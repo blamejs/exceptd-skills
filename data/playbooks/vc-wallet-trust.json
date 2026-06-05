@@ -1,0 +1,726 @@
+{
+  "_meta": {
+    "id": "vc-wallet-trust",
+    "version": "1.0.0",
+    "last_threat_review": "2026-06-02",
+    "threat_currency_score": 94,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-06-02",
+        "summary": "Initial seven-phase verifiable-credential / digital-wallet verifier-trust playbook. Covers the trust-verification failure modes a credential verifier exposes when it accepts SD-JWT-VC, OID4VCI/OID4VP, mdoc (ISO 18013-5), DID-identified, status-list-governed, or OpenID-Federation-anchored credentials: issuer key not pinned to a trust anchor, revocation/status not enforced, did:web resolution unpinned, presentations accepted without nonce/audience key-binding (replay), mdoc device-auth skipped, open signature-algorithm sets, unverified key attestation, federation chains not anchored, over-disclosure beyond the DCQL query, and status-list issuers outside the credential issuer trust scope. Closes the GRC loop against NIST 800-53 IA-9 / IA-5, ISO 27001 A.5.16 / A.8.5, NIS2 Art.21 identity-of-entities, and the EU Digital Identity Wallet (eIDAS 2.0) high-assurance expectations. Cross-cuts identity-sso-compromise (federation trust) and cred-stores (wallet key material)."
+      }
+    ],
+    "owner": "@blamejs/platform-security",
+    "air_gap_mode": false,
+    "scope": "service",
+    "preconditions": [
+      {
+        "id": "verifier-source-or-config-read",
+        "description": "Agent must be able to read the operator's credential-verifier source and/or its runtime configuration to inspect how issuer keys, revocation, DID resolution, presentation key-binding, and algorithm policy are trusted. A black-box host with neither source nor config marks the playbook visibility_gap=no_verifier_inventory.",
+        "check": "agent_has_filesystem_read == true OR agent_has_verifier_config == true",
+        "on_fail": "halt"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "identity-sso-compromise",
+        "condition": "finding.includes_federation_trust_gap == true"
+      },
+      {
+        "playbook_id": "cred-stores",
+        "condition": "finding.includes_wallet_key_material == true"
+      },
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      }
+    ]
+  },
+  "domain": {
+    "name": "Verifiable-credential / digital-wallet verifier trust",
+    "attack_class": "identity-abuse",
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1556",
+      "T1606",
+      "T1550"
+    ],
+    "cve_refs": [],
+    "cwe_refs": [
+      "CWE-347",
+      "CWE-290",
+      "CWE-863",
+      "CWE-200",
+      "CWE-672"
+    ],
+    "frameworks_in_scope": [
+      "nist-800-53",
+      "iso-27001-2022",
+      "nis2",
+      "eu-cra",
+      "uk-caf",
+      "au-ism"
+    ]
+  },
+  "phases": {
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "eIDAS 2.0 / EUDI Wallet",
+          "obligation": "notify_supervisory_body",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "affected_credential_types",
+            "verifier_trust_config_snapshot",
+            "estimated_acceptance_window"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "verifier_inventory",
+            "forged_or_replayed_credential_evidence"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "GDPR Art.33",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "over_disclosed_claim_categories",
+            "data_subjects_estimate"
+          ]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "wallet-certified-but-verifier-unpinned",
+          "claim": "We accept the EUDI / mDL wallet, so our acceptance is trustworthy.",
+          "fast_detection_test": "Wallet certification covers the WALLET; ask for the VERIFIER trust-anchor config. If the verifier accepts any self-consistent issuer key, certification is irrelevant."
+        },
+        {
+          "pattern_id": "signature-valid-equals-trusted",
+          "claim": "The credential signature verifies, so the credential is trusted.",
+          "fast_detection_test": "A valid signature only proves the holder of SOME key signed it. Ask which trust anchor the issuer key was validated against; \"it verified\" without anchor-pinning is theater."
+        },
+        {
+          "pattern_id": "revocation-supported-not-enforced",
+          "claim": "Our credentials support a status list, so revocation is handled.",
+          "fast_detection_test": "Grep the verifier accept-path for a status fetch + bit check. Supporting a status_list claim the verifier never reads is theater."
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Org frameworks treat \"identity verified\" as a binary and assume a validated signature equals a trusted issuer. None of NIST 800-53, ISO 27001, or NIS2 prescribe issuer-trust-anchor pinning, presentation replay-binding, or revocation enforcement for the verifiable-credential / wallet acceptance path — the controls predate the wallet ecosystem.",
+        "lag_score": 72,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "IA-9",
+            "designed_for": "service identification and authentication",
+            "insufficient_because": "does not address verifiable-credential issuer trust-anchor pinning or presentation key-binding; written for service-to-service auth, not wallet-presented credentials."
+          },
+          {
+            "framework": "iso-27001-2022",
+            "control_id": "A.5.16",
+            "designed_for": "identity lifecycle management",
+            "insufficient_because": "covers provisioning/deprovisioning of internal identities, not the trust model for externally-issued verifiable credentials a verifier accepts."
+          },
+          {
+            "framework": "nis2",
+            "control_id": "Art.21(2)(d)",
+            "designed_for": "supply-chain security of entities",
+            "insufficient_because": "names trust of suppliers but not the cryptographic trust-anchor model for credentials those entities present."
+          }
+        ]
+      },
+      "skill_preload": [
+        "identity-assurance",
+        "api-security",
+        "pqc-first",
+        "framework-gap-analysis",
+        "compliance-theater",
+        "policy-exception-gen"
+      ]
+    },
+    "direct": {
+      "threat_context": "A verifier that accepts verifiable credentials / wallet presentations is a trust boundary: every credential it accepts grants whatever the credential asserts (age, license, employment, entitlement). The high-value abuse is not breaking crypto but exploiting MISSING trust checks — an unpinned issuer key, a skipped revocation check, a replayable presentation, an unverified device binding — to present a forged, revoked, or replayed credential that the verifier treats as authentic. eIDAS 2.0 / EUDI wallets make this a 2026 operational reality across the EU.",
+      "rwep_threshold": {
+        "escalate": 60,
+        "monitor": 40,
+        "close": 25
+      },
+      "framework_lag_declaration": "Org identity controls (NIST IA-9/IA-5, ISO A.5.16) assume service-to-service or human-credential auth and are silent on verifiable-credential issuer-trust-anchor pinning, presentation replay-binding, and revocation enforcement. Treat a clean identity-control audit as NON-EVIDENCE for verifier trust posture.",
+      "skill_chain": [
+        {
+          "skill": "identity-assurance",
+          "purpose": "map the verifier trust model to AAL/IAL/FAL and federation assurance expectations"
+        },
+        {
+          "skill": "pqc-first",
+          "purpose": "assess the credential signature-algorithm allowlist for downgrade / non-PQC exposure"
+        },
+        {
+          "skill": "compliance-theater",
+          "purpose": "separate wallet-certification / signature-valid claims from enforced verifier trust"
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "map findings to the IA-9 / A.5.16 / NIS2 gaps the controls do not cover"
+        }
+      ],
+      "token_budget": {
+        "estimated_total": 14000,
+        "breakdown": {
+          "govern": 1200,
+          "direct": 800,
+          "look": 5000,
+          "detect": 4000,
+          "analyze": 2000,
+          "validate": 700,
+          "close": 300
+        }
+      }
+    },
+    "look": {
+      "artifacts": [
+        {
+          "id": "vc-verifier-config",
+          "type": "config_file",
+          "source": "Repository walk for the credential-verifier configuration and call sites: grep for issuerKeyResolver / keyResolver / trustAnchors / trust_anchor / issuer_allowlist / verifyCredential / verifyPresentation across config/*.{js,ts,json,yaml} and the verifier source.",
+          "description": "How the verifier resolves and trusts issuer keys, and whether a trust anchor / issuer allowlist gates acceptance.",
+          "required": true,
+          "air_gap_alternative": "If only source is available (no running config), restrict to the verifier call-sites and their resolver wiring; mark runtime-config-derived trust as inventory_gap."
+        },
+        {
+          "id": "revocation-and-statuslist-config",
+          "type": "config_file",
+          "source": "grep for status_list / statusList / token-status-list / revocation / verifyStatus across the verifier source and config.",
+          "description": "Whether the verifier resolves and enforces credential revocation / status-list, and how the status-list issuer key is trusted.",
+          "required": true,
+          "air_gap_alternative": "Inspect the verifier source for a status-check call on the accept path; if status fetching is runtime-config-gated, mark inventory_gap."
+        },
+        {
+          "id": "did-resolution-config",
+          "type": "config_file",
+          "source": "grep for did:web / did:key / did:jwk / resolveDid / didResolver / .well-known/did.json across source and config.",
+          "description": "Which DID methods are accepted and whether did:web resolution is pinned (cert pin / anchor / known-document-hash).",
+          "required": false,
+          "air_gap_alternative": "Enumerate DID methods referenced in source; absence of pinning logic around did:web fetches is the inspectable signal."
+        },
+        {
+          "id": "oid4vp-request-config",
+          "type": "config_file",
+          "source": "grep for oid4vp / vp_token / requireKeyBinding / nonce / dcql / presentation_definition / aud across source and config.",
+          "description": "Whether OID4VP presentations require nonce+audience-bound key-binding and whether disclosed claims are filtered to the query.",
+          "required": false,
+          "air_gap_alternative": "Inspect the presentation-verify call options for requireKeyBinding + nonce issuance; absence is the signal."
+        },
+        {
+          "id": "mdoc-trust-config",
+          "type": "config_file",
+          "source": "grep for mdoc / mDL / 18013 / trustAnchorsPem / x5chain / deviceAuth / verifyDeviceAuth across source and config.",
+          "description": "Whether mdoc issuer certificate chains validate against configured trust anchors and whether device-auth is verified.",
+          "required": false,
+          "air_gap_alternative": "Inspect mdoc verify call-sites for a device-auth step + trustAnchors argument; omission is the signal."
+        },
+        {
+          "id": "federation-anchor-config",
+          "type": "config_file",
+          "source": "grep for openid-federation / trust_anchor / entity_statement / authority_hints / metadata_policy across source and config.",
+          "description": "Whether OpenID Federation trust chains are validated to a pinned anchor and the kid-less / authority-hint policy.",
+          "required": false,
+          "air_gap_alternative": "Inspect federation resolution call-sites for an anchor argument and chain-termination check."
+        },
+        {
+          "id": "algorithm-policy",
+          "type": "config_file",
+          "source": "grep for alg / algorithms / allowlist / none / HS256 / verify options across the credential/presentation verify call-sites.",
+          "description": "The signature-algorithm allowlist applied at verification and whether \"none\"/symmetric algorithms are refused.",
+          "required": true,
+          "air_gap_alternative": "Inspect the verify-option objects for an explicit alg allowlist; an implicit/open alg set is the signal."
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current verifier configuration + source state (point-in-time posture audit)",
+        "asset_scope": "every service that ACCEPTS verifiable credentials or wallet presentations (SD-JWT-VC, OID4VP, mdoc, DID-identified, status-list-governed)"
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "The operator runs at least one credential VERIFIER (accepts credentials), not only an issuer.",
+          "if_false": "If the operator only ISSUES credentials, the verifier indicators do not apply; pivot to issuer-side key-rotation + status-list-publication posture only."
+        },
+        {
+          "assumption": "Verifier source or runtime config is readable.",
+          "if_false": "Mark visibility_gap=no_verifier_inventory and report only what the accept-path source reveals."
+        }
+      ],
+      "fallback_if_unavailable": [
+        {
+          "artifact_id": "did-resolution-config",
+          "fallback_action": "If no DID methods are used (only x5c / federation issuer keys), skip the did:web indicator and note DID-resolution not-in-scope.",
+          "confidence_impact": "none"
+        },
+        {
+          "artifact_id": "mdoc-trust-config",
+          "fallback_action": "If no mdoc/mDL acceptance, skip the device-auth indicator.",
+          "confidence_impact": "none"
+        }
+      ]
+    },
+    "detect": {
+      "indicators": [
+        {
+          "id": "issuer-key-not-pinned-to-trust-anchor",
+          "type": "config_value",
+          "value": "A credential verifier resolves the issuer signing key via a callback (issuerKeyResolver / keyResolver / publicKey supplied per-request) with no requirement that the key chain to a pre-configured trust anchor or allowlist.",
+          "description": "Without trust-anchor pinning, any party that can present a self-consistent issuer key (e.g. a forged did:web document, an attacker-run OID4VCI issuer) is accepted as a valid issuer — the signature verifies but the issuer identity is unauthenticated.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1606",
+          "false_positive_checks_required": [
+            "Confirm whether the verifier passes the resolved key through a trust-anchor / issuer-allowlist check BEFORE accepting the credential — a keyResolver that returns a key for ANY issuer id is the finding; one that returns a key only for allowlisted issuer ids (or validates an x5c/OpenID-Federation chain to an anchor) is safe.",
+            "Distinguish a development/test config that intentionally trusts any issuer (often gated behind NODE_ENV !== production) from a production verifier path — only the production-reachable path is the finding."
+          ]
+        },
+        {
+          "id": "credential-revocation-status-not-checked",
+          "type": "config_value",
+          "value": "The verifier accepts a credential without checking the revocation status referenced by its status claim (OAuth Token Status List / status_list index), or fetches the status but ignores a revoked/suspended result.",
+          "description": "A revoked or suspended credential continues to validate, so a holder whose authorization was withdrawn (employee offboarded, license suspended) still passes verification.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1550",
+          "false_positive_checks_required": [
+            "Confirm the verifier actually resolves the status_list endpoint and rejects on a set status bit — a code path that reads the status claim but never compares the bit, or treats a fetch error as \"valid\", is the finding.",
+            "A credential type that genuinely has no revocation model (single-use, short-TTL with no status claim) is not a finding; check the credential schema declares no status mechanism rather than the verifier skipping an existing one."
+          ]
+        },
+        {
+          "id": "did-web-resolution-unpinned",
+          "type": "config_value",
+          "value": "A credential issuer identified as did:web is resolved by fetching https://<host>/.well-known/did.json with no certificate pinning, CAA check, or federation-anchor validation of <host>.",
+          "description": "A network/DNS adversary (or a typosquatted issuer host) can serve a did.json carrying an attacker-controlled key, and the verifier binds the credential to that forged key.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1556",
+          "false_positive_checks_required": [
+            "did:web over a host the operator fully controls AND pins (cert pin / known-good DID-document hash / federation anchor) is safe — the finding is unpinned resolution of an externally-controlled host.",
+            "did:key / did:jwk are self-certifying (the key is in the identifier) and are NOT this finding; restrict to did:web (and did:webvh without witness verification)."
+          ]
+        },
+        {
+          "id": "presentation-no-nonce-audience-binding",
+          "type": "config_value",
+          "value": "An OID4VP / SD-JWT-VC presentation is accepted without requiring a Key-Binding JWT bound to the verifier-issued nonce and audience (requireKeyBinding not set / defaults off).",
+          "description": "A presentation captured at one verifier can be replayed to another (or replayed later to the same verifier) because nothing ties the presentation to this challenge and this audience.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1550",
+          "false_positive_checks_required": [
+            "Confirm the verifier issues a fresh nonce per request AND requires the KB-JWT to echo that exact nonce + the verifier audience — a verifier that omits the nonce, accepts any audience, or makes key-binding optional is the finding.",
+            "A flow that is genuinely holder-binding-exempt (e.g. an issuer-to-issuer batch import over a mutually-authenticated channel) is out of scope; only holder-presentation verifier endpoints are in scope."
+          ]
+        },
+        {
+          "id": "mdoc-device-signature-not-verified",
+          "type": "config_value",
+          "value": "An ISO 18013-5 mdoc presentation has its issuer-signed data verified (MSO digest match) but the device-auth (device signature over the session transcript) is not verified.",
+          "description": "A holder can replay issuer-signed mdoc data without proving possession of the device key — the credential is no longer bound to the presenting device.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1550",
+          "false_positive_checks_required": [
+            "Confirm the verifier calls device-auth verification (device-signature over the session transcript / handover) in addition to issuer-signed verification — verifying only the MSO is the finding.",
+            "A trust model that intentionally accepts issuer-signed-only data (e.g. a server-retrieval flow with a separately authenticated channel) is out of scope; the finding is a device-retrieval flow skipping device auth."
+          ]
+        },
+        {
+          "id": "credential-algorithm-allowlist-absent",
+          "type": "config_value",
+          "value": "The verifier does not enforce a signature-algorithm allowlist at credential / presentation verification, or the allowlist permits weak or attacker-selectable algorithms (HMAC alongside asymmetric, \"none\", non-PQC where a PQC posture is required).",
+          "description": "An attacker can forge a credential using an algorithm the library happens to support but the issuer never uses (algorithm-substitution), or a downgrade to a weak primitive.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1606",
+          "false_positive_checks_required": [
+            "Confirm an explicit alg allowlist is enforced AND \"none\" is always refused AND symmetric (HMAC) algs are not accepted on a path expecting asymmetric issuer signatures — absence of any of these is the finding.",
+            "A single-algorithm deployment that hard-codes one asymmetric alg (effectively an allowlist of one) is safe; the finding is an open or implicit alg set."
+          ]
+        },
+        {
+          "id": "key-attestation-not-verified",
+          "type": "config_value",
+          "value": "A holder-supplied key attestation (claiming the credential private key is hardware/TEE-backed) is accepted without a verifier callback that validates the attestation chain (requireKeyAttestation off / no keyAttestationVerifier).",
+          "description": "A holder can claim hardware key protection it does not have, defeating a policy that grants higher assurance to attested keys.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1556",
+          "false_positive_checks_required": [
+            "Only a finding where policy actually RELIES on the attestation (e.g. grants AAL3-equivalent or higher entitlements to attested keys) — if attestation is informational and unused, downgrade.",
+            "Confirm the verifier validates the attestation signature chain to a known attestation root (device-vendor CA) rather than accepting the attestation JWT on its face."
+          ]
+        },
+        {
+          "id": "openid-federation-anchor-not-pinned",
+          "type": "config_value",
+          "value": "OpenID Federation trust resolution applies metadata policy / accepts entity statements without validating the chain terminates at a pinned trust anchor, or accepts kid-less JWKS / unbounded authority_hints traversal.",
+          "description": "A leaf or intermediate not actually subordinate to a configured anchor is treated as trusted, so federation membership (and the metadata it grants) is forgeable.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1556",
+          "false_positive_checks_required": [
+            "Confirm the resolved trust chain is validated to terminate at an operator-configured trust anchor (not merely \"a self-consistent chain\"), and that kid-less single-key JWKS acceptance is opt-in not default.",
+            "A single-anchor deployment with the anchor pinned is safe; the finding is anchor-less or any-anchor chain acceptance."
+          ]
+        },
+        {
+          "id": "over-disclosure-not-filtered",
+          "type": "config_value",
+          "value": "An OID4VP verifier accepts a presentation that discloses claims beyond the DCQL / presentation-definition query, because claim filtering is applied after (not as part of) acceptance.",
+          "description": "The verifier ingests and may log/store personal claims it did not request (e.g. full DOB, address, government ID number when only age-over-18 was asked) — a data-minimisation and privacy-by-design failure.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1556",
+          "false_positive_checks_required": [
+            "Confirm the verifier rejects or strips claims outside the requested set rather than accepting and processing the full disclosed claim set — accepting over-disclosed claims into the verified object is the finding.",
+            "A verifier that requests a broad claim set deliberately (and is authorised to) is not over-disclosure; compare the DCQL/presentation-definition to what is accepted."
+          ]
+        },
+        {
+          "id": "status-list-issuer-not-trust-scoped",
+          "type": "config_value",
+          "value": "The status-list JWT is verified with a key resolved for the status-list endpoint domain without confirming that endpoint is within the credential issuer's declared trust scope.",
+          "description": "A credential issuer (or an attacker who can influence the status_list URI) can point revocation at an endpoint they control and always answer \"valid\", neutralising revocation.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1550",
+          "false_positive_checks_required": [
+            "Confirm the status-list issuer key is validated against the SAME trust anchor / issuer identity as the credential it governs, not merely against whatever key the status-list endpoint presents.",
+            "A deployment where issuer and status-list authority are intentionally the same pinned key is safe; the finding is an unpinned or cross-issuer status-list trust."
+          ]
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "issuer-key-not-pinned-to-trust-anchor",
+          "benign_pattern": "A test harness that injects a per-test issuer key via keyResolver.",
+          "distinguishing_test": "The keyResolver is reachable only when NODE_ENV/test flags are set; the production verifier path validates against a pinned issuer allowlist or federation anchor."
+        },
+        {
+          "indicator_id": "credential-revocation-status-not-checked",
+          "benign_pattern": "Short-TTL single-use credentials with no status claim at all.",
+          "distinguishing_test": "The credential schema declares no status mechanism — there is nothing to check, versus a status claim present but unread."
+        },
+        {
+          "indicator_id": "did-web-resolution-unpinned",
+          "benign_pattern": "did:key / did:jwk self-certifying identifiers.",
+          "distinguishing_test": "The identifier embeds the key (did:key/did:jwk) so no network fetch occurs; only did:web fetches an external document."
+        },
+        {
+          "indicator_id": "presentation-no-nonce-audience-binding",
+          "benign_pattern": "Issuer-to-issuer batch import over a mutually authenticated channel.",
+          "distinguishing_test": "The endpoint is a holder-presentation verifier (accepts wallet vp_token) rather than a server-to-server channel with its own auth."
+        },
+        {
+          "indicator_id": "mdoc-device-signature-not-verified",
+          "benign_pattern": "Server-retrieval flow with a separately authenticated transport.",
+          "distinguishing_test": "A device-retrieval (proximity/QR) flow that omits device-auth is the finding; server-retrieval with channel auth is not."
+        },
+        {
+          "indicator_id": "credential-algorithm-allowlist-absent",
+          "benign_pattern": "A single hard-coded asymmetric algorithm.",
+          "distinguishing_test": "One fixed asymmetric alg is an allowlist of one; an open/implicit alg set or accepted HMAC/\"none\" is the finding."
+        },
+        {
+          "indicator_id": "key-attestation-not-verified",
+          "benign_pattern": "Attestation present but informational and unused by policy.",
+          "distinguishing_test": "Policy grants higher entitlements to attested keys (finding) versus attestation logged but not relied upon (downgrade)."
+        },
+        {
+          "indicator_id": "openid-federation-anchor-not-pinned",
+          "benign_pattern": "Single-anchor deployment with the anchor pinned.",
+          "distinguishing_test": "The chain is validated to terminate at a configured anchor (safe) versus any self-consistent chain accepted (finding)."
+        },
+        {
+          "indicator_id": "over-disclosure-not-filtered",
+          "benign_pattern": "A verifier authorised to request a broad claim set.",
+          "distinguishing_test": "Compare the DCQL/presentation-definition to the accepted claims — accepting claims beyond the query is the finding."
+        },
+        {
+          "indicator_id": "status-list-issuer-not-trust-scoped",
+          "benign_pattern": "Issuer and status-list authority are the same pinned key.",
+          "distinguishing_test": "Status-list key validated against the credential issuer anchor (safe) versus against whatever the status endpoint presents (finding)."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "At least one verifier accept-path lacks a trust check that policy relies on (issuer not anchored, revocation not enforced, presentation replayable, device-auth skipped, or open algorithm set) on a production-reachable verifier.",
+        "inconclusive": "A trust check is ambiguous (e.g. anchoring done in a runtime config the audit could not read) — record as visibility_gap, not a clean result.",
+        "not_detected": "Every accepted credential format validates the issuer key against a pinned anchor, enforces revocation, binds presentations to a fresh nonce+audience, verifies device-auth where applicable, and enforces an explicit algorithm allowlist."
+      }
+    },
+    "analyze": {
+      "rwep_inputs": [
+        {
+          "signal_id": "issuer-key-not-pinned-to-trust-anchor",
+          "rwep_factor": "blast_radius",
+          "weight": 30
+        },
+        {
+          "signal_id": "credential-revocation-status-not-checked",
+          "rwep_factor": "active_exploitation",
+          "weight": 20
+        },
+        {
+          "signal_id": "presentation-no-nonce-audience-binding",
+          "rwep_factor": "public_poc",
+          "weight": 20
+        }
+      ],
+      "blast_radius_model": {
+        "scope_question": "How many credential types and downstream entitlements does the un-trusted verifier path gate, and is it internet-reachable?",
+        "scoring_rubric": [
+          {
+            "condition": "Verifier is internet-facing and the un-anchored path gates a high-value entitlement (payment, age-gated access, employment/licence assertion)",
+            "blast_radius_score": 5,
+            "description": "Forged/replayed credential yields direct authorization to a high-value action"
+          },
+          {
+            "condition": "Verifier accepts credentials but the entitlement is low-value or human-reviewed downstream",
+            "blast_radius_score": 3,
+            "description": "Forged credential needs a second factor / human step to cause impact"
+          },
+          {
+            "condition": "Verifier is internal-only / behind strong network controls",
+            "blast_radius_score": 2,
+            "description": "Exploitation requires prior network access"
+          }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "We accept a certified wallet / the credential signature verifies, so credential acceptance is trustworthy.",
+        "audit_evidence": "Wallet certification documents, a verify() call that returns success, a credential schema that declares a status_list.",
+        "reality_test": "Show the verifier trust-anchor / issuer-allowlist config, the revocation-check on the accept path, and the presentation nonce+audience binding. If acceptance succeeds against an unpinned issuer key, a never-read status list, or an unbound presentation, the assurance is paper.",
+        "theater_verdict_if_gap": "theater"
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "issuer-key-not-pinned-to-trust-anchor",
+          "framework": "nist-800-53",
+          "claimed_control": "IA-9 (service identification)",
+          "actual_gap": "IA-9 does not require credential issuer trust-anchor pinning; a verified signature from an unanchored issuer passes IA-9 as written."
+        },
+        {
+          "finding_id": "credential-revocation-status-not-checked",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.5.16 (identity lifecycle)",
+          "actual_gap": "A.5.16 governs internal identity deprovisioning, not enforcement of externally-issued credential revocation at the verifier."
+        }
+      ],
+      "escalation_criteria": [
+        {
+          "condition": "An internet-facing verifier accepts an unanchored issuer key OR a replayable presentation gating a high-value entitlement",
+          "action": "raise_severity"
+        },
+        {
+          "condition": "Revocation is unenforced on a credential type used for ongoing authorization",
+          "action": "trigger_playbook"
+        }
+      ]
+    },
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "pin-issuer-trust-anchors",
+          "description": "Replace open issuerKeyResolver acceptance with an issuer allowlist / x5c-or-federation chain validated to a configured trust anchor; reject issuer keys that do not chain to it.",
+          "preconditions": [
+            "verifier owns or can configure the set of trusted issuers"
+          ],
+          "priority": 1,
+          "for_signals": [
+            "issuer-key-not-pinned-to-trust-anchor",
+            "did-web-resolution-unpinned",
+            "openid-federation-anchor-not-pinned",
+            "status-list-issuer-not-trust-scoped"
+          ]
+        },
+        {
+          "id": "enforce-revocation-on-accept",
+          "description": "Resolve the status_list on the accept path and reject on a set status bit; treat a status fetch failure as fail-closed (not \"valid\").",
+          "preconditions": [
+            "credentials carry a status mechanism"
+          ],
+          "priority": 1,
+          "for_signals": [
+            "credential-revocation-status-not-checked"
+          ]
+        },
+        {
+          "id": "bind-presentations-to-nonce-audience",
+          "description": "Issue a fresh per-request nonce, require a Key-Binding JWT echoing that nonce + the verifier audience, and verify device-auth for mdoc; reject unbound presentations.",
+          "preconditions": [
+            "verifier controls the request/challenge"
+          ],
+          "priority": 1,
+          "for_signals": [
+            "presentation-no-nonce-audience-binding",
+            "mdoc-device-signature-not-verified"
+          ]
+        },
+        {
+          "id": "enforce-algorithm-allowlist",
+          "description": "Enforce an explicit signature-algorithm allowlist (asymmetric only on issuer paths; \"none\" always refused; PQC-ready per the org crypto posture) at every verify call.",
+          "preconditions": [],
+          "priority": 2,
+          "for_signals": [
+            "credential-algorithm-allowlist-absent"
+          ]
+        },
+        {
+          "id": "filter-to-requested-claims",
+          "description": "Strip or reject claims disclosed beyond the DCQL / presentation-definition query before processing, and validate key attestation only against a known attestation root.",
+          "preconditions": [],
+          "priority": 2,
+          "for_signals": [
+            "over-disclosure-not-filtered",
+            "key-attestation-not-verified"
+          ]
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "forged-issuer-rejected",
+          "test": "Present a credential signed by a well-formed but non-allowlisted issuer key (e.g. a fresh did:web the verifier was not configured to trust).",
+          "expected_result": "Verifier rejects: issuer key does not chain to a configured trust anchor.",
+          "test_type": "negative"
+        },
+        {
+          "id": "revoked-credential-rejected",
+          "test": "Present a structurally valid credential whose status-list bit is set to revoked.",
+          "expected_result": "Verifier rejects on revoked status; a status-fetch failure also rejects (fail-closed).",
+          "test_type": "negative"
+        },
+        {
+          "id": "replayed-presentation-rejected",
+          "test": "Capture a valid presentation and replay it with a stale nonce / to a different audience.",
+          "expected_result": "Verifier rejects: KB-JWT nonce/audience does not match the issued challenge.",
+          "test_type": "negative"
+        },
+        {
+          "id": "legitimate-credential-accepted",
+          "test": "Present a valid, unrevoked, anchored credential with a correctly bound presentation.",
+          "expected_result": "Verifier accepts — no regression on the legitimate path.",
+          "test_type": "functional"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "A trusted issuer whose own signing key is compromised can still mint credentials the verifier will accept until the issuer is removed from the anchor set.",
+        "why_remains": "Trust-anchor pinning authenticates the issuer identity, not the issuer's internal key hygiene; cross-issuer compromise is out of the verifier's control.",
+        "acceptance_level": "ciso"
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "config_diff",
+          "description": "The issuer allowlist / trust-anchor set, revocation-check wiring, presentation-binding options, and algorithm allowlist as configured at audit time.",
+          "retention_period": "1 year"
+        },
+        {
+          "evidence_type": "exploit_replay_negative",
+          "description": "Outcomes of the forged-issuer / revoked / replayed negative tests plus the legitimate-path functional test.",
+          "retention_period": "1 year"
+        }
+      ],
+      "regression_trigger": [
+        {
+          "condition": "A new credential format / DID method / federation is accepted",
+          "interval": "on change"
+        },
+        {
+          "condition": "Periodic re-attestation of verifier trust posture",
+          "interval": "quarterly"
+        }
+      ]
+    },
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": [
+          "verifier trust-config snapshot",
+          "per-indicator findings + false-positive disposition",
+          "validation test results",
+          "framework gap mapping"
+        ],
+        "destination": ".exceptd/attestations/<session_id>/attestation.json"
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Forged / revoked / replayed verifiable credential accepted by a verifier missing a trust check (unanchored issuer, unenforced revocation, unbound presentation, skipped device-auth, open algorithm set).",
+          "control_gap": "Verifier accept-path lacks issuer trust-anchor pinning / revocation enforcement / presentation replay-binding.",
+          "framework_gap": "NIST IA-9 + ISO A.5.16 + NIS2 Art.21 do not prescribe verifiable-credential verifier trust-anchor / revocation / replay controls.",
+          "new_control_requirement": "Verifier MUST validate issuer keys to a pinned anchor, enforce revocation fail-closed, and bind presentations to a fresh nonce + audience."
+        }
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/eIDAS 2.0 / EUDI Wallet 72h",
+          "deadline": "72h from detect_confirmed",
+          "recipient": "national wallet supervisory body",
+          "evidence_attached": [
+            "attestation"
+          ]
+        },
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "24h from detect_confirmed",
+          "recipient": "national CSIRT / competent authority",
+          "evidence_attached": [
+            "attestation"
+          ]
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "A verifier path cannot pin a trust anchor in time (e.g. an open ecosystem with no central anchor yet).",
+        "exception_template": {
+          "scope": "the specific verifier endpoint + credential type",
+          "duration": "90 days",
+          "compensating_controls": [
+            "issuer allowlist by issuer id",
+            "downstream human review of high-value entitlements",
+            "enhanced logging of accepted issuer identities"
+          ],
+          "risk_acceptance_owner": "ciso"
+        }
+      },
+      "regression_schedule": {
+        "next_run": "quarterly or on any new accepted credential format",
+        "trigger": "change to accepted issuers / DID methods / federations, or quarterly re-attestation"
+      }
+    }
+  },
+  "directives": [
+    {
+      "id": "all-credential-verifier-paths",
+      "title": "Inventory + trust-test every verifiable-credential / wallet acceptance path",
+      "applies_to": {
+        "always": true
+      }
+    },
+    {
+      "id": "eudi-wallet-acceptance",
+      "title": "Targeted sweep for EUDI / mDL wallet acceptance trust posture",
+      "applies_to": {
+        "attack_technique": "T1556"
+      }
+    }
+  ]
+}

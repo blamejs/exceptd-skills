@@ -21,7 +21,7 @@
  *        Pre-fix the env-var guard reset on every fresh node process so
  *        operators saw the same banner on every `exceptd plan` invocation.
  *
- * Per CLAUDE.md anti-coincidence rule, every assertion checks an EXACT
+ * Per the anti-coincidence rule, every assertion checks an EXACT
  * value (status code, string presence/absence, array shape).
  */
 

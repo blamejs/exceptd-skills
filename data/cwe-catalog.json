@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "last_updated": "2026-05-19",
+    "last_updated": "2026-06-01",
     "cwe_version": "4.20",
     "cwe_version_release_date": "2026-04-30",
     "source": "https://cwe.mitre.org",
@@ -48,10 +48,13 @@
       "fuzz-testing-strategy"
     ],
     "evidence_cves": [
+      "CVE-2022-1471",
       "CVE-2024-3154",
+      "CVE-2025-10164",
       "CVE-2025-20393",
       "CVE-2025-54236",
       "CVE-2025-6558",
+      "CVE-2026-21858",
       "CVE-2026-32201",
       "CVE-2026-34197",
       "CVE-2026-6973"
@@ -85,6 +88,8 @@
     "skills_referencing": [
       "api-security",
       "attack-surface-pentest",
+      "decompression-dos",
+      "mail-server-hardening",
       "mcp-agent-trust",
       "webapp-security"
     ],
@@ -93,15 +98,28 @@
       "CVE-2021-43798",
       "CVE-2023-38950",
       "CVE-2023-43472",
+      "CVE-2023-51449",
+      "CVE-2023-6021",
+      "CVE-2024-0129",
       "CVE-2024-0769",
+      "CVE-2024-13059",
+      "CVE-2024-1561",
       "CVE-2024-1708",
+      "CVE-2024-24591",
+      "CVE-2024-31462",
+      "CVE-2024-37032",
+      "CVE-2024-39722",
       "CVE-2024-57728",
       "CVE-2024-7399",
       "CVE-2025-2749",
       "CVE-2025-27920",
       "CVE-2025-4632",
+      "CVE-2025-51480",
       "CVE-2025-6218",
+      "CVE-2025-67818",
       "CVE-2025-8110",
+      "CVE-2026-22218",
+      "CVE-2026-25592",
       "CVE-2026-34926"
     ],
     "framework_controls_partially_addressing": [
@@ -132,20 +150,31 @@
     ],
     "skills_referencing": [
       "api-security",
+      "mail-server-hardening",
       "mcp-agent-trust",
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2011-0411",
       "CVE-2016-10033",
       "CVE-2020-25079",
+      "CVE-2021-33515",
       "CVE-2023-33538",
+      "CVE-2024-12450",
+      "CVE-2024-5565",
       "CVE-2025-10035",
       "CVE-2025-29635",
       "CVE-2025-4008",
       "CVE-2025-53773",
       "CVE-2025-55319",
       "CVE-2025-59689",
+      "CVE-2026-22688",
       "CVE-2026-22719",
+      "CVE-2026-26015",
+      "CVE-2026-30616",
+      "CVE-2026-30617",
+      "CVE-2026-30624",
+      "CVE-2026-30625",
       "MAL-2026-3083"
     ],
     "framework_controls_partially_addressing": [
@@ -181,10 +210,13 @@
     "evidence_cves": [
       "CVE-2014-6278",
       "CVE-2023-39780",
+      "CVE-2023-6019",
       "CVE-2024-12987",
       "CVE-2025-11953",
       "CVE-2025-12686",
+      "CVE-2025-1753",
       "CVE-2025-48703",
+      "CVE-2025-54136",
       "CVE-2025-54948",
       "CVE-2025-58034",
       "CVE-2025-59389",
@@ -193,9 +225,17 @@
       "CVE-2025-66644",
       "CVE-2025-9377",
       "CVE-2026-1731",
+      "CVE-2026-22252",
+      "CVE-2026-22688",
       "CVE-2026-25108",
+      "CVE-2026-26015",
+      "CVE-2026-30616",
+      "CVE-2026-30617",
       "CVE-2026-30623",
-      "CVE-2026-39987"
+      "CVE-2026-30624",
+      "CVE-2026-30625",
+      "CVE-2026-39987",
+      "CVE-2026-40933"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -230,9 +270,12 @@
     ],
     "evidence_cves": [
       "CVE-2021-26829",
+      "CVE-2023-6571",
       "CVE-2024-11182",
+      "CVE-2024-27132",
       "CVE-2024-27443",
       "CVE-2024-42009",
+      "CVE-2024-9526",
       "CVE-2025-27915",
       "CVE-2025-48700",
       "CVE-2025-66376",
@@ -269,6 +312,7 @@
       "CVE-2016-10033",
       "CVE-2026-24061",
       "CVE-2026-30623",
+      "CVE-2026-31230",
       "CVE-2026-39884"
     ],
     "framework_controls_partially_addressing": [
@@ -305,7 +349,8 @@
       "CVE-2025-25257",
       "CVE-2025-57819",
       "CVE-2026-21643",
-      "CVE-2026-42208"
+      "CVE-2026-42208",
+      "CVE-2026-9082"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -350,9 +395,21 @@
       "CVE-2017-1000353",
       "CVE-2020-25078",
       "CVE-2022-48503",
+      "CVE-2023-44467",
+      "CVE-2023-6016",
+      "CVE-2024-12366",
+      "CVE-2024-21513",
+      "CVE-2024-21576",
+      "CVE-2024-27132",
+      "CVE-2024-4889",
+      "CVE-2024-5565",
       "CVE-2024-56145",
       "CVE-2025-11837",
+      "CVE-2025-1550",
       "CVE-2025-32432",
+      "CVE-2025-3248",
+      "CVE-2025-33236",
+      "CVE-2025-3466",
       "CVE-2025-37164",
       "CVE-2025-43200",
       "CVE-2025-4428",
@@ -365,14 +422,20 @@
       "CVE-2025-62848",
       "CVE-2025-8875",
       "CVE-2025-8876",
+      "CVE-2026-0766",
       "CVE-2026-1281",
       "CVE-2026-1340",
       "CVE-2026-20045",
+      "CVE-2026-21877",
+      "CVE-2026-25592",
       "CVE-2026-30615",
       "CVE-2026-33017",
       "CVE-2026-34197",
+      "CVE-2026-45829",
+      "CVE-2026-5760",
       "CVE-2026-6973",
-      "MAL-2026-3083"
+      "MAL-2026-3083",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -401,6 +464,7 @@
       "hardening"
     ],
     "evidence_cves": [
+      "CVE-2024-42479",
       "CVE-2026-43284"
     ],
     "framework_controls_partially_addressing": [
@@ -433,9 +497,11 @@
     ],
     "evidence_cves": [
       "CVE-2023-36424",
+      "CVE-2024-42478",
       "CVE-2025-48633",
       "CVE-2025-5419",
       "CVE-2025-5777",
+      "CVE-2026-24213",
       "CVE-2026-3055"
     ],
     "framework_controls_partially_addressing": [
@@ -469,10 +535,14 @@
       "api-security",
       "cloud-security",
       "dlp-gap-analysis",
+      "log-injection-telemetry",
       "sector-healthcare",
+      "vc-wallet-trust",
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2023-43791",
+      "CVE-2023-47117",
       "CVE-2024-40635",
       "CVE-2025-31125",
       "CVE-2026-20133",
@@ -605,6 +675,7 @@
       "CAPEC-19"
     ],
     "skills_referencing": [
+      "audit-log-integrity",
       "idp-incident-response"
     ],
     "evidence_cves": [
@@ -663,10 +734,12 @@
       "CVE-2020-10148",
       "CVE-2021-32030",
       "CVE-2023-27351",
+      "CVE-2024-12776",
       "CVE-2024-1709",
       "CVE-2025-32975",
       "CVE-2025-3935",
       "CVE-2025-49706",
+      "CVE-2025-64513",
       "CVE-2026-20127",
       "CVE-2026-20182"
     ],
@@ -704,10 +777,13 @@
     "evidence_cves": [
       "CVE-2020-24363",
       "CVE-2025-32433",
+      "CVE-2025-3248",
       "CVE-2025-4008",
+      "CVE-2025-49596",
       "CVE-2025-61757",
       "CVE-2026-0300",
       "CVE-2026-24423",
+      "CVE-2026-26190",
       "CVE-2026-33017",
       "CVE-2026-39987",
       "CVE-2026-41940"
@@ -967,7 +1043,9 @@
       "CAPEC-485"
     ],
     "skills_referencing": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2025-1796"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SC-13"
     ],
@@ -994,10 +1072,16 @@
       "CAPEC-148"
     ],
     "skills_referencing": [
+      "audit-log-integrity",
       "idp-incident-response",
-      "mcp-agent-trust"
+      "mcp-agent-trust",
+      "network-trust",
+      "privacy-consent-ops"
     ],
     "evidence_cves": [
+      "CVE-2023-51764",
+      "CVE-2023-51765",
+      "CVE-2023-51766",
       "CVE-2026-32202"
     ],
     "framework_controls_partially_addressing": [
@@ -1034,7 +1118,8 @@
     ],
     "evidence_cves": [
       "CVE-2023-2533",
-      "CVE-2025-34291"
+      "CVE-2025-34291",
+      "CVE-2025-49596"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SC-23",
@@ -1059,7 +1144,9 @@
       "CAPEC-75",
       "CAPEC-39"
     ],
-    "skills_referencing": [],
+    "skills_referencing": [
+      "self-update-integrity"
+    ],
     "evidence_cves": [
       "CVE-2026-32202"
     ],
@@ -1131,6 +1218,8 @@
       "kernel-lpe-triage"
     ],
     "evidence_cves": [
+      "CVE-2010-0249",
+      "CVE-2010-0806",
       "CVE-2020-9715",
       "CVE-2023-41974",
       "CVE-2023-43000",
@@ -1169,7 +1258,8 @@
     ],
     "skills_referencing": [],
     "evidence_cves": [
-      "CVE-2012-1854"
+      "CVE-2012-1854",
+      "CVE-2025-23266"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-6",
@@ -1210,7 +1300,9 @@
       "CVE-2024-7399",
       "CVE-2024-7694",
       "CVE-2025-2749",
-      "CVE-2025-52691"
+      "CVE-2025-31324",
+      "CVE-2025-52691",
+      "CVE-2026-21877"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-3",
@@ -1237,6 +1329,7 @@
     ],
     "skills_referencing": [
       "mcp-agent-trust",
+      "self-update-integrity",
       "supply-chain-integrity"
     ],
     "evidence_cves": [
@@ -1276,11 +1369,25 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2022-1471",
       "CVE-2023-21529",
+      "CVE-2024-11392",
+      "CVE-2024-11393",
+      "CVE-2024-11394",
+      "CVE-2024-24590",
+      "CVE-2024-37052",
+      "CVE-2024-37060",
+      "CVE-2024-50050",
       "CVE-2024-8069",
       "CVE-2025-10035",
+      "CVE-2025-10164",
+      "CVE-2025-23254",
       "CVE-2025-24016",
       "CVE-2025-26399",
+      "CVE-2025-27520",
+      "CVE-2025-30165",
+      "CVE-2025-32434",
+      "CVE-2025-32444",
       "CVE-2025-40551",
       "CVE-2025-42999",
       "CVE-2025-49113",
@@ -1288,9 +1395,15 @@
       "CVE-2025-53690",
       "CVE-2025-53770",
       "CVE-2025-59287",
+      "CVE-2025-60455",
       "CVE-2025-68664",
+      "CVE-2025-68665",
+      "CVE-2025-8747",
       "CVE-2026-20131",
-      "CVE-2026-20963"
+      "CVE-2026-20963",
+      "CVE-2026-3059",
+      "CVE-2026-3060",
+      "CVE-2026-31229"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -1319,15 +1432,21 @@
     ],
     "skills_referencing": [],
     "evidence_cves": [
+      "CVE-2022-23812",
       "CVE-2024-3094",
+      "CVE-2025-30066",
+      "CVE-2025-30154",
       "CVE-2025-54313",
       "CVE-2025-59374",
       "CVE-2026-33634",
       "CVE-2026-45321",
+      "CVE-2026-48027",
       "MAL-2026-3083",
+      "MAL-2026-MOIKA-DEPCONFUSION",
       "MAL-2026-NODE-IPC-STEALER",
       "MAL-2026-SHAI-HULUD-OSS",
-      "MAL-2026-TANSTACK-MINI"
+      "MAL-2026-TANSTACK-MINI",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SA-12",
@@ -1420,7 +1539,9 @@
     ],
     "related_attack_patterns_capec": [],
     "skills_referencing": [
-      "kernel-lpe-triage"
+      "kernel-lpe-triage",
+      "privacy-consent-ops",
+      "vc-wallet-trust"
     ],
     "evidence_cves": [
       "CVE-2026-46300",
@@ -1554,14 +1675,18 @@
       "kernel-lpe-triage"
     ],
     "evidence_cves": [
+      "CVE-2009-1537",
       "CVE-2021-22555",
       "CVE-2023-3519",
       "CVE-2024-21762",
       "CVE-2024-37079",
+      "CVE-2024-42479",
+      "CVE-2025-0282",
       "CVE-2025-14174",
       "CVE-2025-14733",
       "CVE-2025-21042",
       "CVE-2025-21043",
+      "CVE-2025-22457",
       "CVE-2025-5419",
       "CVE-2025-6965",
       "CVE-2025-9242",
@@ -1636,12 +1761,17 @@
     ],
     "skills_referencing": [
       "sector-federal-government",
+      "self-update-integrity",
       "supply-chain-integrity"
     ],
     "evidence_cves": [
       "CVE-2025-32463",
+      "CVE-2025-54136",
+      "CVE-2025-64496",
+      "MAL-2026-MOIKA-DEPCONFUSION",
       "MAL-2026-NODE-IPC-STEALER",
-      "MAL-2026-SHAI-HULUD-OSS"
+      "MAL-2026-SHAI-HULUD-OSS",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SA-12",
@@ -1678,7 +1808,9 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2023-48022",
       "CVE-2023-52163",
+      "CVE-2023-6038",
       "CVE-2024-57726",
       "CVE-2025-20362",
       "CVE-2025-40602",
@@ -1715,7 +1847,10 @@
       "cloud-iam-incident",
       "identity-assurance",
       "idp-incident-response",
+      "mail-server-hardening",
+      "multitenancy-isolation",
       "sector-financial",
+      "vc-wallet-trust",
       "webapp-security"
     ],
     "evidence_cves": [
@@ -1780,7 +1915,9 @@
     "skills_referencing": [
       "api-security",
       "attack-surface-pentest",
+      "log-injection-telemetry",
       "mcp-agent-trust",
+      "network-trust",
       "sector-telecom",
       "webapp-security"
     ],
@@ -1791,7 +1928,16 @@
       "CVE-2021-22054",
       "CVE-2021-22175",
       "CVE-2021-39935",
-      "CVE-2025-61884"
+      "CVE-2022-36551",
+      "CVE-2023-43654",
+      "CVE-2023-48022",
+      "CVE-2023-51449",
+      "CVE-2024-12450",
+      "CVE-2024-6587",
+      "CVE-2025-25297",
+      "CVE-2025-56520",
+      "CVE-2025-61884",
+      "CVE-2026-22219"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SC-7",
@@ -1873,6 +2019,7 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2024-2912",
       "CVE-2025-48927"
     ],
     "framework_controls_partially_addressing": [
@@ -1905,7 +2052,9 @@
       "CVE-2024-3094",
       "CVE-2026-30615",
       "CVE-2026-45321",
-      "MAL-2026-NODE-IPC-STEALER"
+      "MAL-2026-MOIKA-DEPCONFUSION",
+      "MAL-2026-NODE-IPC-STEALER",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SA-12",
@@ -2018,6 +2167,7 @@
       "CWE-732"
     ],
     "evidence_cves": [
+      "CVE-2011-0411",
       "CVE-2026-31635"
     ],
     "last_verified": "2026-05-18",
@@ -2042,7 +2192,8 @@
       "CWE-826"
     ],
     "evidence_cves": [
-      "CVE-2020-17103-REREGRESSION-2026"
+      "CVE-2020-17103-REREGRESSION-2026",
+      "CVE-2024-0132"
     ],
     "last_verified": "2026-05-18",
     "notes": "Added v0.13.17 to back the MiniPlasma cldflt.sys re-regression entry. CWE-367 is the standard MITRE classification for TOCTOU races; the cldflt.sys HsmOsBlockPlaceholderAccess primitive validates a placeholder file's accessibility once, then is racing against a junction / symlink swap before the kernel acts on the cached decision."
@@ -2089,7 +2240,9 @@
     ],
     "evidence_cves": [
       "BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND",
+      "CVE-2025-3466",
       "CVE-2025-40536",
+      "CVE-2025-68668",
       "CVE-2026-21510",
       "CVE-2026-21513"
     ],
@@ -2172,6 +2325,7 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2025-24893",
+      "CVE-2025-64496",
       "CVE-2026-33017"
     ],
     "last_verified": "2026-05-18",
@@ -2210,6 +2364,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2008-4250",
       "CVE-2014-3931",
       "CVE-2025-14174",
       "CVE-2025-31277",
@@ -2217,6 +2372,7 @@
       "CVE-2025-6965",
       "CVE-2025-7775",
       "CVE-2026-20700",
+      "CVE-2026-34159",
       "CVE-2026-3910"
     ],
     "last_verified": "2026-05-18",
@@ -2257,7 +2413,9 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2025-0282",
       "CVE-2025-20352",
+      "CVE-2025-22457",
       "CVE-2025-53521"
     ],
     "last_verified": "2026-05-18",
@@ -2279,7 +2437,8 @@
     "evidence_cves": [
       "CVE-2018-14634",
       "CVE-2021-30952",
-      "CVE-2026-21385"
+      "CVE-2026-21385",
+      "CVE-2026-24214"
     ],
     "last_verified": "2026-05-18",
     "notes": "Added v0.13.17 KEV bulk-import."
@@ -2383,6 +2542,8 @@
       "CVE-2025-57819",
       "CVE-2026-1603",
       "CVE-2026-23760",
+      "CVE-2026-24206",
+      "CVE-2026-24207",
       "CVE-2026-24858"
     ],
     "last_verified": "2026-05-18",
@@ -2424,7 +2585,13 @@
       "CVE-2025-59718"
     ],
     "last_verified": "2026-05-18",
-    "notes": "Added v0.13.17 KEV bulk-import."
+    "notes": "Added v0.13.17 KEV bulk-import.",
+    "skills_referencing": [
+      "audit-log-integrity",
+      "network-trust",
+      "self-update-integrity",
+      "vc-wallet-trust"
+    ]
   },
   "CWE-476": {
     "id": "CWE-476",
@@ -2483,7 +2650,10 @@
       "CVE-2025-58360"
     ],
     "last_verified": "2026-05-18",
-    "notes": "Added v0.13.17 KEV bulk-import."
+    "notes": "Added v0.13.17 KEV bulk-import.",
+    "skills_referencing": [
+      "mail-server-hardening"
+    ]
   },
   "CWE-648": {
     "id": "CWE-648",
@@ -2542,7 +2712,10 @@
       "CVE-2026-21514"
     ],
     "last_verified": "2026-05-18",
-    "notes": "Added v0.13.17 KEV bulk-import."
+    "notes": "Added v0.13.17 KEV bulk-import.",
+    "skills_referencing": [
+      "privacy-consent-ops"
+    ]
   },
   "CWE-822": {
     "id": "CWE-822",
@@ -2658,6 +2831,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2024-21575",
       "CVE-2025-8088"
     ],
     "last_verified": "2026-05-18",
@@ -2696,6 +2870,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2021-38371",
       "CVE-2025-20281",
       "CVE-2025-20337"
     ],
@@ -2716,6 +2891,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2009-3459",
       "CVE-2025-32706",
       "CVE-2026-22778"
     ],
@@ -2778,7 +2954,11 @@
       "CVE-2024-54085"
     ],
     "last_verified": "2026-05-18",
-    "notes": "Added v0.13.17 KEV bulk-import round 2."
+    "notes": "Added v0.13.17 KEV bulk-import round 2.",
+    "skills_referencing": [
+      "network-trust",
+      "vc-wallet-trust"
+    ]
   },
   "CWE-399": {
     "id": "CWE-399",
@@ -2889,12 +3069,20 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2023-44487",
+      "CVE-2023-50868",
+      "CVE-2026-24215",
       "CVE-2026-45498"
     ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
-    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated"
+    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated",
+    "skills_referencing": [
+      "decompression-dos",
+      "mail-server-hardening",
+      "multitenancy-isolation"
+    ]
   },
   "CWE-285": {
     "id": "CWE-285",
@@ -2909,7 +3097,9 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2026-22252"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
@@ -2967,7 +3157,8 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
-      "CVE-2025-34291"
+      "CVE-2025-34291",
+      "CVE-2025-49596"
     ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
@@ -3044,7 +3235,9 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "MAL-2026-MOIKA-DEPCONFUSION"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
@@ -3139,7 +3332,9 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2025-64496"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
@@ -3200,7 +3395,10 @@
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
-    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated"
+    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated",
+    "skills_referencing": [
+      "log-injection-telemetry"
+    ]
   },
   "CWE-539": {
     "id": "CWE-539",
@@ -3386,11 +3584,17 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2026-41947",
+      "CVE-2026-41950"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
-    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated"
+    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated",
+    "skills_referencing": [
+      "multitenancy-isolation"
+    ]
   },
   "CWE-640": {
     "id": "CWE-640",
@@ -3405,7 +3609,10 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2024-12776",
+      "CVE-2025-1796"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
@@ -3576,11 +3783,18 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2023-50387",
+      "CVE-2025-30202"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
-    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated"
+    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated",
+    "skills_referencing": [
+      "decompression-dos",
+      "multitenancy-isolation"
+    ]
   },
   "CWE-772": {
     "id": "CWE-772",
@@ -3618,7 +3832,10 @@
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
-    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated"
+    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated",
+    "skills_referencing": [
+      "decompression-dos"
+    ]
   },
   "CWE-778": {
     "id": "CWE-778",
@@ -3637,7 +3854,11 @@
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
-    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated"
+    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated",
+    "skills_referencing": [
+      "audit-log-integrity",
+      "privacy-consent-ops"
+    ]
   },
   "CWE-779": {
     "id": "CWE-779",
@@ -3675,7 +3896,10 @@
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
-    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated"
+    "_intake_method": "v0.13.18-bulk-mitre-cwe-curated",
+    "skills_referencing": [
+      "decompression-dos"
+    ]
   },
   "CWE-835": {
     "id": "CWE-835",
@@ -4266,6 +4490,147 @@
       "CVE-2024-21626"
     ],
     "last_verified": "2026-05-19",
-    "notes": "Added v0.13.19 to back the runc /proc/self/fd container-escape (CVE-2024-21626) cwe_refs entry."
+    "notes": "Added v0.13.19 to back the runc /proc/self/fd container-escape (CVE-2024-21626) cwe_refs entry.",
+    "skills_referencing": [
+      "multitenancy-isolation"
+    ]
+  },
+  "CWE-340": {
+    "id": "CWE-340",
+    "name": "Generation of Predictable Numbers or Identifiers",
+    "abstraction": "Class",
+    "category": "Cryptography",
+    "description": "The product uses a scheme that generates numbers or identifiers that are more predictable than required (e.g. timestamp-based UUIDv1, a serializer keyed by a guessable secret, sequential ids), so an attacker can predict or derive the value. Child of CWE-330; siblings include CWE-330, -341, -342.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-310"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-59",
+      "CAPEC-112"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2025-69286"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-IA-5",
+      "NIST-800-53-SC-13"
+    ],
+    "real_requirement": "Generate security-relevant identifiers and tokens (API keys, share/reset tokens, session ids) from an OS CSPRNG with an unpredictable per-install secret; never key a serializer with a tenant/customer id, never use timestamp-based UUIDv1 as token material, and never let one token be derivable from another.",
+    "lag_notes": "Framework controls require 'unpredictable' authenticators in the abstract; codebase-level enforcement that token-generation never uses a predictable secret or timestamp source is absent.",
+    "last_verified": "2026-05-26",
+    "playbooks_referencing": [
+      "identity-sso-compromise"
+    ]
+  },
+  "CWE-305": {
+    "id": "CWE-305",
+    "name": "Authentication Bypass by Primary Weakness",
+    "abstraction": "Base",
+    "category": "Authentication",
+    "description": "The authentication algorithm is sound, but the implemented mechanism can be bypassed as the result of a separate weakness that is primary to the authentication error.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-115"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2025-31161"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-IA-2",
+      "ISO-27001-2022-A.5.17"
+    ],
+    "real_requirement": "Authentication paths must be evaluated against bypass via separate primary weaknesses (e.g. header-parsing flaws, race conditions in the auth handler); fuzz and audit the auth mechanism as an integrated whole, not the algorithm in isolation.",
+    "lag_notes": "Authentication-bypass CVEs frequently stem from a primary weakness in request parsing or state handling rather than the auth algorithm itself; controls that audit only the credential-checking logic miss this class.",
+    "last_verified": "2026-05-28"
+  },
+  "CWE-93": {
+    "id": "CWE-93",
+    "name": "Improper Neutralization of CRLF Sequences ('CRLF Injection')",
+    "abstraction": "Base",
+    "category": "Injection",
+    "description": "The product uses CRLF (carriage-return line-feed) sequences as a special element (line/record separators) but does not neutralize, or incorrectly neutralizes, CRLF sequences from inputs. MITRE-canonical; full text at https://cwe.mitre.org/data/definitions/93.html. Backs the SMTP-smuggling end-of-data-sequence class (CVE-2023-51764/51765/51766) and the mail-server protocol-hardening surface.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-34"
+    ],
+    "skills_referencing": [
+      "mail-server-hardening"
+    ],
+    "evidence_cves": [
+      "CVE-2023-51764",
+      "CVE-2023-51765",
+      "CVE-2023-51766"
+    ]
+  },
+  "CWE-409": {
+    "id": "CWE-409",
+    "name": "Improper Handling of Highly Compressed Data (Data Amplification)",
+    "abstraction": "Base",
+    "category": "Resource Management",
+    "description": "The product does not handle or incorrectly handles a compressed input with a very high compression ratio that produces a large output. MITRE-canonical; full text at https://cwe.mitre.org/data/definitions/409.html. Backs the decompression-bomb / zip-bomb / nested-archive class (no decompressed-size or ratio cap).",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-197"
+    ],
+    "skills_referencing": [
+      "decompression-dos"
+    ],
+    "evidence_cves": []
+  },
+  "CWE-1333": {
+    "id": "CWE-1333",
+    "name": "Inefficient Regular Expression Complexity",
+    "abstraction": "Base",
+    "category": "Resource Management",
+    "description": "The product uses a regular expression with inefficient, possibly exponential worst-case complexity on a value that can be controlled by an actor, enabling catastrophic backtracking (ReDoS). MITRE-canonical; full text at https://cwe.mitre.org/data/definitions/1333.html.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-492"
+    ],
+    "skills_referencing": [
+      "decompression-dos"
+    ],
+    "evidence_cves": []
+  },
+  "CWE-117": {
+    "id": "CWE-117",
+    "name": "Improper Output Neutralization for Logs",
+    "abstraction": "Base",
+    "category": "Injection",
+    "description": "The product does not neutralize or incorrectly neutralizes output that is written to logs. MITRE-canonical; full text at https://cwe.mitre.org/data/definitions/117.html. Backs the CRLF log-injection / log-forging class on telemetry sinks (forged or split log entries via un-sanitized control characters).",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-93",
+      "CAPEC-268"
+    ],
+    "skills_referencing": [
+      "log-injection-telemetry"
+    ],
+    "evidence_cves": []
   }
 }

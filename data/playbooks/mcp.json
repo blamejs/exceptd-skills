@@ -3,7 +3,7 @@
     "id": "mcp",
     "version": "1.4.0",
     "last_threat_review": "2026-05-17",
-    "threat_currency_score": 98,
+    "threat_currency_score": 96,
     "changelog": [
       {
         "version": "1.4.0",
@@ -876,6 +876,7 @@
             "auto_update_available == true"
           ],
           "priority": 1,
+          "for_signals": ["vulnerable-windsurf-version"],
           "compensating_controls": [],
           "estimated_time_hours": 0.5
         },
@@ -886,6 +887,7 @@
             "operator_authorized_to_modify_mcp_config == true"
           ],
           "priority": 2,
+          "for_signals": ["unsigned-mcp-manifest","mcp-typosquat-candidate"],
           "compensating_controls": [
             "mcp_egress_network_allowlist",
             "mcp_runs_as_non_root_enforced"
@@ -899,6 +901,7 @@
             "all_authorized_mcp_servers_have_published_signatures == true"
           ],
           "priority": 3,
+          "for_signals": ["mcp-allowlist-missing","mcp-command-provenance-gap"],
           "compensating_controls": [
             "pre-commit hook validates mcp config against signed allowlist",
             "CI gate rejects PRs that introduce unsigned mcp entries"
@@ -912,6 +915,7 @@
             "package_lockfile_exists == true OR sigstore_rekor_entry_available == true"
           ],
           "priority": 4,
+          "for_signals": ["mcp-version-without-integrity"],
           "compensating_controls": [
             "scheduled re-pin job on every authorized MCP package release"
           ],

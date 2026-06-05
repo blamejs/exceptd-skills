@@ -12,7 +12,7 @@
  * reclaim or stale-mtime cleanup branches) — that's the only path that
  * yields exit 8 without a real concurrent invocation.
  *
- * The test pins r.status === 8 EXACTLY (per CLAUDE.md anti-coincidence
+ * The test pins r.status === 8 EXACTLY (per anti-coincidence
  * rule: notEqual(0) would mask a regression to exit 1/3/9) and asserts
  * the structured surfacing path: top-level lock_contention or per-result
  * attestation_persist.lock_contention.

@@ -819,6 +819,7 @@
             "alternative_capability_path_identified == true"
           ],
           "priority": 1,
+          "for_signals": ["compose-privileged","k8s-privileged","compose-cap-add-sys-admin"],
           "compensating_controls": [
             "pod-security-baseline-enforced",
             "admission-controller-blocks-privileged"
@@ -833,6 +834,7 @@
             "host_namespace_requirement_documented_or_invalid == true"
           ],
           "priority": 1,
+          "for_signals": ["k8s-host-namespaces","compose-host-network"],
           "compensating_controls": [
             "pod-security-baseline-enforced",
             "namespace-isolation-tightened"
@@ -846,6 +848,7 @@
             "ci_supports_digest_resolution == true OR manual_digest_pinning_accepted == true"
           ],
           "priority": 2,
+          "for_signals": ["dockerfile-from-latest","dockerfile-no-digest-pin","k8s-image-latest"],
           "compensating_controls": [
             "image-signature-verified",
             "registry-immutability-enforced"
@@ -859,6 +862,7 @@
             "image_supports_non_root == true"
           ],
           "priority": 2,
+          "for_signals": ["dockerfile-runs-as-root","k8s-run-as-root"],
           "compensating_controls": [
             "pod-security-restricted-enforced"
           ],
@@ -871,6 +875,7 @@
             "cluster_supports_seccomp_profile == true"
           ],
           "priority": 2,
+          "for_signals": ["k8s-no-seccomp-profile"],
           "compensating_controls": [
             "seccomp-profile-active"
           ],
@@ -883,6 +888,7 @@
             "alternative_path_identified == true"
           ],
           "priority": 1,
+          "for_signals": ["compose-docker-sock-mount","k8s-hostpath-sensitive"],
           "compensating_controls": [
             "bounded-rbac-applied",
             "sysbox-or-kata-deployed"
@@ -896,6 +902,7 @@
             "sa_usage_audit_complete == true"
           ],
           "priority": 1,
+          "for_signals": ["k8s-cluster-admin-binding"],
           "compensating_controls": [
             "scoped-role-applied",
             "audit2rbac-output-attached"

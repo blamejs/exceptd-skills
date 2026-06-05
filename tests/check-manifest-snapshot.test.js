@@ -146,7 +146,7 @@ test("diff: version bump is additive only", () => {
   assert.match(result.additive[0], /version bumped 1\.0\.0 -> 1\.1\.0/);
 });
 
-test("diff: ATLAS version change is breaking per CLAUDE.md rule #12", () => {
+test("diff: ATLAS version change is breaking per AGENTS.md Hard Rule #12", () => {
   const baseline = captureSurface(manifest([skill()], { atlas_version: "5.1.0" }));
   const current = captureSurface(manifest([skill()], { atlas_version: "5.2.0" }));
   const result = diff(baseline, current);

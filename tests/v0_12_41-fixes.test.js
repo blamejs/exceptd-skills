@@ -23,7 +23,7 @@
  *        (alignment with discover/doctor convention).
  *   F7 — lib/scoring.js compare() surfaces "no scoring signal" distinctly
  *        from "broadly aligned" when both rwep and cvss are zero/null
- *        (coincidence-passing fix per CLAUDE.md pitfall).
+ *        (coincidence-passing fix per the common-pitfall list).
  *   F8 — lib/playbook-runner.js normalizeSubmission clones submission
  *        before pushing to _runErrors (prevents TypeError on frozen input).
  */
@@ -59,15 +59,15 @@ test('F1: lib/sign.js generateKeypair() guards keys/public.pem overwrite', () =>
 
 // ---------- F2 — sidecar .sig 0o600 + Windows ACL ----------
 
-test('F2: bin/exceptd.js sidecar .sig writes use mode 0o600', () => {
+test('F2: bin/exceptd.js sidecar + body writes use mode 0o600 and ACL-harden the sidecar', () => {
   const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
-  // The two sidecar write paths (signed + unsigned stub) must both pass
-  // mode: 0o600 AND call restrictWindowsAcl on the sidecar path. Match
-  // the post-JSON-stringify trailing `{ mode: 0o600 }` argument; the
-  // surrounding fs.writeFileSync(sigPath, ...) is multi-line.
-  const modeWrites = src.match(/fs\.writeFileSync\(sigPath,[\s\S]*?\{\s*mode:\s*0o600\s*\}/g);
-  assert.ok(modeWrites && modeWrites.length >= 2,
-    `expected at least 2 sigPath writes with mode 0o600; found ${modeWrites ? modeWrites.length : 0}`);
+  // The atomic-write refactor writes the body + sidecar to fsync'd tmp files
+  // via a shared writeFsync helper that opens each with mode 0o600
+  // (openSync(p, "w", 0o600)); the mode survives the rename into place. The
+  // 0o600 protection must still be present, and restrictWindowsAcl must still
+  // be applied to the sidecar path (Windows multi-tenant hardening).
+  assert.match(src, /fs\.openSync\([^,]+,\s*"w",\s*0o600\)/,
+    'attestation writes must create files with mode 0o600 (via openSync)');
   assert.match(src, /restrictWindowsAcl\(sigPath\)/,
     'bin/exceptd.js must call restrictWindowsAcl on the .sig sidecar (Windows multi-tenant hardening)');
 });
@@ -112,7 +112,7 @@ test('F4: attest unknown subverb returns did_you_mean[] in JSON body', () => {
   assert.ok(Array.isArray(body.accepted_subverbs), 'accepted_subverbs[] must be present');
   // Pin the canonical subverb set so a future addition/removal updates
   // the test consciously.
-  assert.deepEqual(body.accepted_subverbs.slice().sort(), ['diff', 'export', 'list', 'show', 'verify']);
+  assert.deepEqual(body.accepted_subverbs.slice().sort(), ['diff', 'export', 'list', 'prune', 'show', 'verify']);
 });
 
 // ---------- F6 — cmdAsk honors --pretty ----------

@@ -249,10 +249,18 @@ async function refreshRfc({ dry = false } = {}) {
     if (touched) { cur.last_verified = TODAY; backfilledCount++; }
   }
   // Second pass: add new "current" entries that weren't in the catalog.
-  for (const e of entries) {
+  // Add new rows from the FULL index, not just the current series. Obsoleted
+  // and historic RFCs were previously excluded, so "is RFC N still current?"
+  // had no offline answer and forced a datatracker lookup. They are added here
+  // marked `_obsoleted` (with obsoleted_by populated) so the resolver can say
+  // "Historic, superseded by RFC X" offline. UNKNOWN-status index rows
+  // (placeholders / not-issued numbers) are still skipped.
+  for (const e of backfillable) {
     const id = `RFC-${e.num}`;
     // Existing rows handled in the first-pass backfill above.
     if (existing.has(id)) continue;
+    if (e.status === "UNKNOWN") continue;
+    const obsoleted = !!e.obsoleted || e.status === "HISTORIC";
     cat[id] = {
       number: e.num,
       title: e.title,
@@ -269,6 +277,7 @@ async function refreshRfc({ dry = false } = {}) {
       obsoletes: e.obsoletes,
       updates: e.updates,
       updated_by: e.updatedBy,
+      obsoleted_by: e.obsoletedBy,
       is_also: e.isAlso,
       errata_count: e.hasErrata ? null : 0,
       tracker: `https://www.rfc-editor.org/info/rfc${e.num}`,
@@ -278,7 +287,8 @@ async function refreshRfc({ dry = false } = {}) {
       skills_referencing: [],
       last_verified: TODAY,
       _auto_imported: true,
-      _intake_method: "ietf-rfc-index"
+      _intake_method: "ietf-rfc-index",
+      ...(obsoleted ? { _obsoleted: true } : {}),
     };
     existing.add(id);
     added++;

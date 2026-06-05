@@ -23,7 +23,7 @@
  *     respectively. Pinned so the v0.11.13 emit() contract doesn't
  *     accidentally grow into them.
  *
- * Per CLAUDE.md anti-coincidence rule, every assertion checks an EXACT
+ * Per the anti-coincidence rule, every assertion checks an EXACT
  * key set (deepEqual) or specific scalar value.
  */
 

@@ -92,7 +92,7 @@ Each theater pattern below maps to one or more attacker TTPs in `data/atlas-ttps
 | Vendor/Third-Party Risk Theater — AI APIs (Pattern 6) | AML.T0010 (ML Supply Chain Compromise) | MCP servers and LLM APIs sit outside the vendor-management scope |
 | Security Awareness Theater — AI Phishing (Pattern 7) | T1566 (Phishing), AML.T0016 (Obtain Capabilities: Develop Capabilities — misuse of public AI APIs for payload crafting) | AI-generated content evades grammar/style heuristics and template-matching detectors |
 
-Source-of-truth TTP catalog: `data/atlas-ttps.json` (pinned to MITRE ATLAS v5.6.0, May 2026). Any theater claim in an assessment must cite at least one TTP ID from that catalog or an ATT&CK Enterprise ID — claims without a mapped TTP fail Hard Rule #4 (no orphaned controls).
+Source-of-truth TTP catalog: `data/atlas-ttps.json` (pinned to MITRE ATLAS v5.6.0, May 2026). Any theater claim in an assessment must cite at least one TTP ID from that catalog or an ATT&CK Enterprise ID — claims without a mapped TTP are orphaned controls and are rejected.
 
 ---
 
@@ -325,7 +325,7 @@ For each relevant theater pattern:
 
 ## Output Format
 
-The skill produces a structured Compliance Theater Assessment that scores each of the seven theater patterns and surfaces the auditor-facing remediation language for any flagged pattern. The shape below is consumed downstream by `policy-exception-gen` (which converts theater flags into defensible exceptions with concrete compensating controls), by `framework-gap-analysis` (which escalates any newly discovered theater pattern into a Framework Lag Declaration), and by `global-grc` (which rolls up theater findings across EU/UK/AU/ISO jurisdictions per Hard Rule #5). Auditor-facing remediation language is the load-bearing field — preserve the wording so corrective-action plans can copy it verbatim.
+The skill produces a structured Compliance Theater Assessment that scores each of the seven theater patterns and surfaces the auditor-facing remediation language for any flagged pattern. The shape below is consumed downstream by `policy-exception-gen` (which converts theater flags into defensible exceptions with concrete compensating controls), by `framework-gap-analysis` (which escalates any newly discovered theater pattern into a Framework Lag Declaration), and by `global-grc` (which rolls up theater findings across EU/UK/AU/ISO jurisdictions). Auditor-facing remediation language is the load-bearing field — preserve the wording so corrective-action plans can copy it verbatim.
 
 ```
 ## Compliance Theater Assessment
@@ -381,7 +381,7 @@ Applied at the level of the seven theater patterns:
 | 6 Vendor Management (AI APIs) | DPA + risk assessment for every LLM provider; vendor review record for every installed MCP server | Any AI provider or MCP server without vendor-management evidence |
 | 7 Security Awareness (AI phishing) | AI-generated content proportion in last 3 phishing simulations + phishing-resistant MFA deployment | Zero AI-generated simulation content or SMS/TOTP-only MFA |
 
-The output is consumed by policy-exception-gen (to convert theater flags into defensible exceptions with real compensating controls), framework-gap-analysis (to escalate any newly discovered theater pattern into a Framework Lag Declaration), and global-grc (to roll up theater findings across EU/UK/AU/ISO jurisdictions per Hard Rule #5).
+The output is consumed by policy-exception-gen (to convert theater flags into defensible exceptions with real compensating controls), framework-gap-analysis (to escalate any newly discovered theater pattern into a Framework Lag Declaration), and global-grc (to roll up theater findings across EU/UK/AU/ISO jurisdictions).
 
 ---
 
@@ -405,4 +405,4 @@ This skill produces theater findings, not control prescriptions. The mapping bel
 
 **Zero-trust posture:** a theater flag closes only when the downstream skill's recommended D3FEND technique is deployed, monitored, and tested against the cited offensive TTP — not when a policy document is updated. The Compliance Theater Assessment output (per the Output Format section) must record both the theater finding and the downstream-skill remediation target; auditors converting the finding into a corrective action plan use the downstream skill's verification tests, not this skill's detection tests.
 
-**AI-pipeline applicability (per AGENTS.md Hard Rule #9):** AI-pipeline degradations for each technique (serverless inference endpoints, ephemeral RAG indices) are documented in the cited downstream skill, not duplicated here. This skill's theater-finding format is unchanged across AI and non-AI pipelines — the AI specificity lives in the routing target.
+**AI-pipeline applicability:** AI-pipeline degradations for each technique (serverless inference endpoints, ephemeral RAG indices) are documented in the cited downstream skill, not duplicated here. This skill's theater-finding format is unchanged across AI and non-AI pipelines — the AI specificity lives in the routing target.

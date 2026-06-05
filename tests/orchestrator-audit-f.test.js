@@ -473,6 +473,21 @@ test('P3-8: watch --log-file tees stdout to the named file', (t, done) => {
   }, 10000).unref();
 });
 
+test('watch --log-file open failure exits 1 (GENERIC_FAILURE), not 2 (DETECTED_ESCALATE)', () => {
+  // A filesystem error opening the log target is a generic operational
+  // failure, not a detected-finding escalation — code 2 would misroute a CI
+  // gate. Force the open to fail by pointing --log-file at a path whose
+  // parent is an existing FILE (so mkdirSync of the parent throws).
+  const parentFile = path.join(SUITE_HOME, `notadir-${Date.now()}`);
+  fs.writeFileSync(parentFile, 'x');
+  const badLog = path.join(parentFile, 'sub.log'); // parent is a file → open fails
+  const r = spawnSync(process.execPath, [ORCH, 'watch', '--log-file', badLog], {
+    env: childEnv(), encoding: 'utf8', timeout: 15000,
+  });
+  assert.equal(r.status, 1, `--log-file open failure must exit 1 (GENERIC_FAILURE); got ${r.status}`);
+  assert.match(r.stderr || '', /--log-file/, 'stderr must name the --log-file error');
+});
+
 // --- P3-9 — cache size guard -----------------------------------------------
 
 test('P3-9: validateAllCvesPreferCache refuses cache files over 50 MB', () => {
@@ -482,4 +497,125 @@ test('P3-9: validateAllCvesPreferCache refuses cache files over 50 MB', () => {
   const src = fs.readFileSync(ORCH, 'utf8');
   assert.match(src, /CACHE_FILE_MAX_BYTES = 50 \* 1024 \* 1024/);
   assert.match(src, /exceeds .* byte cap/);
+});
+
+// --- UF-1 — unknown-flag rejection extended to report/watch/framework-gap/skill
+
+const runCli = (argv) => spawnSync(process.execPath, [CLI, ...argv], {
+  encoding: 'utf8', timeout: 15000, env: childEnv(),
+});
+
+// Some verbs (currency) prepend a non-JSON scheduler banner to stdout before
+// the JSON envelope. Pull the last brace-delimited JSON object line out so the
+// assertion isn't tripped by that leading noise.
+const lastJsonLine = (s) => {
+  const lines = String(s || '').split('\n').map(l => l.trim()).filter(Boolean);
+  for (let i = lines.length - 1; i >= 0; i--) {
+    if (lines[i].startsWith('{')) return JSON.parse(lines[i]);
+  }
+  throw new Error(`no JSON object line found in:\n${s}`);
+};
+
+test('UF-1: report rejects an unknown flag with a structured ok:false envelope + exit 1', () => {
+  const r = runCli(['report', 'executive', '--bogus']);
+  assert.equal(r.status, 1, `report --bogus must hard-fail with exit 1; got ${r.status} stderr=${r.stderr}`);
+  const body = JSON.parse(r.stdout);
+  assert.equal(body.ok, false);
+  assert.equal(body.verb, 'report');
+  assert.deepEqual(body.unknown_flags, ['--bogus']);
+});
+
+test('UF-1: skill rejects an unknown flag with a structured ok:false envelope + exit 1', () => {
+  const r = runCli(['skill', 'kernel-lpe-triage', '--bogus']);
+  assert.equal(r.status, 1, `skill --bogus must hard-fail with exit 1; got ${r.status} stderr=${r.stderr}`);
+  const body = JSON.parse(r.stdout);
+  assert.equal(body.ok, false);
+  assert.equal(body.verb, 'skill');
+  assert.deepEqual(body.unknown_flags, ['--bogus']);
+});
+
+test('UF-1: framework-gap rejects an unknown flag with a structured ok:false envelope + exit 1', () => {
+  const r = runCli(['framework-gap', 'NIST-800-53', 'CVE-2026-31431', '--bogus']);
+  assert.equal(r.status, 1, `framework-gap --bogus must hard-fail with exit 1; got ${r.status} stderr=${r.stderr}`);
+  const body = JSON.parse(r.stdout);
+  assert.equal(body.ok, false);
+  assert.equal(body.verb, 'framework-gap');
+  assert.deepEqual(body.unknown_flags, ['--bogus']);
+});
+
+test('UF-1: report/watch/framework-gap/skill all route through rejectUnknownFlags', () => {
+  const src = fs.readFileSync(ORCH, 'utf8');
+  for (const verb of ['report', 'watch', 'framework-gap', 'skill']) {
+    assert.match(src, new RegExp(`rejectUnknownFlags\\('${verb}'`),
+      `${verb} must call rejectUnknownFlags`);
+  }
+});
+
+// --- UF-2 — scan/dispatch/currency accept the global air-gap flags ----------
+
+test('UF-2: scan --air-gap is accepted (not rejected) and exits 0', () => {
+  const r = runCli(['scan', '--air-gap', '--json']);
+  assert.equal(r.status, 0, `scan --air-gap must not hard-fail; got ${r.status} stderr=${r.stderr}`);
+  const body = JSON.parse(r.stdout);
+  assert.equal(body.ok, true, 'scan --air-gap must emit ok:true, not an unknown-flag envelope');
+});
+
+test('UF-2: dispatch --offline is accepted (not rejected) and exits 0', () => {
+  const r = runCli(['dispatch', '--offline', '--json']);
+  assert.equal(r.status, 0, `dispatch --offline must not hard-fail; got ${r.status} stderr=${r.stderr}`);
+  const body = JSON.parse(r.stdout);
+  assert.equal(body.ok, true);
+});
+
+test('UF-2: currency --no-network is accepted (not rejected) and exits 0', () => {
+  const r = runCli(['currency', '--no-network', '--json']);
+  assert.equal(r.status, 0, `currency --no-network must not hard-fail; got ${r.status} stderr=${r.stderr}`);
+  const body = lastJsonLine(r.stdout);
+  assert.equal(body.ok, true);
+});
+
+test('UF-2: scan/dispatch/currency allowlists include --air-gap/--offline/--no-network', () => {
+  const src = fs.readFileSync(ORCH, 'utf8');
+  for (const verb of ['scan', 'dispatch', 'currency']) {
+    const callMatch = src.match(new RegExp(`rejectUnknownFlags\\('${verb}', args, (\\[[^\\]]*\\])\\)`));
+    assert.ok(callMatch, `${verb} rejectUnknownFlags call must be locatable`);
+    const allowlist = callMatch[1];
+    for (const flag of ['--air-gap', '--offline', '--no-network']) {
+      assert.ok(allowlist.includes(`'${flag}'`),
+        `${verb} allowlist must include ${flag}; got ${allowlist}`);
+    }
+  }
+});
+
+// --- UF-3 — removed verbs still refuse with the removal envelope -------------
+
+test('UF-3: removed phase-name verbs still refuse with a removal envelope', () => {
+  for (const verb of ['plan', 'govern', 'direct', 'look', 'ingest']) {
+    const r = runCli([verb]);
+    assert.equal(r.status, 1, `${verb} must exit 1; got ${r.status} stderr=${r.stderr}`);
+    // The REMOVED_VERBS intercept routes through emitError, which writes the
+    // ok:false envelope to stderr.
+    const body = lastJsonLine(r.stderr);
+    assert.equal(body.ok, false);
+    assert.equal(body.verb, verb);
+    // The envelope must carry the removal version as a version-shaped string;
+    // the exact literal lives in the source's REMOVED_VERBS table, not pinned
+    // here (authoritative versions belong in package.json / CHANGELOG / tags).
+    assert.match(String(body.removed_in), /^\d+\.\d+\.\d+$/,
+      `${verb} removal envelope must carry a version-shaped removed_in`);
+    assert.ok(body.replacement, `${verb} removal envelope must carry a replacement`);
+  }
+});
+
+test('UF-3: dead dispatch cases + handler functions are gone from bin/exceptd.js', () => {
+  const src = fs.readFileSync(CLI, 'utf8');
+  for (const dead of ['cmdGovern', 'cmdDirect', 'cmdLook', 'cmdIngest']) {
+    assert.doesNotMatch(src, new RegExp(`function ${dead}\\b`),
+      `${dead} must be deleted`);
+  }
+  // The dead switch cases must be gone (run + reattest remain live).
+  for (const verb of ['plan', 'govern', 'direct', 'look', 'ingest']) {
+    assert.doesNotMatch(src, new RegExp(`case "${verb}":`),
+      `dead 'case "${verb}":' must be removed from the dispatch switch`);
+  }
 });

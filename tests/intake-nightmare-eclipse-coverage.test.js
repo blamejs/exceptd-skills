@@ -52,7 +52,9 @@ const SOURCE = require(path.join(ROOT, "lib", "source-advisories.js"));
 const REQUIRED_V0_13_17_FEEDS = [
   { name: "bleepingcomputer-security", kind: "rss" },
   { name: "thehackernews", kind: "rss" },
-  { name: "nightmare-eclipse-github", kind: "github-events" },
+  // The handle tracker migrated from GitHub events to the GitLab public
+  // activity Atom feed after the researcher's GitHub account was removed.
+  { name: "nightmare-eclipse-gitlab", kind: "gitlab-activity" },
 ];
 
 const NIGHTMARE_ECLIPSE_KEYS = [

@@ -1,0 +1,636 @@
+{
+  "_meta": {
+    "id": "self-update-integrity",
+    "version": "1.0.0",
+    "last_threat_review": "2026-06-02",
+    "threat_currency_score": 93,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-06-02",
+        "summary": "Initial seven-phase consumer-side self-update integrity playbook. Covers the receiving end of the software supply chain that publisher-side posture (library-author, supply-chain-integrity) does not: a self-update that applies without verifying a signature, verifies against an in-band (attacker-suppliable) key, accepts a signed-but-older version (downgrade / no anti-rollback), fetches over an unauthenticated channel, serves browser modules without Subresource Integrity, ignores C2PA content credentials or SCITT/TSA transparency receipts on received artifacts, or applies the update without gating on the verifier result. Maps to ATT&CK T1195.002 / T1574 and to NIST 800-53 SR-11 / SI-7, ISO 27001 A.8.19, NIS2 Art.21, and EU CRA Annex I secure-update obligations."
+      }
+    ],
+    "owner": "@blamejs/platform-security",
+    "air_gap_mode": false,
+    "scope": "service",
+    "preconditions": [
+      {
+        "id": "update-path-source-or-config-read",
+        "description": "Agent must read the operator's self-update / artifact-consumption source and/or runtime configuration to inspect signature verification, key pinning, anti-rollback, channel pinning, SRI, and provenance/transparency checks. A host with neither marks the playbook visibility_gap=no_update_path_inventory.",
+        "check": "agent_has_filesystem_read == true OR agent_has_update_config == true",
+        "on_fail": "halt"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "sbom",
+        "condition": "finding.includes_unverified_dependency_update == true"
+      },
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      }
+    ]
+  },
+  "domain": {
+    "name": "Consumer-side self-update / artifact integrity",
+    "attack_class": "supply-chain",
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1195.002",
+      "T1574"
+    ],
+    "cve_refs": [],
+    "cwe_refs": [
+      "CWE-494",
+      "CWE-829",
+      "CWE-353",
+      "CWE-347"
+    ],
+    "frameworks_in_scope": [
+      "nist-800-53",
+      "iso-27001-2022",
+      "nis2",
+      "eu-cra",
+      "uk-caf",
+      "au-ism"
+    ]
+  },
+  "phases": {
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "EU CRA Annex I",
+          "obligation": "notify_supervisory_body",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "update_path_inventory",
+            "unverified_update_application_evidence"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "update_channel_compromise_scope",
+            "affected_installed_base"
+          ]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "updates-are-signed",
+          "claim": "Our updates are signed, so the update channel is secure.",
+          "fast_detection_test": "Signing is the PUBLISHER side. Ask whether the CLIENT verifies the signature, against a key pinned OUT OF BAND, BEFORE applying — and refuses downgrades. A signed update the client does not verify is theater."
+        },
+        {
+          "pattern_id": "https-is-enough",
+          "claim": "Updates come over HTTPS, so they cannot be tampered.",
+          "fast_detection_test": "HTTPS authenticates against a CA bundle and is defeated by a mis-issued cert. Ask whether the artifact itself is signature-verified with a pinned key independent of the channel."
+        },
+        {
+          "pattern_id": "we-have-a-verifier",
+          "claim": "We have an update verifier.",
+          "fast_detection_test": "Ask whether the APPLY step is GATED on the verifier result and fails closed. A verifier whose output does not block activation is decorative."
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Org supply-chain controls focus on the publisher: signing, SBOM, SLSA. They do not require the CONSUMER side — that the receiving client verifies signatures against a pinned key before applying, refuses downgrades, pins the channel, enforces SRI on browser modules, and verifies provenance/transparency receipts.",
+        "lag_score": 72,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "SI-7",
+            "designed_for": "software/firmware integrity",
+            "insufficient_because": "attested by \"updates are signed\" without verifying the client checks the signature against a pinned key before applying and refuses downgrades."
+          },
+          {
+            "framework": "eu-cra",
+            "control_id": "Annex I",
+            "designed_for": "secure updates for products with digital elements",
+            "insufficient_because": "conformance is attested by shipping signed updates without verifying the receiving client enforces signature + anti-rollback + key-pin."
+          }
+        ]
+      },
+      "skill_preload": [
+        "self-update-integrity",
+        "supply-chain-integrity",
+        "pqc-first",
+        "framework-gap-analysis",
+        "compliance-theater",
+        "policy-exception-gen"
+      ]
+    },
+    "direct": {
+      "threat_context": "The self-update loop is the highest-privilege code path most products ship: it fetches code and runs it as the application. Publisher-side signing (library-author, supply-chain-integrity) is necessary but useless if the CONSUMER applies updates without verifying the signature, trusts a key the channel supplies, accepts a signed-but-vulnerable older version, or applies before the verifier gates it. Browser-served modules add the Subresource-Integrity surface. These are consumer-side validation gaps, not publisher posture.",
+      "rwep_threshold": {
+        "escalate": 60,
+        "monitor": 40,
+        "close": 25
+      },
+      "framework_lag_declaration": "A clean \"updates are signed / SLSA-attested / SBOM-published\" audit is NON-EVIDENCE for consumer-side update integrity; it confirms publisher posture, not signature-before-apply, key-pinning, anti-rollback, or verifier-gating on the receiving client.",
+      "skill_chain": [
+        {
+          "skill": "self-update-integrity",
+          "purpose": "enumerate the consumer-side verify / pin / anti-rollback / SRI / provenance checks"
+        },
+        {
+          "skill": "supply-chain-integrity",
+          "purpose": "cross-reference the publisher-side signing/SLSA posture this consumes"
+        },
+        {
+          "skill": "pqc-first",
+          "purpose": "assess the update-signature algorithm for downgrade / non-PQC exposure"
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "map findings to the SR-11 / SI-7 / CRA gaps the controls do not cover"
+        }
+      ],
+      "token_budget": {
+        "estimated_total": 12000,
+        "breakdown": {
+          "govern": 1200,
+          "direct": 800,
+          "look": 4000,
+          "detect": 3800,
+          "analyze": 1500,
+          "validate": 500,
+          "close": 200
+        }
+      }
+    },
+    "look": {
+      "artifacts": [
+        {
+          "id": "self-update-config",
+          "type": "config_file",
+          "source": "grep for self-update / self-update-standalone-verifier / downloadUpdate / applyUpdate / signature / verify across the update subsystem and config.",
+          "description": "How the self-update fetches, verifies, and applies releases, and whether the apply is gated on the verifier.",
+          "required": true,
+          "air_gap_alternative": "Inspect the self-update source for the fetch/verify/apply sequence and the signature + verifier-gate logic."
+        },
+        {
+          "id": "update-key-and-channel-config",
+          "type": "config_file",
+          "source": "grep for public key / root / pin / TOFU / https / cert / version / rollback / minimum-version across the update trust + channel config.",
+          "description": "Whether the verifying key is pinned out-of-band, the channel is pinned, and anti-rollback / monotonic-version is enforced.",
+          "required": true,
+          "air_gap_alternative": "Inspect the updater for key-pin source, channel pinning, and the version-comparison logic."
+        },
+        {
+          "id": "importmap-sri-config",
+          "type": "config_file",
+          "source": "grep for importmap-integrity / import map / integrity= / subresource / module script across the browser-served asset pipeline.",
+          "description": "Whether browser-served modules / import maps carry Subresource Integrity hashes.",
+          "required": false,
+          "air_gap_alternative": "Inspect the asset pipeline / template for integrity= on module scripts and the importmap."
+        },
+        {
+          "id": "provenance-and-transparency-config",
+          "type": "config_file",
+          "source": "grep for content-credentials / c2pa / scitt / tsa / transparency / receipt / timestamp across the artifact-consumption path.",
+          "description": "Whether C2PA content credentials and SCITT/TSA transparency receipts on received artifacts are verified.",
+          "required": false,
+          "air_gap_alternative": "Inspect the artifact-consumption path for manifest + receipt verification where provenance is relied upon."
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current update-path configuration + source state (point-in-time posture audit)",
+        "asset_scope": "every self-updating client/agent and every consumer of externally-sourced artifacts (modules, models, signed bundles)"
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "The product has a self-update path or consumes externally-sourced executable artifacts.",
+          "if_false": "A product updated solely via an OS package manager that verifies signatures has a reduced surface; focus on browser-module SRI and provenance if applicable."
+        },
+        {
+          "assumption": "Update-path source or config is readable.",
+          "if_false": "Mark visibility_gap=no_update_path_inventory and report only what the fetch/verify/apply source reveals."
+        }
+      ],
+      "fallback_if_unavailable": [
+        {
+          "artifact_id": "importmap-sri-config",
+          "fallback_action": "If the product serves no browser modules, skip the SRI indicator.",
+          "confidence_impact": "none"
+        },
+        {
+          "artifact_id": "provenance-and-transparency-config",
+          "fallback_action": "If no C2PA / SCITT / TSA is used, skip those indicators.",
+          "confidence_impact": "none"
+        }
+      ]
+    },
+    "detect": {
+      "indicators": [
+        {
+          "id": "self-update-no-signature-verification",
+          "type": "config_value",
+          "value": "The self-update path fetches and applies a new release without verifying a cryptographic signature over the downloaded artifact before swapping it in.",
+          "description": "An attacker who can serve or tamper with the update (compromised mirror, MITM, poisoned CDN) delivers arbitrary code that the client installs as a trusted update — the canonical software-supply-chain foothold.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1195.002",
+          "false_positive_checks_required": [
+            "Confirm the update path verifies a signature over the artifact BEFORE applying it (not merely a checksum the same server provides) — a path that applies on download, or trusts a server-provided hash with no signature, is the finding.",
+            "A self-update that delegates to an OS package manager which itself verifies signatures (apt/rpm/notary) is safe; the finding is a bespoke self-update with no signature step."
+          ]
+        },
+        {
+          "id": "self-update-no-anti-rollback",
+          "type": "config_value",
+          "value": "The self-update accepts a correctly-signed but OLDER version (no monotonic version / anti-rollback check), so a downgrade attack is possible.",
+          "description": "A downgrade serves a genuinely-signed but known-vulnerable prior release; without anti-rollback the client willingly reinstalls a version with a patched CVE, re-opening it.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1195.002",
+          "false_positive_checks_required": [
+            "Confirm the updater refuses a target version lower than the installed version (monotonic counter / minimum-version floor) — accepting any signed version regardless of order is the finding.",
+            "A deliberate, operator-initiated rollback path (explicit downgrade command) is not this finding; the finding is the AUTOMATIC update accepting an older signed version."
+          ]
+        },
+        {
+          "id": "self-update-key-not-pinned",
+          "type": "config_value",
+          "value": "The update signature is verified against a key/root that the update channel itself can supply or rotate without an out-of-band pin (TOFU with no pinned root, or a key fetched from the same endpoint as the update).",
+          "description": "If the signing key is not pinned out-of-band, an attacker who controls the channel supplies their own key + signature and the verification passes — signature verification with an attacker-chosen key is no verification.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1195.002",
+          "false_positive_checks_required": [
+            "Confirm the verifying root key is pinned (shipped in the binary / OS trust store / a separate pinned channel) and not fetched from the same place as the update — a key delivered alongside the update is the finding.",
+            "A documented, audited key-rotation that re-pins out-of-band is safe; the finding is in-band key trust."
+          ]
+        },
+        {
+          "id": "self-update-channel-not-authenticated",
+          "type": "config_value",
+          "value": "The update is fetched over plaintext HTTP, or over HTTPS without certificate/SPKI pinning where the channel is the sole integrity control.",
+          "description": "A plaintext or unpinned channel lets an on-path attacker substitute the update; even with HTTPS, a mis-issued cert defeats CA-only trust for the update endpoint.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1195.002",
+          "false_positive_checks_required": [
+            "Confirm the update is fetched over TLS with the endpoint pinned (or that artifact-signature verification makes the channel non-load-bearing) — plaintext fetch, or HTTPS-only as the sole control, is the finding.",
+            "If the artifact is independently signature-verified with a pinned key, the channel is not the sole control and a weaker channel is acceptable."
+          ]
+        },
+        {
+          "id": "importmap-sri-not-enforced",
+          "type": "config_value",
+          "value": "Browser-served module scripts / import maps are delivered without Subresource Integrity (no integrity= hashes), so a tampered or substituted module loads without detection.",
+          "description": "Without SRI, a compromised CDN or MITM swaps a JavaScript module the page imports; the browser executes it with the page's full privileges — a client-side supply-chain compromise.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1195.002",
+          "false_positive_checks_required": [
+            "Confirm import-map entries / module script tags carry integrity= hashes matching the served bytes (and the importmap itself is integrity-protected) — modules served without SRI are the finding.",
+            "First-party modules served same-origin over a pinned channel have a reduced need for SRI; the finding is third-party / CDN-served modules without integrity hashes."
+          ]
+        },
+        {
+          "id": "content-credentials-not-verified",
+          "type": "config_value",
+          "value": "C2PA / content-credential (provenance manifest) bound to a received artifact (model, media, signed bundle) is present but not verified, or is absent where the consumer relies on provenance.",
+          "description": "Unverified content credentials let a tampered or mis-attributed artifact pass as provenance-checked; the manifest exists but proves nothing if the consumer never validates the claim chain to a trust anchor.",
+          "confidence": "low",
+          "deterministic": false,
+          "attack_ref": "T1195.002",
+          "false_positive_checks_required": [
+            "Confirm the consumer verifies the C2PA manifest signature + claim chain to a trusted signer where it relies on provenance — accepting the manifest on its face (or ignoring it) is the finding.",
+            "A consumer that does not rely on content provenance for any trust decision is not in scope for this indicator."
+          ]
+        },
+        {
+          "id": "transparency-log-not-checked",
+          "type": "config_value",
+          "value": "Received artifacts carry SCITT transparency-log receipts or TSA timestamps that the consumer does not verify (existence + inclusion proof + timestamp validity).",
+          "description": "An unverified transparency receipt provides no non-repudiation or timestamp guarantee; an attacker omits or forges it and the consumer accepts an unlogged artifact as transparently-recorded.",
+          "confidence": "low",
+          "deterministic": false,
+          "attack_ref": "T1195.002",
+          "false_positive_checks_required": [
+            "Confirm the consumer verifies the SCITT receipt inclusion proof / TSA timestamp signature against the expected log/authority — accepting an artifact without checking the receipt is the finding.",
+            "A supply chain that does not use transparency logs / timestamping has no receipt to verify and is not in scope."
+          ]
+        },
+        {
+          "id": "update-applied-without-verifier-gate",
+          "type": "config_value",
+          "value": "The standalone update verifier exists but the apply step does not GATE on it — the new binary/code is swapped into the execution path before (or regardless of) the verifier's result.",
+          "description": "A verifier whose result does not block the apply is decorative; the attacker-supplied update executes because the swap happened independent of (or before) verification.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1574",
+          "false_positive_checks_required": [
+            "Confirm the apply/swap is conditional on the verifier returning success and fails closed on a verifier error — an apply that proceeds on verifier failure/timeout, or before verification, is the finding.",
+            "A two-phase stage-then-verify-then-activate flow where activation is gated on the verifier is safe; the finding is verify-and-apply racing or verifier advisory-only."
+          ]
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "self-update-no-signature-verification",
+          "benign_pattern": "Integrity enforced by a delegated mechanism (OS package manager, pinned-key signature, gated verifier) or a surface where the control is genuinely not relied upon.",
+          "distinguishing_test": "Confirm the update path verifies a signature over the artifact BEFORE applying it (not merely a checksum the same server provides) — a path that applies on download, or trusts a server-provided hash with no signature, is the finding."
+        },
+        {
+          "indicator_id": "self-update-no-anti-rollback",
+          "benign_pattern": "Integrity enforced by a delegated mechanism (OS package manager, pinned-key signature, gated verifier) or a surface where the control is genuinely not relied upon.",
+          "distinguishing_test": "Confirm the updater refuses a target version lower than the installed version (monotonic counter / minimum-version floor) — accepting any signed version regardless of order is the finding."
+        },
+        {
+          "indicator_id": "self-update-key-not-pinned",
+          "benign_pattern": "Integrity enforced by a delegated mechanism (OS package manager, pinned-key signature, gated verifier) or a surface where the control is genuinely not relied upon.",
+          "distinguishing_test": "Confirm the verifying root key is pinned (shipped in the binary / OS trust store / a separate pinned channel) and not fetched from the same place as the update — a key delivered alongside the update is the finding."
+        },
+        {
+          "indicator_id": "self-update-channel-not-authenticated",
+          "benign_pattern": "Integrity enforced by a delegated mechanism (OS package manager, pinned-key signature, gated verifier) or a surface where the control is genuinely not relied upon.",
+          "distinguishing_test": "Confirm the update is fetched over TLS with the endpoint pinned (or that artifact-signature verification makes the channel non-load-bearing) — plaintext fetch, or HTTPS-only as the sole control, is the finding."
+        },
+        {
+          "indicator_id": "importmap-sri-not-enforced",
+          "benign_pattern": "Integrity enforced by a delegated mechanism (OS package manager, pinned-key signature, gated verifier) or a surface where the control is genuinely not relied upon.",
+          "distinguishing_test": "Confirm import-map entries / module script tags carry integrity= hashes matching the served bytes (and the importmap itself is integrity-protected) — modules served without SRI are the finding."
+        },
+        {
+          "indicator_id": "content-credentials-not-verified",
+          "benign_pattern": "Integrity enforced by a delegated mechanism (OS package manager, pinned-key signature, gated verifier) or a surface where the control is genuinely not relied upon.",
+          "distinguishing_test": "Confirm the consumer verifies the C2PA manifest signature + claim chain to a trusted signer where it relies on provenance — accepting the manifest on its face (or ignoring it) is the finding."
+        },
+        {
+          "indicator_id": "transparency-log-not-checked",
+          "benign_pattern": "Integrity enforced by a delegated mechanism (OS package manager, pinned-key signature, gated verifier) or a surface where the control is genuinely not relied upon.",
+          "distinguishing_test": "Confirm the consumer verifies the SCITT receipt inclusion proof / TSA timestamp signature against the expected log/authority — accepting an artifact without checking the receipt is the finding."
+        },
+        {
+          "indicator_id": "update-applied-without-verifier-gate",
+          "benign_pattern": "Integrity enforced by a delegated mechanism (OS package manager, pinned-key signature, gated verifier) or a surface where the control is genuinely not relied upon.",
+          "distinguishing_test": "Confirm the apply/swap is conditional on the verifier returning success and fails closed on a verifier error — an apply that proceeds on verifier failure/timeout, or before verification, is the finding."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "At least one consumer-side control is absent on a production update path — no signature verification, in-band key trust, no anti-rollback, unauthenticated channel as sole control, missing SRI, or an apply not gated on the verifier.",
+        "inconclusive": "A control is delegated to infrastructure the audit could not read (OS package manager, an external verifier service) — record as visibility_gap, not a clean result.",
+        "not_detected": "The update path verifies a signature against an out-of-band-pinned key before applying, refuses downgrades, pins/secures the channel, gates the apply on the verifier, enforces SRI on browser modules, and verifies provenance/transparency receipts where relied upon."
+      }
+    },
+    "analyze": {
+      "rwep_inputs": [
+        {
+          "signal_id": "self-update-no-signature-verification",
+          "rwep_factor": "blast_radius",
+          "weight": 30
+        },
+        {
+          "signal_id": "self-update-no-anti-rollback",
+          "rwep_factor": "public_poc",
+          "weight": 20
+        },
+        {
+          "signal_id": "update-applied-without-verifier-gate",
+          "rwep_factor": "active_exploitation",
+          "weight": 10
+        }
+      ],
+      "blast_radius_model": {
+        "scope_question": "Does the gap let an attacker who can influence the update channel run arbitrary code on the entire installed base?",
+        "scoring_rubric": [
+          {
+            "condition": "A self-update with no signature-before-apply on a widely-distributed client — channel compromise yields RCE across the install base",
+            "blast_radius_score": 5,
+            "description": "Mass arbitrary-code execution via the update mechanism"
+          },
+          {
+            "condition": "Downgrade or in-band-key gap requiring a more specific channel position",
+            "blast_radius_score": 4,
+            "description": "Targeted reintroduction of vulnerable code or key substitution"
+          },
+          {
+            "condition": "Browser-module SRI gap on a single app surface",
+            "blast_radius_score": 3,
+            "description": "Client-side code substitution scoped to the served page"
+          }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "Our updates are signed and delivered over HTTPS, so the update channel is secure.",
+        "audit_evidence": "A code-signing certificate, an HTTPS update endpoint, a published SBOM/SLSA attestation.",
+        "reality_test": "Verify the CLIENT checks the signature against an out-of-band-pinned key before applying, refuses older versions, and gates the apply on the verifier. If a swapped artifact, an attacker-supplied key, or an older signed version would be applied, the signing did not protect the consumer.",
+        "theater_verdict_if_gap": "theater"
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "self-update-no-signature-verification",
+          "framework": "nist-800-53",
+          "claimed_control": "SI-7 (software integrity)",
+          "actual_gap": "SI-7 is attested by \"updates are signed\" without verifying the client checks the signature before applying."
+        },
+        {
+          "finding_id": "self-update-no-anti-rollback",
+          "framework": "eu-cra",
+          "claimed_control": "Annex I (secure updates)",
+          "actual_gap": "CRA conformance via signed updates does not verify the client refuses a signed-but-older vulnerable version."
+        }
+      ],
+      "escalation_criteria": [
+        {
+          "condition": "A widely-distributed self-updating client applies updates with no signature-before-apply or in-band key trust",
+          "action": "raise_severity"
+        },
+        {
+          "condition": "The apply step proceeds on verifier failure/timeout",
+          "action": "trigger_playbook"
+        }
+      ]
+    },
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "verify-signature-before-apply",
+          "description": "Verify an artifact signature against an out-of-band-pinned root key BEFORE swapping the update in, and fail closed on any verification error — never trust a server-provided hash alone.",
+          "preconditions": [
+            "operator controls the update client"
+          ],
+          "priority": 1,
+          "for_signals": [
+            "self-update-no-signature-verification",
+            "self-update-key-not-pinned",
+            "update-applied-without-verifier-gate"
+          ]
+        },
+        {
+          "id": "enforce-anti-rollback",
+          "description": "Refuse any target version lower than the installed version (monotonic counter / minimum-version floor); require an explicit operator action for any intentional downgrade.",
+          "preconditions": [],
+          "priority": 1,
+          "for_signals": [
+            "self-update-no-anti-rollback"
+          ]
+        },
+        {
+          "id": "pin-the-update-channel",
+          "description": "Fetch over TLS with the endpoint pinned (cert/SPKI), treating the channel as defence-in-depth behind artifact-signature verification.",
+          "preconditions": [],
+          "priority": 2,
+          "for_signals": [
+            "self-update-channel-not-authenticated"
+          ]
+        },
+        {
+          "id": "enforce-sri-on-modules",
+          "description": "Add Subresource Integrity hashes to import-map entries and module script tags (and integrity-protect the import map itself) for third-party / CDN-served modules.",
+          "preconditions": [],
+          "priority": 2,
+          "for_signals": [
+            "importmap-sri-not-enforced"
+          ]
+        },
+        {
+          "id": "verify-provenance-and-transparency",
+          "description": "Verify C2PA content-credential claim chains and SCITT/TSA transparency receipts on received artifacts where provenance is relied upon.",
+          "preconditions": [],
+          "priority": 3,
+          "for_signals": [
+            "content-credentials-not-verified",
+            "transparency-log-not-checked"
+          ]
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "tampered-update-rejected",
+          "test": "Serve a tampered (or attacker-signed) update artifact to the client.",
+          "expected_result": "Client rejects: signature does not verify against the pinned key; nothing is applied.",
+          "test_type": "negative"
+        },
+        {
+          "id": "downgrade-rejected",
+          "test": "Serve a correctly-signed but older version to the auto-updater.",
+          "expected_result": "Client refuses the downgrade (version below installed).",
+          "test_type": "negative"
+        },
+        {
+          "id": "verifier-failure-blocks-apply",
+          "test": "Force the update verifier to fail/timeout during an apply.",
+          "expected_result": "Apply is blocked (fails closed); the running version is unchanged.",
+          "test_type": "negative"
+        },
+        {
+          "id": "legitimate-update-applies",
+          "test": "Serve a valid, correctly-signed, newer update.",
+          "expected_result": "Update verifies and applies — no regression on the legitimate path.",
+          "test_type": "functional"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "Compromise of the pinned signing key (or the publisher's build pipeline) still yields a validly-signed malicious update the consumer will accept.",
+        "why_remains": "Consumer-side verification authenticates the publisher key, not the publisher's own integrity; build-pipeline / key compromise is the publisher-side supply-chain-integrity concern.",
+        "acceptance_level": "ciso"
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "config_diff",
+          "description": "The signature-verification, key-pin, anti-rollback, channel-pin, SRI, and provenance/transparency configuration as audited.",
+          "retention_period": "1 year"
+        },
+        {
+          "evidence_type": "exploit_replay_negative",
+          "description": "Outcomes of the tampered-update / downgrade / verifier-failure negative tests plus the legitimate-update functional test.",
+          "retention_period": "1 year"
+        }
+      ],
+      "regression_trigger": [
+        {
+          "condition": "A change to the update client, signing key, channel, or artifact-consumption path",
+          "interval": "on change"
+        },
+        {
+          "condition": "Periodic re-attestation of consumer-side update integrity",
+          "interval": "quarterly"
+        }
+      ]
+    },
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": [
+          "update-path config snapshot",
+          "per-indicator findings + false-positive disposition",
+          "negative + functional test results",
+          "framework gap mapping"
+        ],
+        "destination": ".exceptd/attestations/<session_id>/attestation.json"
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Malicious update accepted by a consumer that did not verify the signature against a pinned key before applying, refused downgrades, or gated the apply on the verifier — channel compromise to arbitrary code execution.",
+          "control_gap": "Consumer-side update path lacks signature-before-apply / out-of-band key pin / anti-rollback / verifier-gating.",
+          "framework_gap": "NIST SR-11 + SI-7 + EU CRA Annex I cover publisher signing but not consumer-side verification enforcement.",
+          "new_control_requirement": "The update client MUST verify a signature against an out-of-band-pinned key before applying, refuse downgrades, and gate the apply on the verifier."
+        }
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/EU CRA Annex I 24h",
+          "deadline": "24h from detect_confirmed",
+          "recipient": "CRA market-surveillance authority",
+          "evidence_attached": [
+            "attestation"
+          ]
+        },
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "24h from detect_confirmed",
+          "recipient": "national CSIRT / competent authority",
+          "evidence_attached": [
+            "attestation"
+          ]
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "A legacy client cannot adopt signature-before-apply immediately (e.g. a third-party updater).",
+        "exception_template": {
+          "scope": "the specific update client",
+          "duration": "90 days",
+          "compensating_controls": [
+            "pin the update channel (cert/SPKI)",
+            "restrict update sources to a controlled mirror",
+            "monitor + alert on update-artifact hash changes"
+          ],
+          "risk_acceptance_owner": "ciso"
+        }
+      },
+      "regression_schedule": {
+        "next_run": "quarterly or on any update-client / signing-key / channel change",
+        "trigger": "change to the update path, or quarterly re-attestation"
+      }
+    }
+  },
+  "directives": [
+    {
+      "id": "all-self-update-paths",
+      "title": "Inventory + integrity-test every self-update and artifact-consumption path",
+      "applies_to": {
+        "always": true
+      }
+    },
+    {
+      "id": "downgrade-and-key-pin-sweep",
+      "title": "Targeted anti-rollback + key-pinning sweep on auto-updating clients",
+      "applies_to": {
+        "attack_technique": "T1195.002"
+      }
+    }
+  ]
+}

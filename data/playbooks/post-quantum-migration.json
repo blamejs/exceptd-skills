@@ -855,6 +855,7 @@
             "operator_assigns_register_owner == true"
           ],
           "priority": 1,
+          "for_signals": ["no-cryptographic-asset-register","register-incomplete-per-asset-fields","long-retention-classical-only-asset"],
           "compensating_controls": [
             "interim_high_value_asset_prioritisation",
             "vendor_engagement_for_unattested_dependencies"
@@ -869,6 +870,7 @@
             "operator_legal_team_engaged == true"
           ],
           "priority": 2,
+          "for_signals": ["vendor-no-pqc-commitment","policy-without-vendor-sla"],
           "compensating_controls": [
             "alternative_vendor_shortlist_per_dependency",
             "data_minimisation_for_vendor_handled_data"
@@ -883,6 +885,7 @@
             "hybrid_configured_asset_inventory_present == true"
           ],
           "priority": 2,
+          "for_signals": ["no-downgrade-detection"],
           "compensating_controls": [
             "alerting_on_downgrade_threshold_per_service",
             "weekly_downgrade_report_to_security_team"
@@ -897,6 +900,7 @@
             "key_migration_window_within_jurisdiction_deadline == true"
           ],
           "priority": 3,
+          "for_signals": ["hsm-firmware-no-pqc"],
           "compensating_controls": [
             "network_segmentation_for_classical_only_hsm",
             "shortened_retention_for_keys_pending_migration"
@@ -910,6 +914,7 @@
             "operator_jurisdictional_scope_documented == true"
           ],
           "priority": 4,
+          "for_signals": ["regulator-deadline-missing-or-stale"],
           "compensating_controls": [
             "automated_regulator_publication_monitoring",
             "quarterly_deadline_review_with_legal"
@@ -923,6 +928,7 @@
             "firmware_update_channel_exists == true OR end_of_life_communicable_to_customers == true"
           ],
           "priority": 4,
+          "for_signals": ["embedded-tls-stack-classical-only"],
           "compensating_controls": [
             "pqc_gateway_for_classical_only_devices",
             "customer_notification_of_hndl_exposure"

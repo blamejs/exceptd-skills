@@ -1119,7 +1119,8 @@
     "api-security"
   ],
   "bola": [
-    "api-security"
+    "api-security",
+    "multitenancy-isolation"
   ],
   "bfla": [
     "api-security"
@@ -1626,5 +1627,447 @@
   ],
   "tenant compromise": [
     "idp-incident-response"
+  ],
+  "verifiable credential": [
+    "vc-wallet-trust"
+  ],
+  "digital wallet": [
+    "vc-wallet-trust"
+  ],
+  "sd-jwt-vc": [
+    "vc-wallet-trust"
+  ],
+  "oid4vp": [
+    "vc-wallet-trust"
+  ],
+  "oid4vci": [
+    "vc-wallet-trust"
+  ],
+  "mdoc": [
+    "vc-wallet-trust"
+  ],
+  "mdl": [
+    "vc-wallet-trust"
+  ],
+  "iso 18013-5": [
+    "vc-wallet-trust"
+  ],
+  "eudi wallet": [
+    "vc-wallet-trust"
+  ],
+  "eidas 2.0": [
+    "vc-wallet-trust"
+  ],
+  "did:web": [
+    "vc-wallet-trust"
+  ],
+  "status list": [
+    "vc-wallet-trust"
+  ],
+  "credential revocation": [
+    "vc-wallet-trust"
+  ],
+  "openid federation": [
+    "vc-wallet-trust"
+  ],
+  "trust anchor": [
+    "vc-wallet-trust"
+  ],
+  "credential verifier": [
+    "vc-wallet-trust"
+  ],
+  "presentation exchange": [
+    "vc-wallet-trust"
+  ],
+  "dcql": [
+    "vc-wallet-trust"
+  ],
+  "mail server hardening": [
+    "mail-server-hardening"
+  ],
+  "smtp smuggling": [
+    "mail-server-hardening"
+  ],
+  "starttls injection": [
+    "mail-server-hardening"
+  ],
+  "open relay": [
+    "mail-server-hardening"
+  ],
+  "imap command injection": [
+    "mail-server-hardening"
+  ],
+  "managesieve": [
+    "mail-server-hardening"
+  ],
+  "sieve redirect": [
+    "mail-server-hardening"
+  ],
+  "mailbox dav": [
+    "mail-server-hardening"
+  ],
+  "caldav": [
+    "mail-server-hardening"
+  ],
+  "carddav": [
+    "mail-server-hardening"
+  ],
+  "pop3": [
+    "mail-server-hardening"
+  ],
+  "mx hardening": [
+    "mail-server-hardening"
+  ],
+  "rfc 5321": [
+    "mail-server-hardening"
+  ],
+  "rfc 9051": [
+    "mail-server-hardening"
+  ],
+  "rfc 5804": [
+    "mail-server-hardening"
+  ],
+  "mail protocol": [
+    "mail-server-hardening"
+  ],
+  "inbound mail": [
+    "mail-server-hardening"
+  ],
+  "smtp listener": [
+    "mail-server-hardening"
+  ],
+  "network trust": [
+    "network-trust"
+  ],
+  "adversary in the middle": [
+    "network-trust"
+  ],
+  "aitm": [
+    "network-trust"
+  ],
+  "dnssec": [
+    "network-trust"
+  ],
+  "dane": [
+    "network-trust"
+  ],
+  "tlsa": [
+    "network-trust"
+  ],
+  "tsig": [
+    "network-trust"
+  ],
+  "mtls pinning": [
+    "network-trust"
+  ],
+  "certificate pinning": [
+    "network-trust"
+  ],
+  "http message signature": [
+    "network-trust"
+  ],
+  "rfc 9421": [
+    "network-trust"
+  ],
+  "dns rebinding": [
+    "network-trust"
+  ],
+  "nts": [
+    "network-trust"
+  ],
+  "authenticated time": [
+    "network-trust"
+  ],
+  "ntp spoofing": [
+    "network-trust"
+  ],
+  "public suffix list": [
+    "network-trust"
+  ],
+  "name resolution trust": [
+    "network-trust"
+  ],
+  "audit log integrity": [
+    "audit-log-integrity"
+  ],
+  "tamper evident logging": [
+    "audit-log-integrity"
+  ],
+  "hash chain": [
+    "audit-log-integrity"
+  ],
+  "worm": [
+    "audit-log-integrity"
+  ],
+  "object lock": [
+    "audit-log-integrity"
+  ],
+  "immutable storage": [
+    "audit-log-integrity"
+  ],
+  "legal hold": [
+    "audit-log-integrity"
+  ],
+  "retention": [
+    "audit-log-integrity"
+  ],
+  "honeytoken": [
+    "audit-log-integrity"
+  ],
+  "canary token": [
+    "audit-log-integrity"
+  ],
+  "break glass": [
+    "audit-log-integrity"
+  ],
+  "dual control": [
+    "audit-log-integrity"
+  ],
+  "anti forensics": [
+    "audit-log-integrity"
+  ],
+  "log deletion": [
+    "audit-log-integrity"
+  ],
+  "separation of duties": [
+    "audit-log-integrity"
+  ],
+  "audit trail": [
+    "audit-log-integrity"
+  ],
+  "self update": [
+    "self-update-integrity"
+  ],
+  "auto update": [
+    "self-update-integrity"
+  ],
+  "update integrity": [
+    "self-update-integrity"
+  ],
+  "anti rollback": [
+    "self-update-integrity"
+  ],
+  "downgrade attack": [
+    "self-update-integrity"
+  ],
+  "code signing verification": [
+    "self-update-integrity"
+  ],
+  "key pinning": [
+    "self-update-integrity"
+  ],
+  "subresource integrity": [
+    "self-update-integrity"
+  ],
+  "sri": [
+    "self-update-integrity"
+  ],
+  "import map integrity": [
+    "self-update-integrity"
+  ],
+  "c2pa": [
+    "self-update-integrity"
+  ],
+  "content credentials": [
+    "self-update-integrity"
+  ],
+  "scitt": [
+    "self-update-integrity"
+  ],
+  "transparency log": [
+    "self-update-integrity"
+  ],
+  "software supply chain consumer": [
+    "self-update-integrity"
+  ],
+  "update channel": [
+    "self-update-integrity"
+  ],
+  "multitenancy isolation": [
+    "multitenancy-isolation"
+  ],
+  "multi tenant": [
+    "multitenancy-isolation"
+  ],
+  "cross tenant": [
+    "multitenancy-isolation"
+  ],
+  "tenant isolation": [
+    "multitenancy-isolation"
+  ],
+  "row level security": [
+    "multitenancy-isolation"
+  ],
+  "rls": [
+    "multitenancy-isolation"
+  ],
+  "broken object level authorization": [
+    "multitenancy-isolation"
+  ],
+  "idor": [
+    "multitenancy-isolation"
+  ],
+  "noisy neighbour": [
+    "multitenancy-isolation"
+  ],
+  "rapid reset": [
+    "multitenancy-isolation"
+  ],
+  "rate limit": [
+    "multitenancy-isolation"
+  ],
+  "per tenant quota": [
+    "multitenancy-isolation"
+  ],
+  "circuit breaker": [
+    "multitenancy-isolation"
+  ],
+  "distributed lock fencing": [
+    "multitenancy-isolation"
+  ],
+  "resource exhaustion": [
+    "decompression-dos",
+    "multitenancy-isolation"
+  ],
+  "denial of service": [
+    "multitenancy-isolation"
+  ],
+  "decompression bomb": [
+    "decompression-dos"
+  ],
+  "zip bomb": [
+    "decompression-dos"
+  ],
+  "zip slip": [
+    "decompression-dos"
+  ],
+  "redos": [
+    "decompression-dos"
+  ],
+  "regular expression denial of service": [
+    "decompression-dos"
+  ],
+  "catastrophic backtracking": [
+    "decompression-dos"
+  ],
+  "billion laughs": [
+    "decompression-dos"
+  ],
+  "xml entity expansion": [
+    "decompression-dos"
+  ],
+  "xxe": [
+    "decompression-dos"
+  ],
+  "parser dos": [
+    "decompression-dos"
+  ],
+  "amplification attack": [
+    "decompression-dos"
+  ],
+  "nested archive": [
+    "decompression-dos"
+  ],
+  "recursion depth": [
+    "decompression-dos"
+  ],
+  "length field allocation": [
+    "decompression-dos"
+  ],
+  "input amplification": [
+    "decompression-dos"
+  ],
+  "log injection": [
+    "log-injection-telemetry"
+  ],
+  "crlf injection": [
+    "log-injection-telemetry"
+  ],
+  "log forging": [
+    "log-injection-telemetry"
+  ],
+  "telemetry integrity": [
+    "log-injection-telemetry"
+  ],
+  "secrets in logs": [
+    "log-injection-telemetry"
+  ],
+  "log redaction": [
+    "log-injection-telemetry"
+  ],
+  "metrics endpoint exposure": [
+    "log-injection-telemetry"
+  ],
+  "prometheus exposure": [
+    "log-injection-telemetry"
+  ],
+  "otlp exporter": [
+    "log-injection-telemetry"
+  ],
+  "cloudwatch": [
+    "log-injection-telemetry"
+  ],
+  "webhook sink": [
+    "log-injection-telemetry"
+  ],
+  "exporter ssrf": [
+    "log-injection-telemetry"
+  ],
+  "observability security": [
+    "log-injection-telemetry"
+  ],
+  "log sink": [
+    "log-injection-telemetry"
+  ],
+  "telemetry exfiltration": [
+    "log-injection-telemetry"
+  ],
+  "privacy operations": [
+    "privacy-consent-ops"
+  ],
+  "consent integrity": [
+    "privacy-consent-ops"
+  ],
+  "sanctions screening": [
+    "privacy-consent-ops"
+  ],
+  "ofac screening": [
+    "privacy-consent-ops"
+  ],
+  "homoglyph evasion": [
+    "privacy-consent-ops"
+  ],
+  "confusable normalization": [
+    "privacy-consent-ops"
+  ],
+  "iab tcf": [
+    "privacy-consent-ops"
+  ],
+  "mspa": [
+    "privacy-consent-ops"
+  ],
+  "consent string": [
+    "privacy-consent-ops"
+  ],
+  "dsr": [
+    "privacy-consent-ops"
+  ],
+  "right to erasure": [
+    "privacy-consent-ops"
+  ],
+  "right to be forgotten": [
+    "privacy-consent-ops"
+  ],
+  "gdpr article 17": [
+    "privacy-consent-ops"
+  ],
+  "ropa": [
+    "privacy-consent-ops"
+  ],
+  "record of processing": [
+    "privacy-consent-ops"
+  ],
+  "data subject request": [
+    "privacy-consent-ops"
   ]
 }

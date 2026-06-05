@@ -1,5 +1,852 @@
 # Changelog
 
+## 0.16.20 — 2026-06-02
+
+CVE curation now accepts three operator-supplied fields it previously dropped or rejected: `ai_discovery_source` (the AI-discovery provenance category — vendor research, AI-augmented bug bounty, academic fuzzing, threat-actor-built, human, or unknown), `vendor_update_paths` (the restart-required vendor remediation steps), and the `theoretical` value of `active_exploitation` (a published proof-of-concept with no observed in-the-wild use). All three are already valid in the catalog and factored by RWEP scoring, so a curated entry that supplies them is no longer stripped of its provenance or remediation detail before being written.
+
+## 0.16.19 — 2026-06-02
+
+New `privacy-consent-ops` playbook and skill audit where privacy and sanctions controls become paper despite existing: sanctions screening that does not normalize confusable / homoglyph Unicode (or lacks alias + transliteration + fuzzy matching), so a listed name spelled with lookalikes evades it; IAB TCF / MSPA consent signals acted on without an integrity binding to the consent log of record and not re-validated against withdrawal or expiry at processing time; data-subject erasure marked "completed" without per-store proof and not propagated to backups, indexes, warehouses, and processors; and a GDPR Record of Processing Activities that drifts from actual processing. It maps to ATT&CK T1036 / T1565.001 / T1070 and to NIST 800-53 SI-10, ISO 27001 A.5.34, NIS2 Art.21, UK CAF B4, and AU ISM. Run it with `exceptd brief privacy-consent-ops` or `exceptd run privacy-consent-ops`.
+
+## 0.16.18 — 2026-06-02
+
+New `log-injection-telemetry` playbook and skill audit the integrity and confidentiality of the telemetry pipeline itself, which "we centralize all logs" does not cover: CR/LF log injection that forges or splits entries on every sink except syslog, secrets and PII logged without a redaction pass, unauthenticated `/metrics` and debug endpoints leaking internal state, telemetry exporters shipping to un-inventoried or input-derived destinations (exfiltration), embedded exporter credentials, plaintext or unverified-TLS export, and webhook log sinks usable for SSRF. It maps to ATT&CK T1565.001 / T1530 / T1213 and to NIST 800-53 AU-9 / SI-11, ISO 27001 A.8.15, NIS2 Art.21, UK CAF B4, and AU ISM. CWE-117 (improper output neutralization for logs) is added to the catalog to back it. Run it with `exceptd brief log-injection-telemetry` or `exceptd run log-injection-telemetry`.
+
+## 0.16.17 — 2026-06-02
+
+New `decompression-dos` playbook and skill audit the input-amplification denial-of-service class a single small crafted input can trigger — which input-format validation, a WAF, and autoscaling do not bound: unbounded archive decompression (zip bomb) and nested-archive bombs, Zip Slip path traversal on extraction, XML entity expansion (billion laughs) / XXE, catastrophic-backtracking regular expressions (ReDoS), recursive parsing with no depth limit, and length-field-driven unbounded allocation in binary parsers (ASN.1/DER, CBOR, MIME, protobuf). It maps to ATT&CK T1499 / T1499.001 / T1059 and to NIST 800-53 SI-10 / SC-5, ISO 27001 A.8.26, NIS2 Art.21, UK CAF B4, and AU ISM. Two weaknesses are added to the catalog to back it: CWE-409 (data amplification) and CWE-1333 (inefficient regular-expression complexity). Run it with `exceptd brief decompression-dos` or `exceptd run decompression-dos`.
+
+## 0.16.16 — 2026-06-02
+
+New `multitenancy-isolation` playbook and skill audit two linked failure classes on shared multitenant infrastructure that "we have authorization" and "the cloud autoscales" do not cover. Isolation: a tenant identifier trusted from a client-controlled field, queries not scoped at the data layer (no row-level security), an RLS policy bypassable by the request connection's role, and cache/pub-sub/queue keys not namespaced by tenant — each a cross-tenant data path from a single authenticated account. Availability: HTTP/2 Rapid Reset (CVE-2023-44487) uncapped, no per-tenant rate/byte quota (noisy-neighbour), unbounded per-request allocation, distributed locks without fencing, and missing circuit breakers. It maps to ATT&CK T1078/T1499/T1499.001/T1530 and to NIST 800-53 AC-3/SC-6, ISO 27001 A.8.31, NIS2 Art.21, UK CAF B4, AU ISM, and SOC 2 CC6. Run it with `exceptd brief multitenancy-isolation` or `exceptd run multitenancy-isolation`.
+
+## 0.16.15 — 2026-06-02
+
+New `self-update-integrity` playbook and skill audit the receiving end of the software supply chain — the consumer-side checks that publisher signing and SBOM/SLSA posture do not cover: a self-update applied without verifying a signature before swapping the new code in, a signature checked against a key the update channel itself supplies, a signed-but-older version accepted (downgrade with no anti-rollback) that re-opens a patched CVE, an update fetched over an unauthenticated channel as the sole control, browser modules served without Subresource Integrity, unverified C2PA content credentials or SCITT/TSA transparency receipts, and an apply step that does not gate on the verifier result. It maps to ATT&CK T1195.002 / T1574 and to NIST 800-53 SR-11, NIS2 Art.21, UK CAF B4, AU ISM, and the EU CRA secure-update obligations. Run it with `exceptd brief self-update-integrity` or `exceptd run self-update-integrity`.
+
+## 0.16.14 — 2026-06-02
+
+New `audit-log-integrity` playbook and skill audit whether the system-of-record audit trail survives the privileged or insider attacker most likely to tamper with it: a hash chain that is written but never verified on read, audit entries unsigned or signed with a key co-located with the log writer, WORM storage in governance/override mode (a privileged role can still delete) rather than compliance mode, legal holds that annotate but do not block the retention purge, the log-writing identity also able to delete its own log, and missing or untriaged honeytokens plus unwitnessed break-glass access. It maps to NIST 800-53 SI-2, ISO 27001 A.8.15, NIS2 Art.21, and SOC 2 CC7. Run it with `exceptd brief audit-log-integrity` or `exceptd run audit-log-integrity`. The recently added `vc-wallet-trust`, `mail-server-hardening`, and `network-trust` playbooks now also map UK CAF and AU ISM, so their framework-gap output is complete on multi-jurisdiction runs.
+
+## 0.16.13 — 2026-06-02
+
+New `network-trust` playbook and skill audit the trust-anchor validation beneath TLS that adversary-in-the-middle attacks exploit: DNSSEC not validated end-to-end, DANE/TLSA not checked on capable peers, zone operations without TSIG, mTLS trusting a broad CA bundle instead of a pinned private CA, RFC 9421 HTTP message signatures unverified or under-scoped, DNS rebinding unguarded (SSRF into internal addresses), and unauthenticated NTP whose clock shift can revive expired certificates or shift TOTP windows. It maps to the DNSSEC resolver-DoS catalog entries (KeyTrap, NSEC3) and to NIST 800-53 SC-8, ISO 27001 A.8.21, NIS2 Art.21, and UK-CAF B4. Run it with `exceptd brief network-trust` or `exceptd run network-trust`.
+
+## 0.16.12 — 2026-06-02
+
+New `mail-server-hardening` playbook and skill audit the inbound mail-server protocol surface that sender authentication (SPF/DKIM/DMARC) and transport TLS do not protect: SMTP smuggling via a non-standard end-of-data sequence, STARTTLS receive-buffer command/response injection, IMAP/POP3 bare-CR-LF and ManageSieve PUTSCRIPT injection, uncapped Sieve `redirect` used as a mail-routing exfiltration primitive, an unauthenticated open relay, mailbox-DAV (CalDAV/CardDAV) path traversal and XXE, and cleartext AUTH offered before STARTTLS. It maps to the SMTP-smuggling (CVE-2023-51764/51766) and STARTTLS-injection (CVE-2021-38371/33515) catalog families and to NIST 800-53 SI-2, ISO 27001 A.8.8, NIS2 Art.21, and PCI-DSS 4.0 6.3.3. Run it with `exceptd brief mail-server-hardening` or `exceptd run mail-server-hardening`.
+
+## 0.16.11 — 2026-06-02
+
+New `vc-wallet-trust` playbook and skill audit the verifiable-credential / digital-wallet verifier trust boundary — the checks a service must make before it accepts an SD-JWT-VC, OID4VP, or ISO 18013-5 mdoc presentation from a wallet it does not control. It detects an issuer key not pinned to a trust anchor, revocation/status-list not enforced, `did:web` resolution left unpinned, presentations accepted without nonce/audience key-binding (replayable), mdoc device authentication skipped, open signature-algorithm sets, and over-disclosure beyond the requested claims — mapping each to the framework controls (NIST 800-63B, NIST 800-53 IA-5, ISO 27001 A.5.16, NIS2, eIDAS 2.0 / EUDI wallet) that do not cover the wallet acceptance path. Run it with `exceptd brief vc-wallet-trust` or `exceptd run vc-wallet-trust`.
+
+## 0.16.10 — 2026-06-02
+
+RWEP scoring no longer emits a spurious validation warning when a CVE carries the `theoretical` active-exploitation status — a value the catalog vocabulary and the scorer already accept and score. The guided curation questionnaire now prompts for `ai_assisted_weaponization`, a required field it previously skipped, so a curated entry cannot silently omit it. The `prefetch` verb no longer double-counts a global flag, and `lint --strict` is now documented in its own `--help`.
+
+## 0.16.9 — 2026-06-01
+
+The catalog now covers a set of real, vendor-patched protocol-layer flaws it previously did not name, so scans, triage, and reports surface them with RWEP scoring and behavioral indicators:
+
+- **SMTP smuggling** — CVE-2023-51764 (Postfix), CVE-2023-51765 (Sendmail), CVE-2023-51766 (Exim): a mail server that accepts a non-standard end-of-data sequence lets an attacker smuggle a second message that passes SPF, DKIM, and DMARC on the outer envelope and spoofs the sender. The fix is an end-of-data hardening setting (or upgrade), not a control sender-authentication can supply.
+- **STARTTLS command/response injection** — CVE-2021-38371 (Exim), CVE-2021-33515 (Dovecot), CVE-2011-0411 (Postfix): a server that does not discard bytes buffered before the TLS handshake executes attacker-supplied plaintext inside the encrypted session. Transport encryption strength is irrelevant — the bytes cross the boundary before TLS applies.
+- **DNSSEC validating-resolver CPU exhaustion** — CVE-2023-50387 (KeyTrap) and CVE-2023-50868 (NSEC3): a single crafted DNSSEC response forces worst-case signature evaluation or NSEC3 hash iteration and stalls the resolver for every client.
+- **HTTP/2 Rapid Reset** — CVE-2023-44487 (CISA KEV, confirmed exploited): rapid stream open-then-reset cycles exhaust the server at near-zero cost to the attacker.
+
+CWE-93 (CRLF injection) is added to the weakness catalog to back the SMTP-smuggling class.
+
+## 0.16.8 — 2026-05-31
+
+`discover` now recommends the `containers` playbook whenever a Dockerfile, Containerfile, or compose file exists anywhere in the tree — a Dockerfile in a subdirectory, or a compose variant like `docker-compose.test.yml` — matching exactly the surface the containers collector scans. Previously it probed only for a root-level `Dockerfile` / `docker-compose.yml`, so a repository whose container config lived in a subdirectory or used a variant filename was never told to run the container security review and its Dockerfile findings went unsurfaced.
+
+## 0.16.7 — 2026-05-31
+
+The default (human) run output now lists collector notices — for example a file skipped for exceeding the scan-size limit — under a "Collector notices" section, instead of carrying them only in `--json`. Previously a human reader saw "evidence: complete" with no indication that part of the tree was not scanned.
+
+## 0.16.6 — 2026-05-31
+
+`collect --help` now documents the `--attest-ownership` flag — it attests that you own (or hold written authorisation for) the asset being scanned, satisfying an ownership precondition such as the CI/CD playbook's fleet-ownership gate so a run does not block at preflight. The flag already worked and is what the precondition-block remediation points to; it was simply missing from the help text.
+
+## 0.16.5 — 2026-05-31
+
+`selected_remediation` now matches the finding. Each `remediation_path` can declare an optional `for_signals` linkage naming the detect indicators it addresses; when no remediation's preconditions are verified (the common static-scan case), the recommendation is the highest-priority path that addresses a fired indicator instead of always defaulting to priority-1. So a FIPS-claim-without-runtime-activation finding now recommends activating the FIPS provider rather than an unrelated post-quantum migration. The linkage is populated across the playbook set, and each entry in `remediation_options_considered` gains an `addresses_fired_signal` flag.
+
+A blocked-preflight `summary_line` is now truncated on a word boundary with an ellipsis instead of cut mid-word.
+
+## 0.16.4 — 2026-05-31
+
+A `collect | run` result now surfaces non-fatal collector notices as a `collector_warnings` field — for example a file skipped for exceeding the scan size limit — so a consumer can see what the collector could not scan. The verdict and evidence completeness are unchanged; the field is omitted when the collector reported nothing.
+
+For an indicator-driven detection, `top_finding` now names the indicator that actually drove the RWEP score (the highest-weighted fired signal) rather than the highest-confidence hit, so the summary headline explains the number shown beside it. It falls back to the dominant fired indicator when no weighted signal fired.
+
+A playbook's event-based regression triggers now report their condition string in `regression_event_triggers` instead of null.
+
+## 0.16.3 — 2026-05-31
+
+For an indicator-driven detection with no matched CVE, a run's `top_finding` now names the indicator that actually drove the verdict instead of repeating the verdict word, so the summary line reads (for example) `library-author: detected (rwep=10, release-workflow-non-frozen-install, evidence=complete)` rather than duplicating `detected`.
+
+## 0.16.2 — 2026-05-31
+
+The default evidence bundle for the secrets, credential-store, runtime, and citation-hygiene playbooks is now a real structured-JSON document instead of an "Unknown format" placeholder, and `json` is a generally selectable bundle format for any playbook.
+
+A crypto-codebase scan of a source repository no longer emits a spurious "precondition not met" warning for its source-tree check: the collector now attests that gate from the files it walked, matching how the supply-chain and library-author collectors already self-attest.
+
+When a run is blocked on a precondition you submitted as false, the remediation now names the exact way to satisfy it — submit `precondition_checks {"<id>": true}` in your evidence, or pass the owning collector's attestation flag at collect time (for example `collect cicd-pipeline-compromise --attest-ownership`) — instead of an ambiguous hint that could be read as a flag on the wrong verb.
+
+## 0.16.1 — 2026-05-31
+
+Supply-chain, library-author, and MCP scans no longer emit a spurious "precondition not met" warning when the scanned directory clearly satisfies it: the collectors now attest the gates they can verify from what they collected (a lockfile satisfies the package-manager gate, a package manifest or publish workflow satisfies the publishable-artifact gate, a present assistant config satisfies the AI-assistant gate) — so a `collect --cwd <repo> | run` against a target directory reports them as met rather than unverified. The library-author publish-workflow detector no longer mis-classifies a CI workflow whose only mention of a publish command sits inside a comment. And a blocked run on an intent/ownership precondition (for example the CI/CD playbook's fleet-ownership gate) now states the specific gate and how to satisfy it, instead of guessing a platform mismatch.
+
+## 0.16.0 — 2026-05-31
+
+Supply-chain playbook gains reachability-aware triage and publisher-identity detection. A CVE-reachability demoter flags a matched-CVE dependency whose vulnerable module is never imported on a path from your own code, supporting exploit-priority triage of the runtime-vs-build-only distinction — it over-approximates toward reachable (any dynamic / plugin / reflective load counts as reachable) so it only demotes a match when reachability is explicitly attested, and the CVE matcher itself is unchanged. A publisher-identity-change detector flags an account-takeover precursor: a dependency whose publishing account, maintainer set, or provenance identity changed across an update while its capability surface stayed identical — the silent ownership-handoff release that precedes a payload, which the capability-creep detector cannot see.
+
+Two compliance-theater fingerprints are added — a declared license policy that no build gate actually enforces against the resolved tree, and a declared publisher-trust control (maintainer vetting / MFA-on-publish / registry cooldown) that no intake gate blocks on.
+
+## 0.15.53 — 2026-05-30
+
+Catalog: package-class entries can now carry an optional package-confidence signal — a 0–100 supply-chain trustworthiness score with inverse polarity to RWEP (high = trustworthy provenance, low = behaves like malware), derived from maintainer, code-quality, behavioral, and provenance sub-signals. It is surfaced alongside RWEP and never feeds or replaces it: RWEP answers "how urgently must I act on this known vulnerability," while package-confidence answers "how much do I trust this package's provenance." Populated on the supply-chain malware entries (the MOIKA dependency-confusion campaign, TrapDoor, Shai-Hulud, the node-ipc credential-stealer, and the node-ipc protestware incident).
+
+The Shai-Hulud worm entry now also covers the PyTorch Lightning PyPI compromise (CVE-2026-44484 / `lightning` 2.6.2–2.6.3) as the PyPI side of the same Mini Shai-Hulud wave, with its Bun-runtime infostealer indicators and disclosure sources.
+
+## 0.15.52 — 2026-05-30
+
+Supply-chain playbook: three new detection-depth checks. Typosquat / homoglyph detection flags a direct dependency whose name impersonates a popular package by edit-distance or a visually-confusable Unicode substitution (reusing the Trojan-Source codepoint tables) — a lure signal that precedes any payload. A static content red-flag screen flags packages that ship only minified/obfuscated source, carry a high ratio of high-entropy strings, are a trivial shell that nonetheless runs an install script or opens the network, or combine dynamic `eval` with dynamic `require` (CWE/ATT&CK T1027) — orthogonal to the capability screens. A dependency-confusion resolution check flags an internal-looking package name served from the public registry, or an inflated-version public squat that wins resolution over the private package — the resolution-source signature that precedes execution, correlated to the MOIKA campaign. Each ships with a paired evidence artifact and false-positive profile.
+
+## 0.15.51 — 2026-05-30
+
+Catalog: three new supply-chain entries. CVE-2022-23812 — the node-ipc "peacenotwar" protestware incident, where a trusted maintainer shipped a geo-targeted file-wiper in the package main module, so `--ignore-scripts` (the usual npm-supply-chain mitigation) does not stop it. TrapDoor — a cross-ecosystem (npm / PyPI / crates.io) credential-stealer campaign whose novel vector plants zero-width-Unicode instructions in `.cursorrules` / `CLAUDE.md` files to subvert AI coding assistants into discovering and exfiltrating local secrets. MOIKA — the catalog's first dependency-confusion entry: public packages published under squatted internal scopes at inflated versions, with a postinstall stager that exfiltrates the full process environment. Each carries its paired zero-day lesson and new framework-lag controls (main-module-payload detection, AI-assistant config-file poisoning detection, internal-scope→registry pinning).
+
+Supply-chain playbook: a package-capability taxonomy (network / filesystem / shell / env / eval / install-script / telemetry / native-binary) as a CVE-independent screening lens. Two new detectors flag a dependency that gains a capability across a version bump, and a no-CVE package whose install-script combines with shell / network / env access (the credential-harvesting delivery shape) — both gated by false-positive checks for the build-tooling and native-addon class.
+
+## 0.15.50 — 2026-05-30
+
+Hardening: `--operator` validation and the operator-text sanitizer now classify and strip Unicode threat codepoints — Trojan-Source bidirectional overrides (CVE-2021-42574), zero-width/invisible marks, C0 controls, and null — through a shared vendored codepoint-threat table, and the `--operator` rejection now names the specific codepoint family (for example "bidirectional-override codepoint") instead of a generic message. Unicode General Category C remains the reject/strip backstop, so the broader control / private-use / unassigned set is still refused.
+
+Internal: a new codebase-pattern gate class, `bidi-codepoint-literal`, blocks raw bidi-override / zero-width / null codepoints embedded literally in source (invisible-in-review code reordering — the Trojan-Source class); source must escape them or route through the shared table.
+
+## 0.15.49 — 2026-05-30
+
+Internal: a new predeploy gate, `scripts/check-codebase-patterns.js`, enforces code-shape bug classes that recurred across releases. It blocks a library-callable function that writes to stdout and then calls `process.exit()` (which truncates buffered output when the stream is piped — the class the v0.15.47 validate-cves fix addressed) and a stale or reason-less `// allow:` suppression marker, and warns on dynamic `RegExp` construction. The flagged `process.exit` sites across the catalog, playbook, package, and vendor validators were converted to the flush-safe `safeExit` form, and the dynamic-`RegExp` sites carry inline justification markers. A companion advisory, wired into the release `prepare` step, flags when the upstream pattern catalog grows a class exceptd hasn't triaged. No change to the shipped CLI surface, catalogs, or skills.
+
+## 0.15.48 — 2026-05-30
+
+Internal: the release flow is now driven by a phased orchestrator, `scripts/release.js`. Each subcommand (prepare, gates, commit, push, watch, merge, tag, release) runs one idempotent, resumable phase and exits with a script-safe code; the tag phase enforces a GUARD against tag-on-stale-HEAD and version skew between `package.json`, `manifest.json`, and the CHANGELOG heading. No change to the shipped CLI, catalogs, or skills.
+
+## 0.15.47 — 2026-05-30
+
+A consistency pass on error envelopes and flag handling.
+
+An invalid `--session-id`, `--attestation-root`, `--session-key`, `--mode`, or `--operator` passed to `ci`, `run-all`, or `ai-run` now reports the verb you actually ran instead of always saying "run:", and the error envelope carries the matching `verb` field. `brief --ack` — and every "irrelevant flag" refusal — now carries `flag` and `error_class` consistently for machine consumers.
+
+`run --format` with no value now refuses instead of silently proceeding, and `--format` / `--air-gap` typos are suggested on `run` / `collect`. `discover --help` documents `--cwd`. The `framework-gap` unknown-framework error carries `verb`. `validate-cves --offline` exits through the flush-safe path so its final summary line is never truncated when piped.
+
+## 0.15.46 — 2026-05-30
+
+A correctness and help-accuracy pass.
+
+`exceptd help <verb>` for a verb removed in v0.13.0 — `plan`, `govern`, `direct`, `look`, `ingest` — now refuses with the replacement command and a non-zero exit, matching what the bare verb already did, instead of printing stale help for a command that no longer runs.
+
+Help text now matches behavior: `brief --help` documents `--flat`, `attest --help` lists the `prune` subverb, and `ai-run --help` shows the correct exit code for a session-id collision. `doctor` accepts `--air-gap` consistently across its flag-validation paths. Error messages and accepted-verb lists no longer recommend removed verbs.
+
+A failure opening the `watch --log-file` target now exits with the generic-failure code instead of the detected-escalation code, so a filesystem error no longer trips a CI gate keyed on escalation. The worst-of active-exploitation reduction used in finding drafts now ranks a "theoretical" CVE correctly instead of dropping it or overstating an empty set as "unknown".
+
+Validator warnings describe their `--strict` / predeploy enforcement rather than promising an already-shipped version.
+
+## 0.15.45 — 2026-05-30
+
+An operator-experience pass.
+
+Running a platform-gated playbook on a host it does not target — for example a Linux-only kernel playbook on macOS or Windows — now prints a one-line blocked summary with the reason and the next step instead of dumping the raw JSON envelope. `--json` and `--pretty` still return the full body for machine consumers, and the exit code is unchanged.
+
+A single named playbook given `--evidence-dir` (a contract-run input) now refuses loudly rather than running against empty evidence and reporting a false all-clear: pass `--evidence <file|->` for one playbook, or run a contract over a directory of evidence. Piping empty stdin into `run <playbook>` no longer writes an advisory note that corrupted `run ... 2>&1 | jq`; an explicit `--evidence -` with empty input still warns.
+
+Skills are discoverable. `exceptd skill` with no arguments lists every skill ID and description, and the not-found hint points there instead of at the playbook list. `brief <playbook>` ends with the `collect | run` pipeline so brief-first operators see where evidence comes from. `recipes --help` and `report --help` show real per-verb help, and `report --help` states that its default output is Markdown.
+
+New global `--quiet` flag suppresses advisory stderr chatter — notes, tips, and the deprecation and unsigned-attestation banners — while keeping the result on stdout and all errors on stderr. It is narrower than `--json-stdout-only`, which silences all stderr and forces JSON.
+
+`doctor --registry-check` prints an actionable message when it cannot compare versions instead of an internal "raw exit=?" token. The `refresh` help text describes the OSV/GHSA import surface as it actually is — one advisory ID per invocation, no bulk import — rather than advertising unbuilt work.
+
+## 0.15.44 — 2026-05-30
+
+Final pass; the bulk-imported KEV draft backlog is now fully curated. Six remaining CISA KEV-listed CVEs, each a distinct vulnerability class, are promoted from auto-imported drafts to fully-curated entries with mechanism-specific behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: the WhatsApp linked-device zero-click authorization flaw used as the delivery half of a mobile-spyware chain (CVE-2025-55177, T1190), the IGEL OS expired-key Secure Boot signature bypass (CVE-2025-47827, T1553), the Windows WebDAV Internet-Shortcut remote-code-execution flaw exploited by Stealth Falcon (CVE-2025-33053, T1203 + T1204.002), a network-reachable Windows NULL-pointer dereference (CVE-2026-21525, T1190), the PaperCut NG/MF cross-site request forgery used in its exploitation chain (CVE-2023-2533, T1190), and the Multi-Router Looking Glass buffer overflow on route servers (CVE-2014-3931, T1190 + T1059). With this pass every CVE entry in the catalog carries behavioral IOCs, an ATT&CK mapping, and a defense-chain zero-day lesson.
+
+## 0.15.43 — 2026-05-30
+
+Supply-chain embedded malicious code. Two CISA KEV-listed CVEs where malicious code shipped through a trusted distribution channel are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: the ASUS Live Update updater (CVE-2025-59374), which executes attacker code in the trusted context of the vendor update utility, and the eslint-config-prettier npm package (CVE-2025-54313), where a maintainer-account compromise published versions carrying a malicious install-time payload that runs on developer and CI machines. Both map T1195.002 (Compromise Software Supply Chain). The lessons frame the defense as enforced signature and provenance verification (code signing, Sigstore/in-toto, SLSA), dependency pinning, and publishing-account protections — not patching — and note that response is environment-wide because the tainted code reaches every host that installed it.
+
+## 0.15.42 — 2026-05-29
+
+Sensitive data exposure. Three CISA KEV-listed CVEs that leak credentials and plaintext data through diagnostic surfaces are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: the two TeleMessage TM SGNL flaws — a core-dump file exposed to an unauthorized control sphere (CVE-2025-48928) and an insecure-default Spring Boot Actuator `/heapdump` endpoint (CVE-2025-48927), which together leaked plaintext messages and credentials from the Signal-clone server — and the Wing FTP error-message disclosure (CVE-2025-47813). All map T1190 and T1552. The lessons make the point that an encryption-in-transit posture is undermined when the server holds and leaks plaintext through memory dumps and diagnostic endpoints, that least-functionality (disabling Actuator and core-dump generation in production) is the durable control, and that response must rotate every exposed secret and treat the disclosed data's confidentiality as already breached — a patch cannot recall data the attacker has.
+
+## 0.15.41 — 2026-05-29
+
+Access-control and security-control bypass. Four CISA KEV-listed CVEs that defeat an access-enforcement mechanism are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: the CrushFTP unprotected-alternate-channel admin bypass (CVE-2025-54309), the SonicWall SMA1000 missing-authorization flaw (CVE-2025-40602), the SolarWinds Web Help Desk security-control bypass (CVE-2025-40536), and the Craft CMS assumed-immutable-parameter tampering flaw (CVE-2025-35939). All map T1190; the authorization-bypass trio also maps T1078. The lessons make the point that the access-control posture (passwords, roles) is irrelevant when the enforcement mechanism itself is bypassed — restricting the management plane to a trusted network is the load-bearing compensating control — and that the parameter-tampering flaw is chained to code execution, so it requires web-shell hunting and key rotation beyond the patch.
+
+## 0.15.40 — 2026-05-29
+
+Unauthenticated upload-or-injection RCE. Six CISA KEV-listed CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: unrestricted file uploads in SmarterTools SmarterMail (CVE-2025-52691) and TeamT5 ThreatSonar (CVE-2024-7694), and command/argument injection in the React Native Community CLI Metro dev server (CVE-2025-11953), GNU InetUtils (CVE-2026-24061), the Smartbedded Meteobridge device (CVE-2025-4008), and Motex LANSCOPE Endpoint Manager (CVE-2025-61932). All map T1190; the uploads add T1505.003 (web shell) and the injections add T1059. The lessons flag the trust-inversion of a compromised security product (ThreatSonar), the supply-chain risk of an exposed developer build server (React Native CLI), and the fleet-wide reach of an endpoint manager (LANSCOPE) — each demanding downstream review beyond the patched host.
+
+## 0.15.39 — 2026-05-29
+
+Webmail cross-site scripting. Three CISA KEV-listed webmail XSS CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: the MDaemon WorldClient webmail flaw (CVE-2024-11182) and two Roundcube Webmail flaws (CVE-2024-42009, CVE-2025-68461). Script runs in the victim's authenticated mail session the moment they view a crafted email, so they map T1190 alongside T1539 (steal web session cookie). The lessons stress that patching the specific bug is not enough — a strict Content-Security-Policy and HttpOnly+SameSite session cookies are the durable controls that stop the next XSS from exfiltrating a session — and that response must invalidate webmail sessions and review mailboxes for unauthorized access and forwarding rules, because this class is repeatedly used by espionage actors for silent mailbox theft.
+
+## 0.15.38 — 2026-05-29
+
+Path traversal file access. Four CISA KEV-listed unauthenticated path-traversal CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Ruby on Rails Action View arbitrary file read (CVE-2019-5418), Srimax Output Messenger directory traversal chained to code execution (CVE-2025-27920), ZKTeco BioTime arbitrary file read (CVE-2023-38950), and the end-of-life D-Link DIR-859 router configuration disclosure (CVE-2024-0769). All map T1190; the secret-leaking file-read variants also map T1552. The lessons stress that patching does not undo the disclosure — every secret a traversal read must be rotated — that file-write traversals require hunting for dropped payloads, and that an end-of-life device (DIR-859) can only be replaced, not patched.
+
+## 0.15.37 — 2026-05-29
+
+Local and host privilege escalation. Four CISA KEV-listed escalation CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons, spanning four platforms: the Sudo chroot-handling local-to-root flaw (CVE-2025-32463), an Android Runtime privilege escalation (CVE-2025-48543), a VMware Aria Operations / VMware Tools guest privilege-management flaw (CVE-2025-41244), and the Windows SMB client NTLM-reflection-to-SYSTEM flaw (CVE-2025-33073). All map T1068; the SMB-client case also maps T1557.001 (NTLM relay). The lessons frame these as the escalation half of an intrusion chain and name the platform-specific backstops the frameworks leave unstated — SELinux/seccomp and least privilege on Linux, MDM-enforced OTA SLAs on Android, management-account segmentation for virtualization, and — most importantly — SMB signing plus NTLM disablement for the reflection class, which breaks the attack regardless of patch state.
+
+## 0.15.36 — 2026-05-29
+
+Client-side file and content handling. Four CISA KEV-listed CVEs where a victim processes attacker-supplied content are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: WinRAR archive-extraction path traversals that drop a payload into an autorun location (CVE-2025-6218, CVE-2025-8088 — the latter used by espionage actors), the Microsoft Video ActiveX (msvidctl) Internet Explorer drive-by (CVE-2008-0015), and the Git link-following flaw that lets a malicious repository write outside the working tree on clone/checkout (CVE-2025-48384). They map T1203 (exploitation for client execution) with T1547.001 for the archive autorun drops, and T1204.002 (user execution of a malicious file) for the Git repository case. The lessons name the load-bearing controls beyond patching: Mark-of-the-Web propagation to extracted files, ASR rules, ActiveX kill-bits and retiring end-of-life Internet Explorer, and hardened version-control clone settings (protectNTFS, disabling symlinks) on developer machines.
+
+## 0.15.35 — 2026-05-29
+
+Server-side processing of untrusted data. Seven CISA KEV-listed unauthenticated CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons. The remote-code-execution set — SAP NetWeaver deserialization (CVE-2025-42999), Wazuh server deserialization (CVE-2025-24016), Meta React Server Components (CVE-2025-55182), and XWiki eval injection (CVE-2025-24893) — maps T1190 and T1059; the forgery/disclosure set — OSGeo GeoServer XXE (CVE-2025-58360), Adminer SSRF (CVE-2021-21311), and Oracle E-Business Suite SSRF (CVE-2025-61884) — maps T1190. The lessons separate the RCE response (web-shell hunting and secret rotation) from the SSRF/XXE response (egress filtering, cloud-metadata blocking, disabling external entities), and flag two amplifiers: a compromised Wazuh monitoring server blinds detection across the estate, and SAP/Oracle E-Business Suite sit adjacent to financial data in PCI scope.
+
+## 0.15.34 — 2026-05-29
+
+Authentication bypass and missing authentication. Seven CISA KEV-listed CVEs that grant access without valid credentials are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: the Juniper ScreenOS hardcoded-backdoor credential (CVE-2015-7755), Sangoma FreePBX (CVE-2019-19006) and SKYSEA Client View (CVE-2016-7836) improper authentication, AMI MegaRAC SPx baseboard-management-controller authentication bypass by spoofing (CVE-2024-54085), the Erlang/OTP SSH server pre-authentication remote code execution (CVE-2025-32433), Oracle Fusion Middleware missing authentication (CVE-2025-61757), and the TP-Link TL-WA855RE extender missing authentication (CVE-2020-24363). All map T1190 and T1078; the Erlang flaw also maps T1059. The lessons make the load-bearing point that multi-factor authentication and password policy are irrelevant once authentication is bypassed — the compensating control is restricting the management plane to a trusted network — and that below-the-OS targets (the BMC) and planted backdoors require device rebuild, because firmware-level persistence survives an OS reinstall.
+
+## 0.15.33 — 2026-05-29
+
+Unauthenticated command/code-injection RCE. Eight CISA KEV-listed CVEs where attacker input reaches a shell or interpreter are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Array Networks ArrayOS AG (CVE-2025-66644), CWP Control Web Panel (CVE-2025-48703), Libraesva Email Security Gateway (CVE-2025-59689), Trend Micro Apex One console (CVE-2025-54948), GNU Bash Shellshock-family parsing (CVE-2014-6278), PHPMailer sender-address injection (CVE-2016-10033), Jenkins CLI Java deserialization (CVE-2017-1000353), and Fortra GoAnywhere MFT license-servlet deserialization (CVE-2025-10035). All map T1190 and T1059. The lessons highlight a high-fidelity detection signal — a shell or interpreter spawned from a web/daemon process — and stress that bundled-library flaws (Bash, PHPMailer) require updating every consumer, while CI, MFT, and EDR-console compromise carries downstream supply-chain and data reach beyond the patched host.
+
+## 0.15.32 — 2026-05-29
+
+Network devices and edge appliances. Seven CISA KEV-listed unauthenticated CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons, spanning enterprise appliances — F5 BIG-IP stack overflow (CVE-2025-53521), HPE OneView code injection (CVE-2025-37164), Versa Concerto SD-WAN orchestrator authentication bypass (CVE-2025-34026) — and SOHO/embedded devices: ASUS router OS command injection (CVE-2023-39780) and authentication bypass (CVE-2021-32030), Digiever DVR missing authorization (CVE-2023-52163), and Sierra Wireless AirLink ALEOS unrestricted upload (CVE-2018-4063). All map T1190, with per-class T1059, T1078, or T1505.003. The lessons split remediation by device class: enterprise appliances must be rebuilt and re-keyed after compromise, while embedded/SOHO devices — often end-of-life and recruited into botnets — require firmware re-flash or replacement rather than patch-in-place.
+
+## 0.15.31 — 2026-05-29
+
+Internet-facing server-side web applications. Seven CISA KEV-listed unauthenticated CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: server-side request forgery in GitLab (CVE-2021-22175, CVE-2021-39935) and Omnissa Workspace ONE UEM (CVE-2021-22054), PaperCut NG/MF authentication bypass (CVE-2023-27351), the Adobe Commerce/Magento "SessionReaper" session-takeover flaw (CVE-2025-54236), Adobe Experience Manager Forms code execution (CVE-2025-54253), and Sitecore ViewState deserialization via a known machine key (CVE-2025-53690). All map T1190, with per-class T1059 (code injection/deserialization) or T1078 (auth bypass/session takeover). The lessons separate the SSRF defense (egress filtering and cloud-metadata blocking as compensating controls) from the RCE/auth defense (web-shell hunting, machine-key rotation, and session invalidation beyond the patch).
+
+## 0.15.30 — 2026-05-29
+
+Software supply-chain code integrity. Three CISA KEV-listed CVEs where code is trusted without integrity verification are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: the TrueConf client and Notepad++ download code/updates without an integrity check (CVE-2026-3502, CVE-2025-15556), and a Trivy distribution shipped embedded malicious code that runs in the trusted context of the vulnerability scanner (CVE-2026-33634). All map T1195.002 (Compromise Software Supply Chain). The lessons frame the defense as enforced signature and provenance verification — code signing, Sigstore/in-toto, SLSA build provenance, TLS-pinned update channels — rather than patching, and note that response is environment-wide because a compromised updater or scanner reaches every host it runs on.
+
+## 0.15.29 — 2026-05-29
+
+ICS/OT devices. Four CISA KEV-listed industrial-control and operational-technology CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: OpenPLC ScadaBR SCADA/HMI (CVE-2021-26828 unrestricted file upload, CVE-2021-26829 cross-site scripting), Hikvision IP camera authentication bypass (CVE-2017-7921), and the Rockwell Automation Logix protected-credential weakness (CVE-2021-22681). All map T1190, with per-class T1505.003, T1078, or T1552. The lessons carry an OT-specific framing: these devices frequently cannot be patched on an IT cadence, so the load-bearing controls are IEC 62443 zones-and-conduits segmentation, removal of IT/internet reachability, and OT-network monitoring — and response must validate process/control-logic integrity, not just perform IT cleanup, because compromise can have physical and safety consequences.
+
+## 0.15.28 — 2026-05-29
+
+Web applications and developer tooling. Six CISA KEV-listed unauthenticated server-side CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Laravel Livewire code injection (CVE-2025-54068), n8n dynamic-code execution (CVE-2025-68613), JetBrains TeamCity authentication bypass via path traversal (CVE-2024-27199), and arbitrary file-read path traversals in Grafana (CVE-2021-43798), Gogs (CVE-2025-8110), and the Vite dev server (CVE-2025-31125). All map T1190, with per-class T1059 (code injection), T1078 (auth bypass), or T1552 (file reads that leak configuration/source secrets). The lessons stress that file-disclosure flaws demand rotation of every exposed secret, and that CI/developer-tool compromise (TeamCity) carries software-supply-chain risk to build artifacts beyond the server itself.
+
+## 0.15.27 — 2026-05-29
+
+Mobile device exploitation. Four CISA KEV-listed mobile CVEs that together form a mobile-spyware chain are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Samsung image-parsing-library out-of-bounds writes exploited zero-click via a malicious image (CVE-2025-21042, CVE-2025-21043) map T1203, and Android Framework local privilege escalation and an information-disclosure primitive (CVE-2025-48572, CVE-2025-48633) map T1068. The lessons frame these as the initial-access and local-escalation halves of a commercial-surveillance chain, and name OEM/carrier OTA cadence (Samsung SMR, Android Security Bulletin), MDM-enforced update SLAs, and mobile-threat-defense as the load-bearing controls — patch reach, not just patch availability, is the gap.
+
+## 0.15.26 — 2026-05-29
+
+Unauthenticated network-service RCE. Five CISA KEV-listed server-side CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Samsung MagicINFO 9 Server (CVE-2024-7399 path traversal + file upload, CVE-2025-4632 the path-traversal patch-bypass variant), Wing FTP Server remote code execution (CVE-2025-47812, exploitable via anonymous login), VMware vCenter Server DCE/RPC out-of-bounds write (CVE-2024-37079), and the wormable Windows Server Service RPC overflow MS08-067 (CVE-2008-4250, exploited by Conficker). All map T1190, with T1505.003 for the upload-to-web-shell flaw and T1059 for the injection RCE. The lessons carry the long-tail patch-hygiene warning that MS08-067 still exemplifies, and require web-shell hunting or host rebuild beyond the patch.
+
+## 0.15.24 — 2026-05-29
+
+IT-management and enterprise platforms. Eight CISA KEV-listed unauthenticated server-side CVEs on platforms whose compromise reaches the managed estate are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: N-able N-Central RMM (CVE-2025-8876 command injection, CVE-2025-8875 insecure deserialization), SysAid On-Prem ITSM XXE (CVE-2025-2775, CVE-2025-2776), SimpleHelp remote support (CVE-2024-57728 path traversal, CVE-2024-57726 missing authorization), Quest KACE Systems Management Appliance authentication bypass (CVE-2025-32975), and Oracle E-Business Suite remote code execution (CVE-2025-61882). All map T1190, with per-class T1059 (code injection/deserialization) or T1078 (auth bypass). The lessons stress that management-platform compromise is fleet-wide — response must rotate credentials and audit every action pushed to downstream managed systems during the exposure window, not just patch the server.
+
+## 0.15.23 — 2026-05-29
+
+Microsoft client-side document/web exploitation and protection bypass. Eight CISA KEV-listed CVEs that all begin with a victim opening attacker-controlled content are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons. They are mapped by technique class: memory-corruption code execution (CVE-2025-30397 Scripting Engine type confusion, CVE-2026-21519 type confusion, CVE-2009-1537 DirectShow media parsing) maps T1203; Mark-of-the-Web / SmartScreen protection bypass (CVE-2026-21513 MSHTML, CVE-2026-21510 Windows Shell) maps T1211 with T1553.005; Office security-feature bypass (CVE-2026-21514 Word Protected View, CVE-2026-21509 Office) maps T1211; and VBA insecure library loading (CVE-2012-1854) maps T1574.001. The lessons stress that the protection-bypass flaws prove a single control (SmartScreen, Protected View, Mark-of-the-Web) cannot be the only barrier — layered defenses (ASR rules, application control, content filtering) are required.
+
+## 0.15.22 — 2026-05-29
+
+Windows kernel/driver LPE. Five CISA KEV-listed Windows local-privilege-escalation CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: an Ancillary Function Driver for WinSock use-after-free (CVE-2025-32709), a Common Log File System driver heap overflow (CVE-2025-32706), a kernel use-after-free (CVE-2025-62221), an improper-privilege-management flaw (CVE-2026-21533), and an improper-access-control elevation in a privileged service (CVE-2025-59230). All map T1068 (Exploitation for Privilege Escalation). The lessons frame these as the escalation half of the ransomware chain (initial access → unpatched LPE → SYSTEM within hours) and name hypervisor-protected code integrity (HVCI/VBS) and the Microsoft Vulnerable Driver Blocklist as load-bearing endpoint controls beyond the patch.
+
+## 0.15.21 — 2026-05-29
+
+Legacy browser/reader client-side RCEs. Six CISA KEV-listed client-side memory-corruption CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Adobe Acrobat/Reader (CVE-2020-9715 use-after-free, CVE-2009-3459 heap overflow), Internet Explorer (CVE-2010-0249 the Operation Aurora zero-day, CVE-2010-0806 iepeers, CVE-2013-3893 the SetMouseCapture watering-hole flaw), and Mozilla Firefox (CVE-2010-3765). All map T1203 (Exploitation for Client Execution). The lessons frame these as long-tail KEV re-listings — the fixes shipped years ago, but unpatched and end-of-life estates (notably the unsupported Internet Explorer) remain exposed; retiring end-of-life browsers and application hardening (Protected Mode/View, ASR rules) are the load-bearing controls.
+
+## 0.15.20 — 2026-05-29
+
+Internet-facing network devices. Eight CISA KEV-listed unauthenticated CVEs on SOHO routers, a telephony appliance, and a firewall are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: TP-Link routers (CVE-2023-50224 authentication bypass, CVE-2025-9377 and CVE-2023-33538 command injection), DrayTek Vigor command injection (CVE-2024-12987), Sangoma FreePBX (CVE-2025-64328 command injection, CVE-2025-57819 authentication bypass + SQL injection), and WatchGuard Firebox out-of-bounds-write RCE (CVE-2025-14733, CVE-2025-9242). All map T1190, with per-class T1059 (command injection) or T1078 (auth bypass). The lessons account for the realities of edge devices: end-of-life firmware that can only be replaced, recruitment into botnets and operational-relay networks, telephony toll fraud on the PBX, and the requirement to re-flash/rebuild and rotate secrets rather than patch in place.
+
+## 0.15.19 — 2026-05-29
+
+Enterprise server-side applications. Eight CISA KEV-listed unauthenticated CVEs across manufacturing-operations, file-sharing, and remote-management software are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Dassault Systèmes DELMIA Apriso (CVE-2025-6204 code injection, CVE-2025-5086 deserialization, CVE-2025-6205 missing authorization), Gladinet CentreStack/Triofox (CVE-2025-14611 hard-coded cryptographic key, CVE-2025-11371 file disclosure leaking the machine key, CVE-2025-12480 improper access control), and ConnectWise ScreenConnect (CVE-2024-1708 path traversal, CVE-2025-3935 authentication bypass). All map T1190, with per-class T1059, T1078, T1552 (key disclosure/forgery), or T1505.003. The lessons stress that key-disclosure and authentication-bypass flaws require cryptographic-key rotation — not just patching — and that RMM/file-sharing/MES compromise extends the blast radius to downstream and OT-adjacent systems.
+
+## 0.15.18 — 2026-05-29
+
+Non-Windows kernel/driver LPE. Seven CISA KEV-listed local-privilege-escalation CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Qualcomm Adreno GPU / chipset flaws (CVE-2026-21385 integer overflow, CVE-2025-21479 and CVE-2025-21480 incorrect-authorization GPU flaws used in Android targeted chains, CVE-2025-27038 use-after-free) and Linux kernel flaws (CVE-2018-14634 "Mutagen Astronomy" integer overflow, CVE-2021-22555 netfilter heap out-of-bounds write, CVE-2023-0386 OverlayFS ownership). All map T1068 (Exploitation for Privilege Escalation). The lessons give platform-correct remediation — Android Security Bulletin OTA updates and MDM-enforced SLAs for the chipset entries, distribution kernel updates or live-patching plus kernel hardening for the Linux entries — and frame these as the escalation half of the attack chain.
+
+## 0.15.17 — 2026-05-29
+
+Chromium browser zero-days. Five CISA KEV-listed Google Chromium client-side CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: V8 JavaScript engine flaws (CVE-2025-13223 and CVE-2025-6554 type confusion, CVE-2025-5419 out-of-bounds read/write), a CSS use-after-free (CVE-2026-2441), and an ANGLE/GPU sandbox escape (CVE-2025-6558). All map T1203 (Exploitation for Client Execution); the sandbox-escape entry also maps T1068. The lessons stress same-day Chrome component-updater rollout — not gating browser updates behind a managed change window — as the load-bearing control, since these are weaponized within days in targeted-spyware and watering-hole chains.
+
+## 0.15.16 — 2026-05-29
+
+Web-application server-side RCE. Eight CISA KEV-listed unauthenticated web-app CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Kentico Xperience CMS (CVE-2025-2749 path-traversal + file upload, CVE-2025-2746 and CVE-2025-2747 alternate-channel authentication bypasses), Craft CMS code injection (CVE-2025-32432 and the related CVE-2024-56145), Roundcube Webmail deserialization (CVE-2025-49113), and SolarWinds Web Help Desk deserialization (CVE-2025-26399, CVE-2025-40551). All map T1190, with per-class T1059 (code injection / deserialization), T1078 (auth bypass), or T1505.003 (upload → web shell). The lessons stress web-shell hunting and application-secret rotation as required cleanup beyond the patch.
+
+## 0.15.15 — 2026-05-29
+
+Windows kernel/driver LPE. Seven CISA KEV-listed Windows local-privilege-escalation CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: a Common Log File System (CLFS) driver use-after-free (CVE-2025-32701 — CLFS is a recurring kernel-LPE target), a race condition (CVE-2025-62215), an untrusted-pointer dereference (CVE-2025-24990), link-following (CVE-2025-60710), a kernel out-of-bounds read primitive (CVE-2023-36424), an information-disclosure primitive (CVE-2026-20805), and improper privilege management (CVE-2021-43226). All map T1068 (Exploitation for Privilege Escalation). The lessons frame these as the second half of the ransomware chain (initial access → unpatched LPE → SYSTEM within hours) and stress hypervisor-protected code integrity (HVCI/VBS) and the Microsoft Vulnerable Driver Blocklist as load-bearing endpoint controls beyond the patch.
+
+## 0.15.14 — 2026-05-29
+
+Legacy Microsoft client-side RCEs. Six CISA KEV-listed older Microsoft document / browser / font-parsing RCEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Office (CVE-2009-0238), PowerPoint (CVE-2009-0556), Excel (CVE-2007-0671), Internet Explorer (CVE-2010-3962 — a landmark IE zero-day from the Operation Aurora era), Windows TrueType font parsing (CVE-2011-3402 — the Duqu zero-day), and Windows InformationCardSigninHelper ActiveX (CVE-2013-3918). All map T1203 (Exploitation for Client Execution). The lessons frame these as long-tail KEV re-listings — the patch landed years ago, but CISA re-lists because unpatched legacy estates remain exposed; centralized patch management plus Office hardening (Protected View, ASR rules) are the load-bearing controls.
+
+## 0.15.13 — 2026-05-29
+
+Citrix. Six CISA KEV-listed Citrix CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: four NetScaler ADC/Gateway appliance flaws (CVE-2026-3055 and CVE-2025-5777 — the CitrixBleed-class out-of-bounds reads that disclose authenticated session material; CVE-2025-7775 and CVE-2025-6543 memory-corruption buffer flaws) and two Session Recording flaws (CVE-2024-8069 deserialization RCE and CVE-2024-8068 privilege escalation). The CitrixBleed entries map T1552 alongside T1190 to surface session-token theft, and the lessons stress session termination + secret rotation (memory-disclosure class) and appliance rebuild (RCE class) as required steps beyond the patch.
+
+## 0.15.12 — 2026-05-29
+
+Zimbra mail server. Seven CISA KEV-listed Synacor Zimbra Collaboration Suite (ZCS) CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: the cross-site scripting cluster (CVE-2025-48700, CVE-2025-66376, CVE-2025-27915, CVE-2024-27443), the server-side request forgery pair (CVE-2020-7796, CVE-2019-9621), and the PHP remote-file-inclusion RCE (CVE-2025-68645). The lessons note ZCS is a recurring mass-exploited mail-server target where web-shell hunting and session-secret rotation are needed beyond the patch.
+
+## 0.15.11 — 2026-05-29
+
+Apple client-side zero-days. Nine CISA KEV-listed Apple memory-corruption CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons. They map T1203 (Exploitation for Client Execution) — and T1068 for the sandbox-escape steps that act as privilege links in a multi-stage chain — rather than the network-service T1190: improper locking (CVE-2025-43510), buffer overflows (CVE-2025-43520, CVE-2025-31277, CVE-2026-20700), use-after-frees (CVE-2023-43000, CVE-2023-41974), an integer overflow (CVE-2021-30952), and two code-execution flaws (CVE-2022-48503, CVE-2025-43200). The lessons frame these as targeted-spyware-chain components and stress same-day OS update vs. MDM change windows, with Lockdown Mode for high-risk users.
+
+## 0.15.10 — 2026-05-29
+
+Microsoft server-side RCE. Six CISA KEV-listed CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Exchange Server deserialization (CVE-2023-21529), Configuration Manager SQL injection (CVE-2024-43468), Windows Server Update Services deserialization (CVE-2025-59287), and the SharePoint Server "ToolShell" chain — improper authentication (CVE-2025-49706), code injection (CVE-2025-49704), and deserialization (CVE-2025-53770). The lessons stress that for these deserialization RCEs patching alone is insufficient: stolen machine keys and dropped web shells survive the patch and require explicit key rotation and web-shell hunting.
+
+## 0.15.9 — 2026-05-29
+
+Network devices and the Ivanti EPMM chain. Seven CISA KEV-listed unauthenticated CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: D-Link DIR-823X command injection (CVE-2025-29635), router buffer overflow (CVE-2022-37055), DCS-2530L/2670L camera code execution (CVE-2020-25078) and command injection (CVE-2020-25079), DNR-322L download-without-integrity (CVE-2022-40799), and the Ivanti EPMM authentication-bypass + code-injection preauth chain (CVE-2025-4427, CVE-2025-4428). The device lessons note that end-of-life consumer hardware is unpatchable, making network isolation the load-bearing control, and that firmware implants survive a reboot without a reflash.
+
+## 0.15.8 — 2026-05-29
+
+Cisco network devices. Seven CISA KEV-listed Cisco CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: SD-WAN path traversal (CVE-2022-20775), multi-product improper input validation (CVE-2025-20393), IOS/IOS XE SNMP DoS+RCE (CVE-2025-20352), the Secure Firewall ASA/FTD missing-authorization (CVE-2025-20362) and buffer-overflow (CVE-2025-20333) chain, and the Identity Services Engine injection pair (CVE-2025-20337, CVE-2025-20281). The ASA and device lessons note that network-device implants survive patching without explicit recovery steps.
+
+## 0.15.7 — 2026-05-29
+
+Fortinet network appliances. Six CISA KEV-listed Fortinet CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: FortiWeb OS command injection (CVE-2025-58034), path traversal (CVE-2025-64446), and SQL injection (CVE-2025-25257); FortiOS hard-coded credentials (CVE-2019-6693); and the multi-product improper-signature-verification (CVE-2025-59718) and stack-based buffer overflow (CVE-2025-32756).
+
+## 0.15.6 — 2026-05-29
+
+Enterprise management-plane and infrastructure. Six CISA KEV-listed CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: the Cisco Catalyst SD-WAN Manager cluster — incorrect privileged-API use (CVE-2026-20122), sensitive-information exposure (CVE-2026-20133), and recoverable password storage (CVE-2026-20128) — plus Microsoft SharePoint Server improper input validation (CVE-2026-32201), Fortinet FortiClient EMS improper access control (CVE-2026-35616), and Dell RecoverPoint for VMs hard-coded credentials (CVE-2026-22769).
+
+## 0.15.5 — 2026-05-29
+
+The client-side memory-corruption class. Four CISA KEV-listed browser/document-reader RCEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, a matching zero-day lesson, and ATT&CK enrichment to T1203 (Exploitation for Client Execution) rather than the network-service T1190: Google Chrome Skia out-of-bounds write (CVE-2026-3909), Chrome Dawn/WebGPU use-after-free (CVE-2026-5281), Chrome V8 memory-buffer flaw (CVE-2026-3910), and Adobe Acrobat/Reader prototype pollution (CVE-2026-34621). The lessons frame remediation as endpoint/browser patch-SLA (same-day auto-update vs. managed change windows) rather than perimeter patching.
+
+## 0.15.4 — 2026-05-29
+
+Draft-curation pass 2. Eight more CISA KEV-listed CVEs are promoted from auto-imported drafts to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons — the network-service authentication-bypass and code-injection class: Ivanti EPMM (CVE-2026-1281), SmarterTools SmarterMail auth bypass (CVE-2026-23760) and missing-auth (CVE-2026-24423), Cisco Unified Communications code injection (CVE-2026-20045), cPanel & WHM / WP2 missing authentication (CVE-2026-41940), Ivanti EPM authentication bypass (CVE-2026-1603), Cisco Catalyst SD-WAN improper authentication (CVE-2026-20127), and Fortinet multi-product authentication bypass (CVE-2026-24858).
+
+The catalog-gap `temporal-staleness` class no longer counts a passed CISA KEV due-date. That date is a fixed external operator-remediation deadline, not a measure of whether a catalog entry's data is current — every historical KEV entry's due-date passes by calendar. The class now reflects only maintainer-controllable data-freshness (source verification, last-updated, and EPSS recency), so `exceptd`'s gap audit no longer reports every aged KEV entry as stale.
+
+## 0.15.3 — 2026-05-29
+
+Draft-curation pass (1 of an ongoing series). Eight CISA KEV-listed CVE entries that were carried as auto-imported drafts are promoted to fully-curated entries with behavioral IOCs, ATT&CK enrichment, and matching zero-day lessons: Apache ActiveMQ (CVE-2026-34197), Microsoft SharePoint deserialization (CVE-2026-20963), BeyondTrust RS/PRA command injection (CVE-2026-1731), Fortinet FortiClient EMS SQL injection (CVE-2026-21643), Ivanti EPMM code injection (CVE-2026-1340), Cisco Secure Firewall Management Center deserialization (CVE-2026-20131), Broadcom VMware Aria Operations command injection (CVE-2026-22719), and Soliton FileZen command injection (CVE-2026-25108). The CVSS, KEV status, and vendor advisories were retained from the verified import; curation adds detection and response guidance.
+
+## 0.15.2 — 2026-05-29
+
+Every curated catalog entry now carries detection IOCs. The 51 operator-curated CVE/MAL entries that previously lacked an `iocs` block — spanning the actively-exploited perimeter and supply-chain entries (runc, xz-utils, SolarWinds, Citrix, ConnectWise, Cisco SD-WAN, FortiOS), the AI-ecosystem cluster (MLflow, vLLM, Ollama, LangChain, the MCP SDK, Big Sleep AI-discovered bugs), the malicious-package supply-chain worms (Shai-Hulud, ultralytics, the RubyGems/PyPI stealers), and the Pwn2Own appliance chains — now ship behavioral detection indicators derived from each entry's documented vulnerability mechanics, with the indicator provenance recorded per entry. Detection coverage for the curated catalog is now complete.
+
+## 0.15.1 — 2026-05-29
+
+Skill content and catalog hygiene.
+
+Every skill now describes its requirements in its own terms. References that pointed at the project's internal contributor guide by name or number — "per AGENTS.md", "Hard Rule #N", "DR-N" — have been replaced with the substance of the rule, since an operator reading a shipped skill cannot resolve those pointers. The behavior each rule mandates is unchanged and stated inline (CVSS reported alongside RWEP, global-first jurisdiction coverage, the zero-day learning loop, no orphaned controls, and so on). Version stamps left in skill frontmatter comments were removed.
+
+Seven flagship actively-exploited catalog entries — runc "Leaky Vessels" (CVE-2024-21626), the xz-utils backdoor (CVE-2024-3094), SolarWinds Orion (CVE-2020-10148), Citrix NetScaler (CVE-2023-3519), ConnectWise ScreenConnect (CVE-2024-1709), Cisco SD-WAN (CVE-2026-20182), and Fortinet FortiOS (CVE-2024-21762) — now carry structured `vendor_advisories` (vendor, advisory id, URL, published date) drawn from their verified public advisories.
+
+## 0.15.0 — 2026-05-28
+
+Validation and gate hardening. Several catalog and skill integrity checks that had been deferred as non-blocking warnings now hard-fail the predeploy gate, and two latent gate weaknesses are closed.
+
+Catalog, skill, and playbook validation now runs in strict mode in the release gate: an unresolved cross-catalog reference (a CVE citing a CWE / ATT&CK / ATLAS / D3FEND id or framework control that doesn't exist), a CVSS vector that doesn't match a known `CVSS:(2.0|3.0|3.1|4.0)/` prefix, a `cisa_kev: true` entry missing its listing date, a public-PoC entry missing IOCs (Hard Rule #14), an incomplete skill body, or playbook enum/symmetry drift now block a release instead of scrolling past as warnings. Auto-imported drafts remain exempt.
+
+The `_meta.entry_count` drift guard now covers every catalog that declares the field, not only framework-control-gaps — closing the hole that had let the zero-day-lessons counter drift to 68 while the file held 422 (now corrected). The RWEP scoring invariants (Shape A/B/mixed factor detection and recomputed-vs-stored divergence) are now enforced against the shipped catalog by a test gate, where previously they ran only against synthetic fixtures.
+
+The `temporal-staleness` catalog-gap class now counts curated entries only. A CISA KEV due-date passing by calendar drift on the un-curated bulk-import backlog is expected and no longer accrues against the budget — which had crept to one slot of headroom and would have failed a future release with no code change. The budget is retightened to reflect the curated-only count.
+
+CLI surface cleanup. The dead handlers behind the verbs removed in 0.13.0 (`govern`, `direct`, `look`, `ingest`) are gone, and those verbs are no longer surfaced as "did you mean" suggestions. Unknown-flag rejection now covers `report`, `watch`, `framework-gap`, and `skill` (an unrecognized flag on these hard-fails with a structured envelope, matching the rest of the surface). The local-only `scan`, `dispatch`, and `currency` verbs now accept `--air-gap` / `--offline` / `--no-network` instead of rejecting the tool's own global flags. The `--format summary` evidence bundle no longer carries always-null `feeds_into` / `jurisdiction_clocks_active` keys (the populated values come from the close phase).
+
+Documentation: corrected catalog counts (427 CVEs, 173 CWEs, the full 8888-entry RFC index) and documented the `report` verb in the CLI reference.
+
+## 0.14.28 — 2026-05-28
+
+Catalog expansion — 2025 actively-exploited perimeter and file-transfer RCE cluster. Four CISA KEV-listed, ransomware-associated entries are now fully curated with RWEP scoring, IOCs, zero-day lessons, and reverse-referenced CWE/ATT&CK/framework mappings:
+
+- **CVE-2025-0282** — Ivanti Connect Secure stack-overflow preauth RCE, exploited as a zero-day with the SPAWN malware ecosystem (RWEP 85). Patch alone is insufficient on compromised appliances — factory reset is required.
+- **CVE-2025-22457** — Ivanti Connect Secure stack-overflow RCE, initially mis-triaged as a low-risk DoS and patched as such, then weaponized to RCE (RWEP 83). Demonstrates the severity-mis-triage failure mode for perimeter preauth flaws.
+- **CVE-2025-31324** — SAP NetWeaver Visual Composer Metadata Uploader, unauthenticated file upload to RCE via JSP web shell, CVSS 10.0 (RWEP 78). Complements the existing NetWeaver deserialization entry it was chained with.
+- **CVE-2025-31161** — CrushFTP HTTP authorization-header authentication bypass to crushadmin takeover (RWEP 76).
+
+Adds CWE-305 (Authentication Bypass by Primary Weakness) to the CWE catalog as the authoritative mapping for the CrushFTP entry.
+
+## 0.14.27 — 2026-05-28
+
+Catalog expansion — CI/CD and IDE-extension supply-chain compromise cluster. Three CISA KEV-listed, actively-exploited CWE-506 (embedded malicious code) entries are now curated with full RWEP scoring, IOCs, zero-day lessons, and reverse-referenced technique/CWE/framework mappings:
+
+- **CVE-2025-30066** — tj-actions/changed-files GitHub Action: mutable release tags repointed to code that dumped CI/CD secrets to public workflow logs (~23,000 dependent repositories).
+- **CVE-2025-30154** — reviewdog/action-setup GitHub Action: trojanized and reached consumers transitively through five dependent reviewdog actions, defeating consumer-side commit-SHA pinning of the outer action.
+- **CVE-2026-48027** — Nx Console IDE extension: a malicious marketplace version (18.95.0) harvested developer credentials on install; clean at 18.100.0.
+
+Two framework-control-gap entries the cluster exposes are added with compliance-theater tests: **NIST 800-53 SR-11 (Component Authenticity)** — authenticity by publisher identity does not detect an authentic-publisher malicious artifact — and **OWASP CICD-SEC-3 (Dependency Chain Abuse)** — action pinning must extend to transitively-included actions and to developer-endpoint IDE extensions.
+
+## 0.14.26 — 2026-05-28
+
+`citation-hygiene` `rfc-number-title-mismatch` now fires only on an explicitly quoted title that conflicts with the registry title (`RFC 9404 "Sieve Email Filtering Language"` when 9404 is the JMAP Blob extension). The previous whole-line token-overlap heuristic flagged the ordinary ways developers cite RFCs — a mechanism description (`CRLF line endings per RFC 5322 §2.3`), a section pointer, a well-known short name (`RFC 9051 (IMAP4rev2)`), and even an RFC-number-shaped token inside code (`envelope.rfc822` → "RFC 822") — because that surrounding prose or code never shares vocabulary with the formal registry title. Those forms state no title and are no longer flagged; a genuinely conflicting quoted title still fires. The deterministic catalog-backed checks (`fabricated-cve-id`, `rejected-or-disputed-cve`, RFC-not-in-index) are unchanged.
+
+## 0.14.25 — 2026-05-28
+
+`secrets` collector `ssh-private-key-block` accuracy:
+- The in-source content scan now requires a complete PEM block — header, base64 body, and closing marker — so a bare `BEGIN … PRIVATE KEY` header used as a detection pattern (a redaction or DLP library's regex literal) or a documentation placeholder no longer registers as an embedded key.
+- File classification is now content-aware for the ambiguous `.pem` / `.key` extensions. A certificate chain (`fullchain.pem`) or a public trust anchor (`bimi-trust-anchors.pem`) is conventionally `.pem` but carries no private key; it is treated as a private-key file only when its content actually contains a `PRIVATE KEY` block. Binary keystores (`.p12` / `.pfx`) and conventionally-named SSH keys (`id_rsa`, …) remain classified by name. A `.pem` or `.key` holding a real private key still fires.
+
+## 0.14.24 — 2026-05-28
+
+`crypto-codebase` `hardcoded-key-material` now requires a complete PEM block — a `BEGIN … PRIVATE KEY` header, a base64 body, and a closing `END` marker — before it fires. A bare `BEGIN … PRIVATE KEY` marker carrying no key body is a *detection pattern*, not a leak: a redaction or DLP library's regex literal that matches the key header (to redact keys), or a documentation placeholder such as `privateKeyPem: "<elided>"`, no longer registers as embedded key material. An actual pasted private key still fires.
+
+## 0.14.23 — 2026-05-27
+
+`crypto-codebase` collector accuracy:
+- `hardcoded-key-material` now fires on private-key blocks only. A public key or certificate embedded in source (a pinned release-signing public key, a BIMI trust anchor, an autoupdate verification key) is published by design and is no longer flagged as leaked key material — it was inflating crypto risk on repositories handling keys correctly.
+- `vendored-pqc-no-provenance` now recognizes `MANIFEST.json` (the common vendor-tree provenance record holding upstream version, source, and license) as provenance, alongside the existing markers. A vendored post-quantum tree documented this way no longer reports as provenance-less.
+
+`containers` collector now resolves `ARG`-interpolated base references. A digest pinned through an ARG default (`ARG BASE=image@sha256:…` then `FROM ${BASE}`) is recognized as digest-pinned, and a base reference whose interpolation can't be resolved from an in-file `ARG` default no longer raises `dockerfile-from-latest` — an unknown reference can't be proven to float on `:latest`. A resolved-but-undigested tag still fires `dockerfile-no-digest-pin`, and a literal unpinned or `:latest` image still fires.
+
+## 0.14.22 — 2026-05-27
+
+The `containers` collector no longer false-flags multi-stage build-stage references. A `FROM <stage>` line that refers to an earlier `FROM <image> AS <stage>` is an internal build-stage reference, not a registry image, so it needs no tag or digest — but it was raising `dockerfile-from-latest` and `dockerfile-no-digest-pin` on every normal multi-stage Dockerfile. Stage references are now exempt; real registry images (unpinned or `:latest`) still fire.
+
+## 0.14.21 — 2026-05-27
+
+The survey/meta skills `framework-gap-analysis`, `threat-modeling-methodology`, and `global-grc` now document why their `atlas_refs` / `attack_refs` are intentionally empty (they correlate or teach across other skills' technique mappings rather than owning a native TTP set), matching the "Frontmatter Scope" note the other meta skills already carry. A reader inspecting the frontmatter alone no longer sees zero technique coverage and assumes the skill maps to nothing.
+
+## 0.14.20 — 2026-05-27
+
+Skill content cleanup:
+- `sector-telecom` no longer labels its analysis-procedure subsections with the CLI verb names that were removed in 0.13.0 (`govern`, `direct`, `look`, etc.) — the section headings are neutral procedural language now. Its reference to `cred-stores` is annotated as a playbook (not a skill, matching the convention three sibling skills already use), and its `last_threat_review` date is quoted consistently with every other skill.
+- `threat-model-currency` no longer pins an outdated date literal in its body that contradicted the frontmatter — it references the frontmatter `last_threat_review` so the assertion can't desync.
+- `pqc-first` no longer leaks the engine's internal phase numbering ("Phase 5 analyze") into operator-facing output prose.
+- `email-security-anti-phishing` no longer cites an internal contributor rule by name in its threat-context narrative.
+
+## 0.14.19 — 2026-05-27
+
+Catalog data-integrity pass:
+- The AI supply-chain CVE families ShadowMQ (`CVE-2025-23254`, `CVE-2025-30165`, `CVE-2024-50050`, `CVE-2025-60455`) and the Triton authentication-bypass pair (`CVE-2026-24206`, `CVE-2026-24207`) now carry their ATLAS mapping (`AML.T0049`, Exploit Public-Facing Application) — matching the sibling entries in the same families that were already mapped.
+- The `active_exploitation: "theoretical"` status (a published PoC with no observed in-the-wild exploitation) is now an explicit entry in the RWEP active-exploitation ladder instead of falling through to the zero default.
+- The `framework-control-gaps` catalog's declared entry count is corrected (it read 184 while the catalog held 192) and a validator gate now fails if the declared count ever drifts from the actual count again.
+- The derived staleness index counts jurisdictions consistently with the README and the catalog-summaries index (GLOBAL included → 35), clearing a false "badge drift" staleness finding.
+
+## 0.14.18 — 2026-05-27
+
+`precondition_check_source` now reports accurate provenance. A precondition supplied in the submission is tagged `submission` (it was always `merged`, because the value was internally copied into the run options), and a precondition the engine auto-detected from the host is tagged `auto` (it was mislabeled `submission`). A genuine programmatic override that supplies the same precondition both ways is still `merged`. Precondition gating behavior is unchanged.
+
+## 0.14.17 — 2026-05-27
+
+New `recipes` verb. `exceptd recipes` lists the curated multi-skill workflows (use-case → ordered skill chain); `exceptd recipes <id>` expands one. These were previously reachable only by reading the catalog file.
+
+`ask` now points at the right skill for domains covered by a skill rather than a playbook. A question about email authentication (DMARC/DKIM/SPF/BIMI), child safety / age gates, HIPAA / healthcare, or data-loss prevention surfaces the matching skill (`email-security-anti-phishing`, `age-gates-child-safety`, `sector-healthcare`, `dlp-gap-analysis`) instead of only a confident-looking but wrong playbook. A genuinely low-confidence match also notes that the topic may be skill-only.
+
+## 0.14.16 — 2026-05-27
+
+`collect` is dramatically faster on large repositories. The directory-walking collectors (`secrets`, `crypto-codebase`, `containers`, `citation-hygiene`) called `realpathSync` on every file for symlink-cycle detection and stat'd each file before reading it; the walk is now a single shared implementation that resolves real paths only for directories and symlinks and reads files without a pre-stat. On a 5000-file repository `collect secrets` drops from ~1.1s to ~0.18s (and `collect containers` from ~0.7s to ~0.02s), with identical results.
+
+Cheap verbs start faster. The CVE catalog (~2.6 MB) was parsed at module load on every invocation; verbs that never analyze (`brief`, `plan`, `look`, `ask`, `lint`, `discover`) no longer pay that cost — the catalog is parsed lazily on the first run that needs it (a corrupt catalog still blocks a `run` cleanly).
+
+`ask` routes a few more questions correctly: a CI/OIDC question (e.g. "my CI runner leaked an OIDC token") routes to `cicd-pipeline-compromise` instead of the supply-chain playbooks, and an "AI command and control" question routes to `ai-api`. Common two-letter English filler words ("do", "is", "to", …) no longer produce a spurious low-confidence match for nonsense questions.
+
+Removed an always-empty `recipes` field from the CVE cross-reference result. Recipes are use-case curated, never CVE-keyed, so a per-CVE recipe lookup could never populate.
+
+## 0.14.15 — 2026-05-27
+
+Emitted CSAF 2.0 and SARIF 2.1.0 documents now pass strict schema/profile validation:
+- Every CSAF vulnerability carries `notes` (CVE-keyed entries previously omitted it, failing the security-advisory profile's mandatory test).
+- A clean run's `csaf_informational_advisory` no longer carries a `/vulnerabilities` array or a `/product_tree` (both are wrong for the informational profile) and now includes the required external `/document/references` entry.
+- `tracking.version` equals the last `revision_history` number and uses the same versioning scheme as it (previously the version was the playbook semver while the revision number was the integer `1` — two violations: a version/revision mismatch and mixed versioning schemes).
+- SARIF results with `kind: "informational"` (framework-gap findings) now use `level: "none"` instead of `"note"`; the SARIF spec requires `level: "none"` whenever `kind` is not `"fail"`, so strict validators and GitHub code scanning previously rejected those results.
+- SARIF `artifactLocation.uri` values from a submission-supplied evidence location are normalized to forward slashes. A Windows operator passing a native backslash path previously produced URIs that violate the SARIF URI-reference requirement (the collector-derived locations were already normalized; submission-threaded ones were not).
+
+## 0.14.14 — 2026-05-27
+
+Attestation durability and verification:
+- Attestations are now written atomically. The body and its Ed25519 `.sig` sidecar are written to fsync'd temporary files and placed together (the body via an atomic create that still detects a session-id collision, the sidecar alongside it), so a crash or out-of-space mid-write can no longer leave a truncated `attestation.json` or a body without its signature. A failed write also leaves no partial file at the slot.
+- `attest verify` now flags a deleted `.sig` sidecar as tampering (exit 6) when a signature was expected — i.e. when a signing key is present or a sibling attestation in the same session is signed — instead of accepting it as a benign "unsigned" attestation (exit 0). This makes the default `attest verify` agree with `reattest`, which already refused. A genuinely unsigned attestation on a keyless host stays benign.
+- A `run` now blocks (`blocked_by: "mutex"`) when a live concurrent process holds the run lock, rather than proceeding without the lock after losing the acquire race. Same-process reentrancy and filesystem quirks are unaffected.
+
+## 0.14.13 — 2026-05-27
+
+Security: a collector scanning a hostile repository no longer hangs on a crafted file. Three workflow/Dockerfile/manifest scanners (`library-author`, `cicd-pipeline-compromise`, `containers`) had a regex that backtracked catastrophically on a long whitespace line — a single planted file could wedge the scan for minutes. The regexes are fixed and a per-line length cap bounds any future regression.
+
+Deeply-nested evidence is now rejected with an actionable message instead of crashing with an opaque "internal error". The submission canonicalizer (which runs on every `run` to compute the evidence hash) recursed without bound; it now refuses a submission nested beyond 200 levels.
+
+`run --strict-preconditions` now fails (exit 1) when a `skip_phase` precondition is false. Previously such a run skipped the detect phase and exited 0, so a CI gate relying on the flag silently passed despite the detection never running.
+
+Detection no longer silently loses or buries a result:
+- A `signal_overrides` value that isn't a recognized result (e.g. `"maybe"`, a number) now surfaces a `signal_override_unrecognized` runtime error instead of being dropped as if the signal were never supplied.
+- A `not_detected` / `clean` classification override is refused when it would bury a deterministic indicator hit (a deterministic hit is too strong to downgrade to "nothing found"); the run stays inconclusive with an explanatory error. Probabilistic hits remain overridable for the legitimate "I confirmed these are benign" workflow. A refused override is no longer reported as applied.
+
+`run --all` / `run-all` now exits 7 (session-id collision) when a reused `--session-id` collides across the batch, matching the single-run behavior — previously a batch that persisted nothing exited 0 and reported success.
+
+`watch --help` prints usage and exits instead of starting the blocking daemon and hanging the terminal; `collect --help` now prints its synopsis. The `--help` synopsis for the spawned verbs (`watch`, `watchlist`, `report`, `scan`, `dispatch`, `currency`, `validate-cves`, `validate-rfcs`) is filled in.
+
+README corrects the `watch` / `watchlist` documentation (the one-shot aggregator with `--alerts` / `--org-scan` is `watchlist`; `watch` is the long-running daemon) and the `refresh --prefetch` description (it warms the cache by fetching, the opposite of the report-only `--no-network`).
+
+## 0.14.12 — 2026-05-27
+
+Structured-bundle accuracy:
+- CSAF advisories no longer attribute exploitation to the CISA KEV catalog for a CVE that is confirmed-exploited but not actually in KEV — the "(CISA KEV)" parenthetical is now conditional on the CVE's KEV status.
+- An empty-evidence run emits a `csaf_informational_advisory` instead of a `csaf_security_advisory` with an empty `vulnerabilities` array (Profile 4 expects vulnerabilities; the informational profile does not).
+- SARIF `cve_match` results now carry a `locations` entry. Without it, GitHub Code Scanning silently dropped the highest-severity result class.
+- SARIF and OpenVEX render "not assessed" for an unassessed blast radius instead of the literal "null" / "null/5".
+- `ci --format csaf|sarif|openvex` emits a JSON array of the pure documents instead of an exceptd wrapper carrying a top-level `ok` key (which is invalid in all three formats). Each array element is now a conformant document.
+
+External-source command hardening:
+- `validate-rfcs` / `validate-cves` reject an unknown flag before doing any work, instead of silently defaulting to a live-network run that hangs on a typo'd flag.
+- `cve` and `rfc` now return `ok:false` (not `ok:true`) when the citation fails to stand up — the envelope matched the exit code was already 2, but `ok` was inverted.
+- `refresh`, `prefetch`, and the `scan`/`dispatch`/`currency`/`watchlist` verbs reject unknown flags instead of silently ignoring them; the latter four also emit a top-level `ok` in their `--json` output.
+- `framework-gap` and `skill` honor `--json` on their missing-argument paths (structured error, not plain text), and `skill --json` no longer treats `--json` as the skill name.
+
+`doctor`:
+- `doctor --rfcs` counts the whole RFC catalog (including the CSAF/draft/ISO citation families it previously dropped) with a `by_prefix` breakdown, and its freshness fields read the real catalog file instead of a path that never existed.
+- `doctor --fix` re-verifies signatures after generating a key and signing, so a successful bootstrap reports success (exit 0) rather than carrying the pre-fix "signatures failed" state through to a non-zero exit. It also refuses to generate a key when a fingerprint pin is present without the public key (a corrupted checkout) rather than producing an install that can never verify.
+- `doctor --shipped-tarball` runs the tarball round-trip even when combined with another selective flag (it was silently skipped). `doctor --ai-config` reports a warning when its scan hits the file cap, rather than an unqualified clean pass on an incomplete walk.
+
+Playbook validation hardening (enforcement for future drift; the shipped corpus is unaffected):
+- `domain.attack_refs` are cross-referenced against the ATT&CK catalog (they were unchecked).
+- An air-gap playbook with a network-sourced artifact lacking an `air_gap_alternative` is now rejected (the schema's air-gap conditional was never executed by the validator).
+- Empty `detect.indicators` / `look.artifacts` are rejected; every playbook must map to at least one real TTP (cross-cutting analysis playbooks excepted). Dangling `false_positive_profile` indicator references and invalid `clock_starts` / `frameworks_in_scope` values now fail validation instead of passing as warnings.
+
+RWEP factor validation accepts a numeric string consistently with the scorer (the two surfaces previously disagreed).
+
+## 0.14.11 — 2026-05-27
+
+Security: `reattest <session-id>` now validates the session-id before it is joined into a filesystem path, the same gate the other read verbs use. A `../`-bearing id previously escaped the attestation root — reading a forged attestation and writing a signed replay record outside the root. Such an id is now refused (exit 1) and nothing is written.
+
+Air-gap is now honored on every external-source path that previously leaked. `watchlist --org-scan`, `refresh --network`, and `prefetch` all consulted the network even under `--air-gap` / `EXCEPTD_AIR_GAP=1`; each now refuses (or, for `prefetch`, runs report-only) instead of egressing.
+
+The `sbom` collector no longer reports `lockfile-no-integrity` on every clean repository. It counted the npm lockfile's root entry — which legitimately has no integrity hash — as a missing-integrity dependency, so the indicator fired on any normal `package-lock.json`. It now counts only remote-tarball entries that lack integrity.
+
+The `secrets` collector no longer fires on the published AWS documentation example key (`AKIAIOSFODNN7EXAMPLE`), and a text file skipped for exceeding the size limit is now surfaced in `collector_errors` instead of being dropped silently. Secret/citation/crypto findings now carry the exact line in their evidence locations, so SARIF points at the line rather than the file.
+
+Cache-integrity refusals during `refresh` (sha256 mismatch, tampered or unindexed cache) now exit 4 — the documented "cache precondition failed" code — instead of the generic 1. `refresh --source ""` errors with the valid-source list instead of silently running every source; `cve "  "` (whitespace) is treated as a missing argument; `refresh --advisory "  "` gets the dedicated empty-advisory message. `refresh --help` documents exit 1 and the full meaning of exit 4.
+
+Human-readable output gaps closed across several verbs:
+- `run --all` / `run-all` print a per-playbook summary table instead of dumping the full JSON.
+- `attest diff --against` renders the same one-screen summary the no-argument form already did, rather than raw JSON.
+- A matched CVE renders `KEV=Y`/`KEV=N` (not the raw boolean); a deterministic indicator no longer prints `deterministic/deterministic`; a truncated remediation, an over-long fired-indicator list, and the `ci` framework-gap / jurisdiction-clock rollups now show how much was elided; a preflight warning that carries its text in `message` and a runtime warning that carries only context fields are now shown instead of `(no detail)` / a blank line.
+- `framework-gap <framework> <scenario>` summary line counts only the queried framework's gaps, matching the per-framework body (it previously reported the all-frameworks total).
+- `report executive` writes its progress notice to stderr so piped markdown is clean.
+- The synopsis now describes `watchlist` (the one-shot forward-watch aggregator) and `watch` (the long-running daemon) correctly; the inverted deprecation arrow is gone. `cve`/`rfc` help states their exit-2 contract.
+
+## 0.14.10 — 2026-05-27
+
+`ci <playbook> --evidence -` no longer reports a false PASS when handed a flat submission. `run` accepts a flat submission (`{ "signal_overrides": {...} }`) and so do operators by habit; `ci` keyed the input by playbook id, found nothing under that key, and evaluated an empty submission — a detected finding came back PASS. A single-positional `ci` invocation now treats a flat (non-bundle-shaped) submission as belonging to that playbook, so `ci` and `run` agree. A real bundle keyed by playbook id is still routed per-key.
+
+`ai-run <playbook> --no-stream --evidence -` now rejects a non-object submission (`null`, an array, a scalar) at the read boundary, matching `run`. Previously the no-stream path skipped the shape guard and ran a malformed submission as if it were empty, so an operator believed a bad payload had been evaluated.
+
+The `ci` framework-gap rollup now carries the gap explanation. Each rollup entry's `why_insufficient` was always null because the rollup read a field that doesn't exist on a gap record; the text lives in `actual_gap`, which is now surfaced (alongside `required_control`).
+
+A regulatory clock now starts on an engine-confirmed detection, not only on an agent-submitted classification. When indicators fire and the engine itself classifies the detect phase as `detected`, `--ack` starts the notification clock and computes the jurisdiction deadlines — previously the clock only moved if the submission also carried `detection_classification: "detected"`, so an engine-confirmed finding left every deadline stalled at `pending_clock_start_event`.
+
+`framework-gap <framework> <scenario>` refuses an unknown framework instead of returning a zero-gap report that reads as "no gaps found." A typo or an untracked framework now errors with the list of frameworks the catalog covers; the documented short forms (`NIST-800-53`, `PCI-DSS-4.0`) and `all` continue to resolve.
+
+## 0.14.9 — 2026-05-27
+
+`refresh --advisory <id> --air-gap` now refuses (no network) instead of egressing. The `--air-gap` flag was parsed but dropped before the fetch, so an air-gapped advisory seed silently reached GHSA/OSV — an air-gap-guarantee violation. Both the flag and the `EXCEPTD_AIR_GAP=1` env now refuse identically.
+
+`--tlp` is wired through. It stamps the emitted bundle's CSAF `document.distribution` marking (TLP 2.0), validates the label against `CLEAR | GREEN | AMBER | AMBER+STRICT | RED`, and is refused on info-only verbs — previously it was accepted but never applied (a silent no-op).
+
+`refresh --advisory ""` errors instead of silently running a full refresh, and `refresh --help` now documents refresh's own exit-code scheme — notably that its exit 3 means "draft produced, review pending" (distinct from `exceptd run`'s exit 3, "ran but no evidence"), so scripts should branch on the `ok` field rather than `$?`.
+
+## 0.14.8 — 2026-05-27
+
+SARIF output now carries file locations. A run's `results[].locations` are populated from per-indicator evidence locations, so a secret or file finding points at the file — and the line, when known — that triggered it instead of shipping location-less, which GitHub code scanning and most SARIF viewers drop or attribute to the repository root. A submission may supply locations directly (`evidence_locations: { "<indicator-id>": ["path", { "uri": "path", "startLine": N }] }`), and the code-scope collectors emit them from their hit data, so `exceptd collect <pb> | exceptd run <pb> --format sarif` produces located findings.
+
+## 0.14.7 — 2026-05-27
+
+The deprecated-alias help is now honest about behavior. `scan`, `dispatch`, `currency`, `validate-cves`, and `validate-rfcs` still run their original (legacy orchestrator) implementation and emit that older output shape — they are not transparent aliases of the canonical verbs listed as their replacements, and the help no longer implies otherwise.
+
+`attest diff --against <sid>` validates the comparison session-id with the same gate as the primary one, so a path-traversal or malformed value returns an explicit "invalid session-id" error instead of a misleading "no session dir found".
+
+## 0.14.6 — 2026-05-27
+
+`attest verify --require-signed` makes an unsigned or sidecar-stripped attestation a failure (exit 1) instead of accepting it as "unsigned, exit 0". An audit gate can now require a valid Ed25519 signature, closing the path where deleting the `.sig` downgraded a tampered attestation to a passing verify. Default `attest verify` stays lenient — an unsigned attestation is reported but not failed (the common keyless-CI case).
+
+New `attest prune --all-older-than <ISO> [--dry-run]` garbage-collects attestation sessions older than a cutoff. One attestation is written per `run` with no prior cleanup, so the store grew unboundedly; `--dry-run` previews the deletions, and removal is confined to the resolved attestation roots.
+
+## 0.14.5 — 2026-05-27
+
+`reattest` no longer reports a false "drifted" on an unchanged session. It now replays the original recorded submission instead of a hardcoded empty one, so unchanged evidence reproduces its prior hash and only a genuine change in the evidence (or the way it canonicalizes) shows as drift. The `attest diff` path was already correct; this fixes the replay-based `reattest`/`attest diff <sid>` verb, which previously emitted "drifted" — and wrote that bogus verdict into the audit trail — on every unchanged session.
+
+`exceptd discover --cwd <dir>` now scans the target directory instead of silently scanning the process working directory; a nonexistent or non-directory path errors cleanly rather than being ignored.
+
+`collect` warns on stderr when any precondition fails — not only when the collector emits an empty submission — so a collector that gathers artifacts but fails a consent/ownership gate (such as `cicd-pipeline-compromise`) tells you up front that `run` will block at preflight.
+
+`lint` distinguishes a required artifact that is present but intentionally uncaptured (e.g. a POSIX-mode probe a collector skips on Windows) from one that is absent, instead of advising you to add an artifact that is already there.
+
+## 0.14.4 — 2026-05-27
+
+Clearer errors. A case-only playbook typo — `run SECRETS` — now suggests the right id ("Did you mean: secrets?") instead of only printing the id-format rule. Input-validation errors (a bad `--scope`, malformed evidence) are reported plainly rather than dressed as an "internal error" with a file-a-bug pointer. `exceptd ask` now points a question that names a specific CVE or RFC at the direct resolver (`exceptd cve <id>` / `exceptd rfc <n>`). The malformed-CVE message reads accurately for a short year, not only a non-numeric tail, and the RFC resolver's documentation reflects that obsoleted/historic RFCs are now in the local index.
+
+## 0.14.3 — 2026-05-27
+
+The resolved-citation cache is now integrity-checked. Each cached record carries a content digest (covering its `resolved_at` timestamp) that is verified on read, and freshness is gated on that timestamp rather than the file's modification time. A cache file edited in place — flipping a rejected CVE to "published" — is rejected as tampered instead of trusted, and a touched file can no longer resurrect a stale verdict. This closes a path where a writable cache could launder a rejected or fabricated citation into a passing verdict (which feeds `collect citation-hygiene --resolve` and, in turn, attestations).
+
+`exceptd cve` and `exceptd rfc` reject unknown flags instead of silently ignoring them — a mistyped `--json` no longer emits human text into a pipe that asked for JSON.
+
+Malformed evidence is rejected at the boundary. A JSON `null`, array, or scalar piped to `run --evidence -` now returns "evidence must be a JSON object" instead of being silently accepted as an empty run or surfacing as an internal error.
+
+`collect citation-hygiene --resolve` now flags a cited RFC number that resolves to nothing, matching how it already flags a fabricated CVE. `ci --max-rwep` rejects a non-numeric or negative cap instead of silently coercing it to 0 (which had quietly degenerated the gate to "block everything"). `run --format` notes on stderr when it overrides `--json`. `cve`, `rfc`, `collect`, `watch`, and `report` are now listed in `exceptd help`.
+
+## 0.14.2 — 2026-05-27
+
+`exceptd collect citation-hygiene --resolve` now resolves the cited CVEs the offline catalog can't confirm — once each, through the shared resolver cache — and flips their verdicts instead of parking them as inconclusive for an agent to chase: a rejected or disputed identifier becomes a hit, a well-formed identifier NVD doesn't know becomes fabricated, and a confirmed one clears. Honors `--air-gap` (catalog and cache only, no network).
+
+The RFC index now includes obsoleted and historic RFCs (8888 entries, up from 7476). `exceptd rfc <number>` resolves a superseded RFC entirely offline — RFC 2616, for example, returns "Hypertext Transfer Protocol -- HTTP/1.1, obsoleted by RFC 7230–7235" — so confirming whether a cited RFC is still current no longer requires an IETF datatracker lookup.
+
+## 0.14.1 — 2026-05-27
+
+Two citation resolvers — `exceptd cve <id>` and `exceptd rfc <number>` — answer "is this CVE/RFC citation valid?" so an agent gets the answer from exceptd instead of researching each identifier against NVD or the IETF datatracker by hand. A fan-out of agents auditing a codebase previously re-researched the same citations independently; these resolvers do it once and cache the result for the rest.
+
+`exceptd cve <id>` returns a structured status — published, rejected, disputed, fabricated, nonexistent, or unknown — alongside CVSS / KEV / product. It resolves offline-first: the curated catalog, then a resolved cache, then a single NVD lookup whose result is cached under `.cache/upstream/resolved/` (7-day TTL). The first lookup of an uncatalogued identifier serves every later agent and every offline run. NVD's authoritative `vulnStatus` and `cveTags` are now read — they were previously fetched and discarded — so a rejected or disputed CVE is flagged rather than treated as valid (the class that lets a withdrawn identifier sit cited in a codebase unnoticed). A non-canonical identifier such as `CVE-2024-XXXX` is caught as fabricated with no network call. Network is opt-out: `--air-gap`, `--no-network`, or `EXCEPTD_AIR_GAP=1` keep resolution offline-only and return `unknown` with a reason. Exit code 2 when a citation will not stand up.
+
+`exceptd rfc <number>` resolves an RFC number to its title and status from the local index — the whole current RFC series, fully offline. `--check "<claimed title>"` reports whether a claimed title matches the real one (exit code 2 on mismatch), catching an RFC number cited under the wrong specification.
+
+Catalog entries may now carry a structured `status` field (`published` / `rejected` / `disputed` / `withdrawn` / `reserved`), sourced from NVD `vulnStatus` / `cveTags` or OSV / GHSA `withdrawn`, replacing the prior free-text heuristic. The `citation-hygiene` playbook now routes its "needs external verification" guidance through `exceptd cve` / `exceptd rfc`.
+
+## 0.14.0 — 2026-05-26
+
+New playbook — `citation-hygiene`. Validates a codebase's own cited security references: it scans source, comments, and docs for CVE and RFC citations and flags fabricated CVE IDs (the non-numeric `CVE-2024-XXXX` form), catalog-rejected/disputed CVEs, and RFC number-vs-title mismatches. Well-formed CVE IDs absent from the curated catalog are routed to an inconclusive "needs external verification" result rather than a false clear or a false fabrication flag. Ships with a companion collector — `exceptd collect citation-hygiene | exceptd run citation-hygiene --evidence -`. The catalog now holds 24 playbooks.
+
+Unknown flags are refused on every verb. Previously only `doctor` rejected an unrecognized flag; every other verb silently ignored it, so a typo like `--max-rweap 70` or `--fromat sarif` looked like it applied a cap or a format when it did nothing. Each verb now exits 1 with the accepted-flag list and a did-you-mean suggestion. A flag that is valid on another verb (e.g. `--csaf-status` on `brief`) still gets its tailored "that flag belongs on a run-class verb" guidance instead of a blanket refusal.
+
+`exceptd run --format json` now emits the full run result. It previously discarded the result and printed a short "unknown format" stub with a success exit code. SARIF, CSAF, and OpenVEX bundles are now emitted as spec-conformant documents — the internal `ok` envelope key is no longer prepended, so strict validators (GitHub code-scanning SARIF upload, CSAF trusted-provider checks) accept the output. Passing several `--format` values prints a note to stderr pointing at `bundles_by_format` rather than silently dropping all but the first.
+
+`exceptd collect <pb> | exceptd run <pb> --evidence -` works again. `collect` now emits JSON when its stdout is a pipe (the human summary is reserved for an interactive terminal), so the documented one-liner no longer feeds a prose summary into `run`.
+
+`exceptd refresh --check-advisories` polls the primary-source advisory feeds as documented (report-only; emits `diffs[]`) instead of being silently ignored.
+
+`skill --help` and `framework-gap --help` print usage instead of erroring.
+
+`exceptd attest list --limit <n>` caps the inventory; the JSON envelope reports the unfiltered total alongside the shown count.
+
+Code-scope collectors skip agent scratch (`.claude`) and linked git worktrees. A working tree holding detached worktree copies was scanned once per copy, inflating hash and secret counts with duplicates of the same files. The `library-author` collector now recognizes release-time SBOM generation, npm provenance, and sigstore/cosign signing, and `id-token: write` declared at job scope — so a well-run publisher no longer gets false "SBOM absent" or "no OIDC" findings from artifacts that are produced at release time.
+
+Documentation: the `ci` exit-code contract (0–5), the `osv` refresh source, and the full `--format` vocabulary are corrected in `--help` and README; the deprecated-alias help no longer claims a one-time banner it does not emit, and `reattest` / `list-attestations` are documented as canonical short forms rather than deprecated aliases.
+
+## 0.13.126 — 2026-05-26
+
+CVE catalog — n8n Git-node RCE. Adds **CVE-2026-21877**, completing the n8n critical cluster. In versions ≥ 0.123.0 and < 1.121.3, an authenticated user abuses the Git node to write a file of a dangerous type to an arbitrary path, which is then executed — yielding remote code execution and full compromise of both self-hosted and Cloud instances (CWE-434 unrestricted upload chained to CWE-94; GitHub CNA CVSS v3.1 9.9). Fixed in 1.121.3. Reuses the AI-app-builder execution-endpoint auth-and-sandbox control (NEW-CTRL-103), which now also covers file-writing workflow nodes as code-execution sinks. CVE count 419 → 420.
+
+## 0.13.125 — 2026-05-26
+
+CVE catalog — SGLang unauthenticated IPC-deserialization RCE cluster. Adds two unauthenticated RCEs in SGLang (lmsys), the unauth siblings of the already-catalogued authenticated weight-update flaw. **CVE-2026-3059** (CNA CVSS v3.1 9.8) — the multimodal generation module's ZMQ broker deserializes untrusted serialized objects from unauthenticated peers (CWE-502). **CVE-2026-3060** (CNA CVSS v3.1 9.8) — the encoder-parallel disaggregation module does the same. Both yield unauthenticated remote code execution on the serving host and are fixed in 0.5.10 (PR #20904). Both reuse the AI-inference IPC deserialization-safety control (NEW-CTRL-086), shared with the vLLM ZeroMQ-transport and TensorRT-LLM deserialization class — the lesson being that inference-engine IPC channels must use a safe serializer + peer authentication and never deserialize untrusted objects. CVE count 417 → 419.
+
+## 0.13.124 — 2026-05-26
+
+CVE catalog — stable-diffusion-webui (AUTOMATIC1111). Adds **CVE-2024-31462** in the most widely deployed Stable Diffusion web UI. The Backup/Restore tab (`save_config_state` in `modules/ui_extensions.py`) builds a file path from an unvalidated user-supplied config-state name and opens it for writing, yielding a limited file write (JSON files to arbitrary locations) on Windows (CWE-22; GitHub CNA CVSS v3.1 6.3; GHSL-2024-010). The advisory tested 1.7.0, but the CVE/OSV record marks releases through 1.8.0 as affected — fixed by commit `d9708c92`, so upgrading 1.7.0 → 1.8.0 is **not** sufficient. Reuses the AI-runtime-API path-traversal validation control (NEW-CTRL-094). CVE count 416 → 417.
+
+## 0.13.123 — 2026-05-26
+
+CVE catalog — n8n AI-workflow / automation platform. Adds two flaws in n8n (joining the already-catalogued CVE-2025-68613 expression-injection RCE). **CVE-2026-21858** (GitHub CNA CVSS v3.1 10.0 CRITICAL) — versions 1.65.0 to before 1.121.0 let an unauthenticated attacker access files on the underlying server through form-based actions with no path confinement (CWE-20); fixed in 1.121.0. On locally deployed instances the public exploit chains the read into host RCE — read the DB/config, forge an admin session, then run host commands via the Execute Command node — so the entry maps command-execution and valid-accounts TTPs alongside the file read. Reuses the AI-runtime-API path-traversal validation control (NEW-CTRL-094). **CVE-2025-68668** (CVSS v3.1 9.9) — the Python Code Node's Pyodide sandbox is bypassable, so an authenticated workflow editor runs code with host privileges (CWE-693 protection-mechanism failure); fixed in 2.0.0. Reuses the AI-app-builder execution-endpoint auth-and-sandbox control (NEW-CTRL-103), shared with the Dify code-node escape and Langflow/Flowise RCEs. CVE count 414 → 416.
+
+## 0.13.122 — 2026-05-26
+
+CVE catalog — SGLang LLM-serving framework. Adds two RCEs in SGLang (lmsys), a widely used high-performance LLM serving / inference framework. **CVE-2025-10164** (VulDB CNA CVSS v3.1 7.3; GHSA describes it as RCE) — `update_weights_from_tensor` deserializes untrusted serialized-object tensor data, so a deployment that exposes the weight-update path to untrusted input executes arbitrary code (CWE-502 / CWE-20); reuses the untrusted-model-artifact loading control (NEW-CTRL-091). **CVE-2026-5760** (CNA CVSS v3.1 9.8 CRITICAL) — the `/v1/rerank` endpoint renders a model-supplied `tokenizer.chat_template` with a non-sandboxed `jinja2.Environment()`, so a malicious model file achieves remote code execution via server-side template injection (CWE-94); fix renders with `ImmutableSandboxedEnvironment`. Introduces NEW-CTRL-110: an LLM serving framework must render model-supplied templates in a sandboxed environment and treat third-party model files as untrusted. Both are malicious-model classes (ATLAS AML.T0010/AML.T0011). CVE count 412 → 414.
+
+## 0.13.121 — 2026-05-26
+
+CVE catalog — ONNX model-interchange path traversal. Adds **CVE-2025-51480** in ONNX, the de-facto open model-interchange format used across the ML ecosystem. `onnx.external_data_helper.save_external_data` does not confine the model-supplied `external_data` `location`, so processing a crafted ONNX model writes external-data tensors to an arbitrary path (`../` traversal or absolute), overwriting arbitrary files (CWE-22; NVD CVSS v3.1 8.8) — which in a model-load pipeline can escalate to code execution. Requires the victim to process the malicious model (UI:R), so it is modelled as a malicious-model / supply-chain class (ATLAS AML.T0010/AML.T0011, ATT&CK T1195.002). Fixed in 1.18.0. Reuses the AI-runtime-API path-traversal validation control (NEW-CTRL-094). CVE count 411 → 412.
+
+## 0.13.120 — 2026-05-26
+
+CVE catalog — LangChain JS serialization injection. Adds **CVE-2025-68665**, the JavaScript sibling of the already-catalogued Python-side CVE-2025-68664. LangChain JS's `toJSON()` (and `JSON.stringify` of LangChain objects) did not escape free-form data containing the internal `lc` marker key, so attacker-controlled data carrying that structure is rehydrated as a legitimate LangChain object on deserialization instead of staying plain data (CWE-502; GitHub CNA CVSS v3.1 8.6, scope-changed / NVD 9.1). Fixed in `@langchain/core` 0.3.80 / 1.1.8 and `langchain` 0.3.37 / 1.2.3. Reuses the LLM-output deserialization trust-zone control (NEW-CTRL-064) and AI-tool input-sanitization (NEW-CTRL-005). Scored conservatively below the Python sibling, which additionally carries suspected-exploitation and weaponization signals the JS variant lacks. CVE count 410 → 411.
+
+## 0.13.119 — 2026-05-26
+
+CVE catalog — Chainlit LLM-app framework. Adds two flaws in the `/project/element` update flow of Chainlit, a widely used open-source framework for conversational-AI / LLM apps. **CVE-2026-22218** (VulnCheck CNA CVSS v4.0 7.1; NVD v3.1 6.5) — a custom element with a caller-supplied `path` is copied into the requesting user's session without validation, so an authenticated client reads arbitrary files on the server host (CWE-22 path traversal); fixed in 2.9.4. Reuses the AI-runtime-API path-traversal validation control (NEW-CTRL-094) shared with the AnythingLLM upload traversal. **CVE-2026-22219** (VulnCheck CNA CVSS v4.0 8.3; NVD v3.1 7.7, scope-changed) — with the SQLAlchemy data-layer backend, a custom element's `url` is fetched server-side and the response stored, so an authenticated client reaches internal services or cloud metadata (CWE-918 SSRF); fixed in 2.9.4. Reuses the AI-data-pipeline import SSRF control (NEW-CTRL-105) shared with the Dify, RAGFlow, and Label Studio data-pipeline SSRFs. CVE count 408 → 410.
+
+## 0.13.118 — 2026-05-26
+
+The researcher-handle tracker behind `refresh --check-advisories` (NEW-CTRL-073) now follows the Nightmare-Eclipse handle on its GitLab public-activity Atom feed instead of the GitHub events API — the handle's GitHub account was removed. The feed count is unchanged and the diff shape is identical: GitLab tag pushes and newly created public projects surface as `researcher-handle-drop` diffs exactly as the GitHub events did, carrying the same `researcher_handle` field. The NEW-CTRL-073 control text is now platform-agnostic (GitHub events or a GitLab activity feed).
+
+`exceptd --help` is clearer. A Quick start block at the top shows the three commands most workflows begin with — `discover` to see what applies, `brief` to read what a playbook checks, `run` to investigate — plus the plain-language `ask` entry point for when you don't know which playbook fits. The legacy-verb section now separates the five removed verbs (`plan`, `govern`, `direct`, `look`, `ingest` — which error with a pointer to their replacement) from the deprecated aliases that still work, so the help no longer implies a removed verb is available.
+
+## 0.13.117 — 2026-05-26
+
+CVE catalog — RAGFlow RAG-engine. Adds two flaws in RAGFlow (infiniflow/ragflow), a widely deployed open-source Retrieval-Augmented-Generation engine. **CVE-2024-12450** (NVD CVSS 9.8 CRITICAL; huntr CNA 6.5) — the `web_crawl` function does not filter the supplied URL, yielding full-read SSRF against internal addresses, arbitrary local file read via `file://`, and potential remote code execution through an outdated headless Chromium run with the sandbox disabled; fixed in 0.14.0. Reuses the AI-data-pipeline import SSRF control (NEW-CTRL-105) shared with the Dify `RemoteFileUploadApi` and Label Studio data-pipeline SSRFs. **CVE-2025-69286** (GitHub CNA CVSS v4.0 8.9; NVD v3.1 9.8) — the API key and the assistant/agent share token are generated with the same serializer keyed by the tenant id over a timestamp-based UUIDv1, so the two tokens are mutually derivable; an attacker who obtains a shared assistant/agent link derives the owner's personal API key and takes full control of the account (CWE-340); fixed in 0.22.0. Introduces NEW-CTRL-109: an AI app's API keys and share tokens must be generated from a CSPRNG with an unpredictable per-install secret — never derivable from a tenant id, a timestamp, or another token. Adds CWE-340 (Generation of Predictable Numbers or Identifiers) to the CWE catalog. CVE count 406 → 408.
+
+## 0.13.116 — 2026-05-26
+
+Documentation. The README pinned the CVE catalog's size to a v0.13.17 milestone ("68 to 312 entries"), which read as the current count even though the catalog has since grown past 400. Reworded to state current scale while keeping the v0.13.17 KEV-intake milestone, phrased so it no longer drifts as the catalog grows.
+
+## 0.13.115 — 2026-05-26
+
+CVE catalog — Dify object-level authorization bypass. Adds two flaws in Dify where an API trusts a user-controlled key without an ownership check (CWE-639). **CVE-2026-41947** (VulnCheck CNA CVSS 9.1 CRITICAL / v4.0 9.3) — the trace-configuration endpoints miss tenant-ownership checks, so an authenticated editor configures trace settings for any application and can redirect victim trace data to an attacker-controlled provider; fixed in 1.14.2. **CVE-2026-41950** (VulnCheck CNA CVSS 6.5 MEDIUM) — the chat-messages endpoint accepts an arbitrary file UUID in the files array without verifying ownership, so an authenticated user reads files uploaded by other users in the same tenant; fixed in 1.14.0. Both are patched and reuse the AI-app API object-authorization control (NEW-CTRL-106) shared with the Label Studio privilege-escalation chain — an LLM app platform must enforce object-level authorization on every request that references an object by a caller-supplied id. CVE count 404 → 406.
+
+## 0.13.114 — 2026-05-26
+
+CVE catalog — Dify password-recovery account takeover. Adds two flaws in Dify's password-reset flow, both yielding takeover of any account including administrators (CWE-640 weak password-recovery mechanism). **CVE-2025-1796** (CWE-338 / CWE-640, NVD CVSS 8.8 HIGH; huntr CNA 7.5) — reset codes are generated with a weak pseudo-random number generator (`random.randint`), so an attacker predicts the code and resets any account. **CVE-2024-12776** (CWE-287 / CWE-640, huntr CNA CVSS 8.1 HIGH; NVD classifies it CWE-305) — the `/forgot-password/resets` endpoint does not verify the reset code before allowing a reset. Neither has a fixed version published, so mitigation is generating reset tokens with a CSPRNG and verifying them server-side. Both introduce NEW-CTRL-108: an AI app's password-recovery flow must use cryptographically secure, single-use, short-lived reset tokens and verify them server-side before any reset. CVE count 402 → 404.
+
+## 0.13.113 — 2026-05-26
+
+CVE catalog — Dify LLM app-platform. Adds two flaws in Dify, the low-code LLM application-development platform. **CVE-2025-3466** (CWE-94 / CWE-693, NVD CVSS 7.2 HIGH; huntr CNA 9.8 CRITICAL) — the code node runs user-supplied code in a sandbox, but unsanitized input lets an attacker override global functions (e.g. `parseInt`) before the sandbox restrictions are applied, escaping the sandbox and executing code with root-level access; fixed in 1.1.3. (NVD classifies it CWE-1100; the catalog maps that to the catalogued CWE-94 + CWE-693.) **CVE-2025-56520** (CWE-918, CISA-ADP CVSS 5.3 MEDIUM) — the `RemoteFileUploadApi` fetches a user-supplied URL without validating the destination, so an unauthenticated attacker reaches internal services or cloud metadata via the server; no fixed version is published, so mitigation is destination allowlisting and network isolation. The code-node RCE reuses the LLM-app-builder execution control (NEW-CTRL-103) — an app builder must initialize its sandbox before evaluating user input — and the SSRF reuses the data-pipeline SSRF control (NEW-CTRL-105). CVE count 400 → 402.
+
+## 0.13.112 — 2026-05-26
+
+CVE catalog — Kubeflow MLOps-console cross-site scripting. Adds two XSS flaws in Kubeflow, the MLOps orchestration console, where user-controlled fields are rendered without neutralization (CWE-79). **CVE-2024-9526** (NVD CVSS 5.4 MEDIUM; Google CNA CVSS v4.0 7.1) — the Pipeline View renders the pipeline description field without filtering HTML, so attacker-stored markup runs in the browser of every operator who views the pipeline; fixed upstream. **CVE-2023-6571** (NVD CVSS 6.1 MEDIUM) — Kubeflow reflects attacker-controlled input into a page without neutralization, so a crafted link runs script in the victim's authenticated session; fixed upstream. Both are patched and introduce NEW-CTRL-107: an MLOps console is a multi-user trust boundary — HTML-encode every user-controlled field it renders, never render description/metadata as raw HTML, set a strict Content-Security-Policy, and mark session cookies HttpOnly, so stored or reflected markup cannot hijack operators' sessions. CVE count 398 → 400.
+
+## 0.13.110 — 2026-05-26
+
+CVE catalog — Adversarial Robustness Toolbox (ART) code execution. Adds two flaws in ART, the Trusted-AI library used to *defend* ML models against adversarial attacks, both in its Kubeflow component (CISA-ADP CVSS 9.8 CRITICAL; NVD assessment pending). **CVE-2026-31229** (CWE-502) — the model loader calls `torch.load()` without `weights_only=True`, so loading a maliciously crafted model file runs arbitrary code (the same safe-load gap as CVE-2025-32434, here in the defensive library). **CVE-2026-31230** (CWE-88) — the `--clip_values` and `--input_shape` command-line arguments are parsed through an unsafe dynamic-evaluation call, so attacker-controlled values execute arbitrary Python. Both affect ART through 1.20.1 with no published fix, so both are scored without patch credit; CVE-2026-31229 reuses the untrusted-model-artifact control (NEW-CTRL-091) — a model file is executable code — and CVE-2026-31230 reuses the AI-framework CLI input-neutralization control (NEW-CTRL-100), parse argument values with a safe literal parser. CVE count 396 → 398.
+
+## 0.13.109 — 2026-05-26
+
+CVE catalog — Label Studio privilege-escalation chain. Adds the two flaws that chain into full account takeover of Label Studio, the data-labeling platform used in ML pipelines, both sensitive-information exposure (CWE-200). **CVE-2023-47117** (NVD/GitHub CNA CVSS 7.5 HIGH) — the task-filter feature passes user input into a Django ORM query without restricting referenced fields, leaking password hashes and tokens from all accounts; fixed in 1.9.2post0. **CVE-2023-43791** (NVD CVSS 8.8 HIGH; GitHub CNA 9.8 CRITICAL) — exposed information, chained with that ORM leak, lets an attacker impersonate any account and escalate from a low-privilege user to a Django super administrator; fixed in 1.8.2. Both are patched and introduce NEW-CTRL-106: an ML data-platform API must enforce object-level authorization on every read and never expose secrets, tokens, or password hashes through serializers or user-controlled filters — use field allowlists, scope queries to the caller, and store credentials so a read leak is not directly replayable. CVE count 394 → 396.
+
+## 0.13.108 — 2026-05-26
+
+CVE catalog — Label Studio data-pipeline SSRF. Adds two server-side request forgery flaws in Label Studio, the data-labeling / annotation platform used in ML pipelines, where the server fetches caller-supplied URLs without validating the destination. **CVE-2025-25297** (CWE-918, NVD CVSS 7.7 HIGH; GitHub CNA 8.6) — the S3 storage feature accepts a custom endpoint URL without validation, so an attacker reaches internal services or cloud metadata via the server; fixed in 1.16.0. **CVE-2022-36551** (CWE-918, NIST CVSS 6.5 MEDIUM) — the Data Import module fetches a user-supplied URL with no restriction and self-registration is on by default, so any remote attacker reads arbitrary files or reaches internal services; fixed in 1.6.0. Both are patched and introduce NEW-CTRL-105: an ML data-pipeline platform's import/storage URL fetches must validate and allowlist destinations (block private, link-local, and cloud-metadata addresses and `file://` schemes) and restrict who can configure them. CVE count 392 → 394.
+
+## 0.13.107 — 2026-05-26
+
+CVE catalog — MLflow model-artifact deserialization (a model is executable code). Adds two of the Protect AI / HiddenLayer MLflow model-flavor deserialization flaws, where loading a stored artifact runs arbitrary code. **CVE-2024-37052** (CWE-502, HiddenLayer CNA CVSS 8.8 HIGH; NVD unscored) — a maliciously crafted scikit-learn model in MLflow runs code when a user loads it. **CVE-2024-37060** (CWE-502, HiddenLayer CNA CVSS 8.8 HIGH; NVD unscored) — a maliciously crafted MLflow Recipe runs code when executed. Both affect MLflow up to 2.14.1 and have no patched version — loading an untrusted model artifact is inherently code execution — so they are scored without patch credit and the control is provenance verification plus sandboxed loading. Both map MITRE ATLAS AML.T0011.000 (unsafe AI artifacts) and ATT&CK T1204, and reuse the untrusted-model-artifact control (NEW-CTRL-091) shared with the Keras / Hugging Face / NeMo / PyTorch / H2O entries — a model artifact is executable code regardless of platform. CVE count 390 → 392.
+
+## 0.13.106 — 2026-05-26
+
+CVE catalog — BentoML model-serving deserialization RCE (recurring class). Adds two unauthenticated insecure-deserialization flaws in BentoML, the model-serving / inference framework, where the serving path reconstructs an attacker-supplied serialized object without validation. **CVE-2024-2912** (CWE-1188, huntr.dev CNA CVSS 10.0 CRITICAL; NVD unscored) — BentoML before 1.2.5 deserializes a malicious object delivered to a valid serving endpoint, giving unauthenticated remote code execution; fixed in 1.2.5. **CVE-2025-27520** (CWE-502, GitHub CNA CVSS 9.8 CRITICAL; NVD unscored) — the deserialization routine in `serde.py` reconstructs an attacker-supplied object from a request, so any unauthenticated user runs code on the server; fixed in 1.4.3, the same class recurring after the 1.2.5 fix. Both are patched (scored with patch credit) and reuse the inference/serving deserialization-safety control (NEW-CTRL-086) shared with the ShadowMQ / vLLM inference-deserialization entries — a model server must never reconstruct an untrusted serialized object from a request. Upgrade BentoML to 1.4.3 or later. CVE count 388 → 390.
+
+## 0.13.105 — 2026-05-26
+
+CVE catalog — H2O-3 ML platform unauthenticated control plane. Adds two huntr.dev / Protect AI flaws in H2O-3, the open-source ML/AutoML platform, both reachable without authentication. **CVE-2023-6016** (CWE-94, NVD CVSS 9.8 CRITICAL; huntr CNA 10.0) — the dashboard's POJO (Java) model-import feature compiles and runs the imported model code with no authentication, so importing a malicious model gives remote code execution. **CVE-2023-6038** (CWE-862, NVD CVSS 7.5 HIGH; huntr CNA 9.3) — the REST API's file-import path performs no authorization check, letting an unauthenticated attacker read arbitrary files on the host. H2O.ai documents H2O-3 as a trusted-environment product and ships no fix, so both are scored without patch credit and the only remediation is network isolation plus authenticated access control. CVE-2023-6016 reuses the untrusted-model-artifact control (NEW-CTRL-091) — a POJO model is executable code, the same class as the Keras / Hugging Face / NeMo / PyTorch entries — and CVE-2023-6038 reuses the AI-compute control-plane authentication control (NEW-CTRL-088) shared with the Ray entries. CVE count 386 → 388.
+
+## 0.13.104 — 2026-05-26
+
+CVE catalog — ClearML MLOps platform artifact trust. Adds two flaws in ClearML, the MLOps / experiment-tracking platform, where the client SDK mishandles content other collaborators uploaded (HiddenLayer disclosure). **CVE-2024-24590** (CWE-502, NVD CVSS 8.8 HIGH; HiddenLayer CNA 8.0) — the SDK reconstructs a stored artifact through an unsafe object-deserialization path on retrieval, so a maliciously uploaded artifact runs code on the retrieving user's system. **CVE-2024-24591** (CWE-22, NVD CVSS 8.8 HIGH; HiddenLayer CNA 8.0) — the SDK writes dataset entries without path containment, so a malicious dataset writes files to arbitrary locations (escalating to code execution by overwriting startup files). Neither has a fixed SDK version published in the advisory, so both are scored without patch credit and remediation is to retrieve artifacts/datasets only from trusted projects. Both map MITRE ATLAS AML.T0010 and ATT&CK T1204, and introduce NEW-CTRL-104: an MLOps platform must treat every uploaded artifact and dataset as untrusted — never auto-deserialize through an unsafe loader, and contain dataset extraction paths. CVE count 384 → 386.
+
+## 0.13.103 — 2026-05-26
+
+CVE catalog — the same Langflow unauthenticated-RCE class, CISA KEV-listed on two different endpoints. Adds two unauthenticated remote-code-execution flaws in Langflow, the visual LLM app/agent builder, where a flow endpoint reaches a code-execution path without authentication — both actively exploited and in the CISA KEV catalog. **CVE-2025-3248** (CWE-94 / CWE-306, VulnCheck CNA CVSS 9.8 CRITICAL; KEV added 2025-05-05) — the `/api/v1/validate/code` endpoint runs attacker-supplied Python with no authentication. **CVE-2026-33017** (CWE-94 / CWE-95 / CWE-306, NVD CVSS 9.8; GitHub CNA CVSS v4.0 9.3; KEV added 2026-03-25) — after the first fix shipped in 1.3.0, the public flow-build endpoint still ran flow-supplied Python through an unsandboxed dynamic-evaluation path, so the same code-injection class was exploited and KEV-listed a second time; fixed in 1.9.0. Both score P1 (patch within 24h) under RWEP. They introduce NEW-CTRL-103: every LLM-app-builder flow validate/build/run endpoint must authenticate and sandbox submitted code, and a fix must cover the whole class of endpoints rather than the single reported route — the first Langflow fix closed one route but not the class. Upgrade Langflow to 1.9.0 or later. CVE count 383 → 384.
+
+## 0.13.102 — 2026-05-25
+
+CVE catalog — prompt injection to code execution in natural-language data-analysis agents. Adds two flaws in agents whose purpose is to turn a natural-language question into code that the framework then runs, so prompt injection is the exploit primitive. **CVE-2024-5565** (Vanna.AI, CWE-94 / CWE-77, JFrog CNA CVSS 8.1 HIGH; GitHub advisory 9.2; NVD unscored) — the text-to-SQL `ask` method runs LLM-generated Python to build a Plotly visualization (default-on), so an injected question executes arbitrary Python on the host. **CVE-2024-12366** (PandasAI, CWE-94, CISA-ADP CVSS 9.8 CRITICAL; NVD unscored) — the `chat` interface runs LLM-generated Python against DataFrames without separating analytical input from injected instructions, giving unauthenticated RCE / sandbox escape. Neither has a fixed release, so both are scored without patch credit and remediation is sandboxing the code-execution path; both map MITRE ATLAS AML.T0051 (LLM Prompt Injection) and ATT&CK T1059.006, and introduce a control (NEW-CTRL-102) requiring NL-to-code/SQL agents to treat the question and analyzed data as untrusted and never run model-generated code with host privileges. CVE count 381 → 383.
+
+## 0.13.101 — 2026-05-25
+
+CVE catalog — vector-database RCE and backup path traversal. Adds two more flaws in the RAG persistence layer. **CVE-2026-45829** (ChromaDB "ChromaToast", CWE-94, CNA CVSS v4.0 10.0 CRITICAL; NVD unscored) — ChromaDB's Python FastAPI server processes a caller-supplied embedding-function config (a model repo with `trust_remote_code=true`) on the collections endpoint *before* authenticating, giving unauthenticated remote code execution; no fixed Python release is published, so mitigation is network isolation, the Rust `chroma run` / official Docker deployment, and disabling remote model loading. **CVE-2025-67818** (Weaviate, CWE-22, NIST CVSS 7.2) — backup restore does not constrain entry paths, so a write-capable attacker uses absolute / `../` paths (ZipSlip) to create or overwrite arbitrary host files; fixed in 1.33.4. Both map MITRE ATLAS AML.T0049 and ATT&CK T1190; ChromaDB reuses the vector-DB authentication control (NEW-CTRL-101) shared with Milvus, and Weaviate reuses the path-traversal control (NEW-CTRL-094) shared with the Ollama / AnythingLLM entries. The unpatched pre-auth RCE scores well above the patched path-traversal flaw under RWEP. CVE count 379 → 381.
+
+## 0.13.100 — 2026-05-25
+
+CVE catalog — PyTorch torch.load RCE despite weights_only=True. Adds **CVE-2025-32434** (CWE-502, NIST CVSS 9.8 CRITICAL): PyTorch's `torch.load` executes attacker code from a crafted checkpoint even when called with `weights_only=True` — the setting the ecosystem recommended as the safe way to load untrusted models — so pipelines that followed that guidance on ≤ 2.5.1 remain vulnerable; fixed in 2.6.0. Maps MITRE ATLAS AML.T0010 / AML.T0011 / AML.T0011.000 and ATT&CK T1204 / T1059 / T1195.002, and reuses the untrusted-model-artifact control (NEW-CTRL-091) shared with the Keras, Hugging Face Transformers, and NeMo entries — a model checkpoint is executable code regardless of "safe" load flags. CVE count 378 → 379.
+
+## 0.13.99 — 2026-05-25
+
+CVE catalog — NVIDIA NeMo model-load code execution. Adds two flaws in NeMo, NVIDIA's LLM training/customization framework, both where loading an untrusted model executes code. **CVE-2025-33236** (CWE-94, CNA NVIDIA CVSS 7.8; NVD unscored) — importing a malicious AI model triggers code injection and NeMo silently runs attacker code; fixed in 2.6.1 (Cato CTRL research). **CVE-2024-0129** (CWE-22, NIST CVSS 7.8 / NVIDIA 6.3) — the SaveRestoreConnector extracts a `.nemo` (`.tar`) model archive without path restriction, so a malicious model writes to an arbitrary path and can execute code; fixed in r2.0.0rc0. Both map MITRE ATLAS AML.T0010 / AML.T0011 / AML.T0011.000 and ATT&CK T1204 / T1059 / T1195.002, and reuse the untrusted-model-artifact control (NEW-CTRL-091) shared with the Keras and Hugging Face Transformers entries — a model file is executable code, so untrusted models must be provenance-verified and sandboxed. CVE count 376 → 378.
+
+## 0.13.98 — 2026-05-25
+
+CVE catalog — Anyscale Ray dashboard. Adds the Ray dashboard CVE pair (fixed in Ray 2.8.1), complementing the disputed ShadowRay Job-API entry. **CVE-2023-6019** (CWE-78, NIST CVSS 9.8) — the dashboard's `cpu_profile` URL parameter is injected into a system command, giving unauthenticated remote code execution on the dashboard host. **CVE-2023-6021** (CWE-22, NIST CVSS 7.5) — the dashboard log API allows path traversal to read any file on the host without authentication. Both map ATLAS AML.T0049 and ATT&CK T1190 (+ T1059 / T1083), and reuse the AI-compute control-plane authentication control (NEW-CTRL-088) shared with ShadowRay — the AI compute dashboard/control plane must authenticate every caller and never be network-exposed. Unlike the disputed ShadowRay Job-API issue, these were patched in 2.8.1. CVE count 374 → 376.
+
+## 0.13.97 — 2026-05-25
+
+CVE catalog — Milvus vector-database authentication bypass. Adds the vector-DB / RAG-persistence surface with two Milvus auth-bypass flaws. **CVE-2025-64513** (CWE-287, CNA GitHub CVSS v4.0 9.3; NVD unscored) — the Milvus Proxy trusts forged HTTP headers, letting an unauthenticated attacker bypass all authentication; fixed in 2.4.24 / 2.5.21 / 2.6.5. **CVE-2026-26190** (CWE-306, NIST CVSS 9.8) — TCP port 9091 is exposed with weak default tokens and unauthenticated API access, enabling arbitrary expression evaluation and full unauthenticated control; fixed in 2.5.27 / 2.6.10. Both map ATLAS AML.T0049 / AML.T0035 and ATT&CK T1190 (+ T1078 / T1059), with a zero-day lesson (NEW-CTRL-101) treating the vector database as a sensitive RAG data store whose every API/management port (including metrics ports) must authenticate, with default tokens replaced and no untrusted-network exposure. CVE count 372 → 374.
+
+## 0.13.96 — 2026-05-25
+
+CVE catalog — BerriAI LiteLLM gateway. Adds two flaws in the LLM proxy/gateway that concentrates provider API keys. **CVE-2024-6587** (CWE-918, NIST CVSS 7.5) — LiteLLM honors a user-supplied `api_base` on `/chat/completions` and forwards the configured provider API key to the attacker's domain (SSRF → key interception); this was the SSRF link of a Pwn2Own full-chain RCE. **CVE-2024-4889** (CWE-94, NIST CVSS 7.2) — an admin-influenced `UI_LOGO_PATH` with Google KMS / `SAVE_CONFIG_TO_DB` reaches a dynamic-evaluation path in the secret-management code, executing code on the credential-bearing proxy; fixed in 1.44.16. Both map ATLAS AML.T0049 + AML.T0055 (unsecured credentials) and ATT&CK T1190 (+ T1552.001 / T1059), and reuse the gateway-credential-isolation control (NEW-CTRL-013) shared with the LiteLLM SQLi entry — the LLM gateway is a high-value credential store whose request/config plane must be isolated from the secrets. CVE count 370 → 372.
+
+## 0.13.95 — 2026-05-25
+
+CVE catalog — LlamaIndex CLI command injection. Adds **CVE-2025-1753** (CWE-78, CNA huntr.dev CVSS 7.8; NVD has not assigned its own score): the LlamaIndex CLI builds a shell command from the user-supplied `--files` argument and runs it without neutralization, so shell metacharacters execute arbitrary OS commands; the fix adds shlex escaping. Maps ATT&CK T1059, with a zero-day lesson (NEW-CTRL-100) requiring AI-framework CLIs/tools to use argv-array execution or shlex neutralization rather than building shell strings from arguments — the same root cause as the MCP-stdio command-injection family, applied to a framework CLI. CVE count 369 → 370.
+
+## 0.13.94 — 2026-05-25
+
+CVE catalog — AnythingLLM upload path traversal to RCE. Adds **CVE-2024-13059** (CWE-22, NIST CVSS 7.2): AnythingLLM's multer-based upload handler mishandles non-ASCII filenames so they decode into `../` traversal sequences, letting a manager/admin user write attacker content to an arbitrary path (e.g. a startup script) and achieve remote code execution on the host; fixed in 1.3.1. Maps ATLAS AML.T0049 and ATT&CK T1190 / T1059, and reuses the runtime-API path-traversal control (NEW-CTRL-094) shared with the Ollama entries — AI-app file/path inputs must be canonicalized and validated, including non-ASCII transforms, before touching the filesystem. CVE count 368 → 369.
+
+## 0.13.93 — 2026-05-25
+
+CVE catalog — LangChain experimental-chain code execution (prompt injection to RCE). Adds the canonical class where an LLM chain turns prompt-influenced input into executed Python. **CVE-2024-21513** (langchain-experimental, CWE-94, NIST CVSS 8.5) — VectorSQLDatabaseChain evaluates database values as code, so an attacker controlling the input prompt achieves arbitrary code execution; fixed in 0.0.21. **CVE-2023-44467** (langchain_experimental PALChain, CWE-94, NIST CVSS 9.8) — PALChain executes prompt-generated Python and did not block the dunder-import builtin, bypassing the earlier CVE-2023-36258 fix; fixed in 0.0.306. Both map ATLAS AML.T0051 (LLM prompt injection) + AML.T0011 and ATT&CK T1059 / T1059.006, and their shared zero-day lesson (NEW-CTRL-099) requires chains that execute generated code to sandbox or disable it — builtin denylists are an incomplete fix. Distinct from the existing LangChain entries (LangGrinch serialization, Chatchat MCP). CVE count 366 → 368.
+
+## 0.13.92 — 2026-05-25
+
+CVE catalog — ComfyUI custom-node RCE. Adds the two Snyk-disclosed flaws in the ComfyUI custom-node ecosystem, the AI image-generation tool whose nodes auto-load and run code. **CVE-2024-21575** (ComfyUI-Impact-Pack, CWE-35, NIST CVSS 8.6) — missing validation of `image.filename` on `/upload/temp` allows path-traversal arbitrary file write; dropping a `.py` into the auto-loaded `./custom_nodes` directory escalates to remote code execution. **CVE-2024-21576** (ComfyUI-Bmad-Nodes, CWE-94, NIST CVSS 10.0) — several nodes pass a workflow-supplied string to a dynamic-code-evaluation call, so a crafted workflow yields unauthenticated RCE. Both map ATLAS AML.T0049 and ATT&CK T1190 / T1059; their shared zero-day lesson (NEW-CTRL-098) treats auto-loaded AI-tool custom nodes as an untrusted-code supply-chain and execution surface (allow-list before install, validate node inputs, never expose the tool to untrusted networks). The entries note the April 2026 cryptomining-botnet campaign mass-targeting exposed ComfyUI via this surface, without attributing it to these specific CVEs. CVE count 364 → 366.
+
+## 0.13.91 — 2026-05-25
+
+CVE catalog — MLflow recipe template-injection XSS. Adds **CVE-2024-27132** (CWE-79, NIST CVSS 9.6 CRITICAL): MLflow renders recipe template variables without sufficient sanitization, so running an untrusted recipe executes script in the victim's MLflow session (stored XSS) and pivots to client-side remote code execution against the tracking-server UI; fixed in 2.10.0. Maps ATLAS AML.T0049 and ATT&CK T1189 / T1059.007, with a zero-day lesson (NEW-CTRL-097) requiring the MLOps platform UI to output-encode all user/community-supplied content it renders (recipe variables, run metadata, model cards) and stay off untrusted networks. Complements the existing MLflow path-traversal entry (CVE-2023-43472). CVE count 363 → 364.
+
+## 0.13.90 — 2026-05-25
+
+CVE catalog — vLLM distributed-serving ZeroMQ transport. Adds two flaws in vLLM's multi-node serving transport, both fixed in 0.8.5. **CVE-2025-32444** (CWE-502, NIST CVSS 9.8) — the Mooncake KV-transfer integration exchanges serialized data over unsecured ZeroMQ sockets, giving an unauthenticated network attacker remote code execution; unlike the off-by-default V0-engine ShadowMQ flaw, the Mooncake sockets are network-reachable when the integration is enabled. **CVE-2025-30202** (CWE-770, NIST CVSS 7.5) — multi-node deployments bind the primary host's XPUB ZeroMQ socket to all interfaces, exposing the broadcast data stream and enabling denial of service. Both map ATLAS AML.T0049 and ATT&CK T1190 (+ T1059 / T1499 / T1040), and they reuse the inference-IPC deserialization-safety control (NEW-CTRL-086) shared with the ShadowMQ family — a safe serializer, peer authentication, and loopback/trusted-segment binding across every inference engine. CVE count 361 → 363.
+
+## 0.13.89 — 2026-05-25
+
+CVE catalog — NVIDIA Triton DALI backend memory safety. Completes the May 2026 Triton bulletin coverage with the three DALI (data-augmentation) backend flaws disclosed by researcher Navtej Kathuria, all fixed in r26.03: **CVE-2026-24213** (CWE-125 out-of-bounds read, NIST CVSS 9.8), **CVE-2026-24214** (CWE-190 integer overflow, NIST CVSS 9.8), and **CVE-2026-24215** (CWE-400 uncontrolled resource consumption / DoS, NIST CVSS 7.5). All process attacker-supplied inference input on a network-reachable backend. These are deliberate CVSS-versus-RWEP cases: NVD rates two of them CRITICAL, but with no CISA KEV listing, no confirmed in-the-wild exploitation, no public proof-of-concept, and a patch available, the Real-World Exploit Priority is P4 — the catalog scores priority on exploitation reality, not CVSS alone. Their shared zero-day lesson (NEW-CTRL-096) requires inference backends to bound and validate untrusted input size/shape and enforce resource limits, with the inference endpoint off untrusted networks. CVE count 358 → 361.
+
+## 0.13.88 — 2026-05-25
+
+CVE catalog — Hugging Face Transformers model-loader deserialization RCE. Adds the three ZDI-coordinated deserialization flaws in the foundational ML library's model loaders, all CWE-502 and fixed in 4.48.0: **CVE-2024-11392** (MobileViTV2 configuration files), **CVE-2024-11393** (MaskFormer model files), and **CVE-2024-11394** (Trax model files), each NIST CVSS 8.8 — loading a malicious model/config of the affected type executes attacker code in the user's process. All map MITRE ATLAS AML.T0010 / AML.T0011 / AML.T0011.000 and ATT&CK T1204 / T1059 / T1195.002, and they reuse the existing untrusted-model-artifact control (NEW-CTRL-091) — the same control that closes the Keras model-deserialization CVEs, because the class is "a model file is executable code", not a single loader. CVE count 355 → 358.
+
+## 0.13.87 — 2026-05-25
+
+CVE catalog — Gradio file-access (Hugging Face Spaces secret theft). Adds the two Horizon3.ai-disclosed file-read flaws in Gradio, the ML demo/UI framework behind Hugging Face Spaces and countless public ML demos. **CVE-2024-1561** (CWE-22, NIST CVSS 7.5) — the `/component_server` endpoint invokes arbitrary Component methods with attacker-controlled arguments, abused via `move_resource_to_block_cache()` to read host files (and steal HF Spaces secrets); fixed in 4.13.0. **CVE-2023-51449** (CWE-22 + SSRF, NIST CVSS 7.5) — the `/file` route's directory-containment check was flawed, allowing arbitrary file read (and full-read SSRF) on a publicly reachable app; fixed in 4.11.0. Both map MITRE ATLAS AML.T0049 + AML.T0055 (unsecured credentials) and ATT&CK T1190 / T1083 / T1005; their shared zero-day lesson (NEW-CTRL-095) requires the framework's file-serving routes to enforce directory containment, not expose arbitrary method invocation or SSRF, and keep secret-bearing apps off untrusted networks. CVE count 353 → 355.
+
+## 0.13.86 — 2026-05-25
+
+CVE catalog — Ollama API path traversal. Adds the two path-traversal flaws in Ollama, the most widely used local LLM runtime. **CVE-2024-37032** (Wiz "Probllama", CWE-22, NIST CVSS 8.8) — Ollama does not validate that a model-blob digest is a 64-character hex SHA256, so a manifest from a rogue registry embeds traversal sequences that make a model pull write attacker content to an arbitrary path, achieving remote code execution; fixed in 0.1.34. **CVE-2024-39722** (Oligo "More Models, More ProbLLMs", CWE-22, NIST CVSS 7.5) — the api/push route discloses host file existence via path traversal to an unauthenticated caller; fixed in 0.1.46. Both map ATLAS AML.T0049 (+ AML.T0010 for the rogue-registry RCE) and ATT&CK T1190 (+ T1059 / T1083); their shared zero-day lesson (NEW-CTRL-094) requires the runtime API to validate digests and path parameters before filesystem access, stay off untrusted networks, and pull only from trusted registries. CVE count 351 → 353.
+
+## 0.13.85 — 2026-05-25
+
+CVE catalog — ShellTorch (PyTorch TorchServe model-server takeover). Adds the Oligo-disclosed chain that took over thousands of exposed TorchServe instances, including at major organizations. **CVE-2023-43654** (CWE-918, NIST CVSS 9.8) — the TorchServe management API registers a model from any remote URL (SSRF), and because the management console binds to all interfaces by default with no authentication, this is unauthenticated remote code execution; fixed in 0.8.2. **CVE-2022-1471** (CWE-502/20, NIST CVSS 9.8, CNA 8.3) — the deserialization leg: SnakeYAML's default `Constructor` instantiates arbitrary types from untrusted YAML, so the model config TorchServe parses becomes code execution; fixed in SnakeYAML 2.0 (SafeConstructor default). Both map MITRE ATLAS (AML.T0049 / AML.T0010 / AML.T0011.000) and ATT&CK T1190 / T1059, and their shared zero-day lesson (NEW-CTRL-093) requires the model-server management API to authenticate, bind to loopback, allow-list model sources, and parse config with safe deserializers. CVE count 349 → 351.
+
+## 0.13.84 — 2026-05-25
+
+CVE catalog — llama.cpp RPC-backend memory-safety RCE. Adds the unauthenticated remote-memory-corruption family in the RPC backend of the most widely used local LLM runtime, all reachable over the RPC server's default port 50052 with no authentication. **CVE-2024-42479** (CWE-787/123, NIST CVSS 9.8) — a SET_TENSOR message with an unvalidated `rpc_tensor` data pointer yields a write-what-where primitive and RCE. **CVE-2024-42478** (CWE-125, NIST CVSS 9.8) — the companion GET_TENSOR arbitrary-address read for pointer leaks / ASLR bypass. Both fixed in build b3561. **CVE-2026-34159** (CWE-119, NIST CVSS 9.8) — `deserialize_tensor()` still skips bounds validation when a tensor's `buffer` field is 0 via the GRAPH_COMPUTE command path that the b3561 fix never covered, giving unauthenticated RCE; fixed in b8492. All three map ATLAS AML.T0049 and ATT&CK T1190 (+ T1059 for the code-execution variants); their shared zero-day lesson (NEW-CTRL-092) requires bounds validation inside `deserialize_tensor` across every command path and keeping the RPC server off untrusted networks. CVE count 346 → 349.
+
+## 0.13.83 — 2026-05-25
+
+CVE catalog — Keras model-deserialization RCE (the canonical "untrusted model artifact is executable code" supply-chain risk). **CVE-2025-1550** (CWE-94, NIST CVSS 9.8) — Keras's `.keras` format parser runs arbitrary Python via `importlib` at load time, with no Lambda layer or custom object required and triggered simply by loading (not calling) the model; fixed in 3.8.0, which introduced `safe_mode`. **CVE-2025-8747** (CWE-502, NIST CVSS 7.8) — that `safe_mode` mitigation is bypassable through 3.10.0: `Model.load_model` still executes code from a crafted archive via arguments to built-in modules even with `safe_mode` enabled, i.e. the first fix was incomplete. Both map MITRE ATLAS AML.T0010 / AML.T0011 / AML.T0011.000 (ML supply chain compromise / unsafe AI artifacts) and ATT&CK T1204 / T1059 / T1195.002, and their shared zero-day lesson (NEW-CTRL-091) requires treating model artifacts as untrusted code — provenance, safe formats like safetensors, sandboxed loading — and not relying on `safe_mode` alone. CVE count 344 → 346.
+
+## 0.13.82 — 2026-05-25
+
+CVE catalog — NVIDIA Container Toolkit GPU container escape. Adds the two Wiz-disclosed escapes in the container runtime that underpins essentially all containerized GPU/AI workloads. **CVE-2024-0132** (CWE-367, NIST CVSS 8.3 / NVIDIA 9.0) — a time-of-check/time-of-use race lets a crafted container image escape to the host; fixed in Container Toolkit 1.16.2. **CVE-2025-23266** (NVIDIAScape, CWE-426, CVSS 9.0) — an untrusted search path in container-initialization hooks lets a crafted container load attacker code with elevated host permissions; patch per NVIDIA advisory a_id/5659. Both map ATT&CK T1610/T1611 (deploy container / escape to host) and carry maximal blast radius because a single escape on a shared GPU host crosses the tenant boundary and exposes co-tenant models, data, and credentials. Their shared zero-day lesson (NEW-CTRL-090) treats the GPU container runtime as a patch-prioritized AI-pipeline isolation boundary, not an assumed-safe layer. CVE count 342 → 344.
+
+## 0.13.81 — 2026-05-25
+
+CVE catalog — Open WebUI code-injection RCEs. Adds two remote code execution flaws in Open WebUI, a widely deployed self-hosted AI chat front end. **CVE-2026-0766** (CWE-94, ZDI CVSS 8.8) — the `load_tool_module_by_id` function runs an unvalidated user-supplied string as Python, so an authenticated user achieves RCE on the host. **CVE-2025-64496** (CWE-95/501/829, NIST CVSS 8.0, fixed 0.6.35) — with the Direct Connections feature enabled and a user lured to a malicious external model server, that server injects JavaScript via server-sent events, leading to token theft, account takeover, and with extended permissions RCE. Both carry CWE + ATT&CK T1190/T1059 mappings, global-first framework gaps, and behavioral IoCs; their shared zero-day lesson (NEW-CTRL-089) requires an AI application never to turn user-supplied strings or external-model-server content into executable code. CVE count 340 → 342.
+
+## 0.13.80 — 2026-05-25
+
+CVE catalog — ShadowRay (CVE-2023-48022). Adds Anyscale Ray's unauthenticated Job Submission / Dashboard API remote code execution, the landmark case for prioritizing on real-world exploitation rather than CVSS or KEV alone. NVD marks the CVE disputed — the vendor frames the open Job API as intended for trusted networks — so it carries no code patch and is not on the CISA KEV catalog. Yet it is exploited at scale: Oligo's ShadowRay 2.0 campaign turned roughly 230,000 internet-exposed Ray clusters into crypto-mining botnets and exfiltrated model weights and cloud credentials. It therefore scores RWEP 68 (high) on confirmed active exploitation plus broad blast radius with no patch credit. The entry maps real MITRE ATLAS techniques (AML.T0049 / T0034 / T0035 / T0025) and ATT&CK T1190 / T1059 / T1496, and its zero-day lesson names the "controlled network is a security control" theater pattern, with a control requiring the AI compute control plane to authenticate every caller (Ray token auth, no untrusted-network exposure). Mitigation is configuration, not a patch. CVE count 339 → 340.
+
+## 0.13.79 — 2026-05-25
+
+CVE catalog — NVIDIA Triton Inference Server authentication bypass. Adds the two CWE-288 authentication-bypass CVEs from NVIDIA's May 2026 Triton bulletin: **CVE-2026-24207** and **CVE-2026-24206**, both NIST CVSS 9.8 and reachable unauthenticated over the network against one of the most widely deployed AI inference servers. A successful bypass reaches Triton's model control plane (model load/unload, repository management) without credentials. Fixed in r26.03. NVD enriched CVE-2026-24206 to 9.8 while NVIDIA scored it 7.3 — the entry stores the NVD primary and records the dispute. Their shared zero-day lesson adds a control requiring inference-server authentication to be proven complete across every request path, not assumed from the primary API. CVE count 337 → 339.
+
+## 0.13.78 — 2026-05-25
+
+CVE catalog — ShadowMQ code-reuse family: adds the four AI-inference-engine CVEs from Oligo Security's ShadowMQ research, where one insecure deserialization-over-ZeroMQ primitive (CWE-502) spread across projects by copy-paste code reuse. **CVE-2025-23254** (NVIDIA TensorRT-LLM, NIST CVSS 8.8) — Python executor deserializes untrusted data over its ZeroMQ socket; fixed in 0.18.2. **CVE-2025-30165** (vLLM, NIST CVSS 8.0) — legacy V0 engine deserializes over ZeroMQ in multi-node deployments; no code patch shipped, the V0 engine is off by default since 0.8.0, so it scores higher (RWEP 46) than its patched siblings. **CVE-2024-50050** (Meta Llama Stack, NIST CVSS 6.3, originally scored 9.3 by the disclosing researchers) — the seed of the family, fixed by migrating socket serialization to JSON. **CVE-2025-60455** (Modular Max Server, NIST CVSS 8.4) — deserialization reachable with the experimental KVCache agent enabled; fixed in 25.6.0. All four converge on one control: AI inference engines must use a safe serializer, authenticate socket peers, and isolate the channel — applied across every engine in the estate, since the flaw propagated by reuse. CVE count 333 → 337.
+
+## 0.13.77 — 2026-05-25
+
+CVE catalog — two current additions. **CVE-2026-9082** (Drupal core, SA-CORE-2026-004, CWE-89, NIST CVSS 9.8) is an unauthenticated SQL injection in the database abstraction layer reachable via JSON:API on PostgreSQL-backed sites; CISA added it to the KEV catalog on 2026-05-22 with a 2026-05-27 remediation due date, so it scores RWEP P1 (78) on confirmed exploitation. Fixed in the SA-CORE-2026-004 releases (10.4.10 / 10.5.10 / 10.6.9 / 11.1.10 / 11.2.12 / 11.3.10). Its zero-day lesson adds a control requiring parameterization to be verified at the database abstraction layer — not assumed from application-layer input validation or a perimeter WAF. **CVE-2026-26015** (DocsGPT, CWE-77, NIST CVSS 9.8 / GitHub 10.0) completes the MCP command-injection family: a crafted payload bypasses the MCP validation step to run shell commands without authentication; fixed in 0.16.0. Both carry CWE + ATT&CK mappings, global-first framework gaps, and behavioral IoCs. CVE count 331 → 333.
+
+## 0.13.76 — 2026-05-25
+
+CVE catalog — MCP command-injection family expansion: adds five more verified entries from the 2026 MCP supply-chain advisory, all variations of the same root cause where an AI framework hands caller-supplied command/args to its MCP transport and executes them. **CVE-2026-40933** (FlowiseAI Flowise, CWE-78, NIST CVSS 9.9) — an authenticated user bypasses Custom-MCP command sanitization by pairing an allow-listed binary (npx) with execution flags; fixed in 3.1.0. **CVE-2026-30625** (Upsonic, CWE-77, NIST CVSS 9.8) — MCP task creation allow-lists npm/npx whose argument flags re-enable arbitrary command execution; 0.72.0 adds a warning, not a confirmed fix. **CVE-2026-30617** (Langchain-Chatchat, CWE-77, NIST CVSS 8.6) — an exposed MCP management interface lets a caller configure a malicious stdio command. **CVE-2026-30624** (Agent Zero, CWE-77, NIST CVSS 8.6) — MCP server configurations execute without adequate validation. **CVE-2026-30616** (Jaaz, CWE-77, NIST CVSS 7.3) — MCP stdio command-execution handling runs configured commands unsanitized. Each carries CWE + ATT&CK T1190/T1059 mappings, global-first framework gaps, behavioral IoCs, and RWEP scoring; all map to the MCP-transport command-governance controls already established for this class. CVE count 326 → 331.
+
+## 0.13.75 — 2026-05-25
+
+CVE catalog — MCP stdio transport RCE class: adds two more from the 2026 MCP supply-chain advisory, both where the MCP stdio transport runs caller-supplied commands. **CVE-2026-22252** (LibreChat, CWE-285, NIST CVSS 9.9) — the MCP stdio transport accepts arbitrary commands without authorization, so any authenticated user executes shell commands as root inside the container via one API request; fixed in 0.8.2-rc2. **CVE-2026-22688** (Tencent WeKnora, CWE-77, NIST CVSS 8.8) — authenticated users inject `stdio_config.command/args` into MCP settings, causing the server to spawn attacker-supplied subprocesses; fixed in 0.2.5. Both not KEV, RWEP P3 (30 each). Each carries CWE + ATT&CK T1190/T1059 mappings, global-first framework gaps, behavioral IoCs, and a zero-day lesson with a new control (NEW-CTRL-083/084) requiring the MCP stdio transport to authorize callers and validate/neutralize the commands it is handed rather than treating ordinary user auth as an execution boundary. CVE count 324 → 326.
+
+## 0.13.74 — 2026-05-25
+
+CVE catalog — MCP agent-tool trust: adds **CVE-2025-54136** (Check Point Research's "MCPoison"). Cursor trusts an MCP server entry when the user first approves it but never re-validates the `.cursor/mcp.json` entry on later edits — so an attacker who modifies that already-trusted entry (via a shared repository the victim pulls, or local access) gets their command (CWE-78) executed silently and persistently on every project open. This is AI-agent tool poisoning (ATLAS **AML.T0110**): a previously-approved tool mutated into a malicious one with no fresh consent. CVSS 8.8; fixed in Cursor 1.3; not KEV. RWEP P3 (30, per `lib/scoring.js`). CWE-78/829 + ATLAS AML.T0110/T0104 + ATT&CK T1059/T1195, global-first framework gaps, behavioral IoCs, and a zero-day lesson whose new control (NEW-CTRL-082) requires re-validating AI-agent tool configurations on change rather than trusting them indefinitely after first approval. CVE count 323 → 324.
+
+Internal: the `doctor --signatures --shipped-tarball` round-trip test (npm pack + extract + Ed25519 verify) was intermittently exceeding its 30s cap on the macOS CI runner; it now uses a generous timeout to stop the spurious failure.
+
+## 0.13.73 — 2026-05-25
+
+CVE catalog — MCP toolchain: adds **CVE-2025-49596**, the remote code execution in Anthropic's official MCP Inspector. The Inspector client and proxy have no authentication between them, so an unauthenticated request that reaches the browser-reachable proxy (loopback / 0.0.0.0) launches MCP commands over stdio — a malicious web page a developer visits drives it cross-origin (the 0.0.0.0-day / DNS-rebinding class), yielding RCE on the developer's machine. CWE-306; GitHub CNA CVSS v4.0 9.4 (NVD has not assessed v3.1; the catalog records a conservative v3.1 estimate of 8.3); fixed in `@modelcontextprotocol/inspector` 0.14.1. The framework-gap notes name the real exposure: MCP — the connective tissue of the agent ecosystem — concentrates RCE risk in its toolchain, which sits outside the managed vulnerability program on developer workstations. RWEP P3 (30): not KEV, no confirmed in-the-wild exploitation, patched at disclosure. CWE-306/352/346 + ATT&CK T1190/T1059, global-first framework gaps, behavioral IoCs, and a zero-day lesson whose new control (NEW-CTRL-081) requires locally-bound AI/MCP dev services to authenticate and origin-validate rather than trust loopback reachability. CVE count 322 → 323.
+
+## 0.13.72 — 2026-05-25
+
+CVE catalog — AI-framework threat intel: adds **CVE-2026-25592**, the Microsoft Semantic Kernel prompt-injection-to-RCE (CVSS 9.9 critical; Microsoft-disclosed 2026-05-07; fixed in Microsoft.SemanticKernel.Plugins.Core 1.71.0). A path traversal (CWE-22) in the `SessionsPythonPlugin` allows arbitrary file write; because the plugin runs inside a tool-wired agent, an injected prompt (ATLAS AML.T0051) drives the write to host code execution — a single prompt was shown launching calc.exe on the agent host. This is the catalog's core thesis made concrete: once an agent can reach a file-writing or code-running tool, prompt injection is a remote-code-execution primitive, not a content-safety nuisance. The RWEP score is deliberately P3 (30) despite the 9.9 CVSS — it is not KEV-listed, has no confirmed in-the-wild exploitation, and shipped with a patch (Hard Rule #3: real-world-exploit priority over CVSS). The entry carries CWE-22/94 + ATLAS AML.T0051 + ATT&CK T1059/T1203 mappings, global-first framework gaps including the prompt-injection access-control gap, behavioral IoCs, and a zero-day lesson whose new control (NEW-CTRL-080) requires sandboxing the AI agent's tool-execution boundary. CVE count 321 → 322.
+
+## 0.13.71 — 2026-05-25
+
+CVE catalog currency: closes the last of the 2026-05-20 CISA KEV batch by adding the five legacy CVEs CISA re-listed for renewed exploitation against unpatched / end-of-life systems — CVE-2008-4250 (Windows Server-service RPC RCE, MS08-067 / Conficker), CVE-2009-1537 (DirectShow QuickTime parsing RCE), CVE-2009-3459 (Adobe Acrobat/Reader heap overflow), CVE-2010-0249 (Internet Explorer use-after-free, Operation Aurora), and CVE-2010-0806 (Internet Explorer iepeers use-after-free). Each is KEV-listed 2026-05-20, due 2026-06-03, with patches long available — the re-listing is a legacy-exploitation-resurgence signal, and the framework-gap notes call out that the real exposure is the patch-deployment gap on assets that have fallen out of the managed vulnerability program. Added as enrichment-pending drafts (RWEP P1 70, CWE + ATT&CK mappings, reverse references propagated) matching the catalog's auto-imported KEV-intake convention. With these, the catalog is current to the latest published CISA KEV as of today. CVE count 316 → 321.
+
 ## 0.13.70 — 2026-05-24
 
 CVE catalog currency: adds **CVE-2026-45498**, the actively-exploited Microsoft Defender remote denial of service (CVSS 7.5 — network, unauthenticated; CISA KEV 2026-05-20, due 2026-06-03), companion to CVE-2026-41091 in the same Defender advisory. Uncontrolled resource consumption (CWE-400) lets a remote attacker crash or hang Defender, removing the host's AV/EDR coverage — a defense-impairment primitive (ATT&CK T1562.001) that enables follow-on intrusion. (Early press reported CVSS 4.0; NVD's authoritative score is 7.5.) Fixed in Defender antimalware platform 4.18.26040.7 (auto-update, no reboot). The entry carries RWEP scoring (P2, 45 via lib/scoring.js), CWE-400 and ATT&CK T1562.001/T1499 mappings, global-first framework-gap declarations, behavioral IoCs, and a zero-day lesson whose new control (NEW-CTRL-079) makes loss of AV/EDR availability a monitored security event. Postdates the catalog's prior bulk KEV intake (KEV catalog 2026.05.15).
@@ -2843,7 +3690,7 @@ Adds detection for the npm supply-chain worm disclosed 2026-05-11 (84 malicious 
 
 - `skills/supply-chain-integrity/SKILL.md` — adds the CVE-2026-45321 case at the top of Threat Context with the chained-primitives explanation and the new SLSA-L3-insufficient framing.
 
-### Eating own dogfood
+### Self-applied supply-chain hardening
 
 - `.npmrc` — adds `before=72h` + `minimumReleaseAge=4320` so this repo refuses fresh-publish installs. Survives downgrade to older npm via both flags.
 

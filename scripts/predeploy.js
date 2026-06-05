@@ -68,7 +68,11 @@ const GATES = [
   {
     name: "Validate CVE catalog schema + zero-day learning coverage",
     command: process.execPath,
-    args: [path.join(ROOT, "lib", "validate-cve-catalog.js")],
+    // --strict promotes the deferred warning checks (cross-catalog ref
+    // resolution, strict CVSS-vector prefix, KEV-date-required, Hard-Rule-#14
+    // IoCs) to hard failures so they block a release rather than scrolling
+    // past. Auto-imported drafts stay exempt.
+    args: [path.join(ROOT, "lib", "validate-cve-catalog.js"), "--strict"],
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
   // the "validate-cves --offline --no-fail" and
@@ -89,7 +93,7 @@ const GATES = [
   {
     name: "Lint skill files",
     command: process.execPath,
-    args: [path.join(ROOT, "lib", "lint-skills.js")],
+    args: [path.join(ROOT, "lib", "lint-skills.js"), "--strict"],
     ciJobName: "Lint skill files",
   },
   {
@@ -113,7 +117,7 @@ const GATES = [
   {
     name: "Validate catalog _meta (tlp + source_confidence + freshness_policy)",
     command: process.execPath,
-    args: [path.join(ROOT, "lib", "validate-catalog-meta.js")],
+    args: [path.join(ROOT, "lib", "validate-catalog-meta.js"), "--strict"],
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
   {
@@ -174,7 +178,7 @@ const GATES = [
     // v0.13.0 additions) all validate cleanly.
     name: "Validate playbooks (schema + cross-refs)",
     command: process.execPath,
-    args: [path.join(ROOT, "lib", "validate-playbooks.js")],
+    args: [path.join(ROOT, "lib", "validate-playbooks.js"), "--strict"],
     ciJobName: "Validate playbooks",
   },
   {
@@ -230,6 +234,32 @@ const GATES = [
     name: "AGENTS.md collector enumeration drift",
     command: process.execPath,
     args: [path.join(ROOT, "scripts", "check-agents-md-collectors.js")],
+    ciJobName: "Data integrity (catalog + manifest snapshot)",
+  },
+  {
+    // Codebase-pattern gate. Blocks the code-shape bug classes that
+    // recurred across releases: a library-callable function that writes to
+    // stdout then calls process.exit() (truncates the buffered write when
+    // piped — the stdout-flush-truncation class), and a stale/typo'd `// allow:` marker.
+    // dynamic-RegExp construction is surfaced warn-only this release. The
+    // exception mechanism + the "owned elsewhere" boundary are documented in
+    // the script header.
+    name: "Codebase-pattern gates (stdout-flush, dynamic RegExp, bidi codepoints, orphan markers)",
+    command: process.execPath,
+    args: [path.join(ROOT, "scripts", "check-codebase-patterns.js")],
+    ciJobName: "Data integrity (catalog + manifest snapshot)",
+  },
+  {
+    // Release-notes extract + quality gate. Runs the same `## <version>`
+    // CHANGELOG extraction the release workflow publishes as the GitHub
+    // Release body, and lints it for operator-facing quality (no internal
+    // phase/pass/slice narrative, no agent-dispatch / conversation residue,
+    // no tautological green claims). A malformed or internal-narrative section
+    // fails here rather than shipping as the public release body / falling
+    // back to the generic "Release of v<version>." line.
+    name: "Release-notes extract + operator-facing lint (CHANGELOG section)",
+    command: process.execPath,
+    args: [path.join(ROOT, "scripts", "check-changelog-extract.js")],
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
 ];

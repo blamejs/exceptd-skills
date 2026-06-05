@@ -54,18 +54,34 @@ async function main() {
   try {
     const binMod = require(path.join(__dirname, '..', '..', 'bin', 'exceptd.js'));
     if (binMod && typeof binMod.persistAttestation === 'function') {
-      persistResult = binMod.persistAttestation({
-        sessionId,
-        playbookId: 'synth',
-        directiveId: 'default',
-        evidenceHash,
-        operator: null,
-        operatorConsent: null,
-        submission: { writer: idx },
-        runOpts: { airGap: false, forceStale: false, mode: 'test', attestationRoot: root },
-        forceOverwrite: true,
-        filename: 'attestation.json',
-      });
+      // persistAttestation's inner lock spins synchronously for a bounded
+      // number of attempts, then returns a LOCK_CONTENTION sentinel whose
+      // own error text documents the contract: "Retry the operation."
+      // That bounded inner budget is deliberate (it caps a CPU-freezing
+      // busy-spin); it does NOT promise that every writer acquires within
+      // one call under heavy contention. The operator-facing contract is
+      // retry-from-outside. Model that here so the chain-integrity assertion
+      // is exercised against the actual contract rather than a timing race:
+      // because this helper is async we can truly yield the event loop
+      // between attempts (the inner spin cannot), giving the current holder
+      // room to finish its short critical section before we retry.
+      const OUTSIDE_RETRIES = 12;
+      for (let attempt = 0; attempt <= OUTSIDE_RETRIES; attempt++) {
+        persistResult = binMod.persistAttestation({
+          sessionId,
+          playbookId: 'synth',
+          directiveId: 'default',
+          evidenceHash,
+          operator: null,
+          operatorConsent: null,
+          submission: { writer: idx },
+          runOpts: { airGap: false, forceStale: false, mode: 'test', attestationRoot: root },
+          forceOverwrite: true,
+          filename: 'attestation.json',
+        });
+        if (persistResult.ok || !persistResult.lock_contention) break;
+        await new Promise((r) => setTimeout(r, 40 + Math.floor(Math.random() * 120)));
+      }
     } else {
       // Fallback: drive via spawnSync against the CLI. Use the
       // `exceptd attest persist` path if it exists; otherwise fail loudly.

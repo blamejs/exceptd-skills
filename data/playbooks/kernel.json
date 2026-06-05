@@ -589,6 +589,7 @@
             "host_supports_livepatch == true"
           ],
           "priority": 1,
+          "for_signals": ["kver-in-affected-range"],
           "compensating_controls": [],
           "estimated_time_hours": 1
         },
@@ -600,6 +601,7 @@
             "reboot_window_within_72h == true"
           ],
           "priority": 2,
+          "for_signals": ["kver-in-affected-range"],
           "compensating_controls": [
             "MAC_policy_tightened_until_reboot",
             "ssh_access_restricted_to_admins_until_reboot"
@@ -614,6 +616,7 @@
             "ops_authorization_for_sysctl_changes == true"
           ],
           "priority": 3,
+          "for_signals": ["unpriv-userns-enabled","unpriv-bpf-allowed"],
           "compensating_controls": [
             "sysctl_changes_recorded_in_change_management",
             "exploit_replay_negative_test_passed"

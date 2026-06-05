@@ -52,6 +52,22 @@
       "exceptd_deltas": [
         "scriptPath validator rejects Windows UNC + extended-path prefixes (\\\\?\\, \\\\.\\, \\\\<server>\\) — defense-in-depth against worker-spawn from network shares on win32 platforms"
       ]
+    },
+    "codepoint-class.js": {
+      "vendored_path": "vendor/blamejs/codepoint-class.js",
+      "vendored_sha256": "2be79cf25de87f46b608aec98ee790f4cf1035ffee48fe70ff082d3cf6f324ba",
+      "upstream_path": "lib/codepoint-class.js",
+      "upstream_sha256_at_pin": "2be79cf25de87f46b608aec98ee790f4cf1035ffee48fe70ff082d3cf6f324ba",
+      "stripped": [],
+      "surface_preserved": [
+        "BIDI_RE / C0_CTRL_RE / ZERO_WIDTH_RE / NULL_BYTE (classification regexes)",
+        "BIDI_RE_G / C0_CTRL_RE_G / ZW_RE_G / NULL_RE_G (global strip regexes)",
+        "applyCharStripPolicies(text, opts)",
+        "hex4 / charClass / fromCp / range tables"
+      ],
+      "exceptd_deltas": [
+        "Used for codepoint-family CLASSIFICATION + family-strip only. The BIDI|C0|ZERO_WIDTH|NULL union is a strict subset of Unicode General Category C, so \\p{C} remains the reject/strip backstop at both consumer sites (bin/exceptd.js --operator validation, lib/playbook-runner.js sanitizeOperatorText) — it catches the divergent remainder (U+007F, U+0080-009F, U+FFF9-FFFB, private-use, unassigned) the named-family regexes miss."
+      ]
     }
   }
 }

@@ -908,6 +908,7 @@
             "rotation_runbook_documented == true OR ad_hoc_rotation_acceptable_within_4h == true"
           ],
           "priority": 1,
+          "for_signals": ["credential-store-touched-during-window","long-lived-token-in-compromised-ci-log","outbound-exfil-during-window"],
           "compensating_controls": [
             "rotation_recorded_in_secret_store_audit_log",
             "synthetic_test_validates_new_credential",
@@ -923,6 +924,7 @@
             "host_isolation_authority == true"
           ],
           "priority": 1,
+          "for_signals": ["compromised-install-on-host"],
           "compensating_controls": [
             "host_isolation_during_audit",
             "fresh_workstation_provisioning_for_affected_developers"
@@ -937,6 +939,7 @@
             "operator_can_re_authenticate_ai_assistant == true"
           ],
           "priority": 1,
+          "for_signals": ["ai-assistant-config-mutated"],
           "compensating_controls": [
             "ai_assistant_baseline_attestation",
             "weekly_ai_assistant_config_drift_scan"
@@ -951,6 +954,7 @@
             "operator_can_file_advisories == true"
           ],
           "priority": 2,
+          "for_signals": ["operator-published-package-republish"],
           "compensating_controls": [
             "advisory_filed_within_24h",
             "yank_or_deprecate_within_4h",
@@ -966,6 +970,7 @@
             "slsa_l3_pipeline_operational == true"
           ],
           "priority": 3,
+          "for_signals": ["no-provenance-revocation-filed"],
           "compensating_controls": [
             "provenance_revocation_filed",
             "clean_release_provenance_attested"
@@ -979,6 +984,7 @@
             "ir_plan_ownership_attested == true"
           ],
           "priority": 4,
+          "for_signals": ["ir-plan-missing-supply-chain-recovery"],
           "compensating_controls": [
             "ir_team_training_recorded",
             "feed_ingestion_attested"

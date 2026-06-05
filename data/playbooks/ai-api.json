@@ -780,6 +780,7 @@
             "operator_authorized_for_key_rotation == true"
           ],
           "priority": 1,
+          "for_signals": ["cleartext-api-key-in-dotfile","long-lived-aws-keys","gcp-service-account-json","kubeconfig-with-static-token"],
           "compensating_controls": [
             "service_disruption_window_acknowledged",
             "rotation_audit_trail"
@@ -794,6 +795,7 @@
             "incident_response_authorized == true"
           ],
           "priority": 1,
+          "for_signals": ["ai-api-egress-from-unexpected-process","ai-api-anomalous-volume","ai-api-beaconing-cadence","base64-or-encoded-payload-in-prompts"],
           "compensating_controls": [
             "forensic_preservation",
             "vendor_abuse_team_notification"
@@ -807,6 +809,7 @@
             "broker_available_for_each_credential_class == true"
           ],
           "priority": 2,
+          "for_signals": ["cleartext-api-key-in-dotfile","long-lived-aws-keys","gcp-service-account-json","kubeconfig-with-static-token"],
           "compensating_controls": [
             "legacy_dotfile_still_present_until_keychain_validated",
             "developer_workflow_regression_test"
@@ -821,6 +824,7 @@
             "tls_termination_acceptable_per_policy == true"
           ],
           "priority": 3,
+          "for_signals": ["ai-api-egress-from-unexpected-process","ai-api-anomalous-volume","ai-api-beaconing-cadence","base64-or-encoded-payload-in-prompts"],
           "compensating_controls": [
             "proxy_failure_mode_defined",
             "developer_traffic_baseline_collection"
@@ -834,6 +838,7 @@
             "host-level_firewall_or_endpoint_egress_control_available == true"
           ],
           "priority": 4,
+          "for_signals": ["ai-api-egress-from-unexpected-process","ai-api-anomalous-volume","ai-api-beaconing-cadence"],
           "compensating_controls": [
             "allowlist_change_management",
             "monitoring_for_blocked_attempts"

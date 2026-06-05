@@ -685,6 +685,7 @@
             "ops_authorization_for_chmod == true"
           ],
           "priority": 1,
+          "for_signals": ["non-baseline-suid"],
           "compensating_controls": [
             "suid-baseline-tracked",
             "edr-alerts-on-suid-creation"
@@ -699,6 +700,7 @@
             "automation_account_owner_authorization == true"
           ],
           "priority": 1,
+          "for_signals": ["sudoers-nopasswd-wildcard"],
           "compensating_controls": [
             "sudoers-change-recorded",
             "automation-account-inventory-updated"
@@ -712,6 +714,7 @@
             "deterministic_implant_indicator_fired == true"
           ],
           "priority": 1,
+          "for_signals": ["duplicate-uid-zero","orphan-privileged-process","cron-or-timer-outside-policy"],
           "compensating_controls": [
             "host-isolated-from-network",
             "memory-snapshot-captured-pre-removal"
@@ -726,6 +729,7 @@
             "service_owner_identified == true"
           ],
           "priority": 2,
+          "for_signals": ["listening-socket-unknown-bind"],
           "compensating_controls": [
             "host-firewall-rule-added",
             "service-inventory-updated"

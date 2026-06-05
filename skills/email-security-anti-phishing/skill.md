@@ -54,7 +54,7 @@ d3fend_refs:
   - D3-IOPR
   - D3-MFA
 last_threat_review: "2026-05-18"
-discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief email-security-anti-phishing` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
+discovery_mode: "standalone"  # operator-reached via `exceptd brief email-security-anti-phishing` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # Email Security and Anti-Phishing Assessment
@@ -71,7 +71,7 @@ Phishing remained the #1 initial-access vector through 2025 (Verizon DBIR 2025) 
 
 **Business Email Compromise losses continued growing through 2025.** FBI IC3 2024 and 2025 reports place BEC at multi-billion-USD annual loss globally, with the wire-redirection and vendor-invoice-fraud subclasses dominant. The 2026 reality is that BEC is no longer "compromised mailbox sends a wire request" — it is increasingly "spoofed-or-look-alike domain plus deepfake voice/video confirmation channel" so that out-of-band verification by phone *fails open* unless the callback number is a pre-registered known-good.
 
-**Defense ecosystem snapshot.** SPF (RFC 7208), DKIM (RFC 6376), and DMARC (RFC 7489) adoption is effectively universal among Fortune 500 sender domains, but **enforcement** (`p=reject` vs `p=none`) lags — only roughly 60% of large enterprise domains are at `p=reject` by mid-2026, with the rest stuck in monitoring mode for fear of breaking legitimate forwarders. BIMI (AuthIndicators Working Group draft, with IETF mailing-list discussion ongoing as of mid-2026) for visual brand verification is deployed at Gmail, Yahoo Mail, and Apple Mail, but requires DMARC `p=quarantine` or `p=reject` to take effect — so it doubles as enforcement-status signaling. ARC (RFC 8617) is the forwarder-authentication answer to the DMARC-vs-mailing-list problem and is maturing across major providers. MTA-STS (RFC 8461) and TLSRPT (RFC 8460) close the in-transit TLS-downgrade gap that opportunistic STARTTLS leaves open. The cloud email duopoly — Microsoft 365 Exchange Online and Google Workspace Gmail — is the canonical ephemeral inbox environment per the project's ephemeral-realities rule; on-prem Exchange remains in regulated and air-gapped enclaves and gets an explicit exception path below.
+**Defense ecosystem snapshot.** SPF (RFC 7208), DKIM (RFC 6376), and DMARC (RFC 7489) adoption is effectively universal among Fortune 500 sender domains, but **enforcement** (`p=reject` vs `p=none`) lags — only roughly 60% of large enterprise domains are at `p=reject` by mid-2026, with the rest stuck in monitoring mode for fear of breaking legitimate forwarders. BIMI (AuthIndicators Working Group draft, with IETF mailing-list discussion ongoing as of mid-2026) for visual brand verification is deployed at Gmail, Yahoo Mail, and Apple Mail, but requires DMARC `p=quarantine` or `p=reject` to take effect — so it doubles as enforcement-status signaling. ARC (RFC 8617) is the forwarder-authentication answer to the DMARC-vs-mailing-list problem and is maturing across major providers. MTA-STS (RFC 8461) and TLSRPT (RFC 8460) close the in-transit TLS-downgrade gap that opportunistic STARTTLS leaves open. The cloud email duopoly — Microsoft 365 Exchange Online and Google Workspace Gmail — is the canonical inbox environment most enterprises operate in; on-prem Exchange remains in regulated and air-gapped enclaves and gets an explicit exception path below.
 
 **Phishing-resistant authentication.** FIDO2 / WebAuthn synced passkeys are the only widely deployed authenticator class that survives AiTM proxy phishing (evilginx-class), Tycoon-2FA-style session-token relay, and push-notification fatigue attacks. TOTP, SMS, and push-MFA are all bypassable by 2026 phishing-kit ecosystems. Caffeine and Tycoon 2FA continue to evolve; observed 2025 telemetry shows passkey-relay attempts emerging against poorly configured WebAuthn relying-party verification.
 
@@ -95,7 +95,7 @@ Phishing remained the #1 initial-access vector through 2025 (Verizon DBIR 2025) 
 | IN CERT-In | Phishing guidance and 6-hour incident reporting rule | Reporting requirement is firm; control specifications lag. |
 | NYDFS | 23 NYCRR 500.14 (training and monitoring) | Annual phishing-aware training required; does not specify FIDO2, DMARC `p=reject`, or deepfake-aware procedures. |
 
-Per AGENTS.md Rule #5, this analysis spans EU + UK + AU + JP + IL + SG + IN + NYDFS alongside NIST and ISO. Each framework-gap ID in `framework_gaps` (`NIST-800-53-SI-3`, `ISO-27001-2022-A.8.16`, `SOC2-CC7-anomaly-detection`, `NIS2-Art21-incident-handling`, `UK-CAF-C1`, `AU-Essential-8-App-Hardening`) resolves against `data/framework-control-gaps.json` — operators producing a per-control evidence pack should pull the canonical lag rationale from that catalog rather than transcribing the table above.
+This analysis spans EU + UK + AU + JP + IL + SG + IN + NYDFS alongside NIST and ISO, because a US-only email-security posture is incomplete for any multi-jurisdiction sender. Each framework-gap ID in `framework_gaps` (`NIST-800-53-SI-3`, `ISO-27001-2022-A.8.16`, `SOC2-CC7-anomaly-detection`, `NIS2-Art21-incident-handling`, `UK-CAF-C1`, `AU-Essential-8-App-Hardening`) resolves against `data/framework-control-gaps.json` — operators producing a per-control evidence pack should pull the canonical lag rationale from that catalog rather than transcribing the table above.
 
 ---
 
@@ -122,7 +122,7 @@ Note: `atlas_refs` is intentionally empty — these are ATT&CK Enterprise TTPs a
 | Voice cloning | Commodity | ElevenLabs and similar have anti-abuse, but underground forks and self-hosted open-weights models remove the guardrails. ~3 seconds of audio suffices. |
 | Real-time deepfake video | Live | DeepFaceLab plus real-time variants; single-GPU; demonstrated at scale by the Arup 2024 incident. |
 | LLM-generated hyperpersonalized email | Live | All major LLM providers run abuse-detection on the email-generation surface; jailbreak-augmented intermediaries route around it. |
-| AI-discovered novel evasion | Active | Per DR-5: AI acceleration of attacker tooling is current operational reality, not future-watch. |
+| AI-discovered novel evasion | Active | AI acceleration of attacker tooling is current operational reality, not future-watch. |
 | Phishing-resistant defense | Available now | FIDO2 / WebAuthn synced passkeys = the only authenticator class that survives 2026 phishing kits. CISA Phishing-Resistant MFA guidance + NIST 800-63B rev 4 codify this. |
 | DMARC `p=reject` adoption | Universal at large senders, ~60% enforced | Adoption metric is misleading; enforcement metric is the real KPI. |
 | ARC for forwarders | Maturing across major providers | Closes the mailing-list-breaks-DMARC objection that kept many domains at `p=none`. |
@@ -134,7 +134,7 @@ No CVE entries are claimed for this skill — email-channel social engineering i
 
 ## Analysis Procedure
 
-The procedure threads three foundational principles per AGENTS.md:
+The procedure threads three foundational principles:
 
 **Defense in depth** — inbound: DMARC enforcement (`p=reject`) + ARC for forwarders + secure email gateway (Proofpoint, Mimecast, Microsoft Defender for Office 365, Google Workspace Gmail Advanced Protection) + URL rewriting + sandbox detonation + DLP egress. Outbound: DKIM signing on all sending sources + BIMI registration + SPF maintenance with SPF-record-flattening discipline (10-DNS-lookup ceiling). User layer: phishing-resistant MFA (passkeys), simulated phishing program including AI-augmented lures, deepfake-aware policies for video and voice. Vendor layer: fourth-party email risk — supplier DMARC posture monitored as a vendor-risk attribute. Incident layer: BEC IR playbook with explicit hand-off to `incident-response-playbook`.
 
@@ -142,7 +142,7 @@ The procedure threads three foundational principles per AGENTS.md:
 
 **Zero trust** — every email is hostile until verified (DMARC pass + sender reputation + intent classification at gateway). Every video call requesting a financial action requires a live verification challenge (callback to a known number; pre-arranged challenge phrase; in-person or known-good-channel confirmation for high-value transactions). Every voice call from a "known" executive requesting an out-of-policy action gets multi-channel verification before action.
 
-**Cloud-email canonical, on-prem exception** (Rule #9): default scoping assumes Microsoft 365 Exchange Online or Google Workspace Gmail. On-prem Exchange (legacy, regulated enclave, air-gapped) gets an explicit exception path noting which controls (cloud-native sandbox detonation, Microsoft Defender XDR signals, Google Workspace Security Sandbox) have on-prem equivalents and which require compensating controls.
+**Cloud-email canonical, on-prem exception:** default scoping assumes Microsoft 365 Exchange Online or Google Workspace Gmail. On-prem Exchange (legacy, regulated enclave, air-gapped) gets an explicit exception path noting which controls (cloud-native sandbox detonation, Microsoft Defender XDR signals, Google Workspace Security Sandbox) have on-prem equivalents and which require compensating controls.
 
 Email-authentication RFCs cited throughout the procedure (`RFC-7489` DMARC, `RFC-6376` DKIM, `RFC-7208` SPF, `RFC-8616` BIMI/AuthIndicators DNS encoding, `RFC-8461` MTA-STS, `RFC-8617` ARC, `RFC-8460` TLSRPT) resolve against `data/rfc-references.json`. The DLP exfil-channel mappings invoked by the gateway-and-egress sub-procedures (`DLP-CHAN-EMAIL-OUT` for outbound message exfil, `DLP-CHAN-LLM-PROMPT` for LLM-prompt-as-egress when users paste mailbox content into AI assistants, `DLP-ENFORCE-BLOCK` for hard-block enforcement on confirmed PHI/PCI patterns) resolve against `data/dlp-controls.json` — these are the canonical IDs to cite when handing off to `dlp-gap-analysis`.
 
@@ -191,7 +191,7 @@ Four concrete tests distinguish paper compliance from real anti-phishing posture
 
 ## Defensive Countermeasure Mapping
 
-Per AGENTS.md, this skill ships on 2026-05-11 and includes the optional 8th section, mapping offensive findings to MITRE D3FEND defensive techniques.
+This section maps offensive findings to MITRE D3FEND defensive techniques.
 
 | D3FEND ID | Defense | Defense-in-Depth Layer | Least-Privilege Scope | Zero-Trust Posture | AI-Pipeline Applicability |
 |---|---|---|---|---|---|

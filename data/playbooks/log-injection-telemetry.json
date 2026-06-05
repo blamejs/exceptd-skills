@@ -1,0 +1,619 @@
+{
+  "_meta": {
+    "id": "log-injection-telemetry",
+    "version": "1.0.0",
+    "last_threat_review": "2026-06-02",
+    "threat_currency_score": 92,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-06-02",
+        "summary": "Initial seven-phase telemetry-pipeline integrity playbook — log injection + telemetry-sink confidentiality. Covers the integrity and leakage failures of the observability path that logging-presence controls do not: CR/LF log injection forging entries on every sink except syslog, secrets/PII logged without redaction, unauthenticated /metrics + debug endpoints leaking internal state, telemetry exporters shipping to un-inventoried or input-derived destinations (exfil/SSRF), embedded exporter credentials, and plaintext/relaxed-TLS export. Distinct from dlp-gap-analysis (LLM/RAG exfil) — this is the telemetry pipeline. Adds CWE-117 (improper output neutralization for logs) to the catalog. Maps to ATT&CK T1565.001 / T1530 / T1213 and to NIST 800-53 AU-9 / SI-11, ISO 27001 A.8.15, NIS2 Art.21, UK CAF B4, and AU ISM."
+      }
+    ],
+    "owner": "@blamejs/platform-security",
+    "air_gap_mode": false,
+    "scope": "service",
+    "preconditions": [
+      {
+        "id": "logging-source-or-config-read",
+        "description": "Agent must read the operator's logging / telemetry-exporter / metrics source and/or configuration to inspect per-sink neutralization, redaction, exporter destinations/credentials/TLS, and metrics-endpoint exposure. A host with neither marks the playbook visibility_gap=no_telemetry_inventory.",
+        "check": "agent_has_filesystem_read == true OR agent_has_telemetry_config == true",
+        "on_fail": "halt"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "secrets",
+        "condition": "finding.includes_embedded_sink_credential == true"
+      },
+      {
+        "playbook_id": "audit-log-integrity",
+        "condition": "finding.includes_log_forging == true"
+      },
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      }
+    ]
+  },
+  "domain": {
+    "name": "Telemetry-pipeline integrity (log injection + sink confidentiality)",
+    "attack_class": "cloud-misconfig",
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1565.001",
+      "T1530",
+      "T1213"
+    ],
+    "cve_refs": [],
+    "cwe_refs": [
+      "CWE-117",
+      "CWE-532",
+      "CWE-918",
+      "CWE-200"
+    ],
+    "frameworks_in_scope": [
+      "nist-800-53",
+      "iso-27001-2022",
+      "nis2",
+      "uk-caf",
+      "au-ism"
+    ]
+  },
+  "phases": {
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "GDPR Art.33",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "pii_in_logs_scope",
+            "sink_exposure_estimate"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "telemetry_inventory",
+            "log_forging_or_exfil_evidence"
+          ]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "we-have-centralized-logging",
+          "claim": "We centralize all logs to a SIEM, so logging is handled.",
+          "fast_detection_test": "Centralization is not integrity or confidentiality. Ask whether CR/LF is neutralized per sink (log forging), whether secrets are redacted before shipping, and whether the /metrics endpoint is authenticated."
+        },
+        {
+          "pattern_id": "logs-are-access-controlled",
+          "claim": "The log store has access controls, so logs are protected.",
+          "fast_detection_test": "Store ACLs do not stop INJECTION at write time. Ask whether interpolated values are CR/LF-neutralized — an attacker forges entries before they reach the protected store."
+        },
+        {
+          "pattern_id": "metrics-are-internal",
+          "claim": "Our metrics are internal-only.",
+          "fast_detection_test": "Confirm the network binding. An \"internal\" /metrics that is actually reachable (default 0.0.0.0 bind, exposed ingress) leaks internal state to anyone who can reach it."
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Org logging controls require that events are recorded, centralized, and access-controlled. None address the integrity (CR/LF injection / log forging) and confidentiality (secrets in logs, exporter egress/SSRF, unauthenticated metrics) of the telemetry pipeline itself.",
+        "lag_score": 70,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "AU-9",
+            "designed_for": "protection of audit information",
+            "insufficient_because": "attested by store access controls; does not address CR/LF log injection that forges entries before storage."
+          },
+          {
+            "framework": "nist-800-53",
+            "control_id": "SI-11",
+            "designed_for": "error handling / output neutralization",
+            "insufficient_because": "not operationalised as per-sink CR/LF neutralization or secret redaction on the telemetry path."
+          }
+        ]
+      },
+      "skill_preload": [
+        "log-injection-telemetry",
+        "webapp-security",
+        "dlp-gap-analysis",
+        "framework-gap-analysis",
+        "compliance-theater",
+        "policy-exception-gen"
+      ]
+    },
+    "direct": {
+      "threat_context": "The telemetry pipeline is both an integrity target and a confidentiality leak. Integrity: un-sanitized CR/LF lets an attacker forge or split log entries, corrupting the record incident response depends on (only the syslog sink here sanitizes). Confidentiality: secrets/PII logged without redaction persist in every downstream sink; an unauthenticated /metrics leaks internal state; exporters shipping to un-inventoried or input-derived endpoints become exfil/SSRF channels; embedded sink credentials and plaintext export widen it. These are pipeline-posture gaps that \"we centralize logs\" does not address.",
+      "rwep_threshold": {
+        "escalate": 50,
+        "monitor": 30,
+        "close": 15
+      },
+      "framework_lag_declaration": "A clean \"we centralize logs to a SIEM with access controls\" audit is NON-EVIDENCE for telemetry-pipeline integrity; it confirms log presence and store ACLs, not CR/LF neutralization, secret redaction, metrics-endpoint auth, or exporter egress/SSRF/TLS posture.",
+      "skill_chain": [
+        {
+          "skill": "log-injection-telemetry",
+          "purpose": "enumerate the per-sink neutralization / redaction / exporter / metrics checks"
+        },
+        {
+          "skill": "webapp-security",
+          "purpose": "cross-reference the OWASP log-injection and SSRF classes"
+        },
+        {
+          "skill": "dlp-gap-analysis",
+          "purpose": "frame the secrets/PII-in-telemetry leakage dimension (without duplicating LLM/RAG exfil)"
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "map findings to the AU-9 / SI-11 gaps the controls do not cover"
+        }
+      ],
+      "token_budget": {
+        "estimated_total": 12000,
+        "breakdown": {
+          "govern": 1200,
+          "direct": 800,
+          "look": 4000,
+          "detect": 3800,
+          "analyze": 1500,
+          "validate": 500,
+          "close": 200
+        }
+      }
+    },
+    "look": {
+      "artifacts": [
+        {
+          "id": "log-write-path",
+          "type": "config_file",
+          "source": "grep for log.js / log-stream / logger / format / CRLF / sanitiz / redact across the logging write path and per-sink formatters.",
+          "description": "Whether interpolated values are CR/LF-neutralized per sink and whether a redaction pass runs before values reach any sink.",
+          "required": true,
+          "air_gap_alternative": "Inspect the per-sink formatter source for control-character neutralization and the redaction stage."
+        },
+        {
+          "id": "telemetry-exporter-config",
+          "type": "config_file",
+          "source": "grep for log-stream-otlp / otlp-grpc / cloudwatch / webhook / otel-export / endpoint / url / insecure / tls across the exporter config.",
+          "description": "Exporter destinations (inventoried/allowlisted?), embedded credentials, TLS posture, and webhook SSRF guarding.",
+          "required": true,
+          "air_gap_alternative": "Inspect the exporter config for destination allowlisting, credential source, TLS verification, and webhook SSRF guards."
+        },
+        {
+          "id": "metrics-and-debug-endpoints",
+          "type": "config_file",
+          "source": "grep for metrics.js / server-timing / /metrics / prometheus / debug / pprof / actuator across the observability surface + the route auth config.",
+          "description": "Whether metrics/debug/telemetry endpoints require auth or are bound to a private interface.",
+          "required": false,
+          "air_gap_alternative": "Inspect the metrics/debug route registration + its auth/binding."
+        },
+        {
+          "id": "secret-and-pii-redaction",
+          "type": "config_file",
+          "source": "grep for redact / mask / pii / secret pattern / token across the redaction module and its wiring into the log path.",
+          "description": "Whether a redaction pass strips secrets/PII before values reach the sinks.",
+          "required": false,
+          "air_gap_alternative": "Inspect the redaction module and confirm it is wired into every sink path."
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current logging / telemetry configuration + source state (point-in-time posture audit)",
+        "asset_scope": "every log/trace/metric sink + exporter and every metrics/debug endpoint"
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "The product writes logs/traces/metrics to one or more sinks.",
+          "if_false": "A product with no telemetry pipeline has no surface here."
+        },
+        {
+          "assumption": "Logging/telemetry source or config is readable.",
+          "if_false": "Mark visibility_gap=no_telemetry_inventory and report only what the logging source reveals."
+        }
+      ],
+      "fallback_if_unavailable": [
+        {
+          "artifact_id": "metrics-and-debug-endpoints",
+          "fallback_action": "If no metrics/debug endpoint is exposed, skip that indicator.",
+          "confidence_impact": "none"
+        },
+        {
+          "artifact_id": "secret-and-pii-redaction",
+          "fallback_action": "If logging is strictly structured with a field allowlist, the redaction indicator is reduced-scope.",
+          "confidence_impact": "low"
+        }
+      ]
+    },
+    "detect": {
+      "indicators": [
+        {
+          "id": "crlf-log-injection-unsanitized",
+          "type": "config_value",
+          "value": "Log entries are written to a sink (CloudWatch / OTLP / webhook / local file) with operator- or attacker-influenced values that are not neutralized for CR/LF and control characters — only the syslog sink sanitizes.",
+          "description": "Un-sanitized CR/LF lets an attacker forge or split log entries (injecting fake lines, breaking the parser, or hiding their own actions), corrupting the audit/observability record that incident response relies on.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1565.001",
+          "false_positive_checks_required": [
+            "Confirm every sink (not just syslog) neutralizes CR/LF + control characters in interpolated values (or uses a structured/encoded format that cannot be line-split) — a sink writing raw user-influenced text is the finding.",
+            "A purely structured sink (JSON-encoded fields the consumer parses structurally, never line-split) is safe; the finding is a line-oriented sink interpolating un-neutralized values."
+          ]
+        },
+        {
+          "id": "metrics-endpoint-unauthenticated",
+          "type": "config_value",
+          "value": "A /metrics (Prometheus) or debug/telemetry endpoint is exposed without authentication, leaking internal state (build info, internal hostnames, queue depths, user counts, sometimes tokens in labels).",
+          "description": "An unauthenticated metrics/debug endpoint is a reconnaissance goldmine — internal topology and operational state an attacker uses to plan, and occasionally secrets leaked into metric labels.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1213",
+          "false_positive_checks_required": [
+            "Confirm the metrics/telemetry endpoint requires authentication or is bound to a private interface / scrape network not reachable by untrusted clients — an internet-reachable unauthenticated /metrics is the finding.",
+            "A metrics endpoint on a loopback / private scrape subnet that the public cannot reach is safe; confirm the effective network exposure, not just that auth is off."
+          ]
+        },
+        {
+          "id": "secrets-or-pii-logged-without-redaction",
+          "type": "config_value",
+          "value": "Sensitive values (API keys, tokens, passwords, PII) reach the logs without a redaction pass on the log/telemetry path.",
+          "description": "Secrets or PII in logs persist in every sink and downstream store (SIEM, cloud log service), widening the exposure surface and turning a log breach into a credential/PII breach.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1530",
+          "false_positive_checks_required": [
+            "Confirm a redaction pass strips known secret patterns / PII before values reach any sink — log statements that interpolate credentials/PII with no redaction are the finding.",
+            "A field-level allowlist that structurally cannot include sensitive fields is safe; the finding is free-form logging of objects that may contain secrets without redaction."
+          ]
+        },
+        {
+          "id": "telemetry-egress-endpoints-not-inventoried",
+          "type": "config_value",
+          "value": "Log/trace/metric exporters (OTLP, CloudWatch, webhook) ship to destination endpoints that are not inventoried or are configurable from attacker-influenceable input, with no allowlist.",
+          "description": "An un-inventoried or input-derived exporter destination is an exfiltration channel — telemetry (which often contains sensitive operational data) is shipped wherever the (possibly poisoned) config points.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1530",
+          "false_positive_checks_required": [
+            "Confirm exporter destinations are a fixed, inventoried allowlist not derived from untrusted input — an exporter endpoint taken from an env/config that an attacker could influence, with no allowlist, is the finding.",
+            "A hard-coded or operator-pinned exporter endpoint is safe; the finding is a dynamically-sourced destination with no allowlist."
+          ]
+        },
+        {
+          "id": "telemetry-sink-credentials-embedded",
+          "type": "config_value",
+          "value": "Exporter/sink credentials (API keys, bearer tokens, webhook secrets) are embedded in source or plaintext config rather than a secret store.",
+          "description": "Embedded sink credentials leak through the same source/config exposure as any hard-coded secret, granting an attacker access to the telemetry pipeline (read others' telemetry, or inject forged data).",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1530",
+          "false_positive_checks_required": [
+            "Confirm sink credentials are resolved from a secret store / injected at runtime, not committed in source or plaintext config — a token literal in the exporter config is the finding.",
+            "A credential injected via a mounted secret / vault reference is safe; the finding is a literal in tracked source/config."
+          ]
+        },
+        {
+          "id": "telemetry-egress-tls-relaxed",
+          "type": "config_value",
+          "value": "Telemetry is exported over plaintext, or over TLS with certificate verification disabled / a relaxed trust setting.",
+          "description": "Plaintext or unverified-TLS export exposes the telemetry stream (and any secrets/PII it carries) to on-path interception or redirection, and undermines the integrity of the shipped records.",
+          "confidence": "low",
+          "deterministic": false,
+          "attack_ref": "T1530",
+          "false_positive_checks_required": [
+            "Confirm exporters use TLS with verification enabled — plaintext export, or TLS with insecure_skip_verify / disabled cert validation, is the finding.",
+            "An exporter shipping over a mutually-authenticated private link (mTLS / a trusted in-cluster path) is safe even if the public CA chain is not used."
+          ]
+        },
+        {
+          "id": "webhook-log-sink-ssrf-unguarded",
+          "type": "config_value",
+          "value": "A webhook log/alert sink URL is taken from configuration and requested without an SSRF guard (no allowlist, follows redirects, resolves to private/link-local/metadata addresses).",
+          "description": "An attacker who can set or poison the webhook sink URL turns the logging pipeline into an SSRF primitive — reaching internal services or the cloud metadata endpoint from the telemetry process.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1530",
+          "false_positive_checks_required": [
+            "Confirm the webhook sink URL is allowlisted and the request refuses private/link-local/metadata addresses and redirects — a sink URL from config requested with no SSRF guard is the finding.",
+            "A fixed, operator-pinned webhook to a known external endpoint with no dynamic component is lower-risk; the finding is a dynamically-set sink without an SSRF guard."
+          ]
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "crlf-log-injection-unsanitized",
+          "benign_pattern": "A control enforced at a lower layer (a structured-only sink, a private scrape network, a secret store, a pinned exporter) or a sink that handles only non-sensitive structured data.",
+          "distinguishing_test": "Confirm every sink (not just syslog) neutralizes CR/LF + control characters in interpolated values (or uses a structured/encoded format that cannot be line-split) — a sink writing raw user-influenced text is the finding."
+        },
+        {
+          "indicator_id": "metrics-endpoint-unauthenticated",
+          "benign_pattern": "A control enforced at a lower layer (a structured-only sink, a private scrape network, a secret store, a pinned exporter) or a sink that handles only non-sensitive structured data.",
+          "distinguishing_test": "Confirm the metrics/telemetry endpoint requires authentication or is bound to a private interface / scrape network not reachable by untrusted clients — an internet-reachable unauthenticated /metrics is the finding."
+        },
+        {
+          "indicator_id": "secrets-or-pii-logged-without-redaction",
+          "benign_pattern": "A control enforced at a lower layer (a structured-only sink, a private scrape network, a secret store, a pinned exporter) or a sink that handles only non-sensitive structured data.",
+          "distinguishing_test": "Confirm a redaction pass strips known secret patterns / PII before values reach any sink — log statements that interpolate credentials/PII with no redaction are the finding."
+        },
+        {
+          "indicator_id": "telemetry-egress-endpoints-not-inventoried",
+          "benign_pattern": "A control enforced at a lower layer (a structured-only sink, a private scrape network, a secret store, a pinned exporter) or a sink that handles only non-sensitive structured data.",
+          "distinguishing_test": "Confirm exporter destinations are a fixed, inventoried allowlist not derived from untrusted input — an exporter endpoint taken from an env/config that an attacker could influence, with no allowlist, is the finding."
+        },
+        {
+          "indicator_id": "telemetry-sink-credentials-embedded",
+          "benign_pattern": "A control enforced at a lower layer (a structured-only sink, a private scrape network, a secret store, a pinned exporter) or a sink that handles only non-sensitive structured data.",
+          "distinguishing_test": "Confirm sink credentials are resolved from a secret store / injected at runtime, not committed in source or plaintext config — a token literal in the exporter config is the finding."
+        },
+        {
+          "indicator_id": "telemetry-egress-tls-relaxed",
+          "benign_pattern": "A control enforced at a lower layer (a structured-only sink, a private scrape network, a secret store, a pinned exporter) or a sink that handles only non-sensitive structured data.",
+          "distinguishing_test": "Confirm exporters use TLS with verification enabled — plaintext export, or TLS with insecure_skip_verify / disabled cert validation, is the finding."
+        },
+        {
+          "indicator_id": "webhook-log-sink-ssrf-unguarded",
+          "benign_pattern": "A control enforced at a lower layer (a structured-only sink, a private scrape network, a secret store, a pinned exporter) or a sink that handles only non-sensitive structured data.",
+          "distinguishing_test": "Confirm the webhook sink URL is allowlisted and the request refuses private/link-local/metadata addresses and redirects — a sink URL from config requested with no SSRF guard is the finding."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "At least one telemetry path lacks an integrity/confidentiality control — un-neutralized CR/LF on a sink, secrets/PII logged without redaction, an unauthenticated reachable metrics endpoint, an un-allowlisted exporter destination, embedded sink credentials, relaxed export TLS, or an SSRF-unguarded webhook sink.",
+        "inconclusive": "A control is enforced at a layer the audit could not read (a logging sidecar that sanitizes, a private scrape network) — record as visibility_gap, not a clean result.",
+        "not_detected": "Every sink neutralizes CR/LF (or is structured-only), a redaction pass strips secrets/PII, metrics/debug endpoints are authenticated or private, exporter destinations are allowlisted with secret-store credentials over verified TLS, and webhook sinks are SSRF-guarded."
+      }
+    },
+    "analyze": {
+      "rwep_inputs": [
+        {
+          "signal_id": "secrets-or-pii-logged-without-redaction",
+          "rwep_factor": "blast_radius",
+          "weight": 20
+        },
+        {
+          "signal_id": "crlf-log-injection-unsanitized",
+          "rwep_factor": "public_poc",
+          "weight": 20
+        },
+        {
+          "signal_id": "webhook-log-sink-ssrf-unguarded",
+          "rwep_factor": "active_exploitation",
+          "weight": 10
+        }
+      ],
+      "blast_radius_model": {
+        "scope_question": "Does the gap corrupt the audit record for the whole system, leak secrets/PII across every downstream sink, or turn the telemetry process into an SSRF/exfil channel?",
+        "scoring_rubric": [
+          {
+            "condition": "Secrets/PII logged without redaction across all sinks, or a webhook sink usable for SSRF to cloud metadata",
+            "blast_radius_score": 5,
+            "description": "Credential/PII exposure fleet-wide or internal-network reach from the telemetry process"
+          },
+          {
+            "condition": "CR/LF log forging that corrupts the audit record incident response depends on",
+            "blast_radius_score": 4,
+            "description": "Attacker can hide actions / forge entries across the observability record"
+          },
+          {
+            "condition": "Unauthenticated internal-only metrics leaking recon data",
+            "blast_radius_score": 2,
+            "description": "Reconnaissance value, limited direct impact"
+          }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "We centralize all logs to a SIEM with access controls, so logging is handled.",
+        "audit_evidence": "A SIEM, log-store IAM policies, a logging dashboard.",
+        "reality_test": "Inject CR/LF into a logged value and check whether the sink forges a line; log a secret and check redaction; reach /metrics unauthenticated; inspect exporter destinations + credentials + TLS. If forging, secret leakage, or exfil/SSRF succeeds, centralization did not protect the pipeline.",
+        "theater_verdict_if_gap": "theater"
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "crlf-log-injection-unsanitized",
+          "framework": "nist-800-53",
+          "claimed_control": "AU-9 (protection of audit information)",
+          "actual_gap": "AU-9 protects the store; it does not address injection at write time that forges entries before they reach the store."
+        },
+        {
+          "finding_id": "secrets-or-pii-logged-without-redaction",
+          "framework": "iso-27001-2022",
+          "claimed_control": "A.8.15 (logging)",
+          "actual_gap": "A.8.15 is attested by \"we log and protect logs\"; it does not require redaction of secrets/PII before they reach the sinks."
+        }
+      ],
+      "escalation_criteria": [
+        {
+          "condition": "Secrets/PII are logged without redaction, or a webhook sink reaches cloud metadata via SSRF",
+          "action": "raise_severity"
+        },
+        {
+          "condition": "CR/LF log forging is possible on the audit sink incident response relies on",
+          "action": "trigger_playbook"
+        }
+      ]
+    },
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "neutralize-and-redact",
+          "description": "Neutralize CR/LF + control characters in interpolated values on every sink (or move to a structured-only format), and run a redaction pass that strips secrets/PII before any sink.",
+          "preconditions": [
+            "operator controls the logging path"
+          ],
+          "priority": 1,
+          "for_signals": [
+            "crlf-log-injection-unsanitized",
+            "secrets-or-pii-logged-without-redaction"
+          ]
+        },
+        {
+          "id": "authenticate-metrics",
+          "description": "Require authentication on metrics/debug/telemetry endpoints or bind them to a private scrape network unreachable by untrusted clients.",
+          "preconditions": [],
+          "priority": 2,
+          "for_signals": [
+            "metrics-endpoint-unauthenticated"
+          ]
+        },
+        {
+          "id": "lock-down-exporters",
+          "description": "Allowlist exporter destinations (not derived from untrusted input), resolve sink credentials from a secret store, and require verified TLS on export.",
+          "preconditions": [],
+          "priority": 1,
+          "for_signals": [
+            "telemetry-egress-endpoints-not-inventoried",
+            "telemetry-sink-credentials-embedded",
+            "telemetry-egress-tls-relaxed"
+          ]
+        },
+        {
+          "id": "ssrf-guard-webhook-sinks",
+          "description": "Allowlist webhook sink URLs and refuse private/link-local/metadata addresses and redirects on the sink request.",
+          "preconditions": [],
+          "priority": 2,
+          "for_signals": [
+            "webhook-log-sink-ssrf-unguarded"
+          ]
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "crlf-injection-neutralized",
+          "test": "Log a value containing CR/LF and control characters.",
+          "expected_result": "The sink records a single neutralized/encoded entry; no forged second line.",
+          "test_type": "negative"
+        },
+        {
+          "id": "secret-redacted",
+          "test": "Log an object containing a token and a PII field.",
+          "expected_result": "The token and PII are redacted before reaching any sink.",
+          "test_type": "negative"
+        },
+        {
+          "id": "metrics-requires-auth",
+          "test": "Request the metrics/debug endpoint from an untrusted client without credentials.",
+          "expected_result": "The request is refused (auth required) or unreachable (private binding).",
+          "test_type": "negative"
+        },
+        {
+          "id": "webhook-sink-ssrf-blocked",
+          "test": "Point a webhook sink at a private/metadata address.",
+          "expected_result": "The sink request is refused by the SSRF guard / allowlist.",
+          "test_type": "negative"
+        },
+        {
+          "id": "legitimate-telemetry-flows",
+          "test": "Emit a normal log line, metric, and trace through the hardened pipeline.",
+          "expected_result": "Telemetry flows normally — no regression on the legitimate path.",
+          "test_type": "functional"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "Telemetry necessarily contains some operational data; a compromise of the (legitimate) sink store still exposes it.",
+        "why_remains": "Pipeline hardening prevents injection, secret leakage, and exfil channels; it does not eliminate the inherent sensitivity of telemetry held in a legitimate, access-controlled store.",
+        "acceptance_level": "ciso"
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "config_diff",
+          "description": "The per-sink neutralization, redaction, metrics-auth, exporter allowlist/credential/TLS, and webhook-SSRF configuration as audited.",
+          "retention_period": "1 year"
+        },
+        {
+          "evidence_type": "exploit_replay_negative",
+          "description": "Outcomes of the CR/LF-injection / secret-redaction / metrics-auth / webhook-SSRF negative tests plus the legitimate-telemetry functional test.",
+          "retention_period": "1 year"
+        }
+      ],
+      "regression_trigger": [
+        {
+          "condition": "A new sink, exporter, or metrics/debug endpoint is added",
+          "interval": "on change"
+        },
+        {
+          "condition": "Periodic re-attestation of telemetry-pipeline integrity",
+          "interval": "quarterly"
+        }
+      ]
+    },
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": [
+          "telemetry-pipeline config snapshot",
+          "per-indicator findings + false-positive disposition",
+          "negative + functional test results",
+          "framework gap mapping"
+        ],
+        "destination": ".exceptd/attestations/<session_id>/attestation.json"
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Log forging via CR/LF injection, secret/PII leakage through un-redacted logs, internal-state disclosure via an unauthenticated metrics endpoint, or exfil/SSRF through an un-allowlisted exporter / webhook sink.",
+          "control_gap": "Telemetry pipeline lacks per-sink CR/LF neutralization, secret redaction, metrics auth, exporter allowlisting/secret-store credentials, or webhook SSRF guarding.",
+          "framework_gap": "NIST AU-9 + SI-11 + ISO A.8.15 cover log presence and store ACLs but not pipeline integrity/confidentiality.",
+          "new_control_requirement": "Every sink MUST neutralize CR/LF and redact secrets; metrics endpoints MUST be authenticated/private; exporters MUST be allowlisted with secret-store credentials over verified TLS."
+        }
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/GDPR Art.33 72h",
+          "deadline": "72h from detect_confirmed",
+          "recipient": "data protection authority",
+          "evidence_attached": [
+            "attestation"
+          ]
+        },
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "24h from detect_confirmed",
+          "recipient": "national CSIRT / competent authority",
+          "evidence_attached": [
+            "attestation"
+          ]
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "A legacy sink cannot adopt neutralization/redaction immediately.",
+        "exception_template": {
+          "scope": "the specific sink / exporter",
+          "duration": "90 days",
+          "compensating_controls": [
+            "sanitize at the logging sidecar/collector",
+            "restrict the metrics endpoint at the network layer",
+            "rotate any credential observed in logs"
+          ],
+          "risk_acceptance_owner": "ciso"
+        }
+      },
+      "regression_schedule": {
+        "next_run": "quarterly or on any new sink / exporter / metrics endpoint",
+        "trigger": "change to the telemetry pipeline, or quarterly re-attestation"
+      }
+    }
+  },
+  "directives": [
+    {
+      "id": "all-telemetry-sinks-and-exporters",
+      "title": "Inventory + integrity-test every log/metric/trace sink, exporter, and metrics endpoint",
+      "applies_to": {
+        "always": true
+      }
+    },
+    {
+      "id": "log-forging-and-exfil-sweep",
+      "title": "Targeted CR/LF-injection + secret-in-logs + exporter-SSRF sweep",
+      "applies_to": {
+        "attack_technique": "T1565.001"
+      }
+    }
+  ]
+}

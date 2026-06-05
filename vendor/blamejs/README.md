@@ -9,6 +9,7 @@ upstream commit [`1442f17`](https://github.com/blamejs/blamejs/commit/1442f17758
 |---|---|---|
 | `retry.js` | `lib/retry.js` | Battle-tested exponential backoff + crypto jitter + AbortSignal + circuit-breaker. Used by `lib/job-queue.js` and `lib/refresh-external.js` for HTTP retry semantics on KEV/EPSS/NVD/IETF/GitHub fetches. |
 | `worker-pool.js` | `lib/worker-pool.js` | Generic worker_threads pool with bounded queue, per-task timeout, worker recycle. Used by `scripts/build-indexes.js --parallel` and any future CPU-bound fan-out work. |
+| `codepoint-class.js` | `lib/codepoint-class.js` | Trojan-Source (CVE-2021-42574) codepoint threat tables — bidi-override / C0-control / zero-width / null ranges + compiled regexes + `applyCharStripPolicies`. Used by the `--operator` reject path (`bin/exceptd.js`) and `sanitizeOperatorText` (`lib/playbook-runner.js`) to classify which family an offending codepoint belongs to; `\p{C}` remains the category backstop. |
 | `LICENSE` | `LICENSE` | Apache-2.0 license text (identical to exceptd's). |
 | `_PROVENANCE.json` | — | sha256 of each vendored file + upstream file at pin, plus the strip rules applied. `lib/validate-vendor.js` re-hashes on every predeploy run. |
 

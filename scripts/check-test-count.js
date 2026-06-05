@@ -5,10 +5,17 @@
  * scripts/check-test-count.js — v0.13.2 canonical-test-count predeploy gate.
  *
  * Why this exists. The v0.12 audit flagged that nothing in the suite asserts
- * "we expect N tests today." A test file accidentally deleted, a skip-all
- * mistakenly committed, or a misnamed file glob-excluded would all silently
- * drop tests without anyone noticing. The lint + diff-coverage gates catch
- * source changes; this gate catches test-set shrinkage.
+ * "we expect N tests today." A deleted test file, a removed `test(` call, or a
+ * misnamed file glob-excluded would all silently drop tests without anyone
+ * noticing. The lint + diff-coverage gates catch source changes; this gate
+ * catches test-set shrinkage.
+ *
+ * Scope + blind spot. This counts test DECLARATIONS, so it detects deleted
+ * files / removed `test(` calls / glob-exclusions. It does NOT detect a test
+ * neutered in place: `test('name', { skip: true }, fn)` and `test.skip(` both
+ * still count as one declaration, so flipping a running test to permanently
+ * skipped leaves the count unchanged. Guarding against skip-in-place would
+ * need runnable-vs-skipped tracking; that is out of scope for this gate.
  *
  * Mechanism: count `test(`, `test.only(`, and `test.skip(` declarations
  * across `tests/*.test.js` via static analysis (faster than running). Compare

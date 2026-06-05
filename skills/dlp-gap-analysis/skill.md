@@ -86,7 +86,7 @@ The dominant real-world exfil pattern: an engineer pastes proprietary code, cust
 | NIST AI RMF MAP-4.1 / MEASURE-2.10 (referenced from `DLP-CHAN-LLM-PROMPT`, `DLP-CHAN-LLM-CONTEXT`) | AI risk identification and measurement | Identifies AI system risks and measurement criteria. | Voluntary, not auditable. Does not operationalise DLP at the prompt or retrieval boundary. |
 | ISO 27001:2022 A.8.16 | Monitoring Activities | Monitoring of networks, systems, and applications. | Channel-agnostic in language; every implementation guide cites email/web/endpoint. No guidance for SDK-level prompt logging, MCP tool-call argument capture, or RAG retrieval audit. |
 | ISO 27001:2022 A.5.34 (referenced from `DLP-CHAN-LLM-CONTEXT`, `DLP-CHAN-IDE-TELEMETRY`) | Privacy and Protection of PII | PII handling. | Does not address retrieval-time classification of PII in RAG corpora. |
-| ISO/IEC 42001:2023 clause 6.1.2 | AI Risk Treatment Planning | Requires the org to plan treatments for AI risks. | Non-prescriptive on prompt-egress DLP. Auditors accept policy documents in lieu of control evidence — DR-1 risk. The real_requirement is recorded under `ISO-IEC-42001-2023-clause-6.1.2` in `data/framework-control-gaps.json`. |
+| ISO/IEC 42001:2023 clause 6.1.2 | AI Risk Treatment Planning | Requires the org to plan treatments for AI risks. | Non-prescriptive on prompt-egress DLP. Auditors accept policy documents in lieu of control evidence — a compliance-theater risk. The real_requirement is recorded under `ISO-IEC-42001-2023-clause-6.1.2` in `data/framework-control-gaps.json`. |
 | EU AI Act (Reg. 2024/1689) Art 10 / Art 15 | Data governance and accuracy/robustness/cybersecurity for high-risk AI | Training data governance, robustness, and cybersecurity for high-risk AI systems. | Inference-time prompt data flows are not enumerated. Cross-border transfer of prompt content interacting with EU-resident personal data is governed by GDPR Art 44, not by AI Act technical controls. |
 | EU GDPR Art 44 | International transfers | Cross-border personal-data transfers require adequacy, SCCs, or BCRs. | Operationalised in DPIAs as "transfers to processors" — engineer-pastes-into-LLM is treated as an unsanctioned use, not as a measurable DLP event. Without prompt-egress evidence the org cannot answer a Subject Access Request asking "has my data been processed by AI." |
 | UK Data Protection Act 2018 / UK GDPR + ICO AI guidance (Oct 2023, updated 2025) | UK transfers and AI accountability | Equivalent to EU GDPR; ICO has issued AI-specific guidance. | Same blind spot as GDPR Art 44; ICO guidance is non-statutory. |
@@ -101,7 +101,7 @@ The dominant real-world exfil pattern: an engineer pastes proprietary code, cust
 | PCI-DSS 4.0 §3.4 | Cardholder-data rendering | PAN must be rendered unreadable. | Silent on PAN appearing in LLM prompts; payment org operational reality is that engineers paste prod queries containing PAN-shaped data into AI tools for debugging. |
 | US DTSA / EU Trade Secrets Directive 2016/943 | Trade secret protection | Misappropriation remedies. | "Reasonable measures to keep secret" is the eligibility test. Pasting trade secrets into a third-party LLM that retains them for abuse monitoring can disqualify trade-secret status in subsequent litigation. No technical control named — purely a downstream legal-eligibility risk. |
 
-**Bottom line:** no compliance framework operationalises LLM-prompt, MCP-tool-arg, RAG-retrieval, embedding-store, or code-completion-context DLP as a required, auditable, technically prescriptive control. Compliance evidence based purely on legacy SC-7, AC-2, A.8.16, or §164.312 for AI-era DLP is theater (DR-1).
+**Bottom line:** no compliance framework operationalises LLM-prompt, MCP-tool-arg, RAG-retrieval, embedding-store, or code-completion-context DLP as a required, auditable, technically prescriptive control. Compliance evidence based purely on legacy SC-7, AC-2, A.8.16, or §164.312 for AI-era DLP is theater.
 
 ### Expanded jurisdictional coverage (per `data/global-frameworks.json`)
 
@@ -210,7 +210,7 @@ A gap exists where:
 - A control depends on SDK-level prompt logging that is not enabled (cascading dependency failure).
 - A control depends on retrieval-time classification on a RAG corpus where labels have not propagated (cascading dependency failure).
 
-Score each gap using the RWEP model in `lib/scoring.js`. Inputs: KEV / known-exploitation evidence (use the Exploit Availability Matrix above), AI-acceleration flag (yes for every modern channel), blast radius (per-identity vs. enterprise-wide), patch availability (architectural — not patchable, only mitigable). Output RWEP per gap. Never report a gap with CVSS alone (DR-2).
+Score each gap using the RWEP model in `lib/scoring.js`. Inputs: KEV / known-exploitation evidence (use the Exploit Availability Matrix above), AI-acceleration flag (yes for every modern channel), blast radius (per-identity vs. enterprise-wide), patch availability (architectural — not patchable, only mitigable). Output RWEP per gap. Never report a gap with CVSS alone — RWEP is the prioritization signal, with CVSS reported alongside but never as the sole input.
 
 **Step 6 — Propose layered controls per the defense-in-depth ladder.**
 

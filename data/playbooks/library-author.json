@@ -1261,6 +1261,7 @@
             "workflow_modifiable == true"
           ],
           "priority": 1,
+          "for_signals": ["publish-workflow-uses-static-token","publish-workflow-no-id-token-write","package-json-provenance-missing"],
           "compensating_controls": [
             "delete_static_publisher_secret_post_migration",
             "audit_recent_publishes_for_token_leak_indicators"
@@ -1275,6 +1276,7 @@
             "release_pipeline_runs_on_github_hosted_runner == true"
           ],
           "priority": 2,
+          "for_signals": ["no-rekor-entry-for-latest-release","release-signed-with-personal-gpg-key"],
           "compensating_controls": [
             "rekor_entry_search_documented_in_security_md",
             "cosign_pub_committed_to_repo_for_offline_verification"
@@ -1288,6 +1290,7 @@
             "repo_admin_access == true"
           ],
           "priority": 3,
+          "for_signals": ["tag-protection-absent","publish-workflow-action-refs-mutable","release-tag-not-signed"],
           "compensating_controls": [
             "branch_protection_on_main_with_required_reviewers",
             "codeowners_for_release_workflow_files"
@@ -1302,6 +1305,7 @@
             "sbom_tooling_supports_target_ecosystem == true"
           ],
           "priority": 4,
+          "for_signals": ["sbom-absent-or-unsigned","sbom-regenerated-at-request-time"],
           "compensating_controls": [
             "sbom_completeness_gate_in_ci",
             "sbom_signature_verification_documented_in_security_md"
@@ -1316,6 +1320,7 @@
             "product_has_primary_domain == true"
           ],
           "priority": 5,
+          "for_signals": ["vex-feed-absent"],
           "compensating_controls": [
             "github_security_advisory_used_as_interim_vex_carrier",
             "vex_template_in_security_md"
@@ -1330,6 +1335,7 @@
             "primary_domain_dns_modifiable == true OR static_hosting_modifiable == true"
           ],
           "priority": 6,
+          "for_signals": ["no-security-md","no-security-txt","private-vuln-reporting-disabled"],
           "compensating_controls": [
             "security_md_linked_from_readme",
             "security_txt_expires_date_calendared_for_renewal"
@@ -1344,6 +1350,7 @@
             "lockfile_regeneration_does_not_break_build == true"
           ],
           "priority": 7,
+          "for_signals": ["release-workflow-non-frozen-install","lockfile-missing-integrity"],
           "compensating_controls": [
             "lockfile_review_in_pr_template",
             "registry_url_pinned_in_install_config"
@@ -1358,6 +1365,7 @@
             "consumer_install_path_modifiable == true"
           ],
           "priority": 8,
+          "for_signals": ["skill-signing-but-verification-not-gated"],
           "compensating_controls": [
             "install_time_signature_verification_documented_in_readme",
             "public_key_committed_to_repo_for_offline_verification"
@@ -1371,6 +1379,7 @@
             "product_ships_to_eu_market == true"
           ],
           "priority": 9,
+          "for_signals": ["ssdf-claimed-cra-not-ready"],
           "compensating_controls": [
             "support_lifecycle_in_release_notes_per_release"
           ],

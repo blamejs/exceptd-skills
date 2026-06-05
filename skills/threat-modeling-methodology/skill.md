@@ -44,10 +44,14 @@ forward_watch:
   - LINDDUN-GO and LINDDUN-PRO updates incorporating LLM privacy threats
   - PASTA v2 updates incorporating AI/ML application threats
 last_threat_review: "2026-05-11"
-discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief threat-modeling-methodology` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
+discovery_mode: "standalone"  # operator-reached via `exceptd brief threat-modeling-methodology` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # Threat Modeling Methodology
+
+## Frontmatter Scope
+
+The `atlas_refs` and `attack_refs` arrays are intentionally empty. This skill teaches the *method* for selecting and combining threat-modeling frameworks and mapping threats to techniques — it does not own a fixed TTP set. The specific TTPs cited in the body are illustrative of the method; the authoritative technique attachment lives on the domain skill or playbook that detects each threat. Duplicating those IDs here would create a divergence surface the next time a downstream mapping changes.
 
 ## Purpose
 
@@ -148,7 +152,7 @@ Methodologies are catalog consumers, not catalog producers. The matrix shows the
 | Trike | Authorised/unauthorised action gaps | Indirectly | Indirectly | No | No |
 | OCTAVE Allegro | Asset areas-of-concern | Indirectly | No | No | No |
 | Cyber Kill Chain | Intrusion phases | Yes (KEV common in initial-access phase) | Yes | Yes | No |
-| Diamond Model | Adversary–capability–infrastructure–victim | Yes (capabilities include live CVEs) | Yes | Yes (campaigns increasingly use AI-developed capabilities per Hard Rule AGENTS.md #1 / DR-5) | Yes (Diamond pivots into IR and IR drives live-patch decisions) |
+| Diamond Model | Adversary–capability–infrastructure–victim | Yes (capabilities include live CVEs) | Yes | Yes (campaigns increasingly use AI-developed capabilities — AI-assisted attack development is current operational reality) | Yes (Diamond pivots into IR and IR drives live-patch decisions) |
 | MITRE Unified Kill Chain v3.0 | Full ATLAS + ATT&CK across 18 phases | Yes | Yes | Yes | Yes (phases 14–18 include impact stages where live-patch SLAs are decisive) |
 | AI-system composite | Full ATLAS catalogue | Yes (CVE-2025-53773 prompt-injection RCE, CVE-2026-30615 MCP RCE, both in `data/cve-catalog.json`) | Yes | Yes | Yes (CVE-2025-53773 is SaaS live-patchable; CVE-2026-30615 is IDE-update live-patchable) |
 | Agent-based composite | ATLAS subset (AML.T0010, AML.T0051, AML.T0096) + MCP-class CVEs | Yes | Yes | Yes | Yes |
@@ -165,7 +169,7 @@ Every threat-modelling exercise must explicitly thread three foundational princi
 - **Least privilege.** Every actor in the model — human, service, AI agent, MCP plugin, RAG retriever, tool-call target — must be documented with a trust boundary and a minimum-scope authorisation statement. The model surfaces excess privilege as a finding, not as an implicit assumption.
 - **Zero trust.** Trust boundaries are explicit. Every boundary crossing requires verification (mutual auth, signed input, capability-scoped token, prompt-injection-resistant context boundary). The model must answer, for each boundary, *what is verified and how* — not "the network is internal".
 
-For ephemeral / serverless / AI-pipeline contexts (Hard Rule AGENTS.md #9), classical STRIDE-per-element applies poorly: there is no persistent attack surface to decompose. Use the modified procedure: model the *invocation lifecycle* (cold-start → execution → state externalisation → teardown) as the unit of analysis, attach trust boundaries to invocation-context inputs (event payload, IAM-scoped role, retrieved secrets, AI model context window), and treat the absence of persistent state as a control to be verified, not assumed.
+For ephemeral / serverless / AI-pipeline contexts, classical STRIDE-per-element applies poorly: there is no persistent attack surface to decompose. Use the modified procedure: model the *invocation lifecycle* (cold-start → execution → state externalisation → teardown) as the unit of analysis, attach trust boundaries to invocation-context inputs (event payload, IAM-scoped role, retrieved secrets, AI model context window), and treat the absence of persistent state as a control to be verified, not assumed.
 
 ### Step 1 — Scope the system and inventory actors (including AI agents)
 
@@ -174,7 +178,7 @@ List every actor with a trust boundary and an authorisation scope:
 - Human actors (end users, operators, developers, admins, contractors).
 - Service actors (microservices, batch jobs, cron tasks, queues).
 - External-system actors (third-party APIs, identity providers, SaaS).
-- **AI actors** — AI coding assistants, MCP servers, LLM endpoints, agent runtimes, autonomous workflows. Per AGENTS.md every AI actor is named, with trust boundary, with minimum-scope authorisation, with an explicit answer to "what does this agent decide on its own and what does it escalate?"
+- **AI actors** — AI coding assistants, MCP servers, LLM endpoints, agent runtimes, autonomous workflows. Every AI actor is named, with trust boundary, with minimum-scope authorisation, with an explicit answer to "what does this agent decide on its own and what does it escalate?"
 - Data actors — vector embedding stores, RAG corpora, training data manifests, model weight artefacts. Treated as crown-jewel data even when they appear as "metadata" elsewhere.
 
 ### Step 2 — Choose methodology or methodology mix
@@ -216,7 +220,7 @@ For each technical threat, attach the relevant CWE class from `data/cwe-catalog.
 
 ### Step 7 — Score known CVEs per RWEP
 
-For each threat that maps to a known CVE in `data/cve-catalog.json`, score per RWEP (`lib/scoring.js`) — not CVSS alone (Hard Rule AGENTS.md #3, DR-2). RWEP outputs feed prioritisation in step 8.
+For each threat that maps to a known CVE in `data/cve-catalog.json`, score per RWEP (`lib/scoring.js`) — not CVSS alone (CVSS-only risk scoring is prohibited; report CVSS alongside RWEP, never alone). RWEP outputs feed prioritisation in step 8.
 
 ### Step 8 — Produce mitigations (hand off to defensive-countermeasure-mapping)
 
@@ -228,7 +232,7 @@ The output of this skill feeds `threat-model-currency` as the model under test. 
 
 ### Step 10 — Re-run on cadence
 
-Per Hard Rule AGENTS.md #12 (external data version pinning): when ATLAS, ATT&CK, NIST 800-218 SSDF, ISO/IEC 42001, or any data-dep version pin advances, re-run the model. Currency triggers also include: any new CVE in scope (`data/cve-catalog.json` change), any new zero-day lesson (`data/zeroday-lessons.json` change), any change to actor inventory (new agent, new MCP server, new RAG corpus).
+Under the external-data version-pinning discipline: when ATLAS, ATT&CK, NIST 800-218 SSDF, ISO/IEC 42001, or any data-dep version pin advances, re-run the model. Currency triggers also include: any new CVE in scope (`data/cve-catalog.json` change), any new zero-day lesson (`data/zeroday-lessons.json` change), any change to actor inventory (new agent, new MCP server, new RAG corpus).
 
 ---
 
@@ -288,7 +292,7 @@ Apply each test. A "no" on any of (a)–(e) means the threat-model is paper.
 
 (d) **Right methodology for privacy.** "For your privacy threats, did you use STRIDE or LINDDUN?" STRIDE for privacy is the wrong methodology — InfoDisclose compresses seven LINDDUN categories into one. If the DPIA / RIPD / PIPIA referenced this model and it used STRIDE alone for privacy, the privacy assessment is theater.
 
-(e) **Cross-jurisdiction.** "Did your model include cross-jurisdiction threats — EU AI Act high-risk categorisation, NIS2 incident-reporting timelines, DORA ICT third-party register, UK CAF B4, AU ISM AI annex, IL INCD methodology, JP NISC, SG CCoP 2.0?" Hard Rule AGENTS.md #5: a model citing only US frameworks does not meet the bar.
+(e) **Cross-jurisdiction.** "Did your model include cross-jurisdiction threats — EU AI Act high-risk categorisation, NIS2 incident-reporting timelines, DORA ICT third-party register, UK CAF B4, AU ISM AI annex, IL INCD methodology, JP NISC, SG CCoP 2.0?" Global-first, not US-centric: a model citing only US frameworks does not meet the bar.
 
 (f) **Methodology rationale.** "Why did you choose this methodology mix?" If the answer is "because that's what we always do" or "because STRIDE is the standard", the methodology choice was not reviewed. Document the rationale or it is theater.
 
@@ -301,7 +305,7 @@ Threat modelling produces an enumerated threat set; mitigations come from the `d
 - **Defense-in-depth layer position.** Each D3FEND mapping is annotated with its layer (network, host, identity, application, data, agent context). Threats that map to only one layer are flagged for additional layering.
 - **Least-privilege scope.** Each mapping is annotated with the principal whose privilege is being scoped (human user, service identity, agent, plugin). Mappings that do not narrow privilege are flagged as monitoring-only.
 - **Zero-trust posture.** Each mapping declares the verification primitive at the boundary it covers (mutual auth, signed input, prompt-injection-resistant context boundary, capability-scoped token).
-- **AI-pipeline applicability (Hard Rule AGENTS.md #9).** Each mapping declares whether it is architecturally feasible for serverless / containerised / AI-pipeline targets. Mappings that are infeasible are paired with an explicitly scoped alternative or marked "no compensating control available — accept residual or redesign".
+- **AI-pipeline applicability.** Each mapping declares whether it is architecturally feasible for serverless / containerised / AI-pipeline targets. Mappings that are infeasible are paired with an explicitly scoped alternative or marked "no compensating control available — accept residual or redesign".
 
 For each threat enumerated in this skill's output, the receiving `defensive-countermeasure-mapping` invocation must produce at least one D3FEND ID at two distinct defense-in-depth layers (per "Defense in depth" in Analysis Procedure step 0). Threats with only one layer of D3FEND coverage are flagged as defense-shallow and routed back to design.
 
@@ -312,7 +316,7 @@ For each threat enumerated in this skill's output, the receiving `defensive-coun
 - **`threat-model-currency`** — runs after this skill to score the produced model against 14 currency classes. The two skills are companion artefacts: methodology builds the model, currency keeps it fresh.
 - **`defensive-countermeasure-mapping`** — receives the threat enumeration from section 4 of Output Format and produces D3FEND mitigations. Mandatory hand-off for any shipped threat model.
 - **`researcher`** — dispatcher for "what skill addresses this specific threat I just enumerated?" Use when a threat in section 4 does not have an obvious skill home.
-- **`zeroday-gap-learn`** — receives any threat enumerated in section 4 that has no ATLAS or ATT&CK TTP attachment. New threats feed back into the learning loop per Hard Rule AGENTS.md #6.
+- **`zeroday-gap-learn`** — receives any threat enumerated in section 4 that has no ATLAS or ATT&CK TTP attachment. New threats feed back into the zero-day learning loop.
 - **`framework-gap-analysis`** — receives any threat enumerated in section 4 that is not addressed by an existing framework control. The model exposes framework gaps as a natural by-product of cross-walk; framework-gap-analysis then runs the global EU+UK+AU+ISO+IL+JP+SG comparison.
 - **`ai-attack-surface`** — runs alongside this skill when the actor inventory includes any AI agent. Produces the AI-specific TTP set that feeds the threat enumeration.
 - **`mcp-agent-trust`** — runs alongside this skill when the actor inventory includes any MCP server or agent plugin. Produces the trust-boundary specification for MCP edges.

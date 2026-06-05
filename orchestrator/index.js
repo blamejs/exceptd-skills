@@ -86,11 +86,30 @@ async function main() {
       await runDispatch();
       break;
     case 'skill':
-      runSkillContext(args[0]);
+      runSkillContext(args);
       break;
-    case 'pipeline':
-      runPipeline(args[0] || 'manual', args[1] ? JSON.parse(args[1]) : {});
+    case 'pipeline': {
+      // pipeline is not dispatched by the bin/ CLI; it's reachable only via a
+      // direct orchestrator invocation. Guard the findings JSON.parse so
+      // malformed input emits a structured ok:false envelope instead of an
+      // uncaught SyntaxError stack trace.
+      let findings = {};
+      if (args[1]) {
+        try {
+          findings = JSON.parse(args[1]);
+        } catch (err) {
+          process.stdout.write(JSON.stringify({
+            ok: false,
+            verb: 'pipeline',
+            error: `pipeline: findings argument is not valid JSON: ${err.message}`,
+          }) + '\n');
+          safeExit(EXIT_CODES.GENERIC_FAILURE);
+          break;
+        }
+      }
+      runPipeline(args[0] || 'manual', findings);
       break;
+    }
     case 'currency':
       runCurrency();
       break;
@@ -136,16 +155,32 @@ function runFrameworkGap(rawArgs) {
   const path = require('path');
   const { gapReport, theaterCheck } = require('../lib/framework-gap');
 
+  // Reject unknown flags with the shared structured envelope. framework-gap
+  // consumes only --json; the global air-gap flags are accepted-and-ignored
+  // (the analytical path reads local catalogs, no egress).
+  if (rejectUnknownFlags('framework-gap', rawArgs, ['--json', '--air-gap', '--offline', '--no-network'])) return;
   const args = rawArgs.filter(a => !a.startsWith('--'));
   const flags = new Set(rawArgs.filter(a => a.startsWith('--')));
   const jsonOut = flags.has('--json');
 
   if (args.length < 2) {
-    console.error(`Usage: exceptd framework-gap <FRAMEWORK_ID|all> <SCENARIO|CVE-ID> [--json]
+    const usage = `Usage: exceptd framework-gap <FRAMEWORK_ID|all> <SCENARIO|CVE-ID> [--json]
 Examples:
   exceptd framework-gap NIST-800-53 CVE-2026-31431
   exceptd framework-gap PCI-DSS-4.0 "prompt injection"
-  exceptd framework-gap all CVE-2025-53773 --json`);
+  exceptd framework-gap all CVE-2025-53773 --json`;
+    // Honor --json on the missing-arg path: a JSON consumer must get a
+    // structured ok:false envelope, not plain usage text on stderr.
+    if (jsonOut) {
+      process.stdout.write(JSON.stringify({
+        ok: false,
+        verb: 'framework-gap',
+        error: 'framework-gap requires <FRAMEWORK_ID|all> and <SCENARIO|CVE-ID>',
+        usage,
+      }) + '\n');
+    } else {
+      console.error(usage);
+    }
     // v0.13 exit-code class fix: usage error is GENERIC_FAILURE (1),
     // not DETECTED_ESCALATE (2). Pre-v0.13 the orchestrator emitted
     // exit 2 for usage errors, colliding with CI gates that branch on
@@ -165,14 +200,50 @@ Examples:
     return;
   }
 
+  // The set of framework IDs the catalog actually carries gaps for. Used both
+  // to expand `all` and to validate an explicit framework argument.
+  const knownFrameworks = [...new Set(Object.values(controlGaps).flatMap(g =>
+    Array.isArray(g.framework) ? g.framework : [g.framework]
+  ).filter(f => f && f !== 'ALL'))];
+
   const requested = args[0].toLowerCase() === 'all'
-    ? [...new Set(Object.values(controlGaps).flatMap(g =>
-        Array.isArray(g.framework) ? g.framework : [g.framework]
-      ).filter(f => f && f !== 'ALL'))]
+    ? knownFrameworks
     : [args[0]];
+
+  // Validate an explicit framework name. Pre-fix an unknown framework (typo,
+  // wrong casing, a framework the catalog doesn't track) produced a report
+  // with zero matching gaps — indistinguishable from a real "no gaps" result,
+  // so an operator could read a typo as proof the framework covers the
+  // scenario. Refuse with the known-framework list instead.
+  //
+  // Match exactly as gapReport does: normalize (strip case + spaces + hyphens)
+  // and accept a substring hit against either a gap's `framework` or a prefix
+  // hit against a gap KEY — so the documented short forms ("NIST-800-53"
+  // matching "NIST 800-53 Rev 5") still resolve. A framework is "known" when at
+  // least one catalog gap matches it, independent of the scenario; a known
+  // framework with no scenario gaps remains a legitimate empty result.
+  if (args[0].toLowerCase() !== 'all') {
+    const normalize = (s) => String(s).toLowerCase().replace(/[\s_-]/g, '');
+    const idNorm = normalize(args[0]);
+    const matchesFramework = Object.entries(controlGaps).some(([key, g]) => {
+      const fws = Array.isArray(g.framework) ? g.framework : [g.framework];
+      if (fws.some(f => f && normalize(f).includes(idNorm))) return true;
+      if (normalize(key).startsWith(idNorm)) return true;
+      return false;
+    });
+    if (!matchesFramework) {
+      const sorted = knownFrameworks.slice().sort();
+      const msg = `[framework-gap] unknown framework "${args[0]}". No catalog control gaps reference it. Known frameworks: ${sorted.join(', ')}. Use "all" to analyze every framework.`;
+      if (jsonOut) console.log(JSON.stringify({ ok: false, verb: 'framework-gap', error: msg, known_frameworks: sorted }, null, 2));
+      else console.error(msg);
+      safeExit(EXIT_CODES.GENERIC_FAILURE);
+      return;
+    }
+  }
   const scenario = args[1];
 
-  const report = gapReport(requested, scenario, controlGaps, cveCatalog);
+  const allFrameworks = args[0].toLowerCase() === 'all';
+  const report = gapReport(requested, scenario, controlGaps, cveCatalog, { allFrameworks });
   const theater = theaterCheck(controlGaps, cveCatalog);
 
   if (jsonOut) {
@@ -198,7 +269,8 @@ Examples:
   if (report.universal_gaps.length > 0) {
     console.log(`### Universal gaps (no jurisdiction covers these) — ${report.universal_gaps.length}`);
     for (const g of report.universal_gaps) {
-      console.log(`  - ${g.id || g.name}: ${(g.real_requirement || '').slice(0, 140)}`);
+      const req = g.real_requirement || '';
+      console.log(`  - ${g.id || g.name}: ${req.length > 140 ? req.slice(0, 140) + '…' : req}`);
     }
     console.log();
   }
@@ -221,12 +293,18 @@ async function runScan() {
   // other verbs (validate-cves, watchlist, etc.). Previously this was a
   // bare `process.argv.includes('--json')`, which differed in style from
   // the verbs below and could miss `--json=true` or similar future forms.
+  // --air-gap / --offline / --no-network are global flags; scan does only
+  // local filesystem probing, so they're accepted-and-ignored rather than
+  // rejected (no network I/O to suppress).
+  if (rejectUnknownFlags('scan', args, ['--json', '--air-gap', '--offline', '--no-network'])) return;
   const { flags } = parseFlags(process.argv.slice(2), []);
   const jsonOut = flags.has('--json');
   if (!jsonOut) console.log('[orchestrator] Scanning environment...\n');
   const result = await scan();
   if (jsonOut) {
-    process.stdout.write(JSON.stringify(result) + '\n');
+    // Top-level ok:true so a single JSON consumer can branch on the same
+    // envelope the ok:false error paths emit.
+    process.stdout.write(JSON.stringify({ ok: true, ...result }) + '\n');
     return result;
   }
 
@@ -256,13 +334,16 @@ async function runScan() {
 }
 
 async function runDispatch() {
+  // --air-gap / --offline / --no-network: local-only verb, accepted-and-ignored
+  // (see runScan).
+  if (rejectUnknownFlags('dispatch', args, ['--json', '--air-gap', '--offline', '--no-network'])) return;
   const jsonOut = process.argv.includes('--json');
   if (!jsonOut) console.log('[orchestrator] Scanning then dispatching...\n');
   const scanResult = await scan();
   const plan = dispatch(scanResult.findings);
 
   if (jsonOut) {
-    process.stdout.write(JSON.stringify({ scan: scanResult, dispatch: plan }) + '\n');
+    process.stdout.write(JSON.stringify({ ok: true, scan: scanResult, dispatch: plan }) + '\n');
     return plan;
   }
 
@@ -297,10 +378,50 @@ async function runDispatch() {
   return plan;
 }
 
-function runSkillContext(skillName) {
+function runSkillContext(rawArgs) {
+  // `rawArgs` is the full arg list. Filter --flags out of the positional set
+  // before treating the first positional as the skill name — pre-fix
+  // `skill --json` passed "--json" through as args[0] and reported
+  // "Skill not found: --json".
+  const argList = Array.isArray(rawArgs) ? rawArgs : (rawArgs == null ? [] : [rawArgs]);
+  // Reject unknown flags with the shared structured envelope. skill consumes
+  // only --json; the global air-gap flags are accepted-and-ignored (skill
+  // context is read from local skill files, no egress).
+  if (rejectUnknownFlags('skill', argList, ['--json', '--air-gap', '--offline', '--no-network'])) return;
+  const jsonOut = argList.includes('--json');
+  const positionals = argList.filter(a => typeof a === 'string' && !a.startsWith('--'));
+  const skillName = positionals[0];
+
   if (!skillName) {
-    console.error('Usage: exceptd skill <skill-name>');
-    console.error('       (Lists available skills: exceptd brief --all)');
+    // Operators cannot guess the skill IDs (they are not the playbook names, and
+    // `brief --all` lists playbooks, not skills). List the real skill IDs +
+    // one-line descriptions straight from the signed manifest so `exceptd skill`
+    // is self-documenting.
+    let skills = [];
+    try {
+      skills = (require('../manifest.json').skills || [])
+        .map(s => ({ id: s.name, description: s.description || '' }))
+        .sort((a, b) => a.id.localeCompare(b.id));
+    } catch { /* fall back to the bare usage line below */ }
+    if (jsonOut) {
+      process.stdout.write(JSON.stringify({
+        ok: false,
+        verb: 'skill',
+        error: 'usage: exceptd skill <skill-name>',
+        hint: `Pass one of the ${skills.length} skill IDs listed in "skills".`,
+        skills,
+      }) + '\n');
+    } else {
+      console.error('Usage: exceptd skill <skill-name>');
+      if (skills.length) {
+        console.error(`\nAvailable skills (${skills.length}):`);
+        for (const s of skills) {
+          console.error(`  ${s.id.padEnd(36)} ${s.description.slice(0, 64)}`);
+        }
+      } else {
+        console.error('       (manifest unreadable — see skills/ for available skill IDs)');
+      }
+    }
     safeExit(EXIT_CODES.GENERIC_FAILURE);
     return;
   }
@@ -310,7 +431,7 @@ function runSkillContext(skillName) {
     // v0.13 envelope harmonization: ok:false bodies land on stdout
     // alongside successful results so a single consumer can parse the
     // verb's envelope without splitting across two streams.
-    process.stdout.write(JSON.stringify({ ok: false, verb: "skill", error: `Skill not found: ${skillName}`, hint: "Run `exceptd brief --all` or check skills/ for available skill IDs." }) + "\n");
+    process.stdout.write(JSON.stringify({ ok: false, verb: "skill", error: `Skill not found: ${skillName}`, hint: "Run `exceptd skill` with no arguments to list all available skill IDs." }) + "\n");
     safeExit(EXIT_CODES.GENERIC_FAILURE);
     return;
   }
@@ -344,12 +465,15 @@ function runPipeline(triggerType, payload) {
 }
 
 function runCurrency() {
+  // --air-gap / --offline / --no-network: local-only verb, accepted-and-ignored
+  // (see runScan).
+  if (rejectUnknownFlags('currency', args, ['--json', '--air-gap', '--offline', '--no-network'])) return;
   const jsonOut = process.argv.includes('--json');
   const result = runCurrencyNow();
   const { currency_report, action_required, critical_count } = currencyCheck();
 
   if (jsonOut) {
-    process.stdout.write(JSON.stringify({ currency_report, action_required, critical_count, generated_at: new Date().toISOString() }) + '\n');
+    process.stdout.write(JSON.stringify({ ok: true, currency_report, action_required, critical_count, generated_at: new Date().toISOString() }) + '\n');
     return;
   }
 
@@ -370,6 +494,11 @@ function runCurrency() {
 }
 
 async function runReport(format) {
+  // Reject unknown flags with the same structured envelope the other verbs
+  // emit. report takes only a format positional; --json is accepted for
+  // parity, and the global air-gap flags are accepted-and-ignored (the
+  // report path's scan() is local-only).
+  if (rejectUnknownFlags('report', args, ['--json', '--air-gap', '--offline', '--no-network'])) return;
   // v0.11.6 (#98): validate format positional. Pre-0.11.6 unknown formats
   // emitted a generic "# exceptd Report" header — silently accepted any
   // string. Now: reject with structured JSON error matching other verbs.
@@ -437,7 +566,10 @@ async function runReport(format) {
     return;
   }
 
-  console.log(`[orchestrator] Generating ${format} report...\n`);
+  // Progress line goes to stderr so `report executive > out.md` produces
+  // clean markdown on stdout — the first stdout line must be the report
+  // header, not this progress notice.
+  console.error(`[orchestrator] Generating ${format} report...\n`);
   const scanResult = await scan();
   const plan = dispatch(scanResult.findings);
   const { currency_report } = currencyCheck();
@@ -580,6 +712,11 @@ function _acquireWatchLock() {
 }
 
 async function runWatch() {
+  // Reject unknown flags before acquiring the watch lock / starting the
+  // scheduler. --log-file is the value-taking option this verb consumes;
+  // --json is accepted for parity; the global air-gap flags are
+  // accepted-and-ignored (watch does no egress of its own).
+  if (rejectUnknownFlags('watch', args, ['--log-file', '--json', '--air-gap', '--offline', '--no-network'])) return;
   const { flags, options } = parseFlags(args, ['--log-file']);
   const logFilePath = options.get('--log-file');
   let logStream = null;
@@ -592,8 +729,12 @@ async function runWatch() {
       fsMod.mkdirSync(pathMod.dirname(pathMod.resolve(logFilePath)), { recursive: true });
       logStream = fsMod.createWriteStream(pathMod.resolve(logFilePath), { flags: 'a' });
     } catch (err) {
+      // A filesystem error opening the log target (ENOENT/EACCES/EROFS) is a
+      // generic operational failure, not a detected-finding escalation — code
+      // 2 is DETECTED_ESCALATE and would misroute a CI gate. Use the same
+      // GENERIC_FAILURE every other error site in this function uses.
       console.error(`[orchestrator] --log-file ${logFilePath}: ${err.message}`);
-      process.exitCode = 2;
+      safeExit(EXIT_CODES.GENERIC_FAILURE);
       return;
     }
     const origWrite = process.stdout.write.bind(process.stdout);
@@ -672,12 +813,52 @@ async function runWatch() {
   console.log('Press Ctrl+C to stop. (SIGTERM / SIGHUP / SIGBREAK also honored.)\n');
 }
 
+// Known flags accepted by validate-cves. An unknown flag (typo) must be
+// rejected before any network work — a swallowed `--ofline` previously fell
+// through to the default live-network path and the verb hung fetching the
+// whole catalog from NVD until killed.
+const VALIDATE_CVES_KNOWN_FLAGS = Object.freeze([
+  '--offline', '--no-fail', '--from-cache', '--concurrency', '--since', '--air-gap',
+]);
+// Known flags accepted by validate-rfcs (same hang-on-typo class as
+// validate-cves). `--live` is the explicit opt-in to the default network
+// path; `--air-gap` forces the offline view with no egress.
+const VALIDATE_RFCS_KNOWN_FLAGS = Object.freeze([
+  '--offline', '--no-fail', '--from-cache', '--since', '--live', '--air-gap',
+]);
+
+// Reject unknown --flags against a per-verb allowlist BEFORE any network work.
+// Returns true when a rejection was emitted (caller should return); false when
+// every flag is recognized. The base flag (text before any `=`) is what gets
+// matched so `--from-cache=path` and `--since=2026-01-01` are accepted.
+function rejectUnknownFlags(verb, rawArgs, knownFlags) {
+  const known = new Set(knownFlags);
+  const unknown = rawArgs
+    .filter(a => typeof a === 'string' && a.startsWith('--'))
+    .map(a => { const eq = a.indexOf('='); return eq === -1 ? a : a.slice(0, eq); })
+    .filter(base => !known.has(base));
+  if (unknown.length === 0) return false;
+  // Dedupe while preserving order.
+  const uniq = [...new Set(unknown)];
+  process.stdout.write(JSON.stringify({
+    ok: false,
+    verb,
+    error: `${verb}: unknown flag(s): ${uniq.join(', ')}`,
+    unknown_flags: uniq,
+    known_flags: knownFlags,
+  }) + '\n');
+  safeExit(EXIT_CODES.GENERIC_FAILURE);
+  return true;
+}
+
 async function runValidateCves(rawArgs = []) {
   const fs = require('fs');
   const path = require('path');
 
+  if (rejectUnknownFlags('validate-cves', rawArgs, VALIDATE_CVES_KNOWN_FLAGS)) return;
+
   const flags = new Set(rawArgs.filter(a => a.startsWith('--')));
-  const offline = flags.has('--offline');
+  const offline = flags.has('--offline') || flags.has('--air-gap');
   const noFail = flags.has('--no-fail');
   // --from-cache: prefer cached upstream snapshots before falling back to live
   // network. Accepts an optional path; defaults to .cache/upstream when bare.
@@ -792,7 +973,7 @@ async function runValidateCves(rawArgs = []) {
       );
     }
     console.log(`\n[validate-cves] offline mode — no network calls made. ${cveIds.length} entries listed from local catalog.`);
-    process.exit(0);
+    safeExit(EXIT_CODES.SUCCESS);
     return;
   }
 
@@ -812,7 +993,7 @@ async function runValidateCves(rawArgs = []) {
     if (e.code === 'MODULE_NOT_FOUND') {
       console.warn('[validate-cves] validator module unavailable (MODULE_NOT_FOUND); falling back to offline mode.');
       console.log(`\n[validate-cves] offline mode (forced by missing validators) — ${cveIds.length} entries listed from local catalog.`);
-      process.exit(0);
+      safeExit(EXIT_CODES.SUCCESS);
       return;
     }
     throw e;
@@ -923,8 +1104,10 @@ async function runValidateRfcs(rawArgs = []) {
   const fs = require('fs');
   const path = require('path');
 
+  if (rejectUnknownFlags('validate-rfcs', rawArgs, VALIDATE_RFCS_KNOWN_FLAGS)) return;
+
   const flags = new Set(rawArgs.filter(a => a.startsWith('--')));
-  const offline = flags.has('--offline');
+  const offline = flags.has('--offline') || flags.has('--air-gap');
   const noFail = flags.has('--no-fail');
   let cacheDir = null;
   for (let i = 0; i < rawArgs.length; i++) {
@@ -1096,10 +1279,20 @@ async function runValidateRfcs(rawArgs = []) {
  * that should trigger a skill update. This command surfaces the union so
  * maintainers can see the full horizon at a glance.
  */
+// Every flag any watchlist mode (default aggregator, --alerts, --org-scan)
+// accepts. The unknown-flag guard runs once at the top of runWatchlist so a
+// typo is rejected regardless of which sub-mode it would have reached.
+const WATCHLIST_KNOWN_FLAGS = Object.freeze([
+  '--json', '--by-skill', '--alerts', '--org-scan',
+  '--org', '--pattern', '--output-format', '--air-gap',
+]);
+
 function runWatchlist(rawArgs = []) {
   const fs = require('fs');
   const path = require('path');
   const { parseFrontmatter, extractFrontmatterBlock } = require('../lib/lint-skills.js');
+
+  if (rejectUnknownFlags('watchlist', rawArgs, WATCHLIST_KNOWN_FLAGS)) return;
 
   const byskill = rawArgs.includes('--by-skill');
   const alertsMode = rawArgs.includes('--alerts');
@@ -1668,6 +1861,21 @@ async function runWatchlistOrgScan(rawArgs = []) {
       error: 'watchlist --org-scan requires --org <login> (or GITHUB_ORG env var). Example: exceptd watchlist --org-scan --org blamejs',
     }) + '\n');
     safeExit(EXIT_CODES.GENERIC_FAILURE);
+    return;
+  }
+  // Air-gap guard. The org-scan reaches api.github.com on every pattern
+  // query; under air-gap there is no offline substitute, so refuse before
+  // any fetch rather than silently attempting egress. Mirrors the
+  // source-ghsa air-gap refusal shape (ok:false + source + explicit error).
+  if (process.env.EXCEPTD_AIR_GAP === '1' || rawArgs.includes('--air-gap')) {
+    process.stdout.write(JSON.stringify({
+      ok: false,
+      source: 'air-gap',
+      verb: 'watchlist',
+      mode: 'org-scan',
+      error: 'air-gap: watchlist --org-scan requires network egress to api.github.com; refused.',
+    }) + '\n');
+    safeExit(EXIT_CODES.BLOCKED);
     return;
   }
   // Custom patterns via --pattern <s> (repeatable). Default set from

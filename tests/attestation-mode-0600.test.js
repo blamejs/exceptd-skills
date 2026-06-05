@@ -11,7 +11,7 @@
  * (`fs.writeFileSync(path, content, { mode: 0o600 })` + restrictWindowsAcl
  * for Windows ACL inheritance stripping).
  *
- * Per CLAUDE.md anti-coincidence rule, every assertion checks an EXACT
+ * Per the anti-coincidence rule, every assertion checks an EXACT
  * mode value (0o600) — not "less permissive than 0o644".
  */
 

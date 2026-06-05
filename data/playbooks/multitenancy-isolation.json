@@ -1,0 +1,660 @@
+{
+  "_meta": {
+    "id": "multitenancy-isolation",
+    "version": "1.0.0",
+    "last_threat_review": "2026-06-02",
+    "threat_currency_score": 92,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-06-02",
+        "summary": "Initial seven-phase application-level multitenancy isolation + availability/DoS-resilience playbook. Covers two linked gaps that org access and availability controls do not operationalise: cross-tenant isolation (tenant id trusted from the client, queries not scoped at the data layer, row-level-security bypassable by the request role, un-namespaced cache/pub-sub/queue keys) and DoS-resilience (HTTP/2 Rapid Reset CVE-2023-44487 uncapped, no per-tenant rate/byte quota, unbounded per-request allocation, distributed locks without fencing/TTL, no circuit breaker on dependencies). Maps to ATT&CK T1078 / T1499 / T1499.001 / T1530 and CWE-639/770/863/668/400, and to NIST 800-53 AC-3 / SC-6, ISO 27001 A.8.31, NIS2 Art.21, and SOC 2 CC6."
+      }
+    ],
+    "owner": "@blamejs/platform-security",
+    "air_gap_mode": false,
+    "scope": "service",
+    "preconditions": [
+      {
+        "id": "app-source-or-config-read",
+        "description": "Agent must read the operator's application source and/or runtime configuration to inspect tenant resolution, data-layer isolation, shared-infra key namespacing, and availability controls. A host with neither marks the playbook visibility_gap=no_app_isolation_inventory.",
+        "check": "agent_has_filesystem_read == true OR agent_has_app_config == true",
+        "on_fail": "halt"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "cloud-iam-incident",
+        "condition": "finding.includes_cross_tenant_data_access == true"
+      },
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      }
+    ]
+  },
+  "domain": {
+    "name": "Application multitenancy isolation + availability/DoS resilience",
+    "attack_class": "api-abuse",
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1078",
+      "T1499",
+      "T1499.001",
+      "T1530"
+    ],
+    "cve_refs": [
+      "CVE-2023-44487"
+    ],
+    "cwe_refs": [
+      "CWE-639",
+      "CWE-770",
+      "CWE-863",
+      "CWE-668",
+      "CWE-400"
+    ],
+    "frameworks_in_scope": [
+      "nist-800-53",
+      "iso-27001-2022",
+      "nis2",
+      "soc2",
+      "uk-caf",
+      "au-ism"
+    ]
+  },
+  "phases": {
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "GDPR Art.33",
+          "obligation": "notify_regulator",
+          "window_hours": 72,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "cross_tenant_exposure_scope",
+            "affected_tenants_and_data_subjects"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "availability_impact_scope",
+            "tenant_isolation_failure_evidence"
+          ]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "we-have-authz",
+          "claim": "We have an authorization layer, so tenants are isolated.",
+          "fast_detection_test": "Authorization existing is not data-layer isolation. Ask whether a query CAN run without a tenant predicate — if isolation depends on every code path remembering the filter, it is one missed query from a cross-tenant leak."
+        },
+        {
+          "pattern_id": "rls-is-on",
+          "claim": "Row-level security is enabled.",
+          "fast_detection_test": "Ask which ROLE the request connection uses. RLS is bypassed by a superuser/owner/BYPASSRLS connection, so \"RLS enabled\" with an app connection on a bypass role is paper isolation."
+        },
+        {
+          "pattern_id": "cloud-autoscales",
+          "claim": "The cloud autoscales, so we are DoS-resilient.",
+          "fast_detection_test": "Autoscaling pays the attacker's bill and does not stop an asymmetric DoS (Rapid Reset, unbounded allocation). Ask for per-tenant quotas, rapid-reset caps, and circuit breakers."
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Org controls treat \"we have authorization\" as tenant isolation and \"the cloud scales\" as DoS resilience. Neither requires data-layer tenant scoping (RLS under a non-bypass role), cross-tenant cache/queue namespacing, per-tenant quotas, HTTP/2 rapid-reset caps, or circuit breakers — the controls that actually contain a multitenant leak or an asymmetric DoS.",
+        "lag_score": 70,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "AC-3",
+            "designed_for": "access enforcement",
+            "insufficient_because": "satisfied by an authorization layer; does not require tenant scoping be structurally enforced at the data layer rather than per-query discipline."
+          },
+          {
+            "framework": "nist-800-53",
+            "control_id": "SC-6",
+            "designed_for": "resource availability",
+            "insufficient_because": "named but not operationalised as per-tenant quotas, rapid-reset caps, or circuit breakers against asymmetric DoS."
+          }
+        ]
+      },
+      "skill_preload": [
+        "multitenancy-isolation",
+        "webapp-security",
+        "cloud-security",
+        "framework-gap-analysis",
+        "compliance-theater",
+        "policy-exception-gen"
+      ]
+    },
+    "direct": {
+      "threat_context": "Shared multitenant infrastructure has two linked failure classes. Isolation: if the tenant id is trusted from the client or the tenant filter lives in application discipline rather than the data layer, one authenticated tenant reads another's data (CWE-639 horizontal authz bypass) — and cache/queue keys leak the same way. Availability: asymmetric DoS (HTTP/2 Rapid Reset, unbounded per-request allocation) and the noisy-neighbour (no per-tenant quota) deny service for all tenants; autoscaling pays the bill without stopping it. These are application-posture gaps, not infra defaults.",
+      "rwep_threshold": {
+        "escalate": 55,
+        "monitor": 35,
+        "close": 20
+      },
+      "framework_lag_declaration": "A clean \"we have authorization and the cloud autoscales\" audit is NON-EVIDENCE for multitenancy isolation or DoS resilience; it confirms an auth layer and elastic infra, not data-layer RLS under a non-bypass role, cross-tenant namespacing, per-tenant quotas, rapid-reset caps, or circuit breakers.",
+      "skill_chain": [
+        {
+          "skill": "multitenancy-isolation",
+          "purpose": "enumerate the tenant-isolation + availability-resilience checks"
+        },
+        {
+          "skill": "webapp-security",
+          "purpose": "cross-reference the OWASP broken-object-level-authorization (BOLA) and resource-consumption classes"
+        },
+        {
+          "skill": "cloud-security",
+          "purpose": "frame the shared-infrastructure and autoscaling-economics dimension"
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "map findings to the AC-3 / SC-6 gaps the controls do not cover"
+        }
+      ],
+      "token_budget": {
+        "estimated_total": 13000,
+        "breakdown": {
+          "govern": 1200,
+          "direct": 800,
+          "look": 4500,
+          "detect": 4000,
+          "analyze": 1800,
+          "validate": 500,
+          "close": 200
+        }
+      }
+    },
+    "look": {
+      "artifacts": [
+        {
+          "id": "tenant-context-config",
+          "type": "config_file",
+          "source": "grep for agent-tenant / tenant id / tenant_id / X-Tenant / claim / principal across the request-auth + tenant-resolution path.",
+          "description": "How the effective tenant id is derived and whether it is bound to the authenticated principal vs taken from the client.",
+          "required": true,
+          "air_gap_alternative": "Inspect the tenant-resolution source for the binding between request tenant id and the session principal."
+        },
+        {
+          "id": "data-isolation-config",
+          "type": "config_file",
+          "source": "grep for db-declare-row-policy / db-role-context / row level security / RLS / tenant predicate / BYPASSRLS across the data layer.",
+          "description": "Whether tenant scoping is enforced at the data layer (RLS / mandatory predicate) and which role the request connection uses.",
+          "required": true,
+          "air_gap_alternative": "Inspect the data-layer source for RLS policy declaration and the request-connection role."
+        },
+        {
+          "id": "shared-infra-namespacing",
+          "type": "config_file",
+          "source": "grep for cache / pubsub / queue / cluster key/topic construction and whether the tenant id is included.",
+          "description": "Whether cache, pub/sub, and queue keys are namespaced by tenant to prevent cross-tenant collision.",
+          "required": false,
+          "air_gap_alternative": "Inspect the key/topic construction for a tenant component."
+        },
+        {
+          "id": "availability-controls",
+          "type": "config_file",
+          "source": "grep for http2-teardown / RST_STREAM / tenant-quota / network-byte-quota / mail-server-rate-limit / circuit-breaker / resource-access-lock across the resilience layer.",
+          "description": "HTTP/2 rapid-reset capping, per-tenant rate/byte quotas, distributed-lock fencing, and circuit breakers on dependencies.",
+          "required": true,
+          "air_gap_alternative": "Inspect the resilience-layer source for stream-reset accounting, quotas, lock fencing, and circuit breakers."
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current application + infrastructure configuration and source state (point-in-time posture audit)",
+        "asset_scope": "every shared multitenant surface — data access, cache/pub-sub/queue, and the HTTP/2 + resource-quota + locking + circuit-breaker resilience layer"
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "The application serves multiple tenants on shared infrastructure.",
+          "if_false": "A dedicated single-tenant-per-instance deployment removes the cross-tenant indicators; the availability/DoS indicators still apply."
+        },
+        {
+          "assumption": "Application source or config is readable.",
+          "if_false": "Mark visibility_gap=no_app_isolation_inventory and report only what the request/data path reveals."
+        }
+      ],
+      "fallback_if_unavailable": [
+        {
+          "artifact_id": "shared-infra-namespacing",
+          "fallback_action": "If no shared cache/pub-sub/queue is used, skip the key-collision indicator.",
+          "confidence_impact": "none"
+        },
+        {
+          "artifact_id": "availability-controls",
+          "fallback_action": "If availability is enforced wholly by an upstream CDN/WAF, inspect that policy instead of the origin defaults.",
+          "confidence_impact": "low"
+        }
+      ]
+    },
+    "detect": {
+      "indicators": [
+        {
+          "id": "tenant-id-trusted-from-client",
+          "type": "config_value",
+          "value": "The tenant identifier used for data scoping is taken from a client-controlled header/parameter/JWT claim that is not bound, server-side, to the authenticated principal.",
+          "description": "If the client supplies its own tenant id and the server trusts it, an authenticated user of tenant A sets the id to tenant B and reads/writes B's data — horizontal cross-tenant authorization bypass.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1078",
+          "false_positive_checks_required": [
+            "Confirm the effective tenant id is derived from the authenticated session / verified token binding, not from a mutable request field — a tenant id read from a request header/param/body and used unverified is the finding.",
+            "A tenant id in a token that the server cryptographically verifies and cross-checks against the principal's tenancy is safe; the finding is an unverified client-supplied id."
+          ]
+        },
+        {
+          "id": "query-not-scoped-by-tenant",
+          "type": "config_value",
+          "value": "Data-access queries do not enforce a tenant predicate (no row-level security policy / no mandatory tenant filter), relying on application code to remember to scope each query.",
+          "description": "A single query that forgets the tenant filter returns or mutates other tenants' rows; relying on every code path to remember the filter is a when-not-if cross-tenant leak.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1078",
+          "false_positive_checks_required": [
+            "Confirm tenant scoping is enforced at the data layer (row-level security / a mandatory tenant predicate the ORM cannot omit) rather than per-query application discipline — queries that can run without a tenant predicate are the finding.",
+            "A single-tenant deployment, or a table with no tenant dimension, is not in scope."
+          ]
+        },
+        {
+          "id": "row-policy-bypassable-by-role-context",
+          "type": "config_value",
+          "value": "A row-level-security policy is declared but a query path runs under a role/connection that bypasses it (superuser/owner role, a BYPASSRLS connection, or a view that does not propagate the policy).",
+          "description": "A declared RLS policy that a privileged connection or unenforced view bypasses provides paper isolation; the bypass path reads across tenants despite the policy existing.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1078",
+          "false_positive_checks_required": [
+            "Confirm the application data connection runs under a role SUBJECT to RLS (not a bypass role) and that views/functions propagate the tenant policy — an app connection on a BYPASSRLS/owner role is the finding.",
+            "An out-of-band admin/migration connection that legitimately bypasses RLS is acceptable if it is not the request-serving path; confirm which connection serves user requests."
+          ]
+        },
+        {
+          "id": "cross-tenant-cache-or-queue-key-collision",
+          "type": "config_value",
+          "value": "Cache, pub/sub, or queue keys/topics are not namespaced by tenant, so one tenant's cached value, message, or job can be served to or processed for another.",
+          "description": "Un-namespaced shared-infrastructure keys cause cross-tenant data exposure (a cached response or queued payload crosses the boundary) — a leak through the cache/queue rather than the database.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1530",
+          "false_positive_checks_required": [
+            "Confirm cache keys, pub/sub topics, and queue names include the tenant id in a collision-free way — shared keys derived only from the resource (no tenant component) are the finding.",
+            "A genuinely tenant-agnostic shared cache (public reference data with no tenant-specific content) is not in scope."
+          ]
+        },
+        {
+          "id": "http2-rapid-reset-uncapped",
+          "type": "config_value",
+          "value": "The HTTP/2 endpoint does not cap the rate of client-initiated stream resets (open-then-RST_STREAM), leaving it exposed to the Rapid Reset DDoS class (CVE-2023-44487).",
+          "description": "Rapid Reset lets a client open and immediately cancel streams at near-zero cost while the server does per-stream work, exhausting the server — a record-breaking application-layer DDoS primitive.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1499.001",
+          "false_positive_checks_required": [
+            "Confirm a per-connection cap on client-initiated stream resets (and connection teardown on abuse) is enforced — an HTTP/2 server below the rapid-reset-fixed release with no reset accounting is the finding.",
+            "An endpoint fronted by a CDN/WAF that absorbs rapid-reset upstream is mitigated; inspect the effective enforced control, not just the origin default."
+          ]
+        },
+        {
+          "id": "no-per-tenant-rate-or-byte-quota",
+          "type": "config_value",
+          "value": "There is no per-tenant (or per-IP) rate limit and no byte/connection quota, so a single tenant or client can exhaust shared CPU, bandwidth, or connection pools.",
+          "description": "Without per-tenant quotas one noisy or malicious tenant degrades or denies service for all others (the noisy-neighbour / resource-exhaustion DoS) on shared multitenant infrastructure.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1499",
+          "false_positive_checks_required": [
+            "Confirm a per-tenant/per-IP rate limit AND a byte/connection quota are enforced on the shared surfaces (API, mail, network) — absence of either on a shared multitenant path is the finding.",
+            "A dedicated single-tenant instance with no resource sharing does not need per-tenant quotas; the finding is a shared surface without them."
+          ]
+        },
+        {
+          "id": "unbounded-resource-allocation-per-request",
+          "type": "config_value",
+          "value": "A request can drive unbounded allocation — no cap on result-set size, upload/body size, concurrent connections, or worker/goroutine fan-out.",
+          "description": "An unbounded per-request allocation lets a single crafted request consume memory/connections until the service fails — a cheap, single-request denial of service.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1499.001",
+          "false_positive_checks_required": [
+            "Confirm caps on result-set / body size, concurrent connections, and fan-out are enforced — an allocation that scales with attacker-controlled input without a ceiling is the finding.",
+            "A bounded allocation already capped by config (max body size, pool limits) is safe; the finding is an uncapped path."
+          ]
+        },
+        {
+          "id": "distributed-lock-without-fencing",
+          "type": "config_value",
+          "value": "A distributed/resource-access lock has no fencing token or TTL, so a stale lock-holder (paused, GC, network-partitioned) can act after its lease expired, or a lock is never released.",
+          "description": "A lock without fencing/TTL causes either deadlock-style availability loss (never released) or split-brain writes (a stale holder acts after expiry) — a correctness-and-availability failure on shared state.",
+          "confidence": "low",
+          "deterministic": false,
+          "attack_ref": "T1499",
+          "false_positive_checks_required": [
+            "Confirm the lock carries a TTL AND a fencing token that the protected resource checks (rejecting writes from an expired lease) — a lock with neither is the finding.",
+            "A purely advisory in-process lock on non-shared state is not a distributed-lock finding; this targets cross-node resource locks."
+          ]
+        },
+        {
+          "id": "no-circuit-breaker-on-dependency",
+          "type": "config_value",
+          "value": "Calls to a downstream dependency have no circuit breaker / bulkhead, so a slow or failing dependency cascades into connection-pool exhaustion and a wider outage.",
+          "description": "Without a circuit breaker, a single degraded dependency ties up all request workers waiting on it, turning a partial failure into a full availability outage (cascading failure).",
+          "confidence": "low",
+          "deterministic": false,
+          "attack_ref": "T1499",
+          "false_positive_checks_required": [
+            "Confirm downstream calls are wrapped in a circuit breaker / bulkhead with a timeout that sheds load when the dependency degrades — synchronous unbounded waits on a dependency are the finding.",
+            "A dependency that is genuinely non-critical and already isolated (async, best-effort) does not need a breaker; the finding is a critical synchronous dependency without one."
+          ]
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "tenant-id-trusted-from-client",
+          "benign_pattern": "Isolation/limits enforced at a lower layer (data-layer RLS, CDN/WAF rate limiting, dedicated single-tenant instance) or a surface with no shared-resource / cross-tenant dimension.",
+          "distinguishing_test": "Confirm the effective tenant id is derived from the authenticated session / verified token binding, not from a mutable request field — a tenant id read from a request header/param/body and used unverified is the finding."
+        },
+        {
+          "indicator_id": "query-not-scoped-by-tenant",
+          "benign_pattern": "Isolation/limits enforced at a lower layer (data-layer RLS, CDN/WAF rate limiting, dedicated single-tenant instance) or a surface with no shared-resource / cross-tenant dimension.",
+          "distinguishing_test": "Confirm tenant scoping is enforced at the data layer (row-level security / a mandatory tenant predicate the ORM cannot omit) rather than per-query application discipline — queries that can run without a tenant predicate are the finding."
+        },
+        {
+          "indicator_id": "row-policy-bypassable-by-role-context",
+          "benign_pattern": "Isolation/limits enforced at a lower layer (data-layer RLS, CDN/WAF rate limiting, dedicated single-tenant instance) or a surface with no shared-resource / cross-tenant dimension.",
+          "distinguishing_test": "Confirm the application data connection runs under a role SUBJECT to RLS (not a bypass role) and that views/functions propagate the tenant policy — an app connection on a BYPASSRLS/owner role is the finding."
+        },
+        {
+          "indicator_id": "cross-tenant-cache-or-queue-key-collision",
+          "benign_pattern": "Isolation/limits enforced at a lower layer (data-layer RLS, CDN/WAF rate limiting, dedicated single-tenant instance) or a surface with no shared-resource / cross-tenant dimension.",
+          "distinguishing_test": "Confirm cache keys, pub/sub topics, and queue names include the tenant id in a collision-free way — shared keys derived only from the resource (no tenant component) are the finding."
+        },
+        {
+          "indicator_id": "http2-rapid-reset-uncapped",
+          "benign_pattern": "Isolation/limits enforced at a lower layer (data-layer RLS, CDN/WAF rate limiting, dedicated single-tenant instance) or a surface with no shared-resource / cross-tenant dimension.",
+          "distinguishing_test": "Confirm a per-connection cap on client-initiated stream resets (and connection teardown on abuse) is enforced — an HTTP/2 server below the rapid-reset-fixed release with no reset accounting is the finding."
+        },
+        {
+          "indicator_id": "no-per-tenant-rate-or-byte-quota",
+          "benign_pattern": "Isolation/limits enforced at a lower layer (data-layer RLS, CDN/WAF rate limiting, dedicated single-tenant instance) or a surface with no shared-resource / cross-tenant dimension.",
+          "distinguishing_test": "Confirm a per-tenant/per-IP rate limit AND a byte/connection quota are enforced on the shared surfaces (API, mail, network) — absence of either on a shared multitenant path is the finding."
+        },
+        {
+          "indicator_id": "unbounded-resource-allocation-per-request",
+          "benign_pattern": "Isolation/limits enforced at a lower layer (data-layer RLS, CDN/WAF rate limiting, dedicated single-tenant instance) or a surface with no shared-resource / cross-tenant dimension.",
+          "distinguishing_test": "Confirm caps on result-set / body size, concurrent connections, and fan-out are enforced — an allocation that scales with attacker-controlled input without a ceiling is the finding."
+        },
+        {
+          "indicator_id": "distributed-lock-without-fencing",
+          "benign_pattern": "Isolation/limits enforced at a lower layer (data-layer RLS, CDN/WAF rate limiting, dedicated single-tenant instance) or a surface with no shared-resource / cross-tenant dimension.",
+          "distinguishing_test": "Confirm the lock carries a TTL AND a fencing token that the protected resource checks (rejecting writes from an expired lease) — a lock with neither is the finding."
+        },
+        {
+          "indicator_id": "no-circuit-breaker-on-dependency",
+          "benign_pattern": "Isolation/limits enforced at a lower layer (data-layer RLS, CDN/WAF rate limiting, dedicated single-tenant instance) or a surface with no shared-resource / cross-tenant dimension.",
+          "distinguishing_test": "Confirm downstream calls are wrapped in a circuit breaker / bulkhead with a timeout that sheds load when the dependency degrades — synchronous unbounded waits on a dependency are the finding."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "At least one isolation control is absent (client-trusted tenant id, query runnable without tenant predicate, RLS-bypassing request role, un-namespaced shared keys) or one availability control is absent (uncapped Rapid Reset, no per-tenant quota, unbounded allocation) on a production shared surface.",
+        "inconclusive": "A control is enforced at a layer the audit could not read (data-layer RLS confirmed only in migrations, CDN-enforced quotas) — record as visibility_gap, not a clean result.",
+        "not_detected": "Tenant id is bound to the principal, tenant scoping is data-layer-enforced under a non-bypass role, shared keys are tenant-namespaced, and the availability layer caps Rapid Reset, enforces per-tenant quotas, bounds allocation, fences locks, and circuit-breaks dependencies."
+      }
+    },
+    "analyze": {
+      "rwep_inputs": [
+        {
+          "signal_id": "tenant-id-trusted-from-client",
+          "rwep_factor": "blast_radius",
+          "weight": 25
+        },
+        {
+          "signal_id": "http2-rapid-reset-uncapped",
+          "rwep_factor": "public_poc",
+          "weight": 20
+        },
+        {
+          "signal_id": "query-not-scoped-by-tenant",
+          "rwep_factor": "active_exploitation",
+          "weight": 10
+        }
+      ],
+      "blast_radius_model": {
+        "scope_question": "Does the gap expose all tenants' data, or deny service to all tenants, from a single authenticated user or request?",
+        "scoring_rubric": [
+          {
+            "condition": "A single authenticated tenant can read/write any other tenant's data (client-trusted id or unscoped query) on an internet-facing app",
+            "blast_radius_score": 5,
+            "description": "Full cross-tenant data compromise from one account"
+          },
+          {
+            "condition": "A single client can deny service to all tenants (uncapped Rapid Reset / no per-tenant quota)",
+            "blast_radius_score": 4,
+            "description": "Shared-service DoS affecting every tenant"
+          },
+          {
+            "condition": "Isolation/availability gap requires specific conditions or affects a limited surface",
+            "blast_radius_score": 2,
+            "description": "Constrained cross-tenant or availability impact"
+          }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "We have authorization and the cloud autoscales, so tenants are isolated and we are DoS-resilient.",
+        "audit_evidence": "An authorization middleware, an autoscaling group, a statement that RLS is enabled.",
+        "reality_test": "Probe whether a query runs without a tenant predicate, whether the request connection bypasses RLS, whether the tenant id is client-trusted, and whether Rapid Reset / unbounded allocation is capped. If a cross-tenant read or an asymmetric DoS succeeds, the auth layer and autoscaling did not isolate or protect.",
+        "theater_verdict_if_gap": "theater"
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "query-not-scoped-by-tenant",
+          "framework": "nist-800-53",
+          "claimed_control": "AC-3 (access enforcement)",
+          "actual_gap": "AC-3 is satisfied by an auth layer; it does not require tenant scoping be structurally enforced at the data layer."
+        },
+        {
+          "finding_id": "http2-rapid-reset-uncapped",
+          "framework": "nist-800-53",
+          "claimed_control": "SC-6 (resource availability)",
+          "actual_gap": "SC-6 is not operationalised as a rapid-reset cap against the CVE-2023-44487 asymmetric DDoS class."
+        }
+      ],
+      "escalation_criteria": [
+        {
+          "condition": "A single authenticated user can access another tenant's data on a production app",
+          "action": "raise_severity"
+        },
+        {
+          "condition": "A single client can deny service to all tenants via an uncapped asymmetric DoS",
+          "action": "trigger_playbook"
+        }
+      ]
+    },
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "bind-tenant-and-enforce-rls",
+          "description": "Derive the tenant id from the authenticated principal (never trust a client-supplied id), and enforce tenant scoping at the data layer via row-level security under a NON-bypass request role so a forgotten predicate cannot leak.",
+          "preconditions": [
+            "operator controls the data layer"
+          ],
+          "priority": 1,
+          "for_signals": [
+            "tenant-id-trusted-from-client",
+            "query-not-scoped-by-tenant",
+            "row-policy-bypassable-by-role-context"
+          ]
+        },
+        {
+          "id": "namespace-shared-keys",
+          "description": "Include the tenant id in every cache key, pub/sub topic, and queue name so cross-tenant collisions are impossible.",
+          "preconditions": [],
+          "priority": 2,
+          "for_signals": [
+            "cross-tenant-cache-or-queue-key-collision"
+          ]
+        },
+        {
+          "id": "cap-rapid-reset-and-quota",
+          "description": "Cap client-initiated HTTP/2 stream resets per connection (CVE-2023-44487) and enforce per-tenant/per-IP rate + byte quotas on shared surfaces.",
+          "preconditions": [],
+          "priority": 1,
+          "for_signals": [
+            "http2-rapid-reset-uncapped",
+            "no-per-tenant-rate-or-byte-quota"
+          ]
+        },
+        {
+          "id": "bound-allocation",
+          "description": "Cap result-set / body size, concurrent connections, and fan-out so no single request drives unbounded allocation.",
+          "preconditions": [],
+          "priority": 2,
+          "for_signals": [
+            "unbounded-resource-allocation-per-request"
+          ]
+        },
+        {
+          "id": "fence-locks-and-circuit-break",
+          "description": "Give distributed locks a TTL + fencing token the resource checks, and wrap critical downstream dependencies in a circuit breaker / bulkhead with timeouts.",
+          "preconditions": [],
+          "priority": 3,
+          "for_signals": [
+            "distributed-lock-without-fencing",
+            "no-circuit-breaker-on-dependency"
+          ]
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "cross-tenant-read-blocked",
+          "test": "As an authenticated user of tenant A, set the tenant id to B (header/param/claim) and request B's data.",
+          "expected_result": "Request is denied / scoped to A — the server uses the principal-bound tenant, not the supplied id.",
+          "test_type": "negative"
+        },
+        {
+          "id": "unscoped-query-blocked",
+          "test": "Execute a request whose query omits the tenant predicate.",
+          "expected_result": "Data-layer RLS returns only the current tenant's rows (or the query is refused), not all tenants'.",
+          "test_type": "negative"
+        },
+        {
+          "id": "rapid-reset-capped",
+          "test": "Open and immediately RST_STREAM many HTTP/2 streams on one connection.",
+          "expected_result": "The connection is throttled/closed once the reset rate exceeds the cap; the server is not exhausted.",
+          "test_type": "negative"
+        },
+        {
+          "id": "legitimate-multitenant-flow",
+          "test": "Two tenants concurrently use the app normally within their quotas.",
+          "expected_result": "Each sees only its own data and gets fair service — no regression on the legitimate path.",
+          "test_type": "functional"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "A compromise of a tenant-administrator account, or of the principal-to-tenant mapping itself, still yields that tenant's scope (and any cross-tenant rights it legitimately holds).",
+        "why_remains": "Isolation enforces the principal's tenancy; it does not protect against compromise of a legitimately-scoped account, which is an identity-control concern.",
+        "acceptance_level": "ciso"
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "config_diff",
+          "description": "The tenant-binding, data-layer RLS + role, shared-key namespacing, and availability-control (rapid-reset cap, quotas, locks, breakers) configuration as audited.",
+          "retention_period": "1 year"
+        },
+        {
+          "evidence_type": "exploit_replay_negative",
+          "description": "Outcomes of the cross-tenant-read / unscoped-query / rapid-reset negative tests plus the legitimate multitenant functional test.",
+          "retention_period": "1 year"
+        }
+      ],
+      "regression_trigger": [
+        {
+          "condition": "A new shared resource, tenant-scoped table, or HTTP/2 endpoint is added",
+          "interval": "on change"
+        },
+        {
+          "condition": "Periodic re-attestation of multitenancy isolation + availability posture",
+          "interval": "quarterly"
+        }
+      ]
+    },
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": [
+          "app-isolation config snapshot",
+          "per-indicator findings + false-positive disposition",
+          "negative + functional test results",
+          "framework gap mapping"
+        ],
+        "destination": ".exceptd/attestations/<session_id>/attestation.json"
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Cross-tenant data access from a single authenticated account (client-trusted tenant id / unscoped query / RLS bypass / shared-key collision), or shared-service denial of service (Rapid Reset / no per-tenant quota / unbounded allocation).",
+          "control_gap": "Tenant scoping not data-layer-enforced under a non-bypass role; availability controls (rapid-reset cap, per-tenant quota, breaker) absent.",
+          "framework_gap": "NIST AC-3 + SC-6 + SOC 2 CC6 equate an auth layer with isolation and autoscaling with resilience.",
+          "new_control_requirement": "Tenant id MUST bind to the principal and scoping MUST be data-layer-enforced under a non-bypass role; shared surfaces MUST enforce per-tenant quotas and rapid-reset caps."
+        }
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/GDPR Art.33 72h",
+          "deadline": "72h from detect_confirmed",
+          "recipient": "data protection authority",
+          "evidence_attached": [
+            "attestation"
+          ]
+        },
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "24h from detect_confirmed",
+          "recipient": "national CSIRT / competent authority",
+          "evidence_attached": [
+            "attestation"
+          ]
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "A legacy table cannot adopt data-layer RLS immediately.",
+        "exception_template": {
+          "scope": "the specific table / endpoint",
+          "duration": "90 days",
+          "compensating_controls": [
+            "mandatory tenant predicate in a shared query helper",
+            "automated test asserting no query runs without a tenant filter",
+            "enhanced cross-tenant access logging"
+          ],
+          "risk_acceptance_owner": "ciso"
+        }
+      },
+      "regression_schedule": {
+        "next_run": "quarterly or on any new shared resource / tenant-scoped table / endpoint",
+        "trigger": "change to the isolation or availability surfaces, or quarterly re-attestation"
+      }
+    }
+  },
+  "directives": [
+    {
+      "id": "all-multitenant-surfaces",
+      "title": "Inventory + isolation/availability-test every shared multitenant surface",
+      "applies_to": {
+        "always": true
+      }
+    },
+    {
+      "id": "cross-tenant-bola-sweep",
+      "title": "Targeted cross-tenant (BOLA) + asymmetric-DoS sweep on internet-facing multitenant APIs",
+      "applies_to": {
+        "attack_technique": "T1078"
+      }
+    }
+  ]
+}

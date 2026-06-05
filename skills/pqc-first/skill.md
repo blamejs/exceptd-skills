@@ -123,7 +123,7 @@ Sovereign-cyber programs outside the EU/UK/AU/ISO axis are producing the most co
 - **Brazil (LGPD + ANPD):** ANPD has signalled that "state-of-the-art" technical measures under LGPD Art. 46 will include PQC consideration for long-sensitivity-window data; no hard mandate yet.
 - **US sub-national — NYDFS 23 NYCRR 500.15:** Encryption-of-nonpublic-information requirement is algorithm-agnostic but recently amended (Nov 2023) to require periodic CISO review of cryptographic controls — operationally this is the hook for PQC inclusion in covered entities' annual review cycles, ahead of any federal mandate beyond CNSA 2.0.
 
-PQC migration is the clearest example of the project's hard rule #5 (global-first): the lag is not uniformly distributed — INCD, KISA, and BSI/ANSSI guidance leads, while many compliance-framework controls still treat algorithm choice as ungoverned.
+PQC migration is the clearest example of why a global-first lens matters: the lag is not uniformly distributed — INCD, KISA, and BSI/ANSSI guidance leads, while many compliance-framework controls still treat algorithm choice as ungoverned.
 
 ### IETF Tracking — The IETF Lag IS the Framework Lag for PQC
 
@@ -514,7 +514,7 @@ Priority order:
 
 ## Output Format
 
-The skill produces a structured PQC Readiness Assessment that scores the org's post-quantum migration posture against the NIST PQC standards (ML-KEM / FIPS 203, ML-DSA / FIPS 204, SLH-DSA / FIPS 205), CNSA 2.0, and the BSI / ANSSI / NCSC migration guidance. The shape below is consumed downstream by `crypto` playbook runs (which feed the assessment into Phase 5 analyze), by `framework-gap-analysis` (for SC-8 / SC-13 / A.8.24 / A.10 lag declarations), and by `compliance-theater` (which compares the harvest-now-decrypt-later exposure against the org's data-classification claims). Preserve the per-protocol cryptographic-inventory rows verbatim — they are the auditable derivation of the migration roadmap.
+The skill produces a structured PQC Readiness Assessment that scores the org's post-quantum migration posture against the NIST PQC standards (ML-KEM / FIPS 203, ML-DSA / FIPS 204, SLH-DSA / FIPS 205), CNSA 2.0, and the BSI / ANSSI / NCSC migration guidance. The shape below is consumed downstream by `crypto` playbook runs (which feed the assessment into the analysis correlation step), by `framework-gap-analysis` (for SC-8 / SC-13 / A.8.24 / A.10 lag declarations), and by `compliance-theater` (which compares the harvest-now-decrypt-later exposure against the org's data-classification claims). Preserve the per-protocol cryptographic-inventory rows verbatim — they are the auditable derivation of the migration roadmap.
 
 ```
 ## PQC Readiness Assessment
@@ -562,7 +562,7 @@ D3FEND references from `data/d3fend-catalog.json`. The harvest-now-decrypt-later
 
 **Zero-trust posture:** every session negotiates PQC-hybrid key exchange regardless of network trust level — there is no "internal traffic is safe from HNDL" exemption, because a passive collector on an internal span harvests ciphertext as readily as one on the public path. Confidentiality is asserted per-session at the crypto layer, not inferred from network position.
 
-**AI-pipeline applicability (per AGENTS.md Hard Rule #9):** `D3-FE` applies to model-weight files, training datasets, and embedding stores at rest; for ephemeral inference workloads that never persist state locally, the control shifts to PQC-hybrid-wrapped object storage (e.g. SSE-KMS with an ML-KEM-based envelope) rather than local-disk encryption. `D3-MENCR` applies to all AI-API traffic, which must move to TLS 1.3 with hybrid key exchange on the CNSA 2.0 timeline — noting that PQC protects the confidentiality of that traffic but not its content-layer abuse as a covert channel (pair with the AI-C2 egress controls in `ai-c2-detection`).
+**AI-pipeline applicability (some controls shift when workloads are ephemeral and never persist state):** `D3-FE` applies to model-weight files, training datasets, and embedding stores at rest; for ephemeral inference workloads that never persist state locally, the control shifts to PQC-hybrid-wrapped object storage (e.g. SSE-KMS with an ML-KEM-based envelope) rather than local-disk encryption. `D3-MENCR` applies to all AI-API traffic, which must move to TLS 1.3 with hybrid key exchange on the CNSA 2.0 timeline — noting that PQC protects the confidentiality of that traffic but not its content-layer abuse as a covert channel (pair with the AI-C2 egress controls in `ai-c2-detection`).
 
 ---
 

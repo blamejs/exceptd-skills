@@ -13,7 +13,9 @@
       "kernel-lpe-triage"
     ],
     "CWE-672": [
-      "kernel-lpe-triage"
+      "kernel-lpe-triage",
+      "privacy-consent-ops",
+      "vc-wallet-trust"
     ],
     "CWE-787": [
       "attack-surface-pentest",
@@ -41,12 +43,17 @@
     "CWE-22": [
       "api-security",
       "attack-surface-pentest",
+      "decompression-dos",
+      "mail-server-hardening",
       "mcp-agent-trust",
       "webapp-security"
     ],
     "CWE-345": [
+      "audit-log-integrity",
       "idp-incident-response",
-      "mcp-agent-trust"
+      "mcp-agent-trust",
+      "network-trust",
+      "privacy-consent-ops"
     ],
     "CWE-352": [
       "api-security",
@@ -62,17 +69,21 @@
     ],
     "CWE-494": [
       "mcp-agent-trust",
+      "self-update-integrity",
       "supply-chain-integrity"
     ],
     "CWE-77": [
       "api-security",
+      "mail-server-hardening",
       "mcp-agent-trust",
       "webapp-security"
     ],
     "CWE-918": [
       "api-security",
       "attack-surface-pentest",
+      "log-injection-telemetry",
       "mcp-agent-trust",
+      "network-trust",
       "sector-telecom",
       "webapp-security"
     ],
@@ -132,7 +143,9 @@
       "api-security",
       "cloud-security",
       "dlp-gap-analysis",
+      "log-injection-telemetry",
       "sector-healthcare",
+      "vc-wallet-trust",
       "webapp-security"
     ],
     "CWE-1357": [
@@ -148,6 +161,7 @@
     ],
     "CWE-829": [
       "sector-federal-government",
+      "self-update-integrity",
       "supply-chain-integrity"
     ],
     "CWE-287": [
@@ -194,7 +208,10 @@
       "cloud-iam-incident",
       "identity-assurance",
       "idp-incident-response",
+      "mail-server-hardening",
+      "multitenancy-isolation",
       "sector-financial",
+      "vc-wallet-trust",
       "webapp-security"
     ],
     "CWE-1037": [
@@ -206,7 +223,67 @@
       "idp-incident-response"
     ],
     "CWE-284": [
+      "audit-log-integrity",
       "idp-incident-response"
+    ],
+    "CWE-347": [
+      "audit-log-integrity",
+      "network-trust",
+      "self-update-integrity",
+      "vc-wallet-trust"
+    ],
+    "CWE-290": [
+      "network-trust",
+      "vc-wallet-trust"
+    ],
+    "CWE-93": [
+      "mail-server-hardening"
+    ],
+    "CWE-611": [
+      "mail-server-hardening"
+    ],
+    "CWE-400": [
+      "decompression-dos",
+      "mail-server-hardening",
+      "multitenancy-isolation"
+    ],
+    "CWE-778": [
+      "audit-log-integrity",
+      "privacy-consent-ops"
+    ],
+    "CWE-353": [
+      "self-update-integrity"
+    ],
+    "CWE-639": [
+      "multitenancy-isolation"
+    ],
+    "CWE-770": [
+      "decompression-dos",
+      "multitenancy-isolation"
+    ],
+    "CWE-668": [
+      "multitenancy-isolation"
+    ],
+    "CWE-409": [
+      "decompression-dos"
+    ],
+    "CWE-1333": [
+      "decompression-dos"
+    ],
+    "CWE-776": [
+      "decompression-dos"
+    ],
+    "CWE-834": [
+      "decompression-dos"
+    ],
+    "CWE-117": [
+      "log-injection-telemetry"
+    ],
+    "CWE-532": [
+      "log-injection-telemetry"
+    ],
+    "CWE-807": [
+      "privacy-consent-ops"
     ]
   },
   "d3fend_refs": {
@@ -329,14 +406,21 @@
   },
   "framework_gaps": {
     "NIST-800-53-SI-2": [
-      "kernel-lpe-triage"
+      "audit-log-integrity",
+      "decompression-dos",
+      "kernel-lpe-triage",
+      "log-injection-telemetry",
+      "mail-server-hardening",
+      "privacy-consent-ops"
     ],
     "ISO-27001-2022-A.8.8": [
       "coordinated-vuln-disclosure",
-      "kernel-lpe-triage"
+      "kernel-lpe-triage",
+      "mail-server-hardening"
     ],
     "PCI-DSS-4.0-6.3.3": [
-      "kernel-lpe-triage"
+      "kernel-lpe-triage",
+      "mail-server-hardening"
     ],
     "NIS2-Art21-patch-management": [
       "attack-surface-pentest",
@@ -346,6 +430,7 @@
     ],
     "NIST-800-53-SC-8": [
       "kernel-lpe-triage",
+      "network-trust",
       "pqc-first"
     ],
     "CIS-Controls-v8-Control7": [
@@ -471,6 +556,7 @@
     ],
     "SOC2-CC7-anomaly-detection": [
       "ai-c2-detection",
+      "audit-log-integrity",
       "dlp-gap-analysis",
       "email-security-anti-phishing",
       "incident-response-playbook"
@@ -534,7 +620,8 @@
       "supply-chain-integrity"
     ],
     "NIST-800-63B-rev4": [
-      "identity-assurance"
+      "identity-assurance",
+      "vc-wallet-trust"
     ],
     "PSD2-RTS-SCA": [
       "identity-assurance",
@@ -568,7 +655,12 @@
       "sector-telecom"
     ],
     "AU-ISM-1556": [
-      "sector-telecom"
+      "decompression-dos",
+      "log-injection-telemetry",
+      "multitenancy-isolation",
+      "privacy-consent-ops",
+      "sector-telecom",
+      "self-update-integrity"
     ],
     "GSMA-NESAS-Deployment": [
       "sector-telecom"
@@ -622,10 +714,12 @@
       "cloud-iam-incident"
     ],
     "NIST-800-53-IA-5-Federated": [
-      "idp-incident-response"
+      "idp-incident-response",
+      "vc-wallet-trust"
     ],
     "ISO-27001-2022-A.5.16-Federated": [
-      "idp-incident-response"
+      "idp-incident-response",
+      "vc-wallet-trust"
     ],
     "SOC2-CC6-OAuth-Consent": [
       "idp-incident-response"
@@ -637,13 +731,48 @@
       "idp-incident-response"
     ],
     "NIS2-Art-21-Federated-Identity": [
-      "idp-incident-response"
+      "idp-incident-response",
+      "vc-wallet-trust"
     ],
     "DORA-Art-19-IdP-4h": [
       "idp-incident-response"
     ],
     "OFAC-Sanctions-Threat-Actor-Negotiation": [
       "idp-incident-response"
+    ],
+    "UK-CAF-B2": [
+      "vc-wallet-trust"
+    ],
+    "NIS2-Art21-network-security": [
+      "audit-log-integrity",
+      "decompression-dos",
+      "log-injection-telemetry",
+      "mail-server-hardening",
+      "multitenancy-isolation",
+      "network-trust",
+      "privacy-consent-ops",
+      "self-update-integrity"
+    ],
+    "ISO-27001-2022-A.8.21": [
+      "network-trust"
+    ],
+    "UK-CAF-B4": [
+      "decompression-dos",
+      "log-injection-telemetry",
+      "multitenancy-isolation",
+      "network-trust",
+      "privacy-consent-ops",
+      "self-update-integrity"
+    ],
+    "ISO-27001-2022-A.8.15": [
+      "audit-log-integrity",
+      "log-injection-telemetry"
+    ],
+    "NIST-800-53-SR-11": [
+      "self-update-integrity"
+    ],
+    "NIST-800-53-AC-3": [
+      "multitenancy-isolation"
     ]
   },
   "atlas_refs": {
@@ -735,6 +864,7 @@
     "T1059": [
       "ai-attack-surface",
       "attack-surface-pentest",
+      "decompression-dos",
       "mcp-agent-trust",
       "ransomware-response",
       "webapp-security"
@@ -746,6 +876,7 @@
       "cloud-security",
       "container-runtime-security",
       "fuzz-testing-strategy",
+      "mail-server-hardening",
       "mcp-agent-trust",
       "ot-ics-security",
       "sector-energy",
@@ -786,6 +917,7 @@
       "email-security-anti-phishing",
       "identity-assurance",
       "incident-response-playbook",
+      "multitenancy-isolation",
       "ransomware-response",
       "sector-energy",
       "sector-financial",
@@ -804,16 +936,20 @@
     "T1530": [
       "cloud-security",
       "dlp-gap-analysis",
+      "log-injection-telemetry",
+      "multitenancy-isolation",
       "sector-healthcare"
     ],
     "T1213": [
-      "dlp-gap-analysis"
+      "dlp-gap-analysis",
+      "log-injection-telemetry"
     ],
     "T1041": [
       "dlp-gap-analysis",
       "incident-response-playbook"
     ],
     "T1195.002": [
+      "self-update-integrity",
       "supply-chain-integrity"
     ],
     "T1554": [
@@ -822,7 +958,9 @@
     ],
     "T1556": [
       "identity-assurance",
-      "sector-telecom"
+      "network-trust",
+      "sector-telecom",
+      "vc-wallet-trust"
     ],
     "T1110": [
       "identity-assurance"
@@ -890,6 +1028,48 @@
     ],
     "T1606.002": [
       "idp-incident-response"
+    ],
+    "T1606": [
+      "vc-wallet-trust"
+    ],
+    "T1550": [
+      "vc-wallet-trust"
+    ],
+    "T1071.003": [
+      "mail-server-hardening"
+    ],
+    "T1557": [
+      "mail-server-hardening",
+      "network-trust"
+    ],
+    "T1071.004": [
+      "network-trust"
+    ],
+    "T1070": [
+      "audit-log-integrity",
+      "privacy-consent-ops"
+    ],
+    "T1565.001": [
+      "audit-log-integrity",
+      "log-injection-telemetry",
+      "privacy-consent-ops"
+    ],
+    "T1562.008": [
+      "audit-log-integrity"
+    ],
+    "T1574": [
+      "self-update-integrity"
+    ],
+    "T1499": [
+      "decompression-dos",
+      "multitenancy-isolation"
+    ],
+    "T1499.001": [
+      "decompression-dos",
+      "multitenancy-isolation"
+    ],
+    "T1036": [
+      "privacy-consent-ops"
     ]
   },
   "rfc_refs": {

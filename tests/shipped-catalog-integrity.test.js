@@ -60,14 +60,30 @@ test("shipped catalogs: missing-context budget is enforced per catalog (no silen
   // the same PR. This is the no-MVP rule applied to the catalog —
   // you can't make the catalog WORSE without explicit acknowledgement.
   const BUDGET = {
-    "cve-catalog":     { iocs: 291 },
+    // The bulk-imported KEV draft backlog has been fully curated — every CVE
+    // entry now carries a behavioral iocs block, so the missing-iocs count is 0.
+    // This budget stays at 0 as a guard: any future entry shipped without iocs
+    // is a regression and fails the gate.
+    "cve-catalog":     { iocs: 0 },
     "cwe-catalog":     {},
     "attack-techniques": {},
     "atlas-ttps":      {},
     "d3fend-catalog":  {},
-    "rfc-references":  {},
+    // Obsoleted/historic RFCs are now imported so a superseded RFC resolves
+    // offline. 31 of them carry no abstract in the IETF index (older RFCs
+    // predate the abstract field); that absence is upstream, not a curation
+    // regression — the rows are otherwise complete (title, status, obsoleted_by).
+    "rfc-references":  { abstract: 31 },
     "framework-control-gaps": {},
-    "zeroday-lessons": { new_control_requirements: 252 }
+    // Lessons whose remediation reuses existing controls (perimeter/edge patch
+    // SLA, endpoint and application hardening, kernel/driver hardening) rather
+    // than demanding a new one carry no new_control_requirements — the field is
+    // honestly absent rather than padded with a fabricated control, which the
+    // no-orphaned-controls rule forbids. The count rises as such lessons are
+    // added for newly-curated CVEs (e.g. legacy client-side browser/reader RCEs
+    // whose defense is patch + end-of-life-retirement + Protected View/ASR, not
+    // a novel control). Raised to the current actual when that happens.
+    "zeroday-lessons": { new_control_requirements: 269 }
   };
   const findings = {};
   for (const key of Object.keys(MOD.SPEC)) {
@@ -111,7 +127,11 @@ test("shipped catalogs: extended-detector budgets (no silent regression on v0.13
   }
   const BUDGET = {
     "content-quality": 12,        // 10 KEV-no-vendor-advisories + slack
-    "temporal-staleness": 260,    // 255 passed-KEV-due-date entries
+    // data-freshness only (source_verified / last_updated / epss_date). The
+    // calendar-driven KEV-due-passed sub-check was removed (external operator
+    // date, not catalog freshness; grew unboundedly as KEV drafts got curated).
+    // Actual 0 with fresh data; 10 leaves refresh headroom.
+    "temporal-staleness": 10,
     "logical-consistency": 5,
     "cross-ref-completeness": 5,
     "schema-evolution": 0,

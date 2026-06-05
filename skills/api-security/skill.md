@@ -193,7 +193,7 @@ Wire-level RFC mappings cited below resolve against `data/rfc-references.json` (
 - Origin validation at WebSocket upgrade handshake; CSRF tokens or sender-constrained tokens for any cookie-authenticated API.
 - Internal-network position grants nothing — SSRF assumes the attacker is already inside (per API7 / CWE-918).
 
-**Ephemeral / serverless caveat (per AGENTS.md Hard Rule #9):** session-level controls (in-process rate limiters, sticky-session anti-automation) are architecturally impossible. Replace with per-request stateless equivalents: short-TTL signed tokens (RFC 8725), gateway-enforced quotas in a distributed store (Redis-class), per-request workload identity, per-request egress allow-list. Do not require in-process state where the platform forbids it.
+**Ephemeral / serverless caveat:** session-level controls (in-process rate limiters, sticky-session anti-automation) are architecturally impossible. Replace with per-request stateless equivalents: short-TTL signed tokens (RFC 8725), gateway-enforced quotas in a distributed store (Redis-class), per-request workload identity, per-request egress allow-list. Do not require in-process state where the platform forbids it.
 
 ### The 10-step assessment
 
@@ -269,11 +269,11 @@ The skill produces an API Security Assessment covering REST / GraphQL / gRPC / W
 
 Each test below distinguishes paper compliance from real posture. A "no" or hand-waving answer to any of (a)–(d) means the corresponding control claim is theater.
 
-**(a) API inventory completeness.** "List every API in your environment — REST, GraphQL, gRPC, WebSocket, MCP — including every AI-API your services consume. Produce the list now from a system of record (gateway log, service mesh, secret inventory), not from memory." If the team cannot produce an inventory, or the inventory excludes AI-API consumption, **API9 Improper Inventory Management is the posture**, regardless of policy. Per AGENTS.md DR-1, "we have an API catalogue" without a current list is theater.
+**(a) API inventory completeness.** "List every API in your environment — REST, GraphQL, gRPC, WebSocket, MCP — including every AI-API your services consume. Produce the list now from a system of record (gateway log, service mesh, secret inventory), not from memory." If the team cannot produce an inventory, or the inventory excludes AI-API consumption, **API9 Improper Inventory Management is the posture**, regardless of policy. "We have an API catalogue" without a current list is theater — never treat a control as adequate when it cannot be demonstrated against a live inventory.
 
 **(b) BOLA test result.** "Show your BOLA test output for the last sprint. What percentage of object-ID-bearing routes have per-object authorisation asserted by an integration test or by a contract test (Burp Autorize, Schemathesis, equivalent)?" If the answer is "we have auth on every route" without per-resource scoping verification, the auth claim is BFLA-only at best and the API1 risk is unmanaged. Per CWE-863 / CWE-862 — these are not tested into existence by route-level guards.
 
-**(c) Rate-limit policy for AI-API consumption — denial-of-wallet exposure.** "For each AI-API your services consume (OpenAI, Anthropic, Gemini, Bedrock, Azure OpenAI, other), what is the per-user-per-day USD cost cap, where is it enforced, and when was it last tested by triggering it deliberately?" If there is no cost cap, or it has never been deliberately triggered, **denial-of-wallet exposure is open**. A leaked key over a weekend is a real budget event — not a theoretical one. Per AGENTS.md DR-3: control existence requires operational SLA, not policy language.
+**(c) Rate-limit policy for AI-API consumption — denial-of-wallet exposure.** "For each AI-API your services consume (OpenAI, Anthropic, Gemini, Bedrock, Azure OpenAI, other), what is the per-user-per-day USD cost cap, where is it enforced, and when was it last tested by triggering it deliberately?" If there is no cost cap, or it has never been deliberately triggered, **denial-of-wallet exposure is open**. A leaked key over a weekend is a real budget event — not a theoretical one. Control existence requires an operational SLA, not policy language.
 
 **(d) MCP transport policy.** "What is your MCP transport policy? Specifically: which MCP servers are sanctioned, what is the auth model on each, what is the per-tool token scope, what is on the egress allow-list, and how is anomalous MCP traffic surfaced to SIEM?" If the answer is "we just allow it through the proxy" or "we trust the agent to call only sanctioned tools," **MCP transport is unmanaged** and BOLA / SSRF on tool calls is the live risk. Hand off to `mcp-agent-trust` for the trust-model specifics; the API-security posture is the necessary precondition.
 
@@ -281,7 +281,7 @@ Each test below distinguishes paper compliance from real posture. A "no" or hand
 
 ## Defensive Countermeasure Mapping
 
-Each D3FEND technique below maps an offensive API-security finding to a defensive control, with explicit defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability per AGENTS.md Hard Rule #9.
+Each D3FEND technique below maps an offensive API-security finding to a defensive control, with explicit defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability (controls impossible in serverless / ephemeral contexts name an explicit scoped alternative).
 
 | D3FEND ID | Technique | Layer (defense in depth) | Least-Privilege Scope | Zero-Trust Posture | AI-Pipeline Applicability |
 |---|---|---|---|---|---|

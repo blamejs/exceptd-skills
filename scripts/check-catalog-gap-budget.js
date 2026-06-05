@@ -51,7 +51,13 @@ function loadAll() {
 // in tests/shipped-catalog-integrity.test.js.
 const BUDGET = {
   "content-quality": 12,
-  "temporal-staleness": 260,
+  // temporal-staleness now measures only maintainer-controllable data-freshness
+  // fields (source_verified > 180d, last_updated > 365d, epss_date > 90d). The
+  // calendar-driven KEV-due-passed sub-check was removed — it was an external
+  // operator-remediation date, not catalog freshness, and grew without bound as
+  // the catalog aged and KEV drafts got curated. Actual is 0 with fresh data;
+  // 10 leaves headroom for entries aging past a threshold before a refresh.
+  "temporal-staleness": 10,
   "logical-consistency": 5,
   "cross-ref-completeness": 5,
   "schema-evolution": 0,

@@ -2,9 +2,104 @@
   "_meta": {
     "schema_version": "1.0.0",
     "note": "Per-artifact 'last changed' feed sorted descending by date. Skill events from manifest.last_threat_review; catalog events from data/<catalog>.json _meta.last_updated.",
-    "event_count": 54
+    "event_count": 63
   },
   "events": [
+    {
+      "date": "2026-06-02",
+      "type": "skill_review",
+      "artifact": "vc-wallet-trust",
+      "path": "skills/vc-wallet-trust/skill.md",
+      "note": "Verifiable-credential / digital-wallet verifier trust for mid-2026 — SD-JWT-VC, OID4VCI/OID4VP, mdoc (ISO 18013-5), DID resolution, OAuth Token Status List revocation, OpenID Federation trust anchors, and the EUDI wallet (eIDAS 2.0) acceptance path"
+    },
+    {
+      "date": "2026-06-02",
+      "type": "skill_review",
+      "artifact": "mail-server-hardening",
+      "path": "skills/mail-server-hardening/skill.md",
+      "note": "Inbound mail-server protocol hardening for mid-2026 — SMTP smuggling, STARTTLS command/response injection, IMAP/POP3/ManageSieve command injection, Sieve redirect exfiltration, open relay, mailbox-DAV traversal/XXE, and cleartext-AUTH (the server-side protocol layer that SPF/DKIM/DMARC do not protect)"
+    },
+    {
+      "date": "2026-06-02",
+      "type": "skill_review",
+      "artifact": "network-trust",
+      "path": "skills/network-trust/skill.md",
+      "note": "Network-layer trust and adversary-in-the-middle resistance for mid-2026 — DNSSEC validation, DANE/TLSA pinning, TSIG, mTLS private-CA pinning, RFC 9421 HTTP message signatures, DNS-rebinding/SSRF guarding, and authenticated time (NTS) and its effect on certificate validity and TOTP"
+    },
+    {
+      "date": "2026-06-02",
+      "type": "skill_review",
+      "artifact": "audit-log-integrity",
+      "path": "skills/audit-log-integrity/skill.md",
+      "note": "Audit-log integrity for mid-2026 — tamper-evident hash-chaining, off-host signing, compliance-mode WORM immutability, legal-hold-vs-retention enforcement, writer/custodian separation, and deception (honeytoken) coverage that resist the privileged attacker most likely to tamper with the trail"
+    },
+    {
+      "date": "2026-06-02",
+      "type": "skill_review",
+      "artifact": "self-update-integrity",
+      "path": "skills/self-update-integrity/skill.md",
+      "note": "Consumer-side self-update and artifact integrity for mid-2026 — signature-verification-before-apply, out-of-band key pinning, anti-rollback/downgrade protection, channel pinning, Subresource Integrity on browser modules, and C2PA / SCITT-TSA transparency verification on received artifacts"
+    },
+    {
+      "date": "2026-06-02",
+      "type": "skill_review",
+      "artifact": "multitenancy-isolation",
+      "path": "skills/multitenancy-isolation/skill.md",
+      "note": "Application multitenancy isolation and availability/DoS resilience for mid-2026 — principal-bound tenant identity, data-layer row-level-security under a non-bypass role, cross-tenant cache/queue namespacing, per-tenant rate/byte quotas, HTTP/2 Rapid Reset caps, bounded allocation, distributed-lock fencing, and circuit breakers"
+    },
+    {
+      "date": "2026-06-02",
+      "type": "skill_review",
+      "artifact": "decompression-dos",
+      "path": "skills/decompression-dos/skill.md",
+      "note": "Decompression-bomb, parser-DoS, and ReDoS resistance for mid-2026 — decompression size/ratio caps, Zip Slip path confinement, XML entity-expansion disabling, linear-time regex on untrusted input, parse-depth limits, and length-field allocation bounds against single-input amplification denial of service"
+    },
+    {
+      "date": "2026-06-02",
+      "type": "skill_review",
+      "artifact": "log-injection-telemetry",
+      "path": "skills/log-injection-telemetry/skill.md",
+      "note": "Telemetry-pipeline integrity for mid-2026 — CR/LF log-injection neutralization across every sink, secret/PII redaction before shipping, authenticated metrics endpoints, and exporter destination allowlisting, secret-store credentials, verified TLS, and webhook SSRF guarding"
+    },
+    {
+      "date": "2026-06-02",
+      "type": "skill_review",
+      "artifact": "privacy-consent-ops",
+      "path": "skills/privacy-consent-ops/skill.md",
+      "note": "Privacy, consent, and sanctions operational integrity for mid-2026 — confusable/homoglyph normalization before sanctions screening, integrity-bound and re-validated consent records, evidence-gated and downstream-propagated DSR erasure, and ROPA reconciliation against actual processing"
+    },
+    {
+      "date": "2026-06-01",
+      "type": "catalog_update",
+      "artifact": "data/cve-catalog.json",
+      "path": "data/cve-catalog.json",
+      "schema_version": "1.0.0",
+      "entry_count": 439
+    },
+    {
+      "date": "2026-06-01",
+      "type": "catalog_update",
+      "artifact": "data/cwe-catalog.json",
+      "path": "data/cwe-catalog.json",
+      "schema_version": "1.0.0",
+      "entry_count": 177
+    },
+    {
+      "date": "2026-06-01",
+      "type": "catalog_update",
+      "artifact": "data/zeroday-lessons.json",
+      "path": "data/zeroday-lessons.json",
+      "schema_version": "1.1.0",
+      "entry_count": 439
+    },
+    {
+      "date": "2026-05-27",
+      "type": "catalog_update",
+      "artifact": "data/rfc-references.json",
+      "path": "data/rfc-references.json",
+      "schema_version": "1.0.0",
+      "entry_count": 8888
+    },
     {
       "date": "2026-05-22",
       "type": "skill_review",
@@ -87,26 +182,10 @@
     {
       "date": "2026-05-19",
       "type": "catalog_update",
-      "artifact": "data/cwe-catalog.json",
-      "path": "data/cwe-catalog.json",
-      "schema_version": "1.0.0",
-      "entry_count": 171
-    },
-    {
-      "date": "2026-05-19",
-      "type": "catalog_update",
       "artifact": "data/d3fend-catalog.json",
       "path": "data/d3fend-catalog.json",
       "schema_version": "1.0.0",
       "entry_count": 468
-    },
-    {
-      "date": "2026-05-19",
-      "type": "catalog_update",
-      "artifact": "data/rfc-references.json",
-      "path": "data/rfc-references.json",
-      "schema_version": "1.0.0",
-      "entry_count": 7476
     },
     {
       "date": "2026-05-18",
@@ -146,26 +225,10 @@
     {
       "date": "2026-05-18",
       "type": "catalog_update",
-      "artifact": "data/cve-catalog.json",
-      "path": "data/cve-catalog.json",
-      "schema_version": "1.0.0",
-      "entry_count": 316
-    },
-    {
-      "date": "2026-05-18",
-      "type": "catalog_update",
       "artifact": "data/framework-control-gaps.json",
       "path": "data/framework-control-gaps.json",
       "schema_version": "1.0.0",
-      "entry_count": 192
-    },
-    {
-      "date": "2026-05-18",
-      "type": "catalog_update",
-      "artifact": "data/zeroday-lessons.json",
-      "path": "data/zeroday-lessons.json",
-      "schema_version": "1.1.0",
-      "entry_count": 316
+      "entry_count": 194
     },
     {
       "date": "2026-05-17",
@@ -272,7 +335,7 @@
       "type": "manifest_review",
       "artifact": "manifest.json",
       "path": "manifest.json",
-      "note": "manifest threat_review_date — 42 skills, 11 catalogs"
+      "note": "manifest threat_review_date — 51 skills, 11 catalogs"
     },
     {
       "date": "2026-05-11",

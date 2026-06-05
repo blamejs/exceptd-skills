@@ -24,7 +24,7 @@ forward_watch:
   - Framework updates that close previously open gaps
   - Vendor advisories for MCP/AI tool supply chain CVEs
 last_threat_review: "2026-05-18"
-discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief zeroday-gap-learn` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
+discovery_mode: "standalone"  # operator-reached via `exceptd brief zeroday-gap-learn` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 # Zero-Day Learning Loop
@@ -45,7 +45,7 @@ The `atlas_refs`, `attack_refs`, and `framework_gaps` arrays are intentionally e
 
 The zero-day learning cycle has compressed. The frameworks have not.
 
-- **41% of 2025 zero-days were discovered by attackers using AI-assisted reverse engineering** (AGENTS.md DR-5 / GTIG 2025). Copy Fail (CVE-2026-31431) was AI-found in approximately one hour; Fragnesia (CVE-2026-46300, 2026-05-13) is the canonical 2026 anchor case — Zellic's agentic code-auditing tool surfaced an 18-year-old Linux kernel page-cache primitive in load-bearing OSS. The first documented AI-built in-the-wild zero-day surfaced 2026-05-11 (GTIG AI 2FA-bypass case). The exceptd catalog's 2026 AI-discovery rate now stands at 40% (4/10), tracking the GTIG reference. The historical learning rhythm — researcher disclosure → industry analysis → framework update cycle measured in quarters or years — is incompatible with AI-discovery cadence measured in weeks. CTID Secure AI v2 (2026-05-06) replaces v1 as the alignment target for the learning-loop outputs.
+- **41% of 2025 zero-days were discovered by attackers using AI-assisted reverse engineering** (GTIG 2025). Copy Fail (CVE-2026-31431) was AI-found in approximately one hour; Fragnesia (CVE-2026-46300, 2026-05-13) is the canonical 2026 anchor case — Zellic's agentic code-auditing tool surfaced an 18-year-old Linux kernel page-cache primitive in load-bearing OSS. The first documented AI-built in-the-wild zero-day surfaced 2026-05-11 (GTIG AI 2FA-bypass case). The exceptd catalog's 2026 AI-discovery rate now stands at 40% (4/10), tracking the GTIG reference. The historical learning rhythm — researcher disclosure → industry analysis → framework update cycle measured in quarters or years — is incompatible with AI-discovery cadence measured in weeks. CTID Secure AI v2 (2026-05-06) replaces v1 as the alignment target for the learning-loop outputs.
 - **The compounding consequence**: when a zero-day is announced, the relevant question is no longer "when will the patch ship?" but "what control, if it had existed, would have stopped this, and how do we add that control to the next thousand systems before the AI-generated variant lands?" Without a running learning loop, every novel TTP becomes a one-off incident response rather than a control-system improvement.
 - **AI-acceleration also compresses variant generation.** A single disclosed primitive (Copy Fail's deterministic page-cache CoW; SesameOp's AI-API C2 channel) can be re-applied by AI tooling to adjacent code paths within days. Frameworks that only respond to specific CVE-IDs miss the class-level lesson entirely.
 - **Compliance frameworks do not include zero-day learning as a required control category.** The "learn from incidents" language in NIST CSF 2.0 IMPROVE and ISO 27001:2022 A.5.7 is process-only, no required artifact. An org can be fully compliant while patching every CVE and learning nothing.
@@ -78,7 +78,7 @@ This skill is meta — it does not pin to a single TTP class. The learning loop 
 
 | Input Catalog | Role in the Learning Loop |
 |---|---|
-| `data/cve-catalog.json` | The CVE-level corpus: each entry is a candidate lesson input. New entries trigger a new loop run per AGENTS.md DR-8. |
+| `data/cve-catalog.json` | The CVE-level corpus: each entry is a candidate lesson input. New entries trigger a new loop run. |
 | `data/atlas-ttps.json` (MITRE ATLAS v5.6.0) | The AI/ML TTP taxonomy. Attack-vector extraction maps the CVE's mechanism to an ATLAS ID (e.g., AML.T0096 for SesameOp AI-as-C2). |
 | `data/framework-control-gaps.json` | The control-gap corpus. Framework-coverage assessment writes into this file via new entries or `status` updates. |
 | `data/zeroday-lessons.json` | The output corpus. Each completed loop produces one entry here — the durable artifact of the lesson. |
@@ -102,7 +102,7 @@ Status of the learning-loop entry for each CVE currently in `data/cve-catalog.js
 | MAL-2026-3083 (Elementary-Data PyPI worm — forged release via GitHub Actions script-injection) | No (OSSF Malicious Packages dataset; CISA KEV catalogues vendor CVEs only) | Yes (orphan commit + exfil domain confirmed in-wild during 8h window) | No (manual chain) | n/a | Pre-run exemplar lesson encoded below; control requirements GHACTIONS-EVENT-INTERPOLATION-BAN, INSTALL-HOOK-AUDIT, OSSF-MALPACKAGES-INGEST generated |
 | CVE-2026-46300 (Fragnesia — Dirty Frag sequel) | No (candidate within days) | Yes (one-liner vs /usr/bin/su) | No (human-discovered by V12 security team) | 20 | Complete — pre-run lesson encoded below; control requirements PAGE-CACHE-INTEGRITY-VERIFICATION, BUG-FAMILY-MITIGATION-PERSISTENCE, SCANNER-PAPER-COMPLIANCE-TEST generated. Pattern: a patch for one bug class introduced a sibling bug in the same primitive class. |
 
-Per AGENTS.md DR-8: every new entry added to `data/cve-catalog.json` must produce a corresponding entry here and in `data/zeroday-lessons.json` before the catalog change ships. Any CVE in the catalog without a complete lesson entry is a pre-ship-checklist failure.
+Every new entry added to `data/cve-catalog.json` must produce a corresponding entry here and in `data/zeroday-lessons.json` before the catalog change ships. Any CVE in the catalog without a complete lesson entry is a pre-ship-checklist failure.
 
 ---
 
@@ -301,7 +301,7 @@ Output: Lesson entry for data/zeroday-lessons.json
 **What control should have prevented this:**
 - Workflow-privilege isolation: `pull_request_target` should never run fork-PR code with base-repo permissions in the same job as cache writes. The chain is broken if the bundle-size workflow runs with `permissions: contents: read` and writes to a separate cache key.
 - Cache integrity: `actions/cache` keyed by `hashFiles('**/pnpm-lock.yaml')` is attacker-influenceable when the same key is restored by a privileged downstream workflow. Restore-only-on-verified-publisher caches or per-job cache namespacing breaks the link.
-- OIDC token scoping: the publish job's `id-token: write` should be bound to a job that does *not* restore externally-influenced caches. Token scope minimisation per AGENTS.md DR-1 (no orphaned-privilege workflows).
+- OIDC token scoping: the publish job's `id-token: write` should be bound to a job that does *not* restore externally-influenced caches. Token scope minimisation (no orphaned-privilege workflows).
 
 **New control requirements generated:**
 
@@ -328,7 +328,7 @@ Output: Lesson entry for data/zeroday-lessons.json
 
 1. **GHACTIONS-EVENT-INTERPOLATION-BAN**: Static-analysis gate on every CI pipeline: reject any workflow that interpolates `${{ github.event.* }}` (or `github.head_ref`, `inputs.*` from untrusted sources) directly into `run:` shell. Required tooling: `zizmor` / `Octoscan` / `actionlint` with the script-injection rule enabled. Hard fail on PR merge.
 2. **INSTALL-HOOK-AUDIT**: Pre-install scan of every wheel / sdist for install-time hooks (`.pth` files, `setup.py` execution, `pyproject.toml` build hooks). Any package adding a `.pth` file that imports network code at module-load time gets quarantined for review. Tooling: `pip-audit` plus a custom `.pth`-file diff rule.
-3. **OSSF-MALPACKAGES-INGEST**: Subscribe to the OSSF Malicious Packages OSV feed with sub-hour latency and apply it as a hard-block at the dependency resolver. Any organisation whose dependency pipeline is anchored to NVD CVE feeds alone misses MAL-2026-3083 entirely — there is no CVE ID, just an OSSF / Snyk / kam193 advisory. This control closes the AGENTS.md DR-1 (no stale threat intel) loop for the OSV-native malicious-package class.
+3. **OSSF-MALPACKAGES-INGEST**: Subscribe to the OSSF Malicious Packages OSV feed with sub-hour latency and apply it as a hard-block at the dependency resolver. Any organisation whose dependency pipeline is anchored to NVD CVE feeds alone misses MAL-2026-3083 entirely — there is no CVE ID, just an OSSF / Snyk / kam193 advisory. This control closes the no-stale-threat-intel loop for the OSV-native malicious-package class.
 
 **Exposure scoring:**
 - Anyone who `pip install`-ed `elementary-data` between 2026-04-24 22:20Z and 2026-04-25 ~06:30Z inside a dbt analytics pipeline (or any virtualenv where `elementary-data==0.23.3` resolved) was hit. The install-hook fires at the *next* import in the affected venv, which can be hours-to-days after the install.
@@ -441,7 +441,7 @@ Run this check against any organization claiming a mature vulnerability-manageme
 
 > "Pull the org's vulnerability-management runbook for the most recent five CISA-KEV-listed zero-days. For each: was the CVE patched? Almost certainly yes. Now ask the harder question: for each, where is the artifact that says (a) what attack vector this zero-day used, (b) what control would have caught it pre-patch, (c) which framework control was responsible for that detection/prevention, (d) was that framework control adequate, and (e) what new internal control requirement, if any, was created? If the answer is `we patched it, ticket closed` with no artifact, the program is patching CVEs and learning nothing. The next AI-generated variant of the same primitive will land against the same unchanged control surface. That is compliance theater for the threat-intel function — process compliance (A.5.7) with zero learning-loop output."
 
-> "Open `data/zeroday-lessons.json` (or the org's equivalent). Count the entries. Compare to the count of CVEs the org actually responded to in the same period. If the lesson-entry count is < CVE-response count, the loop is partial. Per AGENTS.md DR-8, partial is failure: every zero-day-in-scope must produce a lesson entry. The gap between CVEs-patched and lessons-learned is the size of the theater. The org's `Improve` function (NIST CSF 2.0) is not running."
+> "Open `data/zeroday-lessons.json` (or the org's equivalent). Count the entries. Compare to the count of CVEs the org actually responded to in the same period. If the lesson-entry count is < CVE-response count, the loop is partial. Partial is failure: every zero-day-in-scope must produce a lesson entry. The gap between CVEs-patched and lessons-learned is the size of the theater. The org's `Improve` function (NIST CSF 2.0) is not running."
 
 > "Ask: in the last 12 months, has a single internal control requirement been created or modified as a result of a public zero-day the org was NOT directly hit by? If no, the org's threat-intelligence control (ISO A.5.7) is consumption-only — collecting feeds, not changing controls. Threat-intel without control-system change is library subscription, not security capability."
 
@@ -473,4 +473,4 @@ The learning loop's output is a new control requirement. The mapping below conve
 
 **Zero-trust posture:** a lesson entry closes only when the new control requirement is deployed and verified in production, not when the lesson is recorded. The Output Format's "Exposure Scoring" section must track lesson-deployment latency alongside lesson-creation latency — a lesson recorded but not deployed is the same operational state as no lesson at all.
 
-**AI-pipeline applicability (per AGENTS.md Hard Rule #9):** lessons targeting AML.T0010 (MCP / model-serving supply chain) must record AI-pipeline degradations explicitly. `D3-EAL` does not apply to serverless inference endpoints — the scoped alternative is `D3-CSPP` at the gateway plus signed-image attestation at the provider. `D3-FAPA` on ephemeral RAG indices degrades to per-query retrieval logging via `D3-IOPR` plus index-build provenance signed at construction. Lessons that omit these degradations propagate the framework-lag they were meant to close.
+**AI-pipeline applicability:** lessons targeting AML.T0010 (MCP / model-serving supply chain) must record AI-pipeline degradations explicitly. `D3-EAL` does not apply to serverless inference endpoints — the scoped alternative is `D3-CSPP` at the gateway plus signed-image attestation at the provider. `D3-FAPA` on ephemeral RAG indices degrades to per-query retrieval logging via `D3-IOPR` plus index-build provenance signed at construction. Lessons that omit these degradations propagate the framework-lag they were meant to close.

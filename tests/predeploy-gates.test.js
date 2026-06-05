@@ -71,6 +71,13 @@ function copyFile(srcAbs, dstAbs) {
   fs.copyFileSync(srcAbs, dstAbs);
 }
 
+// Every staged lib validator now requires lib/exit-codes.js (for safeExit);
+// stage it alongside so the mirrored script doesn't crash on require (which
+// would yield empty stdout and a confusing content-assertion failure).
+function copyExitCodes(tmp) {
+  copyFile(path.join(ROOT, "lib", "exit-codes.js"), path.join(tmp, "lib", "exit-codes.js"));
+}
+
 // Generate an Ed25519 keypair in PEM form, matching lib/verify.js conventions.
 function genKeypair() {
   return crypto.generateKeyPairSync("ed25519", {
@@ -175,6 +182,7 @@ test("gate 7: lint-skills.js fires on a skill missing the Threat Context section
       path.join(ROOT, "lib", "lint-skills.js"),
       path.join(tmp, "lib", "lint-skills.js")
     );
+    copyExitCodes(tmp);
     // lint-skills.js loads data/atlas-ttps.json and
     // data/framework-control-gaps.json unconditionally; the optional
     // catalogs (rfc, cwe, d3fend, dlp) are loaded only if present.
@@ -303,6 +311,7 @@ test("gate 9: validate-catalog-meta.js fires on a catalog missing _meta.tlp", ()
       path.join(ROOT, "lib", "validate-catalog-meta.js"),
       path.join(tmp, "lib", "validate-catalog-meta.js")
     );
+    copyExitCodes(tmp);
     fs.mkdirSync(path.join(tmp, "data"), { recursive: true });
     fs.writeFileSync(
       path.join(tmp, "data", "bad.json"),
@@ -643,6 +652,7 @@ test("gate 12: validate-vendor.js fires on a vendored file modified outside _PRO
       path.join(ROOT, "lib", "validate-vendor.js"),
       path.join(tmp, "lib", "validate-vendor.js")
     );
+    copyExitCodes(tmp);
 
     const r = spawnSync(
       process.execPath,
@@ -729,6 +739,7 @@ test("gate 13: validate-package.js fires when a files-allowlist entry is missing
       path.join(ROOT, "lib", "validate-package.js"),
       path.join(tmp, "lib", "validate-package.js")
     );
+    copyExitCodes(tmp);
 
     const r = spawnSync(
       process.execPath,
@@ -760,7 +771,7 @@ test("gate 13: validate-package.js fires when a files-allowlist entry is missing
 // `npm install` against the SHIPPED tarball produces 0/38. The cause is
 // keys/public.pem being swapped between sign and pack (the test that
 // did it lived in `tests/operator-bugs.test.js` and synchronously
-// regenerated keys mid-suite — see CLAUDE.md's pitfall list).
+// regenerated keys mid-suite — see the common-pitfalls list).
 //
 // The simulated regression here: sign the skill against PRIVATE_KEY_A
 // (the original ceremony), then post-sign tamper the skill body but

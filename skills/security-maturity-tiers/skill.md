@@ -384,7 +384,7 @@ The skill produces a Security Maturity Roadmap that scores each in-scope domain 
 
 Apply this check to every maturity-tier engagement before recommending a roadmap:
 
-> "Your security program currently sits at Tier <N> by self-assessment for domain <D>. The compliance framework you cite (e.g. NIST CSF 2.0 / ISO 27001:2022 / NIS2 Art. 21 / UK-CAF / AU Essential 8) classifies your posture as <attested-tier>. If the threats now in scope for this domain (specific CVE / TTP from `data/cve-catalog.json` and `data/atlas-ttps.json`) include a class where the framework control is structurally insufficient (Hard Rule #2 framework-lag), then your attested tier and your operational tier diverge by exactly that gap. Which of the controls you would cite for your attested tier would survive a primary-source IoC test against the highest-RWEP CVE in scope?"
+> "Your security program currently sits at Tier <N> by self-assessment for domain <D>. The compliance framework you cite (e.g. NIST CSF 2.0 / ISO 27001:2022 / NIS2 Art. 21 / UK-CAF / AU Essential 8) classifies your posture as <attested-tier>. If the threats now in scope for this domain (specific CVE / TTP from `data/cve-catalog.json` and `data/atlas-ttps.json`) include a class where the framework control is structurally insufficient (the framework-lag class — framework controls trail current threats), then your attested tier and your operational tier diverge by exactly that gap. Which of the controls you would cite for your attested tier would survive a primary-source IoC test against the highest-RWEP CVE in scope?"
 
 **Theater fingerprints for tier conflation:**
 
@@ -394,7 +394,7 @@ Apply this check to every maturity-tier engagement before recommending a roadmap
 - Tier-3 controls audited annually, Tier-1 controls (patching, MFA on privileged identities, secrets in git) never re-audited because they "passed once."
 - The roadmap promotes the org from Tier 1 to Tier 3 in a single budget cycle, skipping the Tier 2 operational work that converts point-in-time controls into continuous ones.
 
-**Real requirement:** maturity assessed per domain, not org-wide; the assessed tier matches operational behavior (not the audit attestation); promotion happens domain-by-domain with explicit Tier-2 instrumentation between Tier-1 controls and Tier-3 sophistication; the same CVE-anchored primary-source IoC test (Hard Rule #14) applies at every tier — if a Tier-3 control cannot defend against the published PoC of the highest-RWEP CVE in scope, the tier classification is theater.
+**Real requirement:** maturity assessed per domain, not org-wide; the assessed tier matches operational behavior (not the audit attestation); promotion happens domain-by-domain with explicit Tier-2 instrumentation between Tier-1 controls and Tier-3 sophistication; the same CVE-anchored primary-source IoC test applies at every tier — if a Tier-3 control cannot defend against the published PoC of the highest-RWEP CVE in scope, the tier classification is theater.
 
 ---
 
@@ -446,7 +446,7 @@ Each tier diverges from at least one widely-cited framework control because the 
 | Overkill | ISO 27001:2022 A.8.31 (Separation of development, test, production) | Environment separation | Add: sandboxed MCP servers with seccomp+netns enforcement | A.8.31 does not contemplate developer-installed AI tool plugins as a privilege-bearing execution surface |
 | Overkill | EU AI Act Art. 15 (Cybersecurity for high-risk AI) | "Appropriate level" of cybersecurity | Continuous adversarial testing of AI surfaces in CI | "Appropriate" is interpretive; the tier operationalises it |
 
-Per AGENTS.md hard rule #5, the divergences above are surfaced against US, EU, UK, AU and ISO 27001:2022 — every tier's framework lag declaration is global by construction.
+The divergences above are surfaced against US, EU, UK, AU and ISO 27001:2022 — every tier's framework lag declaration is global by construction.
 
 ---
 
@@ -482,7 +482,7 @@ Tiered to the current `data/cve-catalog.json`, using RWEP (`lib/scoring.js`) as 
 | Practical | RWEP >= 30 | CVE-2026-31431 (90), CVE-2026-30615 (Windsurf MCP local-vector RCE, 35, CVSS 8.0), CVE-2025-53773 (Copilot YOLO-mode RCE, 30, CVSS 7.8) | Copy Fail as above; CVE-2026-30615 + CVE-2025-53773 both AV:L local-vector, demonstrated PoC, vendor-patchable; AI-coding-assistant scope | All MVP coverage plus: prompt-injection classifier in front of any LLM processing external content; phishing simulation using AI-generated content; org-wide AI-coding-assistant version management; MCP server allowlisting with signed manifests |
 | Overkill | All catalog entries regardless of RWEP | CVE-2026-31431 (90), CVE-2026-43284 (Dirty Frag ESP/IPsec, 38, CVSS 7.8), CVE-2026-30615 (Windsurf MCP local-vector RCE, 35, CVSS 8.0), CVE-2026-43500 (Dirty Frag RxRPC, 32, CVSS 7.6), CVE-2025-53773 (Copilot YOLO-mode RCE, 30, CVSS 7.8) | Public PoC for all; Dirty Frag pair has no live patch (kpatch RHEL-only); Windsurf is local-vector supply-chain class; chained Dirty Frag requires kernel-version fingerprinting | All Practical coverage plus: kernel hardening (unprivileged_userns_clone=0, unprivileged_userfaultfd=0, kptr_restrict=2); seccomp profiles on all containers; eBPF runtime detection; immutable infrastructure for the workloads that tolerate it; sandboxed MCP execution; per-invocation capability tokens for AI agents |
 
-Refresh trigger: re-run `node lib/scoring.js` and rebuild this matrix whenever `data/cve-catalog.json` is updated. Per AGENTS.md hard rule #6 the zero-day learning loop also feeds back into the tier mapping when a new CVE is added.
+Refresh trigger: re-run `node lib/scoring.js` and rebuild this matrix whenever `data/cve-catalog.json` is updated. The zero-day learning loop also feeds back into the tier mapping when a new CVE is added.
 
 Note on CVSS divergence: every CVE in this catalog has a CVSS in the 7.6–8.0 range — CVSS alone would prioritise the highest-band CVE without distinguishing the AI-discovered KEV-listed deterministic LPE (Copy Fail) from the local-vector MCP supply-chain class (Windsurf). RWEP correctly ranks Copy Fail (90) above Windsurf (35) because KEV listing, deterministic exploitability, AI discovery, and broad blast radius dominate. The MVP tier protects against the right thing first.
 

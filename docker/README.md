@@ -64,7 +64,7 @@ docker run --rm exceptd-test:fresh-bootstrap
 
 ## Pinning policy
 
-The base image tag (`node:24.14.1-alpine3.21`) is pinned to match the
+The base image tag (`node:24.14.1-alpine3.23`) is pinned to match the
 `node-version` field in `.github/workflows/ci.yml`. When the workflow
 bumps Node, bump this tag in the same commit. The
 `tests/docker.test.js` regression test enforces the alignment.

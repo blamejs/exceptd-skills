@@ -41,7 +41,7 @@ async function scan() {
   // Deprecation banner — surfaces via stderr so JSON consumers aren't broken.
   if (process.stderr.isTTY && !process.env.EXCEPTD_SUPPRESS_DEPRECATION) {
     process.stderr.write(
-      '[scan] DEPRECATION: `exceptd scan` is legacy. Prefer `exceptd plan` + `exceptd run <playbook>` ' +
+      '[scan] DEPRECATION: `exceptd scan` is legacy. Prefer `exceptd discover` + `exceptd run <playbook>` ' +
       '(seven-phase contract with full GRC closure). See AGENTS.md "Seven-phase playbook contract". ' +
       'Suppress this notice with EXCEPTD_SUPPRESS_DEPRECATION=1.\n'
     );

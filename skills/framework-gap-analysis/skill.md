@@ -27,6 +27,10 @@ last_threat_review: "2026-05-22"
 
 This skill analyzes the gap between what a compliance framework control was designed to address and what current attacker TTPs require. It is the meta-skill that underlies compliance-theater, global-grc, and policy-exception-gen.
 
+## Frontmatter Scope
+
+The `atlas_refs` and `attack_refs` arrays are intentionally empty. This skill is a meta-analysis: its subject is the *gap* between a control's design intent and the live TTP landscape, so its inputs are the TTP-to-control mappings already attached to every other playbook and skill rather than a fixed native TTP set. The specific techniques appear in the body where a given gap is illustrated; the authoritative TTP attachment lives on the skill or playbook that owns that detection. The `framework_gaps` reference set is the populated, authoritative declaration for this skill.
+
 ## Threat Context (mid-2026)
 
 Compliance frameworks lag the threat environment by years. Most active controls in NIST 800-53, ISO 27001:2022, SOC 2, PCI DSS 4.0, NIS2, and DORA were drafted against assumptions (human-speed exploit development, persistent inventoriable assets, human-controlled accounts) that current attacker TTPs no longer respect. Three concrete mid-2026 instances anchor the lag:
@@ -43,7 +47,7 @@ This skill's entire purpose is to declare framework lag per analysis. The pre-an
 
 ### Expanded jurisdictional cross-walk requirement (per `data/global-frameworks.json`)
 
-AGENTS.md hard rule #5 (global-first) now binds against the full expanded catalog, not the EU+UK+AU+ISO baseline. Every gap declaration produced by this skill must cross-walk the cited control against the equivalent obligations in the expanded jurisdiction set tracked in `data/global-frameworks.json`. The cross-walk set as of mid-2026:
+The global-first requirement binds against the full expanded catalog, not the EU+UK+AU+ISO baseline. Every gap declaration produced by this skill must cross-walk the cited control against the equivalent obligations in the expanded jurisdiction set tracked in `data/global-frameworks.json`. The cross-walk set as of mid-2026:
 
 - **EU:** GDPR, NIS2 (Directive 2022/2555), DORA (Regulation 2022/2554), EU AI Act (Regulation 2024/1689), EU CRA (Regulation 2024/2847).
 - **UK:** UK GDPR / DPA 2018, NCSC CAF, Cyber Essentials / CE+.
@@ -65,7 +69,7 @@ AGENTS.md hard rule #5 (global-first) now binds against the full expanded catalo
 - **Global standards:** ISO 27001:2022 / 27002:2022, ISO/IEC 42001:2023, CSA CCM v4, CIS Controls v8, MITRE ATLAS v5.6.0.
 - **US sub-national:** NYDFS 23 NYCRR 500 (amended Nov 2023, phased through Nov 2025); state privacy laws (CA CCPA/CPRA, CO CPA, CT CTDPA, IL BIPA, NY SHIELD, TX DPSA, VA CDPA).
 
-A gap declaration that closes section 6 (Global coverage check) without referencing at least the EU, UK, AU, ISO, and a representative selection from {IL, CH, HK, TW, ID, VN, JP-expanded, KR, CN, BR, NYDFS} for any org operating in those jurisdictions fails hard rule #5. The exact set required depends on the org's footprint — but the analyst must consult `data/global-frameworks.json` to enumerate it rather than defaulting to the legacy four-jurisdiction shorthand.
+A gap declaration that closes section 6 (Global coverage check) without referencing at least the EU, UK, AU, ISO, and a representative selection from {IL, CH, HK, TW, ID, VN, JP-expanded, KR, CN, BR, NYDFS} for any org operating in those jurisdictions is incomplete: a global-first analysis must cover every applicable jurisdiction, not a US-centric subset. The exact set required depends on the org's footprint — but the analyst must consult `data/global-frameworks.json` to enumerate it rather than defaulting to the legacy four-jurisdiction shorthand.
 
 ## TTP Mapping (MITRE ATLAS v5.6.0 and ATT&CK)
 
@@ -84,7 +88,7 @@ This skill maps framework controls to attacker TTPs on demand rather than static
 | NIS2 Art. 21 vs. AI pipeline integrity | AML.T0020 (Poison Training Data), AML.T0010 | No AI-specific control surface |
 | All frameworks vs. ephemeral inventory | T1610, T1525 | Asset-inventory assumption invalid on serverless/container |
 
-For any gap analysis this skill produces, every cited control must be paired with at least one ATLAS or ATT&CK ID drawn from `data/atlas-ttps.json`. Controls without a mapped TTP fail Hard Rule #4 (no orphaned controls).
+For any gap analysis this skill produces, every cited control must be paired with at least one ATLAS or ATT&CK ID drawn from `data/atlas-ttps.json`. Controls without a mapped TTP are orphaned controls and are rejected — every control recommendation must map to a real ATLAS or ATT&CK TTP.
 
 ## Exploit Availability Matrix
 
@@ -312,7 +316,7 @@ These universal gaps should be surfaced in every framework gap analysis and expl
 
 ## Output Format
 
-Every framework gap analysis this skill produces uses the following literal template. Sections are mandatory; empty sections fail Hard Rule #11 (no-MVP ban).
+Every framework gap analysis this skill produces uses the following literal template. Sections are mandatory; empty sections are not acceptable — every section must be populated.
 
 ```
 ## Framework Lag Declaration
@@ -346,7 +350,7 @@ finding and should be surfaced to the compliance-theater skill.]
 
 ### 6. Global coverage check
 [EU (NIS2/DORA/EU AI Act), UK (CAF), AU (ISM/Essential 8), ISO 27001:2022, and
-NIST equivalents for the same lag. Per Hard Rule #5: US-only output is incomplete.]
+NIST equivalents for the same lag. US-only output is incomplete.]
 ```
 
 The output is consumed by: compliance-theater (theater scoring), policy-exception-gen (compensating-control justification), and global-grc (cross-jurisdictional rollup).
@@ -402,4 +406,4 @@ Every Framework Lag Declaration this skill produces names the missing control. T
 
 **Zero-trust posture:** no control is claimed as compensating without verification that the defensive technique is deployed, monitored, and tested against the cited offensive TTP. "We have SC-8 IPsec" is not a compensating control for Dirty Frag — `D3-NI` over a non-IPsec data path is. The Framework Lag Declaration's "What a real control requires" field must name the D3FEND technique by ID.
 
-**AI-pipeline applicability (per AGENTS.md Hard Rule #9):** `D3-EAL` does not apply to serverless inference endpoints; the scoped alternative is `D3-CSPP` at the gateway plus signed-image attestation at the provider. `D3-FAPA` on ephemeral RAG indices degrades to per-query retrieval logging via `D3-IOPR` plus index-build provenance signed at construction. These degradations must be named explicitly in the declaration when the gap concerns an AI pipeline.
+**AI-pipeline applicability:** `D3-EAL` does not apply to serverless inference endpoints; the scoped alternative is `D3-CSPP` at the gateway plus signed-image attestation at the provider. `D3-FAPA` on ephemeral RAG indices degrades to per-query retrieval logging via `D3-IOPR` plus index-build provenance signed at construction. These degradations must be named explicitly in the declaration when the gap concerns an AI pipeline.

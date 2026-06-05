@@ -197,13 +197,17 @@
     "tactic": [
       "Credential Access",
       "Discovery"
+    ],
+    "cve_refs": [
+      "CVE-2025-30202"
     ]
   },
   "T1041": {
     "name": "Exfiltration Over C2 Channel",
     "version": "v19",
     "cve_refs": [
-      "CVE-2026-30615"
+      "CVE-2026-30615",
+      "MAL-2026-MOIKA-DEPCONFUSION"
     ],
     "description_full": "Adversaries may steal data by exfiltrating it over an existing command and control channel. Stolen data is encoded into the normal communications channel using the same protocol as command and control communications.",
     "platforms": [
@@ -269,18 +273,140 @@
       "DS0017"
     ],
     "cve_refs": [
+      "CVE-2014-3931",
+      "CVE-2014-6278",
+      "CVE-2016-10033",
+      "CVE-2017-1000353",
+      "CVE-2020-25078",
+      "CVE-2020-25079",
+      "CVE-2022-1471",
+      "CVE-2023-33538",
+      "CVE-2023-39780",
+      "CVE-2023-43654",
+      "CVE-2023-44467",
+      "CVE-2023-48022",
+      "CVE-2023-6016",
+      "CVE-2023-6019",
+      "CVE-2024-0129",
+      "CVE-2024-11392",
+      "CVE-2024-11393",
+      "CVE-2024-11394",
+      "CVE-2024-12366",
+      "CVE-2024-12987",
+      "CVE-2024-13059",
+      "CVE-2024-21513",
+      "CVE-2024-21575",
+      "CVE-2024-21576",
+      "CVE-2024-24590",
+      "CVE-2024-2912",
+      "CVE-2024-37032",
+      "CVE-2024-37052",
+      "CVE-2024-37060",
+      "CVE-2024-42479",
+      "CVE-2024-4889",
+      "CVE-2024-50050",
+      "CVE-2024-5565",
+      "CVE-2024-56145",
+      "CVE-2024-8069",
+      "CVE-2025-10035",
+      "CVE-2025-10164",
       "CVE-2025-1094",
       "CVE-2025-11837",
+      "CVE-2025-11953",
+      "CVE-2025-1550",
+      "CVE-2025-1753",
+      "CVE-2025-20281",
+      "CVE-2025-20337",
+      "CVE-2025-23254",
+      "CVE-2025-24016",
+      "CVE-2025-24893",
+      "CVE-2025-26399",
+      "CVE-2025-27520",
+      "CVE-2025-29635",
+      "CVE-2025-30165",
+      "CVE-2025-32432",
+      "CVE-2025-32433",
+      "CVE-2025-32434",
+      "CVE-2025-32444",
+      "CVE-2025-3248",
+      "CVE-2025-33236",
       "CVE-2025-34291",
+      "CVE-2025-3466",
+      "CVE-2025-37164",
+      "CVE-2025-4008",
+      "CVE-2025-40551",
+      "CVE-2025-42999",
+      "CVE-2025-4428",
+      "CVE-2025-47812",
+      "CVE-2025-48703",
+      "CVE-2025-49113",
+      "CVE-2025-49596",
+      "CVE-2025-49704",
+      "CVE-2025-5086",
+      "CVE-2025-51480",
+      "CVE-2025-53690",
       "CVE-2025-53773",
+      "CVE-2025-54068",
+      "CVE-2025-54136",
+      "CVE-2025-54253",
+      "CVE-2025-54948",
+      "CVE-2025-55182",
       "CVE-2025-55319",
+      "CVE-2025-58034",
+      "CVE-2025-59689",
+      "CVE-2025-60455",
+      "CVE-2025-61882",
+      "CVE-2025-61932",
+      "CVE-2025-6204",
+      "CVE-2025-64328",
+      "CVE-2025-64496",
+      "CVE-2025-66644",
+      "CVE-2025-68613",
+      "CVE-2025-68645",
       "CVE-2025-68664",
+      "CVE-2025-68665",
+      "CVE-2025-68668",
+      "CVE-2025-8747",
+      "CVE-2025-8875",
+      "CVE-2025-8876",
+      "CVE-2025-9377",
+      "CVE-2026-0766",
+      "CVE-2026-1281",
+      "CVE-2026-1340",
+      "CVE-2026-1731",
+      "CVE-2026-20045",
+      "CVE-2026-21858",
+      "CVE-2026-21877",
+      "CVE-2026-22252",
+      "CVE-2026-22688",
+      "CVE-2026-22719",
       "CVE-2026-22778",
+      "CVE-2026-24061",
+      "CVE-2026-24213",
+      "CVE-2026-24214",
+      "CVE-2026-25108",
+      "CVE-2026-25592",
+      "CVE-2026-26015",
+      "CVE-2026-26190",
+      "CVE-2026-3059",
+      "CVE-2026-3060",
       "CVE-2026-30615",
+      "CVE-2026-30616",
+      "CVE-2026-30617",
       "CVE-2026-30623",
+      "CVE-2026-30624",
+      "CVE-2026-30625",
+      "CVE-2026-31229",
+      "CVE-2026-31230",
       "CVE-2026-32202",
+      "CVE-2026-33017",
+      "CVE-2026-34159",
+      "CVE-2026-34197",
       "CVE-2026-39884",
       "CVE-2026-39987",
+      "CVE-2026-40933",
+      "CVE-2026-45829",
+      "CVE-2026-5760",
       "CVE-2026-6973"
     ],
     "description_full": "Adversaries may abuse command and script interpreters to execute commands, scripts, or binaries. These interfaces and languages provide ways of interacting with computer systems and are a common feature across many different platforms. Most systems come with some built-in command-line interface and scripting capabilities, for example, macOS and Linux distributions include some flavor of [Unix Shell](https://attack.mitre.org/techniques/T1059/004) while Windows installations include the [Windows Command Shell](https://attack.mitre.org/techniques/T1059/003) and [PowerShell](https://attack.mitre.org/techniques/T1059/001). There are also cross-platform interpreters such as [Python](https://attack.mitre.org/techniques/T1059/006), as well as those commonly associated with client applications such as [JavaScript](https://attack.mitre.org/techniques/T1059/007) and [Visual Basic](https://attack.mitre.org/techniques/T1059/005). Adversaries may abuse these technologies in various ways as a means of executing arbitrary commands. Commands and scripts can be embedded in [Initial Access](https://attack.mitre.org/tactics/TA0001) payloads delivered to victims as lure documents or as secondary payloads downloaded from an existing C2. Adversaries may also execute commands through interactive terminals/shells, as well as utilize various [Remote Services](https://attack.mitre.org/techniques/T1021) in order to achieve remote Execution.(Citation: Powershell Remote Commands)(Citation: Cisco IOS Software Integrity Assurance - Command History)(Citation: Remote Shell Execution in Python)",
@@ -325,7 +451,14 @@
     "name": "Command and Scripting Interpreter: Python",
     "version": "v19",
     "cve_refs": [
+      "CVE-2023-44467",
+      "CVE-2024-12366",
+      "CVE-2024-21513",
+      "CVE-2024-5565",
+      "CVE-2025-3248",
       "CVE-2025-49844",
+      "CVE-2026-31230",
+      "CVE-2026-33017",
       "MAL-2026-3083"
     ],
     "description_full": "Adversaries may abuse Python commands and scripts for execution. Python is a very popular scripting/programming language, with capabilities to perform many functions. Python can be executed interactively from the command-line (via the <code>python.exe</code> interpreter) or via scripts (.py) that can be written and distributed to different systems. Python code can also be compiled into binary executables.(Citation: Zscaler APT31 Covid-19 October 2020) Python comes with many built-in packages to interact with the underlying system, such as file operations and device I/O. Adversaries can use these libraries to download and execute commands or other scripts as well as perform various malicious behaviors.",
@@ -349,16 +482,22 @@
     "version": "v19",
     "cve_refs": [
       "CVE-2021-26829",
+      "CVE-2023-6571",
       "CVE-2024-11182",
+      "CVE-2024-27132",
       "CVE-2024-27443",
       "CVE-2024-42009",
+      "CVE-2024-9526",
       "CVE-2025-0133",
       "CVE-2025-27915",
+      "CVE-2025-3466",
       "CVE-2025-48700",
       "CVE-2025-66376",
       "CVE-2025-68461",
       "CVE-2026-45321",
-      "MAL-2026-NODE-IPC-STEALER"
+      "MAL-2026-MOIKA-DEPCONFUSION",
+      "MAL-2026-NODE-IPC-STEALER",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "description_full": "Adversaries may abuse various implementations of JavaScript for execution. JavaScript (JS) is a platform-independent scripting language (compiled just-in-time at runtime) commonly associated with scripts in webpages, though JS can be executed in runtime environments outside the browser.(Citation: NodeJS) JScript is the Microsoft implementation of the same scripting standard. JScript is interpreted via the Windows Script engine and thus integrated with many components of Windows such as the [Component Object Model](https://attack.mitre.org/techniques/T1559/001) and Internet Explorer HTML Application (HTA) pages.(Citation: JScrip May 2018)(Citation: Microsoft JScript 2007)(Citation: Microsoft Windows Scripts) JavaScript for Automation (JXA) is a macOS scripting language based on JavaScript, included as part of Apple’s Open Scripting Architecture (OSA), that was introduced in OSX 10.10. Apple’s OSA provides scripting capabilities to control applications, interface with the operating system, and bridge access into the rest of Apple’s internal APIs. As of OSX 10.10, OSA only supports two languages, JXA and [AppleScript](https://attack.mitre.org/techniques/T1059/002). Scripts can be executed via the command line utility <code>osascript</code>, they can be compiled into applications or script files via <code>osacompile</code>, and they can be compiled and executed in memory of other programs by leveraging the OSAKit Framework.(Citation: Apple About Mac Scripting 2016)(Citation: SpecterOps JXA 2020)(Citation: SentinelOne macOS Red Team)(Citation: Red Canary Silver Sparrow Feb2021)(Citation: MDSec macOS JXA and VSCode) Adversaries may abuse various implementations of JavaScript to execute various behaviors. Common uses include hosting malicious scripts on websites as part of a [Drive-by Compromise](https://attack.mitre.org/techniques/T1189) or downloading and executing these script files as secondary payloads. Since these payloads are text-based, it is also very common for adversaries to obfuscate their content as part of [Obfuscated Files or Information](https://attack.mitre.org/techniques/T1027).",
     "platforms": [
@@ -380,25 +519,49 @@
     "version": "v19",
     "cve_refs": [
       "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
+      "CVE-2018-14634",
       "CVE-2020-17103-REREGRESSION-2026",
+      "CVE-2021-22555",
+      "CVE-2021-30952",
       "CVE-2021-43226",
+      "CVE-2023-0386",
+      "CVE-2023-36424",
+      "CVE-2023-41974",
+      "CVE-2023-43000",
       "CVE-2024-0769",
       "CVE-2024-8068",
       "CVE-2025-10725",
+      "CVE-2025-21479",
+      "CVE-2025-21480",
       "CVE-2025-22224",
       "CVE-2025-22225",
       "CVE-2025-24201",
       "CVE-2025-24990",
+      "CVE-2025-27038",
+      "CVE-2025-31277",
+      "CVE-2025-32463",
       "CVE-2025-32701",
+      "CVE-2025-32706",
+      "CVE-2025-32709",
+      "CVE-2025-33073",
       "CVE-2025-38352",
       "CVE-2025-40602",
+      "CVE-2025-41244",
       "CVE-2025-43300",
       "CVE-2025-48543",
       "CVE-2025-48572",
+      "CVE-2025-48633",
+      "CVE-2025-59230",
       "CVE-2025-60710",
       "CVE-2025-62215",
+      "CVE-2025-62221",
       "CVE-2025-62849",
+      "CVE-2025-6558",
       "CVE-2026-0300",
+      "CVE-2026-20122",
+      "CVE-2026-20805",
+      "CVE-2026-21385",
+      "CVE-2026-21533",
       "CVE-2026-31431",
       "CVE-2026-31635",
       "CVE-2026-33825",
@@ -451,31 +614,57 @@
     "cve_refs": [
       "BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY",
       "CVE-2015-7755",
+      "CVE-2016-7836",
       "CVE-2017-7921",
       "CVE-2019-19006",
+      "CVE-2019-6693",
       "CVE-2020-10148",
       "CVE-2020-24363",
       "CVE-2021-32030",
       "CVE-2023-27351",
+      "CVE-2023-43791",
       "CVE-2023-50224",
+      "CVE-2023-52163",
+      "CVE-2024-12776",
       "CVE-2024-1709",
+      "CVE-2024-27199",
       "CVE-2024-54085",
+      "CVE-2024-57726",
+      "CVE-2025-12480",
+      "CVE-2025-1796",
       "CVE-2025-21085",
       "CVE-2025-2746",
       "CVE-2025-2747",
+      "CVE-2025-31161",
+      "CVE-2025-32433",
       "CVE-2025-32975",
       "CVE-2025-34026",
+      "CVE-2025-3935",
+      "CVE-2025-40536",
+      "CVE-2025-40602",
+      "CVE-2025-4427",
       "CVE-2025-49706",
+      "CVE-2025-54236",
+      "CVE-2025-54309",
+      "CVE-2025-57819",
       "CVE-2025-61757",
+      "CVE-2025-6205",
+      "CVE-2025-64513",
+      "CVE-2025-69286",
       "CVE-2026-1603",
       "CVE-2026-20127",
       "CVE-2026-20182",
+      "CVE-2026-21858",
+      "CVE-2026-22769",
+      "CVE-2026-23760",
       "CVE-2026-24061",
       "CVE-2026-24423",
       "CVE-2026-24858",
       "CVE-2026-33825",
       "CVE-2026-39884",
       "CVE-2026-41940",
+      "CVE-2026-41947",
+      "CVE-2026-41950",
       "CVE-2026-42897",
       "CVE-2026-6973",
       "MAL-2026-NODE-IPC-STEALER",
@@ -591,7 +780,8 @@
       "CVE-2025-55241",
       "CVE-2026-45321",
       "MAL-2026-3083",
-      "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER"
+      "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "description_full": "Valid accounts in cloud environments may allow adversaries to perform actions to achieve Initial Access, Persistence, Privilege Escalation, or Defense Evasion. Cloud accounts are those created and configured by an organization for use by users, remote support, services, or for administration of resources within a cloud service provider or SaaS application. Cloud Accounts can exist solely in the cloud; alternatively, they may be hybrid-joined between on-premises systems and the cloud through syncing or federation with other identity sources such as Windows Active Directory.(Citation: AWS Identity Federation)(Citation: Google Federating GC)(Citation: Microsoft Deploying AD Federation) Service or user accounts may be targeted by adversaries through [Brute Force](https://attack.mitre.org/techniques/T1110), [Phishing](https://attack.mitre.org/techniques/T1566), or various other means to gain access to the environment. Federated or synced accounts may be a pathway for the adversary to affect both on-premises systems and cloud environments - for example, by leveraging shared credentials to log onto [Remote Services](https://attack.mitre.org/techniques/T1021). High privileged cloud accounts, whether federated, synced, or cloud-only, may also allow pivoting to on-premises environments by leveraging SaaS-based [Software Deployment Tools](https://attack.mitre.org/techniques/T1072) to run commands on hybrid-joined devices. An adversary may create long lasting [Additional Cloud Credentials](https://attack.mitre.org/techniques/T1098/001) on a compromised cloud account to maintain persistence in the environment. Such credentials may also be used to bypass security controls such as multi-factor authentication. Cloud accounts may also be able to assume [Temporary Elevated Cloud Access](https://attack.mitre.org/techniques/T1548/005) or other privileges through various means within the environment. Misconfigurations in role assignments or role assumption policies may allow an adversary to use these mechanisms to leverage permissions outside the intended scope of the account. Such over privileged accounts may be used to harvest sensitive data from online storage accounts and databases through [Cloud API](https://attack.mitre.org/techniques/T1059/009) or other methods. For example, in Azure environments, adversaries may target Azure Managed Identities, which allow associated Azure resources to request access tokens. By compromising a resource with an attached Managed Identity, such as an Azure VM, adversaries may be able to [Steal Application Access Token](https://attack.mitre.org/techniques/T1528)s to move laterally across the cloud environment.(Citation: SpecterOps Managed Identity 2022)",
     "platforms": [
@@ -703,7 +893,8 @@
     "description": "Adversaries may use brute force techniques to gain access to accounts when passwords are unknown or when password hashes are obtained.(Citation: TrendMicro Pawn Storm Dec 2020) Without knowledge of the password for an account or set of accounts, an adversary may systematically guess the password using a repetitive or iterative mechanism.(Citation: Dragos Crashoverride 2018) Brute forcing passwords can take place via interaction with a service that will check the validity of those credentials ...",
     "tactic": [
       "Credential Access"
-    ]
+    ],
+    "cve_refs": []
   },
   "T1110.001": {
     "name": "Brute Force: Password Guessing",
@@ -735,6 +926,8 @@
     "version": "v19",
     "cve_refs": [
       "CVE-2024-21762",
+      "CVE-2025-0282",
+      "CVE-2025-22457",
       "CVE-2026-0300",
       "CVE-2026-39987"
     ],
@@ -780,103 +973,160 @@
     "name": "Exploit Public-Facing Application",
     "version": "v19",
     "cve_refs": [
-      "CVE-2007-0671",
-      "CVE-2008-0015",
-      "CVE-2009-0238",
-      "CVE-2009-0556",
-      "CVE-2010-3765",
-      "CVE-2010-3962",
-      "CVE-2011-3402",
-      "CVE-2012-1854",
-      "CVE-2013-3893",
-      "CVE-2013-3918",
+      "CVE-2008-4250",
+      "CVE-2014-3931",
       "CVE-2014-6278",
+      "CVE-2015-7755",
       "CVE-2016-10033",
       "CVE-2016-7836",
       "CVE-2017-1000353",
+      "CVE-2017-7921",
       "CVE-2018-4063",
+      "CVE-2019-19006",
+      "CVE-2019-5418",
       "CVE-2019-6693",
+      "CVE-2019-9621",
       "CVE-2020-10148",
+      "CVE-2020-24363",
       "CVE-2020-25078",
       "CVE-2020-25079",
+      "CVE-2020-7796",
+      "CVE-2021-21311",
+      "CVE-2021-22054",
+      "CVE-2021-22175",
       "CVE-2021-22681",
       "CVE-2021-26828",
+      "CVE-2021-26829",
+      "CVE-2021-32030",
+      "CVE-2021-39935",
+      "CVE-2021-43798",
+      "CVE-2022-1471",
+      "CVE-2022-20775",
+      "CVE-2022-36551",
       "CVE-2022-37055",
       "CVE-2022-40799",
-      "CVE-2022-48503",
-      "CVE-2023-0386",
       "CVE-2023-21529",
       "CVE-2023-2533",
+      "CVE-2023-27351",
       "CVE-2023-33538",
       "CVE-2023-3519",
+      "CVE-2023-38950",
       "CVE-2023-39780",
+      "CVE-2023-43654",
+      "CVE-2023-43791",
+      "CVE-2023-47117",
+      "CVE-2023-48022",
+      "CVE-2023-50224",
+      "CVE-2023-51449",
+      "CVE-2023-51764",
+      "CVE-2023-51765",
+      "CVE-2023-51766",
       "CVE-2023-52163",
+      "CVE-2023-6016",
+      "CVE-2023-6019",
+      "CVE-2023-6021",
+      "CVE-2023-6038",
+      "CVE-2024-0769",
+      "CVE-2024-11182",
+      "CVE-2024-12450",
+      "CVE-2024-12776",
       "CVE-2024-12987",
+      "CVE-2024-13059",
+      "CVE-2024-1561",
+      "CVE-2024-1708",
       "CVE-2024-1709",
+      "CVE-2024-21575",
+      "CVE-2024-21576",
       "CVE-2024-21762",
+      "CVE-2024-27199",
+      "CVE-2024-27443",
+      "CVE-2024-2912",
+      "CVE-2024-31462",
+      "CVE-2024-37032",
       "CVE-2024-37079",
+      "CVE-2024-39722",
+      "CVE-2024-42009",
+      "CVE-2024-42478",
+      "CVE-2024-42479",
       "CVE-2024-43468",
+      "CVE-2024-4889",
+      "CVE-2024-50050",
+      "CVE-2024-54085",
       "CVE-2024-56145",
       "CVE-2024-57726",
+      "CVE-2024-57728",
+      "CVE-2024-6587",
+      "CVE-2024-7399",
       "CVE-2024-7694",
+      "CVE-2024-8068",
       "CVE-2024-8069",
+      "CVE-2025-0282",
       "CVE-2025-10035",
       "CVE-2025-1094",
       "CVE-2025-11371",
       "CVE-2025-11953",
       "CVE-2025-12480",
       "CVE-2025-12686",
-      "CVE-2025-13223",
       "CVE-2025-14611",
       "CVE-2025-14733",
       "CVE-2025-14847",
-      "CVE-2025-15556",
+      "CVE-2025-1796",
       "CVE-2025-20281",
       "CVE-2025-20333",
       "CVE-2025-20337",
       "CVE-2025-20352",
       "CVE-2025-20362",
       "CVE-2025-20393",
-      "CVE-2025-21042",
-      "CVE-2025-21043",
+      "CVE-2025-22457",
       "CVE-2025-24016",
       "CVE-2025-24893",
       "CVE-2025-25257",
+      "CVE-2025-25297",
       "CVE-2025-26399",
+      "CVE-2025-2746",
+      "CVE-2025-2747",
+      "CVE-2025-2749",
+      "CVE-2025-27520",
       "CVE-2025-2775",
       "CVE-2025-2776",
+      "CVE-2025-27915",
+      "CVE-2025-27920",
       "CVE-2025-29635",
-      "CVE-2025-30397",
+      "CVE-2025-30165",
+      "CVE-2025-30202",
       "CVE-2025-31125",
+      "CVE-2025-31161",
+      "CVE-2025-31324",
       "CVE-2025-32432",
       "CVE-2025-32433",
-      "CVE-2025-32463",
-      "CVE-2025-32706",
+      "CVE-2025-32444",
+      "CVE-2025-3248",
       "CVE-2025-32756",
-      "CVE-2025-33053",
-      "CVE-2025-33073",
+      "CVE-2025-32975",
+      "CVE-2025-34026",
       "CVE-2025-34291",
+      "CVE-2025-3466",
       "CVE-2025-35939",
       "CVE-2025-37164",
       "CVE-2025-3935",
       "CVE-2025-4008",
       "CVE-2025-40536",
       "CVE-2025-40551",
-      "CVE-2025-41244",
+      "CVE-2025-40602",
       "CVE-2025-42999",
-      "CVE-2025-43200",
-      "CVE-2025-43510",
-      "CVE-2025-43520",
       "CVE-2025-4427",
       "CVE-2025-4428",
+      "CVE-2025-4632",
       "CVE-2025-47812",
-      "CVE-2025-47827",
-      "CVE-2025-48384",
+      "CVE-2025-47813",
+      "CVE-2025-48700",
       "CVE-2025-48703",
       "CVE-2025-48927",
       "CVE-2025-48928",
       "CVE-2025-49113",
+      "CVE-2025-49596",
       "CVE-2025-49704",
+      "CVE-2025-49706",
       "CVE-2025-49844",
       "CVE-2025-5086",
       "CVE-2025-52691",
@@ -889,79 +1139,109 @@
       "CVE-2025-54236",
       "CVE-2025-54253",
       "CVE-2025-54309",
-      "CVE-2025-54313",
       "CVE-2025-54948",
       "CVE-2025-55177",
       "CVE-2025-55182",
+      "CVE-2025-56520",
+      "CVE-2025-5777",
       "CVE-2025-57819",
       "CVE-2025-58034",
       "CVE-2025-58360",
-      "CVE-2025-59230",
       "CVE-2025-59287",
-      "CVE-2025-59374",
       "CVE-2025-59389",
       "CVE-2025-59689",
       "CVE-2025-59718",
+      "CVE-2025-61757",
       "CVE-2025-61882",
+      "CVE-2025-61884",
       "CVE-2025-61932",
       "CVE-2025-6204",
       "CVE-2025-6205",
-      "CVE-2025-62221",
       "CVE-2025-62847",
       "CVE-2025-62848",
       "CVE-2025-64328",
-      "CVE-2025-6554",
-      "CVE-2025-6558",
+      "CVE-2025-64446",
+      "CVE-2025-64496",
+      "CVE-2025-64513",
+      "CVE-2025-6543",
+      "CVE-2025-66376",
       "CVE-2025-66644",
+      "CVE-2025-67818",
+      "CVE-2025-68461",
       "CVE-2025-68613",
       "CVE-2025-68645",
+      "CVE-2025-68668",
+      "CVE-2025-69286",
       "CVE-2025-6965",
       "CVE-2025-7775",
+      "CVE-2025-8110",
       "CVE-2025-8875",
       "CVE-2025-8876",
       "CVE-2025-9242",
       "CVE-2025-9377",
       "CVE-2026-0300",
+      "CVE-2026-0766",
       "CVE-2026-1281",
       "CVE-2026-1340",
+      "CVE-2026-1603",
       "CVE-2026-1731",
       "CVE-2026-20045",
       "CVE-2026-20122",
+      "CVE-2026-20127",
       "CVE-2026-20128",
       "CVE-2026-20131",
       "CVE-2026-20133",
       "CVE-2026-20182",
-      "CVE-2026-20700",
       "CVE-2026-20963",
-      "CVE-2026-21509",
-      "CVE-2026-21510",
-      "CVE-2026-21513",
-      "CVE-2026-21514",
-      "CVE-2026-21519",
       "CVE-2026-21525",
-      "CVE-2026-21533",
       "CVE-2026-21643",
+      "CVE-2026-21858",
+      "CVE-2026-21877",
+      "CVE-2026-22218",
+      "CVE-2026-22219",
+      "CVE-2026-22252",
+      "CVE-2026-22688",
       "CVE-2026-22719",
       "CVE-2026-22769",
       "CVE-2026-22778",
       "CVE-2026-23760",
+      "CVE-2026-24061",
+      "CVE-2026-24206",
+      "CVE-2026-24207",
+      "CVE-2026-24213",
+      "CVE-2026-24214",
+      "CVE-2026-24215",
+      "CVE-2026-24423",
+      "CVE-2026-24858",
       "CVE-2026-25108",
+      "CVE-2026-26015",
+      "CVE-2026-26190",
+      "CVE-2026-3055",
+      "CVE-2026-3059",
+      "CVE-2026-3060",
+      "CVE-2026-30616",
+      "CVE-2026-30617",
+      "CVE-2026-30624",
+      "CVE-2026-30625",
       "CVE-2026-32201",
       "CVE-2026-32202",
       "CVE-2026-33017",
-      "CVE-2026-33634",
+      "CVE-2026-34159",
       "CVE-2026-34197",
-      "CVE-2026-34621",
-      "CVE-2026-3502",
       "CVE-2026-35616",
-      "CVE-2026-3909",
-      "CVE-2026-3910",
       "CVE-2026-39987",
+      "CVE-2026-40933",
+      "CVE-2026-41940",
+      "CVE-2026-41947",
+      "CVE-2026-41950",
       "CVE-2026-42208",
       "CVE-2026-42897",
       "CVE-2026-42945",
+      "CVE-2026-45829",
+      "CVE-2026-5760",
       "CVE-2026-6973",
       "CVE-2026-7482",
+      "CVE-2026-9082",
       "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP"
     ],
     "description_full": "Adversaries may attempt to exploit a weakness in an Internet-facing host or system to initially access a network. The weakness in the system can be a software bug, a temporary glitch, or a misconfiguration. Exploited applications are often websites/web servers, but can also include databases (like SQL), standard services (like SMB or SSH), network device administration and management protocols (like SNMP and Smart Install), and any other system with Internet-accessible open sockets.(Citation: NVD CVE-2016-6662)(Citation: CIS Multiple SMB Vulnerabilities)(Citation: US-CERT TA18-106A Network Infrastructure Devices 2018)(Citation: Cisco Blog Legacy Device Attacks)(Citation: NVD CVE-2014-7169) On ESXi infrastructure, adversaries may exploit exposed OpenSLP services; they may alternatively exploit exposed VMware vCenter servers.(Citation: Recorded Future ESXiArgs Ransomware 2023)(Citation: Ars Technica VMWare Code Execution Vulnerability 2021) Depending on the flaw being exploited, this may also involve [Exploitation for Stealth](https://attack.mitre.org/techniques/T1211) or [Exploitation for Client Execution](https://attack.mitre.org/techniques/T1203). If an application is hosted on cloud-based infrastructure and/or is containerized, then exploiting it may lead to compromise of the underlying instance or container. This can allow an adversary a path to access the cloud or container APIs (e.g., via the [Cloud Instance Metadata API](https://attack.mitre.org/techniques/T1552/005)), exploit container host access via [Escape to Host](https://attack.mitre.org/techniques/T1611), or take advantage of weak identity and access management policies. Adversaries may also exploit edge network infrastructure and related appliances, specifically targeting devices that do not support robust host-based defenses.(Citation: Mandiant Fortinet Zero Day)(Citation: Wired Russia Cyberwar) For websites and databases, the OWASP top 10 and CWE top 25 highlight the most common web-based vulnerabilities.(Citation: OWASP Top 10)(Citation: CWE top 25)",
@@ -1000,16 +1280,25 @@
     "description": "Adversaries may manipulate products or product delivery mechanisms prior to receipt by a final consumer for the purpose of data or system compromise.",
     "tactic": [
       "Initial Access"
+    ],
+    "cve_refs": [
+      "CVE-2025-54136"
     ]
   },
   "T1195.001": {
     "name": "Supply Chain Compromise: Software Dependencies and Development Tools",
     "version": "v19",
     "cve_refs": [
+      "CVE-2022-23812",
+      "CVE-2025-30066",
+      "CVE-2025-30154",
       "CVE-2026-30615",
+      "CVE-2026-48027",
       "MAL-2026-3083",
+      "MAL-2026-MOIKA-DEPCONFUSION",
       "MAL-2026-NODE-IPC-STEALER",
-      "MAL-2026-TANSTACK-MINI"
+      "MAL-2026-TANSTACK-MINI",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "description_full": "Adversaries may manipulate software dependencies and development tools prior to receipt by a final consumer for the purpose of data or system compromise. Applications often depend on external software to function properly. Popular open source projects that are used as dependencies in many applications, such as pip and NPM packages, may be targeted as a means to add malicious code to users of the dependency.(Citation: Trendmicro NPM Compromise)(Citation: Bitdefender NPM Repositories Compromised 2021)(Citation: MANDVI Malicious npm and PyPI Packages Disguised) This may also include abandoned packages, which in some cases could be re-registered by threat actors after being removed by adversaries.(Citation: The Hacker News PyPi Revival Hijack 2024) Adversaries may also employ \"typosquatting\" or name-confusion by choosing names similar to existing popular libraries or packages in order to deceive a user.(Citation: Ahmed Backdoors in Python and NPM Packages)(Citation: Meyer PyPI Supply Chain Attack Uncovered)(Citation: Checkmarx-oss-seo) Additionally, CI/CD pipeline components, such as GitHub Actions, may be targeted in order to gain access to the building, testing, and deployment cycles of an application.(Citation: Unit 42 Palo Alto GitHub Actions Supply Chain Attack 2025) By adding malicious code into a GitHub action, a threat actor may be able to collect runtime credentials (e.g., via [Proc Filesystem](https://attack.mitre.org/techniques/T1003/007)) or insert further malicious components into the build pipelines for a second-order supply chain compromise.(Citation: OWASP CICD-SEC-4) As GitHub Actions are often dependent on other GitHub Actions, threat actors may be able to infect a large number of repositories via the compromise of a single Action.(Citation: Palo Alto Networks GitHub Actions Worm 2023) Targeting may be specific to a desired victim set or may be distributed to a broad set of consumers but only move on to additional tactics on specific victims.",
     "platforms": [
@@ -1030,14 +1319,36 @@
     "name": "Supply Chain Compromise: Software Supply Chain",
     "version": "v19",
     "cve_refs": [
+      "CVE-2024-0129",
+      "CVE-2024-11392",
+      "CVE-2024-11393",
+      "CVE-2024-11394",
+      "CVE-2024-24590",
       "CVE-2024-3094",
+      "CVE-2024-37052",
+      "CVE-2024-37060",
+      "CVE-2025-10164",
+      "CVE-2025-1550",
+      "CVE-2025-15556",
+      "CVE-2025-32434",
+      "CVE-2025-33236",
+      "CVE-2025-51480",
+      "CVE-2025-54313",
+      "CVE-2025-59374",
+      "CVE-2025-8747",
+      "CVE-2026-31229",
+      "CVE-2026-33634",
+      "CVE-2026-3502",
       "CVE-2026-45321",
+      "CVE-2026-5760",
       "MAL-2024-PYPI-ULTRALYTICS-XMRIG",
       "MAL-2025-PYPI-COLORAMA-SOLANA-STEALER",
       "MAL-2026-3083",
+      "MAL-2026-MOIKA-DEPCONFUSION",
       "MAL-2026-NODE-IPC-STEALER",
       "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER",
-      "MAL-2026-SHAI-HULUD-OSS"
+      "MAL-2026-SHAI-HULUD-OSS",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "description_full": "Adversaries may manipulate application software prior to receipt by a final consumer for the purpose of data or system compromise. Supply chain compromise of software can take place in a number of ways, including manipulation of the application source code, manipulation of the update/distribution mechanism for that software, or replacing compiled releases with a modified version. Targeting may be specific to a desired victim set or may be distributed to a broad set of consumers but only move on to additional tactics on specific victims.(Citation: Avast CCleaner3 2018)(Citation: Command Five SK 2011)",
     "platforms": [
@@ -1080,26 +1391,51 @@
     "name": "Exploitation for Client Execution",
     "version": "v19",
     "cve_refs": [
-      "CVE-2014-3931",
-      "CVE-2018-14634",
+      "CVE-2007-0671",
+      "CVE-2008-0015",
+      "CVE-2009-0238",
+      "CVE-2009-0556",
+      "CVE-2009-1537",
+      "CVE-2009-3459",
+      "CVE-2010-0249",
+      "CVE-2010-0806",
+      "CVE-2010-3765",
+      "CVE-2010-3962",
+      "CVE-2011-3402",
+      "CVE-2013-3893",
+      "CVE-2013-3918",
       "CVE-2020-9715",
-      "CVE-2021-22555",
       "CVE-2021-30952",
+      "CVE-2022-48503",
       "CVE-2023-41974",
       "CVE-2023-43000",
       "CVE-2025-10585",
+      "CVE-2025-13223",
       "CVE-2025-14174",
-      "CVE-2025-21479",
-      "CVE-2025-21480",
+      "CVE-2025-21042",
+      "CVE-2025-21043",
       "CVE-2025-24201",
-      "CVE-2025-27038",
+      "CVE-2025-30397",
       "CVE-2025-31277",
-      "CVE-2025-32709",
+      "CVE-2025-33053",
+      "CVE-2025-43200",
       "CVE-2025-43300",
+      "CVE-2025-43510",
+      "CVE-2025-43520",
       "CVE-2025-43529",
       "CVE-2025-4919",
-      "CVE-2026-21385",
+      "CVE-2025-5419",
+      "CVE-2025-6218",
+      "CVE-2025-6554",
+      "CVE-2025-6558",
+      "CVE-2025-8088",
+      "CVE-2026-20700",
+      "CVE-2026-21519",
       "CVE-2026-2441",
+      "CVE-2026-25592",
+      "CVE-2026-34621",
+      "CVE-2026-3909",
+      "CVE-2026-3910",
       "CVE-2026-5281",
       "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP"
     ],
@@ -1122,7 +1458,10 @@
     "name": "Exploitation for Credential Access",
     "version": "v19",
     "cve_refs": [
-      "CVE-2025-14174"
+      "CVE-2023-43791",
+      "CVE-2025-14174",
+      "CVE-2025-1796",
+      "CVE-2025-69286"
     ],
     "description_full": "Adversaries may exploit software vulnerabilities in an attempt to collect credentials. Exploitation of a software vulnerability occurs when an adversary takes advantage of a programming error in a program, service, or within the operating system software or kernel itself to execute adversary-controlled code. Credentialing and authentication mechanisms may be targeted for exploitation by adversaries as a means to gain access to useful credentials or circumvent the process to gain authenticated access to systems. One example of this is `MS14-068`, which targets Kerberos and can be used to forge Kerberos tickets using domain user permissions.(Citation: Technet MS14-068)(Citation: ADSecurity Detecting Forged Tickets) Another example of this is replay attacks, in which the adversary intercepts data packets sent between parties and then later replays these packets. If services don't properly validate authentication requests, these replayed packets may allow an adversary to impersonate one of the parties and gain unauthorized access or privileges.(Citation: Bugcrowd Replay Attack)(Citation: Comparitech Replay Attack)(Citation: Microsoft Midnight Blizzard Replay Attack) Such exploitation has been demonstrated in cloud environments as well. For example, adversaries have exploited vulnerabilities in public cloud infrastructure that allowed for unintended authentication token creation and renewal.(Citation: Storm-0558 techniques for unauthorized email access) Exploitation for credential access may also result in Privilege Escalation depending on the process targeted or credentials obtained.",
     "platforms": [
@@ -1159,12 +1498,20 @@
     "description": "Adversaries may leverage information repositories to mine valuable information.",
     "tactic": [
       "Collection"
+    ],
+    "cve_refs": [
+      "CVE-2024-12450",
+      "CVE-2026-20133",
+      "CVE-2026-21858",
+      "CVE-2026-22218",
+      "CVE-2026-41950"
     ]
   },
   "T1485": {
     "name": "Data Destruction",
     "version": "v19",
     "cve_refs": [
+      "CVE-2022-23812",
       "MAL-2026-SHAI-HULUD-OSS"
     ],
     "description_full": "Adversaries may destroy data and files on specific systems or in large numbers on a network to interrupt availability to systems, services, and network resources. Data destruction is likely to render stored data irrecoverable by forensic techniques through overwriting files or data on local and remote drives.(Citation: Symantec Shamoon 2012)(Citation: FireEye Shamoon Nov 2016)(Citation: Palo Alto Shamoon Nov 2016)(Citation: Kaspersky StoneDrill 2017)(Citation: Unit 42 Shamoon3 2018)(Citation: Talos Olympic Destroyer 2018) Common operating system file deletion commands such as <code>del</code> and <code>rm</code> often only remove pointers to files without wiping the contents of the files themselves, making the files recoverable by proper forensic methodology. This behavior is distinct from [Disk Content Wipe](https://attack.mitre.org/techniques/T1561/001) and [Disk Structure Wipe](https://attack.mitre.org/techniques/T1561/002) because individual files are destroyed rather than sections of a storage disk or the disk's logical structure. Adversaries may attempt to overwrite files and directories with randomly generated data to make it irrecoverable.(Citation: Kaspersky StoneDrill 2017)(Citation: Unit 42 Shamoon3 2018) In some cases politically oriented image files have been used to overwrite data.(Citation: FireEye Shamoon Nov 2016)(Citation: Palo Alto Shamoon Nov 2016)(Citation: Kaspersky StoneDrill 2017) To maximize impact on the target organization in operations where network-wide availability interruption is the goal, malware designed for destroying data may have worm-like features to propagate across a network by leveraging additional techniques like [Valid Accounts](https://attack.mitre.org/techniques/T1078), [OS Credential Dumping](https://attack.mitre.org/techniques/T1003), and [SMB/Windows Admin Shares](https://attack.mitre.org/techniques/T1021/002).(Citation: Symantec Shamoon 2012)(Citation: FireEye Shamoon Nov 2016)(Citation: Palo Alto Shamoon Nov 2016)(Citation: Kaspersky StoneDrill 2017)(Citation: Talos Olympic Destroyer 2018). In cloud environments, adversaries may leverage access to delete cloud storage objects, machine images, database instances, and other infrastructure crucial to operations to damage an organization or their customers.(Citation: Data Destruction - Threat Post)(Citation: DOJ - Cisco Insider) Similarly, they may delete virtual machines from on-prem virtualized environments.",
@@ -1303,6 +1650,9 @@
     "description": "Adversaries may access data from cloud storage.",
     "tactic": [
       "Collection"
+    ],
+    "cve_refs": [
+      "CVE-2026-41947"
     ]
   },
   "T1543": {
@@ -1410,7 +1760,28 @@
     "name": "Unsecured Credentials",
     "version": "v19",
     "cve_refs": [
+      "CVE-2019-5418",
+      "CVE-2021-22681",
+      "CVE-2021-43798",
+      "CVE-2023-38950",
+      "CVE-2023-47117",
+      "CVE-2024-0769",
+      "CVE-2024-12450",
+      "CVE-2025-11371",
+      "CVE-2025-14611",
+      "CVE-2025-30066",
+      "CVE-2025-30154",
+      "CVE-2025-31125",
+      "CVE-2025-47813",
+      "CVE-2025-48927",
+      "CVE-2025-48928",
+      "CVE-2025-5777",
       "CVE-2025-68664",
+      "CVE-2025-68665",
+      "CVE-2026-20128",
+      "CVE-2026-22219",
+      "CVE-2026-3055",
+      "CVE-2026-48027",
       "MAL-2025-PYPI-COLORAMA-SOLANA-STEALER",
       "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER"
     ],
@@ -1439,11 +1810,14 @@
     "name": "Unsecured Credentials: Credentials In Files",
     "version": "v19",
     "cve_refs": [
+      "CVE-2024-6587",
       "CVE-2025-21085",
       "CVE-2026-30615",
       "MAL-2026-3083",
+      "MAL-2026-MOIKA-DEPCONFUSION",
       "MAL-2026-NODE-IPC-STEALER",
-      "MAL-2026-TANSTACK-MINI"
+      "MAL-2026-TANSTACK-MINI",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "description_full": "Adversaries may search local file systems and remote file shares for files containing insecurely stored credentials. These can be files created by users to store their own credentials, shared credential stores for a group of individuals, configuration files containing passwords for a system or service, or source code/binary files containing embedded passwords. It is possible to extract passwords from backups or saved virtual machines through [OS Credential Dumping](https://attack.mitre.org/techniques/T1003).(Citation: CG 2014) Passwords may also be obtained from Group Policy Preferences stored on the Windows Domain Controller.(Citation: SRD GPP) In cloud and/or containerized environments, authenticated user and service account credentials are often stored in local configuration and credential files.(Citation: Unit 42 Hildegard Malware) They may also be found as parameters to deployment commands in container logs.(Citation: Unit 42 Unsecured Docker Daemons) In some cases, these files can be copied and reused on another machine or the contents can be read and then used to authenticate without needing to copy any files.(Citation: Specter Ops - Cloud Credential Storage)",
     "platforms": [
@@ -1479,6 +1853,9 @@
     "description": "Adversaries may search for private key certificate files on compromised systems for insecurely stored credentials.",
     "tactic": [
       "Credential Access"
+    ],
+    "cve_refs": [
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ]
   },
   "T1552.005": {
@@ -1577,7 +1954,10 @@
     "stix_id": "attack-pattern--f4c1826f-a322-41cd-9557-562100848c84",
     "is_subtechnique": false,
     "last_verified": "2026-05-19",
-    "description": "Adversaries may modify authentication mechanisms and processes to access user credentials or enable otherwise unwarranted access to accounts."
+    "description": "Adversaries may modify authentication mechanisms and processes to access user credentials or enable otherwise unwarranted access to accounts.",
+    "cve_refs": [
+      "CVE-2024-12776"
+    ]
   },
   "T1557": {
     "name": "Adversary-in-the-Middle",
@@ -1597,6 +1977,11 @@
     "tactic": [
       "Credential Access",
       "Collection"
+    ],
+    "cve_refs": [
+      "CVE-2011-0411",
+      "CVE-2021-33515",
+      "CVE-2021-38371"
     ]
   },
   "T1562.001": {
@@ -1754,6 +2139,7 @@
     "name": "Exfiltration Over Web Service",
     "version": "v19",
     "cve_refs": [
+      "CVE-2026-48027",
       "MAL-2026-SHAI-HULUD-OSS"
     ],
     "description_full": "Adversaries may use an existing, legitimate external Web service to exfiltrate data rather than their primary command and control channel. Popular Web services acting as an exfiltration mechanism may give a significant amount of cover due to the likelihood that hosts within a network are already communicating with them prior to compromise. Firewall rules may also already exist to permit traffic to these services. Web service providers also commonly use SSL/TLS encryption, giving adversaries an added level of protection.",
@@ -1964,6 +2350,10 @@
     "description": "Adversaries may deploy a container into an environment to facilitate execution or evade defenses.",
     "tactic": [
       "Execution"
+    ],
+    "cve_refs": [
+      "CVE-2024-0132",
+      "CVE-2025-23266"
     ]
   },
   "T1611": {
@@ -1975,11 +2365,13 @@
       "DS0029"
     ],
     "cve_refs": [
+      "CVE-2024-0132",
       "CVE-2024-21626",
       "CVE-2024-3154",
       "CVE-2025-22224",
       "CVE-2025-22225",
       "CVE-2025-22226",
+      "CVE-2025-23266",
       "CVE-2025-38352"
     ],
     "description_full": "Adversaries may break out of a container or virtualized environment to gain access to the underlying host. This can allow an adversary access to other containerized or virtualized resources from the host level or to the host itself. In principle, containerized / virtualized resources should provide a clear separation of application functionality and be isolated from the host environment.(Citation: Docker Overview) There are multiple ways an adversary may escape from a container to a host environment. Examples include creating a container configured to mount the host’s filesystem using the bind parameter, which allows the adversary to drop payloads and execute control utilities such as cron on the host; utilizing a privileged container to run commands or load a malicious kernel module on the underlying host; or abusing system calls such as `unshare` and `keyctl` to escalate privileges and steal secrets.(Citation: Docker Bind Mounts)(Citation: Trend Micro Privileged Container)(Citation: Intezer Doki July 20)(Citation: Container Escape)(Citation: Crowdstrike Kubernetes Container Escape)(Citation: Keyctl-unmask) Additionally, an adversary may be able to exploit a compromised container with a mounted container management socket, such as `docker.sock`, to break out of the container via a [Container Administration Command](https://attack.mitre.org/techniques/T1609).(Citation: Container Escape) Adversaries may also escape via [Exploitation for Privilege Escalation](https://attack.mitre.org/techniques/T1068), such as exploiting vulnerabilities in global symbolic links in order to access the root directory of a host machine.(Citation: Windows Server Containers Are Open) In ESXi environments, an adversary may exploit a vulnerability in order to escape from a virtual machine into the hypervisor.(Citation: Broadcom VMSA-2025-004) Gaining access to the host may provide the adversary with the opportunity to achieve follow-on objectives, such as establishing persistence, moving laterally within the environment, accessing other containers or virtual machines running on the host, or setting up a command and control channel on the host.",
@@ -2364,6 +2756,9 @@
     "version": "v19",
     "cve_refs": [
       "CVE-2023-36424",
+      "CVE-2023-51449",
+      "CVE-2023-6038",
+      "CVE-2024-1561",
       "CVE-2025-14847",
       "CVE-2025-22226",
       "CVE-2025-47813",
@@ -2395,6 +2790,8 @@
     "name": "Drive-by Compromise",
     "version": "v19",
     "cve_refs": [
+      "CVE-2023-6571",
+      "CVE-2024-27132",
       "CVE-2025-10585",
       "CVE-2025-14174",
       "CVE-2025-24201",
@@ -2421,6 +2818,7 @@
     "name": "Resource Hijacking",
     "version": "v19",
     "cve_refs": [
+      "CVE-2023-48022",
       "MAL-2024-PYPI-ULTRALYTICS-XMRIG"
     ],
     "description_full": "Adversaries may leverage the resources of co-opted systems to complete resource-intensive tasks, which may impact system and/or hosted service availability. Resource hijacking may take a number of different forms. For example, adversaries may: * Leverage compute resources in order to mine cryptocurrency * Sell network bandwidth to proxy networks * Generate SMS traffic for profit * Abuse cloud-based messaging services to send large quantities of spam messages In some cases, adversaries may leverage multiple types of Resource Hijacking at once.(Citation: Sysdig Cryptojacking Proxyjacking 2023)",
@@ -2445,6 +2843,9 @@
     "name": "Network Denial of Service",
     "version": "v19",
     "cve_refs": [
+      "CVE-2023-44487",
+      "CVE-2023-50387",
+      "CVE-2023-50868",
       "CVE-2025-8671"
     ],
     "description_full": "Adversaries may perform Network Denial of Service (DoS) attacks to degrade or block the availability of targeted resources to users. Network DoS can be performed by exhausting the network bandwidth services rely on. Example resources include specific websites, email services, DNS, and web-based applications. Adversaries have been observed conducting network DoS attacks for political purposes(Citation: FireEye OpPoisonedHandover February 2016) and to support other malicious activities, including distraction(Citation: FSISAC FraudNetDoS September 2012), hacktivism, and extortion.(Citation: Symantec DDoS October 2014) A Network DoS will occur when the bandwidth capacity of the network connection to a system is exhausted due to the volume of malicious traffic directed at the resource or the network connections and network devices the resource relies on. For example, an adversary may send 10Gbps of traffic to a server that is hosted by a network with a 1Gbps connection to the internet. This traffic can be generated by a single system or multiple systems spread across the internet, which is commonly referred to as a distributed DoS (DDoS). To perform Network DoS attacks several aspects apply to multiple methods, including IP address spoofing, and botnets. Adversaries may use the original IP address of an attacking system, or spoof the source IP address to make the attack traffic more difficult to trace back to the attacking system or to enable reflection. This can increase the difficulty defenders have in defending against the attack by reducing or eliminating the effectiveness of filtering by the source address on network defense devices. For DoS attacks targeting the hosting system directly, see [Endpoint Denial of Service](https://attack.mitre.org/techniques/T1499).",
@@ -2468,6 +2869,7 @@
     "name": "Endpoint Denial of Service: OS Exhaustion Flood",
     "version": "v19",
     "cve_refs": [
+      "CVE-2023-44487",
       "CVE-2025-8671"
     ],
     "description_full": "Adversaries may launch a denial of service (DoS) attack targeting an endpoint's operating system (OS). A system's OS is responsible for managing the finite resources as well as preventing the entire system from being overwhelmed by excessive demands on its capacity. These attacks do not need to exhaust the actual resources on a system; the attacks may simply exhaust the limits and available resources that an OS self-imposes. Different ways to achieve this exist, including TCP state-exhaustion attacks such as SYN floods and ACK floods.(Citation: Arbor AnnualDoSreport Jan 2018) With SYN floods, excessive amounts of SYN packets are sent, but the 3-way TCP handshake is never completed. Because each OS has a maximum number of concurrent TCP connections that it will allow, this can quickly exhaust the ability of the system to receive new requests for TCP connections, thus preventing access to any TCP service provided by the server.(Citation: Cloudflare SynFlood) ACK floods leverage the stateful nature of the TCP protocol. A flood of ACK packets are sent to the target. This forces the OS to search its state table for a related TCP connection that has already been established. Because the ACK packets are for connections that do not exist, the OS will have to search the entire state table to confirm that no match exists. When it is necessary to do this for a large flood of packets, the computational requirements can cause the server to become sluggish and/or unresponsive, due to the work it must do to eliminate the rogue ACK packets. This greatly reduces the resources available for providing the targeted service.(Citation: Corero SYN-ACKflood)",
@@ -2511,8 +2913,13 @@
     "name": "Steal Web Session Cookie",
     "version": "v19",
     "cve_refs": [
+      "CVE-2023-6571",
+      "CVE-2024-11182",
+      "CVE-2024-42009",
+      "CVE-2024-9526",
       "CVE-2025-0133",
-      "CVE-2025-34291"
+      "CVE-2025-34291",
+      "CVE-2025-68461"
     ],
     "description_full": "An adversary may steal web application or service session cookies and use them to gain access to web applications or Internet services as an authenticated user without needing credentials. Web applications and services often use session cookies as an authentication token after a user has authenticated to a website. Cookies are often valid for an extended period of time, even if the web application is not actively used. Cookies can be found on disk, in the process memory of the browser, and in network traffic to remote systems. Additionally, other applications on the targets machine might store sensitive authentication cookies in memory (e.g. apps which authenticate to cloud services). Session cookies can be used to bypasses some multi-factor authentication protocols.(Citation: Pass The Cookie) There are several examples of malware targeting cookies from web browsers on the local system.(Citation: Kaspersky TajMahal April 2019)(Citation: Unit 42 Mac Crypto Cookies January 2019) Adversaries may also steal cookies by injecting malicious JavaScript content into websites or relying on [User Execution](https://attack.mitre.org/techniques/T1204) by tricking victims into running malicious JavaScript in their browser.(Citation: Talos Roblox Scam 2023)(Citation: Krebs Discord Bookmarks 2023) There are also open source frameworks such as `Evilginx2` and `Muraena` that can gather session cookies through a malicious proxy (e.g., [Adversary-in-the-Middle](https://attack.mitre.org/techniques/T1557)) that can be set up by an adversary and used in phishing campaigns.(Citation: Github evilginx2)(Citation: GitHub Mauraena) After an adversary acquires a valid cookie, they can then perform a [Web Session Cookie](https://attack.mitre.org/techniques/T1550/004) technique to login to the corresponding web application.",
     "platforms": [
@@ -2664,7 +3071,12 @@
     "last_verified": "2026-05-19",
     "notes": "Added v0.13.17 to support DoS-class KEV bulk imports.",
     "cve_refs": [
+      "CVE-2023-50387",
+      "CVE-2023-50868",
+      "CVE-2025-20352",
+      "CVE-2025-30202",
       "CVE-2025-6543",
+      "CVE-2026-24215",
       "CVE-2026-45498"
     ],
     "description_full": "Adversaries may perform Endpoint Denial of Service (DoS) attacks to degrade or block the availability of services to users. Endpoint DoS can be performed by exhausting the system resources those services are hosted on or exploiting the system to cause a persistent crash condition. Example services include websites, email services, DNS, and web-based applications. Adversaries have been observed conducting DoS attacks for political purposes(Citation: FireEye OpPoisonedHandover February 2016) and to support other malicious activities, including distraction(Citation: FSISAC FraudNetDoS September 2012), hacktivism, and extortion.(Citation: Symantec DDoS October 2014) An Endpoint DoS denies the availability of a service without saturating the network used to provide access to the service. Adversaries can target various layers of the application stack that is hosted on the system used to provide the service. These layers include the Operating Systems (OS), server applications such as web servers, DNS servers, databases, and the (typically web-based) applications that sit on top of them. Attacking each layer requires different techniques that take advantage of bottlenecks that are unique to the respective components. A DoS attack may be generated by a single system or multiple systems spread across the internet, which is commonly referred to as a distributed DoS (DDoS). To perform DoS attacks against endpoint resources, several aspects apply to multiple methods, including IP address spoofing and botnets. Adversaries may use the original IP address of an attacking system, or spoof the source IP address to make the attack traffic more difficult to trace back to the attacking system or to enable reflection. This can increase the difficulty defenders have in defending against the attack by reducing or eliminating the effectiveness of filtering by the source address on network defense devices. Botnets are commonly used to conduct DDoS attacks against networks and services. Large botnets can generate a significant amount of traffic from systems spread across the global internet. Adversaries may have the resources to build out and control their own botnet infrastructure or may rent time on an existing botnet to conduct an attack. In some of the worst cases for DDoS, so many systems are used to generate requests that each one only needs to send out a small amount of traffic to produce enough volume to exhaust the target's resources. In such circumstances, distinguishing DDoS traffic from legitimate clients becomes exceedingly difficult. Botnets have been used in some of the most high-profile DDoS attacks, such as the 2012 series of incidents that targeted major US banks.(Citation: USNYAG IranianBotnet March 2016) In cases where traffic manipulation is used, there may be points in the global network (such as high traffic gateway routers) where packets can be altered and cause legitimate clients to execute code that directs network packets toward a target in high volume. This type of capability was previously used for the purposes of web censorship where client HTTP traffic was modified to include a reference to JavaScript that generated the DDoS code to overwhelm target web servers.(Citation: ArsTechnica Great Firewall of China) For attacks attempting to saturate the providing network, see [Network Denial of Service](https://attack.mitre.org/techniques/T1498).",
@@ -3446,6 +3858,12 @@
     "stix_id": "attack-pattern--7bc57495-ea59-4380-be31-a64af124ef18",
     "is_subtechnique": false,
     "cve_refs": [
+      "CVE-2023-51449",
+      "CVE-2023-6021",
+      "CVE-2023-6038",
+      "CVE-2024-1561",
+      "CVE-2024-24591",
+      "CVE-2024-39722",
       "CVE-2026-34926"
     ]
   },
@@ -3496,7 +3914,12 @@
       "Windows"
     ],
     "stix_id": "attack-pattern--731f4f55-b6d0-41d1-a7a9-072a66389aea",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2022-36551",
+      "CVE-2025-25297",
+      "CVE-2025-56520"
+    ]
   },
   "T1091": {
     "id": "T1091",
@@ -4055,7 +4478,10 @@
       "Windows"
     ],
     "stix_id": "attack-pattern--544b0346-29ad-41e1-a808-501bb4193f47",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2024-9526"
+    ]
   },
   "T1187": {
     "id": "T1187",
@@ -4184,7 +4610,23 @@
       "Containers"
     ],
     "stix_id": "attack-pattern--8c32eb4d-805f-4fc5-bf60-c4d476c131b5",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2024-0129",
+      "CVE-2024-11392",
+      "CVE-2024-11393",
+      "CVE-2024-11394",
+      "CVE-2024-24590",
+      "CVE-2024-24591",
+      "CVE-2024-37052",
+      "CVE-2024-37060",
+      "CVE-2025-1550",
+      "CVE-2025-32434",
+      "CVE-2025-33236",
+      "CVE-2025-51480",
+      "CVE-2025-8747",
+      "CVE-2026-31229"
+    ]
   },
   "T1205": {
     "id": "T1205",
@@ -4249,7 +4691,10 @@
       "ESXi"
     ],
     "stix_id": "attack-pattern--9db0cf3a-a3c9-4012-8268-123b9db6fd82",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2008-4250"
+    ]
   },
   "T1211": {
     "id": "T1211",
@@ -4272,7 +4717,13 @@
       "IaaS"
     ],
     "stix_id": "attack-pattern--fe926152-f431-4baf-956c-4ad3cb0bf23b",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2026-21509",
+      "CVE-2026-21510",
+      "CVE-2026-21513",
+      "CVE-2026-21514"
+    ]
   },
   "T1216": {
     "id": "T1216",
@@ -4820,7 +5271,10 @@
       "Windows"
     ],
     "stix_id": "attack-pattern--b83e166d-13d7-4b52-8677-dff90c548fd7",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2025-47827"
+    ]
   },
   "T1558": {
     "id": "T1558",
@@ -9005,7 +9459,10 @@
     "stix_id": "attack-pattern--df8b2a25-8bdf-4856-953c-a04372b1c161",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "MAL-2026-MOIKA-DEPCONFUSION"
+    ]
   },
   "T1071.002": {
     "id": "T1071.002",
@@ -9062,7 +9519,15 @@
     "stix_id": "attack-pattern--54b4c251-1f0e-4eba-ba6b-dbc7a6f6f06b",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2011-0411",
+      "CVE-2021-33515",
+      "CVE-2021-38371",
+      "CVE-2023-51764",
+      "CVE-2023-51765",
+      "CVE-2023-51766"
+    ]
   },
   "T1071.004": {
     "id": "T1071.004",
@@ -10381,7 +10846,11 @@
     "stix_id": "attack-pattern--232b7f21-adf9-4b42-b936-b9d6f7df856e",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2025-33053",
+      "CVE-2025-48384"
+    ]
   },
   "T1204.003": {
     "id": "T1204.003",
@@ -11755,7 +12224,19 @@
     "stix_id": "attack-pattern--5d0d3609-d06d-49e1-b9c9-b544e0c618cb",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2018-4063",
+      "CVE-2021-26828",
+      "CVE-2024-1708",
+      "CVE-2024-7399",
+      "CVE-2024-7694",
+      "CVE-2025-2749",
+      "CVE-2025-31324",
+      "CVE-2025-49704",
+      "CVE-2025-52691",
+      "CVE-2025-53770"
+    ]
   },
   "T1505.004": {
     "id": "T1505.004",
@@ -12649,7 +13130,11 @@
     "stix_id": "attack-pattern--9efb1ea7-c37b-4595-9640-b7680cd84279",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2025-6218",
+      "CVE-2025-8088"
+    ]
   },
   "T1547.002": {
     "id": "T1547.002",
@@ -13427,7 +13912,11 @@
     "stix_id": "attack-pattern--7e7c2fba-7cca-486c-9582-4c1bb2851961",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2026-21510",
+      "CVE-2026-21513"
+    ]
   },
   "T1553.006": {
     "id": "T1553.006",
@@ -13858,7 +14347,10 @@
     "stix_id": "attack-pattern--650c784b-7504-4df7-ab2c-4ea882384d1e",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2025-33073"
+    ]
   },
   "T1557.002": {
     "id": "T1557.002",
@@ -14727,7 +15219,10 @@
     "stix_id": "attack-pattern--1cfcb312-b8d7-47a4-b560-4b16cc677292",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2024-24591"
+    ]
   },
   "T1565.002": {
     "id": "T1565.002",
@@ -14837,7 +15332,10 @@
     "stix_id": "attack-pattern--86a96bf6-cf8b-411c-aaeb-8959944d64f7",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
+    ]
   },
   "T1567.002": {
     "id": "T1567.002",
@@ -15166,7 +15664,10 @@
     "stix_id": "attack-pattern--2fee9321-3e71-4cf4-af24-d4d40d355b34",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2012-1854"
+    ]
   },
   "T1574.004": {
     "id": "T1574.004",

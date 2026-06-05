@@ -71,7 +71,11 @@ function buildStaleContent({ root, manifest, skills, catalogFiles }) {
     const liveJurisdictions = (() => {
       try {
         const gf = JSON.parse(fs.readFileSync(path.join(root, "data/global-frameworks.json"), "utf8"));
-        return Object.keys(gf).filter((k) => !k.startsWith("_") && k !== "GLOBAL").length;
+        // Count non-underscore keys (GLOBAL included) — the canonical
+        // jurisdiction count used by the README badge and catalog-summaries.
+        // Excluding GLOBAL here uniquely produced 34 and emitted a false
+        // badge_drift finding against the README's (correct) 35.
+        return Object.keys(gf).filter((k) => !k.startsWith("_")).length;
       } catch {
         return null;
       }

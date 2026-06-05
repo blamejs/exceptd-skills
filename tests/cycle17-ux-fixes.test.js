@@ -30,7 +30,7 @@
  *         `Volt-Typhoon-aligned` / `Volt-Typhoon-style`. All others use
  *         unhyphenated `Volt Typhoon`. Test pins single canonical form.
  *
- * Per CLAUDE.md anti-coincidence rule, every assertion checks an EXACT
+ * Per the anti-coincidence rule, every assertion checks an EXACT
  * value (string match, deepEqual, or specific count).
  */
 

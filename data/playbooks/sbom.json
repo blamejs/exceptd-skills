@@ -1,9 +1,9 @@
 {
   "_meta": {
     "id": "sbom",
-    "version": "1.2.0",
+    "version": "1.4.0",
     "last_threat_review": "2026-05-13",
-    "threat_currency_score": 98,
+    "threat_currency_score": 96,
     "changelog": [
       {
         "version": "1.2.0",
@@ -43,6 +43,26 @@
           "nis2-art21-2d",
           "dora-art28"
         ]
+      },
+      {
+        "version": "1.2.1",
+        "date": "2026-05-30",
+        "summary": "Add capability-creep behavioral detector: flags a dependency that gains network / filesystem-write / shell-spawn / credential-access / install-script capability across a version bump (pre-disclosure supply-chain signal), with five false-positive checks and a matching false-positive profile."
+      },
+      {
+        "version": "1.3.0",
+        "date": "2026-05-30",
+        "summary": "Add a package-capability taxonomy (network / filesystem / shell / env / eval / install-script / telemetry / native-binary): a package-capability-surface evidence artifact plus an absolute capability-surface screen that flags a no-CVE package whose install-script combines with shell/network/env/eval (the credential-harvesting delivery shape), complementing the across-version-bump capability-creep detector."
+      },
+      {
+        "version": "1.3.1",
+        "date": "2026-05-30",
+        "summary": "Add three supply-chain detection-depth indicators: typosquat/homoglyph package-name detection (reusing the vendored codepoint-class confusable tables), a static content red-flag screen (obfuscation / high-entropy / trivial-package / eval+dynamic-require, T1027), and a dependency-confusion resolution-source check (internal scope served by the public registry / inflated-version squat, correlating to MAL-2026-MOIKA-DEPCONFUSION) — each with a paired look artifact and false-positive profile."
+      },
+      {
+        "version": "1.4.0",
+        "date": "2026-05-31",
+        "summary": "Add a CVE-reachability demoter (dependency-cve-unreachable: flags a matched-CVE dependency whose vulnerable module is not imported on a first-party path, over-approximating to reachable so it only demotes with an explicit reachability attestation; the package-matches-catalogued-cve matcher is unchanged), a publisher-identity-change detector (account-takeover/ownership-handoff precursor that fires on a publisher/provenance-identity change absent a capability change), and two compliance-theater fingerprints (license-policy and publisher-trust attested-but-not-enforced). Theater-fingerprint count 6 -> 8."
       }
     ],
     "owner": "@blamejs/supply-chain",
@@ -85,6 +105,7 @@
       "ai-api",
       "ai-discovered-cve-triage",
       "cicd-pipeline-compromise",
+      "citation-hygiene",
       "cloud-iam-incident",
       "containers",
       "crypto",
@@ -94,6 +115,7 @@
       "library-author",
       "mcp",
       "post-quantum-migration",
+      "self-update-integrity",
       "supply-chain-recovery",
       "webhook-callback-abuse"
     ]
@@ -305,6 +327,26 @@
             "openssf-model-signing",
             "atlas-aml-t0018"
           ]
+        },
+        {
+          "pattern_id": "license-policy-attested-but-not-enforced",
+          "claim": "We have an approved open-source license policy — copyleft / non-permissive dependencies are governed.",
+          "fast_detection_test": "Locate the declared license policy (allowlist/denylist in a LICENSE-POLICY doc, OSS-governance config, or contractual SBOM clause). Then walk the resolved dependency tree (license field per node in package-lock.json/yarn.lock/pnpm-lock.yaml, PyPI METADATA, Cargo metadata, go-licenses) and confirm a build-time gate actually fails the build on a policy-violating, license-change-across-version, or missing/ambiguous license. Theater if the policy exists as a document but (a) no CI/build step enforces it (no license-check / dependency-review / scancode / FOSSA gate wired into the pipeline that can BLOCK a merge or build), OR (b) the produced SBOM carries no per-component license field to enforce against, OR (c) dependencies resolve with missing/UNKNOWN license strings that the gate does not reject. Policy-as-attestation without a blocking gate against the live resolved tree = paper compliance.",
+          "implicated_controls": [
+            "eu-cra-art13",
+            "nist-800-218-SSDF-PS-3",
+            "cyclonedx-1-6"
+          ]
+        },
+        {
+          "pattern_id": "publisher-trust-attested-but-not-enforced",
+          "claim": "We vet upstream package publishers — maintainer identity, account MFA, and publish recency are part of our supply-chain controls.",
+          "fast_detection_test": "Locate the declared publisher-trust control (a maintainer-vetting policy, an MFA-on-publish requirement, a registry-cooldown / minimumReleaseAge setting, an abandoned/unmaintained-dependency review). Then confirm a build-time or intake gate actually ENFORCES it against the live resolved tree: does any pipeline step BLOCK on a dependency whose publishing account changed (ownership handoff / new-or-nonexistent author), whose maintainer lacks 2FA, that was published inside the cooldown window, or that is deprecated/unmaintained? Theater if the policy exists as a document but (a) no .npmrc before= / minimumReleaseAge cooldown is configured, (b) no dependency-review / publisher-identity gate can fail a build on an ownership change, or (c) deprecated/unmaintained dependencies are not surfaced for review. Publisher-trust as attestation without a blocking intake gate = paper compliance; the identity discontinuity that precedes account-takeover payloads (PyPI Revival Hijack class) passes an unenforced policy untouched.",
+          "implicated_controls": [
+            "nist-800-218-SSDF",
+            "eu-cra-art13",
+            "nist-800-53-SA-12"
+          ]
         }
       ],
       "framework_context": {
@@ -426,7 +468,7 @@
         },
         {
           "skill": "compliance-theater",
-          "purpose": "Run the six theater fingerprints in govern.theater_fingerprints; emit verdict per pattern.",
+          "purpose": "Run the eight theater fingerprints in govern.theater_fingerprints; emit verdict per pattern.",
           "required": true
         },
         {
@@ -600,6 +642,41 @@
           "type": "config_file",
           "source": "Read .github/workflows/*.yml and *.yaml — extract `on:` triggers, `permissions:`, and `uses: actions/cache@*` step references",
           "description": "CVE-2026-45321 architectural pre-condition check — detects pull_request_target + id-token:write + shared actions/cache co-residency in the same repo.",
+          "required": false
+        },
+        {
+          "id": "package-capability-surface",
+          "type": "config_file",
+          "source": "For each installed/locked npm + PyPI package, read its manifest to enumerate declared/observable capabilities: package.json scripts (preinstall/install/postinstall), bin, gypfile/binding.gyp (native-binary build), and dependencies on known network/child-process modules; PyPI setup.py/pyproject.toml build hooks + .so/.pyd payloads. Classify each package into the capability vocabulary: network, filesystem, shell, env, eval, install-script, telemetry, native-binary.",
+          "description": "Package-capability surface per dependency, using a capability taxonomy (network / filesystem / shell / env / eval / install-script / telemetry / native-binary). Complements the CVE-match register: a package with no catalogued CVE can still carry an outsized capability surface (an install-script that spawns a shell and reads env is the Shai-Hulud delivery shape). Capability is a property of the package, independent of any known vulnerability.",
+          "required": false
+        },
+        {
+          "id": "package-name-similarity-surface",
+          "type": "config_file",
+          "source": "For each direct dependency, capture {package name, resolved registry host, a download/popularity signal where available} and compute (a) the Levenshtein edit-distance to a set of high-download popular package names and (b) a homoglyph-normalized / confusable-folded form of the name (via vendor/blamejs/codepoint-class.js) to surface visually-confusable substitutions. Record the closest popular-name match + distance per dependency.",
+          "description": "Package-name similarity surface — the evidence the typosquat/homoglyph detector reads. Captures edit-distance and confusable-normalized name forms so name-impersonation is computable offline without a registry call (the popularity set is a static bundled list; absence of a live download count degrades to edit-distance + homoglyph only).",
+          "required": false
+        },
+        {
+          "id": "package-source-content-surface",
+          "type": "config_file",
+          "source": "For each installed/locked package, statically read its shipped source and record: readable-source-present vs minified-only, sourcemap presence, high-entropy-string ratio (Shannon entropy over string literals), effective LOC count, and dynamic eval / dynamic require/import usage. No execution — static read of the on-disk package files only.",
+          "description": "Package source-content surface — the static evidence the obfuscation screen reads. Distinct from package-capability-surface (which classifies declared/observable capabilities); this captures source SHAPE (minification, entropy, size, dynamic-eval) for the content red-flag screen.",
+          "required": false
+        },
+        {
+          "id": "dep-confusion-resolution-config",
+          "type": "config_file",
+          "source": "Read scope-to-registry resolution config: .npmrc + $HOME/.npmrc (@scope:registry= lines, registry=, always-auth), .yarnrc.yml (npmScopes), pip.conf / pip.ini (index-url, extra-index-url), and any private-registry manifest listing internal @scopes / package names. Cross with repo-lockfiles resolved URLs to determine which registry actually served each internal-scope name.",
+          "description": "Resolution-source configuration — distinguishes an internal-namespace package correctly pinned to a private registry (safe) from one resolvable off the public registry (dependency-confusion exposed). Without it the indicator can only see inflated-version heuristics; with it the resolution-source check becomes high-confidence.",
+          "required": false
+        },
+        {
+          "id": "cve-reachability-surface",
+          "type": "config_file",
+          "source": "For each dependency that matched a catalogued CVE (the package-matches-catalogued-cve hit set), statically resolve whether the catalogued-vulnerable module is imported on a first-party call path: grep the repo's own source for import/require of the matched package's vulnerable module/submodule/symbol; build the first-party import graph through direct dependencies; flag uncertainty edges (dynamic import, plugin discovery, native/FFI). Records reachable | unreachable | uncertain per matched CVE; uncertainty is recorded as reachable.",
+          "description": "CVE reachability surface — the static import-graph evidence the dependency-cve-unreachable demoter reads. Over-approximates: any uncertainty is recorded as reachable so the demoter cannot fire on it. Optional sweep; absence leaves every matched CVE treated as reachable (the matcher stands unchanged).",
           "required": false
         }
       ],
@@ -799,6 +876,120 @@
           "description": "Mitigation gap for CVE-2026-45321 and similar fresh-publish worms. Without a registry cooldown, `npm install` will accept a version published seconds ago. Recommended: `before=72h` (npm 11+) or `minimumReleaseAge=4320` minutes. The worm was caught publicly within 20 minutes; 72h is overkill-safe.",
           "confidence": "high",
           "deterministic": false
+        },
+        {
+          "id": "dependency-capability-creep-across-version-bump",
+          "type": "behavioral_signal",
+          "value": "For any dependency present in repo-lockfiles, npm-global-packages, or container-image-layers whose resolved version advanced since the last recorded inventory (or across two lockfile revisions in scope), compare the package's capability surface between the two versions. CAPABILITY SURFACE = (a) network egress (new fetch/http/https/net/dgram/ws imports or new outbound hosts), (b) filesystem write beyond the package's own dir, (c) process/shell spawn (child_process/exec/spawn, os/system, subprocess, Runtime.exec), (d) environment / credential access (process.env enumeration, reads of ~/.aws ~/.ssh ~/.npmrc ~/.kube ~/.config, keychain/secrets API), (e) install-lifecycle scripts newly present or newly non-trivial (preinstall/install/postinstall, setup.py/cfg build hooks, gem extensions, Cargo build.rs). FIRES when a version bump GAINS one or more capability categories the prior in-scope version did not exercise — a capability the dependent never opted into when it first selected the package.",
+          "description": "Capability-creep — a dependency that suddenly gains network / filesystem-write / shell-spawn / credential-access / install-script capability across a version bump. Models the core behavioral supply-chain signal: most maintainer-account takeovers and protestware injections surface first as a new capability class in an otherwise-unchanged package, before any CVE is catalogued. Pre-disclosure detector — fires on behavior delta, not on a known-CVE match.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1195.001",
+          "atlas_ref": "AML.T0010",
+          "false_positive_checks_required": [
+            "Confirm the new capability is not explained by a documented feature in the version's release notes / CHANGELOG that the dependent intentionally upgraded to consume (e.g. a logging library that added an opt-in OTLP-over-HTTP exporter). A capability gain matching a documented, in-changelog feature the operator pulled deliberately is benign — demote to inconclusive and record the changelog citation.",
+            "Distinguish a genuine capability gain from a refactor that merely RELOCATED an existing capability (the prior version already spawned a child process via a transitive dep; the new version inlines it). Diff the EFFECTIVE capability of the prior resolved tree (package + its own deps), not the single package file — relocation across the package boundary is not a gain. Demote when the capability was already present transitively.",
+            "Exclude build-time / dev-time-only dependencies whose new capability never reaches a runtime-loaded path (e.g. a test runner gaining child_process). Confirm runtime reachability before elevating; build/dev-only capability gain demotes to low.",
+            "Rule out the package's own first-party major-version migration where the maintainer key, publish provenance (SLSA / npm --provenance), and signing identity are UNCHANGED across the bump and the version follows the project's normal release cadence (not a sub-72h fresh publish). Unchanged provenance + normal cadence + documented breaking-change major demotes; an unchanged-version-string-but-changed-content republish, a new/rotated maintainer key, or a provenance attestation that regressed from present-to-absent ELEVATES (re-publication-over / account-takeover signature).",
+            "For install-lifecycle scripts: confirm the script is newly present OR newly non-trivial versus the prior version — many packages have always shipped a postinstall (e.g. native-addon compile via node-gyp). A long-standing, content-stable lifecycle script is not creep; only a newly-added or newly-mutated one fires."
+          ]
+        },
+        {
+          "id": "package-capability-creep",
+          "type": "config_value",
+          "value": "Within the package-capability-surface artifact: any direct or transitive package combines an install-time hook (install-script: preinstall/install/postinstall, or PyPI build hook) with at least one high-trust capability (shell, network, env, or eval). Capability vocabulary: network / filesystem / shell / env / eval / install-script / telemetry / native-binary. The install-script+shell+network+env quadruple is the credential-harvesting delivery shape (CVE-2026-45321 Mini Shai-Hulud, CVE-2024-3094 XZ class); install-script+native-binary is the compiled-payload shape.",
+          "description": "Capability-surface screen — flags packages whose capability surface is disproportionate to their declared function, independent of CVE match. A no-CVE package that runs an install-script which spawns a shell, opens the network, and reads env vars is the supply-chain delivery primitive even when the catalog shows zero matched CVEs. Surfaces alongside, not in place of, package-matches-catalogued-cve; absolute-surface complement to the across-version-bump capability-creep detector.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1195.002",
+          "false_positive_checks_required": [
+            "Build-tooling and native-addon packages legitimately need install-script + native-binary (node-gyp, sass-embedded, esbuild, sharp, bcrypt, prebuild-install, electron, playwright, puppeteer). If the package is on the operator documented build-dependency allowlist AND its publisher identity / provenance attestation matches the expected one, demote — capability presence is expected for this class.",
+            "Confirm the install-script actually exercises the high-trust capability at install time, not merely that the package transitively depends on a network/shell module used only at runtime in an unrelated code path. Read the referenced script: a postinstall that only runs node-gyp rebuild is native-binary, not network+shell+env. Demote when the capability is declared-but-not-install-reachable.",
+            "Telemetry-only capability (a postinstall that pings an analytics endpoint with no env/credential read) is a noise/consent concern, not a credential-exfil primitive. Demote network+telemetry-without-env to informational unless env or filesystem-credential-path access co-occurs.",
+            "If the capability surface was read from a stale or non-build lockfile (archive/ or pre-migration/ subdir), it does not reflect what installs. Confirm against the build-consumed lockfile path before firing (same stale-lockfile check as lockfile-no-integrity)."
+          ]
+        },
+        {
+          "id": "dependency-name-typosquat",
+          "type": "behavioral_signal",
+          "value": "For each DIRECT dependency name in repo-lockfiles / npm-global-packages / pip-packages, flag when the name is within Levenshtein edit-distance 1-2 of a SPECIFIC high-download popular package it is NOT (typosquat — e.g. lodahs vs lodash, crossenv vs cross-env), OR uses a homoglyph / visually-confusable Unicode substitution of a popular name (route the name through the vendored vendor/blamejs/codepoint-class.js confusable/bidi detection — a Latin/Cyrillic/Greek lookalike codepoint inside an otherwise-ASCII clone of a popular name is a near-certain lure), OR is a scope/namespace lookalike of a well-known org scope. FIRES on name-confusability independent of any CVE match — the typosquat lure precedes payload execution.",
+          "description": "Typosquat / homoglyph package-name detector. Flags a direct dependency whose NAME impersonates a popular package by edit-distance or visually-confusable codepoint substitution, a pre-disclosure lure signal that no CVE-match or capability screen catches. Reuses the vendored codepoint-class confusable detection (added v0.15.50). Distinct axis from the dependency-confusion resolution check (name-similarity vs resolution-source).",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1195.002",
+          "atlas_ref": "AML.T0010",
+          "false_positive_checks_required": [
+            "The package IS the popular one: confirm via download-count / publish-history that the flagged name is not itself the canonical high-download package before treating proximity as a squat. Demote when the package is the legitimate target it resembles.",
+            "Intentional short-name alias or sanctioned scoped fork the operator deliberately consumes (e.g. an internal mirror named close to upstream). Cross-check the operator documented dependency allowlist; demote when the near-name is a known sanctioned alias.",
+            "Common-word collision: short generic names (ms, qs, fs) sit within edit-distance of many strings by chance. Require a SPECIFIC high-download package the flagged dep plausibly impersonates, not any string within distance 2; demote incidental proximity with no plausible impersonation target.",
+            "Homoglyph false alarm: confirm the confusable/non-ASCII codepoint actually substitutes for an ASCII letter in a known popular package name (a Cyrillic a inside an ASCII clone), not an incidental legitimately-non-Latin name that has no popular ASCII twin. Demote names with no ASCII-lookalike target."
+          ]
+        },
+        {
+          "id": "package-content-obfuscation-screen",
+          "type": "config_value",
+          "value": "Within package-source-content-surface: flag a package that ships ONLY minified/obfuscated source with no readable source and no sourcemap, OR a high ratio of high-entropy string literals (packed/encrypted payload), OR is a trivial package (under ~10 effective LOC) that NONETHELESS declares an install-script or network capability (a thin shell wrapping a payload), OR combines dynamic eval with dynamic require/import. These are CONTENT red-flags orthogonal to the capability taxonomy — a package can be capability-light yet content-obfuscated.",
+          "description": "Static content red-flag screen — obfuscation / high-entropy / minified-only / trivial-package / eval+dynamic-require. Complements (does not duplicate) the capability-surface screens: capability is WHAT the package can do, content is HOW its source is shaped. Maps T1027 (Obfuscated Files or Information).",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1027",
+          "false_positive_checks_required": [
+            "Legitimate minified dist bundle: many front-end packages ship a minified dist/ alongside readable src/ or a sourcemap. Confirm there is NO readable source AND no sourcemap anywhere in the package before flagging minified-only; demote when readable source or a .map file exists.",
+            "Known-good build-output / WASM / native-addon packages legitimately carry high-entropy blobs (embedded WASM, prebuilt binaries, fixtures). Cross-check the operator build-dependency allowlist + publisher provenance; demote expected high-entropy classes.",
+            "Trivial-package false alarm: a genuinely tiny utility (is-number) is trivial WITHOUT an install-script or network capability. Only elevate trivial packages that ALSO declare install-script or network capability (the co-occurrence is the signal); demote trivial-but-inert packages.",
+            "eval / dynamic-require in a legitimate plugin loader or config system (some established frameworks use dynamic require by design). Confirm the eval+dynamic-require pair is in a freshly-published or low-trust package, not a long-standing well-known framework; demote established frameworks with documented dynamic loading."
+          ]
+        },
+        {
+          "id": "dependency-confusion-internal-scope-public-resolution",
+          "type": "config_value",
+          "value": "Within repo-lockfiles + dep-confusion-resolution-config: a dependency whose scope/name matches an organizational-internal naming pattern (a @scope that ALSO appears in the org private-registry manifests, .npmrc/.yarnrc scope-to-registry maps, or pip internal extra-index-url) resolved from the PUBLIC registry (registry.npmjs.org / pypi.org) rather than the internal one — AND/OR a resolved version is anomalously inflated (e.g. 99.x.x, a major far above the package real release history) such that default resolution prefers the public package. The defining condition is RESOLUTION-SOURCE confusion: an internal-namespace identifier served by the public registry, regardless of payload.",
+          "description": "Dependency-confusion / namespace-squat resolution check. Fires when an internal-looking package name is satisfied from the public registry, or an inflated semver indicates a public squat outranking the private package — the resolution-layer signature that precedes any payload. Generalizes MAL-2026-MOIKA-DEPCONFUSION to any internal-scope squat; complements the capability-surface screens (postinstall stager) and the catalog CVE-match (specific known names). Distinct axis from the typosquat name-similarity detector.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1195.001",
+          "atlas_ref": "AML.T0010",
+          "cve_ref": "MAL-2026-MOIKA-DEPCONFUSION",
+          "false_positive_checks_required": [
+            "Confirm the @scope is genuinely an INTERNAL/private namespace for this org (present in a private-registry manifest, .npmrc scope-to-registry map, or internal pip index), not a public org scope the org legitimately consumes from npmjs (@types, @babel, @aws-sdk are public-by-design and not confusion). Demote when the scope is a known public namespace.",
+            "Verify an actual private package of the same name exists that the public one could shadow. A public-only package under a coincidentally org-like scope, with no private counterpart, is not dependency-confusion — there is nothing to confuse it with. Demote to inconclusive absent a private same-name package.",
+            "Confirm install config does not already pin the internal scope to the private registry (.npmrc @scope:registry=, always-auth, pip --index-url with no public fallthrough). A correctly-pinned scope cannot be confused; the public squat exists but cannot win resolution. Demote when resolution is pinned.",
+            "Distinguish an inflated version that reflects a real (if unusual) upstream release from a squat. Check the package real release history on the AUTHORITATIVE registry for this scope: a genuine 99.x maintained release is not a squat. Demote when the inflated version is the legitimate publisher actual latest on the correct registry.",
+            "Confirm the resolved artifact actually came from the public registry for this run (lockfile resolved/resolution URL host = registry.npmjs.org / files.pythonhosted.org), not the private mirror that merely proxies public names. A private proxy serving a vetted copy under the internal scope is not confusion-exposed. Demote when the resolution host is the internal/proxy registry."
+          ]
+        },
+        {
+          "id": "dependency-cve-unreachable",
+          "type": "behavioral_signal",
+          "value": "For a dependency that already fired package-matches-catalogued-cve, statically determine whether the catalogued-vulnerable module is reachable from first-party code: within the cve-reachability-surface artifact, the matched package's vulnerable entry-point (the import name / submodule / exported symbol associated with the catalogued CVE) is NOT imported/required on any static call path originating in the repo's own source. FIRES as an INFORMATIONAL demotion candidate — the matched CVE is present in the dependency tree but no first-party import reaches the vulnerable module. OVER-APPROXIMATES toward reachable: any uncertainty (dynamic import, plugin loader, reflective require, unresolved alias, native/FFI edge) is treated as REACHABLE and this indicator does NOT fire. Surfaces ALONGSIDE package-matches-catalogued-cve; never replaces or suppresses it.",
+          "description": "Reachability demoter — flags a matched-CVE dependency whose vulnerable module has no static import/require path from first-party source, to support RWEP triage (the runtime-presence-vs-build-only distinction the matcher does not compute). Low-confidence + non-deterministic, so a firing hit never reaches the 'detected' classification branch and cannot mute a real match; the package-matches-catalogued-cve matcher remains high-confidence on tree presence and is unchanged. Behavior note: when this fires unattested, the false-positive gate downgrades it to inconclusive, so a tree whose ONLY signal is an unreachable matched-CVE reports inconclusive rather than not_detected — the intended, correctly-surfaced reachability question.",
+          "confidence": "low",
+          "deterministic": false,
+          "attack_ref": "T1195.002",
+          "atlas_ref": "AML.T0010",
+          "false_positive_checks_required": [
+            "Over-approximate uncertain to reachable: any dynamic-import / dynamic-require / reflective or computed module load (require(variable), import(expr), importlib.import_module, __import__, entry-point/plugin discovery, dependency-injection wiring, monkeypatch) anywhere in scope means the vulnerable module reachability cannot be statically excluded — do NOT fire; treat as reachable and let the unchanged matcher stand. This is the load-bearing check: it makes the indicator demote-only-with-attestation, never mute-by-default.",
+            "Plugin-loader / framework auto-registration reachability: confirm the matched package is not loaded implicitly by a framework's convention-based discovery (webpack/vite plugin arrays, pytest entry-points, setuptools console_scripts, Spring/DI auto-wiring, eager package __init__ side effects). Do NOT fire when implicit loading is possible.",
+            "Build/dev-only carve-out: a vulnerable module reachable ONLY from devDependencies / build tooling / test harness (not bundled into and not loaded by the shipped runtime artifact) is lower-priority, but confirm it is build/dev-only by checking the dependency manifest section AND that no runtime code path imports it. Record build-dev-only=true rather than asserting full unreachability when the only reachers are build/test files.",
+            "Transitive-only relocation: when the matched package is transitive-only, confirm the first-party graph does not reach it through an intermediate direct dependency that re-exports or proxies the vulnerable symbol. Walk the effective import graph through direct deps, not just first-party files; do NOT fire when an in-path direct dependency reaches the vulnerable module."
+          ]
+        },
+        {
+          "id": "dependency-publisher-identity-change-without-capability-change",
+          "type": "behavioral_signal",
+          "value": "For any dependency present in repo-lockfiles / npm-global-packages / container-image-layers whose resolved version advanced (or whose content changed under an unchanged version string) since the last recorded inventory, compare PUBLISHER IDENTITY across the two points WITHOUT requiring any capability-surface change. PUBLISHER IDENTITY = (a) the npm/PyPI publishing account(s) / maintainer set on the package metadata, (b) the provenance/signing identity (npm --provenance OIDC subject, Sigstore certificate identity, GPG/maintainer key fingerprint), (c) the publish-source repository / CI identity in the provenance statement. FIRES when ANY of: the maintainer set gained a new or previously-unseen publisher, the sole prior maintainer was replaced (ownership handoff), the publishing account is newly-created / has no prior publish history on this package (new-author), the named maintainer account no longer resolves (non-existent-author / deleted-then-reclaimed handle), or the provenance/signing identity changed — AND the capability surface is UNCHANGED across the bump (so dependency-capability-creep-across-version-bump did not fire). The defining condition is identity discontinuity ABSENT a behavior delta: a silent ownership handoff that ships no new capability yet — the trust-establishment release that precedes a payload release (PyPI Revival Hijack / abandoned-package re-registration / account-takeover staging).",
+          "description": "Publisher-identity-change detector — flags a same-name dependency whose publishing account, maintainer set, or provenance/signing identity changed across an update while its capability surface stayed identical. Catches the account-takeover / ownership-handoff PRECURSOR that capability-creep cannot see: capability-creep only fires on a behavior delta, so a takeover release that ships no new capability (the trust-staging version before the payload version) is invisible to it. Pre-disclosure, identity-axis signal complementary to the capability, name-similarity, and resolution-source axes.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1195.001",
+          "atlas_ref": "AML.T0010",
+          "false_positive_checks_required": [
+            "Confirm the identity change is not a documented, legitimate maintainer transition: many healthy projects hand off to a new maintainer, add a co-maintainer, or migrate the org scope. Benign when the new publisher is announced in the project release notes / GOVERNANCE / README / a pinned issue AND the handoff is corroborated by the project own VCS (the new identity is an existing committer with merge rights, not an outside account). Demote to inconclusive and record the citation when the transition is publicly documented and VCS-corroborated.",
+            "Distinguish an identity-STRING change from an identity-PRINCIPAL change: npm provenance OIDC subjects, CI runner identities, and signing-key rotations change routinely on legitimate infra migrations. Demote when the underlying principal is unchanged — same GitHub org/repo as the provenance source, key rotation cross-signed by the prior key, or 2FA-enforced account simply re-issuing a token. Elevate only when the principal itself (the human/org behind the publish) changed.",
+            "Rule out first-publish / metadata-backfill noise: a package that had no prior recorded publisher in scope (first time this dependency entered the inventory) has nothing to diff against. Require a recorded prior publisher identity for this exact package before firing; demote to inconclusive when the prior-inventory identity is simply missing.",
+            "Confirm the new release publish age and cadence: a documented handoff that then publishes on the project normal cadence (not a sub-72h fresh publish, npm before=/minimumReleaseAge cooldown satisfied) is far lower risk. Demote normal-cadence post-handoff releases; ELEVATE when the identity change co-occurs with an off-cadence / sub-cooldown publish, a deleted-then-reclaimed maintainer handle, or a publishing account with zero prior history on any package.",
+            "Verify the package is actually a trust-bearing dependency in scope, not a dev/test-only artifact whose maintainer change cannot reach a runtime or build-output path. Confirm runtime or build-pipeline reachability before elevating; demote dev-only to low."
+          ]
         }
       ],
       "false_positive_profile": [
@@ -816,6 +1007,41 @@
           "indicator_id": "ai-code-no-provenance",
           "benign_pattern": "Org has documented internal commit-trailer convention (Co-Authored-By:, Generated-By:, AI-Model:) but it isn't reflected in machine-readable SBOM.",
           "distinguishing_test": "Sample 20 commits in the repo. If commit-trailer convention is consistently used, downgrade to medium and recommend SBOM integration rather than flagging absence outright."
+        },
+        {
+          "indicator_id": "dependency-capability-creep-across-version-bump",
+          "benign_pattern": "A widely-used package legitimately adds a capability in a feature release — e.g. an HTTP client adds optional HTTP/2 (new net surface), an ORM adds a CLI migration runner (new child_process), a telemetry SDK adds an opt-in exporter (new egress host). The capability is documented, the maintainer key and publish provenance are unchanged, and the release follows normal cadence.",
+          "distinguishing_test": "Pull the version release notes / CHANGELOG and the npm/PyPI provenance attestation. Benign when ALL hold: (1) the new capability is documented as an intended feature, (2) the signing/maintainer identity is unchanged across the bump, (3) provenance present-before is still present, and (4) publish age exceeds the registry-cooldown threshold (not a sub-72h fresh publish). Malicious-leaning when ANY of: capability is undocumented, maintainer key rotated, provenance regressed from present-to-absent, content changed under an unchanged version string, or the gain is credential-path reads / outbound to a never-before-seen host."
+        },
+        {
+          "indicator_id": "package-capability-creep",
+          "benign_pattern": "Native-addon and build-tooling packages (node-gyp, sass-embedded, esbuild, sharp, bcrypt, prebuild-install, electron, playwright, puppeteer) legitimately carry install-script + native-binary + (sometimes) network capability — the prebuilt-binary download is network + install-script by design.",
+          "distinguishing_test": "Cross-reference the flagged package against the operator documented build-dependency allowlist and its npm/PyPI provenance attestation. If the package is a known build/native-addon dependency AND its publisher identity matches the expected signed publisher, downgrade to medium/informational. Reserve high confidence for packages whose capability surface is unexplained by their stated function (a date-formatting utility that opens the network and reads env)."
+        },
+        {
+          "indicator_id": "dependency-name-typosquat",
+          "benign_pattern": "A short or generic package name sits within edit-distance of a popular one by coincidence (ms, qs), or the operator deliberately consumes a sanctioned near-name (an internal mirror, a scoped fork), or a legitimately non-Latin package name has no popular ASCII twin.",
+          "distinguishing_test": "Typosquat-likely only when ALL hold: the name is within edit-distance 1-2 of (or a homoglyph substitution within) a SPECIFIC high-download package it is NOT, the flagged package is far lower download/younger than that target, and it is not on the operator sanctioned-alias allowlist. Any one failing demotes to medium/informational."
+        },
+        {
+          "indicator_id": "package-content-obfuscation-screen",
+          "benign_pattern": "A front-end package ships a minified dist/ with a sourcemap or alongside readable src/; a native-addon/WASM package carries legitimate high-entropy binary blobs; an established framework uses documented dynamic require for plugin loading.",
+          "distinguishing_test": "Content-malicious-leaning only when the obfuscation co-occurs with risk: minified-only AND no sourcemap AND no readable source; OR trivial-LOC AND (install-script OR network); OR eval+dynamic-require in a fresh/low-trust package. A minified bundle WITH a sourcemap, or high-entropy in an allowlisted native-addon, or dynamic-require in a known framework, demotes to informational."
+        },
+        {
+          "indicator_id": "dependency-confusion-internal-scope-public-resolution",
+          "benign_pattern": "An org legitimately consumes a public scoped package (@types/*, @babel/*, @aws-sdk/*) that superficially resembles an internal naming convention; OR an internal scope is already correctly pinned to the private registry so the public squat cannot win resolution.",
+          "distinguishing_test": "Resolve each flagged @scope against (1) the org private-registry internal-scope list and (2) the .npmrc/.yarnrc/pip index scope-to-registry mapping. Dependency-confusion-exposed only when ALL hold: the scope is an internal namespace, a same-name private package exists, the scope is NOT pinned to the private registry, and the lockfile resolved host is the public registry. If any fails, downgrade to medium/informational."
+        },
+        {
+          "indicator_id": "dependency-cve-unreachable",
+          "benign_pattern": "A matched CVE whose vulnerable module IS reached — directly imported, loaded by a framework plugin convention, pulled in by a direct dependency that re-exports it, or reachable through a dynamic/reflective import the static walk cannot exclude.",
+          "distinguishing_test": "Likely-unreachable (demote the match in RWEP triage) ONLY when ALL hold: a cve-reachability-surface walk ran, no first-party static import path reaches the vulnerable module, no dynamic/plugin/reflective edge introduces uncertainty, and no in-path direct dependency re-exports the vulnerable symbol. Any uncertainty -> reachable -> do not fire. Reachable or uncertain demotes this indicator to a miss and leaves package-matches-catalogued-cve standing at high confidence."
+        },
+        {
+          "indicator_id": "dependency-publisher-identity-change-without-capability-change",
+          "benign_pattern": "A healthy open-source project legitimately transitions maintainers, adds a co-maintainer, migrates its org scope, or rotates its signing key / CI provenance identity on a scheduled infra change. The new publisher is an existing committer, the handoff is announced, and releases continue on normal cadence with no new capability and no off-cadence fresh publish.",
+          "distinguishing_test": "Takeover-precursor-leaning only when ALL hold: a recorded prior publisher identity existed for this exact package, the new publishing principal (not merely an OIDC-subject/CI string) differs, the transition is NOT documented in the project release notes/governance and NOT corroborated by the VCS committer history, and the identity change co-occurs with at least one of {off-cadence or sub-cooldown fresh publish, a deleted-then-reclaimed maintainer handle, a zero-history publishing account, an abandoned/revived package}. A documented, VCS-corroborated, normal-cadence handoff with no capability change demotes to informational."
         }
       ],
       "minimum_signal": {
@@ -1036,6 +1262,11 @@
             "operator_authorized_for_package_upgrade == true"
           ],
           "priority": 1,
+          "for_signals": [
+            "package-matches-catalogued-cve",
+            "kev-listed-match",
+            "windsurf-vulnerable-version"
+          ],
           "compensating_controls": [
             "restart_affected_services_post_upgrade",
             "regression_test_post_upgrade"
@@ -1049,6 +1280,9 @@
             "ci_pipeline_modifiable == true"
           ],
           "priority": 2,
+          "for_signals": [
+            "lockfile-no-integrity"
+          ],
           "compensating_controls": [
             "lockfile_review_in_pr_template"
           ],
@@ -1073,6 +1307,9 @@
             "sbom_tooling_supports_transitive == true"
           ],
           "priority": 4,
+          "for_signals": [
+            "transitive-deps-incomplete-sbom"
+          ],
           "compensating_controls": [
             "sbom_completeness_gate_in_ci"
           ],
@@ -1085,6 +1322,9 @@
             "security_team_capacity_for_vex == true"
           ],
           "priority": 5,
+          "for_signals": [
+            "matched-cve-without-vex"
+          ],
           "compensating_controls": [
             "vex_template_in_security_playbook"
           ],
@@ -1098,6 +1338,9 @@
             "ci_or_pre-commit_modifiable == true"
           ],
           "priority": 6,
+          "for_signals": [
+            "ai-code-no-provenance"
+          ],
           "compensating_controls": [
             "pr_review_for_ai_emitted_code",
             "ai_code_review_checklist"
@@ -1111,6 +1354,9 @@
             "ml_loader_modifiable == true OR ml_inference_pipeline_owned == true"
           ],
           "priority": 7,
+          "for_signals": [
+            "model-weight-unsigned-and-executable-format"
+          ],
           "compensating_controls": [
             "model_inventory_review",
             "non-safetensors_models_quarantined"

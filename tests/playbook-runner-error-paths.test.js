@@ -24,7 +24,7 @@
  *   HH P1-1  release.yml declares a top-level permissions: block.
  *   HH P1-2  refresh.yml declares a top-level permissions: block.
  *
- * Per CLAUDE.md: each assertion checks the EXACT condition the fix produces.
+ * Per the anti-coincidence rule: each assertion checks the EXACT condition the fix produces.
  * No assert.notEqual(0) / assert.ok(field) coincidence-passers.
  */
 
@@ -284,7 +284,7 @@ test('DD P1-1: cross-ref-api cache invalidates when source file mtime changes', 
 test('persistAttestation lock MAX_RETRIES is bounded to 10 (was 50)', () => {
   // The lock body uses `const MAX_RETRIES = 10;` inside the persistAttestation
   // function. Anchor on the function name itself rather than a slot-token
-  // comment ("DD P1-2") — those comments are operator-noise per CLAUDE.md
+  // comment ("DD P1-2") — those comments are operator-noise per the operator-facing rule
   // and may be cleaned up by future rewrites, while the function name is
   // a stable structural landmark.
   const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
@@ -293,10 +293,11 @@ test('persistAttestation lock MAX_RETRIES is bounded to 10 (was 50)', () => {
   // the test resilient to any cosmetic comment churn around the bound.
   const persistIdx = src.indexOf('function persistAttestation(');
   assert.notEqual(persistIdx, -1, 'persistAttestation function must exist in bin/exceptd.js'); // allow-notEqual: refusal-pin (indexOf returns -1 for missing; structural existence check)
-  // Search within ~6000 chars of the function body — generous enough for
-  // the lock block to relocate but tight enough to refuse a stray match
-  // from a sibling function. The lock block sits well inside this window.
-  const window = src.slice(persistIdx, persistIdx + 6000);
+  // Search within ~9000 chars of the function body — widened after the
+  // atomic-write refactor grew the writeAttestation closure (which precedes
+  // the force-overwrite lock block). Still tight enough to refuse a stray
+  // match from a sibling function.
+  const window = src.slice(persistIdx, persistIdx + 9000);
   const match = window.match(/const MAX_RETRIES = (\d+);/);
   assert.ok(match, 'persistAttestation body must declare a MAX_RETRIES bound');
   assert.equal(Number(match[1]), 10,

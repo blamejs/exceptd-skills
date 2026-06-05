@@ -14,7 +14,7 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/blamejs/exceptd-skills/ci.yml?branch=main&label=CI)](https://github.com/blamejs/exceptd-skills/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/blamejs/exceptd-skills/badge)](https://scorecard.dev/viewer/?uri=github.com/blamejs/exceptd-skills)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
-[![Skills](https://img.shields.io/badge/skills-42-d946ef)](#skill-inventory)
+[![Skills](https://img.shields.io/badge/skills-51-d946ef)](#skill-inventory)
 [![ATLAS](https://img.shields.io/badge/MITRE%20ATLAS-v5.6.0-d946ef)](https://atlas.mitre.org)
 [![ATT&CK](https://img.shields.io/badge/MITRE%20ATT%26CK-v19.0-d946ef)](https://attack.mitre.org)
 [![Ed25519-signed](https://img.shields.io/badge/skills-Ed25519--signed-2ea043)](AGENTS.md)
@@ -30,7 +30,7 @@ This platform surfaces what is actually happening right now. Every skill explici
 
 ## Status
 
-Pre-1.0. Latest release lives on [GitHub Releases](https://github.com/blamejs/exceptd-skills/releases) and on npm as [`@blamejs/exceptd-skills`](https://www.npmjs.com/package/@blamejs/exceptd-skills) with signed npm provenance attestation and Ed25519-signed skill bodies. The package ships 42 skills across kernel LPE, MCP supply chain, AI-as-C2, prompt injection, post-quantum crypto, SBOM integrity, identity-incident response, and 35 other AI/security domains, plus 10 intelligence catalogs (CVE / ATLAS / ATT&CK / CWE / D3FEND / DLP / RFC / framework gaps / global frameworks / zero-day lessons) covering 35 jurisdictions — the CVE catalog grew from 68 to 312 entries in v0.13.17 via a CISA KEV bulk-intake of `dateAdded >= 2024-01-01` actively-exploited vulnerabilities. 23 investigation playbooks (kernel, MCP, AI-API, framework, SBOM, runtime, hardening, secrets, cred-stores, containers, crypto, plus `webhook-callback-abuse`, `cicd-pipeline-compromise`, `identity-sso-compromise`, `llm-tool-use-exfil`, `post-quantum-migration`, `ai-discovered-cve-triage`, `supply-chain-recovery`, and more), a CLI for discovery and seven-phase investigation runs (`govern → direct → look → detect → analyze → validate → close`), and a nightly auto-refresh job that pulls KEV / NVD / EPSS / GHSA / OSV / IETF deltas plus 15 primary-source advisory + research-blog + tech-press feeds (Qualys TRU, Red Hat RHSA, Ubuntu USN, ZDI, kernel.org, oss-security, JFrog, CISA, Microsoft Security Blog, Sysdig, Trail of Bits, Embrace the Red, BleepingComputer security, The Hacker News, and a GitHub public-events tracker for the Nightmare-Eclipse researcher handle that anchors NEW-CTRL-073) into auto-PRs for editorial review. v0.13.17 also ships `lib/cve-regression-watcher.js` (NEW-CTRL-074) — a complementary detection method that surfaces poller-diff historical-CVE references as candidate silent-regression cases, the class anchored by MiniPlasma (a 2026 PoC drop that re-broke CVE-2020-17103 without any new ID being assigned).
+Pre-1.0. Latest release lives on [GitHub Releases](https://github.com/blamejs/exceptd-skills/releases) and on npm as [`@blamejs/exceptd-skills`](https://www.npmjs.com/package/@blamejs/exceptd-skills) with signed npm provenance attestation and Ed25519-signed skill bodies. The package ships 51 skills across kernel LPE, MCP supply chain, AI-as-C2, prompt injection, post-quantum crypto, SBOM integrity, identity-incident response, and 35 other AI/security domains, plus 11 intelligence catalogs (CVE / ATLAS / ATT&CK / CWE / D3FEND / DLP / RFC / framework gaps / global frameworks / zero-day lessons / exploit availability) covering 35 jurisdictions; the CVE catalog holds 439 actively-exploited and high-priority entries, each carrying behavioral indicators, an ATT&CK technique mapping, and a defense-chain zero-day lesson. 33 investigation playbooks (kernel, MCP, AI-API, framework, SBOM, runtime, hardening, secrets, cred-stores, containers, crypto, plus `webhook-callback-abuse`, `cicd-pipeline-compromise`, `identity-sso-compromise`, `llm-tool-use-exfil`, `post-quantum-migration`, `ai-discovered-cve-triage`, `supply-chain-recovery`, `citation-hygiene`, `vc-wallet-trust`, `mail-server-hardening`, `network-trust`, `audit-log-integrity`, `self-update-integrity`, `multitenancy-isolation`, `decompression-dos`, `log-injection-telemetry`, `privacy-consent-ops`, and more), a CLI for discovery and investigation built around `discover → brief → run → attest` (each run executes the playbook's seven-phase contract), and a nightly auto-refresh job that pulls KEV / NVD / EPSS / GHSA / OSV / IETF deltas plus 15 primary-source advisory, research-blog, and tech-press feeds (Qualys TRU, Red Hat RHSA, Ubuntu USN, ZDI, kernel.org, oss-security, JFrog, CISA, Microsoft Security Blog, Sysdig, Trail of Bits, Embrace the Red, BleepingComputer security, and The Hacker News) into auto-PRs for editorial review, alongside a silent-regression watcher that flags historical CVEs re-broken without a new identifier.
 
 ---
 
@@ -116,7 +116,7 @@ npx @blamejs/exceptd-skills path
 That prints the absolute path of the installed package. Point your AI assistant at:
 
 - `<path>/AGENTS.md` — canonical project rules + ground truth for every skill
-- `<path>/data/_indexes/summary-cards.json` — 100-word abstract per skill (12 KB)
+- `<path>/data/_indexes/summary-cards.json` — 100-word abstract per skill (~95 KB)
 - `<path>/data/_indexes/recipes.json` — curated multi-skill chains for common use cases
 
 No clone, no signing keys, no Node 24 required for assistants that read directly from disk. If your assistant needs a local copy as a regular checkout, use `npx degit blamejs/exceptd-skills my-skills` instead.
@@ -144,7 +144,7 @@ exceptd help
 First run — verify the signing chain and pin the public-key fingerprint for out-of-band checks:
 
 ```bash
-exceptd doctor --signatures            # verify Ed25519 chains (42/42 expected)
+exceptd doctor --signatures            # verify Ed25519 chains (51/51 expected)
 cat $(exceptd path)/keys/EXPECTED_FINGERPRINT   # pin fingerprint for OOB verify
 ```
 
@@ -154,7 +154,7 @@ Air-gapped operation: run `exceptd refresh --prefetch` on a connected host, copy
 
 Fresh-disclosure workflow (v0.12.0): the nightly auto-PR job pulls KEV / NVD / EPSS / IETF / **GHSA** (added in v0.12.0) / **OSV** (added in v0.12.10). KEV typically takes days; NVD ~10 days; GHSA fires within hours of disclosure and covers npm + PyPI + Maven + Go + NuGet + …; OSV aggregates the OSSF Malicious Packages dataset (`MAL-*` keys) + Snyk + RustSec + Mageia + Ubuntu USN + Go Vuln DB + PYSEC + UVI on top of GHSA — useful for malicious-package compromises that don't have CVEs yet (`exceptd refresh --advisory MAL-2026-3083`). New IDs land as drafts (`_auto_imported: true`, `_draft: true`) that the catalog validator treats as warnings, not errors — operators get the fresh entry immediately, editorial review (framework gaps, IoCs, ATLAS/ATT&CK refs) follows via `exceptd refresh --curate <ID>`. For "I want this advisory today, not tomorrow": `exceptd refresh --advisory <CVE-or-GHSA-or-MAL-or-SNYK-or-RUSTSEC-ID> --apply`.
 
-Primary-source advisory polling: `exceptd refresh --check-advisories` polls 15 vendor and coordinated-disclosure feeds — 8 advisory/coordinated-disclosure venues (Qualys TRU, Red Hat RHSA, Ubuntu USN, Zero Day Initiative, kernel.org commits, oss-security mailing list, JFrog SecOps, CISA current advisories), 4 vendor security research blogs added in v0.13.14 (Microsoft Security Blog, Sysdig, Trail of Bits, Embrace the Red), and 3 additions in v0.13.17 (BleepingComputer security, The Hacker News, and a GitHub public-events tracker for the Nightmare-Eclipse researcher handle that anchors NEW-CTRL-073). Combined coverage publishes CVE IDs at T+0 to T+1 — typically 3–14 days ahead of NVD enrichment. The command is report-only: it returns a structured `diffs[]` listing each newly-seen CVE ID with its source attributions and advisory URLs, but does not mutate the catalog. v0.13.17 also adds a complementary detection method (NEW-CTRL-074 / `lib/cve-regression-watcher.js`): the watcher cross-checks poller diffs for historical-CVE references (year ≤ currentYear − 2) and surfaces candidate silent-regression cases — the class anchored by MiniPlasma (a 2026 PoC drop that re-broke CVE-2020-17103 without any new ID being assigned). Operators triage the output and route promising IDs through `exceptd refresh --advisory <CVE-ID> --apply`. Pairs naturally with the daily scheduled remote agent below.
+Primary-source advisory polling: `exceptd refresh --check-advisories` polls 15 vendor and coordinated-disclosure feeds — 8 advisory/coordinated-disclosure venues (Qualys TRU, Red Hat RHSA, Ubuntu USN, Zero Day Initiative, kernel.org commits, oss-security mailing list, JFrog SecOps, CISA current advisories), 4 vendor security research blogs (Microsoft Security Blog, Sysdig, Trail of Bits, Embrace the Red), and 3 more (BleepingComputer security, The Hacker News, and a researcher activity-feed tracker). Combined coverage publishes CVE IDs at T+0 to T+1 — typically 3–14 days ahead of NVD enrichment. The command is report-only: it returns a structured `diffs[]` listing each newly-seen CVE ID with its source attributions and advisory URLs, but does not mutate the catalog. A complementary silent-regression watcher (`lib/cve-regression-watcher.js`) cross-checks poller diffs for historical-CVE references (year ≤ currentYear − 2) and surfaces candidate silent-regression cases — historical CVEs re-broken by a new proof-of-concept without a new ID being assigned. Operators triage the output and route promising IDs through `exceptd refresh --advisory <CVE-ID> --apply`. Pairs naturally with the daily scheduled remote agent below.
 
 CVE-class alert surfacing: `exceptd watchlist --alerts` matches the live `cve-catalog.json` against five operational patterns (`kernel_lpe_with_poc`, `supply_chain_family`, `ai_discovered_kev`, `active_exploitation_unpatched`, `recent_poc_no_kev_yet`) and returns the matches sorted critical-severity-first, then by RWEP. Use as a fast operational triage on a refreshed catalog without scanning every entry by hand.
 
@@ -162,7 +162,7 @@ GitHub repo-pattern monitoring: `exceptd watchlist --org-scan --org <login>` pro
 
 AI-assistant config-file audit: `exceptd doctor --ai-config` walks `~/.claude`, `~/.cursor`, `~/.codeium`, `~/.aider`, and `~/.continue`, flagging sensitive files (`settings.json`, `mcp.json`, `*.mcp_config.json`, `api_key*`, `*.token`, `*.credentials`) not at mode 0600 on POSIX. On Windows the mode bits aren't load-bearing; each finding is surfaced with an info-level "manual ACL review" note. Catches the AI-config-credential-exfil class that the Shai-Hulud framework targets. Opt-in — does not run as part of the default no-flag `doctor` pass.
 
-Evidence-collection layer: `exceptd collect <playbook>` invokes a companion script under `lib/collectors/<playbook>.js` that walks cwd, applies the catalogued regex set, stats permissions, and emits the submission JSON in the same shape `exceptd run --evidence -` accepts. 13 of 23 playbooks have collectors today (`ai-api`, `cicd-pipeline-compromise`, `containers`, `cred-stores`, `crypto`, `crypto-codebase`, `hardening`, `kernel`, `library-author`, `mcp`, `runtime`, `sbom`, `secrets`); the remaining 10 are policy-skipped per AGENTS.md (judgement-shaped incident / governance / pure-analyze playbooks where AI-driven evidence collection is the design). Canonical operator pipe: `exceptd collect <pb> | exceptd run <pb> --evidence -`. `exceptd doctor --collectors` enumerates the layer; `exceptd discover` tags applicable playbooks with `[collector]` when one ships. `cicd-pipeline-compromise` requires `--attest-ownership` on the collect call (the playbook's `operator-owns-ci-fleet` precondition is opt-in to prevent unauthorized CI assessments).
+Evidence-collection layer: `exceptd collect <playbook>` invokes a companion script under `lib/collectors/<playbook>.js` that walks cwd, applies the catalogued regex set, stats permissions, and emits the submission JSON in the same shape `exceptd run --evidence -` accepts. 14 of 33 playbooks have collectors today (`ai-api`, `cicd-pipeline-compromise`, `citation-hygiene`, `containers`, `cred-stores`, `crypto`, `crypto-codebase`, `hardening`, `kernel`, `library-author`, `mcp`, `runtime`, `sbom`, `secrets`); the remaining 19 are policy-skipped per AGENTS.md (judgement-shaped incident / governance / pure-analyze playbooks where AI-driven evidence collection is the design). Canonical operator pipe: `exceptd collect <pb> | exceptd run <pb> --evidence -`. `exceptd doctor --collectors` enumerates the layer; `exceptd discover` tags applicable playbooks with `[collector]` when one ships. `cicd-pipeline-compromise` requires `--attest-ownership` on the collect call (the playbook's `operator-owns-ci-fleet` precondition is opt-in to prevent unauthorized CI assessments).
 
 Daily scheduled threat intake: a `routine: exceptd-threat-intake` (claude.ai remote agent) runs daily at 14:00 UTC. Sequence: `npm install` → `refresh --check-advisories` → `watchlist --alerts` → `refresh --apply` → `refresh --advisory <CVE-ID>` for up to 5 new CVE IDs from the primary-source feeds → re-sign + rebuild-indexes if the catalog mutated → commit on `intake/<YYYY-MM-DD>` branch with the full diff in the report. Closes the cadence gap that previously left fresh disclosures dependent on operator-triggered intake. Operator-managed at <https://claude.ai/code/routines>.
 
@@ -281,7 +281,7 @@ exceptd collect <playbook>            Walk cwd + invoke the companion collector
                                       under lib/collectors/<playbook>.js. Emits
                                       a submission JSON ready to pipe into
                                       `exceptd run <playbook> --evidence -`.
-                                      13/23 playbooks have collectors; the rest
+                                      14/33 playbooks have collectors; the rest
                                       are AI-driven by design (incident /
                                       governance / pure-analyze — see
                                       AGENTS.md).
@@ -329,9 +329,27 @@ exceptd doctor                        One-shot health check.
                                       note for each sensitive file on Windows.
                                       Opt-in; not part of the default doctor
                                       pass.
+  --fix                               Auto-remediate signing gaps: regenerate
+                                      the local Ed25519 private key when
+                                      keys/public.pem exists but .keys/private.pem
+                                      is absent. No-op when the key is present.
+  --registry-check                    Probe the npm registry for the latest
+                                      published version + days-since-publish.
+                                      Off by default; --air-gap suppresses it.
+  --collectors                        Enumerate the per-playbook collector layer:
+                                      which playbooks ship a collector, which are
+                                      policy-skipped, and which are unwired.
+  --shipped-tarball                   Run the pack + extract + verify round-trip
+                                      against the tarball operators receive, not
+                                      just the source tree.
+  --exit-codes                        Print the canonical exit-code table as
+                                      JSON for CI / scripting consumers.
 
-exceptd ci                            One-shot CI gate. Exits 2 on detected or
-                                      rwep ≥ rwep_threshold.escalate.
+exceptd ci                            One-shot CI gate. Exit codes: 0 PASS,
+                                      1 framework error, 2 detected/escalate
+                                      (or rwep ≥ rwep_threshold.escalate),
+                                      3 ran-but-no-evidence, 4 blocked
+                                      (ok:false), 5 jurisdiction clock started.
   --all | --scope <type>              Pick playbooks; auto-detect if neither.
   --max-rwep <n>                      Cap below playbook default.
   --block-on-jurisdiction-clock       Fail when notification clock fires.
@@ -341,17 +359,57 @@ exceptd ask "<question>"              Plain-English routing to playbook(s).
                                       Returns ranked playbook IDs based on
                                       keyword overlap with each playbook's
                                       domain.name + attack_class + threat_context.
+                                      A question in a domain covered by a skill
+                                      rather than a playbook (email-auth, child
+                                      safety, HIPAA, DLP) surfaces the skill.
+
+exceptd recipes [<id>]                List the curated multi-skill workflows;
+                                      `recipes <id>` expands one into its
+                                      ordered skill chain.
 
 exceptd lint <pb> <evidence>          Pre-flight check submission shape vs
                                       playbook (preconditions / artifacts /
                                       indicators) without executing phases 4-7.
 
+exceptd cve <CVE-ID>                  Resolve one CVE citation → status
+                                      (published / rejected / disputed /
+                                      fabricated / nonexistent / unknown) plus
+                                      cvss / kev / product. Order: curated
+                                      catalog (offline) → resolved cache
+                                      (7-day TTL, warmed by a prior lookup) →
+                                      one NVD lookup, then cached. Lets a
+                                      fan-out of agents share one answer
+                                      instead of each researching the same id.
+  --air-gap | --no-network            Offline-only (also EXCEPTD_AIR_GAP=1).
+                                      Returns unknown + a reason when the id
+                                      isn't in catalog/cache.
+  --json | --pretty                   Machine output.
+                                      Exit 2 when the citation won't stand up
+                                      (rejected / fabricated / nonexistent /
+                                      withdrawn).
+
+exceptd rfc <number>                  Resolve an RFC number → title + status
+                                      from the local index (whole current
+                                      series, fully offline).
+  --check "<title>"                   Report title_match true/false; exit 2 on
+                                      mismatch (e.g. RFC 9404 cited as the
+                                      Sieve spec — it's JMAP Blob Management).
+  --air-gap                           Offline-only. Not-found numbers are
+                                      likely obsoleted/historic or nonexistent;
+                                      with network it disambiguates via the
+                                      datatracker.
+  --json | --pretty                   Machine output.
+
 exceptd refresh                       Refresh upstream catalogs + indexes.
                                       Replaces prefetch + refresh + build-indexes.
   --apply                             Write diffs back + rebuild indexes.
   --from-cache [<dir>]                Read from prefetch cache.
-  --prefetch                          Populate the offline cache (alias for
-                                      --no-network).
+  --prefetch                          Warm the offline cache by fetching every
+                                      upstream artifact now (network required).
+                                      Run on a connected host, then point
+                                      --from-cache at the result on the air-gap.
+  --no-network                        Report-only dry-run: list what would be
+                                      fetched without touching the network.
   --network                           (v0.11.14) Fetch latest signed catalog
                                       snapshot from npm tarball, verify against
                                       local public.pem, swap data/ in place.
@@ -368,7 +426,7 @@ exceptd refresh                       Refresh upstream catalogs + indexes.
                                       advisories, Microsoft Security Blog,
                                       Sysdig, Trail of Bits, Embrace the Red,
                                       BleepingComputer, The Hacker News,
-                                      Nightmare-Eclipse GitHub tracker) for
+                                      researcher activity-feed tracker) for
                                       CVE IDs disclosed at T+0 to T+1 —
                                       days ahead of NVD enrichment.
                                       Report-only: emits structured diffs[]
@@ -387,7 +445,8 @@ gaps, IoCs, ATLAS/ATT&CK refs) is still required.
 
 exceptd watchlist                     Default mode: aggregate every skill's
                                       forward_watch entries (upcoming standards,
-                                      RFC publications, new TTPs to monitor).
+                                      RFC publications, new TTPs to monitor) in
+                                      one shot.
                                       `--by-skill` inverts the grouping.
   --alerts                            Switch to CVE-catalog pattern alerts.
                                       Five patterns ship:
@@ -416,14 +475,28 @@ exceptd watchlist                     Default mode: aggregate every skill's
                                       limit; without it, public-repo search
                                       only.
 
+exceptd watch                         Long-running forward-watch daemon. Blocks
+                                      and listens for KEV additions, ATLAS
+                                      updates, CVE drops, and framework
+                                      amendments, with scheduled currency /
+                                      validation checks. Ctrl-C (or SIGTERM /
+                                      SIGHUP / SIGBREAK) to stop. For one-shot
+                                      aggregation, pattern alerts, or org-scan,
+                                      use `exceptd watchlist`.
+
 exceptd skill <name>                  Show context for one skill.
 exceptd framework-gap <FW> <ref>      One framework + one CVE/scenario, JSON
                                       or human. (Operates outside the seven-
                                       phase contract for ad-hoc gap analysis.)
+exceptd report [executive]            Structured posture report. Bare `report`
+                                      emits the full posture; the optional
+                                      `executive` argument emits the
+                                      executive-summary view.
 exceptd path                          Absolute path to the installed package.
 exceptd version                       Package version.
 exceptd help                          This help.
-exceptd <verb> --help                 Per-verb usage with flag descriptions.
+exceptd <verb> --help                 Most verbs print per-verb usage with flag
+                                      descriptions.
 ```
 
 ### Legacy v0.10.x verbs
@@ -484,13 +557,13 @@ Every `run` (and every per-playbook result inside a `ci` body) hoists the headli
 | `precondition_check_source` | object | Per-precondition: `submission` / `runOpts` / `merged` |
 | `phases` | object | Full per-phase outputs — `govern`, `direct`, `look`, `detect`, `analyze`, `validate`, `close` |
 
-On a blocked result (preflight halt, missing precondition), `ok` is `false` and the envelope additionally carries `blocked_by` / `reason` / `remediation` / `phase: 'preflight'` / `verdict: 'blocked'`. `evidence_completeness` reports `not-evaluated`.
+On a blocked result (preflight halt, missing precondition), `ok` is `false` and the envelope additionally carries `blocked_by` / `reason` / `remediation` / `phase: 'preflight'` / `verdict: 'blocked'`. `evidence_completeness` reports `not-evaluated`. In default human output a blocked result renders as a one-line `[blocked]` summary with the reason and a next step; `--json` / `--pretty` return the full envelope.
 
 ### Default terminal output vs `--json` / `--pretty`
 
 By default `ci`, `run`, `attest verify`, `attest diff`, and `discover` emit a human-readable digest at the terminal — verdict line, per-playbook table (for `ci`), next-step block keyed on verdict (BLOCKED → `exceptd lint <pb> -`; NO_EVIDENCE → lint + `--evidence-dir`; FAIL → `--format markdown` / `--format csaf-2.0` per detected playbook; CLOCK_STARTED → CSAF advisory), pending jurisdiction obligations grouped by `clock_start_event`, deduped session warnings, framework-gap rollup.
 
-Pass `--json` (compact) or `--pretty` (indented) to reach the structured envelope when automating. Setting `EXCEPTD_RAW_JSON=1` in the environment has the same effect.
+Pass `--json` (compact) or `--pretty` (indented) to reach the structured envelope when automating. Setting `EXCEPTD_RAW_JSON=1` in the environment has the same effect. `--quiet` keeps human output but drops advisory stderr notes (and the deprecation / unsigned-attestation banners) so `run … 2>&1 | jq` stays clean; `--json-stdout-only` goes further and silences all stderr.
 
 ## Invoking a skill from your AI assistant
 
@@ -536,7 +609,7 @@ If your tool has a conventional auto-load filename not listed here and you'd lik
 - **`theater-fingerprints.json`** — structured records for the 7 compliance theater patterns: claim, audit evidence, reality, fast detection test, controls implicated.
 - **`_meta.json`** — sha256 of every source file. The `validate-indexes` predeploy gate fails if any source changed after the last build; `build-indexes --changed` reads this to know what to rebuild.
 
-Regenerate with `exceptd build-indexes` (full) or `exceptd build-indexes --changed --parallel` (incremental).
+Regenerate with `exceptd refresh --indexes-only`.
 
 ## For skill authors — `agents/`
 
@@ -545,6 +618,8 @@ The `agents/` directory ships markdown role cards documenting authoring conventi
 ## Data catalogs
 
 All skills pull from `data/`. Cross-validated against canonical upstream sources via `exceptd refresh` / `exceptd doctor --cves` / `exceptd doctor --rfcs`.
+
+To resolve a single citation rather than refresh the whole catalog, `exceptd cve <CVE-ID>` and `exceptd rfc <number>` return a status verdict for one id (catalog → resolved cache → one NVD / datatracker lookup, offline-capable). The lookup caches, so a fan-out of agents shares the answer instead of each independently re-researching the same citation.
 
 - `cve-catalog.json` — CVE metadata with RWEP scores, CISA KEV status, PoC availability, live-patch info
 - `atlas-ttps.json` — MITRE ATLAS v5.6.0 TTPs with gap flags and exploitation examples. Each TTP now carries a `cve_refs[]` back-edge — operators reading an ATLAS entry see the catalogued CVEs that cite it without grepping `cve-catalog.json`. The same back-edge is populated on `attack-techniques.json`, and each playbook carries a `_meta.fed_by[]` reverse field naming the upstream playbooks that chain into it.

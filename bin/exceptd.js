@@ -28,13 +28,10 @@
  * Seven-phase playbook contract (govern → direct → look → detect →
  * analyze → validate → close):
  *
- *   plan                  List playbooks + directives for session planning.
- *   govern <playbook>     Phase 1: load GRC context.
- *   direct <playbook>     Phase 2: scope the investigation.
- *   look <playbook>       Phase 3: emit artifact-collection spec for agent.
+ *   brief [--all]         Phases 1-3 (govern/direct/look) in one info doc.
+ *     <playbook>          Add --phase govern|direct|look for a single phase.
  *   run <playbook>        Phases 4-7 (detect/analyze/validate/close) from
  *                         agent submission JSON.
- *   ingest                Alias for `run` matching AGENTS.md terminology.
  *   reattest <session>    Re-run a prior session and diff evidence_hash.
  *
  *   help, --help, -h      This help.
@@ -65,7 +62,18 @@ const PKG_ROOT = path.resolve(__dirname, "..");
 // behavior share the same source of truth.
 const { EXIT_CODES, listExitCodes } = require(path.join(PKG_ROOT, "lib", "exit-codes.js"));
 const { validateIdComponent } = require(path.join(PKG_ROOT, "lib", "id-validation.js"));
-const { suggestFlag, flagsFor } = require(path.join(PKG_ROOT, "lib", "flag-suggest.js"));
+const { suggestFlag, flagsFor, VERB_FLAG_ALLOWLIST } = require(path.join(PKG_ROOT, "lib", "flag-suggest.js"));
+const codepointClass = require(path.join(PKG_ROOT, "vendor", "blamejs", "codepoint-class.js"));
+
+// Union of every flag known to ANY verb. A flag that is valid somewhere but
+// not on the active verb (e.g. `--csaf-status` on `brief`) is cross-verb
+// misuse, not a typo — it falls through to the verb handler, which emits a
+// tailored "that flag belongs on a run-class verb" message. Only a flag that
+// is unknown EVERYWHERE is refused outright as a typo/garbage at the
+// dispatcher. Kept module-scope so it is computed once.
+const ALL_KNOWN_FLAGS = new Set(
+  Object.values(VERB_FLAG_ALLOWLIST).flat()
+);
 
 /**
  * Factor the EXPECTED_FINGERPRINT pin check used by
@@ -144,13 +152,12 @@ const COMMANDS = {
   watch:           () => path.join(PKG_ROOT, "orchestrator", "index.js"),
   "framework-gap": () => path.join(PKG_ROOT, "orchestrator", "index.js"),
   "framework-gap-analysis": () => path.join(PKG_ROOT, "orchestrator", "index.js"),
+  // Citation resolvers — answer "is this CVE/RFC citation valid?" offline-first
+  // (catalog/index -> resolved cache -> opt-in single network lookup, cached).
+  cve:             () => path.join(PKG_ROOT, "lib", "cve-cli.js"),
+  rfc:             () => path.join(PKG_ROOT, "lib", "rfc-cli.js"),
   // Seven-phase playbook verbs — handled in-process via lib/playbook-runner.js.
-  plan:     null,
-  govern:   null,
-  direct:   null,
-  look:     null,
   run:      null,
-  ingest:   null,
   reattest: null,
 };
 
@@ -160,7 +167,7 @@ const ORCHESTRATOR_PASSTHROUGH = new Set([
   "framework-gap", "framework-gap-analysis",
 ]);
 
-// Cycle 17 P2 S13 (v0.12.37): Levenshtein-1 did-you-mean for unknown verbs.
+// Levenshtein-1 did-you-mean for unknown verbs.
 // Catches common single-char / transposition typos against the COMMANDS
 // table without false-positive flood: only suggests verbs within distance
 // 1 (one insert / delete / substitute / transpose). For typed-distance 2+
@@ -218,7 +225,7 @@ function suggestVerb(cmd, known) {
 const PLAYBOOK_VERBS = new Set([
   "brief", "run", "ai-run", "attest", "discover", "doctor", "ci", "ask",
   "verify-attestation", "run-all", "lint", "collect",
-  "reattest", "list-attestations",
+  "reattest", "list-attestations", "recipes",
 ]);
 
 // v0.13.0: hard-removed legacy verbs. The dispatcher refuses the verb
@@ -354,6 +361,19 @@ function printHelp() {
 Usage: exceptd <command> [args]
        npx @blamejs/exceptd-skills <command> [args]
 
+Quick start
+───────────
+
+  New here? These three cover most workflows:
+
+    exceptd discover            Scan this directory; list the playbooks that apply.
+    exceptd brief <playbook>    What a playbook checks — threat context + indicators.
+    exceptd run <playbook>      Investigate it (add --ci for a pass/fail exit gate).
+
+  Not sure which playbook fits? Describe the problem in plain language:
+
+    exceptd ask "someone may have tampered with our npm packages"
+
 Canonical verbs
 ───────────────
 
@@ -363,6 +383,7 @@ Canonical verbs
                              --all                  every playbook
                              --scope <type>         system | code | service | cross-cutting
                              --directives           expand directive metadata
+                             --flat                 ungrouped list (omit scope grouping)
                              --phase <name>         emit only one phase (legacy compat)
 
   run [playbook]             Phases 4-7. Auto-detects cwd context when no
@@ -371,7 +392,7 @@ Canonical verbs
                              --evidence <file|->    flat or nested submission
                              --evidence-dir <dir>   per-playbook submission files
                              --vex <file>           CycloneDX / OpenVEX filter
-                             --format <fmt> ...     csaf-2.0 | sarif | openvex | markdown | summary
+                             --format <fmt> ...     csaf-2.0 | sarif | openvex | markdown | summary | json
                              --diff-from-latest     drift vs prior attestation
                              --ci                   exit-code gate (use \`exceptd ci\` instead)
                              --operator <name>      bind attestation to identity
@@ -394,7 +415,10 @@ Canonical verbs
                              attest list          inventory all sessions
                              attest export        redacted bundle (--format csaf)
                              attest verify        Ed25519 signature check
+                                                  (--require-signed: unsigned → exit 1)
                              attest diff          drift vs prior or --against <other-sid>
+                             attest prune         GC: delete sessions older than
+                                                  --all-older-than <ISO> (--dry-run to preview)
 
   discover                   Scan cwd → recommend playbooks. Replaces scan + dispatch.
 
@@ -408,13 +432,14 @@ Canonical verbs
                              2 detected/escalate, 3 ran-but-no-evidence,
                              4 blocked (ok:false), 5 jurisdiction clock started.
                              (Codes 6/7/8/9 surface on attest verify / run /
-                             ai-run / ingest, not ci.)
+                             ai-run, not ci.)
                              --all | --scope <type> | (auto-detect)
                              --max-rwep <n>         cap below playbook default
                              --block-on-jurisdiction-clock
                              --evidence-dir <dir>
 
   ask "<question>"           Plain-English routing to playbook(s).
+  recipes [<id>]             List curated multi-skill workflows (or expand one).
 
   lint <pb> <evidence>       Pre-flight check submission shape vs playbook
                              (preconditions / artifacts / indicators) without
@@ -423,8 +448,20 @@ Canonical verbs
   verify-attestation <sid>   Alias for \`attest verify\`.
   run-all                    Alias for \`run --all\`.
 
+  cve <CVE-ID>               Resolve a CVE citation: published | rejected | disputed
+                             | fabricated | nonexistent (catalog → cache → one NVD
+                             lookup). --air-gap/--no-network offline-only; exit 2 on
+                             a citation that won't stand up.
+  rfc <number>               Resolve an RFC number → title + status from the local
+                             index (offline). --check "<title>" flags a mismatch.
+  collect <playbook>         Run a playbook's companion collector; emits submission
+                             JSON to pipe into \`run --evidence -\`. --resolve
+                             (citation-hygiene) resolves uncatalogued citations.
   skill <name>               Show context for a specific skill.
   framework-gap <fw> <ref>   Programmatic gap analysis (one framework, one CVE/scenario).
+  watchlist [--alerts]       Forward-watch aggregator across skills (one-shot).
+  watch                      Long-running forward-watch daemon (blocks; Ctrl-C).
+  report [executive]         Structured posture report.
   path                       Absolute path to the installed package.
   version                    Package version.
 
@@ -445,32 +482,46 @@ Canonical verbs
                              --prefetch             populate offline cache
                              --from-cache           consume offline cache
                              --indexes-only         rebuild indexes only
-                             Sources: kev|epss|nvd|rfc|pins|ghsa (v0.12.0).
+                             Sources: kev|epss|nvd|rfc|pins|ghsa|osv.
                                                     ghsa drafts pass validator as warnings.
+                             --check-advisories     poll primary-source advisory
+                                                    feeds; report-only diffs[].
 
-v0.10.x compatibility (will be removed in v0.13)
-────────────────────────────────────────────────
+Removed verbs (refused — these now error with a pointer to the replacement)
+───────────────────────────────────────────────────────────────────────────
 
-These verbs still work but emit a one-time deprecation banner. The
-[DEPRECATED] prefix is included so \`exceptd help | grep '^  [a-z]'\`
-doesn't surface them in the active-verbs list. Migrate to v0.11:
+Already gone. Invoking one prints a refusal naming its replacement. Listed
+here so old scripts know where each moved:
 
-  [DEPRECATED] plan              → brief --all
-  [DEPRECATED] govern <pb>       → brief <pb> --phase govern
-  [DEPRECATED] direct <pb>       → brief <pb> --phase direct
-  [DEPRECATED] look <pb>         → brief <pb> --phase look
-  [DEPRECATED] ingest            → run
-  [DEPRECATED] reattest <sid>    → attest diff <sid>
-  [DEPRECATED] list-attestations → attest list
+  [REMOVED] plan              → brief --all
+  [REMOVED] govern <pb>       → brief <pb> --phase govern
+  [REMOVED] direct <pb>       → brief <pb> --phase direct
+  [REMOVED] look <pb>         → brief <pb> --phase look
+  [REMOVED] ingest            → run
+
+Deprecated aliases (still work — prefer the canonical verb)
+───────────────────────────────────────────────────────────
+
+These still run their original implementation — they are NOT transparent
+aliases, and several (scan, dispatch, currency, validate-cves, validate-rfcs)
+emit the older orchestrator output shape, not the canonical verb's. Migrate to
+the canonical replacement listed (whose output may differ); the [DEPRECATED]
+prefix keeps them out of the active-verbs list \`exceptd help | grep '^  [a-z]'\`
+surfaces.
+
   [DEPRECATED] scan              → discover --scan-only
   [DEPRECATED] dispatch          → discover
   [DEPRECATED] currency          → doctor --currency
   [DEPRECATED] verify            → doctor --signatures
   [DEPRECATED] validate-cves     → doctor --cves
   [DEPRECATED] validate-rfcs     → doctor --rfcs
-  [DEPRECATED] watchlist         → watch
   [DEPRECATED] prefetch          → refresh --no-network
   [DEPRECATED] build-indexes     → refresh --indexes-only
+
+Accepted short forms (canonical — not deprecated):
+
+  reattest <sid>        short form of \`attest diff <sid>\`
+  list-attestations     short form of \`attest list\`
 
 Output: default human-readable (v0.11.0). --json for machine output.
         --pretty for indented JSON.
@@ -512,6 +563,31 @@ function main() {
     };
   }
 
+  // --quiet: suppress advisory stderr chatter — the "[exceptd] note:" and
+  // "[exceptd] tip:" lines, the deprecation banner, and the unsigned-
+  // attestation warning — while keeping the actual result on stdout and all
+  // errors on stderr. Narrower than --json-stdout-only, which silences ALL
+  // stderr and forces JSON output; --quiet preserves human-readable output and
+  // exit codes and only drops the non-essential advisories. Skipped when
+  // --json-stdout-only is also present (that flag already silenced everything
+  // and patched stderr first; double-wrapping would be redundant).
+  if (argv.includes("--quiet") && !argv.includes("--json-stdout-only")) {
+    global.__exceptdQuiet = true;
+    process.env.EXCEPTD_DEPRECATION_SHOWN = "1";
+    process.env.EXCEPTD_UNSIGNED_WARNED = "1";
+    const origStderrWrite = process.stderr.write.bind(process.stderr);
+    process.stderr.write = (chunk, encoding, cb) => {
+      // Drop only the advisory-prefixed lines. Contract-violation notes
+      // ("[exceptd run] ..."), error frames, and uncaught exceptions still
+      // surface so --quiet never hides why a run failed or exited non-zero.
+      if (typeof chunk === "string" && /^\[exceptd\] (note|tip):/.test(chunk)) {
+        if (typeof cb === "function") cb();
+        return true;
+      }
+      return origStderrWrite(chunk, encoding, cb);
+    };
+  }
+
   if (argv.length === 0) {
     printWelcome();
     process.exit(0);
@@ -520,13 +596,25 @@ function main() {
   const rest = argv.slice(1);
 
   if (cmd === "help" || cmd === "--help" || cmd === "-h") {
-    // Cycle 11 F4 (v0.12.32): `exceptd help <verb>` previously dropped the
+    // `exceptd help <verb>` previously dropped the
     // verb argument and printed the top-level help. Route through the same
     // printPlaybookVerbHelp() that `exceptd <verb> --help` already uses so
     // operators get a consistent verb-specific help surface regardless of
     // which way they reached it.
     if (rest.length > 0 && typeof rest[0] === 'string' && rest[0].length > 0) {
       const verb = rest[0];
+      // A removed verb has no live help. Refuse with the same structured
+      // removal error the bare verb emits, so `help <removed>` and
+      // `<removed> --help` agree (both exit non-zero, both name the
+      // replacement) instead of printing stale help for a verb that no
+      // longer dispatches.
+      if (REMOVED_VERBS[verb]) {
+        emitError(
+          `'${verb}' was removed in v0.13.0. Use \`exceptd ${REMOVED_VERBS[verb]}\` instead.`,
+          { verb, removed_in: "0.13.0", replacement: REMOVED_VERBS[verb] }
+        );
+        return;
+      }
       if (printPlaybookVerbHelp(verb)) {
         process.exit(0);
       }
@@ -653,7 +741,7 @@ function main() {
     // UNKNOWN_COMMAND (10) afterwards. Cycle 9 split this away from
     // DETECTED_ESCALATE (2) — the two semantics had collided since v0.12.24.
     //
-    // Cycle 17 P2 S13 (v0.12.37): add a did-you-mean suggestion when the
+    // add a did-you-mean suggestion when the
     // unknown verb is within Levenshtein-1 of a real verb (catches the
     // common single-char typos: `discoer` → `discover`, `attst` → `attest`,
     // `valdiate-cves` → `validate-cves`).
@@ -688,6 +776,36 @@ function main() {
       { verb: cmd }
     );
     process.exitCode = EXIT_CODES.UNKNOWN_COMMAND;
+    return;
+  }
+
+  // `skill` and `framework-gap` are spawned subcommands that never reach the
+  // in-process per-verb --help, and (unlike `refresh`/`prefetch`, which print
+  // their own help) the orchestrator forwards `--help` as a positional —
+  // `skill --help` tried to resolve a skill literally named "--help"
+  // ("Skill not found: --help") and `framework-gap --help` errored on missing
+  // args. Intercept --help for just these so they honor it. Scoped to the
+  // verbs that lack their own help handler, so spawns that do (refresh,
+  // prefetch) keep their detailed usage.
+  const SPAWN_HELP_USAGE = {
+    skill: "exceptd skill <name>          Show the full context document for one skill. Run `exceptd skill` with no arguments to list all skill IDs.",
+    "framework-gap": "exceptd framework-gap <framework> <cve-or-scenario>   One-framework gap analysis.",
+    "framework-gap-analysis": "exceptd framework-gap <framework> <cve-or-scenario>   One-framework gap analysis.",
+    cve: "exceptd cve <CVE-ID> [--json] [--air-gap|--no-network]   Resolve a CVE: published/rejected/disputed/fabricated/nonexistent (catalog -> cache -> NVD). Exit 2 when the citation won't stand up (rejected/fabricated/nonexistent/withdrawn).",
+    rfc: "exceptd rfc <number> [--check \"<title>\"] [--json] [--air-gap]   Resolve an RFC number -> title + status (local index, offline). Exit 2 when nonexistent or --check title MISMATCH.",
+    // watch MUST be here: without the interception `watch --help` falls through
+    // to spawning the blocking daemon, hanging the operator's terminal.
+    watch: "exceptd watch          Long-running forward-watch daemon (blocks; Ctrl-C to stop). For a one-shot aggregator use `exceptd watchlist`.",
+    watchlist: "exceptd watchlist [--alerts] [--org-scan --org <login>] [--by-skill] [--json]   One-shot forward-watch aggregator across skills.",
+    report: "exceptd report [executive] [--json]   Structured posture report. Markdown by default; pass --json for machine-readable output.",
+    scan: "exceptd scan [--json]          [legacy] Working-directory CVE/KEV scan (orchestrator). See `exceptd discover`.",
+    dispatch: "exceptd dispatch [--json]      [legacy] Scan + route findings to skills (orchestrator). See `exceptd discover`.",
+    currency: "exceptd currency [--json]      [legacy] Skill threat-currency report. See `exceptd doctor --currency`.",
+    "validate-cves": "exceptd validate-cves [--offline|--air-gap] [--json]   Validate the CVE catalog against upstream (offline-first).",
+    "validate-rfcs": "exceptd validate-rfcs [--offline|--air-gap] [--json]   Validate the RFC index against upstream (offline-first).",
+  };
+  if ((effectiveRest.includes("--help") || effectiveRest.includes("-h")) && SPAWN_HELP_USAGE[effectiveCmd]) {
+    process.stdout.write(SPAWN_HELP_USAGE[effectiveCmd] + "\n  Full reference: exceptd help\n");
     return;
   }
 
@@ -886,7 +1004,20 @@ function readJsonFile(filePath) {
   }
 }
 
-function readEvidence(evidenceFlag) {
+// Evidence must be a JSON object. `null`, an array, or a scalar parse as valid
+// JSON but are not a submission — without this guard `null` NPE'd deep in the
+// runner ("internal error") and `[]` / a wrong-typed field were silently
+// accepted and run as if empty, so an operator believed a malformed submission
+// was evaluated. Reject at the read boundary with an actionable message.
+function asEvidenceObject(parsed) {
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    const got = parsed === null ? "null" : Array.isArray(parsed) ? "array" : typeof parsed;
+    throw new Error(`evidence must be a JSON object (e.g. {"artifacts": {...}, "signal_overrides": {...}}); got ${got}. Run \`exceptd brief <playbook>\` for the expected shape.`);
+  }
+  return parsed;
+}
+
+function readEvidence(evidenceFlag, opts = {}) {
   if (!evidenceFlag) return {};
   // v0.12.12: file-path branch enforces a max size to defend against an
   // operator accidentally passing a multi-gigabyte file (binary, log, or
@@ -914,7 +1045,7 @@ function readEvidence(evidenceFlag) {
     }
     const text = Buffer.concat(chunks).toString("utf8");
     if (!text.trim()) {
-      // Cycle 17 P1 S4 (v0.12.37): pre-fix empty stdin silently became {}
+      // pre-fix empty stdin silently became {}
       // — operator got a "successful" run on no evidence with no warning,
       // and the evidence_hash for `{}` is deterministic so subsequent
       // runs didn't even reveal the mistake. Emit a stderr nudge so the
@@ -922,14 +1053,23 @@ function readEvidence(evidenceFlag) {
       // certainly meant to pipe something. Don't change exit semantics;
       // the empty-payload path is still legitimately useful for posture-
       // only playbooks (govern + direct + look-only walks).
-      process.stderr.write(
-        `[exceptd] note: --evidence - read 0 bytes from stdin. Treating as empty evidence {}. ` +
-        `If you meant to pipe a submission, run \`exceptd brief <playbook>\` to see the expected shape; ` +
-        `if you wanted a posture-only walk, this message is informational and the run will proceed.\n`,
-      );
+      //
+      // Only nudge when `--evidence -` was EXPLICITLY requested. On the stdin
+      // auto-promotion path (no --evidence flag, just a non-TTY handle such as
+      // `run kernel </dev/null` or a CI runner) the operator never asked to
+      // read stdin, so an empty read is not a mistake to flag — and emitting to
+      // stderr there corrupted `run ... 2>&1 | jq` pipelines that worked at a
+      // TTY but broke in CI.
+      if (opts.explicit !== false) {
+        process.stderr.write(
+          `[exceptd] note: --evidence - read 0 bytes from stdin. Treating as empty evidence {}. ` +
+          `If you meant to pipe a submission, run \`exceptd brief <playbook>\` to see the expected shape; ` +
+          `if you wanted a posture-only walk, this message is informational and the run will proceed.\n`,
+        );
+      }
       return {};
     }
-    return JSON.parse(text);
+    return asEvidenceObject(JSON.parse(text));
   }
   let stat;
   try { stat = fs.statSync(evidenceFlag); }
@@ -940,7 +1080,7 @@ function readEvidence(evidenceFlag) {
   // Route through readJsonFile() for UTF-8-BOM / UTF-16 tolerance.
   // Windows-tool-emitted JSON commonly carries these markers; the raw "utf8"
   // decode in readFileSync chokes on the leading 0xFEFF.
-  return readJsonFile(evidenceFlag);
+  return asEvidenceObject(readJsonFile(evidenceFlag));
 }
 
 function loadRunner() {
@@ -1009,7 +1149,7 @@ function hasReadableStdin() {
   // PowerShell / MSYS pipes working (isTTY === false when piped). Do NOT
   // gate on size > 0 here: a Windows pipe with bytes queued reports as
   // a regular file with size 0, and gating would silently skip every
-  // `echo {...} | exceptd run|ingest|ai-run` invocation.
+  // `echo {...} | exceptd run|ai-run` invocation.
   if (process.platform === "win32" && process.stdin.isTTY === false) return true;
   return false;
 }
@@ -1183,6 +1323,7 @@ function dispatchPlaybook(cmd, argv) {
     "publisher-namespace", "mode", "scope", "playbook", "phase", "tlp",
     "against", "since", "bundle-epoch", "attestation-root", "format",
     "cwd",  // exceptd collect <pb> --cwd <path>
+    "limit",  // exceptd attest list --limit <n>
   ]);
   const verbAllowlist = flagsFor(cmd);
   const allowlistSet = new Set(verbAllowlist);
@@ -1222,21 +1363,29 @@ function dispatchPlaybook(cmd, argv) {
       }
       continue;
     }
-    // Refuse only when a close suggestion exists (likely typo). Unknown
-    // flags with no near-match fall through to verb-level handling so a
-    // future addition doesn't require an allowlist edit in this file
-    // before it can ship. The PASSTHROUGH_FLAGS list above plus the
-    // per-verb allowlist in lib/flag-suggest.js together cover every
-    // shipped flag; anything that misses both AND has a typo suggestion
-    // is the case operators benefit from refusing.
+    // A flag valid on SOME other verb (e.g. `--csaf-status` on `brief`) is
+    // cross-verb misuse — fall through so the verb handler can emit its
+    // tailored "that flag belongs on a run-class verb" guidance rather than
+    // a blanket refusal here.
+    if (ALL_KNOWN_FLAGS.has(key)) continue;
+    // Unknown everywhere — refuse it as a typo / unsupported flag. Silently
+    // ignoring an unrecognized flag let a mistyped cap or output-format flag
+    // look like it applied when it did nothing. Surface a suggestion
+    // when one is close, and always list the accepted flags so the operator
+    // can self-correct. Adding a new flag to a verb means appending it to
+    // that verb's allowlist (or PASSTHROUGH_FLAGS) — the test suite exercises
+    // every shipped flag, so a missing registration fails CI rather than
+    // silently breaking the flag.
     const suggestion = suggestFlag(key, verbAllowlist);
-    if (suggestion) {
-      return emitError(
-        `unknown flag --${key}`,
-        { verb: cmd, suggested: suggestion },
-        pretty
-      );
-    }
+    return emitError(
+      `${cmd}: unknown flag --${key}`,
+      {
+        verb: cmd,
+        unknown_flags: [{ flag: `--${key}`, did_you_mean: suggestion ? [`--${suggestion}`] : [] }],
+        known_flags: verbAllowlist.filter((f) => typeof f === "string").sort().map((f) => `--${f}`),
+      },
+      pretty
+    );
   }
   const runOpts = {
     // Air-gap can be requested via the explicit flag OR the
@@ -1268,8 +1417,8 @@ function dispatchPlaybook(cmd, argv) {
     const r = validateIdComponent(sid, "session");
     if (!r.ok) {
       return emitError(
-        `run: --session-id ${r.reason}. Path separators and '..' are rejected.`,
-        { provided: typeof sid === "string" ? sid.slice(0, 80) : typeof sid },
+        `${cmd}: --session-id ${r.reason}. Path separators and '..' are rejected.`,
+        { verb: cmd, provided: typeof sid === "string" ? sid.slice(0, 80) : typeof sid },
         pretty
       );
     }
@@ -1282,13 +1431,13 @@ function dispatchPlaybook(cmd, argv) {
     // happens in resolveAttestationRoot — this is the input-validation layer.
     const ar = args["attestation-root"];
     if (typeof ar !== "string" || ar.length === 0) {
-      return emitError("run: --attestation-root must be a non-empty string.", { provided: typeof ar }, pretty);
+      return emitError(`${cmd}: --attestation-root must be a non-empty string.`, { verb: cmd, provided: typeof ar }, pretty);
     }
     const arSegments = ar.split(/[\\/]/);
     if (arSegments.some(seg => seg === "..")) {
       return emitError(
-        "run: --attestation-root must not contain '..' path segments. Pass an absolute path under your home directory or an explicit project-relative path without traversal.",
-        { provided: ar.slice(0, 200) },
+        `${cmd}: --attestation-root must not contain '..' path segments. Pass an absolute path under your home directory or an explicit project-relative path without traversal.`,
+        { verb: cmd, provided: ar.slice(0, 200) },
         pretty
       );
     }
@@ -1301,8 +1450,8 @@ function dispatchPlaybook(cmd, argv) {
     // every collapsed-equivalent shape.
     if (arSegments.some(seg => seg.length > 0 && /^\.+$/.test(seg))) {
       return emitError(
-        "run: --attestation-root path segment cannot consist entirely of dots (rejected: '.', '..', '...', etc.). Pass an absolute path or a project-relative path without traversal.",
-        { provided: ar.slice(0, 200) },
+        `${cmd}: --attestation-root path segment cannot consist entirely of dots (rejected: '.', '..', '...', etc.). Pass an absolute path or a project-relative path without traversal.`,
+        { verb: cmd, provided: ar.slice(0, 200) },
         pretty
       );
     }
@@ -1313,10 +1462,10 @@ function dispatchPlaybook(cmd, argv) {
     // silently accepted; HMAC signing then either failed silently or produced
     // an unverifiable signature.
     if (!/^[0-9a-fA-F]+$/.test(args["session-key"])) {
-      return emitError("run: --session-key must be hex characters only (0-9, a-f). Generate with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"", { provided_length: args["session-key"].length }, pretty);
+      return emitError(`${cmd}: --session-key must be hex characters only (0-9, a-f). Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`, { verb: cmd, provided_length: args["session-key"].length }, pretty);
     }
     if (args["session-key"].length < 16) {
-      return emitError("run: --session-key is too short (need at least 16 hex chars / 64 bits of entropy).", { provided_length: args["session-key"].length }, pretty);
+      return emitError(`${cmd}: --session-key is too short (need at least 16 hex chars / 64 bits of entropy).`, { verb: cmd, provided_length: args["session-key"].length }, pretty);
     }
     runOpts.session_key = args["session-key"];
   }
@@ -1329,8 +1478,8 @@ function dispatchPlaybook(cmd, argv) {
       const dym = suggestFlag(String(args.mode), VALID_MODES);
       const hint = dym ? ` Did you mean "${dym}"?` : '';
       return emitError(
-        `run: --mode "${args.mode}" not in accepted set ${JSON.stringify(VALID_MODES)}.${hint}`,
-        { provided: args.mode, accepted: VALID_MODES, did_you_mean: dym ? [dym] : [] },
+        `${cmd}: --mode "${args.mode}" not in accepted set ${JSON.stringify(VALID_MODES)}.${hint}`,
+        { verb: cmd, provided: args.mode, accepted: VALID_MODES, did_you_mean: dym ? [dym] : [] },
         pretty,
       );
     }
@@ -1348,27 +1497,27 @@ function dispatchPlaybook(cmd, argv) {
   // chars (\x00-\x1F + \x7F), cap length at 256, reject if all-whitespace.
   if (args.operator !== undefined) {
     if (typeof args.operator !== "string") {
-      return emitError("run: --operator must be a string.", { provided: typeof args.operator }, pretty);
+      return emitError(`${cmd}: --operator must be a string.`, { verb: cmd, provided: typeof args.operator }, pretty);
     }
     // eslint-disable-next-line no-control-regex
     if (/[\x00-\x1F\x7F]/.test(args.operator)) {
       return emitError(
-        "run: --operator contains ASCII control characters (newline, tab, NUL, etc.). Refusing — these would corrupt attestation export shape and enable forgery via multi-line injection.",
-        { provided_length: args.operator.length },
+        `${cmd}: --operator contains ASCII control characters (newline, tab, NUL, etc.). Refusing — these would corrupt attestation export shape and enable forgery via multi-line injection.`,
+        { verb: cmd, provided_length: args.operator.length },
         pretty
       );
     }
     if (args.operator.length > 256) {
       return emitError(
-        `run: --operator too long: ${args.operator.length} chars (limit 256). Use a stable identifier (email, service-account name) — not a free-form description.`,
-        { provided_length: args.operator.length },
+        `${cmd}: --operator too long: ${args.operator.length} chars (limit 256). Use a stable identifier (email, service-account name) — not a free-form description.`,
+        { verb: cmd, provided_length: args.operator.length },
         pretty
       );
     }
     if (args.operator.trim().length === 0) {
       return emitError(
-        "run: --operator is empty or whitespace-only. Pass a meaningful identifier or omit the flag.",
-        null,
+        `${cmd}: --operator is empty or whitespace-only. Pass a meaningful identifier or omit the flag.`,
+        { verb: cmd },
         pretty
       );
     }
@@ -1376,6 +1525,7 @@ function dispatchPlaybook(cmd, argv) {
     // Cc / Cf / Co / Cn — bidi overrides (U+202E "RTL OVERRIDE"),
     // zero-width joiners (U+200B-D), invisible format chars, private-use
     // codepoints, unassigned codepoints. An operator string like
+    // allow:bidi-codepoint-literal — illustrative bidi-forgery example in the --operator reject-path doc comment
     // "alice‮evilbob" renders as "alicebobevila" in any UI that respects
     // bidi — a forgery surface where the attested name looks like Bob but the
     // bytes are Alice. Reject anything outside a positive allowlist of
@@ -1391,31 +1541,40 @@ function dispatchPlaybook(cmd, argv) {
     try { normalized = args.operator.normalize("NFC"); }
     catch (e) {
       return emitError(
-        `run: --operator failed Unicode NFC normalisation: ${e.message}`,
-        { provided_length: args.operator.length },
+        `${cmd}: --operator failed Unicode NFC normalisation: ${e.message}`,
+        { verb: cmd, provided_length: args.operator.length },
         pretty
       );
     }
     if (normalized.length === 0) {
       return emitError(
-        "run: --operator is empty after Unicode NFC normalisation. Pass a meaningful identifier or omit the flag.",
-        null,
+        `${cmd}: --operator is empty after Unicode NFC normalisation. Pass a meaningful identifier or omit the flag.`,
+        { verb: cmd },
         pretty
       );
     }
     if (/\p{C}/u.test(normalized)) {
-      // Find the offending codepoint to surface a useful hint without
-      // round-tripping the raw bytes into the error body.
+      // \p{C} (Cc/Cf/Cs/Co/Cn) is the reject gate — it is strictly broader
+      // than the named family regexes (bidi / C0-control / zero-width / null),
+      // so it stays the backstop and catches the divergent remainder the
+      // family tables miss (U+007F, U+0080-009F, private-use, unassigned).
+      // The vendored codepoint tables only CLASSIFY the first offending
+      // codepoint into a human family name for the hint.
       let offending = "";
+      let family = "control / format / private-use / unassigned codepoint";
       for (const cp of normalized) {
         if (/\p{C}/u.test(cp)) {
           offending = "U+" + cp.codePointAt(0).toString(16).toUpperCase().padStart(4, "0");
+          if (codepointClass.BIDI_RE.test(cp)) family = "bidirectional-override codepoint";
+          else if (codepointClass.ZERO_WIDTH_RE.test(cp)) family = "zero-width / invisible codepoint";
+          else if (cp === codepointClass.NULL_BYTE) family = "null byte";
+          else if (codepointClass.C0_CTRL_RE.test(cp)) family = "C0 control character";
           break;
         }
       }
       return emitError(
-        `run: --operator contains a Unicode control / format / private-use / unassigned codepoint (${offending}). Bidi overrides (U+202E), zero-width joiners (U+200B–D), and format marks corrupt attestation rendering and enable name-forgery. Use printable identifiers only.`,
-        { provided_length: args.operator.length, offending_codepoint: offending },
+        `${cmd}: --operator contains a Unicode ${family} (${offending}). Bidi overrides, zero-width joiners, and format marks corrupt attestation rendering and enable name-forgery. Use printable identifiers only.`,
+        { verb: cmd, provided_length: args.operator.length, offending_codepoint: offending, offending_family: family },
         pretty
       );
     }
@@ -1423,16 +1582,15 @@ function dispatchPlaybook(cmd, argv) {
   }
 
   // --csaf-status and --publisher-namespace shape the CSAF bundle emitted by
-  // phases 5-7. Verbs that don't drive those phases (brief, plan, govern,
-  // direct, look, attest, list-attestations, discover, doctor, lint, ask,
-  // verify-attestation, reattest) never assemble a bundle, so silently
-  // consuming these flags is a UX trap. Refuse on those verbs so the
-  // operator knows the flag was discarded — same pattern as --ack. Error
-  // message templates and emitError prefixes use the in-scope `cmd` verb so
-  // a brief invocation says "brief:" rather than misattributing the flag
-  // to run.
+  // phases 5-7. Verbs that don't drive those phases (brief, attest,
+  // list-attestations, discover, doctor, lint, ask, verify-attestation,
+  // reattest) never assemble a bundle, so silently consuming these flags is
+  // a UX trap. Refuse on those verbs so the operator knows the flag was
+  // discarded — same pattern as --ack. Error message templates and emitError
+  // prefixes use the in-scope `cmd` verb so a brief invocation says "brief:"
+  // rather than misattributing the flag to run.
   const BUNDLE_FLAG_RELEVANT_VERBS = new Set([
-    "run", "ci", "run-all", "ai-run", "ingest",
+    "run", "ci", "run-all", "ai-run",
   ]);
 
   // --publisher-namespace <url> threads into the CSAF
@@ -1505,6 +1663,31 @@ function dispatchPlaybook(cmd, argv) {
     runOpts.csafStatus = cs;
   }
 
+  // --tlp stamps the bundle's distribution marking (CSAF document.distribution
+  // TLP). Previously this flag was allowlisted but never wired into runOpts, so
+  // it was a silent no-op; the runner already emits distribution from
+  // runOpts.tlp. Validate against TLP 2.0 labels and refuse on info-only verbs,
+  // matching --csaf-status.
+  if (args.tlp !== undefined) {
+    if (!BUNDLE_FLAG_RELEVANT_VERBS.has(cmd)) {
+      return emitError(
+        `${cmd}: --tlp is irrelevant on this verb (no bundle is assembled). --tlp only applies to verbs that drive phases 5-7: ${[...BUNDLE_FLAG_RELEVANT_VERBS].sort().join(", ")}.`,
+        { verb: cmd, flag: "tlp", error_class: "irrelevant-flag", accepted_verbs: [...BUNDLE_FLAG_RELEVANT_VERBS].sort() },
+        pretty
+      );
+    }
+    const tlp = typeof args.tlp === "string" ? args.tlp.toUpperCase() : args.tlp;
+    const allowedTlp = ["CLEAR", "GREEN", "AMBER", "AMBER+STRICT", "RED"];
+    if (typeof tlp !== "string" || !allowedTlp.includes(tlp)) {
+      return emitError(
+        `${cmd}: --tlp must be one of ${JSON.stringify(allowedTlp)} (TLP 2.0). Got: ${JSON.stringify(String(args.tlp)).slice(0, 40)}`,
+        { verb: cmd, flag: "tlp", provided: args.tlp },
+        pretty
+      );
+    }
+    runOpts.tlp = tlp;
+  }
+
   // --bundle-deterministic + --bundle-epoch (v0.12.27): opt-in deterministic
   // bundle emit. When set, CSAF / OpenVEX / close-envelope timestamps freeze
   // to the supplied epoch (or the playbook's last_threat_review fallback),
@@ -1559,21 +1742,20 @@ function dispatchPlaybook(cmd, argv) {
   // consent was explicit vs. implicit. AGENTS.md says the AI should surface
   // and wait for ack — this is how the ack gets recorded.
   //
-  // --ack only makes sense on verbs that drive phases 5-7 (run / ingest /
-  // ai-run / ci / run-all / reattest). Info-only verbs (brief, plan,
-  // govern, direct, look, attest, list-attestations, discover, doctor,
-  // lint, ask, verify-attestation) never consume an attestation clock —
-  // accepting --ack silently is a UX trap where operators believe they have
-  // recorded consent. Refuse on those verbs so the operator knows the flag
-  // is irrelevant.
+  // --ack only makes sense on verbs that drive phases 5-7 (run / ai-run /
+  // ci / run-all / reattest). Info-only verbs (brief, attest,
+  // list-attestations, discover, doctor, lint, ask, verify-attestation)
+  // never consume an attestation clock — accepting --ack silently is a UX
+  // trap where operators believe they have recorded consent. Refuse on those
+  // verbs so the operator knows the flag is irrelevant.
   const ACK_RELEVANT_VERBS = new Set([
-    "run", "ingest", "ai-run", "ci", "run-all", "reattest",
+    "run", "ai-run", "ci", "run-all", "reattest",
   ]);
   if (args.ack) {
     if (!ACK_RELEVANT_VERBS.has(cmd)) {
       return emitError(
         `${cmd}: --ack is irrelevant on this verb (no jurisdiction clock at stake). --ack only applies to verbs that drive phases 5-7: ${[...ACK_RELEVANT_VERBS].sort().join(", ")}. Re-invoke without --ack, or use \`exceptd run ${cmd === "brief" ? args._[0] || "<playbook>" : "<playbook>"} --ack\` once you're past the briefing step.`,
-        { verb: cmd, accepted_verbs: [...ACK_RELEVANT_VERBS].sort() },
+        { verb: cmd, flag: "ack", error_class: "irrelevant-flag", accepted_verbs: [...ACK_RELEVANT_VERBS].sort() },
         pretty
       );
     }
@@ -1590,12 +1772,7 @@ function dispatchPlaybook(cmd, argv) {
 
   try {
     switch (cmd) {
-      case "plan":     return cmdPlan(runner, args, runOpts, pretty);
-      case "govern":   return cmdGovern(runner, args, runOpts, pretty);
-      case "direct":   return cmdDirect(runner, args, pretty);
-      case "look":     return cmdLook(runner, args, runOpts, pretty);
       case "run":      return cmdRun(runner, args, runOpts, pretty);
-      case "ingest":   return cmdIngest(runner, args, runOpts, pretty);
       case "reattest": return cmdReattest(runner, args, runOpts, pretty);
       case "list-attestations": return cmdListAttestations(runner, args, runOpts, pretty);
       case "attest": return cmdAttest(runner, args, runOpts, pretty);
@@ -1607,6 +1784,7 @@ function dispatchPlaybook(cmd, argv) {
       case "doctor": return cmdDoctor(runner, args, runOpts, pretty);
       case "ai-run": return cmdAiRun(runner, args, runOpts, pretty);
       case "ask":    return cmdAsk(runner, args, runOpts, pretty);
+      case "recipes": return cmdRecipes(runner, args, runOpts, pretty);
       case "ci":     return cmdCi(runner, args, runOpts, pretty);
       case "collect": return cmdCollect(runner, args, runOpts, pretty);
     }
@@ -1622,6 +1800,19 @@ function dispatchPlaybook(cmd, argv) {
       if (hint) {
         return emitError(`Playbook not found: "${wanted}". ${hint}`, { verb: cmd, wanted, type: "playbook_not_found" }, pretty);
       }
+    }
+    // Distinguish an operator-input validation error from a genuine internal
+    // fault. A validation message ("--scope must be one of […]", "must match
+    // …") is the operator's to fix — emit it plainly instead of labeling it an
+    // "internal error" and inviting a bug report. The NPE/typeerror guards keep
+    // real internal faults (that happen to contain "invalid") on the bug path.
+    const msg = e && e.message ? String(e.message) : String(e);
+    if (
+      /\b(must be|must match|not in accepted set|is not a valid|unrecognized)\b|\binvalid /i.test(msg) &&
+      msg.length < 300 &&
+      !/cannot read prop|is not a function|is not defined|undefined \(reading|maximum call stack/i.test(msg)
+    ) {
+      return emitError(`${cmd}: ${msg}`, { verb: cmd, type: "validation_error" }, pretty);
     }
     // Wrap bare e.message so operators see the verb that triggered the
     // failure + the next action they can take. Re-running with --pretty
@@ -1715,44 +1906,13 @@ function editDistance(a, b) {
 
 function printPlaybookVerbHelp(verb) {
   const cmds = {
-    plan: `plan — list playbooks + directives, grouped by scope.
+    recipes: `recipes [<id>] — curated multi-skill workflows (use-case → ordered skill chain).
+
+With no id: lists every recipe with its "when to use" guidance.
+With <id>:  expands that recipe's ordered skill_chain and notes.
 
 Flags:
-  --playbook <id> ...     Filter to one or more playbook IDs.
-  --scope <type>          Filter by scope: system | code | service | cross-cutting | all
-  --flat                  Disable grouped-by-scope output; emit flat list.
-  --directives            Include directive id + title + applies_to per playbook.
-  --session-id <id>       Reuse a specific session ID for the planning output.
-  --mode <m>              Investigation mode forwarded into govern.
-  --pretty                Indented JSON output.`,
-    govern: `govern <playbook> — phase 1, load GRC context for a playbook.
-
-Args / flags:
-  <playbook>              Playbook ID. Required positional.
-  --directive <id>        Specific directive (default: first one).
-  --mode <m>              Investigation mode forwarded into govern policy.
-  --air-gap               Honor _meta.air_gap_mode + air_gap_alternative paths.
-  --pretty                Indented JSON output.
-
-Output: jurisdiction_obligations, theater_fingerprints, framework_context, skill_preload.`,
-    direct: `direct <playbook> — phase 2, threat context + skill chain + token budget.
-
-Args / flags:
-  <playbook>              Required positional.
-  --directive <id>        Specific directive (default: first one).
-  --pretty                Indented JSON output.`,
-    look: `look <playbook> — phase 3, artifact-collection spec the host AI executes.
-
-Args / flags:
-  <playbook>              Required positional.
-  --directive <id>        Specific directive (default: first one).
-  --air-gap               Honor air_gap_alternative paths.
-  --pretty                Indented JSON output.
-
-Output includes a 'preconditions' array — the host AI MUST verify each
-precondition with its own probes and declare results back in the submission as:
-  { "precondition_checks": { "<id>": true | false } }
-The runner refuses the run if a precondition with on_fail=halt is unverified.`,
+  --json   Machine-readable output.`,
     run: `run [playbook] — phases 4-7 (detect → analyze → validate → close).
 
 Invocation modes:
@@ -1778,10 +1938,14 @@ Flags:
                           or not_affected | fixed (OpenVEX) drop out of
                           analyze.matched_cves. The disposition is preserved
                           under analyze.vex.dropped_cves.
-  --format <fmt> ...      Emit the close.evidence_package bundle in additional
-                          formats. Repeatable. Supported: csaf-2.0 | sarif |
-                          openvex | markdown. CSAF is always primary; extras
-                          populate close.evidence_package.bundles_by_format.
+  --format <fmt> ...      Transform stdout. Supported: summary | markdown |
+                          csaf-2.0 | csaf | sarif | openvex | json (json = the
+                          full run result). Standardized bundles (csaf/sarif/
+                          openvex) are emitted as spec-conformant documents.
+                          Repeatable, but only ONE document goes to stdout — the
+                          first; every requested bundle is embedded under
+                          close.evidence_package.bundles_by_format (see via
+                          --json). Passing several prints a note to stderr.
   --explain               Dry-run: emit preconditions, required artifacts,
                           recognized signal keys, and a submission skeleton.
                           Does not run detect/analyze/validate/close.
@@ -1864,36 +2028,6 @@ Other operator-facing flags (full list in source; surfaced here for grep):
   --attestation-root <p>  Override .exceptd/ root for this run.
   --mode <m>              Investigation mode (self_service | authorized_pentest
                           | ir_response | ctf | research | compliance_audit).`,
-    ingest: `ingest — alias for 'run' matching AGENTS.md terminology.
-
-Flags:
-  --domain <id>           Playbook ID (overrides submission.playbook_id).
-  --directive <id>        Directive ID (overrides submission.directive_id).
-  --evidence <file|->     Submission JSON. May include playbook_id/directive_id.
-  --session-id <id>       Reuse a specific session id (must satisfy
-                          /^[A-Za-z0-9._-]{1,64}$/).
-  --force-overwrite       Override session-id collision refusal.
-  --operator <name>       Bind attestation to a specific identity.
-  --ack                   Explicit operator consent for jurisdiction clock.
-  --attestation-root <p>  Override .exceptd/ root for this ingest.
-  --mode <m>              Investigation mode (self_service | authorized_pentest
-                          | ir_response | ctf | research | compliance_audit).
-  --air-gap               Honor air_gap_alternative paths.
-  --force-stale           Override threat_currency_score<50 gate.
-  --csaf-status <s>       CSAF tracking.status for the close.evidence_package
-                          bundle. One of: draft | interim (default) | final.
-                          'final' commits to CSAF §3.1.11.3.5.1 immutability —
-                          set this only after operator review of the advisory.
-  --publisher-namespace <url>
-                          CSAF document.publisher.namespace (§3.1.7.4). The
-                          operator's organisation URL, NOT the tooling vendor.
-                          Must be an http://… or https://… URL, ≤256 chars.
-  --bundle-deterministic  Emit byte-stable bundles (frozen timestamps).
-  --bundle-epoch <ISO>    Frozen epoch for --bundle-deterministic.
-  --pretty                Indented JSON output.
-
-Exit codes: 0 PASS, 1 framework, 4 blocked, 7 SESSION_ID_COLLISION,
-8 LOCK_CONTENTION, 9 STORAGE_EXHAUSTED.`,
     reattest: `reattest [<session-id> | --latest] — replay a prior session and diff the evidence_hash.
 
 Args / flags:
@@ -1919,7 +2053,7 @@ Lists every attestation under .exceptd/attestations/<session_id>/, sorted
 newest-first, with truncated evidence_hash + capture timestamp + file path.`,
     attest: `attest <subverb> <session-id> — auditor-facing attestation operations.
 
-Subverbs (list | show | export | verify | diff):
+Subverbs (list | show | export | verify | diff | prune):
   attest show <sid>       Emit the full (unredacted) attestation.
   attest list             Inventory every prior attestation under
                           ~/.exceptd/attestations/ (or EXCEPTD_HOME when set).
@@ -1943,6 +2077,9 @@ Subverbs (list | show | export | verify | diff):
                           for the same playbook, or against --against <other-sid>
                           for an explicit pair. Reports unchanged | drifted |
                           resolved per evidence_hash + classification deltas.
+  attest prune            GC stale sessions: delete attestations older than
+                          --all-older-than <ISO>. --dry-run previews the set
+                          without deleting.
 
 All subverbs honor --pretty for indented JSON output.
 
@@ -1961,6 +2098,7 @@ on Linux reads /etc/os-release to detect host distro. Emits a list of
 recommended exceptd playbooks tailored to what was found.
 
 Flags:
+  --cwd <dir>             Scan <dir> instead of the current directory.
   --scan-only             Also include legacy \`scan\` output under legacy_scan.
   --json                  Emit JSON (default is human-readable text).
   --pretty                Indented JSON output (implies --json).
@@ -2058,7 +2196,7 @@ Flags:
 Exit codes:
   0  done                  Run completed; emitted {"event":"done","ok":true}.
   1  framework error       Engine threw or stdin parse failure.
-  3  SESSION_ID_COLLISION  --session-id duplicate; pass --force-overwrite or fresh id.
+  7  SESSION_ID_COLLISION  --session-id duplicate; pass --force-overwrite or fresh id.
   8  LOCK_CONTENTION       Concurrent persistAttestation lock held.
   9  STORAGE_EXHAUSTED     Disk/quota/RO filesystem on attestation write.
 
@@ -2169,16 +2307,35 @@ Exit codes:
                            etc.) and the operator has not acked.
 
 (ci does not persist attestations per-run; exit codes 6/7/8/9 surface on
-\`attest verify\` and on \`run\` / \`ai-run\` / \`ingest\`, not on \`ci\`.)
+\`attest verify\` and on \`run\` / \`ai-run\`, not on \`ci\`.)
 
 Output: verb, session_id, playbooks_run, summary{total, detected,
 max_rwep_observed, jurisdiction_clocks_started, verdict, fail_reasons[]},
 results[].`,
+    collect: `collect <playbook> [--cwd <dir>] [--attest-ownership] [--resolve] [--air-gap] [--json]
+
+Scan the working directory (or --cwd <dir>) and emit an evidence submission
+for <playbook>, ready to pipe into \`run\`:
+
+  exceptd collect <playbook> | exceptd run <playbook> --evidence -
+
+Flags:
+  --cwd <dir>             Scan <dir> instead of the current directory.
+  --attest-ownership      Attest that you own (or hold written authorisation
+                          for) the asset being scanned, satisfying an ownership
+                          precondition (e.g. cicd-pipeline-compromise's
+                          operator-owns-ci-fleet gate) so run does not block.
+  --resolve               (citation-hygiene) resolve uncatalogued CVE/RFC
+                          citations found during the scan.
+  --air-gap               Do not touch the network during collection.
+  --json                  Raw JSON (default when piped; collect output is the
+                          submission, not a human digest).`,
     brief: `brief [playbook] — unified info doc (v0.11.0).
 
-Collapses the three info-only phases plan + govern + direct + look into a
-single document. Phases 1-3 of the seven-phase contract are entirely
-informational; brief reads them in one CLI invocation instead of three.
+Collapses the info-only phases govern + direct + look into a single document,
+and replaces the removed plan / govern / direct / look verbs. Phases 1-3 of
+the seven-phase contract are entirely informational; brief reads them in one
+CLI invocation instead of three.
 
 Modes:
   brief                   Auto-detect playbooks for the cwd. Returns a list.
@@ -2192,6 +2349,8 @@ Modes:
 
 Flags:
   --directives            Expand directive metadata per playbook.
+  --flat                  Ungrouped playbook list (omit grouped_by_scope +
+                          scope_summary). Use with --all / --scope.
   --pretty                Indented JSON output.
   --json                  Force single-line JSON.
 
@@ -2234,7 +2393,7 @@ Flags (selected — see \`exceptd run --help\` for the full list):
   --bundle-deterministic  Emit byte-stable bundles across the multi-run set.
   --bundle-epoch <ISO>    Frozen epoch for --bundle-deterministic.`,
   };
-  // Cycle 11 F4 (v0.12.32): return whether a verb-specific help block was
+  // return whether a verb-specific help block was
   // found so the `exceptd help <verb>` caller can decide whether to fall
   // through to the top-level help (verb unknown) or stop here (verb known).
   if (cmds[verb]) {
@@ -2265,7 +2424,7 @@ Flags (selected — see \`exceptd run --help\` for the full list):
  * its evidence JSON before going through phases 4-7. Returns a categorized
  * list: ok / missing_required / unknown_keys / type_mismatch / suggestions.
  */
-function cmdCollect(runner, args, runOpts, pretty) {
+async function cmdCollect(runner, args, runOpts, pretty) {
   const playbookId = args._[0];
   if (!playbookId) {
     return emitError(
@@ -2346,8 +2505,17 @@ function cmdCollect(runner, args, runOpts, pretty) {
   const failedPre = Object.entries(submission.precondition_checks || {})
     .filter(([, v]) => v === false)
     .map(([k]) => k);
-  if (failedPre.length > 0 && (submission.signal_overrides && Object.keys(submission.signal_overrides).length === 0)) {
-    process.stderr.write(`[collect ${playbookId}] precondition not satisfied: ${failedPre.join(", ")} — empty submission emitted (collector skipped on this host)\n`);
+  if (failedPre.length > 0) {
+    // Warn on ANY failed precondition, not only when signal_overrides is empty.
+    // A collector that gathers artifacts but fails a consent/ownership gate
+    // (e.g. cicd-pipeline-compromise's operator-owns-ci-fleet) emits a populated
+    // submission yet `run` will block at preflight — surface that up front so
+    // the operator isn't surprised by the downstream "verdict: blocked".
+    const emptySignals = !submission.signal_overrides || Object.keys(submission.signal_overrides).length === 0;
+    const tail = emptySignals
+      ? "empty submission emitted (collector skipped on this host)"
+      : "submission emitted, but `run` will block at preflight until this precondition is satisfied";
+    process.stderr.write(`[collect ${playbookId}] precondition not satisfied: ${failedPre.join(", ")} — ${tail}\n`);
   }
 
   // Emit the submission JSON to stdout. The operator pipes this into
@@ -2367,10 +2535,41 @@ function cmdCollect(runner, args, runOpts, pretty) {
   try { pbMetaAirGap = !!(runner.loadPlaybook(playbookId)?._meta?.air_gap_mode); }
   catch { /* playbook load shouldn't fail here — collector exists — but be defensive */ }
   const collectAirGap = !!(runOpts.airGap || process.env.EXCEPTD_AIR_GAP === "1" || pbMetaAirGap);
+
+  // --resolve: resolve the citations the offline catalog couldn't confirm,
+  // flipping their parked signals instead of leaving them inconclusive for the
+  // operator to research. Opt-in, collector-specific (only citation-hygiene
+  // exposes applyResolution). Honors the collect air-gap disposition.
+  if (args.resolve) {
+    if (typeof mod.applyResolution !== "function") {
+      return emitError(
+        `collect: --resolve is not supported by the "${playbookId}" collector (no resolution step).`,
+        { verb: "collect", playbook_id: playbookId },
+        pretty,
+      );
+    }
+    try {
+      submission = await mod.applyResolution(submission, { airGap: collectAirGap });
+    } catch (e) {
+      return emitError(
+        `collect: --resolve failed for "${playbookId}": ${e.message}`,
+        { verb: "collect", playbook_id: playbookId, exit_code: 2 },
+        pretty,
+      );
+    }
+  }
+
   // Spread `submission` first, then explicit fields, so a submission key
   // named `air_gap_mode` (currently always undefined but defensive against
   // future collector contracts) can't clobber the envelope marker.
-  emit({ verb: "collect", playbook_id: playbookId, ...submission, air_gap_mode: collectAirGap }, pretty, (obj) => {
+  const collectBody = { verb: "collect", playbook_id: playbookId, ...submission, air_gap_mode: collectAirGap };
+  // collect's primary purpose is the pipe `exceptd collect <pb> | exceptd run
+  // <pb> --evidence -`. When stdout is NOT a TTY (a pipe / redirect), emit JSON
+  // so that one-liner just works; the human summary is only for an interactive
+  // operator at a terminal. Explicit --json / --pretty force JSON regardless.
+  // Without this gate, emit()'s default-human behavior printed a prose summary
+  // into the pipe and the downstream `run --evidence -` failed to parse it.
+  const collectHuman = process.stdout.isTTY ? (obj) => {
     const lines = [];
     const meta = obj.collector_meta || {};
     lines.push(`collect: ${obj.playbook_id}  (${meta.collector_version || "?"} on ${meta.platform || "?"})`);
@@ -2407,10 +2606,11 @@ function cmdCollect(runner, args, runOpts, pretty) {
       }
       if (errs.length > 5) lines.push(`  … ${errs.length - 5} more`);
     }
-    lines.push(`\n→ next: exceptd collect ${obj.playbook_id} --json | exceptd run ${obj.playbook_id} --evidence -`);
+    lines.push(`\n→ next: exceptd collect ${obj.playbook_id} | exceptd run ${obj.playbook_id} --evidence -`);
     lines.push(`Full structured result: --json (or --pretty for indented JSON).`);
     return lines.join("\n");
-  });
+  } : undefined;
+  emit(collectBody, pretty, collectHuman);
 }
 
 function cmdLint(runner, args, runOpts, pretty) {
@@ -2459,10 +2659,16 @@ function cmdLint(runner, args, runOpts, pretty) {
   const normalized = runner.normalizeSubmission(submission, pb);
   const flat = submission.observations || null;
 
-  // After normalize, validation walks the canonical nested shape.
-  const missingRequired = requiredArtifacts.filter(id => {
+  // After normalize, validation walks the canonical nested shape. Distinguish
+  // a truly-absent required artifact (no entry — operator should add it) from
+  // one that is PRESENT but uncaptured (entry with captured:false + a reason,
+  // e.g. a collector's "skipped on win32 — POSIX mode bits not meaningful").
+  // Conflating them told the operator to "add" an artifact that is already
+  // there.
+  const missingRequired = requiredArtifacts.filter(id => !(normalized.artifacts && normalized.artifacts[id]));
+  const uncapturedRequired = requiredArtifacts.filter(id => {
     const a = normalized.artifacts && normalized.artifacts[id];
-    return !a || !a.captured;
+    return a && !a.captured;
   });
 
   const unknownArtifactKeys = Object.keys(normalized.artifacts || {})
@@ -2491,6 +2697,11 @@ function cmdLint(runner, args, runOpts, pretty) {
   // accepted. Now: lint warns about missing artifacts but doesn't fail.
   for (const id of missingRequired) {
     issues.push({ severity: "warn", kind: "missing_required_artifact", artifact_id: id, hint: `Add to submission.artifacts.${id} = { value, captured: true } (or under observations in the flat shape). The run will still execute without this; the corresponding indicators will return 'inconclusive'.` });
+  }
+  for (const id of uncapturedRequired) {
+    const a = normalized.artifacts[id];
+    const reason = a && typeof a.reason === "string" ? a.reason : null;
+    issues.push({ severity: "warn", kind: "uncaptured_required_artifact", artifact_id: id, captured: false, ...(reason ? { reason } : {}), hint: `Artifact "${id}" is present but captured:false${reason ? ` (${reason})` : ""} — it is NOT missing; nothing to add. Its indicators will return 'inconclusive'. Common when a collector intentionally skips a platform-specific probe (e.g. POSIX mode bits on Windows).` });
   }
   for (const k of unknownArtifactKeys) {
     issues.push({ severity: "warn", kind: "unknown_artifact_key", key: k, hint: `Not in playbook ${playbookId} look.artifacts[]. Recognized: ${[...knownArtifacts].slice(0, 10).join(", ")}…` });
@@ -2666,16 +2877,18 @@ function cmdBrief(runner, args, runOpts, pretty) {
     const required = (obj.artifacts || []).filter(a => a.required);
     const optional = (obj.artifacts || []).filter(a => !a.required);
     lines.push(`\nRequired artifacts (${required.length}): ${required.map(a => a.id).join(", ") || "(none)"}`);
-    if (optional.length) lines.push(`Optional artifacts (${optional.length}): ${optional.map(a => a.id).slice(0, 8).join(", ")}${optional.length > 8 ? ", …" : ""}`);
+    if (optional.length) lines.push(`Optional artifacts (${optional.length}): ${optional.map(a => a.id).slice(0, 8).join(", ")}${optional.length > 8 ? `, … +${optional.length - 8}` : ""}`);
     const indicators = obj.detect_indicators_preview || [];
-    lines.push(`\nIndicators (${indicators.length}): ${indicators.map(i => i.id).slice(0, 8).join(", ")}${indicators.length > 8 ? ", …" : ""}`);
+    lines.push(`\nIndicators (${indicators.length}): ${indicators.map(i => i.id).slice(0, 8).join(", ")}${indicators.length > 8 ? `, … +${indicators.length - 8}` : ""}`);
     if (obj.preconditions?.length) {
       lines.push(`\nPreconditions (${obj.preconditions.length}):`);
       for (const p of obj.preconditions) {
-        lines.push(`  ${p.id} (${p.on_fail}): ${p.description?.slice(0, 80) || p.check}`);
+        const pdesc = p.description || p.check || "";
+        lines.push(`  ${p.id} (${p.on_fail}): ${pdesc.length > 80 ? pdesc.slice(0, 80) + "…" : pdesc}`);
       }
     }
-    lines.push(`\nRun: exceptd run ${obj.playbook_id} --evidence <file|-> --json`);
+    lines.push(`\nCollect evidence: exceptd collect ${obj.playbook_id} | exceptd run ${obj.playbook_id} --evidence -`);
+    lines.push(`Run with your own evidence: exceptd run ${obj.playbook_id} --evidence <file|-> --json`);
     lines.push(`Full structured doc: --json or --pretty`);
     return lines.join("\n");
   });
@@ -2737,7 +2950,7 @@ function cmdPlan(runner, args, runOpts, pretty) {
     }
   }
   emit(plan, pretty, (obj) => {
-    // Human renderer for `brief` / `brief --all` / `plan`. Pre-fix this
+    // Human renderer for `brief` / `brief --all`. Pre-fix this
     // verb dumped 36+ KB of JSON to the terminal — operators running
     // `exceptd brief` to explore had no scannable view.
     const lines = [];
@@ -2822,7 +3035,7 @@ function cmdPlan(runner, args, runOpts, pretty) {
 // in `run --scope nonsense` produced `count: 0` + exit 0 (cmd reports
 // "ran 0 playbooks") and in `ci --scope nonsense` silently ran only the
 // cross-cutting set (the union with `framework` produced a false-positive
-// PASS). Both are operator-intent loss patterns CLAUDE.md flags as the
+// PASS). Both are operator-intent loss patterns of the
 // "field-present, content-wrong" class.
 const VALID_SCOPES = ["system", "code", "service", "cross-cutting", "all"];
 
@@ -2846,9 +3059,26 @@ function validateScopeOrThrow(scope) {
 function refuseInvalidPlaybookId(verb, playbookId, pretty) {
   const r = validateIdComponent(playbookId, "playbook");
   if (!r.ok) {
+    // A case-only typo (`run SECRETS`) fails the lowercase-only id regex
+    // before the fuzzy "did you mean" path ever runs. If lowercasing yields a
+    // real playbook, suggest it — the most common id typo shouldn't get the
+    // least helpful error.
+    let suggestion = null;
+    if (typeof playbookId === "string") {
+      const lowered = playbookId.toLowerCase();
+      if (lowered !== playbookId && validateIdComponent(lowered, "playbook").ok) {
+        try {
+          if (fs.existsSync(path.join(PKG_ROOT, "data", "playbooks", `${lowered}.json`))) suggestion = lowered;
+        } catch { /* fall back to no suggestion */ }
+      }
+    }
     emitError(
-      `${verb}: invalid <playbook> id — ${r.reason}.`,
-      { verb, provided: typeof playbookId === "string" ? playbookId.slice(0, 80) : typeof playbookId },
+      `${verb}: invalid <playbook> id — ${r.reason}.${suggestion ? ` Did you mean: ${suggestion}?` : ""}`,
+      {
+        verb,
+        provided: typeof playbookId === "string" ? playbookId.slice(0, 80) : typeof playbookId,
+        ...(suggestion ? { did_you_mean: [suggestion] } : {}),
+      },
       pretty
     );
     return true;
@@ -2888,13 +3118,22 @@ function refuseNoDirectives(verb, playbookId, pretty) {
 // supply the precondition themselves.
 const POLICY_SKIPPED_PLAYBOOKS = new Set([
   "ai-discovered-cve-triage",
+  "audit-log-integrity",
+  "decompression-dos",
   "cloud-iam-incident",
   "idp-incident",
   "identity-sso-compromise",
   "llm-tool-use-exfil",
+  "log-injection-telemetry",
+  "mail-server-hardening",
+  "multitenancy-isolation",
+  "network-trust",
   "post-quantum-migration",
+  "privacy-consent-ops",
   "ransomware",
+  "self-update-integrity",
   "supply-chain-recovery",
+  "vc-wallet-trust",
   "webhook-callback-abuse",
 ]);
 
@@ -2941,36 +3180,6 @@ function detectScopes() {
   // service playbooks need explicit invocation — they have side effects
   // (probing remote endpoints) so we don't auto-include them.
   return detected.length ? detected : ["cross-cutting"];
-}
-
-function cmdGovern(runner, args, runOpts, pretty) {
-  const playbookId = args._[0];
-  if (!playbookId) return emitError("govern: missing <playbookId> positional argument.", null, pretty);
-  if (refuseInvalidPlaybookId("govern", playbookId, pretty)) return;
-  const pb = runner.loadPlaybook(playbookId);
-  const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
-  if (!directiveId) return refuseNoDirectives("govern", playbookId, pretty);
-  emit(runner.govern(playbookId, directiveId, runOpts), pretty);
-}
-
-function cmdDirect(runner, args, pretty) {
-  const playbookId = args._[0];
-  if (!playbookId) return emitError("direct: missing <playbookId> positional argument.", null, pretty);
-  if (refuseInvalidPlaybookId("direct", playbookId, pretty)) return;
-  const pb = runner.loadPlaybook(playbookId);
-  const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
-  if (!directiveId) return refuseNoDirectives("direct", playbookId, pretty);
-  emit(runner.direct(playbookId, directiveId), pretty);
-}
-
-function cmdLook(runner, args, runOpts, pretty) {
-  const playbookId = args._[0];
-  if (!playbookId) return emitError("look: missing <playbookId> positional argument.", null, pretty);
-  if (refuseInvalidPlaybookId("look", playbookId, pretty)) return;
-  const pb = runner.loadPlaybook(playbookId);
-  const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
-  if (!directiveId) return refuseNoDirectives("look", playbookId, pretty);
-  emit(runner.look(playbookId, directiveId, runOpts), pretty);
 }
 
 function cmdRun(runner, args, runOpts, pretty) {
@@ -3027,6 +3236,19 @@ function cmdRun(runner, args, runOpts, pretty) {
   // Single-playbook path (existing behavior).
   const playbookId = positional;
   if (refuseInvalidPlaybookId("run", playbookId, pretty)) return;
+  // --evidence-dir is a contract input: cmdRunMulti reads one
+  // <playbook-id>.json per playbook in an --all / --scope run. With a single
+  // named playbook it was silently ignored, so `run secrets --evidence-dir ./ev`
+  // ran against EMPTY evidence and reported a clean "not_detected" verdict — a
+  // falsely-reassuring result from a security tool. Refuse loudly and point the
+  // operator at the flag that actually loads evidence for one playbook.
+  if (args["evidence-dir"]) {
+    return emitError(
+      `run ${playbookId}: --evidence-dir applies to contract runs (exceptd run --all / --scope <type>), where it reads one <playbook-id>.json per playbook. For a single playbook, pass its evidence directly: exceptd collect ${playbookId} | exceptd run ${playbookId} --evidence -  (or --evidence ${playbookId}.json).`,
+      { playbook: playbookId, provided: "--evidence-dir", use_instead: "--evidence <file|->" },
+      pretty
+    );
+  }
   const pb = runner.loadPlaybook(playbookId);
   const directiveId = args.directive || (pb.directives[0] && pb.directives[0].id);
   if (!directiveId) return refuseNoDirectives("run", playbookId, pretty);
@@ -3090,22 +3312,27 @@ function cmdRun(runner, args, runOpts, pretty) {
   // first, then falls back to a strict isTTY===false check only on Windows
   // (where fstat on a pipe is unreliable). MSYS-bash on win32 reports
   // isTTY === false for genuine piped input, so that path still works.
-  if (!args.evidence && hasReadableStdin()) {
+  const autoStdin = !args.evidence && hasReadableStdin();
+  if (autoStdin) {
     args.evidence = "-";
   }
   if (args.evidence) {
     try {
-      submission = readEvidence(args.evidence);
+      // explicit:false on the auto-promotion path suppresses the empty-stdin
+      // nudge (which otherwise writes to stderr and breaks `run ... 2>&1 | jq`
+      // on every no-evidence CI run); an explicit `--evidence -` still nudges.
+      submission = readEvidence(args.evidence, { explicit: !autoStdin });
     } catch (e) {
       return emitError(`run: failed to read evidence: ${e.message}`, { evidence: args.evidence }, pretty);
     }
   }
 
-  // Lift precondition_checks out of the submission into runOpts so the agent
-  // can declare host-platform / tool-availability facts in one JSON blob.
-  if (submission.precondition_checks) {
-    runOpts.precondition_checks = submission.precondition_checks;
-  }
+  // Note: precondition_checks are NOT lifted into runOpts. run() derives the
+  // effective precondition set from the submission itself (its mergedPCs feeds
+  // preflight), so copying them into runOpts is redundant — and it made every
+  // submission-supplied precondition report provenance "merged" (present in
+  // both the submission and runOpts) instead of "submission". The submission
+  // carries them to run() directly.
 
   // --format <fmt>: override the playbook's declared evidence_package.bundle_format.
   // Supports csaf-2.0 | sarif | openvex | markdown. Multiple --format flags
@@ -3334,7 +3561,40 @@ function cmdRun(runner, args, runOpts, pretty) {
     // Set exitCode BEFORE emit(): emit's ok:false fallback only fires when
     // exitCode is not already set, so the BLOCKED override survives.
     process.exitCode = args.ci ? EXIT_CODES.BLOCKED : EXIT_CODES.GENERIC_FAILURE;
-    emit(result, pretty);
+    emit(result, pretty, (obj) => {
+      // Human renderer for a halted run. Without this, a blocked verdict
+      // (preflight precondition unmet, mutex conflict, stale currency,
+      // corrupt catalog) dumped the raw ok:false JSON envelope even in human
+      // mode — so a non-Linux operator's first `run` against any Linux-gated
+      // playbook was a wall of JSON instead of one line saying why it stopped
+      // and what to do. --json / --pretty still return the full envelope.
+      const v = obj.verdict || "error";
+      const tag = v === "blocked" ? "[blocked]" : "[error]";
+      const lines = [`${tag}  ${obj.playbook_id || "run"}${obj.directive_id ? ` (${obj.directive_id})` : ""}`];
+      // summary_line is already a complete sentence ("<pb>: blocked at
+      // preflight (<cause>) — <reason>"); prefer it, else fall back to reason.
+      const detail = obj.summary_line || obj.reason;
+      if (detail) lines.push(`  ${detail}`);
+      // remediation is the engine's own actionable next step when it has one;
+      // otherwise synthesize a hint from blocked_by so the operator never hits
+      // a dead end. Hints reference only current verbs (plan/direct were
+      // removed in v0.13.0; brief --all is the replacement listing verb).
+      if (obj.remediation) {
+        lines.push(`  → ${obj.remediation}`);
+      } else {
+        const hints = {
+          precondition: "→ A required precondition is unmet — the reason above names the specific gate. It may be a platform mismatch, OR an attestation/evidence the run needs (submit it in your evidence JSON's precondition_checks). For a platform mismatch, list applicable playbooks: exceptd brief --all",
+          mutex: "→ Another run holds this playbook's mutex. Wait for it to finish, then retry.",
+          currency: "→ Threat intel is stale. Refresh sources (exceptd refresh) or re-run with --force-stale to override.",
+          catalog_corrupt: "→ The CVE catalog failed to load. Reinstall the package or run: exceptd doctor",
+          playbook_not_found: "→ Unknown playbook. List available playbooks: exceptd brief --all",
+          directive_not_found: `→ Unknown directive for this playbook. See its directives: exceptd brief ${obj.playbook_id || "<playbook>"}`,
+        };
+        if (obj.blocked_by && hints[obj.blocked_by]) lines.push(`  ${hints[obj.blocked_by]}`);
+      }
+      lines.push("  Full envelope: re-run with --json");
+      return lines.join("\n");
+    });
     return;
   }
 
@@ -3343,8 +3603,13 @@ function cmdRun(runner, args, runOpts, pretty) {
   // behavior where warn-level issues stay informational. CI gates wanting
   // "fail on any unverified precondition" pass this flag.
   if (args["strict-preconditions"] && result && Array.isArray(result.preflight_issues)) {
+    // precondition_skip MUST be included: a false skip_phase precondition
+    // means detect never ran, so a CI gate relying on --strict-preconditions
+    // ("any precondition_check returning false fails the run", per --help) would
+    // otherwise silently pass (verdict:skipped, exit 0) — the exact gap the
+    // flag exists to close.
     const warnIssues = result.preflight_issues.filter(i =>
-      i.kind === "precondition_unverified" || i.kind === "precondition_warn"
+      i.kind === "precondition_unverified" || i.kind === "precondition_warn" || i.kind === "precondition_skip"
     );
     if (warnIssues.length > 0) {
       // v0.12.12: surface the contract violation in the emitted body so
@@ -3460,7 +3725,8 @@ function cmdRun(runner, args, runOpts, pretty) {
   //   --format csaf-2.0/sarif/openvex → the corresponding bundle from close
   //   (default — no --format) → full JSON result as before
   if (args.format) {
-    const requested = Array.isArray(args.format) ? args.format[0] : args.format;
+    const requestedAll = Array.isArray(args.format) ? args.format : [args.format];
+    const requested = requestedAll[0];
     const VALID = ["summary", "markdown", "csaf-2.0", "csaf", "sarif", "openvex", "json"];
     if (!VALID.includes(requested)) {
       const dym = suggestFlag(String(requested), VALID);
@@ -3470,6 +3736,33 @@ function cmdRun(runner, args, runOpts, pretty) {
         { verb: "run", provided: requested, accepted: VALID, did_you_mean: dym ? [dym] : [] },
         pretty,
       );
+    }
+    // --format wins over --json (one stdout document). Note it rather than
+    // silently discarding --json — a script that pipes for JSON and later adds
+    // --format markdown for a human would otherwise get non-JSON with no signal.
+    if ((args.json || global.__exceptdWantJson) && requested !== "json") {
+      process.stderr.write(
+        `[exceptd] note: --format "${requested}" overrides --json; stdout is the ${requested} document, not the JSON envelope.\n`
+      );
+    }
+    // Only one document can be written to stdout. When several --format values
+    // are given, emit the first and tell the operator where the rest live so
+    // the extras aren't silently dropped.
+    if (requestedAll.length > 1) {
+      process.stderr.write(
+        `[exceptd] note: ${requestedAll.length} --format values given; emitting "${requested}" to stdout. ` +
+        `All requested bundles are embedded under phases.close.evidence_package.bundles_by_format — ` +
+        `re-run with --json to see them.\n`
+      );
+    }
+    // `json` means "the full run result as JSON" — the same body the default
+    // (no --format) path emits. Without this it fell through to the bundle
+    // lookup, found the runner's "unknown format" stub under
+    // bundles_by_format.json, and emitted that 150-byte stub instead of the
+    // scan — silently discarding the result with a success exit code.
+    if (requested === "json") {
+      emit(result, pretty);
+      return;
     }
     if (requested === "summary") {
       const cls = result.phases?.detect?.classification;
@@ -3526,7 +3819,15 @@ function cmdRun(runner, args, runOpts, pretty) {
     const bbf = result.phases?.close?.evidence_package?.bundles_by_format || {};
     const body = bbf[formatNorm] || result.phases?.close?.evidence_package?.bundle_body;
     if (body) {
-      emit(body, pretty);
+      // SARIF / CSAF / OpenVEX are self-describing standard documents. Write
+      // them verbatim rather than through emit(), which prepends the tool's
+      // own `ok` envelope key — `ok` is not a permitted top-level property in
+      // any of these schemas and makes strict validators (GitHub code-scanning
+      // SARIF upload, a CSAF trusted-provider check) reject the output. The
+      // namespaced `exceptd_extension` block (CSAF vendor extension carrying
+      // publisher-namespace provenance) is preserved intentionally.
+      const { ok: _ok, ...spec } = body;
+      process.stdout.write(JSON.stringify(spec, null, pretty ? 2 : 0) + "\n");
       return;
     }
     // Fallback: full result
@@ -3614,7 +3915,7 @@ function cmdRun(runner, args, runOpts, pretty) {
       lines.push(`\nMatched CVEs (${cves.length}):`);
       for (const c of cves.slice(0, 6)) {
         const via = Array.isArray(c.correlated_via) && c.correlated_via.length ? `  via ${c.correlated_via[0]}${c.correlated_via.length > 1 ? ` (+${c.correlated_via.length - 1})` : ""}` : "";
-        lines.push(`  ${c.cve_id}  RWEP ${c.rwep}  KEV=${c.cisa_kev}  ${c.active_exploitation || ""}${via}`);
+        lines.push(`  ${c.cve_id}  RWEP ${c.rwep}  KEV=${c.cisa_kev ? "Y" : "N"}  ${c.active_exploitation || ""}${via}`);
       }
       if (cves.length > 6) lines.push(`  … ${cves.length - 6} more`);
     } else if (baseline.length) {
@@ -3627,7 +3928,13 @@ function cmdRun(runner, args, runOpts, pretty) {
     const hits = indicators.filter(i => i.verdict === "hit");
     if (hits.length) {
       lines.push(`\nIndicators that fired (${hits.length}):`);
-      for (const i of hits.slice(0, 8)) lines.push(`  ${i.id}  (${i.confidence}${i.deterministic ? "/deterministic" : ""})`);
+      for (const i of hits.slice(0, 8)) {
+        // Don't double-print "deterministic/deterministic" when confidence is
+        // already the literal "deterministic".
+        const detSuffix = (i.deterministic && i.confidence !== "deterministic") ? "/deterministic" : "";
+        lines.push(`  ${i.id}  (${i.confidence}${detSuffix})`);
+      }
+      if (hits.length > 8) lines.push(`  … ${hits.length - 8} more`);
     }
     // selected_remediation is informational on non-detect runs:
     // validate() always picks the highest-priority remediation path
@@ -3643,7 +3950,8 @@ function cmdRun(runner, args, runOpts, pretty) {
       } else {
         lines.push(`\nRemediation path (informational — verdict=${cls}, no action required now): ${rem.id} (priority ${rem.priority})`);
       }
-      lines.push(`  ${rem.description?.slice(0, 200) || ""}`);
+      const remDesc = rem.description || "";
+      lines.push(`  ${remDesc.length > 200 ? remDesc.slice(0, 200) + "… (full steps: --json)" : remDesc}`);
     }
     // Surface BOTH started and pending notification clocks on detected
     // runs. The detection IS the regulatory event for the obligations
@@ -3695,7 +4003,9 @@ function cmdRun(runner, args, runOpts, pretty) {
       // to the description if `check` is missing too.
       for (const i of issues) {
         const tag = i.on_fail ? `[${i.on_fail}] ` : "";
-        const detail = i.check || i.description || i.reason || "(no detail)";
+        // precondition_warn issues carry their text in `message`; without it in
+        // the fallback chain they rendered "(no detail)".
+        const detail = i.check || i.description || i.reason || i.message || "(no detail)";
         lines.push(`  ${tag}${i.id}: ${detail}`);
       }
     }
@@ -3708,9 +4018,27 @@ function cmdRun(runner, args, runOpts, pretty) {
     if (runtimeErrors.length) {
       lines.push(`\nRuntime warnings (${runtimeErrors.length}):`);
       for (const e of runtimeErrors) {
-        const reason = (e.reason || "").length > 180 ? (e.reason || "").slice(0, 177) + "..." : (e.reason || "");
+        // Some runtime-warning kinds (e.g. csaf_branch_unparseable) carry no
+        // `reason` but do carry context fields (component / cve_id); compose
+        // from those rather than rendering a blank line.
+        const rawReason = e.reason || [e.component, e.cve_id].filter(Boolean).join(" / ") || "(no detail)";
+        const reason = rawReason.length > 180 ? rawReason.slice(0, 177) + "..." : rawReason;
         lines.push(`  [${e.kind || "warning"}] ${reason}`);
         if (e.remediation) lines.push(`    → ${e.remediation}`);
+      }
+    }
+    // Surface collector_warnings (e.g. a file skipped for exceeding the
+    // scan-size limit) on the default human surface too. Without this an
+    // operator reading the render sees "evidence: complete" with no hint that
+    // the collector could not scan part of the tree — the skip lives only in
+    // --json's collector_warnings, invisible to the human reader.
+    const collectorWarnings = obj.collector_warnings || [];
+    if (collectorWarnings.length) {
+      lines.push(`\nCollector notices (${collectorWarnings.length}):`);
+      for (const w of collectorWarnings) {
+        const rawReason = w.reason || w.message || "(no detail)";
+        const reason = rawReason.length > 180 ? rawReason.slice(0, 177) + "..." : rawReason;
+        lines.push(`  [${w.kind || "notice"}] ${reason}`);
       }
     }
     lines.push(`\nFull structured result: --json (or --pretty for indented).`);
@@ -3997,7 +4325,39 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
     },
     jurisdiction_clock_rollup: jurisdictionClockRollup,
     results,
-  }, pretty);
+  }, pretty, (obj) => {
+    // Per-playbook summary table. Without this renderer a multi-run dumped its
+    // entire (often hundreds-of-KB) JSON even in default human mode.
+    const s = obj.summary;
+    const lines = [];
+    const detectedTotal = s.detected;
+    const icon = s.blocked > 0 ? "[!! BLOCKED]" : detectedTotal > 0 ? "[!! DETECTED]" : "[ok]";
+    lines.push(`run ${obj.trigger || "multi"}: ${obj.playbooks_run.length} playbook(s)  session-id: ${obj.session_id}`);
+    lines.push(`\n${icon}  detected=${detectedTotal}  inconclusive=${s.inconclusive}  clean=${s.total - detectedTotal - s.inconclusive - s.blocked}  blocked=${s.blocked}  total=${s.total}`);
+    const rows = (obj.results || []).map(r => (r && r.ok === false)
+      ? { id: r.playbook_id || "?", verdict: "blocked", rwep: "-", evidence: r.evidence_completeness || "not-evaluated", top: r.blocked_by || r.reason || r.error || "" }
+      : { id: r.playbook_id || "?", verdict: r?.phases?.detect?.classification || r?.verdict || "?", rwep: (r?.rwep_score != null) ? String(r.rwep_score) : "-", evidence: r?.evidence_completeness || "unknown", top: r?.top_finding || "" });
+    const wId = Math.max(8, ...rows.map(r => r.id.length));
+    const wV = Math.max(8, ...rows.map(r => r.verdict.length));
+    const wR = Math.max(4, ...rows.map(r => r.rwep.length));
+    const wE = Math.max(8, ...rows.map(r => r.evidence.length));
+    const pad = (str, w) => (str + " ".repeat(w)).slice(0, w);
+    lines.push("");
+    lines.push(`  ${pad("playbook", wId)}  ${pad("verdict", wV)}  ${pad("rwep", wR)}  ${pad("evidence", wE)}  finding`);
+    lines.push(`  ${"-".repeat(wId)}  ${"-".repeat(wV)}  ${"-".repeat(wR)}  ${"-".repeat(wE)}  -------`);
+    for (const row of rows) {
+      const finding = row.top.length > 80 ? row.top.slice(0, 77) + "..." : row.top;
+      lines.push(`  ${pad(row.id, wId)}  ${pad(row.verdict, wV)}  ${pad(row.rwep, wR)}  ${pad(row.evidence, wE)}  ${finding}`);
+    }
+    const clocks = obj.jurisdiction_clock_rollup || [];
+    if (clocks.length) {
+      lines.push(`\nJurisdiction clocks (${clocks.length}):`);
+      for (const n of clocks.slice(0, 5)) lines.push(`  ${n.jurisdiction || "?"}/${n.regulation || "?"} → deadline ${n.deadline || "?"}`);
+      if (clocks.length > 5) lines.push(`  … ${clocks.length - 5} more (--json for all)`);
+    }
+    lines.push(`\nFull structured results: --json or --pretty`);
+    return lines.join("\n");
+  });
   // v0.11.9 (#100): cmdRunMulti exits non-zero when any individual run
   // returned ok:false. Pre-0.11.9 the aggregate result had {ok:false} in
   // the body but exit code stayed 0 — CI gates couldn't distinguish "ran
@@ -4005,124 +4365,29 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
   // the aggregate JSON emitted above is allowed to fully drain.
   //
   // Aggregate exit-code precedence: LOCK_CONTENTION > STORAGE_EXHAUSTED >
-  // BLOCKED. Lock contention is transient (retry-from-outside fixes it);
-  // storage exhaustion is an infra event requiring operator action;
-  // ok:false in a per-playbook result is the BLOCKED case. Surfacing the
+  // SESSION_ID_COLLISION > GENERIC_FAILURE. Lock contention is transient
+  // (retry-from-outside fixes it); storage exhaustion is an infra event
+  // requiring operator action; a session-id collision mirrors the single-run
+  // code; any remaining ok:false per-playbook result yields GENERIC_FAILURE
+  // (exit 1) — distinct from the single-run BLOCKED (4) path. Surfacing the
   // most-specific code first means a CI gate can branch on the right
   // remediation without parsing the body.
   const anyLockBusy = results.some(r => r.attestation_persist && r.attestation_persist.lock_contention === true);
   const anyStorageExhausted = results.some(r => r.attestation_persist && r.attestation_persist.storage_exhausted === true);
+  // A persist failure that is neither lock-contention nor storage-exhaustion is
+  // a session-id collision (the single-run path exits 7 for the same
+  // condition). Pre-fix a batch where every attestation refused to overwrite
+  // exited 0, so a re-run with a reused --session-id silently persisted nothing
+  // while reporting success. Surface it with the same code as the single-run
+  // path so a CI gate sees it.
+  const anySessionCollision = results.some(r =>
+    r.attestation_persist && r.attestation_persist.ok === false
+    && !r.attestation_persist.lock_contention && !r.attestation_persist.storage_exhausted);
   const anyBlocked = results.some(r => r.ok === false);
   if (anyLockBusy) { process.exitCode = EXIT_CODES.LOCK_CONTENTION; return; }
   if (anyStorageExhausted) { process.exitCode = EXIT_CODES.STORAGE_EXHAUSTED; return; }
+  if (anySessionCollision) { process.exitCode = EXIT_CODES.SESSION_ID_COLLISION; return; }
   if (anyBlocked) { process.exitCode = EXIT_CODES.GENERIC_FAILURE; return; }
-}
-
-function cmdIngest(runner, args, runOpts, pretty) {
-  // `ingest` matches the AGENTS.md ingest contract. The submission JSON may
-  // carry playbook_id + directive_id; --domain/--directive flags override.
-  let submission = {};
-  // Auto-detect piped stdin (parity with cmdRun) so
-  // `echo '{...}' | exceptd ingest` reads the routing JSON instead of
-  // failing with "no playbook resolved" because args.evidence stays
-  // undefined.
-  // Route stdin auto-detection through hasReadableStdin() (see cmdRun for
-  // rationale). Wrapped-stdin test harnesses (Mocha/Jest, Docker
-  // stdin-passthrough) would otherwise block here forever on the
-  // readFileSync(0) call when isTTY === undefined.
-  if (!args.evidence && hasReadableStdin()) {
-    args.evidence = "-";
-  }
-  if (args.evidence) {
-    try {
-      submission = readEvidence(args.evidence);
-    } catch (e) {
-      return emitError(`ingest: failed to read evidence: ${e.message}`, { evidence: args.evidence }, pretty);
-    }
-  }
-  const playbookId = args.domain || submission.playbook_id || submission.domain;
-  if (!playbookId) return emitError("ingest: no playbook resolved — pass --domain <id> or include playbook_id in evidence JSON.", null, pretty);
-  if (refuseInvalidPlaybookId("ingest", playbookId, pretty)) return;
-  const pb = runner.loadPlaybook(playbookId);
-  const directiveId = args.directive
-    || submission.directive_id
-    || (pb.directives[0] && pb.directives[0].id);
-  if (!directiveId) return refuseNoDirectives("ingest", playbookId, pretty);
-
-  // Strip the routing keys so the runner only sees the contract shape it expects.
-  const cleanedSubmission = {
-    artifacts: submission.artifacts || {},
-    signal_overrides: submission.signal_overrides || {},
-    signals: submission.signals || {},
-  };
-
-  if (submission.precondition_checks) {
-    runOpts.precondition_checks = submission.precondition_checks;
-  }
-
-  const result = runner.run(playbookId, directiveId, cleanedSubmission, runOpts);
-
-  // v0.12.8: route ingest's attestation persistence through persistAttestation
-  // — the same path cmdRun + cmdRunMulti use — so the session-id collision
-  // refusal AND the Ed25519 sidecar signing both apply. Pre-v0.12.8 ingest
-  // had its own inline writeFileSync with neither check, meaning two ingest
-  // calls with the same session-id silently clobbered the audit trail and no
-  // .sig sidecar was written.
-  if (result && result.ok && result.session_id) {
-    // Mirror cmdRun / cmdRunMulti: gate operator_consent persistence on
-    // classification === 'detected'. --ack is meaningful only when a
-    // jurisdiction clock is at stake; persisting consent on a
-    // not-detected ingest forges audit-trail consent for a clock that
-    // never started.
-    const ingestClassification = result.phases && result.phases.detect ? result.phases.detect.classification : null;
-    const ingestConsentApplies = ingestClassification === "detected";
-    if (runOpts.operator_consent && !ingestConsentApplies) {
-      result.ack = true;
-      result.ack_applied = false;
-      result.ack_skipped_reason = `classification=${ingestClassification || "unknown"}; consent only persisted when classification=detected (jurisdiction clock at stake).`;
-    }
-    const persisted = persistAttestation({
-      sessionId: result.session_id,
-      playbookId: result.playbook_id,
-      directiveId: result.directive_id,
-      evidenceHash: result.evidence_hash,
-      operator: runOpts.operator,
-      operatorConsent: ingestConsentApplies ? runOpts.operator_consent : null,
-      submission: cleanedSubmission,
-      runOpts,
-      forceOverwrite: !!args["force-overwrite"],
-      filename: "attestation.json",
-    });
-    if (!persisted.ok) {
-      // Route every persist-failure shape through emitError so the
-      // emit() ok:false → exitCode contract applies uniformly. Three
-      // exit classes: LOCK_CONTENTION (transient), STORAGE_EXHAUSTED
-      // (infra), SESSION_ID_COLLISION (operator decision).
-      const ctx = { session_id: result.session_id, existing_path: persisted.existingPath };
-      if (persisted.lock_contention) {
-        ctx.lock_contention = true;
-        ctx.exit_code = EXIT_CODES.LOCK_CONTENTION;
-      }
-      if (persisted.storage_exhausted) {
-        ctx.storage_exhausted = true;
-        ctx.exit_code = EXIT_CODES.STORAGE_EXHAUSTED;
-      }
-      emitError(persisted.error, ctx, pretty);
-      if (persisted.lock_contention) process.exitCode = EXIT_CODES.LOCK_CONTENTION;
-      else if (persisted.storage_exhausted) process.exitCode = EXIT_CODES.STORAGE_EXHAUSTED;
-      else process.exitCode = EXIT_CODES.SESSION_ID_COLLISION;
-      return;
-    }
-    if (persisted.prior_session_id) {
-      result.attestation_persist = { ok: true, prior_session_id: persisted.prior_session_id, overwrote_at: persisted.overwrote_at };
-    }
-  }
-
-  if (result && result.ok === false) {
-    emit(result, pretty);
-    return;
-  }
-  emit(result, pretty);
 }
 
 /**
@@ -4234,23 +4499,68 @@ function persistAttestation(args) {
         prior_evidence_hash: priorEvidenceHash,
         prior_captured_at: priorCapturedAt,
       };
-      // Atomic-create via O_EXCL ('wx' flag) eliminates the TOCTOU window
-      // between existsSync and writeFileSync. Two concurrent run-with-same-
-      // session-id invocations now produce one winner + one EEXIST loser,
-      // not silent last-write-wins.
+      // Atomic write: the body and its .sig are written to fsync'd tmp files,
+      // then placed with linkSync (create) / rename (force-overwrite) so a
+      // crash mid-write can never leave a TRUNCATED attestation.json, and the
+      // body never appears partially written. linkSync preserves the O_EXCL
+      // collision guarantee the old "wx" flag gave: it throws EEXIST when the
+      // slot is taken (one winner + one EEXIST loser on concurrent same-
+      // session-id runs), and the placed file has the full content instantly.
       //
-      // v0.12.38 (cycle 18 P1 F2): mode 0o600 + Windows ACL hardening.
-      // Pre-fix attestations were written world-readable (umask-derived
-      // 0o644). On multi-tenant shared hosts a different user could read
-      // the operator's evidence submission, jurisdiction obligations,
-      // and consent records. Mirrors the existing private-key handling
-      // in lib/sign.js (mode 0o600 + restrictWindowsAcl).
-      fs.writeFileSync(filePath, JSON.stringify(attestation, null, 2), { flag, mode: 0o600 });
+      // v0.12.38: mode 0o600 + Windows ACL hardening — attestations carry the
+      // operator's evidence, jurisdiction obligations, and consent records and
+      // must not be world-readable on multi-tenant hosts.
+      const crypto = require("crypto");
+      const jsonStr = JSON.stringify(attestation, null, 2);
+      const sigPath = filePath + ".sig";
+      const suffix = `.${process.pid}.${crypto.randomBytes(6).toString("hex")}.tmp`;
+      const jsonTmp = filePath + suffix;
+      const sigTmp = sigPath + suffix;
+      const writeFsync = (p, data) => {
+        const fd = fs.openSync(p, "w", 0o600);
+        try { fs.writeFileSync(fd, data); fs.fsyncSync(fd); }
+        finally { fs.closeSync(fd); }
+      };
+      // Sidecar is computed over the SAME normalized bytes that will land, so
+      // the sig always matches the placed body.
+      const sidecarBytes = computeSidecarBytes(normalizeAttestationBytes(jsonStr));
+      writeFsync(jsonTmp, jsonStr);
+      writeFsync(sigTmp, sidecarBytes);
+      try {
+        if (flag === "wx") {
+          // Atomic create + collision detection.
+          try {
+            fs.linkSync(jsonTmp, filePath);
+          } catch (linkErr) {
+            if (linkErr.code === "EEXIST") throw linkErr; // collision — outer handler decides
+            // Filesystems without hard-link support (EPERM/EXDEV/ENOSYS): fall
+            // back to an existsSync collision check + atomic rename. Narrow
+            // TOCTOU window, only on such filesystems.
+            if (fs.existsSync(filePath)) { const e = new Error("EEXIST"); e.code = "EEXIST"; throw e; }
+            fs.renameSync(jsonTmp, filePath);
+          }
+          // Slot won — place the sidecar (sigPath is fresh on a create).
+          fs.renameSync(sigTmp, sigPath);
+          try { fs.unlinkSync(jsonTmp); } catch { /* hard-link path leaves a second name */ }
+        } else {
+          // Force-overwrite, under the persist lock: atomic replace of both.
+          // Both tmps are fully written + fsync'd, so the new body and its
+          // matching new sidecar are placed back-to-back.
+          fs.renameSync(jsonTmp, filePath);
+          fs.renameSync(sigTmp, sigPath);
+        }
+      } catch (placeErr) {
+        // Clean up tmps on any placement failure (incl. EEXIST collision) so
+        // a failed/refused write never leaves orphan tmp files at the slot.
+        try { fs.unlinkSync(jsonTmp); } catch { /* may already be linked/renamed */ }
+        try { fs.unlinkSync(sigTmp); } catch { /* may already be renamed */ }
+        throw placeErr;
+      }
       try {
         const { restrictWindowsAcl } = require(path.join(PKG_ROOT, "lib", "sign.js"));
         restrictWindowsAcl(filePath);
+        restrictWindowsAcl(sigPath);
       } catch { /* sign.js not loadable in some test paths — best-effort */ }
-      maybeSignAttestation(filePath);
     };
 
     try {
@@ -4423,40 +4733,18 @@ function normalizeAttestationBytes(input) {
   return s.replace(/\r\n/g, "\n");
 }
 
-function maybeSignAttestation(filePath) {
+// Compute the `.sig` sidecar bytes for an attestation's (already-normalized)
+// content. Pure — does NOT write any file; the persist path writes the
+// returned string to a tmp and atomically renames it into place alongside the
+// attestation body, so the body never lands without its sidecar bytes ready.
+// Emits the one-time-per-process unsigned warning.
+function computeSidecarBytes(contentNormalized) {
   const crypto = require("crypto");
-  const sigPath = filePath + ".sig";
-  // v0.12.9 (P2 #3 from production smoke + codex P1 PR #4 review): keep the
-  // sign key aligned with the VERIFY key. `attest verify` checks signatures
-  // against PKG_ROOT/keys/public.pem; if we sign with cwd/.keys/private.pem
-  // (e.g. the maintainer's repo-local keypair) the resulting `.sig` will
-  // verify INVALID and report a false tamper signal on every freshly-written
-  // attestation. PKG_ROOT-only resolution is the right answer; the original
-  // smoke report's "doctor finds key, run does not" gap is fixed in `doctor`
-  // (reporting only PKG_ROOT now), not by making `run` follow a cwd key the
-  // verifier doesn't trust.
+  // v0.12.9: keep the sign key aligned with the VERIFY key. `attest verify`
+  // checks signatures against PKG_ROOT/keys/public.pem; signing with a
+  // cwd-local key would verify INVALID. PKG_ROOT-only resolution is correct.
   const privKeyPath = path.join(PKG_ROOT, ".keys", "private.pem");
-  // Normalize attestation bytes before sign — strip leading UTF-8 BOM +
-  // collapse CRLF to LF. Mirrors lib/sign.js / lib/verify.js /
-  // lib/refresh-network.js / scripts/verify-shipped-tarball.js. The
-  // attestation file lives on disk under .exceptd/ and can pick up CRLF
-  // through git-attribute / editor round-trips on Windows; without
-  // normalization the sign/verify pair diverges on the same logical content.
-  // The byte-stability contract spans five sites; tests/normalize-contract
-  // .test.js enforces byte-identical output across all of them.
-  const rawContent = fs.readFileSync(filePath, "utf8");
-  const content = normalizeAttestationBytes(rawContent);
   // One-time-per-process unsigned warning so cron jobs don't spam stderr.
-  // Operators who set `.keys/private.pem` get tamper-evident attestations;
-  // operators without the keypair get a single nudge per session telling them
-  // exactly how to enable signing.
-  //
-  // Consumer installs (`npm install -g`) land PKG_ROOT under
-  // node_modules/ where the operator typically can't write to
-  // .keys/. For those installs the multi-line nudge prescribes a
-  // remediation (doctor --fix) the operator doesn't own — surface a
-  // single-line marker so the unsigned attestation isn't silent, but
-  // skip the call-to-action that doesn't apply.
   if (!fs.existsSync(privKeyPath) && !process.env.EXCEPTD_UNSIGNED_WARNED) {
     const pkgRootSegments = PKG_ROOT.split(/[\\/]/);
     const isConsumerInstall =
@@ -4477,37 +4765,45 @@ function maybeSignAttestation(filePath) {
   try {
     if (fs.existsSync(privKeyPath)) {
       const privateKey = fs.readFileSync(privKeyPath, "utf8");
-      const sig = crypto.sign(null, Buffer.from(content, "utf8"), {
+      const sig = crypto.sign(null, Buffer.from(contentNormalized, "utf8"), {
         key: privateKey,
         dsaEncoding: "ieee-p1363",
       });
-      // The sidecar's Ed25519 signature covers ONLY the attestation file
-      // bytes. Fields that travel inside the .sig but are NOT in the signed
-      // message are replay-rewrite trivial: an attacker who can write the
-      // directory can mutate them without invalidating the signature. The
-      // sidecar therefore carries only the algorithm tag, the Ed25519
-      // signature payload, and an explanatory note — no `signed_at`,
-      // `signs_path`, or `signs_sha256`. Operators reading freshness use
-      // filesystem mtime; the attestation file's `captured_at` field is
-      // what's signed.
-      fs.writeFileSync(sigPath, JSON.stringify({
+      // The Ed25519 signature covers ONLY the attestation file bytes; no
+      // replay-rewritable metadata travels in the sidecar.
+      return JSON.stringify({
         algorithm: "Ed25519",
         signature_base64: sig.toString("base64"),
         note: "Ed25519 signature covers the attestation file bytes only. Use filesystem mtime for freshness; use the attestation's `captured_at` for the signed timestamp.",
-      }, null, 2), { mode: 0o600 });
-      // Mirror the v0.12.38 attestation.json hardening: 0o600 on POSIX +
-      // icacls inheritance strip on win32. The sidecar carries the
-      // signature payload; multi-tenant hosts shouldn't leak it.
-      try { require("./../lib/sign.js").restrictWindowsAcl(sigPath); } catch { /* best-effort */ }
-    } else {
-      fs.writeFileSync(sigPath, JSON.stringify({
-        algorithm: "unsigned",
-        signed: false,
-        note: "No private key at .keys/private.pem — attestation is hash-stable but unsigned. Run `exceptd doctor --fix` to enable signing.",
-      }, null, 2), { mode: 0o600 });
-      try { require("./../lib/sign.js").restrictWindowsAcl(sigPath); } catch { /* best-effort */ }
+      }, null, 2);
     }
-  } catch { /* non-fatal — signing failure shouldn't block the run */ }
+    return JSON.stringify({
+      algorithm: "unsigned",
+      signed: false,
+      note: "No private key at .keys/private.pem — attestation is hash-stable but unsigned. Run `exceptd doctor --fix` to enable signing.",
+    }, null, 2);
+  } catch {
+    // Signing failure must not block the run — fall back to an unsigned marker
+    // so the sidecar always exists alongside the body.
+    return JSON.stringify({
+      algorithm: "unsigned",
+      signed: false,
+      note: "Signing failed at write time; attestation is hash-stable but unsigned.",
+    }, null, 2);
+  }
+}
+
+// Sign an already-written file in place by computing + writing its `.sig`
+// sidecar. The main attestation-persist path writes the sidecar atomically
+// alongside the body (via computeSidecarBytes); this helper serves the
+// replay-record path, which writes a uniquely-named file and so needs no
+// atomic-collision handling. Best-effort: a sign-time failure leaves the
+// record unsigned (still a valid audit entry) rather than aborting.
+function maybeSignAttestation(filePath) {
+  const content = normalizeAttestationBytes(fs.readFileSync(filePath, "utf8"));
+  const sidecar = computeSidecarBytes(content);
+  fs.writeFileSync(filePath + ".sig", sidecar, { mode: 0o600 });
+  try { require(path.join(PKG_ROOT, "lib", "sign.js")).restrictWindowsAcl(filePath + ".sig"); } catch { /* best-effort */ }
 }
 
 /**
@@ -4719,6 +5015,92 @@ function verifyAttestationSidecar(attFile) {
   }
 }
 
+/**
+ * `attest prune --all-older-than <ISO>` — GC for attestation growth.
+ *
+ * One attestation is written per `run`, with no cleanup, so the store grows
+ * monotonically (tests alone pile up thousands). This removes whole session
+ * directories whose attestation `captured_at` predates the cutoff. `--dry-run`
+ * previews without deleting. Deletion is confined to direct child dirs of the
+ * resolved attestation roots — never traverses outside them.
+ */
+function cmdPruneAttestations(runner, args, runOpts, pretty) {
+  const cutoffRaw = args["all-older-than"];
+  if (!cutoffRaw) {
+    return emitError(
+      "attest prune: --all-older-than <ISO-8601 date> is required (e.g. attest prune --all-older-than 2026-01-01). Add --dry-run to preview.",
+      { verb: "attest prune" },
+      pretty,
+    );
+  }
+  const isoErr = validateIsoSince(cutoffRaw);
+  if (isoErr) return emitError(`attest prune: ${isoErr}`, { verb: "attest prune" }, pretty);
+  const cutoffMs = Date.parse(cutoffRaw);
+  const dryRun = !!args["dry-run"];
+
+  const roots = [...new Set([resolveAttestationRoot(runOpts), path.join(process.cwd(), ".exceptd", "attestations")])];
+  const pruned = [];
+  let kept = 0;
+  let scanned = 0;
+  for (const root of roots) {
+    let sessions;
+    try { sessions = fs.readdirSync(root, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name); }
+    catch { continue; }
+    for (const sid of sessions) {
+      const sdir = path.join(root, sid);
+      scanned++;
+      // Determine the session's captured_at from its newest non-replay
+      // attestation. A session with no parseable captured_at is left alone
+      // (never delete something we can't date).
+      let captured = null;
+      try {
+        for (const f of fs.readdirSync(sdir)) {
+          if (!f.endsWith(".json") || f.endsWith(".sig")) continue;
+          let j; try { j = JSON.parse(fs.readFileSync(path.join(sdir, f), "utf8")); } catch { continue; }
+          if (!j || j.kind === "replay") continue;
+          if (typeof j.captured_at === "string" && (!captured || j.captured_at > captured)) captured = j.captured_at;
+        }
+      } catch { continue; }
+      const ts = captured ? Date.parse(captured) : NaN;
+      if (!Number.isFinite(ts)) { kept++; continue; }
+      if (ts < cutoffMs) {
+        pruned.push({ session_id: sid, captured_at: captured, dir: sdir });
+        if (!dryRun) {
+          // Confinement: resolve and confirm sdir is a direct child of root
+          // before removing, so a crafted session name can't escape the root.
+          try {
+            const realRoot = fs.realpathSync(root);
+            const realDir = fs.realpathSync(sdir);
+            if (path.dirname(realDir) === realRoot) fs.rmSync(realDir, { recursive: true, force: true });
+          } catch { /* skip undeletable */ }
+        }
+      } else {
+        kept++;
+      }
+    }
+  }
+
+  emit({
+    ok: true,
+    verb: "attest prune",
+    dry_run: dryRun,
+    cutoff: cutoffRaw,
+    scanned,
+    pruned_count: pruned.length,
+    kept,
+    pruned: pruned.map(p => ({ session_id: p.session_id, captured_at: p.captured_at })),
+    roots_searched: roots,
+  }, pretty, (obj) => {
+    const lines = [];
+    lines.push(`attest prune${obj.dry_run ? " (DRY-RUN)" : ""}: cutoff ${obj.cutoff}`);
+    lines.push(`  scanned ${obj.scanned} session(s)  |  ${obj.dry_run ? "would prune" : "pruned"} ${obj.pruned_count}  |  kept ${obj.kept}`);
+    for (const p of obj.pruned.slice(0, 20)) lines.push(`  ${obj.dry_run ? "[would-delete]" : "[deleted]"} ${p.session_id}  (${(p.captured_at || "").slice(0, 19)})`);
+    if (obj.pruned_count > 20) lines.push(`  … ${obj.pruned_count - 20} more`);
+    if (obj.dry_run && obj.pruned_count > 0) lines.push(`  → re-run without --dry-run to delete.`);
+    return lines.join("\n");
+  });
+}
+
 function cmdReattest(runner, args, runOpts, pretty) {
   const crypto = require("crypto");
   // Validate --since as ISO-8601, mirroring `attest list --since`. An
@@ -4745,6 +5127,15 @@ function cmdReattest(runner, args, runOpts, pretty) {
     attFile = found.file;
   }
   if (!sessionId) return emitError("reattest: missing <session-id>. Pass a session-id or --latest [--playbook <id>] [--since <ISO>].", null, pretty);
+  // Validate the session-id BEFORE it is joined into a filesystem path. The
+  // other read verbs (attest show/verify/diff --against) gate on this; reattest
+  // did not, so `findSessionDir` returning null let the `||` fallback join an
+  // unvalidated `../`-bearing id straight onto the attestation root — escaping
+  // it to read a forged attestation and write a signed replay record outside
+  // the root. Ids resolved from the store via the latest-match path are already
+  // safe; an operator-supplied id is the one that must be checked.
+  try { validateSessionIdForRead(sessionId); }
+  catch (e) { return emitError(`reattest: ${e.message}`, { session_id_input: typeof sessionId === "string" ? sessionId.slice(0, 80) : typeof sessionId }, pretty); }
   const dir = findSessionDir(sessionId, runOpts) || path.join(resolveAttestationRoot(runOpts), sessionId);
   if (!attFile) attFile = path.join(dir, "attestation.json");
   if (!fs.existsSync(attFile)) {
@@ -4860,7 +5251,16 @@ function cmdReattest(runner, args, runOpts, pretty) {
   // Preserve only precondition_checks from the prior submission so the runner
   // doesn't halt on host-environment guards (the reattest is about evidence
   // drift, not re-verifying that the host is still Linux etc.).
-  const emptySubmission = { artifacts: {}, signal_overrides: {}, signals: {} };
+  // Replay the ORIGINAL persisted submission, not a hardcoded empty one.
+  // Replaying empty made the replay's evidence_hash differ from the prior hash
+  // for every session whose original evidence wasn't byte-identical to that
+  // empty stub — i.e. essentially all of them — so reattest reported a false
+  // "drifted" on unchanged sessions. Replaying the prior submission reproduces
+  // the prior hash for unchanged evidence; a mismatch then genuinely means the
+  // hash/canonicalization (or the derived verdict) drifted.
+  const replaySubmission = (prior.submission && typeof prior.submission === "object")
+    ? prior.submission
+    : { artifacts: {}, signal_overrides: {}, signals: {} };
   const replayOpts = Object.assign({}, runOpts, {
     airGap: !!(prior.run_opts && prior.run_opts.airGap) || runOpts.airGap,
     forceStale: true, // bypass currency block on reattest — drift comparison is the point
@@ -4884,7 +5284,7 @@ function cmdReattest(runner, args, runOpts, pretty) {
       }
     } catch { /* ignore */ }
   }
-  const replay = runner.run(prior.playbook_id, prior.directive_id, emptySubmission, replayOpts);
+  const replay = runner.run(prior.playbook_id, prior.directive_id, replaySubmission, replayOpts);
 
   if (!replay || replay.ok === false) {
     // When replay.reason is falsy, dump the available keys so an operator
@@ -5097,18 +5497,43 @@ function classifySidecarVerify(verify) {
  *   show <session-id>     Emit the full (unredacted) attestation. Convenience
  *                         alias for `cat .exceptd/attestations/<sid>/attestation.json`.
  */
+// Shared one-screen renderer for `attest diff` (both the --against and the
+// no-against/most-recent-prior branches). Reads only fields off the emitted
+// object so both call sites render identically; the sidecar line is shown only
+// when a sidecar verification was performed (the --against path may omit it).
+function renderAttestDiff(obj) {
+  const lines = [];
+  lines.push(`attest diff: ${obj.a_session}${obj.a_playbook ? ` (${obj.a_playbook})` : ""}`);
+  lines.push(`  vs ${obj.b_session}${obj.b_captured ? ` (captured ${obj.b_captured})` : ""}`);
+  const icon = obj.status === "unchanged" ? "[ok]" : "[!]";
+  lines.push(`  ${icon}  status=${obj.status}  evidence_hash=${(obj.a_evidence_hash || "").slice(0, 12)}...`);
+  const ad = obj.artifact_diff || {};
+  const sd = obj.signal_override_diff || {};
+  lines.push(`  artifact diff:  ${ad.added?.length ?? 0} added, ${ad.removed?.length ?? 0} removed, ${ad.changed?.length ?? 0} changed, ${ad.unchanged_count ?? 0} unchanged (of ${ad.total_compared ?? 0})`);
+  lines.push(`  signal diff:    ${sd.changed?.length ?? 0} changed, ${sd.unchanged_count ?? 0} unchanged (of ${sd.total_compared ?? 0})`);
+  if (obj.sidecar_verify) {
+    const sv = obj.sidecar_verify;
+    let sidecarClass = "verified";
+    if (!sv.signed && sv.reason && sv.reason.includes("explicitly unsigned")) sidecarClass = "explicitly-unsigned";
+    else if (!sv.signed && sv.reason && sv.reason.includes("no .sig sidecar")) sidecarClass = "no-sidecar";
+    else if (sv.signed && !sv.verified) sidecarClass = "tamper-detected";
+    else if (!sv.signed) sidecarClass = "no-public-key";
+    lines.push(`  sidecar verify: ${sidecarClass}`);
+  }
+  return lines.join("\n");
+}
 function cmdAttest(runner, args, runOpts, pretty) {
   const subverb = args._[0];
   const sessionId = args._[1];
   if (!subverb) {
-    return emitError("attest: missing subverb. Usage: attest list | show <sid> | export <sid> | verify <sid> | diff <sid>", null, pretty);
+    return emitError("attest: missing subverb. Usage: attest list | show <sid> | export <sid> | verify <sid> [--require-signed] | diff <sid> | prune --all-older-than <ISO> [--dry-run]", null, pretty);
   }
   // Validate subverb membership BEFORE the session-id branch so a typo
   // (`attest verfy sid`) gets the did-you-mean response, not the
   // misleading "no session dir for sid" downstream. Pre-fix the
   // session-id resolution ran first and a valid-but-unrecognized
   // subverb collapsed into a session-lookup failure.
-  const ATTEST_SUBVERBS = ["list", "show", "export", "verify", "diff"];
+  const ATTEST_SUBVERBS = ["list", "show", "export", "verify", "diff", "prune"];
   if (!ATTEST_SUBVERBS.includes(subverb)) {
     const dym = suggestVerb(subverb, ATTEST_SUBVERBS);
     const hint = dym.length > 0
@@ -5123,6 +5548,10 @@ function cmdAttest(runner, args, runOpts, pretty) {
   // `list` doesn't require a session-id positional.
   if (subverb === "list") {
     return cmdListAttestations(runner, args, runOpts, pretty);
+  }
+  // `prune` is the GC for attestation growth — also no session-id positional.
+  if (subverb === "prune") {
+    return cmdPruneAttestations(runner, args, runOpts, pretty);
   }
   if (!sessionId) {
     return emitError(
@@ -5174,6 +5603,13 @@ function cmdAttest(runner, args, runOpts, pretty) {
     // session (= reattest). With --against, compares two sessions A vs B
     // by evidence_hash + artifact-level field diff.
     if (args.against) {
+      // Validate the --against id with the same gate as the primary sid, so a
+      // traversal/garbage value (`../../etc/passwd`) gets the explicit "invalid
+      // session-id" message rather than a misleading "no session dir found".
+      try { validateSessionIdForRead(args.against); }
+      catch (e) {
+        return emitError(`attest diff --against: ${e.message}`, { against_input: typeof args.against === "string" ? args.against.slice(0, 80) : typeof args.against }, pretty);
+      }
       const otherDir = findSessionDir(args.against, runOpts);
       if (!otherDir) {
         return emitError(`attest diff --against ${args.against}: no session dir found.`, null, pretty);
@@ -5223,12 +5659,14 @@ function cmdAttest(runner, args, runOpts, pretty) {
       emit({
         verb: "attest diff",
         a_session: sessionId,
+        a_playbook: self.playbook_id,
         b_session: args.against,
         a_captured: self.captured_at,
         b_captured: other.captured_at,
         a_evidence_hash: self.evidence_hash,
         b_evidence_hash: other.evidence_hash,
         status: self.evidence_hash === other.evidence_hash ? "unchanged" : "drifted",
+        sidecar_verify: verifyAttestationSidecar(path.join(dir, "attestation.json")),
         // v0.11.8 (#102): normalize submissions before diffing so flat-shape
         // (observations + verdict) submissions emit meaningful artifact_diff
         // counts. Pre-0.11.8 (self.submission||{}).artifacts was undefined
@@ -5242,7 +5680,7 @@ function cmdAttest(runner, args, runOpts, pretty) {
           normalizedSignalOverrides(self.submission, runner, self.playbook_id),
           normalizedSignalOverrides(other.submission, runner, other.playbook_id)
         ),
-      }, pretty);
+      }, pretty, renderAttestDiff);
       return;
     }
     // No --against: find the most-recent prior attestation for the
@@ -5277,6 +5715,7 @@ function cmdAttest(runner, args, runOpts, pretty) {
     emit({
       verb: "attest diff",
       a_session: sessionId,
+      a_playbook: self.playbook_id,
       b_session: prior.sessionId,
       a_captured: self.captured_at,
       b_captured: other.captured_at,
@@ -5292,28 +5731,7 @@ function cmdAttest(runner, args, runOpts, pretty) {
         normalizedSignalOverrides(self.submission, runner, self.playbook_id),
         normalizedSignalOverrides(other.submission, runner, other.playbook_id),
       ),
-    }, pretty, (obj) => {
-      // Human renderer for the no-against `attest diff` path. Same
-      // one-screen shape the old cmdReattest renderer used so the
-      // operator sees the verdict + drift summary + sidecar class.
-      const lines = [];
-      lines.push(`attest diff: ${obj.a_session} (${self.playbook_id})`);
-      lines.push(`  vs prior: ${obj.b_session} (captured ${obj.b_captured})`);
-      const icon = obj.status === "unchanged" ? "[ok]" : "[!]";
-      lines.push(`  ${icon}  status=${obj.status}  evidence_hash=${(obj.a_evidence_hash || "").slice(0, 12)}...`);
-      const ad = obj.artifact_diff || {};
-      const sd = obj.signal_override_diff || {};
-      lines.push(`  artifact diff:  ${ad.added?.length ?? 0} added, ${ad.removed?.length ?? 0} removed, ${ad.changed?.length ?? 0} changed, ${ad.unchanged_count ?? 0} unchanged (of ${ad.total_compared ?? 0})`);
-      lines.push(`  signal diff:    ${sd.changed?.length ?? 0} changed, ${sd.unchanged_count ?? 0} unchanged (of ${sd.total_compared ?? 0})`);
-      const sv = obj.sidecar_verify || {};
-      let sidecarClass = "verified";
-      if (!sv.signed && sv.reason && sv.reason.includes("explicitly unsigned")) sidecarClass = "explicitly-unsigned";
-      else if (!sv.signed && sv.reason && sv.reason.includes("no .sig sidecar")) sidecarClass = "no-sidecar";
-      else if (sv.signed && !sv.verified) sidecarClass = "tamper-detected";
-      else if (!sv.signed) sidecarClass = "no-public-key";
-      lines.push(`  sidecar verify: ${sidecarClass}`);
-      return lines.join("\n");
-    });
+    }, pretty, renderAttestDiff);
     return;
   }
 
@@ -5341,6 +5759,22 @@ function cmdAttest(runner, args, runOpts, pretty) {
     // tampered attestation.json and overwrote .sig with the unsigned stub).
     const privKeyPath = path.join(PKG_ROOT, ".keys", "private.pem");
     const hasPrivKey = fs.existsSync(privKeyPath);
+    // Does any sidecar in this session dir carry a real Ed25519 signature? If
+    // so, a sibling attestation with NO sidecar is suspicious (a sig was
+    // expected). Combined with hasPrivKey, this lets default `attest verify`
+    // treat a deleted sidecar as tamper — agreeing with `reattest`, which
+    // already refuses. The keyless case (no key, all-unsigned peers) stays
+    // benign so keyless CI is unaffected.
+    let anyPeerEd25519Signed = false;
+    try {
+      for (const sf of fs.readdirSync(dir)) {
+        if (!sf.endsWith(".sig")) continue;
+        try {
+          const sd = JSON.parse(fs.readFileSync(path.join(dir, sf), "utf8"));
+          if (sd && sd.algorithm === "Ed25519") { anyPeerEd25519Signed = true; break; }
+        } catch { /* skip unparseable sidecar */ }
+      }
+    } catch { /* dir unreadable — fall through */ }
 
     // Sidecar-verify helper shared by both the attestations[] and
     // replay-records[] partitions. Centralising the per-file verify
@@ -5348,7 +5782,16 @@ function cmdAttest(runner, args, runOpts, pretty) {
     // instead of two parallel branches.
     const verifySidecar = (f) => {
       const sigPath = path.join(dir, f + ".sig");
-      if (!fs.existsSync(sigPath)) return { file: f, signed: false, verified: false, reason: "no .sig sidecar" };
+      if (!fs.existsSync(sigPath)) {
+        // A missing sidecar is benign ONLY when none was ever expected (the
+        // attestation was written on a keyless host and no peer is signed).
+        // When a sig SHOULD exist, an absent one is a deletion-to-evade-tamper
+        // signal — flag it so default verify matches reattest's refusal.
+        if (hasPrivKey || anyPeerEd25519Signed) {
+          return { file: f, signed: false, verified: false, reason: "no .sig sidecar, but one was expected (signing key present or a signed peer attestation exists) — sidecar deletion suspected", tamper_class: "sidecar-missing" };
+        }
+        return { file: f, signed: false, verified: false, reason: "no .sig sidecar" };
+      }
       let sigDoc;
       try { sigDoc = JSON.parse(fs.readFileSync(sigPath, "utf8")); }
       catch (e) {
@@ -5424,7 +5867,8 @@ function cmdAttest(runner, args, runOpts, pretty) {
       (r.signed && !r.verified)
       || r.tamper_class === "sidecar-corrupt"
       || r.tamper_class === "unsigned-substitution"
-      || r.tamper_class === "algorithm-unsupported";
+      || r.tamper_class === "algorithm-unsupported"
+      || r.tamper_class === "sidecar-missing";
     const attTampered = attResults.some(tamperPredicate);
     const replayTampered = replayResults.some(tamperPredicate);
 
@@ -5444,6 +5888,23 @@ function cmdAttest(runner, args, runOpts, pretty) {
       // see the corruption without promoting the exit code.
       body.replay_tamper = true;
       body.warnings = ["one or more replay records failed Ed25519 verification — audit-trail corruption suspected, regenerate via reattest"];
+    }
+    // --require-signed: in an audit context an UNSIGNED or sidecar-stripped
+    // attestation is not acceptable, even though it isn't tamper per se.
+    // Without this, `attest verify` returns exit 0 for an unsigned attestation
+    // — so an attacker who tampers the body AND deletes the .sig evades the
+    // exit-6 tamper signal. Strict mode makes "not Ed25519-verified" a failure
+    // (exit 1 via the ok:false contract, distinct from tamper's exit 6).
+    if (!attTampered && args["require-signed"] && (attResults.length === 0 || !attResults.every(r => r.verified))) {
+      body.ok = false;
+      body.require_signed = true;
+      // attResults.length === 0 → the session dir has no attestation at all
+      // (only replay records, or the JSON was deleted); `[].every()` is
+      // vacuously true, so without the length check an empty session would
+      // pass strict mode. A strict audit gate must reject "nothing to verify".
+      body.error = attResults.length === 0
+        ? "attest verify --require-signed: no signed attestation present for this session — refusing under strict mode"
+        : "attest verify --require-signed: one or more attestations are not Ed25519-verified (unsigned or missing .sig sidecar) — refusing under strict mode";
     }
     // Human renderer for `attest verify` — one-line answer to "did
     // anyone tamper with my evidence since I ran it?" so the operator
@@ -5465,7 +5926,7 @@ function cmdAttest(runner, args, runOpts, pretty) {
       // failures (tamper_class present) so the next-step block still fires.
       const noTamper = att.every(r => !r.tamper_class) && rep.every(r => !r.tamper_class);
       const allVerified = att.every(r => r.verified) && rep.every(r => r.verified);
-      const icon = obj.ok === false ? "[!! TAMPERED]" : (obj.replay_tamper ? "[i  REPLAY_TAMPER]" : (allVerified ? "[ok]" : "[i  UNSIGNED]"));
+      const icon = obj.ok === false ? (obj.require_signed ? "[!! UNSIGNED-REJECTED]" : "[!! TAMPERED]") : (obj.replay_tamper ? "[i  REPLAY_TAMPER]" : (allVerified ? "[ok]" : "[i  UNSIGNED]"));
       lines.push(`\n${icon}  ${att.filter(r => r.verified).length}/${att.length} attestation(s) verified, ${rep.filter(r => r.verified).length}/${rep.length} replay record(s) verified`);
       // Status icon precedence: verified → [ok]. tamper_class set →
       // [!! <CLASS>] (real tamper signal). signed=false AND no
@@ -5715,7 +6176,18 @@ function previewValue(v) {
 // /etc/os-release on Linux, and outputs a list of recommended playbooks.
 // ---------------------------------------------------------------------------
 function cmdDiscover(runner, args, runOpts, pretty) {
-  const cwd = process.cwd();
+  // Honor --cwd so `discover --cwd <dir>` scans the target tree, not the
+  // process cwd. Pre-fix it was silently ignored — recommendations were
+  // computed for the wrong directory with no signal. Validated like collect.
+  let cwd = process.cwd();
+  if (args.cwd) {
+    const resolved = path.resolve(String(args.cwd));
+    let stat;
+    try { stat = fs.statSync(resolved); }
+    catch (e) { return emitError(`discover: --cwd "${args.cwd}" does not exist (${e.message})`, { verb: "discover", provided_cwd: args.cwd }, pretty); }
+    if (!stat.isDirectory()) return emitError(`discover: --cwd "${args.cwd}" is not a directory`, { verb: "discover", provided_cwd: args.cwd }, pretty);
+    cwd = resolved;
+  }
   const wantJson = !!args.json || !!args.pretty;
   const indent = !!args.pretty;
 
@@ -5795,8 +6267,24 @@ function cmdDiscover(runner, args, runOpts, pretty) {
   const hasRust = detected.includes("Cargo.toml");
   const hasGo = detected.includes("go.mod");
   const hasProject = hasNode || hasPython || hasRust || hasGo;
+  // Container artifacts ANYWHERE in the tree (subdir Dockerfiles, compose
+  // variants like docker-compose.test.yml) — not just a root-level exact-name
+  // file. The root-only `probe()`s above miss them, so mirror exactly what the
+  // containers collector walks/classifies, otherwise discover under-recommends
+  // `containers` and an operator silently skips a relevant playbook.
+  let containerArtifacts = [];
+  try {
+    const containersMod = require(path.join(PKG_ROOT, "lib", "collectors", "containers.js"));
+    if (typeof containersMod.hasContainerArtifacts === "function") {
+      containerArtifacts = containersMod.hasContainerArtifacts(cwd);
+    }
+  } catch { /* best-effort detection; never break discover on a walk error */ }
+  if (containerArtifacts.length && !detected.includes("Dockerfile")
+      && !detected.includes("docker-compose.yml") && !detected.includes("docker-compose.yaml")) {
+    detected.push(`container-config (${containerArtifacts[0]})`);
+  }
   const hasContainers = detected.includes("Dockerfile") || detected.includes("docker-compose.yml")
-    || detected.includes("docker-compose.yaml");
+    || detected.includes("docker-compose.yaml") || containerArtifacts.length > 0;
   const isLinux = hostPlatform === "linux";
 
   // .github/workflows/ directory probe — surfaces the CI/CD posture
@@ -5993,8 +6481,10 @@ function cmdDoctor(runner, args, runOpts, pretty) {
     "json", "pretty", "fix", "air-gap",
     "signatures", "currency", "cves", "rfcs", "registry-check",
     "ai-config", "collectors", "exit-codes", "shipped-tarball",
-    // Global flags the parser may inject regardless of verb.
-    "_", "json-stdout-only", "_jsonMode",
+    // Global flags the parser may inject regardless of verb. Keep in sync
+    // with VERB_FLAG_ALLOWLIST._global in lib/flag-suggest.js — quiet/verbose
+    // are accepted on every verb, so doctor must not refuse them as typos.
+    "_", "json-stdout-only", "_jsonMode", "quiet", "verbose",
   ]);
   const unknownFlags = Object.keys(args).filter(k => !KNOWN_DOCTOR_FLAGS.has(k));
   if (unknownFlags.length > 0) {
@@ -6028,7 +6518,11 @@ function cmdDoctor(runner, args, runOpts, pretty) {
   const onlyAiConfig = !!args["ai-config"];
   const onlyCollectors = !!args.collectors;
   const anySelected = onlySigs || onlyCurrency || onlyCves || onlyRfcs || onlyAiConfig || onlyCollectors;
-  const runSigs = !anySelected || onlySigs;
+  // --shipped-tarball lives inside the signatures check, so it must imply it.
+  // Pre-fix, `doctor --shipped-tarball --cves` made runSigs false (a selective
+  // flag was set, but not --signatures), silently skipping the tarball
+  // round-trip while the operator believed it ran.
+  const runSigs = !anySelected || onlySigs || !!args["shipped-tarball"];
   const runCurrency = !anySelected || onlyCurrency;
   const runCves = !anySelected || onlyCves;
   const runRfcs = !anySelected || onlyRfcs;
@@ -6229,23 +6723,34 @@ function cmdDoctor(runner, args, runOpts, pretty) {
         timeout: 30000,
       });
       const text = (res.stdout || "") + (res.stderr || "");
-      const rfcRows = (text.match(/^RFC-\d+/gm) || []).length;
       const driftMatch = text.match(/drift[:\s]+(\d+)/i);
       const ok = res.status === 0;
-      // Audit 3 B.7: surface the RFC catalog file's mtime + age so
-      // operators can answer "is the offline RFC index fresh?" without
-      // running a separate refresh.
+      // Count the catalog directly (same approach the CVE subcheck uses) rather
+      // than scraping `^RFC-\d+` table rows from the validate-rfcs output. The
+      // text scrape dropped every non-RFC family (CSAF / DRAFT / ISO entries),
+      // undercounting the catalog and hiding those citation families. Read the
+      // canonical file and emit a by_prefix breakdown.
+      const rfcCatalogPath = path.join(PKG_ROOT, "data", "rfc-references.json");
+      let rfcTotal = 0;
+      const byPrefix = {};
       let rfcMtime = null;
       let rfcAgeDays = null;
       try {
-        const rfcPath = path.join(PKG_ROOT, "data", "rfc-index.json");
-        const st = fs.statSync(rfcPath);
+        const catalog = JSON.parse(fs.readFileSync(rfcCatalogPath, "utf8"));
+        for (const k of Object.keys(catalog)) {
+          if (k.startsWith("_")) continue;
+          rfcTotal++;
+          const prefix = (k.match(/^[A-Za-z]+/) || ["?"])[0].toUpperCase();
+          byPrefix[prefix] = (byPrefix[prefix] || 0) + 1;
+        }
+        const st = fs.statSync(rfcCatalogPath);
         rfcMtime = st.mtime.toISOString();
         rfcAgeDays = Math.floor((Date.now() - st.mtimeMs) / 86400000);
-      } catch { /* file may not exist on contributor checkouts */ }
+      } catch { /* file may be absent on exotic installs — total stays 0 */ }
       checks.rfcs = {
         ok,
-        total: rfcRows,
+        total: rfcTotal,
+        by_prefix: byPrefix,
         drift: driftMatch ? Number(driftMatch[1]) : 0,
         index_last_modified: rfcMtime,
         index_age_days: rfcAgeDays,
@@ -6527,9 +7032,14 @@ function cmdDoctor(runner, args, runOpts, pretty) {
       }
     }
 
+    // A truncated walk (hit the file/depth cap) means the audit is INCOMPLETE —
+    // a sensitive file beyond the cap would be unseen. Don't report an
+    // unqualified clean pass: downgrade to a warn so automation can branch on
+    // incompleteness even when zero findings surfaced within the cap.
+    const baseSeverity = errorFindings.length > 0 && fixesFailed > 0 ? 'warn' : (errorFindings.length > 0 && !args.fix ? 'warn' : 'info');
     checks.ai_config = {
-      ok: errorFindings.length === 0 || (args.fix && fixesFailed === 0),
-      severity: errorFindings.length > 0 && fixesFailed > 0 ? 'warn' : (errorFindings.length > 0 && !args.fix ? 'warn' : 'info'),
+      ok: (errorFindings.length === 0 || (args.fix && fixesFailed === 0)) && !walkAborted,
+      severity: walkAborted && baseSeverity === 'info' ? 'warn' : baseSeverity,
       scanned_dirs: scannedDirs,
       scanned_files: scannedFiles,
       walk_truncated: walkAborted,
@@ -6560,6 +7070,9 @@ function cmdDoctor(runner, args, runOpts, pretty) {
         "cloud-iam-incident", "idp-incident", "identity-sso-compromise",
         "llm-tool-use-exfil", "supply-chain-recovery",
         "post-quantum-migration", "webhook-callback-abuse",
+        "vc-wallet-trust", "mail-server-hardening", "network-trust",
+        "audit-log-integrity", "self-update-integrity", "multitenancy-isolation",
+        "decompression-dos", "log-injection-telemetry", "privacy-consent-ops",
       ];
       const playbookFiles = fs.readdirSync(playbookDir)
         .filter(f => f.endsWith(".json") && !f.startsWith("_"))
@@ -6648,8 +7161,8 @@ function cmdDoctor(runner, args, runOpts, pretty) {
   // global `npm install -g` reported `failed_checks: ["signing"]` with
   // `warnings_count: 0`, contradicting the [!! warn] text-mode icon.
   const { bucketChecks } = require(path.join(PKG_ROOT, "lib", "doctor-bucketing.js"));
-  const { warnList, errorList } = bucketChecks(checks);
-  const allGreen = errorList.length === 0 && warnList.length === 0;
+  let { warnList, errorList } = bucketChecks(checks);
+  let allGreen = errorList.length === 0 && warnList.length === 0;
   // Audit 3 B.11: surface the local version on the default doctor output
   // so operators answer both "is my install healthy?" AND "which version
   // am I running?" without having to invoke `exceptd version` separately.
@@ -6686,10 +7199,21 @@ function cmdDoctor(runner, args, runOpts, pretty) {
   // `exceptd doctor` (signatures check) reports 0/N passing.
   if (args.fix && checks.signing && !checks.signing.private_key_present) {
     const pubKeyExists = fs.existsSync(path.join(PKG_ROOT, "keys", "public.pem"));
+    const fingerprintPinExists = fs.existsSync(path.join(PKG_ROOT, "keys", "EXPECTED_FINGERPRINT"));
     if (pubKeyExists) {
       out.summary.fix_attempted = "ed25519_keypair_generation_declined";
       out.summary.fix_decline_reason = "keys/public.pem already exists but no matching private key. Generating a fresh keypair would overwrite the public key and orphan every shipped signature. If you intend to establish a new signing identity, run `node $(exceptd path)/lib/sign.js generate-keypair --rotate` followed by sign-all.";
       process.stderr.write("[doctor --fix] refused: keys/public.pem present without matching private key. Pass --rotate via the underlying lib/sign.js if a new identity is intended.\n");
+    } else if (fingerprintPinExists) {
+      // A committed EXPECTED_FINGERPRINT without keys/public.pem signals an
+      // intended committed signing identity on a corrupted/partial checkout.
+      // Generating a fresh keypair here would write a public.pem whose
+      // fingerprint can never match the pin, leaving verify.js permanently
+      // refusing (fingerprint-mismatch) while --fix claimed success. Decline
+      // and tell the operator to restore the real public key.
+      out.summary.fix_attempted = "ed25519_keypair_generation_declined";
+      out.summary.fix_decline_reason = "keys/EXPECTED_FINGERPRINT is present but keys/public.pem is missing — this is a corrupted checkout of a project with a committed signing identity, not a fresh contributor checkout. Generating a keypair would produce a public key whose fingerprint cannot match the pin, so verify would refuse forever. Restore keys/public.pem from version control instead (git checkout -- keys/public.pem).";
+      process.stderr.write("[doctor --fix] refused: keys/EXPECTED_FINGERPRINT present without keys/public.pem. Restore the committed public key (git checkout -- keys/public.pem) rather than generating a new identity.\n");
     } else {
       process.stderr.write("[doctor --fix] generating Ed25519 keypair...\n");
       const r = require("child_process").spawnSync(process.execPath, [path.join(PKG_ROOT, "lib", "sign.js"), "generate-keypair"], {
@@ -6745,6 +7269,37 @@ function cmdDoctor(runner, args, runOpts, pretty) {
       out.summary.sign_all_exit_code = s.status;
       process.stderr.write(`[doctor --fix] sign-all failed (exit=${s.status}); run \`node $(exceptd path)/lib/sign.js sign-all\` manually.\n`);
     }
+  }
+
+  // After a --fix that re-signed skills (keypair generation OR re-sign), the
+  // captured `checks.signatures` is STALE — it was the verify.js result taken
+  // before any key existed. Re-verify now and recompute the buckets, so a
+  // successful --fix reports success (and exits 0) instead of carrying the
+  // pre-fix "signatures FAILED" through to failed_checks + a non-zero exit.
+  if (args.fix
+      && (out.summary.fix_applied === "ed25519_keypair_generated_and_skills_signed"
+          || out.summary.fix_applied === "skills_resigned_against_current_keypair")) {
+    try {
+      const verifyPath = path.join(PKG_ROOT, "lib", "verify.js");
+      const rv = spawnSync(process.execPath, [verifyPath], { encoding: "utf8", cwd: PKG_ROOT, timeout: 30000 });
+      const rvText = (rv.stdout || "") + (rv.stderr || "");
+      const rvMatch = rvText.match(/(\d+)\/(\d+)\s+skills?\s+passed/i);
+      const rvFp = rvText.match(/SHA256:\s*([A-Za-z0-9+/=]+)/);
+      const rvOk = rv.status === 0;
+      checks.signatures = {
+        ok: rvOk,
+        skills_passed: rvMatch ? Number(rvMatch[1]) : null,
+        skills_total: rvMatch ? Number(rvMatch[2]) : null,
+        fingerprint_sha256: rvFp ? rvFp[1] : null,
+        ...(rvOk ? {} : { exit_code: rv.status, raw: rvText.slice(0, 500) }),
+      };
+      out.checks = checks;
+      ({ warnList, errorList } = bucketChecks(checks));
+      allGreen = errorList.length === 0 && warnList.length === 0;
+      out.summary.failed_checks = errorList;
+      out.summary.warning_checks = warnList;
+      out.summary.all_green = allGreen;
+    } catch { /* re-verify best-effort; leave the pre-fix state if it throws */ }
   }
 
   // Audit 3 B.3: --fix was passed but nothing to fix. Pre-fix this was
@@ -6830,7 +7385,7 @@ function cmdDoctor(runner, args, runOpts, pretty) {
     if (c.ahead) {
       return `npm registry: local v${c.local_version ?? "?"} AHEAD of published v${c.published_version ?? "?"} (unreleased / dev install)`;
     }
-    return `npm registry: check returned no comparison (raw exit=${c.exit_code ?? "?"})`;
+    return "npm registry: could not compare versions (registry unreachable, offline, or no published version yet). Run `npm view @blamejs/exceptd-skills version` to see the latest, then `npm install -g @blamejs/exceptd-skills@latest` if you are behind.";
   });
   // v0.12.9 (P3 #10): surface shipped_tarball sub-check when --shipped-tarball was used.
   if (checks.signatures?.shipped_tarball) {
@@ -6957,7 +7512,7 @@ function cmdListAttestations(runner, args, runOpts, pretty) {
   }
   // Enumerate sessions across both v0.11.0 default root and legacy cwd-
   // relative root, so operators with prior attestations still see them.
-  // Cycle 11 F5 (v0.12.32): also track candidate roots that didn't exist
+  // also track candidate roots that didn't exist
   // so operators can tell whether the directory was scanned-and-empty or
   // simply never created. Pre-fix the human output said "(no attestations
   // under )" with no path — operators couldn't see where the verb looked.
@@ -7020,13 +7575,31 @@ function cmdListAttestations(runner, args, runOpts, pretty) {
     }
   }
   entries.sort((a, b) => (b.captured_at || "").localeCompare(a.captured_at || ""));
+  const total = entries.length;
+  // --limit caps the inventory (newest first). Without it, JSON returns every
+  // session and the human table shows the first 50 with an "… and N more"
+  // footer. With it, both surfaces honor the cap and report `total`.
+  let limitN = null;
+  if (args.limit != null) {
+    limitN = Number(args.limit);
+    if (!Number.isInteger(limitN) || limitN < 0) {
+      return emitError(
+        `attest list: --limit must be a non-negative integer; got ${JSON.stringify(String(args.limit))}.`,
+        { verb: "attest list", provided: args.limit },
+        pretty,
+      );
+    }
+  }
+  const shown = limitN != null ? entries.slice(0, limitN) : entries;
   emit({
     ok: true,
-    attestations: entries,
-    count: entries.length,
+    attestations: shown,
+    count: total,
+    shown: shown.length,
+    limit: limitN,
     filter: { playbook: playbookFilter ? [...playbookFilter] : null, since: args.since || null },
     roots_searched: [...seenRoots],
-    // Cycle 11 F5 (v0.12.32): every candidate root + whether it existed,
+    // every candidate root + whether it existed,
     // so JSON consumers can distinguish scanned-and-empty from never-created.
     // The human renderer below also surfaces this rather than printing
     // "(no attestations under )" with an empty path list.
@@ -7048,10 +7621,17 @@ function cmdListAttestations(runner, args, runOpts, pretty) {
     }
     lines.push(`  ${"session-id".padEnd(20)}  ${"playbook".padEnd(16)}  ${"captured-at".padEnd(20)}  evidence-hash`);
     lines.push(`  ${"-".repeat(20)}  ${"-".repeat(16)}  ${"-".repeat(20)}  ${"-".repeat(20)}`);
-    for (const e of obj.attestations.slice(0, 50)) {
+    // When --limit was given, obj.attestations is already capped; show all of
+    // it. Otherwise show the first 50 and footer the remainder.
+    const rows = obj.limit != null ? obj.attestations : obj.attestations.slice(0, 50);
+    for (const e of rows) {
       lines.push(`  ${(e.session_id || "?").padEnd(20)}  ${(e.playbook_id || "?").padEnd(16)}  ${(e.captured_at || "").slice(0, 19).padEnd(20)}  ${e.evidence_hash || ""}`);
     }
-    if (obj.count > 50) lines.push(`  … and ${obj.count - 50} more (use --json for full list)`);
+    if (obj.limit != null) {
+      if (obj.count > rows.length) lines.push(`  showing ${rows.length} of ${obj.count} (raise --limit or use --json for the full list)`);
+    } else if (obj.count > 50) {
+      lines.push(`  … and ${obj.count - 50} more (use --limit <n> or --json for the full list)`);
+    }
     return lines.join("\n");
   });
 }
@@ -7140,17 +7720,47 @@ function cmdAiRun(runner, args, runOpts, pretty) {
     // Read any pre-supplied evidence from stdin OR from --evidence flag.
     let payload = { observations: {}, verdict: {} };
     if (args.evidence) {
-      try { payload = readEvidence(args.evidence); }
+      // Apply the same shape guard `run` enforces at its read boundary: a
+      // submission must be a JSON object. Without this, `--no-stream` accepted
+      // `null` / `[]` / a scalar and ran as if empty, so an operator believed a
+      // malformed submission was evaluated (the streaming path is unaffected —
+      // it only fires on a well-formed evidence event).
+      try { payload = asEvidenceObject(readEvidence(args.evidence)); }
       catch (e) { return emitError(`ai-run: failed to read --evidence: ${e.message}`, null, pretty); }
     } else if (hasReadableStdin()) {
       // hasReadableStdin() probes via fstat before falling into
       // readFileSync(0). Wrapped-stdin test harnesses (isTTY===undefined,
       // size===0) would otherwise hang here.
       // Drain stdin for any evidence event.
-      try {
-        const buf = fs.readFileSync(0, "utf8");
-        if (buf.trim()) {
-          // Accept either a bare submission object or a single evidence event.
+      let buf = "";
+      try { buf = fs.readFileSync(0, "utf8"); }
+      catch { /* stdin empty / unreadable — fall through with empty payload */ }
+      if (buf.trim()) {
+        // First treat stdin as a single JSON document — the common
+        // `echo '<json>' | ai-run … --no-stream` shape. If it parses as one
+        // value we can apply the same shape guard `--evidence` gets: a bare
+        // `null` / `[]` / scalar is a malformed submission, not "no evidence",
+        // and must be rejected rather than silently run as empty.
+        let single;
+        let singleParsed = false;
+        try { single = JSON.parse(buf); singleParsed = true; } catch { /* not a single doc — fall to JSONL scan */ }
+        if (singleParsed) {
+          // An evidence event wrapper is the one object shape that is NOT
+          // itself the submission — unwrap it before guarding.
+          if (single && typeof single === "object" && !Array.isArray(single) && single.event === "evidence" && single.payload) {
+            payload = single.payload;
+          } else {
+            try { payload = asEvidenceObject(single); }
+            catch (e) { return emitError(`ai-run: failed to read evidence from stdin: ${e.message}`, null, pretty); }
+            // Normalize a bare submission into the {observations, verdict} shape.
+            if (!payload.observations && (payload.artifacts || payload.signal_overrides || payload.signals)) {
+              payload = { observations: { ...(payload.artifacts || {}), ...(payload.signal_overrides || {}) }, verdict: payload.signals || {} };
+            }
+          }
+        } else {
+          // JSONL / interleaved host-AI chatter: scan line-by-line for the
+          // first evidence event or bare submission, ignoring non-matching
+          // status frames the host may interleave.
           for (const line of buf.split(/\r?\n/)) {
             const t = line.trim();
             if (!t) continue;
@@ -7170,7 +7780,7 @@ function cmdAiRun(runner, args, runOpts, pretty) {
             } catch { /* skip non-JSON lines */ }
           }
         }
-      } catch { /* stdin empty / unreadable — fall through with empty payload */ }
+      }
     }
     const submission = buildSubmissionFromPayload(payload);
     let result;
@@ -7470,11 +8080,75 @@ function buildSubmissionFromPayload(payload) {
  * playbook scores >= 1, fall back to substring match on playbook ID
  * itself ("secrets" → secrets playbook).
  */
+// `recipes` — list the curated multi-skill workflows, or show one in full.
+// The recipes are use-case curated (when_to_use → ordered skill_chain); they
+// had no CLI surface before, so an operator could only reach them by reading
+// data/_indexes/recipes.json. `recipes` lists them; `recipes <id>` expands one.
+function cmdRecipes(runner, args, runOpts, pretty) {
+  let catalog;
+  try {
+    catalog = require(path.join(PKG_ROOT, "data", "_indexes", "recipes.json"));
+  } catch (e) {
+    return emitError(`recipes: could not load recipe catalog: ${e.message}`, null, pretty);
+  }
+  const recipes = Array.isArray(catalog.recipes) ? catalog.recipes : [];
+  const id = args._[0];
+
+  if (id) {
+    const recipe = recipes.find(r => r.id === id);
+    if (!recipe) {
+      return emitError(
+        `recipes: unknown recipe "${id}". Run \`exceptd recipes\` to list available recipes.`,
+        { verb: "recipes", available: recipes.map(r => r.id) },
+        pretty,
+      );
+    }
+    return emit({ verb: "recipes", recipe }, pretty, (obj) => {
+      const r = obj.recipe;
+      const lines = [];
+      lines.push(`Recipe: ${r.name} (${r.id})`);
+      if (r.description) lines.push(`\n${r.description}`);
+      if (r.when_to_use) lines.push(`\nWhen to use: ${r.when_to_use}`);
+      if (Array.isArray(r.typical_jurisdictions) && r.typical_jurisdictions.length) {
+        lines.push(`Typical jurisdictions: ${r.typical_jurisdictions.join(", ")}`);
+      }
+      lines.push(`\nSkill chain (${r.skill_count ?? (r.skill_chain || []).length}):`);
+      const steps = Array.isArray(r.steps) && r.steps.length ? r.steps : (r.skill_chain || []).map(s => ({ skill: s }));
+      steps.forEach((s, i) => {
+        lines.push(`  ${i + 1}. ${s.skill}`);
+        if (s.why) lines.push(`     ${s.why}`);
+      });
+      lines.push(`\nRun a skill: exceptd skill <name>`);
+      return lines.join("\n");
+    });
+  }
+
+  return emit({ verb: "recipes", count: recipes.length, recipes: recipes.map(r => ({
+    id: r.id, name: r.name, when_to_use: r.when_to_use, skill_count: r.skill_count ?? (r.skill_chain || []).length,
+  })) }, pretty, (obj) => {
+    const lines = [`Curated recipes (${obj.count}) — multi-skill workflows for common engagements:`, ""];
+    for (const r of obj.recipes) {
+      lines.push(`  ${r.id}  (${r.skill_count} skills)`);
+      lines.push(`    ${r.name}`);
+      if (r.when_to_use) lines.push(`    when: ${r.when_to_use.length > 140 ? r.when_to_use.slice(0, 140) + "…" : r.when_to_use}`);
+    }
+    lines.push(`\nExpand one: exceptd recipes <id>`);
+    return lines.join("\n");
+  });
+}
+
 function cmdAsk(runner, args, runOpts, pretty) {
   const question = (args._ || []).join(" ").trim();
   if (!question) {
     return emitError("ask: usage: exceptd ask \"<plain-English question>\"", null, pretty);
   }
+  // ask routes to playbooks, but a question naming a specific CVE / RFC ("is
+  // CVE-… real", "what is RFC 9404") is answered directly by the resolver
+  // verbs — point at them on stderr so the operator gets the right tool.
+  const cveTok = question.match(/\bCVE-\d{4}-\d{3,}\b/i);
+  const rfcTok = question.match(/\bRFC[-\s]?(\d{1,6})\b/i);
+  if (cveTok) process.stderr.write(`[exceptd] tip: to validate that identifier directly, run \`exceptd cve ${cveTok[0].toUpperCase()}\`.\n`);
+  if (rfcTok) process.stderr.write(`[exceptd] tip: to resolve that RFC directly, run \`exceptd rfc ${rfcTok[1]}\`.\n`);
   const ids = runner.listPlaybooks();
   const q = question.toLowerCase();
 
@@ -7525,6 +8199,18 @@ function cmdAsk(runner, args, runOpts, pretty) {
     "cred theft": ["cred-stores", "secrets"],
     "credential exfil": ["cred-stores", "llm-tool-use-exfil"],
     "developer laptop": ["cred-stores", "hardening"],
+    // CI/CD + OIDC vocabulary → the dedicated cicd-pipeline-compromise playbook
+    // (the supply-chain playbooks otherwise out-rank it on shared tokens).
+    "oidc": ["cicd-pipeline-compromise", "ci", "pipeline", "runner", "signing"],
+    "cicd": ["cicd-pipeline-compromise", "ci", "pipeline"],
+    "ci/cd": ["cicd-pipeline-compromise", "pipeline"],
+    "runner": ["cicd-pipeline-compromise", "ci"],
+    "pipeline": ["cicd-pipeline-compromise"],
+    // C2-over-AI-API → the dedicated ai-api playbook (llm-tool-use-exfil
+    // otherwise wins on a long C2 sentence).
+    "c2": ["ai-api", "ai-c2"],
+    "command and control": ["ai-api", "ai-c2"],
+    "command-and-control": ["ai-api", "ai-c2"],
   };
 
   // Audit 3 C.1: stopwords filtered after synonym expansion so common
@@ -7541,6 +8227,11 @@ function cmdAsk(runner, args, runOpts, pretty) {
     "than", "then", "them", "some", "more", "most", "very", "much", "such",
     "been", "were", "want", "well", "back", "good", "make", "made", "take",
     "took", "give", "gave", "find", "found", "know", "knew", "told", "ago",
+    // 2-char English fillers (the length>=2 token filter otherwise lets these
+    // substring-hit a haystack — "do" matched ai-api). Deliberately excludes
+    // security-meaningful 2-char tokens (ai, ml, ci, c2, k8s).
+    "do", "is", "my", "it", "me", "to", "of", "on", "or", "an", "as", "at",
+    "be", "by", "we", "up", "so", "no", "if", "in",
   ]);
 
   // Tokenize question (length >= 2, lowercase) + expand via synonyms.
@@ -7643,19 +8334,39 @@ function cmdAsk(runner, args, runOpts, pretty) {
   const tieCount = scored.filter(s => s.score === topScore).length;
   const baseConfidence = Math.min(1, topScore / Math.max(2, tokens.length));
   const tiePenalty = tieCount > 1 ? 1 / tieCount : 1;
+  const confidence = Math.round(baseConfidence * tiePenalty * 100) / 100;
+  // Some domains are covered by a SKILL, not a playbook — the router would
+  // otherwise present a confident-looking wrong playbook (e.g. "DMARC" →
+  // llm-tool-use-exfil, "HIPAA" → ransomware). Detect those by distinctive
+  // keyword and surface the right skill so the operator is pointed at real
+  // coverage instead of a mis-route. Keyed on terms with no playbook home.
+  const SKILL_ONLY_DOMAINS = [
+    { skill: "email-security-anti-phishing", re: /\b(dmarc|dkim|\bspf\b|bimi|mta-sts|email spoof|email security|sender auth|business email compromise)\b/i },
+    { skill: "age-gates-child-safety", re: /\b(age[\s-]?gate|age verification|coppa|child safety|children'?s code|\bkosa\b|\baadc\b|minor protection)\b/i },
+    { skill: "sector-healthcare", re: /\b(hipaa|\bphi\b|hitrust|healthcare security|45 cfr)\b/i },
+    { skill: "dlp-gap-analysis", re: /\b(data loss prevention|\bdlp\b)\b/i },
+  ];
+  const skillDomain = SKILL_ONLY_DOMAINS.find(d => d.re.test(question));
+  const confidence0 = confidence;
+  // A weak top match also signals a likely no-playbook domain.
+  const lowConfidence = confidence0 < 0.15;
   const result = {
     verb: "ask",
     question,
     routed_to: top.map(t => t.id),
-    confidence: Math.round(baseConfidence * tiePenalty * 100) / 100,
+    confidence,
     confidence_factors: { base: Math.round(baseConfidence * 100) / 100, tie_count: tieCount },
     next_step: `exceptd run ${top[0].id}    # or: exceptd brief ${top[0].id} to learn first`,
+    ...(skillDomain ? { skill_suggestion: skillDomain.skill, skill_suggestion_note: `This topic is covered by the "${skillDomain.skill}" skill, not a playbook. Run \`exceptd skill ${skillDomain.skill}\`.` } : {}),
+    ...((!skillDomain && lowConfidence) ? { low_confidence: true, fallback_hint: "Low-confidence match — this may be a skill-only domain (no dedicated playbook). Browse `exceptd help` for skills, or `exceptd recipes` for curated multi-skill workflows." } : {}),
     full_match_list: top,
   };
   if (args.json || args.pretty) return emit(result, pretty);
   const topGlyph = top[0].collector_available ? " [collector]" : "";
   const altLine = top.slice(1).map(t => t.id + (t.collector_available ? " [collector]" : "")).join(", ") || "(none)";
   process.stdout.write(`ask: ${question}\n  top match: ${top[0].id}${topGlyph} (score ${top[0].score})\n  next: ${result.next_step}\n  alternates: ${altLine}\n`);
+  if (skillDomain) process.stdout.write(`  note: ${result.skill_suggestion_note}\n`);
+  else if (lowConfidence) process.stdout.write(`  note: ${result.fallback_hint}\n`);
 }
 
 /**
@@ -7674,13 +8385,23 @@ function cmdAsk(runner, args, runOpts, pretty) {
 function cmdCi(runner, args, runOpts, pretty) {
   const scope = args.scope;
   const maxRwep = args["max-rwep"] !== undefined ? Number(args["max-rwep"]) : null;
+  // Reject a non-numeric / negative cap rather than silently coercing it.
+  // `--max-rwep abc` previously became Number→NaN→0, degenerating the gate to
+  // "block everything at RWEP 0" with no error — a silently-broken CI gate.
+  if (maxRwep !== null && (!Number.isFinite(maxRwep) || maxRwep < 0)) {
+    return emitError(
+      `ci: --max-rwep must be a non-negative number; got ${JSON.stringify(String(args["max-rwep"]))}.`,
+      { verb: "ci", provided: args["max-rwep"] },
+      pretty,
+    );
+  }
   const blockOnClock = !!args["block-on-jurisdiction-clock"];
 
   // v0.11.9 (#115): --required <playbook,playbook,...> takes precedence over
   // --scope and --all. Operators specifying an explicit set get exactly that
   // set, no more, no less. Pre-0.11.9 the flag was silently ignored.
   let ids;
-  // Cycle 11 F1 (v0.12.31): positional args (`exceptd ci kernel cred-stores`)
+  // positional args (`exceptd ci kernel cred-stores`)
   // were silently ignored and the cwd-autodetect path ran instead. Operators
   // got a green PASS for playbooks that were never actually executed. Treat
   // positional args as an inline --required, with the same unknown-id refusal.
@@ -7792,6 +8513,20 @@ function cmdCi(runner, args, runOpts, pretty) {
     }
   }
 
+  // Flat-submission tolerance for a single positional playbook. `ci` keys its
+  // bundle by playbook id (so --evidence-dir / multi-playbook bundles work),
+  // but `ci <pb> --evidence -` with the SAME flat/nested submission shape that
+  // `run` accepts would otherwise land as bundle[<pb>]=undefined → empty run →
+  // a false PASS that silently ignores the operator's evidence. When exactly
+  // one playbook is in scope and the bundle carries no playbook-id key (it's a
+  // single submission, not a multi-playbook bundle), treat it as that
+  // playbook's evidence.
+  if (ids.length === 1 && Object.keys(bundle).length > 0 && !(ids[0] in bundle)) {
+    const allIds = new Set(runner.listPlaybooks());
+    const looksLikeBundle = Object.keys(bundle).some(k => allIds.has(k));
+    if (!looksLikeBundle) bundle = { [ids[0]]: bundle };
+  }
+
   const results = [];
   let fail = false;
   let failReasons = [];
@@ -7802,7 +8537,7 @@ function cmdCi(runner, args, runOpts, pretty) {
   let clockStartedReasons = [];
 
   for (const id of ids) {
-    // Cycle 9 B4: defense-in-depth — validate id even though the catalog-iter
+    // defense-in-depth — validate id even though the catalog-iter
     // upstream is trusted. A corrupt catalog returning a malformed id would
     // otherwise reach loadPlaybook unchecked. Matches the cmdRunMulti pattern.
     const idCheck = validateIdComponent(id, "playbook");
@@ -7919,7 +8654,10 @@ function cmdCi(runner, args, runOpts, pretty) {
         gapRollupMap.set(key, {
           framework: g.framework || null,
           claimed_control: g.claimed_control || null,
-          why_insufficient: g.why_insufficient || null,
+          // The explanatory text lives in `actual_gap`; the rollup previously
+          // read a nonexistent `why_insufficient` key and so was always null.
+          why_insufficient: g.actual_gap || g.why_insufficient || null,
+          required_control: g.required_control || null,
           playbooks: [r.playbook_id],
         });
       }
@@ -8013,9 +8751,15 @@ function cmdCi(runner, args, runOpts, pretty) {
     }
     process.stdout.write(lines.join("\n") + "\n");
   } else if (fmt === "csaf" || fmt === "sarif" || fmt === "openvex") {
-    // Aggregate the per-run bundles_by_format if present.
+    // Aggregate the per-run bundles_by_format if present. ci spans N playbooks,
+    // so there is no single conformant CSAF/SARIF/OpenVEX document — emit a JSON
+    // ARRAY of the pure documents. Critically, do NOT wrap them in an exceptd
+    // envelope carrying a top-level `ok` key: that key is invalid in all three
+    // standard formats, so a downstream CSAF/SARIF/OpenVEX consumer pointed at
+    // `ci --format` output got a non-conformant top-level shape. Each array
+    // element is now a verbatim, conformant document.
     const bundles = results.map(r => r.phases?.close?.evidence_package?.bundles_by_format?.[fmt === "csaf" ? "csaf-2.0" : fmt]).filter(Boolean);
-    emit({ verb: "ci", session_id: sessionId, format: fmt, bundles_count: bundles.length, bundles }, pretty);
+    process.stdout.write(JSON.stringify(bundles, null, pretty ? 2 : 0) + "\n");
   } else if (fmt && fmt !== "json") {
     // v0.11.4 (#76): garbage format rejected with structured error, not silent empty stdout.
     // Route through emitError so the body propagates exit codes via the
@@ -8108,17 +8852,21 @@ function cmdCi(runner, args, runOpts, pretty) {
       // Jurisdiction clocks.
       if (s.jurisdiction_clocks_started > 0) {
         lines.push(`\nJurisdiction clocks started: ${s.jurisdiction_clocks_started}`);
-        for (const n of (s.jurisdiction_clock_rollup || []).slice(0, 5)) {
+        const clocks = s.jurisdiction_clock_rollup || [];
+        for (const n of clocks.slice(0, 5)) {
           lines.push(`  ${n.jurisdiction || "?"}/${n.regulation || "?"} → deadline ${n.deadline || "?"}`);
         }
+        if (clocks.length > 5) lines.push(`  … ${clocks.length - 5} more (--json for all)`);
       }
 
       // Framework gap rollup.
       if (s.framework_gap_count > 0) {
         lines.push(`\nFramework gaps (${s.framework_gap_count}):`);
-        for (const g of (s.framework_gap_rollup || []).slice(0, 5)) {
+        const fgaps = s.framework_gap_rollup || [];
+        for (const g of fgaps.slice(0, 5)) {
           lines.push(`  ${g.framework || "?"} :: ${g.claimed_control || "?"}  (${g.playbooks.length} playbook(s))`);
         }
+        if (fgaps.length > 5) lines.push(`  … ${fgaps.length - 5} more (--json for all)`);
       }
 
       // Fail reasons.
@@ -8140,17 +8888,21 @@ function cmdCi(runner, args, runOpts, pretty) {
       //   CLOCK_STARTED  → notification clock running; see deadline above.
       //   PASS           → nothing to do.
       const blockedRows = (obj.results || []).filter(r => r && r.ok === false);
-      const lintCmd = (id) => `  exceptd lint ${id} -                          # paste {} on stdin, get exact JSON paths`;
+      // Pad the playbook id to a common width so the trailing `#` comments line
+      // up across variable-length ids instead of using a fixed space run.
+      const lintCmd = (id, w) => `  exceptd lint ${(id + " ".repeat(w)).slice(0, w)} -   # paste {} on stdin, get exact JSON paths`;
       if (s.verdict === "BLOCKED" && blockedRows.length) {
         lines.push(`\nNext steps (unblock the ${blockedRows.length} halted playbook(s)):`);
-        for (const row of blockedRows.slice(0, 4)) {
-          lines.push(lintCmd(row.playbook_id || "?"));
+        const shown = blockedRows.slice(0, 4);
+        const wLint = Math.max(...shown.map(r => (r.playbook_id || "?").length));
+        for (const row of shown) {
+          lines.push(lintCmd(row.playbook_id || "?", wLint));
         }
         lines.push(`  exceptd run <playbook> --evidence <file>     # re-run after filling in evidence`);
       } else if (s.verdict === "NO_EVIDENCE") {
         const firstId = (obj.results[0] && obj.results[0].playbook_id) || (obj.playbooks_run[0]) || "<playbook>";
         lines.push(`\nNext steps (every playbook ran inconclusive — no evidence supplied):`);
-        lines.push(lintCmd(firstId));
+        lines.push(lintCmd(firstId, firstId.length));
         lines.push(`  exceptd ci --scope <type> --evidence-dir <dir>  # gate again with real submissions`);
       } else if (s.verdict === "FAIL") {
         // FAIL fires in two distinct shapes:

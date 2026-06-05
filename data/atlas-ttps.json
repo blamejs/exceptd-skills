@@ -94,6 +94,7 @@
     "last_verified": "2026-05-19",
     "cve_refs": [
       "CVE-2025-68664",
+      "CVE-2025-68665",
       "CVE-2026-30623",
       "CVE-2026-42945"
     ],
@@ -143,16 +144,37 @@
     "maturity": "high",
     "last_verified": "2026-05-19",
     "cve_refs": [
+      "CVE-2023-43654",
+      "CVE-2023-6016",
+      "CVE-2024-0129",
+      "CVE-2024-11392",
+      "CVE-2024-11393",
+      "CVE-2024-11394",
+      "CVE-2024-24590",
+      "CVE-2024-24591",
+      "CVE-2024-37032",
+      "CVE-2024-37052",
+      "CVE-2024-37060",
+      "CVE-2025-10164",
+      "CVE-2025-1550",
+      "CVE-2025-32434",
+      "CVE-2025-33236",
+      "CVE-2025-51480",
+      "CVE-2025-8747",
       "CVE-2026-22778",
       "CVE-2026-30615",
+      "CVE-2026-31229",
       "CVE-2026-39987",
       "CVE-2026-45321",
+      "CVE-2026-5760",
       "MAL-2024-PYPI-ULTRALYTICS-XMRIG",
       "MAL-2026-3083",
+      "MAL-2026-MOIKA-DEPCONFUSION",
       "MAL-2026-NODE-IPC-STEALER",
       "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER",
       "MAL-2026-SHAI-HULUD-OSS",
-      "MAL-2026-TANSTACK-MINI"
+      "MAL-2026-TANSTACK-MINI",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "description_full": "Adversaries may gain initial access to a system by compromising the unique portions of the AI supply chain. This could include [Hardware](/techniques/AML.T0010.000), [Data](/techniques/AML.T0010.002) and its annotations, parts of the AI [AI Software](/techniques/AML.T0010.001) stack, or the [Model](/techniques/AML.T0010.003) itself. In some instances the attacker will need secondary access to fully carry out an attack using compromised components of the supply chain.",
     "platforms": [
@@ -322,7 +344,9 @@
     "maturity": "high",
     "last_verified": "2026-05-19",
     "cve_refs": [
-      "MAL-2026-NODE-IPC-STEALER"
+      "MAL-2026-MOIKA-DEPCONFUSION",
+      "MAL-2026-NODE-IPC-STEALER",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "description_full": "Adversaries may attempt to poison datasets used by an AI model by modifying the underlying data or its labels. This allows the adversary to embed vulnerabilities in AI models trained on the data that may not be easily detectable. Data poisoning attacks may or may not require modifying the labels. The embedded vulnerability is activated at a later time by data samples with an [Insert Backdoor Trigger](/techniques/AML.T0043.004) Poisoned data can be introduced via [AI Supply Chain Compromise](/techniques/AML.T0010) or the data may be poisoned after the adversary gains [Initial Access](/tactics/AML.TA0004) to the system.",
     "platforms": [
@@ -538,12 +562,19 @@
     "maturity": "high",
     "last_verified": "2026-05-19",
     "cve_refs": [
+      "CVE-2023-44467",
+      "CVE-2024-12366",
+      "CVE-2024-21513",
+      "CVE-2024-5565",
       "CVE-2025-53773",
       "CVE-2025-55319",
       "CVE-2025-68664",
+      "CVE-2025-68665",
+      "CVE-2026-25592",
       "CVE-2026-30615",
       "CVE-2026-39884",
-      "CVE-2026-39987"
+      "CVE-2026-39987",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "description_full": "An adversary may craft malicious prompts as inputs to an LLM that cause the LLM to act in unintended ways. These \"prompt injections\" are often designed to cause the model to ignore aspects of its original instructions and follow the adversary's instructions instead. Prompt Injections can be an initial access vector to the LLM that provides the adversary with a foothold to carry out other steps in their operation. They may be designed to bypass defenses in the LLM, or allow the adversary to issue privileged commands. The effects of a prompt injection can persist throughout an interactive session with an LLM. Malicious prompts may be injected directly by the adversary ([Direct](/techniques/AML.T0051.000)) either to leverage the LLM to generate harmful content or to gain a foothold on the system and lead to further effects. Prompts may also be injected indirectly when as part of its normal operation the LLM ingests the malicious prompt from another data source ([Indirect](/techniques/AML.T0051.001)). This type of injection can be used by the adversary to a foothold on the system or to target the user of the LLM. Malicious prompts may also be [Triggered](/techniques/AML.T0051.002) user actions or system events.",
     "platforms": [
@@ -664,6 +695,10 @@
     "maturity": "moderate",
     "last_verified": "2026-05-19",
     "cve_refs": [
+      "CVE-2023-51449",
+      "CVE-2024-1561",
+      "CVE-2024-4889",
+      "CVE-2024-6587",
       "CVE-2026-42208",
       "MAL-2026-3083"
     ],
@@ -1036,7 +1071,10 @@
     ],
     "reference_url": "https://atlas.mitre.org/techniques/AML.T0104",
     "stix_id": "attack-pattern--04842d98-bb69-586e-9765-6ff1f56ef722",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2025-54136"
+    ]
   },
   "AML.T0105": {
     "id": "AML.T0105",
@@ -1255,6 +1293,24 @@
     "exceptd_skills": [],
     "last_verified": "2026-05-19",
     "cve_refs": [
+      "CVE-2023-44467",
+      "CVE-2023-6016",
+      "CVE-2024-0129",
+      "CVE-2024-11392",
+      "CVE-2024-11393",
+      "CVE-2024-11394",
+      "CVE-2024-21513",
+      "CVE-2024-24590",
+      "CVE-2024-37052",
+      "CVE-2024-37060",
+      "CVE-2025-10164",
+      "CVE-2025-1550",
+      "CVE-2025-32434",
+      "CVE-2025-33236",
+      "CVE-2025-51480",
+      "CVE-2025-8747",
+      "CVE-2026-31229",
+      "CVE-2026-5760",
       "MAL-2024-PYPI-ULTRALYTICS-XMRIG"
     ],
     "description_full": "An adversary may rely upon specific actions by a user in order to gain execution. Users may inadvertently execute unsafe code introduced via [AI Supply Chain Compromise](/techniques/AML.T0010). Users may be subjected to social engineering to get them to execute malicious code by, for example, opening a malicious document file or link.",
@@ -1521,7 +1577,11 @@
       "ATLAS"
     ],
     "stix_id": "attack-pattern--f13dede7-12ee-5f0e-985a-4f801aecb681",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2023-48022",
+      "CVE-2025-64496"
+    ]
   },
   "AML.T0029": {
     "id": "AML.T0029",
@@ -1569,7 +1629,10 @@
       "ATLAS"
     ],
     "stix_id": "attack-pattern--7bbac64e-2b1d-5cb0-a442-bb7573b0a328",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2023-48022"
+    ]
   },
   "AML.T0035": {
     "id": "AML.T0035",
@@ -1585,7 +1648,12 @@
       "ATLAS"
     ],
     "stix_id": "attack-pattern--801658f2-81cd-5935-93c7-5e6e2d80e669",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2023-48022",
+      "CVE-2025-64513",
+      "CVE-2026-26190"
+    ]
   },
   "AML.T0036": {
     "id": "AML.T0036",
@@ -1681,7 +1749,72 @@
       "ATLAS"
     ],
     "stix_id": "attack-pattern--ebeed0c7-c5de-5049-8f27-efcae5f88b00",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2022-36551",
+      "CVE-2023-43654",
+      "CVE-2023-43791",
+      "CVE-2023-47117",
+      "CVE-2023-48022",
+      "CVE-2023-51449",
+      "CVE-2023-6019",
+      "CVE-2023-6021",
+      "CVE-2023-6038",
+      "CVE-2023-6571",
+      "CVE-2024-12450",
+      "CVE-2024-12776",
+      "CVE-2024-13059",
+      "CVE-2024-1561",
+      "CVE-2024-21575",
+      "CVE-2024-21576",
+      "CVE-2024-24591",
+      "CVE-2024-27132",
+      "CVE-2024-2912",
+      "CVE-2024-31462",
+      "CVE-2024-37032",
+      "CVE-2024-39722",
+      "CVE-2024-42478",
+      "CVE-2024-42479",
+      "CVE-2024-4889",
+      "CVE-2024-50050",
+      "CVE-2024-6587",
+      "CVE-2024-9526",
+      "CVE-2025-1796",
+      "CVE-2025-23254",
+      "CVE-2025-25297",
+      "CVE-2025-27520",
+      "CVE-2025-30165",
+      "CVE-2025-30202",
+      "CVE-2025-32444",
+      "CVE-2025-3248",
+      "CVE-2025-3466",
+      "CVE-2025-56520",
+      "CVE-2025-60455",
+      "CVE-2025-64496",
+      "CVE-2025-64513",
+      "CVE-2025-67818",
+      "CVE-2025-68668",
+      "CVE-2025-69286",
+      "CVE-2026-0766",
+      "CVE-2026-21858",
+      "CVE-2026-21877",
+      "CVE-2026-22218",
+      "CVE-2026-22219",
+      "CVE-2026-24206",
+      "CVE-2026-24207",
+      "CVE-2026-24213",
+      "CVE-2026-24214",
+      "CVE-2026-24215",
+      "CVE-2026-26190",
+      "CVE-2026-3059",
+      "CVE-2026-3060",
+      "CVE-2026-31230",
+      "CVE-2026-33017",
+      "CVE-2026-34159",
+      "CVE-2026-41947",
+      "CVE-2026-41950",
+      "CVE-2026-45829"
+    ]
   },
   "AML.T0050": {
     "id": "AML.T0050",
@@ -2378,7 +2511,10 @@
       "ATLAS"
     ],
     "stix_id": "attack-pattern--b1b2cc5a-7312-5f26-93d3-8b8ee1baf97d",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2025-54136"
+    ]
   },
   "AML.T0111": {
     "id": "AML.T0111",
@@ -2762,7 +2898,25 @@
       "ATLAS"
     ],
     "stix_id": "attack-pattern--a5cc5062-f672-510a-8a4f-a8d1aa7f5024",
-    "is_subtechnique": true
+    "is_subtechnique": true,
+    "cve_refs": [
+      "CVE-2022-1471",
+      "CVE-2023-6016",
+      "CVE-2024-0129",
+      "CVE-2024-11392",
+      "CVE-2024-11393",
+      "CVE-2024-11394",
+      "CVE-2024-24590",
+      "CVE-2024-37052",
+      "CVE-2024-37060",
+      "CVE-2025-1550",
+      "CVE-2025-32434",
+      "CVE-2025-33236",
+      "CVE-2025-51480",
+      "CVE-2025-8747",
+      "CVE-2026-31229",
+      "CVE-2026-45829"
+    ]
   },
   "AML.T0011.001": {
     "id": "AML.T0011.001",
@@ -2995,7 +3149,10 @@
       "ATLAS"
     ],
     "stix_id": "attack-pattern--c54f84ef-93fd-560c-bbbb-5490753a2f97",
-    "is_subtechnique": true
+    "is_subtechnique": true,
+    "cve_refs": [
+      "CVE-2026-24215"
+    ]
   },
   "AML.T0034.002": {
     "id": "AML.T0034.002",
@@ -3187,7 +3344,11 @@
       "ATLAS"
     ],
     "stix_id": "attack-pattern--073f16fc-c4c0-5351-8a22-9c77aaaab91f",
-    "is_subtechnique": true
+    "is_subtechnique": true,
+    "cve_refs": [
+      "CVE-2024-12366",
+      "CVE-2024-5565"
+    ]
   },
   "AML.T0051.001": {
     "id": "AML.T0051.001",

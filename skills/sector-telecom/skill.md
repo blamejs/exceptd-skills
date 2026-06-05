@@ -66,8 +66,8 @@ forward_watch:
   - "Five Eyes joint advisories on telecom-equipment intrusion"
   - "3GPP TS 33.501 updates (5G security architecture rebaseline)"
   - "O-RAN SFG / WG11 security specifications"
-last_threat_review: 2026-05-15
-discovery_mode: "standalone"  # v0.13.2: operator-reached via `exceptd brief sector-telecom` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
+last_threat_review: "2026-05-15"
+discovery_mode: "standalone"  # operator-reached via `exceptd brief sector-telecom` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 ## Threat Context (mid-2026)
@@ -117,7 +117,7 @@ ATLAS AML.T0040 (Tool / Plugin Compromise) anchors the AI-RAN attack class: plug
 
 ## Analysis Procedure
 
-### Phase 1 — govern (jurisdictional clock + obligations)
+### Jurisdictional clocks + obligations
 
 Surface the operator's jurisdictional notification clocks immediately on detection:
 
@@ -134,11 +134,11 @@ Surface the operator's jurisdictional notification clocks immediately on detecti
 
 Wait for operator acknowledgment of the highest-priority clock before proceeding.
 
-### Phase 2 — direct (threat context)
+### Threat context briefing
 
 Brief the operator on Salt Typhoon-class TTPs + RWEP-threshold bands. For telecom CVEs with active exploitation: live-patch threshold 90, urgent-patch 70, scheduled 30.
 
-### Phase 3 — look (artifacts to capture)
+### Artifacts to capture
 
 Capture the following telecom-specific evidence (use `air_gap_alternative` paths if operator is in disconnected mode):
 
@@ -152,7 +152,7 @@ Capture the following telecom-specific evidence (use `air_gap_alternative` paths
 - **OEM vendor remote-support tunnel inventory** — open Cisco TAC / Ericsson ENS / Nokia OMS tunnels with last-active timestamp.
 - **NESAS deployment posture report** — most recent operator-attested deployment match against the vendor-certified build.
 
-### Phase 4 — detect (indicators)
+### Detection indicators
 
 Walk every indicator's `false_positive_checks_required` list before submitting a hit:
 
@@ -163,23 +163,23 @@ Walk every indicator's `false_positive_checks_required` list before submitting a
 - **Unauthorized LI gateway tunnel** — outbound connection from the LI gateway to an IP outside the LE / DOJ / regulator allowlist. FP check: rule out documented maintenance bastion.
 - **OEM firmware downgrade events** — vendor-equipment firmware version regressed below the operator-published minimum. FP check: rule out documented incident-response rollback.
 
-### Phase 5 — analyze (correlation)
+### Correlation
 
 Match captured artifacts against `data/cve-catalog.json` entries with `attack_class: telecom` or matching `attack_refs`. Cross-reference against `data/framework-control-gaps.json` for FCC-CPNI-4.1, FCC-Cyber-Incident-Notification-2024, NIS2-Annex-I-Telecom, DORA-Art-21-Telecom-ICT, UK-CAF-B5, AU-ISM-1556, GSMA-NESAS-Deployment, 3GPP-TR-33.926, ITU-T-X.805. Score blast-radius based on subscriber count + LI-feed-exposure dimension + AI-RAN slice-mismapping potential.
 
-### Phase 6 — validate (priority-sorted remediation)
+### Priority-sorted remediation
 
 Priority 1 (immediate): isolate compromised NMS account; revoke and re-issue LI-gateway operator credentials; pull running-gNB firmware hash off every base station and compare against operator-attested expected.
 Priority 2 (24h): rotate all OEM vendor remote-support credentials; close TAC tunnels not actively in use; signaling-firewall block on cross-PLMN spike sources.
 Priority 3 (72h): operator-attested NESAS recertification of every gNB / EMS / OSS; slice-isolation verification across every active 5GC slice; comprehensive review of the last 90 days of NMS admin actions.
 
-### Phase 7 — close (regulator notifications + evidence preservation)
+### Regulator notifications + evidence preservation
 
-Draft jurisdictional notification messages with regulator-specific evidence templates. Preserve LI-system audit trail for downstream law-enforcement / intelligence-community handoff. Schedule a follow-up `reattest` window at the highest applicable regulator deadline minus 48 hours.
+Draft jurisdictional notification messages with regulator-specific evidence templates. Preserve LI-system audit trail for downstream law-enforcement / intelligence-community handoff. Schedule a follow-up re-attestation window at the highest applicable regulator deadline minus 48 hours.
 
 ## Output Format
 
-The investigation evidence bundle returned by phase 5 + 6 has this shape:
+The investigation evidence bundle has this shape:
 
 ```json
 {
@@ -251,6 +251,6 @@ Theater patterns specific to telecom posture:
 
 - **incident-response-playbook** — parent IR flow; sector-telecom extends the IR contract with telecom-specific evidence and jurisdictional clocks.
 - **framework-gap-analysis** — invoke for downstream Hard-Rule-5 gap mapping against catalog framework_gaps.
-- **cred-stores** — LI-gateway operator credential storage falls under the cred-stores skill for secret-management depth.
+- **cred-stores** *(playbook chain, not a skill)* — LI-gateway operator credential storage falls under the `cred-stores` playbook for secret-management depth.
 - **sector-federal-government** — national-security adjacency on LI-system compromise touches federal investigation scope.
 - **mcp-agent-trust** — AI-RAN xApp / rApp compromise (ATLAS AML.T0040 class) crosses into MCP-class agent-tool trust boundaries.

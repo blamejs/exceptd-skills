@@ -12,7 +12,7 @@
  * The fix treats positional args as an inline --required, with the same
  * unknown-id refusal. This test pins the contract.
  *
- * Per CLAUDE.md anti-coincidence rule, every assertion checks the EXACT
+ * Per the anti-coincidence rule, every assertion checks the EXACT
  * playbooks_run array or EXACT exit code, never `assert.ok(includes)`.
  */
 

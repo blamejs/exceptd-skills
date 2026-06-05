@@ -13,9 +13,9 @@
   "findings": [
     {
       "severity": "medium",
-      "category": "badge_drift",
-      "artifact": "README.md",
-      "detail": "jurisdictions badge shows 35, live count is 34"
+      "category": "researcher_claim_drift",
+      "artifact": "skills/researcher/skill.md",
+      "detail": "claims 41 specialized skills downstream; live count is 50"
     }
   ]
 }

@@ -240,10 +240,14 @@ test("collect sbom emits only signal_overrides that exist in the playbook indica
 test("collect sbom does not flip lockfile-no-integrity when every entry carries integrity", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-sbom-clean-"));
   try {
+    // Realistic npm 7+ root entry: the `""` package legitimately carries
+    // name + version and NO integrity (it's the project itself, not a remote
+    // tarball). A clean lockfile like this must report "miss" — counting the
+    // root entry as missing-integrity false-positived on every real repo.
     fs.writeFileSync(path.join(tmp, "package-lock.json"), JSON.stringify({
       lockfileVersion: 3,
       packages: {
-        "": {},
+        "": { name: "my-project", version: "1.0.0" },
         "node_modules/foo": { version: "1.0.0", resolved: "https://r/foo.tgz", integrity: "sha512-abc" },
       },
     }));

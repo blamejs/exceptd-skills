@@ -1,0 +1,626 @@
+{
+  "_meta": {
+    "id": "decompression-dos",
+    "version": "1.0.0",
+    "last_threat_review": "2026-06-02",
+    "threat_currency_score": 92,
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-06-02",
+        "summary": "Initial seven-phase decompression-bomb / parser-DoS / ReDoS playbook. Covers the input-amplification denial-of-service class a single crafted file or string can trigger, which generic input-validation controls do not bound: unbounded archive decompression (zip bomb) and nested-archive bombs, Zip Slip path traversal on extraction, XML entity expansion (billion laughs) / XXE, catastrophic-backtracking regular expressions (ReDoS), recursive parsing with no depth limit, and length-field-driven unbounded allocation in binary parsers (ASN.1/DER, CBOR, MIME, protobuf). Adds CWE-409 (data amplification) and CWE-1333 (inefficient regex complexity) to the weakness catalog. Maps to ATT&CK T1499 / T1499.001 / T1059 and to NIST 800-53 SI-10 / SC-5, ISO 27001 A.8.26, NIS2 Art.21, UK CAF B4, and AU ISM."
+      }
+    ],
+    "owner": "@blamejs/platform-security",
+    "air_gap_mode": false,
+    "scope": "code",
+    "preconditions": [
+      {
+        "id": "source-or-config-read",
+        "description": "Agent must read the operator's parsing / decompression / regex source and/or runtime configuration to inspect size and ratio caps, path containment, entity processing, regex complexity, and depth/allocation bounds. A host with neither marks the playbook visibility_gap=no_parser_inventory.",
+        "check": "agent_has_filesystem_read == true OR agent_has_parser_config == true",
+        "on_fail": "halt"
+      }
+    ],
+    "mutex": [],
+    "feeds_into": [
+      {
+        "playbook_id": "crypto-codebase",
+        "condition": "finding.includes_vendored_parser_weakness == true"
+      },
+      {
+        "playbook_id": "framework",
+        "condition": "analyze.compliance_theater_check.verdict == 'theater'"
+      }
+    ]
+  },
+  "domain": {
+    "name": "Decompression-bomb / parser-DoS / ReDoS",
+    "attack_class": "webapp-exploit",
+    "atlas_refs": [],
+    "attack_refs": [
+      "T1499",
+      "T1499.001",
+      "T1059"
+    ],
+    "cve_refs": [],
+    "cwe_refs": [
+      "CWE-409",
+      "CWE-1333",
+      "CWE-400",
+      "CWE-776",
+      "CWE-22",
+      "CWE-834",
+      "CWE-770"
+    ],
+    "frameworks_in_scope": [
+      "nist-800-53",
+      "iso-27001-2022",
+      "nis2",
+      "uk-caf",
+      "au-ism"
+    ]
+  },
+  "phases": {
+    "govern": {
+      "jurisdiction_obligations": [
+        {
+          "jurisdiction": "EU",
+          "regulation": "NIS2 Art.23",
+          "obligation": "notify_regulator",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "parser_inventory",
+            "amplification_dos_evidence"
+          ]
+        },
+        {
+          "jurisdiction": "EU",
+          "regulation": "EU CRA Annex I",
+          "obligation": "notify_supervisory_body",
+          "window_hours": 24,
+          "clock_starts": "detect_confirmed",
+          "evidence_required": [
+            "affected_product",
+            "resource_exhaustion_vector"
+          ]
+        }
+      ],
+      "theater_fingerprints": [
+        {
+          "pattern_id": "we-validate-input",
+          "claim": "We validate all input, so we are safe from malformed data.",
+          "fast_detection_test": "Format validation does not bound AMPLIFICATION. Ask whether decompression caps output size/ratio, the XML parser disables entities, and regexes are length-capped or linear — a valid-format zip bomb or billion-laughs passes input validation."
+        },
+        {
+          "pattern_id": "waf-blocks-it",
+          "claim": "Our WAF blocks malicious uploads.",
+          "fast_detection_test": "A zip bomb / ReDoS string is structurally valid and small; a WAF rarely catches it. Ask for the size/ratio cap, depth limit, and regex-complexity guard at the parser."
+        },
+        {
+          "pattern_id": "cloud-scales",
+          "claim": "The service autoscales, so resource exhaustion is handled.",
+          "fast_detection_test": "Autoscaling pays for the amplification; it does not stop a single crafted file from pinning a worker. Ask for the per-input resource ceiling."
+        }
+      ],
+      "framework_context": {
+        "gap_summary": "Org controls treat \"we validate input\" and \"the cloud scales\" as DoS protection. Neither requires bounding the amplification a single crafted input causes — decompression ratio, entity expansion, regex complexity, parse depth, length-field allocation — which is where zip bombs, billion laughs, and ReDoS live.",
+        "lag_score": 70,
+        "per_framework_gaps": [
+          {
+            "framework": "nist-800-53",
+            "control_id": "SI-10",
+            "designed_for": "information input validation",
+            "insufficient_because": "satisfied by validating format; does not require bounding decompression ratio, entity expansion, or regex complexity against amplification."
+          },
+          {
+            "framework": "nist-800-53",
+            "control_id": "SC-5",
+            "designed_for": "denial-of-service protection",
+            "insufficient_because": "framed at the network tier; not operationalised for single-request asymmetric application-layer DoS."
+          }
+        ]
+      },
+      "skill_preload": [
+        "decompression-dos",
+        "webapp-security",
+        "fuzz-testing-strategy",
+        "framework-gap-analysis",
+        "compliance-theater",
+        "policy-exception-gen"
+      ]
+    },
+    "direct": {
+      "threat_context": "Amplification DoS turns a tiny, structurally-valid input into ruinous server work: a 42 KB zip bomb expands to petabytes, a few lines of XML entities expand to gigabytes (billion laughs), a crafted string pins a CPU on a backtracking regex (ReDoS), and a declared 2 GB length field allocates a 2 GB buffer from a 10-byte message. Input-format validation passes all of these because they are valid. The defence is resource bounds at the parser — size/ratio caps, entity disabling, linear regex, depth and allocation limits — not validation or autoscaling.",
+      "rwep_threshold": {
+        "escalate": 50,
+        "monitor": 30,
+        "close": 15
+      },
+      "framework_lag_declaration": "A clean \"we validate input / have a WAF / autoscale\" audit is NON-EVIDENCE for amplification-DoS resistance; it confirms format validation and elastic infra, not decompression caps, entity disabling, regex-complexity bounds, or parse-depth limits.",
+      "skill_chain": [
+        {
+          "skill": "decompression-dos",
+          "purpose": "enumerate the decompression / parser / regex resource-bound checks"
+        },
+        {
+          "skill": "webapp-security",
+          "purpose": "cross-reference the OWASP ReDoS / XXE / resource-consumption classes"
+        },
+        {
+          "skill": "fuzz-testing-strategy",
+          "purpose": "frame coverage-guided fuzzing as the regression control for parser DoS"
+        },
+        {
+          "skill": "framework-gap-analysis",
+          "purpose": "map findings to the SI-10 / SC-5 gaps the controls do not cover"
+        }
+      ],
+      "token_budget": {
+        "estimated_total": 12000,
+        "breakdown": {
+          "govern": 1200,
+          "direct": 800,
+          "look": 4000,
+          "detect": 3800,
+          "analyze": 1500,
+          "validate": 500,
+          "close": 200
+        }
+      }
+    },
+    "look": {
+      "artifacts": [
+        {
+          "id": "decompression-config",
+          "type": "config_file",
+          "source": "grep for safe-decompress / safe-archive / archive-gz / archive-tar / archive-read / inflate / gunzip / max size / ratio across the archive-handling path.",
+          "description": "Whether archive decompression caps total output size / ratio and limits nested-archive recursion.",
+          "required": true,
+          "air_gap_alternative": "Inspect the decompression source for a size/ratio cap and nesting limit."
+        },
+        {
+          "id": "archive-extraction-paths",
+          "type": "config_file",
+          "source": "grep for extract / entry name / path.join / .. / normaliz / symlink across the archive-extraction path.",
+          "description": "Whether extracted entry paths are normalised and confined to the target (Zip Slip defence).",
+          "required": true,
+          "air_gap_alternative": "Inspect the extraction source for path normalisation + containment before write."
+        },
+        {
+          "id": "xml-and-parser-config",
+          "type": "config_file",
+          "source": "grep for guard-xml / xml-c14n / DTD / entity / external / DOCTYPE across the XML parser config.",
+          "description": "Whether the XML parser disables DTDs / external + general entities (XXE + billion-laughs defence).",
+          "required": true,
+          "air_gap_alternative": "Inspect the XML parser construction for entity/DTD disabling."
+        },
+        {
+          "id": "regex-and-recursion-config",
+          "type": "config_file",
+          "source": "grep for guard-regex / safe-regex / RegExp / max-depth / depth / recursion / nesting across the regex and structured-parser paths.",
+          "description": "Whether regexes on untrusted input are linear/length-capped and whether nested-structure parsers (JSON/CBOR/protobuf/ASN.1/MIME) enforce depth and length-field bounds.",
+          "required": true,
+          "air_gap_alternative": "Inspect the regex usage and the structured-parser source for length caps, linear engines, and depth/allocation bounds."
+        }
+      ],
+      "collection_scope": {
+        "time_window": "current parsing / decompression source + configuration state (point-in-time posture audit)",
+        "asset_scope": "every code path that decompresses an archive, parses XML/JSON/CBOR/protobuf/ASN.1/MIME, or applies a regex to attacker-suppliable input"
+      },
+      "environment_assumptions": [
+        {
+          "assumption": "The product parses or decompresses attacker-suppliable input.",
+          "if_false": "A product that never ingests untrusted files/strings has a reduced surface; focus on any regex over user input."
+        },
+        {
+          "assumption": "Parser/decompression source or config is readable.",
+          "if_false": "Mark visibility_gap=no_parser_inventory and report only what the parsing source reveals."
+        }
+      ],
+      "fallback_if_unavailable": [
+        {
+          "artifact_id": "decompression-config",
+          "fallback_action": "If the product never decompresses archives, skip the bomb / nested-bomb / Zip Slip indicators.",
+          "confidence_impact": "none"
+        },
+        {
+          "artifact_id": "xml-and-parser-config",
+          "fallback_action": "If no XML is parsed, skip the entity-expansion indicator.",
+          "confidence_impact": "none"
+        }
+      ]
+    },
+    "detect": {
+      "indicators": [
+        {
+          "id": "archive-decompression-unbounded",
+          "type": "config_value",
+          "value": "An archive (zip/tar/gzip) is decompressed without a cap on total decompressed size or a compression-ratio guard.",
+          "description": "A decompression bomb — a small archive that expands to gigabytes — exhausts memory/disk and denies service; the classic 42 KB → 4.5 PB zip bomb.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1499.001",
+          "false_positive_checks_required": [
+            "Confirm extraction enforces a total-output-size ceiling AND/OR a per-entry compression-ratio guard (and fails closed when exceeded) — extraction with no size/ratio cap is the finding.",
+            "A decompression of a fully-trusted, operator-produced artifact of known size is lower-risk; the finding is decompressing attacker-suppliable input without a cap."
+          ]
+        },
+        {
+          "id": "zip-slip-path-traversal",
+          "type": "config_value",
+          "value": "Archive extraction writes entries to a path derived from the entry name without normalising and confining it to the target directory, so an entry named `../../x` escapes (Zip Slip).",
+          "description": "A Zip Slip entry overwrites files outside the extraction target — config, a binary on the execution path, an SSH key — turning archive extraction into arbitrary file write and often code execution.",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1059",
+          "false_positive_checks_required": [
+            "Confirm each extracted path is normalised and verified to remain within the target directory (reject `..`, absolute paths, and symlink escapes) before writing — extraction that joins the raw entry name to the target is the finding.",
+            "An extractor that resolves the final path and refuses any that escapes the target (or extracts into a jail) is safe even if entries contain `..`."
+          ]
+        },
+        {
+          "id": "xml-entity-expansion-enabled",
+          "type": "config_value",
+          "value": "XML is parsed with DTD processing / external + general entity expansion enabled, exposing the billion-laughs (entity-expansion) and XXE classes.",
+          "description": "Recursive entity expansion (billion laughs) amplifies a tiny document into gigabytes of memory; external entities additionally enable file read / SSRF (XXE).",
+          "confidence": "high",
+          "deterministic": false,
+          "attack_ref": "T1499.001",
+          "false_positive_checks_required": [
+            "Confirm the XML parser disables DTDs / external + parameter entities (or caps entity expansion) — a parser with entity expansion and external entities enabled on untrusted input is the finding.",
+            "A parser fed only trusted, schema-fixed internal XML with no DTD may be lower-risk; the finding is entity processing enabled on attacker-suppliable XML."
+          ]
+        },
+        {
+          "id": "redos-catastrophic-backtracking",
+          "type": "config_value",
+          "value": "A regular expression with super-linear (exponential / polynomial) worst-case complexity is applied to an actor-controlled value without a length cap or a linear-time engine.",
+          "description": "A crafted input triggers catastrophic backtracking, pinning a CPU core for seconds-to-minutes per request — a cheap single-request denial of service (ReDoS).",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1499",
+          "false_positive_checks_required": [
+            "Confirm regexes on untrusted input are either provably linear (no nested/overlapping quantifiers like (a+)+), length-capped, or run on a linear-time engine (RE2) — a backtracking-prone pattern on uncapped input is the finding.",
+            "A regex applied only to a short, fixed-length, trusted token is lower-risk; the finding is a backtracking pattern on unbounded attacker input."
+          ]
+        },
+        {
+          "id": "recursive-parse-no-depth-limit",
+          "type": "config_value",
+          "value": "A nested-structure parser (JSON / CBOR / protobuf / nested archives / nested XML) imposes no maximum nesting depth, so deeply nested input drives unbounded recursion.",
+          "description": "Deeply nested input exhausts the stack or CPU (and can crash via recursion limit) — a single small payload denies service through the parser.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1499.001",
+          "false_positive_checks_required": [
+            "Confirm the parser enforces a maximum nesting depth and fails closed beyond it — a recursive descent / nesting handler with no depth ceiling on untrusted input is the finding.",
+            "A parser with an explicit depth limit (or an iterative non-recursive design with a bound) is safe."
+          ]
+        },
+        {
+          "id": "length-field-unbounded-allocation",
+          "type": "config_value",
+          "value": "A binary parser (ASN.1/DER, CBOR, MIME, protobuf) reads a length/count field and pre-allocates a buffer or collection of that size without bounding it against the actual remaining input.",
+          "description": "A crafted length field (e.g. a 2 GB declared length on a 10-byte message) makes the parser allocate huge buffers before reading, exhausting memory on a single message.",
+          "confidence": "medium",
+          "deterministic": false,
+          "attack_ref": "T1499.001",
+          "false_positive_checks_required": [
+            "Confirm declared lengths/counts are validated against the remaining input size (and a hard ceiling) before allocation — allocating to a declared length without bounding it is the finding.",
+            "A parser that streams and allocates incrementally as bytes arrive (not up-front to a declared size) is safe."
+          ]
+        },
+        {
+          "id": "nested-archive-bomb-uncapped",
+          "type": "config_value",
+          "value": "Recursive archive handling (an archive containing archives) has no limit on nesting depth or cumulative decompressed output across layers.",
+          "description": "A nested bomb (zip-within-zip-within-...) multiplies the amplification at each layer, defeating a single-layer size cap if the cap is not cumulative across recursion.",
+          "confidence": "low",
+          "deterministic": false,
+          "attack_ref": "T1499.001",
+          "false_positive_checks_required": [
+            "Confirm nested-archive handling caps both recursion depth AND cumulative total output across all layers (not just per-archive) — recursion into inner archives without a cumulative cap is the finding.",
+            "A handler that does not recurse into inner archives at all (treats them as opaque files) is not exposed to nested-bomb amplification."
+          ]
+        }
+      ],
+      "false_positive_profile": [
+        {
+          "indicator_id": "archive-decompression-unbounded",
+          "benign_pattern": "Parsing/decompression bounded by a lower layer (a streaming parser, a size-capped extractor, a linear-time regex engine) or applied only to trusted fixed-size input.",
+          "distinguishing_test": "Confirm extraction enforces a total-output-size ceiling AND/OR a per-entry compression-ratio guard (and fails closed when exceeded) — extraction with no size/ratio cap is the finding."
+        },
+        {
+          "indicator_id": "zip-slip-path-traversal",
+          "benign_pattern": "Parsing/decompression bounded by a lower layer (a streaming parser, a size-capped extractor, a linear-time regex engine) or applied only to trusted fixed-size input.",
+          "distinguishing_test": "Confirm each extracted path is normalised and verified to remain within the target directory (reject `..`, absolute paths, and symlink escapes) before writing — extraction that joins the raw entry name to the target is the finding."
+        },
+        {
+          "indicator_id": "xml-entity-expansion-enabled",
+          "benign_pattern": "Parsing/decompression bounded by a lower layer (a streaming parser, a size-capped extractor, a linear-time regex engine) or applied only to trusted fixed-size input.",
+          "distinguishing_test": "Confirm the XML parser disables DTDs / external + parameter entities (or caps entity expansion) — a parser with entity expansion and external entities enabled on untrusted input is the finding."
+        },
+        {
+          "indicator_id": "redos-catastrophic-backtracking",
+          "benign_pattern": "Parsing/decompression bounded by a lower layer (a streaming parser, a size-capped extractor, a linear-time regex engine) or applied only to trusted fixed-size input.",
+          "distinguishing_test": "Confirm regexes on untrusted input are either provably linear (no nested/overlapping quantifiers like (a+)+), length-capped, or run on a linear-time engine (RE2) — a backtracking-prone pattern on uncapped input is the finding."
+        },
+        {
+          "indicator_id": "recursive-parse-no-depth-limit",
+          "benign_pattern": "Parsing/decompression bounded by a lower layer (a streaming parser, a size-capped extractor, a linear-time regex engine) or applied only to trusted fixed-size input.",
+          "distinguishing_test": "Confirm the parser enforces a maximum nesting depth and fails closed beyond it — a recursive descent / nesting handler with no depth ceiling on untrusted input is the finding."
+        },
+        {
+          "indicator_id": "length-field-unbounded-allocation",
+          "benign_pattern": "Parsing/decompression bounded by a lower layer (a streaming parser, a size-capped extractor, a linear-time regex engine) or applied only to trusted fixed-size input.",
+          "distinguishing_test": "Confirm declared lengths/counts are validated against the remaining input size (and a hard ceiling) before allocation — allocating to a declared length without bounding it is the finding."
+        },
+        {
+          "indicator_id": "nested-archive-bomb-uncapped",
+          "benign_pattern": "Parsing/decompression bounded by a lower layer (a streaming parser, a size-capped extractor, a linear-time regex engine) or applied only to trusted fixed-size input.",
+          "distinguishing_test": "Confirm nested-archive handling caps both recursion depth AND cumulative total output across all layers (not just per-archive) — recursion into inner archives without a cumulative cap is the finding."
+        }
+      ],
+      "minimum_signal": {
+        "detected": "At least one parser/decompression path on attacker-suppliable input lacks a resource bound — no decompression size/ratio cap, XML entities enabled, a backtracking regex on uncapped input, no parse-depth limit, or unbounded length-field allocation.",
+        "inconclusive": "A bound is enforced by a lower layer the audit could not read (a streaming runtime, an RE2 engine) — record as visibility_gap, not a clean result.",
+        "not_detected": "Decompression caps output size/ratio and nesting, extraction confines paths, the XML parser disables entities, regexes on untrusted input are linear or length-capped, parsers enforce depth limits, and binary parsers bound length-field allocation."
+      }
+    },
+    "analyze": {
+      "rwep_inputs": [
+        {
+          "signal_id": "archive-decompression-unbounded",
+          "rwep_factor": "public_poc",
+          "weight": 20
+        },
+        {
+          "signal_id": "xml-entity-expansion-enabled",
+          "rwep_factor": "blast_radius",
+          "weight": 15
+        },
+        {
+          "signal_id": "redos-catastrophic-backtracking",
+          "rwep_factor": "active_exploitation",
+          "weight": 10
+        }
+      ],
+      "blast_radius_model": {
+        "scope_question": "Can a single small crafted input deny service to the whole instance, and is the ingest path internet-facing?",
+        "scoring_rubric": [
+          {
+            "condition": "An internet-facing endpoint accepts attacker uploads/strings and a single crafted input (zip bomb / billion laughs / ReDoS) exhausts the instance",
+            "blast_radius_score": 5,
+            "description": "Single-request denial of service on a public endpoint"
+          },
+          {
+            "condition": "Zip Slip extraction on an internet-facing path enabling arbitrary file write / code execution",
+            "blast_radius_score": 5,
+            "description": "Path traversal to write/exec via archive extraction"
+          },
+          {
+            "condition": "Parser on an internal/authenticated path only",
+            "blast_radius_score": 2,
+            "description": "Exploitation requires prior access"
+          }
+        ]
+      },
+      "compliance_theater_check": {
+        "claim": "We validate all input and have a WAF / autoscaling, so amplification attacks are handled.",
+        "audit_evidence": "An input-validation library, WAF rules, an autoscaling group.",
+        "reality_test": "Feed a zip bomb, a billion-laughs XML, and a ReDoS string. If any expands unbounded, pins a CPU, or allocates from a declared length, validation/WAF/autoscaling did not bound the amplification.",
+        "theater_verdict_if_gap": "theater"
+      },
+      "framework_gap_mapping": [
+        {
+          "finding_id": "archive-decompression-unbounded",
+          "framework": "nist-800-53",
+          "claimed_control": "SI-10 (input validation)",
+          "actual_gap": "SI-10 validates format; a valid-format zip bomb passes — it does not require a decompression-ratio cap."
+        },
+        {
+          "finding_id": "redos-catastrophic-backtracking",
+          "framework": "nist-800-53",
+          "claimed_control": "SC-5 (DoS protection)",
+          "actual_gap": "SC-5 is network-tier; it does not require linear-time regex on untrusted input against ReDoS."
+        }
+      ],
+      "escalation_criteria": [
+        {
+          "condition": "An internet-facing ingest accepts attacker input and a single crafted payload exhausts the instance",
+          "action": "raise_severity"
+        },
+        {
+          "condition": "Archive extraction is vulnerable to Zip Slip on a writable path",
+          "action": "trigger_playbook"
+        }
+      ]
+    },
+    "validate": {
+      "remediation_paths": [
+        {
+          "id": "cap-decompression",
+          "description": "Enforce a total decompressed-output size ceiling AND a per-entry compression-ratio guard, plus a cumulative cap and recursion limit for nested archives; fail closed when exceeded.",
+          "preconditions": [
+            "operator controls the decompression path"
+          ],
+          "priority": 1,
+          "for_signals": [
+            "archive-decompression-unbounded",
+            "nested-archive-bomb-uncapped"
+          ]
+        },
+        {
+          "id": "confine-extraction-paths",
+          "description": "Normalise each archive entry path and verify it stays within the target directory (reject `..`, absolute paths, symlink escapes) before writing.",
+          "preconditions": [],
+          "priority": 1,
+          "for_signals": [
+            "zip-slip-path-traversal"
+          ]
+        },
+        {
+          "id": "disable-xml-entities",
+          "description": "Disable DTD processing and external + parameter entity expansion in the XML parser (or hard-cap expansion) on all untrusted XML.",
+          "preconditions": [],
+          "priority": 1,
+          "for_signals": [
+            "xml-entity-expansion-enabled"
+          ]
+        },
+        {
+          "id": "bound-regex-complexity",
+          "description": "Run regexes on untrusted input through a linear-time engine (RE2) or length-cap the input and remove nested/overlapping quantifiers that backtrack.",
+          "preconditions": [],
+          "priority": 2,
+          "for_signals": [
+            "redos-catastrophic-backtracking"
+          ]
+        },
+        {
+          "id": "limit-depth-and-allocation",
+          "description": "Enforce a maximum nesting depth in structured parsers and validate declared length/count fields against remaining input before allocating.",
+          "preconditions": [],
+          "priority": 2,
+          "for_signals": [
+            "recursive-parse-no-depth-limit",
+            "length-field-unbounded-allocation"
+          ]
+        }
+      ],
+      "validation_tests": [
+        {
+          "id": "zip-bomb-rejected",
+          "test": "Submit a high-ratio decompression bomb (small archive expanding to many GB).",
+          "expected_result": "Extraction aborts at the size/ratio ceiling; memory/disk are not exhausted.",
+          "test_type": "negative"
+        },
+        {
+          "id": "zip-slip-rejected",
+          "test": "Submit an archive with an entry named `../../evil`.",
+          "expected_result": "Extraction refuses the escaping path; nothing is written outside the target.",
+          "test_type": "negative"
+        },
+        {
+          "id": "billion-laughs-rejected",
+          "test": "Submit a billion-laughs entity-expansion XML document.",
+          "expected_result": "The parser rejects entity expansion / DTD; memory is not exhausted.",
+          "test_type": "negative"
+        },
+        {
+          "id": "redos-input-bounded",
+          "test": "Submit an input crafted to trigger catastrophic backtracking on a known regex.",
+          "expected_result": "Matching completes in linear time (RE2 / length cap); no CPU pinning.",
+          "test_type": "negative"
+        },
+        {
+          "id": "legitimate-input-parses",
+          "test": "Submit a normal archive, XML document, and input string.",
+          "expected_result": "All parse/extract normally — no regression on the legitimate path.",
+          "test_type": "functional"
+        }
+      ],
+      "residual_risk_statement": {
+        "risk": "A novel amplification pattern in a parser without a coverage-guided fuzzer can still surface after the known classes are bounded.",
+        "why_remains": "Resource caps stop the known amplification classes; an unforeseen pathological input is caught by continuous fuzzing, not by the caps alone.",
+        "acceptance_level": "ciso"
+      },
+      "evidence_requirements": [
+        {
+          "evidence_type": "config_diff",
+          "description": "The decompression size/ratio caps, extraction path-confinement, XML entity settings, regex engine/length caps, and parser depth/allocation bounds as audited.",
+          "retention_period": "1 year"
+        },
+        {
+          "evidence_type": "exploit_replay_negative",
+          "description": "Outcomes of the zip-bomb / Zip-Slip / billion-laughs / ReDoS negative tests plus the legitimate-input functional test.",
+          "retention_period": "1 year"
+        }
+      ],
+      "regression_trigger": [
+        {
+          "condition": "A new parser, decompression path, or regex over untrusted input is added",
+          "interval": "on change"
+        },
+        {
+          "condition": "Continuous coverage-guided fuzzing of the parsers",
+          "interval": "continuous"
+        }
+      ]
+    },
+    "close": {
+      "evidence_package": {
+        "bundle_format": "csaf-2.0",
+        "contents": [
+          "parser/decompression config snapshot",
+          "per-indicator findings + false-positive disposition",
+          "negative + functional test results",
+          "framework gap mapping"
+        ],
+        "destination": ".exceptd/attestations/<session_id>/attestation.json"
+      },
+      "learning_loop": {
+        "enabled": true,
+        "lesson_template": {
+          "attack_vector": "Single crafted input (zip bomb / nested bomb / Zip Slip / billion-laughs XML / ReDoS / length-field over-allocation) that amplifies into resource exhaustion or arbitrary file write because the parser imposed no resource bound.",
+          "control_gap": "Decompression / XML / regex / structured-parser path lacks size-ratio caps, entity disabling, linear-regex, depth limits, or length-field bounds.",
+          "framework_gap": "NIST SI-10 + SC-5 validate format and protect the network tier but not single-request application-layer amplification.",
+          "new_control_requirement": "Every parser/decompressor on untrusted input MUST enforce a resource bound (size/ratio cap, entity disable, linear regex, depth + allocation limit)."
+        }
+      },
+      "notification_actions": [
+        {
+          "obligation_ref": "EU/NIS2 Art.23 24h",
+          "deadline": "24h from detect_confirmed",
+          "recipient": "national CSIRT / competent authority",
+          "evidence_attached": [
+            "attestation"
+          ]
+        },
+        {
+          "obligation_ref": "EU/EU CRA Annex I 24h",
+          "deadline": "24h from detect_confirmed",
+          "recipient": "CRA market-surveillance authority",
+          "evidence_attached": [
+            "attestation"
+          ]
+        }
+      ],
+      "exception_generation": {
+        "trigger_condition": "A legacy parser cannot adopt a resource bound immediately.",
+        "exception_template": {
+          "scope": "the specific parser / endpoint",
+          "duration": "90 days",
+          "compensating_controls": [
+            "front the ingest with a size-limited reverse proxy",
+            "run the parse in a memory/CPU-limited sandbox",
+            "rate-limit the ingest endpoint"
+          ],
+          "risk_acceptance_owner": "ciso"
+        }
+      },
+      "regression_schedule": {
+        "next_run": "continuous fuzzing + quarterly re-attestation",
+        "trigger": "change to a parser / decompression / regex path, or quarterly re-attestation"
+      }
+    }
+  },
+  "directives": [
+    {
+      "id": "all-parser-and-decompression-paths",
+      "title": "Inventory + resource-bound-test every parser and decompression path on untrusted input",
+      "applies_to": {
+        "always": true
+      }
+    },
+    {
+      "id": "amplification-dos-sweep",
+      "title": "Targeted zip-bomb / billion-laughs / ReDoS sweep on internet-facing ingest",
+      "applies_to": {
+        "attack_technique": "T1499.001"
+      }
+    }
+  ]
+}

@@ -905,6 +905,7 @@
             "downstream_relying_party_inventory_complete == true"
           ],
           "priority": 1,
+          "for_signals": ["anomalous-federated-trust-addition","session-token-forgery-evidence","mfa-factor-swap-without-password-reset","recent-high-privilege-role-assignment"],
           "compensating_controls": [
             "session-revocation-attestation",
             "downstream-saas-audit-log-baseline-captured",
@@ -920,6 +921,7 @@
             "cross_tenant_inventory_complete == true"
           ],
           "priority": 2,
+          "for_signals": ["unauthorized-consent-grant-from-non-corp-tenant","oauth-app-publisher-unverified","cross-tenant-assumption-anomaly","anomalous-federated-trust-addition"],
           "compensating_controls": [
             "consent-grant-attestation",
             "federated-trust-attestation"
@@ -934,6 +936,7 @@
             "break_glass_inventory_complete == true"
           ],
           "priority": 3,
+          "for_signals": ["service-account-unused-then-active","break-glass-account-authentication"],
           "compensating_controls": [
             "service-account-rotation-attestation",
             "break-glass-drill-calendar"
