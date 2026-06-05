@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.21 — 2026-06-04
+
+The deprecation pointer for `prefetch` — on the help screen and in the README alias table — named `refresh --no-network`, which is a report-only dry run: an operator following it got a list of what would be fetched instead of a populated cache. Both now point at `refresh --prefetch`, which runs the same cache population as `prefetch` itself. The two scheduled repository workflows (external-data refresh, ATLAS currency) are also repaired: an upstream action tag had been re-pointed so its pinned commit no longer existed, and the Node setup step requested npm caching in a repo that intentionally ships no lock file — both workflows now run again, and the refresh job installs with `--no-package-lock` so a generated lock file can never ride along in its automated data PRs.
+
 ## 0.16.20 — 2026-06-02
 
 CVE curation now accepts three operator-supplied fields it previously dropped or rejected: `ai_discovery_source` (the AI-discovery provenance category — vendor research, AI-augmented bug bounty, academic fuzzing, threat-actor-built, human, or unknown), `vendor_update_paths` (the restart-required vendor remediation steps), and the `theoretical` value of `active_exploitation` (a published proof-of-concept with no observed in-the-wild use). All three are already valid in the catalog and factored by RWEP scoring, so a curated entry that supplies them is no longer stripped of its provenance or remediation detail before being written.

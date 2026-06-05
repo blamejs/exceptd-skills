@@ -522,7 +522,7 @@ The remaining v0.10.x verbs are still functional, no banner, no removal schedule
 | `validate-rfcs` | `doctor --rfcs` | matches canonical |
 | `list-attestations` | `attest list` | matches canonical |
 | `reattest <sid>` | `attest diff <sid>` | matches canonical |
-| `prefetch` | `refresh --no-network` | matches canonical |
+| `prefetch` | `refresh --prefetch` | matches canonical |
 | `build-indexes` | `refresh --indexes-only` | matches canonical |
 
 **Legacy passthrough verbs** — dispatch to the v0.10.x orchestrator script. The output shape is **NOT** identical to the canonical verb — it's the legacy `{timestamp, host, findings}` envelope. Use the canonical verb when you want the v0.11+ structured envelope contract; the passthrough is kept only for scripts that depend on the legacy output:
