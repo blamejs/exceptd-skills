@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.22 — 2026-06-05
+
+When the automated external-data refresh applies a CISA KEV listing change to a catalog entry, it now updates the entry's RWEP factor and score in the same write, honouring whichever factor shape the entry stores. Previously only the flag flipped, leaving the stored score failing the factor-sum invariant the catalog enforces — the first real KEV listing the refresh applied surfaced this as a 25-point mismatch. A first listing also now carries its KEV date: the drift check emitted a date change only when the local entry already had one, so a newly listed CVE arrived dated null. The refresh workflow's post-apply gate now runs structural validation (catalog schema and RWEP coherence, cross-references, index freshness, skill lint) instead of the full test suite: the suite's curation-completeness checks assert guarantees that human curation supplies after import, so they gate the automated data PR's merge rather than its creation. The workflow also regenerates the SBOM over freshly applied data and consumes its own just-built prefetch cache on runners that have no signing key.
+
 ## 0.16.21 — 2026-06-04
 
 The deprecation pointer for `prefetch` — on the help screen and in the README alias table — named `refresh --no-network`, which is a report-only dry run: an operator following it got a list of what would be fetched instead of a populated cache. Both now point at `refresh --prefetch`, which runs the same cache population as `prefetch` itself. The two scheduled repository workflows (external-data refresh, ATLAS currency) are also repaired: an upstream action tag had been re-pointed so its pinned commit no longer existed, and the Node setup step requested npm caching in a repo that intentionally ships no lock file — both workflows now run again, and the refresh job installs with `--no-package-lock` so a generated lock file can never ride along in its automated data PRs.
