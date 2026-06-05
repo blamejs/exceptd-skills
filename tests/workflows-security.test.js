@@ -252,7 +252,7 @@ test("atlas-currency.yml routes the currency report via env: (not template liter
   );
 });
 
-test("refresh.yml validates inputs.source against [a-z,]+ allowlist before passing to shell", () => {
+test("refresh.yml validates inputs.source against [a-z,-]+ allowlist before passing to shell", () => {
   const f = path.join(WORKFLOWS_DIR, "refresh.yml");
   const yaml = fs.readFileSync(f, "utf8");
   // Must use SOURCE_INPUT env var (not direct ${{ inputs.source }} in run:).
@@ -261,10 +261,21 @@ test("refresh.yml validates inputs.source against [a-z,]+ allowlist before passi
     /SOURCE_INPUT:\s*\$\{\{\s*inputs\.source\s*\}\}/,
     "refresh.yml must route inputs.source via env.SOURCE_INPUT"
   );
-  // Must enforce the [a-z,]+ shape allowlist.
+  // Must enforce the [a-z,-]+ shape allowlist (hyphen included for source
+  // names like cve-regression-watcher; still excludes every shell
+  // metacharacter).
   assert.match(
     yaml,
-    /grep\s+-Eq\s+'\^\[a-z,\]\+\$'/,
-    "refresh.yml must validate SOURCE_INPUT against ^[a-z,]+$ before using it"
+    /grep\s+-Eq\s+'\^\[a-z,-\]\+\$'/,
+    "refresh.yml must validate SOURCE_INPUT against ^[a-z,-]+$ before using it"
+  );
+  // The raw dispatch input must reach exactly one run: block (the resolve
+  // step that validates it); downstream steps consume the validated
+  // steps.scope.* outputs instead.
+  const rawUses = yaml.match(/SOURCE_INPUT:\s*\$\{\{\s*inputs\.source\s*\}\}/g) || [];
+  assert.equal(
+    rawUses.length,
+    1,
+    "raw inputs.source must feed only the resolve-scope step; later steps take steps.scope outputs"
   );
 });

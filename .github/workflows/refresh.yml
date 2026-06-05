@@ -2,11 +2,16 @@ name: External Data Refresh
 
 on:
   schedule:
-    # Daily 06:00 UTC — KEV/EPSS/NVD churn fast.
+    # Daily 06:00 UTC — KEV/EPSS/NVD/GHSA/OSV/advisory feeds churn fast.
+    # Scoped to every source EXCEPT the per-RFC drift sweep: that one walks
+    # ~9k slow-moving documents against rate-limited upstreams and takes
+    # hours, so it runs on the Monday slot only. RFC status drift and
+    # new-RFC discovery are weekly signals, not daily ones.
     - cron: '0 6 * * *'
-    # Mondays 06:30 UTC — extra slot for version-pin checks (ATLAS, ATT&CK,
-    # CWE, D3FEND). These are report-only; the daily run also exercises them
-    # but the Monday slot is what opens fresh version-bump issues.
+    # Mondays 06:30 UTC — full sweep: everything the daily run covers plus
+    # the per-RFC drift/discovery pass and version-pin checks (ATLAS,
+    # ATT&CK, CWE, D3FEND). Pin checks are report-only; this slot is what
+    # opens fresh version-bump issues.
     - cron: '30 6 * * 1'
   workflow_dispatch:
     inputs:
@@ -15,9 +20,16 @@ on:
         required: false
         default: 'false'
       source:
-        description: 'Comma-separated source list (kev,epss,nvd,rfc,pins) — blank = all'
+        description: 'Comma-separated source list (kev,epss,nvd,rfc,pins,ghsa,osv,advisories,cve-regression-watcher) — blank = all'
         required: false
         default: ''
+
+# One refresh at a time. A scheduled run that overlaps a still-running
+# earlier one would race it on the data-refresh/auto branch; new runs
+# queue behind the in-flight one instead.
+concurrency:
+  group: external-data-refresh
+  cancel-in-progress: false
 
 # Top-level minimum-scope default. Per-job blocks below escalate as needed.
 permissions:
@@ -70,32 +82,77 @@ jobs:
         # `git status --porcelain` capture below and land in auto-PRs.
         run: npm install --no-package-lock
 
+      - name: Resolve refresh source scope
+        id: scope
+        # Dispatch input wins. The daily cron scopes to every source except
+        # the per-RFC sweep; the Monday cron and blank-source dispatches run
+        # the full sweep. Both lists derive from the live source registries
+        # (lib/refresh-external.js ALL_SOURCES, lib/prefetch.js SOURCES) so a
+        # future source addition is picked up by the daily run automatically
+        # rather than silently waiting for the Monday slot.
+        env:
+          # CWE-78 hardening: route workflow_dispatch input via env: instead
+          # of `${{ … }}` interpolation directly into the bash run: block,
+          # and validate against an allowlist shape before it reaches any
+          # CLI so an operator who types `kev; rm -rf /; #` cannot break
+          # out of the argument.
+          SOURCE_INPUT: ${{ inputs.source }}
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          if [ -n "$SOURCE_INPUT" ]; then
+            if ! printf '%s' "$SOURCE_INPUT" | grep -Eq '^[a-z,-]+$'; then
+              echo "::error::inputs.source must match ^[a-z,-]+$ (got: $SOURCE_INPUT)"
+              exit 1
+            fi
+            SOURCES="$SOURCE_INPUT"
+          elif [ "$EVENT_SCHEDULE" = "0 6 * * *" ]; then
+            SOURCES=$(node -e "console.log(Object.keys(require('./lib/refresh-external.js').ALL_SOURCES).filter(s => s !== 'rfc').join(','))")
+          else
+            SOURCES=""
+          fi
+          # Prefetch has its own (smaller) source vocabulary — intersect so a
+          # scoped refresh never asks prefetch for a source it doesn't know.
+          PREFETCH_SOURCES=""
+          if [ -n "$SOURCES" ]; then
+            PREFETCH_SOURCES=$(node -e "const known = new Set(Object.keys(require('./lib/prefetch.js').SOURCES)); console.log(process.argv[1].split(',').filter(s => known.has(s)).join(','))" "$SOURCES")
+          fi
+          echo "sources=$SOURCES" >> "$GITHUB_OUTPUT"
+          echo "prefetch_sources=$PREFETCH_SOURCES" >> "$GITHUB_OUTPUT"
+          echo "refresh scope: ${SOURCES:-<all>} | prefetch scope: ${PREFETCH_SOURCES:-<all>}"
+
       - name: Warm upstream cache (single fan-out fetch)
-        # Prefetch caches every upstream snapshot once at job start. The
-        # subsequent refresh runs read from .cache/upstream rather than
+        # Prefetch caches the in-scope upstream snapshots once at job start.
+        # The subsequent refresh runs read from .cache/upstream rather than
         # re-hitting upstream APIs — eliminates parallel-fetch rate-limit
-        # contention and gives swarm-mode genuine parallelism.
+        # contention and gives swarm-mode genuine parallelism. The scope
+        # comes from the resolve step above: an unscoped prefetch on a scoped
+        # run wastes hours warming ~9k per-RFC entries the refresh never
+        # reads.
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node lib/prefetch.js --quiet
+          SOURCE_INPUT: ${{ steps.scope.outputs.prefetch_sources }}
+        run: |
+          SOURCE_ARG=""
+          if [ -n "$SOURCE_INPUT" ]; then
+            SOURCE_ARG="--source $SOURCE_INPUT"
+          fi
+          node lib/prefetch.js --quiet $SOURCE_ARG
 
       - name: Run refresh in dry-run mode (always first)
         id: dry
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-          # CWE-78 hardening: route workflow_dispatch input via env: instead
-          # of `${{ … }}` interpolation directly into the bash run: block.
-          # The input shape is `kev,epss,nvd,rfc,pins`; we validate against
-          # that allowlist before passing it to the CLI so an operator who
-          # types `kev; rm -rf /; #` cannot break out of the argument.
-          SOURCE_INPUT: ${{ inputs.source }}
+          # Resolved + allowlist-validated by the scope step above (dispatch
+          # input never reaches this step unvalidated). The shape check here
+          # is defense in depth.
+          SOURCE_INPUT: ${{ steps.scope.outputs.sources }}
         run: |
           set +e
           SOURCE_ARG=""
           if [ -n "$SOURCE_INPUT" ]; then
-            if ! printf '%s' "$SOURCE_INPUT" | grep -Eq '^[a-z,]+$'; then
-              echo "::error::inputs.source must match ^[a-z,]+$ (got: $SOURCE_INPUT)"
+            if ! printf '%s' "$SOURCE_INPUT" | grep -Eq '^[a-z,-]+$'; then
+              echo "::error::source scope must match ^[a-z,-]+$ (got: $SOURCE_INPUT)"
               exit 1
             fi
             SOURCE_ARG="--source $SOURCE_INPUT"
@@ -121,13 +178,14 @@ jobs:
           (github.event_name == 'schedule' || inputs.apply == 'true')
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-          # CWE-78 hardening — same allowlist as the dry-run step above.
-          SOURCE_INPUT: ${{ inputs.source }}
+          # Resolved + allowlist-validated by the scope step above; shape
+          # check kept as defense in depth.
+          SOURCE_INPUT: ${{ steps.scope.outputs.sources }}
         run: |
           SOURCE_ARG=""
           if [ -n "$SOURCE_INPUT" ]; then
-            if ! printf '%s' "$SOURCE_INPUT" | grep -Eq '^[a-z,]+$'; then
-              echo "::error::inputs.source must match ^[a-z,]+$ (got: $SOURCE_INPUT)"
+            if ! printf '%s' "$SOURCE_INPUT" | grep -Eq '^[a-z,-]+$'; then
+              echo "::error::source scope must match ^[a-z,-]+$ (got: $SOURCE_INPUT)"
               exit 1
             fi
             SOURCE_ARG="--source $SOURCE_INPUT"
