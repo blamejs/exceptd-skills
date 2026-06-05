@@ -36,6 +36,7 @@ jobs:
         id: currency
         run: |
           set +e
+          # Human-readable report for the issue body.
           OUTPUT=$(node orchestrator/index.js currency 2>&1)
           EXIT_CODE=$?
           echo "exit_code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
@@ -44,14 +45,30 @@ jobs:
             echo "$OUTPUT"
             echo 'CURRENCY_EOF'
           } >> "$GITHUB_OUTPUT"
-          # Detect any skill currency under 50% in the report. The currency
-          # subcommand is expected to emit lines containing a percentage such
-          # as "currency: 42%" or "42% currency" for each skill it checks.
-          if echo "$OUTPUT" | grep -E '([0-9]|[1-4][0-9])%' | grep -qiE 'currency|stale|past review'; then
-            echo "needs_issue=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "needs_issue=false" >> "$GITHUB_OUTPUT"
-          fi
+          # Gate on the machine-readable `action_required` field from the
+          # --json output rather than regex-matching the human-readable
+          # prose. `action_required` is true iff at least one skill scores
+          # below the currency threshold; it is computed from the actual
+          # currency values, so a prose reword can't silently disable this
+          # gate. The CLI may print a non-JSON scheduler line before the
+          # JSON object, so parse the last `{`-prefixed line.
+          JSON_LINE=$(node orchestrator/index.js currency --json 2>/dev/null | grep '^{' | tail -1)
+          NEEDS_ISSUE=$(printf '%s' "$JSON_LINE" | node -e "
+            let s='';
+            process.stdin.on('data', d => s += d);
+            process.stdin.on('end', () => {
+              try {
+                const j = JSON.parse(s);
+                process.stdout.write(j.action_required === true ? 'true' : 'false');
+              } catch {
+                // Fail closed: if the currency report can't be parsed, open
+                // an issue so the broken report is surfaced rather than
+                // silently swallowed.
+                process.stdout.write('true');
+              }
+            });
+          ")
+          echo "needs_issue=$NEEDS_ISSUE" >> "$GITHUB_OUTPUT"
           exit 0
 
       - name: Open issue for skills past review window

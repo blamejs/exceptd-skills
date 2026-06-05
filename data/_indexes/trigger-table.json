@@ -11,10 +11,16 @@
   "dirty frag": [
     "kernel-lpe-triage"
   ],
+  "fragnesia": [
+    "kernel-lpe-triage"
+  ],
   "cve-2026-31431": [
     "kernel-lpe-triage"
   ],
   "cve-2026-43284": [
+    "kernel-lpe-triage"
+  ],
+  "cve-2026-46300": [
     "kernel-lpe-triage"
   ],
   "linux root": [
@@ -1459,7 +1465,16 @@
   "age assurance": [
     "age-gates-child-safety"
   ],
+  "child safety": [
+    "age-gates-child-safety"
+  ],
   "child online safety": [
+    "age-gates-child-safety"
+  ],
+  "children's online safety": [
+    "age-gates-child-safety"
+  ],
+  "youth safety": [
     "age-gates-child-safety"
   ],
   "coppa": [
@@ -1492,16 +1507,10 @@
   "csam": [
     "age-gates-child-safety"
   ],
-  "child safety": [
-    "age-gates-child-safety"
-  ],
   "ofcom": [
     "age-gates-child-safety"
   ],
   "esafety": [
-    "age-gates-child-safety"
-  ],
-  "children's online safety": [
     "age-gates-child-safety"
   ],
   "cloud iam compromise": [

@@ -8,7 +8,7 @@
 # GitHub-hosted ubuntu/windows/macos runners; this image gives a fast
 # Linux signal without burning a CI cycle.
 #
-# Two targets:
+# Three targets:
 #   predeploy        — runs `npm run predeploy` against the repo as
 #                      mounted/copied. Mirrors the CI gate sequence.
 #                      Skips `verify-signatures` if keys/public.pem is
@@ -19,6 +19,11 @@
 #                      keypair, sign every skill, verify) followed by
 #                      `npm run predeploy`. Proves a fresh clone reaches
 #                      a clean green state with no manual steps.
+#
+#   e2e              — runs `npm run test:e2e`, the end-to-end scenario
+#                      gate over tests/e2e-scenarios/ (synthetic file
+#                      trees with real IoC patterns, asserted against
+#                      each scenario's expect.json).
 #
 # Use via the package.json scripts:
 #   npm run test:docker          → predeploy target

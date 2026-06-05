@@ -176,7 +176,7 @@ Tracks PoC status, weaponization stage, and AI-assist factor per CVE. Updated wh
 
 ### `data/cwe-catalog.json`
 
-173 CWE entries pinned to **CWE v4.20**. Covers the Top 25 Most Dangerous Software Weaknesses (2024 release) plus AI- and supply-chain-relevant weakness classes (prompt-injection-as-trust-boundary failure, training data integrity, dependency confusion, untrusted artifact ingestion). Each entry records root-cause description, common consequences, mitigation patterns, and the CVEs in `cve-catalog.json` that instantiate the weakness. Skills cite CWE IDs in `cwe_refs` to anchor a finding to a stable weakness taxonomy rather than to a single CVE; the CWE provides the durable root-cause lens that survives across exploit generations.
+177 CWE entries pinned to **CWE v4.20**. Covers the Top 25 Most Dangerous Software Weaknesses (2024 release) plus AI- and supply-chain-relevant weakness classes (prompt-injection-as-trust-boundary failure, training data integrity, dependency confusion, untrusted artifact ingestion). Each entry records root-cause description, common consequences, mitigation patterns, and the CVEs in `cve-catalog.json` that instantiate the weakness. Skills cite CWE IDs in `cwe_refs` to anchor a finding to a stable weakness taxonomy rather than to a single CVE; the CWE provides the durable root-cause lens that survives across exploit generations.
 
 `_meta.cwe_version` pins the version; on a CWE release, audit IDs for renames or deprecations, bump `last_threat_review` on affected skills, and update `_meta`.
 
@@ -213,7 +213,7 @@ cisa_kev              +25  (binary)
 poc_available         +20  (binary)
 ai_assisted_weapon    +15  (binary)
 active_exploitation   +20  (binary)
-blast_radius          +15  (0–15 scaled)
+blast_radius          +30  (0–30 scaled)
 patch_available       -15  (binary)
 live_patch_available  -10  (binary: additional reduction if no reboot required)
 reboot_required       +5   (binary penalty: patch exists but requires reboot)

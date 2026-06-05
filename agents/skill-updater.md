@@ -96,7 +96,7 @@ For each affected skill:
 ## Quality Rules
 
 - Never write to data files without a source-validator approval
-- Never modify the interpretation of a framework control without a framework-analyst package
+- Never modify the interpretation of a framework control without a threat-researcher handoff package containing the framework gap update, verified by source-validator
 - Never delete entries from zeroday-lessons.json or framework-control-gaps.json — mark as superseded, not deleted
 - Always update `last_threat_review` in skill frontmatter after changes
 - If a RWEP score changes by more than 15 points: flag for review rather than auto-applying

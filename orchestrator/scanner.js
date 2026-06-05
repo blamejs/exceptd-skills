@@ -517,12 +517,60 @@ function probeTls(target) {
   return match ? match[1] : null;
 }
 
-function sanitizeConfig(obj) {
-  const safe = { ...obj };
-  for (const key of Object.keys(safe)) {
-    if (/token|key|secret|password|credential/i.test(key)) safe[key] = '[REDACTED]';
+// Key names that signal a credential value, matched case-insensitively at any
+// nesting depth. MCP server configs place real secrets inside `env` and
+// `headers` sub-objects (e.g. env.OPENAI_API_KEY, headers.Authorization), so a
+// top-level-only sweep leaks them into emitted findings.
+const SECRET_KEY_RE = /token|key|secret|password|credential|auth|bearer|api[-_]?key|access[-_]?key/i;
+
+// Value shapes that look like live credentials even under an innocuous key name
+// (e.g. args: ['--token', 'sk-...'] or a positional bearer string).
+const SECRET_VALUE_RES = [
+  /\bsk-[A-Za-z0-9_-]{8,}/,            // OpenAI-style keys
+  /\bAKIA[0-9A-Z]{12,}/,              // AWS access key id
+  /\bASIA[0-9A-Z]{12,}/,             // AWS temporary access key id
+  /\bgh[pousr]_[A-Za-z0-9]{20,}/,     // GitHub tokens
+  /\bxox[baprs]-[A-Za-z0-9-]{10,}/,   // Slack tokens
+  /\bBearer\s+[A-Za-z0-9._-]{8,}/i,   // Authorization: Bearer ...
+  /eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]+/ // JWT
+];
+
+function looksLikeSecretValue(value) {
+  if (typeof value !== 'string') return false;
+  return SECRET_VALUE_RES.some((re) => re.test(value));
+}
+
+// Recursively redact credential-shaped data so nothing emitted to stdout or
+// persisted carries an operator's live secrets. Redacts values of secret-named
+// keys at any depth and any standalone string value that matches a known
+// credential shape. Cycles are guarded with a seen-set.
+function redactDeep(value, seen) {
+  if (value === null || typeof value !== 'object') {
+    return looksLikeSecretValue(value) ? '[REDACTED]' : value;
   }
-  return safe;
+  if (seen.has(value)) return '[CIRCULAR]';
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    return value.map((item) => redactDeep(item, seen));
+  }
+
+  const out = {};
+  for (const key of Object.keys(value)) {
+    if (SECRET_KEY_RE.test(key)) {
+      out[key] = '[REDACTED]';
+    } else {
+      out[key] = redactDeep(value[key], seen);
+    }
+  }
+  return out;
+}
+
+function sanitizeConfig(obj) {
+  if (obj === null || typeof obj !== 'object') {
+    return looksLikeSecretValue(obj) ? '[REDACTED]' : obj;
+  }
+  return redactDeep(obj, new Set());
 }
 
 function loadJson(filename) {
@@ -533,4 +581,4 @@ function loadJson(filename) {
   }
 }
 
-module.exports = { scan, scanDomain };
+module.exports = { scan, scanDomain, sanitizeConfig };

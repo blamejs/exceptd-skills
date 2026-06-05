@@ -238,6 +238,114 @@ test('check-sbom-currency: SHA3-512 absence (downgrade attack) fails the gate', 
   }
 });
 
+function bringToTmp(tmp, rels) {
+  for (const rel of rels) {
+    const src = path.join(ROOT, rel);
+    const dst = path.join(tmp, rel);
+    try {
+      fs.mkdirSync(path.dirname(dst), { recursive: true });
+      try { fs.symlinkSync(src, dst, fs.statSync(src).isDirectory() ? 'dir' : 'file'); }
+      catch { fs.cpSync(src, dst, { recursive: true }); }
+    } catch { /* missing file is its own error path */ }
+  }
+}
+
+const SBOM_SUPPORT_REFS = [
+  'manifest.json', 'data', 'keys', 'agents', 'bin', 'lib', 'orchestrator', 'scripts',
+  'sources', 'vendor', 'skills', 'manifest-snapshot.json', 'manifest-snapshot.sha256',
+  'AGENTS.md', 'ARCHITECTURE.md', 'CHANGELOG.md', 'CONTEXT.md',
+  'LICENSE', 'NOTICE', 'README.md', 'SECURITY.md',
+];
+
+test('check-sbom-currency: embedded description entry counts match the live catalogs', () => {
+  // The SBOM ships per-catalog entry counts as free text in
+  // metadata.component.description. The gate must now assert each token
+  // equals the live catalog entry count, not just the catalog/skill
+  // cardinality. Pin the production-tree pass so a future change that
+  // drops the description check is caught here.
+  const result = checkSbomCurrency(ROOT);
+  const descErrs = result.errors.filter((e) => /description/.test(e));
+  assert.deepEqual(descErrs, [],
+    `live SBOM description must match the live catalog entry counts; got: ${JSON.stringify(descErrs)}`);
+});
+
+test('check-sbom-currency: a stale entry count in the description fails the gate', () => {
+  // Mutate a catalog entry-count token in metadata.component.description
+  // so it no longer matches the live catalog. Earlier the gate only
+  // checked catalog/skill cardinality (file count + skill count), so a
+  // per-catalog entry count baked into the description could silently
+  // drift while the gate stayed green.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sbom-desc-drift-'));
+  try {
+    const sbom = JSON.parse(fs.readFileSync(path.join(ROOT, 'sbom.cdx.json'), 'utf8'));
+    const desc = sbom.metadata.component.description;
+    const m = desc.match(/(\d+)\s+CVEs\b/);
+    assert.ok(m, 'production description must embed a CVE entry count to mutate');
+    const wrong = String(Number(m[1]) + 1);
+    sbom.metadata.component.description = desc.replace(/\d+\s+CVEs\b/, wrong + ' CVEs');
+    fs.writeFileSync(path.join(tmp, 'sbom.cdx.json'), JSON.stringify(sbom));
+    bringToTmp(tmp, SBOM_SUPPORT_REFS);
+
+    const result = checkSbomCurrency(tmp);
+    const descErr = result.errors.find((e) => e.includes('description entry count for CVEs'));
+    assert.ok(descErr,
+      `expected a CVE description entry-count drift error; got: ${JSON.stringify(result.errors.slice(0, 3))}`);
+    assert.match(descErr, /is \d+ but live .* has \d+/,
+      'drift error must report both the stated and the live count');
+    assert.match(descErr, /refresh-sbom/, 'drift error names the regen step');
+    assert.equal(result.ok, false, 'gate must refuse a stale description entry count');
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* best effort */ }
+  }
+});
+
+test('check-sbom-currency: a stale skill count in the description fails the gate', () => {
+  // The skill count is embedded in the same description free text
+  // ("N skills"). A drift there must fail the gate too.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sbom-desc-skill-'));
+  try {
+    const sbom = JSON.parse(fs.readFileSync(path.join(ROOT, 'sbom.cdx.json'), 'utf8'));
+    const desc = sbom.metadata.component.description;
+    const m = desc.match(/(\d+)\s+skills\b/);
+    assert.ok(m, 'production description must embed a skill count to mutate');
+    const wrong = String(Number(m[1]) + 7);
+    sbom.metadata.component.description = desc.replace(/\d+\s+skills\b/, wrong + ' skills');
+    fs.writeFileSync(path.join(tmp, 'sbom.cdx.json'), JSON.stringify(sbom));
+    bringToTmp(tmp, SBOM_SUPPORT_REFS);
+
+    const result = checkSbomCurrency(tmp);
+    const skillErr = result.errors.find((e) => e.includes('description skill count'));
+    assert.ok(skillErr,
+      `expected a description skill-count drift error; got: ${JSON.stringify(result.errors.slice(0, 3))}`);
+    assert.equal(result.ok, false, 'gate must refuse a stale description skill count');
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* best effort */ }
+  }
+});
+
+test('check-sbom-currency: a missing entry-count token in the description fails the gate', () => {
+  // If a refresh drops a per-catalog token entirely (e.g. the SBOM
+  // generator emits a description without the RFC count), the gate must
+  // refuse rather than silently passing on a partial description.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sbom-desc-missing-'));
+  try {
+    const sbom = JSON.parse(fs.readFileSync(path.join(ROOT, 'sbom.cdx.json'), 'utf8'));
+    const desc = sbom.metadata.component.description;
+    assert.match(desc, /\d+\s+RFCs\b/, 'production description must embed an RFC token to remove');
+    sbom.metadata.component.description = desc.replace(/\s*\/?\s*\d+\s+RFCs\b/, '');
+    fs.writeFileSync(path.join(tmp, 'sbom.cdx.json'), JSON.stringify(sbom));
+    bringToTmp(tmp, SBOM_SUPPORT_REFS);
+
+    const result = checkSbomCurrency(tmp);
+    const missingErr = result.errors.find((e) => e.includes('missing the') && /rfc/i.test(e));
+    assert.ok(missingErr,
+      `expected a missing-RFC-token error; got: ${JSON.stringify(result.errors.slice(0, 3))}`);
+    assert.equal(result.ok, false, 'gate must refuse a description with a missing entry-count token');
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* best effort */ }
+  }
+});
+
 test('check-sbom-currency: SHA3-512 drift fails the gate (not just SHA-256)', () => {
   // Stage an SBOM where SHA-256 is correct but SHA3-512 has been
   // deliberately changed. The gate must still refuse — a partial

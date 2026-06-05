@@ -516,7 +516,7 @@
     },
     "exploit-scoring": {
       "path": "skills/exploit-scoring/skill.md",
-      "total_bytes": 30227,
+      "total_bytes": 30230,
       "total_lines": 391,
       "frontmatter": {
         "line_start": 1,
@@ -575,16 +575,16 @@
           "normalized_name": "rwep-formula",
           "line": 104,
           "byte_start": 10542,
-          "byte_end": 13408,
-          "bytes": 2866,
+          "byte_end": 13409,
+          "bytes": 2867,
           "h3_count": 1
         },
         {
           "name": "Pre-Calculated RWEP Scores",
           "normalized_name": "pre-calculated-rwep-scores",
           "line": 159,
-          "byte_start": 13408,
-          "byte_end": 19124,
+          "byte_start": 13409,
+          "byte_end": 19125,
           "bytes": 5716,
           "h3_count": 5
         },
@@ -592,8 +592,8 @@
           "name": "RWEP vs. CVSS Delta Analysis",
           "normalized_name": "rwep-vs-cvss-delta-analysis",
           "line": 253,
-          "byte_start": 19124,
-          "byte_end": 20633,
+          "byte_start": 19125,
+          "byte_end": 20634,
           "bytes": 1509,
           "h3_count": 0
         },
@@ -601,17 +601,17 @@
           "name": "Analysis Procedure",
           "normalized_name": "analysis-procedure",
           "line": 277,
-          "byte_start": 20633,
-          "byte_end": 22324,
-          "bytes": 1691,
+          "byte_start": 20634,
+          "byte_end": 22327,
+          "bytes": 1693,
           "h3_count": 4
         },
         {
           "name": "Output Format",
           "normalized_name": "output-format",
           "line": 315,
-          "byte_start": 22324,
-          "byte_end": 23969,
+          "byte_start": 22327,
+          "byte_end": 23972,
           "bytes": 1645,
           "h3_count": 4
         },
@@ -619,8 +619,8 @@
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
           "line": 355,
-          "byte_start": 23969,
-          "byte_end": 26004,
+          "byte_start": 23972,
+          "byte_end": 26007,
           "bytes": 2035,
           "h3_count": 0
         },
@@ -628,8 +628,8 @@
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
           "line": 367,
-          "byte_start": 26004,
-          "byte_end": 30227,
+          "byte_start": 26007,
+          "byte_end": 30230,
           "bytes": 4223,
           "h3_count": 0
         }

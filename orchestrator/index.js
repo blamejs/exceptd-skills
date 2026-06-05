@@ -195,7 +195,14 @@ Examples:
     controlGaps = JSON.parse(fs.readFileSync(path.join(root, 'data', 'framework-control-gaps.json'), 'utf8'));
     cveCatalog = JSON.parse(fs.readFileSync(path.join(root, 'data', 'cve-catalog.json'), 'utf8'));
   } catch (err) {
-    console.error(`[framework-gap] cannot read catalog: ${err.message}`);
+    // Honor --json on the catalog-read failure path too: a JSON consumer must
+    // get the same structured ok:false envelope the other error exits emit.
+    const msg = `framework-gap: cannot read catalog: ${err.message}`;
+    if (jsonOut) {
+      process.stdout.write(JSON.stringify({ ok: false, verb: 'framework-gap', error: msg }) + '\n');
+    } else {
+      console.error(`[framework-gap] cannot read catalog: ${err.message}`);
+    }
     safeExit(EXIT_CODES.GENERIC_FAILURE);
     return;
   }
@@ -755,7 +762,11 @@ async function runWatch() {
     lock = _acquireWatchLock();
   } catch (err) {
     console.error(`[orchestrator] cannot start watch: ${err.message}`);
-    process.exitCode = err.code === 'EWATCHLOCKED' ? 75 : 1;
+    // sysexits EX_TEMPFAIL: the watch daemon lock is held; retry later. Read
+    // the value from the canonical exit-code table when it carries it so the
+    // `doctor --exit-codes` dump and this path share one source of truth.
+    const watchLocked = EXIT_CODES.WATCH_LOCK_CONTENTION || 75;
+    process.exitCode = err.code === 'EWATCHLOCKED' ? watchLocked : 1;
     return;
   }
 
@@ -1609,6 +1620,7 @@ function runWatchlistAlerts(rawArgs = []) {
 async function validateAllCvesPreferCache(catalog, cacheDir) {
   const fs = require('fs');
   const path = require('path');
+  const crypto = require('crypto');
   const { validateCve } = require('../sources/validators');
 
   // 50 MB cap on any single cache file. Refuses to read past the cap to
@@ -1617,6 +1629,34 @@ async function validateAllCvesPreferCache(catalog, cacheDir) {
   // NVD / EPSS / KEV file (largest in practice is the full KEV feed at
   // ~3 MB as of 2026); anything beyond 50 MB is almost certainly damage.
   const CACHE_FILE_MAX_BYTES = 50 * 1024 * 1024;
+
+  // Load the prefetch cache index once. Every payload written by the prefetch
+  // pipeline records a per-entry sha256 here, so a consume-side recompute
+  // catches a payload rewritten on disk after prefetch. The fingerprint is
+  // computed over JSON.stringify(payload) (unindented) at write time, so the
+  // round-trip parse + re-stringify below produces the comparable hash.
+  let cacheIndex = null;
+  try {
+    cacheIndex = JSON.parse(fs.readFileSync(path.join(cacheDir, '_index.json'), 'utf8'));
+  } catch { cacheIndex = null; }
+
+  // Verify a cache payload against its recorded sha256 before it is trusted.
+  // Returns false on any tamper signal: no index, no sha256 entry, or a
+  // mismatch. The caller then refuses the cached value and re-validates the
+  // CVE live, so forged cache contents can no longer mask drift.
+  function cacheEntryVerified(source, id, parsed) {
+    const meta = cacheIndex && cacheIndex.entries && cacheIndex.entries[`${source}/${id}`];
+    if (!meta || typeof meta.sha256 !== 'string') {
+      console.error(`[validate-cves] cache integrity: no recorded sha256 for ${source}/${id}; ignoring cache entry and validating live.`);
+      return false;
+    }
+    const actual = crypto.createHash('sha256').update(JSON.stringify(parsed)).digest('hex');
+    if (actual !== meta.sha256) {
+      console.error(`[validate-cves] cache integrity: sha256 mismatch for ${source}/${id} (expected ${meta.sha256.slice(0, 16)}..., got ${actual.slice(0, 16)}...); ignoring tampered cache entry and validating live.`);
+      return false;
+    }
+    return true;
+  }
 
   function readCached(source, id) {
     const safe = id.replace(/[^A-Za-z0-9._-]/g, '_');
@@ -1628,7 +1668,9 @@ async function validateAllCvesPreferCache(catalog, cacheDir) {
         console.error(`[validate-cves] cache file ${p} exceeds ${CACHE_FILE_MAX_BYTES} byte cap (${st.size}); refusing to read.`);
         return null;
       }
-      return JSON.parse(fs.readFileSync(p, 'utf8'));
+      const parsed = JSON.parse(fs.readFileSync(p, 'utf8'));
+      if (!cacheEntryVerified(source, id, parsed)) return null;
+      return parsed;
     }
     catch { return null; }
   }
@@ -2016,7 +2058,9 @@ async function runWatchlistOrgScan(rawArgs = []) {
 // tests and from `bin/exceptd.js`'s programmatic entrypoints.
 if (require.main === module) {
   main().catch(err => {
-    console.error('[orchestrator] Fatal:', err.message);
+    // Match the structured ok:false stderr contract the rest of the surface
+    // uses so a JSON consumer gets a parseable envelope on the fatal path too.
+    console.error(JSON.stringify({ ok: false, verb: cmd, error: String((err && err.message) || err) }));
     process.exitCode = 1;
   });
 }

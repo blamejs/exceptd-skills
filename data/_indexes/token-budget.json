@@ -3,8 +3,8 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1743803,
-    "total_approx_tokens": 435954,
+    "total_chars": 1743806,
+    "total_approx_tokens": 435955,
     "skill_count": 51
   },
   "skills": {
@@ -300,10 +300,10 @@
     },
     "exploit-scoring": {
       "path": "skills/exploit-scoring/skill.md",
-      "bytes": 30227,
-      "chars": 30043,
+      "bytes": 30230,
+      "chars": 30046,
       "lines": 391,
-      "approx_tokens": 7511,
+      "approx_tokens": 7512,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -332,8 +332,8 @@
           "approx_tokens": 435
         },
         "rwep-formula": {
-          "bytes": 2866,
-          "chars": 2856,
+          "bytes": 2867,
+          "chars": 2857,
           "approx_tokens": 714
         },
         "pre-calculated-rwep-scores": {
@@ -347,9 +347,9 @@
           "approx_tokens": 373
         },
         "analysis-procedure": {
-          "bytes": 1691,
-          "chars": 1665,
-          "approx_tokens": 416
+          "bytes": 1693,
+          "chars": 1667,
+          "approx_tokens": 417
         },
         "output-format": {
           "bytes": 1645,

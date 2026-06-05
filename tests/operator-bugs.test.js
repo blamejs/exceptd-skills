@@ -1576,24 +1576,45 @@ test('audit-3 B.2: doctor CVE catalog by_prefix sums to total', () => {
     `by_prefix must sum to total (${sum} != ${cves.total}); pre-fix only CVE + MAL were enumerated and BUG-* entries dropped from the breakdown`);
 });
 
-test('audit-3 B.3: doctor --fix on healthy install emits fix_status: already_present', () => {
-  // Pre-fix --fix silently no-op'd when keys were already present. Operators
+test('doctor --fix on a healthy install reports fix_status: already_present (no-op contract)', () => {
+  // --fix once silently no-op'd when keys were already present. Operators
   // couldn't distinguish "we tried and were already healthy" from "we tried
-  // and failed silently." Now surfaces a structured fix_status so the
-  // operator (or CI script) can branch on it.
-  const r = cli(['doctor', '--fix', '--json']);
-  const data = tryJson(r.stdout);
-  assert.ok(data, 'doctor --fix --json must emit parseable JSON');
-  // On a healthy local checkout (keys/public.pem + .keys/private.pem both
-  // present + sigs valid), --fix has nothing to do. Surface that explicitly.
-  if (data.summary?.fix_applied || data.summary?.fix_attempted) {
-    // Fix actually ran — not the path under test here.
-    return;
-  }
-  assert.equal(data.summary?.fix_status, 'already_present',
-    `--fix on a healthy install must report fix_status: "already_present"; got: ${JSON.stringify(data.summary)}`);
-  assert.equal(typeof data.summary?.fix_skipped_reason, 'string',
-    'fix_skipped_reason must accompany fix_status for operator clarity');
+  // and failed silently." It now surfaces a structured fix_status so the
+  // operator (or a CI script) can branch on it.
+  //
+  // This contract is verified against the bin source rather than by spawning
+  // `doctor --fix`. doctor resolves its key paths relative to the package
+  // root (the bin script's parent), not the spawn cwd, and there is no
+  // override — so a real `doctor --fix` invocation operates on the committed
+  // keys/ + manifest.json. When the captured signatures check is transiently
+  // failing (e.g. mid-edit), --fix chains sign-all, which rewrites every
+  // signature in manifest.json. Spawning it from the suite would therefore
+  // mutate committed signing material, the exact divergence class that once
+  // shipped orphaned signatures to operators. Pin the no-op summary-shaping
+  // logic by source assertion instead, matching the source-assertion pattern
+  // the sibling --fix path tests already use.
+  const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
+
+  // The no-op branch fires only when --fix was requested AND no other fix
+  // path ran (no applied / attempted / partial / decline outcome, and no
+  // ai-config remediation). Pin that precondition so a future edit can't let
+  // already_present mask a fix that actually ran.
+  assert.match(
+    src,
+    /args\.fix\s*&&\s*!out\.summary\.fix_applied\s*&&\s*!out\.summary\.fix_attempted/,
+    'already_present must gate on --fix with no applied/attempted fix'
+  );
+  // The structured status + reason both have to be set for callers to branch.
+  assert.match(
+    src,
+    /out\.summary\.fix_status\s*=\s*["']already_present["']/,
+    'doctor --fix no-op must set fix_status: "already_present"'
+  );
+  assert.match(
+    src,
+    /out\.summary\.fix_skipped_reason\s*=\s*["']/,
+    'doctor --fix no-op must set a fix_skipped_reason string alongside fix_status'
+  );
 });
 
 test('audit-3 B.4: doctor refuses unknown flags with structured error + known_flags list', () => {

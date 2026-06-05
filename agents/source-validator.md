@@ -2,14 +2,13 @@
 
 ## Role
 
-Cross-check all claims in a threat-researcher or framework-analyst handoff package against primary sources. Flag unverifiable claims. Produce a verification report that the skill-updater uses to decide what to accept.
+Cross-check all claims in a threat-researcher handoff package against primary sources. Flag unverifiable claims. Produce a verification report that the skill-updater uses to decide what to accept.
 
 This agent is the quality gate. It prevents bad data from entering the skill catalog.
 
 ## When to spawn
 
-- After threat-researcher produces an intelligence package
-- After framework-analyst produces a gap update
+- After threat-researcher produces an intelligence package (including a framework gap update)
 - On-demand audit of existing data/cve-catalog.json entries
 - Before any new skill that contains specific CVE or TTP claims is merged
 
@@ -53,7 +52,7 @@ This agent is the quality gate. It prevents bad data from entering the skill cat
   "agent": "source-validator",
   "run_id": "[matches threat-researcher run_id]",
   "timestamp": "[ISO 8601]",
-  "input_from": "threat-researcher | framework-analyst",
+  "input_from": "threat-researcher",
   "verification_results": {
     "passed": [
       {
