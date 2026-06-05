@@ -1,7 +1,9 @@
 {
   "json_path_equals": {
     "ok": true,
-    "phases.detect.classification": "detected"
+    "phases.detect.classification": "detected",
+    "phases.detect.indicators.8.id": "tanstack-worm-payload-files",
+    "phases.detect.indicators.8.verdict": "hit"
   },
   "json_path_min": {
     "phases.close.jurisdiction_clocks_count": 1

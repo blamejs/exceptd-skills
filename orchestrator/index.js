@@ -704,10 +704,24 @@ function _acquireWatchLock() {
       e.code = 'EWATCHLOCKED';
       throw e;
     }
-    // Stale — reclaim atomically. unlink + re-create with O_EXCL so a race
-    // with another reclaimer surfaces as EEXIST cleanly.
+    // Stale — reclaim atomically. unlink + re-create with O_EXCL. If another
+    // reclaimer won the race between our unlink and our re-create, the O_EXCL
+    // create throws EEXIST; that is contention, not a generic failure, so
+    // re-tag it as EWATCHLOCKED to map onto the EX_TEMPFAIL "retry later"
+    // exit rather than the GENERIC_FAILURE the bare EEXIST would fall to.
     try { fsMod.unlinkSync(lockPath); } catch { /* concurrent reclaim, fine */ }
-    tryCreate();
+    try {
+      tryCreate();
+    } catch (recreateErr) {
+      if (recreateErr.code === 'EEXIST') {
+        const e = new Error(
+          `another exceptd watch process reclaimed ${lockPath} concurrently; retry`
+        );
+        e.code = 'EWATCHLOCKED';
+        throw e;
+      }
+      throw recreateErr;
+    }
   }
 
   return {

@@ -36,7 +36,7 @@ Generate structured, audience-appropriate reports from skill outputs. Translates
 ### 2. Technical Assessment Report
 
 **Audience:** Security engineers, DevOps, Platform teams  
-**Template:** `reports/templates/technical-assessment.md`  
+**Template:** No canonical template — assemble from the content list below.  
 **Content:**
 - Full CVE inventory with CVSS + RWEP
 - Specific remediation commands and configurations
@@ -74,7 +74,7 @@ Generate structured, audience-appropriate reports from skill outputs. Translates
 ### 4. Threat Model Update Report
 
 **Audience:** Security architects, threat modeling teams  
-**Template:** `reports/templates/threat-model-update.md`  
+**Template:** No canonical template — assemble from the content list below.  
 **Content:**
 - Currency score before and after update
 - Specific threat classes added

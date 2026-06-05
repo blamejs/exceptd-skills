@@ -1,7 +1,9 @@
 {
   "json_path_equals": {
     "ok": true,
-    "phases.detect.classification": "detected"
+    "phases.detect.classification": "detected",
+    "phases.detect.indicators.10.id": "agent-persistence-claude-session-start-hook",
+    "phases.detect.indicators.10.verdict": "hit"
   },
   "json_path_present": [
     "phases.close.jurisdiction_notifications"

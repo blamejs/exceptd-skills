@@ -89,7 +89,7 @@
           "byte_start": 21020,
           "byte_end": 23408,
           "bytes": 2388,
-          "h3_count": 7
+          "h3_count": 0
         },
         {
           "name": "Detection Rules",
@@ -183,7 +183,7 @@
           "byte_start": 23183,
           "byte_end": 24873,
           "bytes": 1690,
-          "h3_count": 8
+          "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
@@ -268,7 +268,7 @@
           "byte_start": 23413,
           "byte_end": 24950,
           "bytes": 1537,
-          "h3_count": 7
+          "h3_count": 0
         },
         {
           "name": "Hand-Off / Related Skills",
@@ -371,7 +371,7 @@
           "byte_start": 20951,
           "byte_end": 22669,
           "bytes": 1718,
-          "h3_count": 9
+          "h3_count": 4
         },
         {
           "name": "Universal Gaps (No Framework Covers These Adequately)",
@@ -389,7 +389,7 @@
           "byte_start": 23764,
           "byte_end": 25703,
           "bytes": 1939,
-          "h3_count": 6
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -492,7 +492,7 @@
           "byte_start": 29995,
           "byte_end": 31948,
           "bytes": 1953,
-          "h3_count": 4
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -613,7 +613,7 @@
           "byte_start": 22327,
           "byte_end": 23972,
           "bytes": 1645,
-          "h3_count": 4
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -743,7 +743,7 @@
           "byte_start": 23244,
           "byte_end": 24789,
           "bytes": 1545,
-          "h3_count": 5
+          "h3_count": 0
         },
         {
           "name": "Hand-Off / Related Skills",
@@ -882,7 +882,7 @@
           "byte_start": 35308,
           "byte_end": 36801,
           "bytes": 1493,
-          "h3_count": 5
+          "h3_count": 0
         },
         {
           "name": "Hand-Off / Related Skills",
@@ -1106,7 +1106,7 @@
           "byte_start": 26199,
           "byte_end": 28181,
           "bytes": 1982,
-          "h3_count": 4
+          "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
@@ -1227,7 +1227,7 @@
           "byte_start": 39587,
           "byte_end": 41090,
           "bytes": 1503,
-          "h3_count": 6
+          "h3_count": 0
         }
       ]
     },
@@ -1321,7 +1321,7 @@
           "byte_start": 34986,
           "byte_end": 36548,
           "bytes": 1562,
-          "h3_count": 7
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -1469,7 +1469,7 @@
           "byte_start": 31973,
           "byte_end": 33464,
           "bytes": 1491,
-          "h3_count": 6
+          "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
@@ -1581,7 +1581,7 @@
           "byte_start": 35586,
           "byte_end": 36640,
           "bytes": 1054,
-          "h3_count": 4
+          "h3_count": 0
         },
         {
           "name": "Framework Lag Declaration",
@@ -1711,7 +1711,7 @@
           "byte_start": 15155,
           "byte_end": 16753,
           "bytes": 1598,
-          "h3_count": 3
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -1926,7 +1926,7 @@
           "byte_start": 25273,
           "byte_end": 29270,
           "bytes": 3997,
-          "h3_count": 9
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -2011,7 +2011,7 @@
           "byte_start": 21811,
           "byte_end": 25605,
           "bytes": 3794,
-          "h3_count": 10
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -2096,7 +2096,7 @@
           "byte_start": 32852,
           "byte_end": 35950,
           "bytes": 3098,
-          "h3_count": 9
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -2181,7 +2181,7 @@
           "byte_start": 34907,
           "byte_end": 37660,
           "bytes": 2753,
-          "h3_count": 9
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -2360,7 +2360,7 @@
           "byte_start": 21674,
           "byte_end": 25090,
           "bytes": 3416,
-          "h3_count": 9
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -2454,7 +2454,7 @@
           "byte_start": 23877,
           "byte_end": 26649,
           "bytes": 2772,
-          "h3_count": 11
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -2660,7 +2660,7 @@
           "byte_start": 24615,
           "byte_end": 26923,
           "bytes": 2308,
-          "h3_count": 9
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -2754,7 +2754,7 @@
           "byte_start": 20363,
           "byte_end": 24124,
           "bytes": 3761,
-          "h3_count": 6
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -2857,7 +2857,7 @@
           "byte_start": 25454,
           "byte_end": 28983,
           "bytes": 3529,
-          "h3_count": 10
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -2951,7 +2951,7 @@
           "byte_start": 33880,
           "byte_end": 37432,
           "bytes": 3552,
-          "h3_count": 14
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -3045,7 +3045,7 @@
           "byte_start": 35068,
           "byte_end": 38475,
           "bytes": 3407,
-          "h3_count": 15
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -3139,7 +3139,7 @@
           "byte_start": 34560,
           "byte_end": 37765,
           "bytes": 3205,
-          "h3_count": 10
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -3233,7 +3233,7 @@
           "byte_start": 38416,
           "byte_end": 41876,
           "bytes": 3460,
-          "h3_count": 13
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -3421,7 +3421,7 @@
           "byte_start": 28125,
           "byte_end": 32523,
           "bytes": 4398,
-          "h3_count": 9
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -3515,7 +3515,7 @@
           "byte_start": 40269,
           "byte_end": 43223,
           "bytes": 2954,
-          "h3_count": 13
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -3609,7 +3609,7 @@
           "byte_start": 32702,
           "byte_end": 36368,
           "bytes": 3666,
-          "h3_count": 12
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -3703,7 +3703,7 @@
           "byte_start": 33207,
           "byte_end": 36629,
           "bytes": 3422,
-          "h3_count": 10
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -4079,7 +4079,7 @@
           "byte_start": 49575,
           "byte_end": 54909,
           "bytes": 5334,
-          "h3_count": 14
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -4173,7 +4173,7 @@
           "byte_start": 30423,
           "byte_end": 32621,
           "bytes": 2198,
-          "h3_count": 15
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
@@ -4267,7 +4267,7 @@
           "byte_start": 30054,
           "byte_end": 33237,
           "bytes": 3183,
-          "h3_count": 16
+          "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",

@@ -1,10 +1,14 @@
 {
   "json_path_equals": {
     "ok": true,
-    "phases.detect.classification": "detected"
+    "phases.detect.classification": "detected",
+    "phases.detect.indicators.0.id": "dockerfile-from-latest",
+    "phases.detect.indicators.0.verdict": "hit",
+    "phases.detect.indicators.3.id": "dockerfile-curl-pipe-bash",
+    "phases.detect.indicators.3.verdict": "hit"
   },
   "json_path_min": {
-    "phases.analyze.rwep.adjusted": 10,
+    "phases.analyze.rwep.adjusted": 30,
     "phases.close.jurisdiction_notifications.length": 1
   },
   "json_path_present": [

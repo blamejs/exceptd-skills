@@ -118,11 +118,19 @@ function buildOne(absPath, relPath) {
     const next = h2[j + 1];
     const startByte = lineByteOffsets[cur.idx];
     const endByte = next ? lineByteOffsets[next.idx] : totalBytes;
-    // Count H3 within this section.
+    // Count H3 within this section — fence-aware, the same way the H2 loop
+    // above is. A section starts and ends on an H2 header, both of which are
+    // outside any fence, so fence state always begins false here. "### Foo"
+    // lines inside ```...``` output templates are not real sub-sections.
     const endIdx = next ? next.idx : lines.length;
     let h3Count = 0;
+    let h3InFence = false;
     for (let k = cur.idx + 1; k < endIdx; k++) {
-      if (/^### /.test(lines[k])) h3Count++;
+      if (/^```/.test(lines[k])) {
+        h3InFence = !h3InFence;
+        continue;
+      }
+      if (!h3InFence && /^### /.test(lines[k])) h3Count++;
     }
     sections.push({
       name: cur.raw.replace(/^##\s+/, ""),

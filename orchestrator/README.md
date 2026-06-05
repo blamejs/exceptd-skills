@@ -88,7 +88,7 @@ The orchestrator produces output in three formats:
 | Format | Audience | File |
 |--------|----------|------|
 | `executive` | CISO / Board | `reports/templates/executive-summary.md` |
-| `technical` | Security Engineers | `reports/templates/technical-assessment.md` |
+| `technical` | Security Engineers | (no canonical template — assembled by report-generator) |
 | `compliance` | Auditors / GRC | `reports/templates/compliance-gap-report.md` |
 | `zero-day` | Incident Response | `reports/templates/zero-day-response.md` |
 

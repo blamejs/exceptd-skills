@@ -1,6 +1,9 @@
 {
   "json_path_equals": {
     "ok": true,
-    "phases.detect.classification": "inconclusive"
+    "phases.detect.classification": "detected",
+    "phases.detect.classification_override_applied": null,
+    "phases.detect.indicators.14.id": "npm-registry-no-cooldown",
+    "phases.detect.indicators.14.verdict": "hit"
   }
 }

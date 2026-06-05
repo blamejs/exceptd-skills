@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.16.24 — 2026-06-05
+
+Attestation replay tamper-gating, collector detection integrity, and lock-lifecycle fixes.
+
+### Bugs
+
+A host whose `keys/public.pem` fails the `EXPECTED_FINGERPRINT` pin is now a first-class tamper state on the replay path: `reattest` refuses with exit 6 (TAMPERED) unless `--force-replay`, the same way `attest verify` already refused. Previously the pin mismatch — the exact key-swap attack the pin exists to surface — fell through to a benign "unsigned attestations are an operator config issue" note and the replay proceeded. The sidecar audit classification gains a matching `fingerprint-mismatch` label, and the replay-refusal predicate now lives in one shared helper so a future tamper class has exactly one place to extend.
+
+Piping a collector into a run — `exceptd collect secrets | exceptd run secrets --evidence -` — now classifies real findings as detected instead of silently inconclusive. Collectors flipped false-positive-gated indicators to "hit" without attesting the FP checks they had actually performed, so the engine's honest-downgrade gate demoted every such hit. Eight collectors now perform and attest their deterministic FP checks (example-key demotion, placeholder and entropy floors, context co-occurrence, test-path exclusion, kernel-config reads, sticky-bit/socket classification, registry-tarball and mutable-ref analysis); indicators whose remaining checks genuinely require a network probe or operator judgement stay inconclusive by design, and a guard test enforces that any collector flipping a gated indicator either attests its checks or documents why it abstains.
+
+A run invoked with `--bundle-deterministic` against pathologically nested evidence no longer leaks the playbook's cross-process mutex: the depth-limit refusal threw after the lock was taken but before the release path was armed, so every later run of that playbook on the same host was blocked with a phantom "concurrent run holds the mutex" until the process exited. Attestation creation no longer strands an orphaned, unsigned attestation body holding the session slot when the body lands but its signature sidecar cannot be placed — the slot is released and the create can be retried; the unsafe-filename refusal also now returns its structured envelope instead of crashing. `doctor --ai-config --fix` no longer builds an `icacls` grant from an unset `USERNAME` (which stripped ACL inheritance and then failed on the unresolvable account, locking the file out); it resolves the user via the OS and withholds the automatic fix when no name is resolvable. The watch daemon's lockfile stale-reclaim race now exits 75 (WATCH_LOCK_CONTENTION) like every other contention path instead of a generic failure, and the CVE regression watcher stamps reports with the run's clock rather than a module-load timestamp.
+
+End-to-end detection scenarios now assert that the staged indicator actually fired instead of accepting the operator-supplied verdict alone, one scenario no longer masks the engine's computed classification with an override, and RWEP floors are pinned at the computed values so a per-indicator weight regression trips them. The derived-index builders count `###` headings fence-aware (code-block lines no longer inflate section offsets), emit the documented `dlp_refs` key on CWE chains, and describe their real output shape; the zero-day response report template and remaining docs now state the blast-radius ceiling as 0-30.
+
 ## 0.16.23 — 2026-06-05
 
 A broad correctness and hardening pass across the runtime, the data-refresh pipeline, the catalogs, and the release tooling.
@@ -25,6 +39,8 @@ The release orchestrator could report a release complete while the publish was u
 ### Features
 
 The secret-scanning configuration no longer allowlists the entire playbooks directory by path — targeted patterns cover the legitimate example values instead, so a real credential committed into a playbook file is detectable again. Workflow version comments now match their pinned action SHAs, the publish workflow pins the same exact Node version the gates run on (held in lockstep by a three-way test against CI and the Docker harness), the ATLAS-currency workflow detects stale skills structurally instead of grepping a prose string, and the automated data-refresh PR body describes the structural gate it actually runs. The packaging gate pins every module the CLI requires at launch, the SBOM gate verifies the entry counts embedded in the published description against the live catalogs, skill frontmatter is validated against the shipped schema (previously decorative), and a new guard asserts that every byte-hashed shipped file type carries an LF-forcing `.gitattributes` rule. The catalog inventory in CONTEXT.md and the counts in the package description are pinned by tests so they fail loudly instead of rotting silently.
+
+## 0.16.22 — 2026-06-05
 
 When the automated external-data refresh applies a CISA KEV listing change to a catalog entry, it now updates the entry's RWEP factor and score in the same write, honouring whichever factor shape the entry stores. Previously only the flag flipped, leaving the stored score failing the factor-sum invariant the catalog enforces — the first real KEV listing the refresh applied surfaced this as a 25-point mismatch. A first listing also now carries its KEV date: the drift check emitted a date change only when the local entry already had one, so a newly listed CVE arrived dated null. The refresh workflow's post-apply gate now runs structural validation (catalog schema and RWEP coherence, cross-references, index freshness, skill lint) instead of the full test suite: the suite's curation-completeness checks assert guarantees that human curation supplies after import, so they gate the automated data PR's merge rather than its creation. The workflow also regenerates the SBOM over freshly applied data and consumes its own just-built prefetch cache on runners that have no signing key.
 
@@ -2151,6 +2167,8 @@ Documentation accuracy pass. README.md + ARCHITECTURE.md were still pinning ATLA
 
 **`tests/docs-catalog-counts-pinned.test.js`** — new contract test asserts that README.md and ARCHITECTURE.md text matches the live catalog state for: ATLAS version (`data/atlas-ttps.json._meta.atlas_version`), ATT&CK version (`data/attack-techniques.json._meta.attack_version`), skill count (`manifest.json.skills.length`), D3FEND entry count, CVE catalog count, framework-gap entry count. Any future PR that bumps a catalog without updating the operator-facing docs fails the gate at CI time — eliminates the silent-drift class that v0.12.34 cleaned up.
 
+
+## 0.12.33 — 2026-05-15
 
 Same-day CVE intake (node-ipc supply-chain compromise) + cleanup of the long-standing `cred-stores` skill-vs-playbook semantic confusion.
 

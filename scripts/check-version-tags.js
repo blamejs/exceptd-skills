@@ -70,6 +70,11 @@ const COMMENT_EXEMPT = new Set([
   // MUST embed real `## X.Y.Z` headings (e.g. 0.15.5 vs 0.15.50) — load-bearing
   // test data, not sprinkled release tags.
   "tests/check-changelog-extract.test.js",
+  // The extract gate's orphan-tag allowlist must name the exact versions of
+  // tags that exist with no published release (outage-recovery bumps), so the
+  // heading-completeness check can skip them — load-bearing references to git
+  // tags, an authoritative version surface.
+  "scripts/check-changelog-extract.js",
 ]);
 
 // Git-ignored files (a contributor's local-only working docs, scratch) are

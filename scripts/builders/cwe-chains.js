@@ -77,6 +77,7 @@ function buildCweChains({ skills, cweCatalog, atlasTtps, cveCatalog, frameworkGa
         title: rfcCatalog[r]?.title,
         status: rfcCatalog[r]?.status,
       })),
+      dlp_refs: [...accum.dlp_refs].sort(),
     };
 
     // Related CVEs: walk evidence_cves on the framework_gaps that the
