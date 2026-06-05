@@ -3118,13 +3118,22 @@ function refuseNoDirectives(verb, playbookId, pretty) {
 // supply the precondition themselves.
 const POLICY_SKIPPED_PLAYBOOKS = new Set([
   "ai-discovered-cve-triage",
+  "audit-log-integrity",
+  "decompression-dos",
   "cloud-iam-incident",
   "idp-incident",
   "identity-sso-compromise",
   "llm-tool-use-exfil",
+  "log-injection-telemetry",
+  "mail-server-hardening",
+  "multitenancy-isolation",
+  "network-trust",
   "post-quantum-migration",
+  "privacy-consent-ops",
   "ransomware",
+  "self-update-integrity",
   "supply-chain-recovery",
+  "vc-wallet-trust",
   "webhook-callback-abuse",
 ]);
 
@@ -7061,6 +7070,9 @@ function cmdDoctor(runner, args, runOpts, pretty) {
         "cloud-iam-incident", "idp-incident", "identity-sso-compromise",
         "llm-tool-use-exfil", "supply-chain-recovery",
         "post-quantum-migration", "webhook-callback-abuse",
+        "vc-wallet-trust", "mail-server-hardening", "network-trust",
+        "audit-log-integrity", "self-update-integrity", "multitenancy-isolation",
+        "decompression-dos", "log-injection-telemetry", "privacy-consent-ops",
       ];
       const playbookFiles = fs.readdirSync(playbookDir)
         .filter(f => f.endsWith(".json") && !f.startsWith("_"))

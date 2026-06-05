@@ -6,7 +6,7 @@
     "decay_formula": "100 base; -30/-20/-10/-5 at 180/90/60/30-day thresholds. forward_watch count does NOT affect the score (it's a maintenance signal, not a staleness one). Label thresholds: ≥90 current, ≥70 acceptable, ≥50 stale, <50 critical_stale."
   },
   "summary": {
-    "current": 42,
+    "current": 51,
     "acceptable": 0,
     "stale": 0,
     "critical_stale": 0,
@@ -68,6 +68,15 @@
       "action_required": false
     },
     {
+      "skill": "audit-log-integrity",
+      "last_threat_review": "2026-06-02",
+      "days_since_review": -18,
+      "currency_score": 100,
+      "currency_label": "current",
+      "forward_watch_count": 0,
+      "action_required": false
+    },
+    {
       "skill": "cloud-iam-incident",
       "last_threat_review": "2026-05-15",
       "days_since_review": 0,
@@ -110,6 +119,15 @@
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 6,
+      "action_required": false
+    },
+    {
+      "skill": "decompression-dos",
+      "last_threat_review": "2026-06-02",
+      "days_since_review": -18,
+      "currency_score": 100,
+      "currency_label": "current",
+      "forward_watch_count": 0,
       "action_required": false
     },
     {
@@ -212,6 +230,24 @@
       "action_required": false
     },
     {
+      "skill": "log-injection-telemetry",
+      "last_threat_review": "2026-06-02",
+      "days_since_review": -18,
+      "currency_score": 100,
+      "currency_label": "current",
+      "forward_watch_count": 0,
+      "action_required": false
+    },
+    {
+      "skill": "mail-server-hardening",
+      "last_threat_review": "2026-06-02",
+      "days_since_review": -18,
+      "currency_score": 100,
+      "currency_label": "current",
+      "forward_watch_count": 0,
+      "action_required": false
+    },
+    {
       "skill": "mcp-agent-trust",
       "last_threat_review": "2026-05-17",
       "days_since_review": -2,
@@ -227,6 +263,24 @@
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 6,
+      "action_required": false
+    },
+    {
+      "skill": "multitenancy-isolation",
+      "last_threat_review": "2026-06-02",
+      "days_since_review": -18,
+      "currency_score": 100,
+      "currency_label": "current",
+      "forward_watch_count": 0,
+      "action_required": false
+    },
+    {
+      "skill": "network-trust",
+      "last_threat_review": "2026-06-02",
+      "days_since_review": -18,
+      "currency_score": 100,
+      "currency_label": "current",
+      "forward_watch_count": 0,
       "action_required": false
     },
     {
@@ -254,6 +308,15 @@
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 11,
+      "action_required": false
+    },
+    {
+      "skill": "privacy-consent-ops",
+      "last_threat_review": "2026-06-02",
+      "days_since_review": -18,
+      "currency_score": 100,
+      "currency_label": "current",
+      "forward_watch_count": 0,
       "action_required": false
     },
     {
@@ -338,6 +401,15 @@
       "action_required": false
     },
     {
+      "skill": "self-update-integrity",
+      "last_threat_review": "2026-06-02",
+      "days_since_review": -18,
+      "currency_score": 100,
+      "currency_label": "current",
+      "forward_watch_count": 0,
+      "action_required": false
+    },
+    {
       "skill": "skill-update-loop",
       "last_threat_review": "2026-05-22",
       "days_since_review": -7,
@@ -371,6 +443,15 @@
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 6,
+      "action_required": false
+    },
+    {
+      "skill": "vc-wallet-trust",
+      "last_threat_review": "2026-06-02",
+      "days_since_review": -18,
+      "currency_score": 100,
+      "currency_label": "current",
+      "forward_watch_count": 0,
       "action_required": false
     },
     {

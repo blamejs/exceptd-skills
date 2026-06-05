@@ -48,21 +48,30 @@
     "fed_by": [
       "ai-api",
       "ai-discovered-cve-triage",
+      "audit-log-integrity",
       "cicd-pipeline-compromise",
       "citation-hygiene",
       "cloud-iam-incident",
       "crypto",
       "crypto-codebase",
+      "decompression-dos",
       "identity-sso-compromise",
       "idp-incident",
       "kernel",
       "library-author",
       "llm-tool-use-exfil",
+      "log-injection-telemetry",
+      "mail-server-hardening",
       "mcp",
+      "multitenancy-isolation",
+      "network-trust",
       "post-quantum-migration",
+      "privacy-consent-ops",
       "ransomware",
       "sbom",
+      "self-update-integrity",
       "supply-chain-recovery",
+      "vc-wallet-trust",
       "webhook-callback-abuse"
     ]
   },
@@ -723,7 +732,10 @@
             "upstream_findings_actionable == true"
           ],
           "priority": 1,
-          "for_signals": ["audit-clean-with-active-finding","compound-theater"],
+          "for_signals": [
+            "audit-clean-with-active-finding",
+            "compound-theater"
+          ],
           "compensating_controls": [],
           "estimated_time_hours": 16
         },
@@ -734,7 +746,9 @@
             "compensating_control_design_feasible == true"
           ],
           "priority": 2,
-          "for_signals": ["framework-lag-no-compensating-control"],
+          "for_signals": [
+            "framework-lag-no-compensating-control"
+          ],
           "compensating_controls": [
             "test_cadence_recorded_in_change_management"
           ],
@@ -747,7 +761,9 @@
             "exception_register_exists == true"
           ],
           "priority": 3,
-          "for_signals": ["exception-missing-expiry-or-owner"],
+          "for_signals": [
+            "exception-missing-expiry-or-owner"
+          ],
           "compensating_controls": [
             "exception_review_cadence_documented"
           ],
@@ -760,7 +776,9 @@
             "jurisdictional_footprint_documented == true"
           ],
           "priority": 4,
-          "for_signals": ["jurisdiction-without-framework"],
+          "for_signals": [
+            "jurisdiction-without-framework"
+          ],
           "compensating_controls": [
             "mapping_review_cadence_documented"
           ],
@@ -773,7 +791,9 @@
             "ai_in_production == true"
           ],
           "priority": 5,
-          "for_signals": ["ai-use-without-ai-controls"],
+          "for_signals": [
+            "ai-use-without-ai-controls"
+          ],
           "compensating_controls": [],
           "estimated_time_hours": 80
         },

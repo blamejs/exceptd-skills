@@ -1,5 +1,60 @@
 # Changelog
 
+## 0.16.20 — 2026-06-02
+
+CVE curation now accepts three operator-supplied fields it previously dropped or rejected: `ai_discovery_source` (the AI-discovery provenance category — vendor research, AI-augmented bug bounty, academic fuzzing, threat-actor-built, human, or unknown), `vendor_update_paths` (the restart-required vendor remediation steps), and the `theoretical` value of `active_exploitation` (a published proof-of-concept with no observed in-the-wild use). All three are already valid in the catalog and factored by RWEP scoring, so a curated entry that supplies them is no longer stripped of its provenance or remediation detail before being written.
+
+## 0.16.19 — 2026-06-02
+
+New `privacy-consent-ops` playbook and skill audit where privacy and sanctions controls become paper despite existing: sanctions screening that does not normalize confusable / homoglyph Unicode (or lacks alias + transliteration + fuzzy matching), so a listed name spelled with lookalikes evades it; IAB TCF / MSPA consent signals acted on without an integrity binding to the consent log of record and not re-validated against withdrawal or expiry at processing time; data-subject erasure marked "completed" without per-store proof and not propagated to backups, indexes, warehouses, and processors; and a GDPR Record of Processing Activities that drifts from actual processing. It maps to ATT&CK T1036 / T1565.001 / T1070 and to NIST 800-53 SI-10, ISO 27001 A.5.34, NIS2 Art.21, UK CAF B4, and AU ISM. Run it with `exceptd brief privacy-consent-ops` or `exceptd run privacy-consent-ops`.
+
+## 0.16.18 — 2026-06-02
+
+New `log-injection-telemetry` playbook and skill audit the integrity and confidentiality of the telemetry pipeline itself, which "we centralize all logs" does not cover: CR/LF log injection that forges or splits entries on every sink except syslog, secrets and PII logged without a redaction pass, unauthenticated `/metrics` and debug endpoints leaking internal state, telemetry exporters shipping to un-inventoried or input-derived destinations (exfiltration), embedded exporter credentials, plaintext or unverified-TLS export, and webhook log sinks usable for SSRF. It maps to ATT&CK T1565.001 / T1530 / T1213 and to NIST 800-53 AU-9 / SI-11, ISO 27001 A.8.15, NIS2 Art.21, UK CAF B4, and AU ISM. CWE-117 (improper output neutralization for logs) is added to the catalog to back it. Run it with `exceptd brief log-injection-telemetry` or `exceptd run log-injection-telemetry`.
+
+## 0.16.17 — 2026-06-02
+
+New `decompression-dos` playbook and skill audit the input-amplification denial-of-service class a single small crafted input can trigger — which input-format validation, a WAF, and autoscaling do not bound: unbounded archive decompression (zip bomb) and nested-archive bombs, Zip Slip path traversal on extraction, XML entity expansion (billion laughs) / XXE, catastrophic-backtracking regular expressions (ReDoS), recursive parsing with no depth limit, and length-field-driven unbounded allocation in binary parsers (ASN.1/DER, CBOR, MIME, protobuf). It maps to ATT&CK T1499 / T1499.001 / T1059 and to NIST 800-53 SI-10 / SC-5, ISO 27001 A.8.26, NIS2 Art.21, UK CAF B4, and AU ISM. Two weaknesses are added to the catalog to back it: CWE-409 (data amplification) and CWE-1333 (inefficient regular-expression complexity). Run it with `exceptd brief decompression-dos` or `exceptd run decompression-dos`.
+
+## 0.16.16 — 2026-06-02
+
+New `multitenancy-isolation` playbook and skill audit two linked failure classes on shared multitenant infrastructure that "we have authorization" and "the cloud autoscales" do not cover. Isolation: a tenant identifier trusted from a client-controlled field, queries not scoped at the data layer (no row-level security), an RLS policy bypassable by the request connection's role, and cache/pub-sub/queue keys not namespaced by tenant — each a cross-tenant data path from a single authenticated account. Availability: HTTP/2 Rapid Reset (CVE-2023-44487) uncapped, no per-tenant rate/byte quota (noisy-neighbour), unbounded per-request allocation, distributed locks without fencing, and missing circuit breakers. It maps to ATT&CK T1078/T1499/T1499.001/T1530 and to NIST 800-53 AC-3/SC-6, ISO 27001 A.8.31, NIS2 Art.21, UK CAF B4, AU ISM, and SOC 2 CC6. Run it with `exceptd brief multitenancy-isolation` or `exceptd run multitenancy-isolation`.
+
+## 0.16.15 — 2026-06-02
+
+New `self-update-integrity` playbook and skill audit the receiving end of the software supply chain — the consumer-side checks that publisher signing and SBOM/SLSA posture do not cover: a self-update applied without verifying a signature before swapping the new code in, a signature checked against a key the update channel itself supplies, a signed-but-older version accepted (downgrade with no anti-rollback) that re-opens a patched CVE, an update fetched over an unauthenticated channel as the sole control, browser modules served without Subresource Integrity, unverified C2PA content credentials or SCITT/TSA transparency receipts, and an apply step that does not gate on the verifier result. It maps to ATT&CK T1195.002 / T1574 and to NIST 800-53 SR-11, NIS2 Art.21, UK CAF B4, AU ISM, and the EU CRA secure-update obligations. Run it with `exceptd brief self-update-integrity` or `exceptd run self-update-integrity`.
+
+## 0.16.14 — 2026-06-02
+
+New `audit-log-integrity` playbook and skill audit whether the system-of-record audit trail survives the privileged or insider attacker most likely to tamper with it: a hash chain that is written but never verified on read, audit entries unsigned or signed with a key co-located with the log writer, WORM storage in governance/override mode (a privileged role can still delete) rather than compliance mode, legal holds that annotate but do not block the retention purge, the log-writing identity also able to delete its own log, and missing or untriaged honeytokens plus unwitnessed break-glass access. It maps to NIST 800-53 SI-2, ISO 27001 A.8.15, NIS2 Art.21, and SOC 2 CC7. Run it with `exceptd brief audit-log-integrity` or `exceptd run audit-log-integrity`. The recently added `vc-wallet-trust`, `mail-server-hardening`, and `network-trust` playbooks now also map UK CAF and AU ISM, so their framework-gap output is complete on multi-jurisdiction runs.
+
+## 0.16.13 — 2026-06-02
+
+New `network-trust` playbook and skill audit the trust-anchor validation beneath TLS that adversary-in-the-middle attacks exploit: DNSSEC not validated end-to-end, DANE/TLSA not checked on capable peers, zone operations without TSIG, mTLS trusting a broad CA bundle instead of a pinned private CA, RFC 9421 HTTP message signatures unverified or under-scoped, DNS rebinding unguarded (SSRF into internal addresses), and unauthenticated NTP whose clock shift can revive expired certificates or shift TOTP windows. It maps to the DNSSEC resolver-DoS catalog entries (KeyTrap, NSEC3) and to NIST 800-53 SC-8, ISO 27001 A.8.21, NIS2 Art.21, and UK-CAF B4. Run it with `exceptd brief network-trust` or `exceptd run network-trust`.
+
+## 0.16.12 — 2026-06-02
+
+New `mail-server-hardening` playbook and skill audit the inbound mail-server protocol surface that sender authentication (SPF/DKIM/DMARC) and transport TLS do not protect: SMTP smuggling via a non-standard end-of-data sequence, STARTTLS receive-buffer command/response injection, IMAP/POP3 bare-CR-LF and ManageSieve PUTSCRIPT injection, uncapped Sieve `redirect` used as a mail-routing exfiltration primitive, an unauthenticated open relay, mailbox-DAV (CalDAV/CardDAV) path traversal and XXE, and cleartext AUTH offered before STARTTLS. It maps to the SMTP-smuggling (CVE-2023-51764/51766) and STARTTLS-injection (CVE-2021-38371/33515) catalog families and to NIST 800-53 SI-2, ISO 27001 A.8.8, NIS2 Art.21, and PCI-DSS 4.0 6.3.3. Run it with `exceptd brief mail-server-hardening` or `exceptd run mail-server-hardening`.
+
+## 0.16.11 — 2026-06-02
+
+New `vc-wallet-trust` playbook and skill audit the verifiable-credential / digital-wallet verifier trust boundary — the checks a service must make before it accepts an SD-JWT-VC, OID4VP, or ISO 18013-5 mdoc presentation from a wallet it does not control. It detects an issuer key not pinned to a trust anchor, revocation/status-list not enforced, `did:web` resolution left unpinned, presentations accepted without nonce/audience key-binding (replayable), mdoc device authentication skipped, open signature-algorithm sets, and over-disclosure beyond the requested claims — mapping each to the framework controls (NIST 800-63B, NIST 800-53 IA-5, ISO 27001 A.5.16, NIS2, eIDAS 2.0 / EUDI wallet) that do not cover the wallet acceptance path. Run it with `exceptd brief vc-wallet-trust` or `exceptd run vc-wallet-trust`.
+
+## 0.16.10 — 2026-06-02
+
+RWEP scoring no longer emits a spurious validation warning when a CVE carries the `theoretical` active-exploitation status — a value the catalog vocabulary and the scorer already accept and score. The guided curation questionnaire now prompts for `ai_assisted_weaponization`, a required field it previously skipped, so a curated entry cannot silently omit it. The `prefetch` verb no longer double-counts a global flag, and `lint --strict` is now documented in its own `--help`.
+
+## 0.16.9 — 2026-06-01
+
+The catalog now covers a set of real, vendor-patched protocol-layer flaws it previously did not name, so scans, triage, and reports surface them with RWEP scoring and behavioral indicators:
+
+- **SMTP smuggling** — CVE-2023-51764 (Postfix), CVE-2023-51765 (Sendmail), CVE-2023-51766 (Exim): a mail server that accepts a non-standard end-of-data sequence lets an attacker smuggle a second message that passes SPF, DKIM, and DMARC on the outer envelope and spoofs the sender. The fix is an end-of-data hardening setting (or upgrade), not a control sender-authentication can supply.
+- **STARTTLS command/response injection** — CVE-2021-38371 (Exim), CVE-2021-33515 (Dovecot), CVE-2011-0411 (Postfix): a server that does not discard bytes buffered before the TLS handshake executes attacker-supplied plaintext inside the encrypted session. Transport encryption strength is irrelevant — the bytes cross the boundary before TLS applies.
+- **DNSSEC validating-resolver CPU exhaustion** — CVE-2023-50387 (KeyTrap) and CVE-2023-50868 (NSEC3): a single crafted DNSSEC response forces worst-case signature evaluation or NSEC3 hash iteration and stalls the resolver for every client.
+- **HTTP/2 Rapid Reset** — CVE-2023-44487 (CISA KEV, confirmed exploited): rapid stream open-then-reset cycles exhaust the server at near-zero cost to the attacker.
+
+CWE-93 (CRLF injection) is added to the weakness catalog to back the SMTP-smuggling class.
+
 ## 0.16.8 — 2026-05-31
 
 `discover` now recommends the `containers` playbook whenever a Dockerfile, Containerfile, or compose file exists anywhere in the tree — a Dockerfile in a subdirectory, or a compose variant like `docker-compose.test.yml` — matching exactly the surface the containers collector scans. Previously it probed only for a root-level `Dockerfile` / `docker-compose.yml`, so a repository whose container config lived in a subdirectory or used a variant filename was never told to run the container security review and its Dockerfile findings went unsurfaced.

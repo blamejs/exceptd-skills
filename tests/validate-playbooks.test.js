@@ -50,12 +50,12 @@ test("every shipped playbook validates without errors", () => {
     playbooks.filter((p) => p.data).map((p) => p.data._meta.id),
   );
 
-  // citation-hygiene (validates a codebase's own cited CVE/RFC references
-  // against the shipped catalogs) brings the canonical set to 24.
+  // privacy-consent-ops (privacy / consent / sanctions operational integrity)
+  // brings the canonical set to 33.
   assert.equal(
     playbooks.length,
-    24,
-    `expected 24 shipped playbooks, found ${playbooks.length}`,
+    33,
+    `expected 33 shipped playbooks, found ${playbooks.length}`,
   );
 
   for (const pb of playbooks) {

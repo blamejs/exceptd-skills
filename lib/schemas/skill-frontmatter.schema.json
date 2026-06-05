@@ -104,6 +104,11 @@
       "items": { "type": "string", "minLength": 1 },
       "description": "Optional. Upcoming standards changes or new TTPs to watch for skill update."
     },
+    "discovery_mode": {
+      "type": "string",
+      "enum": ["standalone"],
+      "description": "Optional. 'standalone' marks a skill reached via `exceptd brief <name>` or `exceptd ask` rather than a playbook's direct.skill_chain (omission means chained). Mirrors the OPTIONAL_FRONTMATTER_FIELDS list in lib/lint-skills.js."
+    },
     "last_threat_review": {
       "type": "string",
       "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",

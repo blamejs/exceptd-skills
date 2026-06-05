@@ -897,6 +897,7 @@
     "status": "open",
     "opened_date": "2026-05-13",
     "evidence_cves": [
+      "CVE-2022-23812",
       "CVE-2024-3094",
       "CVE-2025-12686",
       "CVE-2025-62847",
@@ -906,11 +907,10 @@
       "CVE-2026-42945",
       "CVE-2026-45321",
       "MAL-2026-3083",
+      "MAL-2026-MOIKA-DEPCONFUSION",
       "MAL-2026-NODE-IPC-STEALER",
       "MAL-2026-SHAI-HULUD-OSS",
-      "MAL-2026-TANSTACK-MINI",
-      "CVE-2022-23812",
-      "MAL-2026-MOIKA-DEPCONFUSION"
+      "MAL-2026-TANSTACK-MINI"
     ],
     "atlas_refs": [
       "AML.T0010",
@@ -1418,6 +1418,7 @@
       "CVE-2010-0806",
       "CVE-2010-3765",
       "CVE-2010-3962",
+      "CVE-2011-0411",
       "CVE-2011-3402",
       "CVE-2012-1854",
       "CVE-2013-3893",
@@ -1450,6 +1451,8 @@
       "CVE-2021-26829",
       "CVE-2021-30952",
       "CVE-2021-32030",
+      "CVE-2021-33515",
+      "CVE-2021-38371",
       "CVE-2021-39935",
       "CVE-2021-43226",
       "CVE-2021-43798",
@@ -1470,8 +1473,14 @@
       "CVE-2023-43000",
       "CVE-2023-43654",
       "CVE-2023-44467",
+      "CVE-2023-44487",
       "CVE-2023-50224",
+      "CVE-2023-50387",
+      "CVE-2023-50868",
       "CVE-2023-51449",
+      "CVE-2023-51764",
+      "CVE-2023-51765",
+      "CVE-2023-51766",
       "CVE-2023-52163",
       "CVE-2023-6019",
       "CVE-2023-6021",
@@ -2058,11 +2067,11 @@
     "status": "open",
     "opened_date": "2026-05-11",
     "evidence_cves": [
+      "CVE-2022-23812",
       "CVE-2026-45321",
       "MAL-2026-3083",
-      "MAL-2026-NODE-IPC-STEALER",
-      "CVE-2022-23812",
-      "MAL-2026-MOIKA-DEPCONFUSION"
+      "MAL-2026-MOIKA-DEPCONFUSION",
+      "MAL-2026-NODE-IPC-STEALER"
     ],
     "atlas_refs": [
       "AML.T0010",
@@ -2559,6 +2568,7 @@
       "CVE-2010-0806",
       "CVE-2010-3765",
       "CVE-2010-3962",
+      "CVE-2011-0411",
       "CVE-2011-3402",
       "CVE-2012-1854",
       "CVE-2013-3893",
@@ -2591,6 +2601,8 @@
       "CVE-2021-26829",
       "CVE-2021-30952",
       "CVE-2021-32030",
+      "CVE-2021-33515",
+      "CVE-2021-38371",
       "CVE-2021-39935",
       "CVE-2021-43226",
       "CVE-2021-43798",
@@ -2612,8 +2624,14 @@
       "CVE-2023-43000",
       "CVE-2023-43654",
       "CVE-2023-44467",
+      "CVE-2023-44487",
       "CVE-2023-50224",
+      "CVE-2023-50387",
+      "CVE-2023-50868",
       "CVE-2023-51449",
+      "CVE-2023-51764",
+      "CVE-2023-51765",
+      "CVE-2023-51766",
       "CVE-2023-52163",
       "CVE-2023-6019",
       "CVE-2023-6021",
@@ -3417,6 +3435,9 @@
     "opened_date": "2026-03-15",
     "evidence_cves": [
       "CVE-2023-3519",
+      "CVE-2023-51764",
+      "CVE-2023-51765",
+      "CVE-2023-51766",
       "CVE-2024-21762",
       "CVE-2025-0282",
       "CVE-2025-22457",
@@ -3673,9 +3694,9 @@
       "CVE-2025-30154",
       "CVE-2026-45321",
       "MAL-2026-3083",
+      "MAL-2026-MOIKA-DEPCONFUSION",
       "MAL-2026-NODE-IPC-STEALER",
-      "MAL-2026-SHAI-HULUD-OSS",
-      "MAL-2026-MOIKA-DEPCONFUSION"
+      "MAL-2026-SHAI-HULUD-OSS"
     ],
     "atlas_refs": [
       "AML.T0010",
@@ -5187,8 +5208,11 @@
       "CVE-2023-43654",
       "CVE-2023-43791",
       "CVE-2023-44467",
+      "CVE-2023-44487",
       "CVE-2023-47117",
       "CVE-2023-48022",
+      "CVE-2023-50387",
+      "CVE-2023-50868",
       "CVE-2023-51449",
       "CVE-2023-6016",
       "CVE-2023-6019",
@@ -5813,6 +5837,10 @@
     "status": "open",
     "opened_date": "2026-05-17",
     "evidence_cves": [
+      "CVE-2011-0411",
+      "CVE-2021-33515",
+      "CVE-2021-38371",
+      "CVE-2022-23812",
       "CVE-2022-36551",
       "CVE-2023-43791",
       "CVE-2023-44467",
@@ -5907,10 +5935,9 @@
       "CVE-2026-46333",
       "CVE-2026-5760",
       "CVE-2026-9082",
+      "MAL-2026-MOIKA-DEPCONFUSION",
       "MAL-2026-SHAI-HULUD-OSS",
-      "CVE-2022-23812",
-      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM",
-      "MAL-2026-MOIKA-DEPCONFUSION"
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "atlas_refs": [],
     "attack_refs": [
@@ -6116,6 +6143,7 @@
     "status": "open",
     "opened_date": "2026-05-17",
     "evidence_cves": [
+      "CVE-2022-23812",
       "CVE-2024-24590",
       "CVE-2024-24591",
       "CVE-2024-3154",
@@ -6123,13 +6151,12 @@
       "CVE-2024-37060",
       "CVE-2026-31229",
       "CVE-2026-31230",
+      "MAL-2026-MOIKA-DEPCONFUSION",
       "MAL-2026-NODE-IPC-STEALER",
       "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER",
       "MAL-2026-SHAI-HULUD-OSS",
       "MAL-2026-TANSTACK-MINI",
-      "CVE-2022-23812",
-      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM",
-      "MAL-2026-MOIKA-DEPCONFUSION"
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "atlas_refs": [
       "AML.T0010",
@@ -6472,6 +6499,12 @@
     "opened_date": "2026-05-18",
     "evidence_cves": [
       "CVE-2022-36551",
+      "CVE-2023-44487",
+      "CVE-2023-50387",
+      "CVE-2023-50868",
+      "CVE-2023-51764",
+      "CVE-2023-51765",
+      "CVE-2023-51766",
       "CVE-2024-12450",
       "CVE-2024-21762",
       "CVE-2024-31462",
@@ -6721,8 +6754,8 @@
       "CVE-2025-6965",
       "CVE-2026-22778",
       "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP",
-      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM",
-      "MAL-2026-MOIKA-DEPCONFUSION"
+      "MAL-2026-MOIKA-DEPCONFUSION",
+      "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "theater_test": {
       "claim": "We are compliant with Art-15 (Accuracy, robustness, and cybersecurity of high-risk AI systems) because we follow the documented requirement: Article 15 — high-risk AI systems must be designed and developed so as to achieve an appropriate level of accuracy, robustness, and cybersecurity throughout their lifecycle. Anchored on the assumption",
@@ -7533,10 +7566,10 @@
     "status": "open",
     "opened_at": "2026-05-18",
     "evidence_cves": [
-      "MAL-2025-PYPI-COLORAMA-SOLANA-STEALER",
-      "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER",
-      "MAL-2026-MOIKA-DEPCONFUSION",
       "CVE-2022-23812",
+      "MAL-2025-PYPI-COLORAMA-SOLANA-STEALER",
+      "MAL-2026-MOIKA-DEPCONFUSION",
+      "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER",
       "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
     "theater_test": {

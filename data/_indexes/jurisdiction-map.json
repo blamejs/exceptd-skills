@@ -7,11 +7,13 @@
       "ai-risk-management",
       "api-security",
       "attack-surface-pentest",
+      "audit-log-integrity",
       "cloud-iam-incident",
       "cloud-security",
       "compliance-theater",
       "container-runtime-security",
       "coordinated-vuln-disclosure",
+      "decompression-dos",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "email-security-anti-phishing",
@@ -23,11 +25,16 @@
       "idp-incident-response",
       "incident-response-playbook",
       "kernel-lpe-triage",
+      "log-injection-telemetry",
+      "mail-server-hardening",
       "mcp-agent-trust",
       "mlops-security",
+      "multitenancy-isolation",
+      "network-trust",
       "ot-ics-security",
       "policy-exception-gen",
       "pqc-first",
+      "privacy-consent-ops",
       "rag-pipeline-security",
       "ransomware-response",
       "researcher",
@@ -37,15 +44,17 @@
       "sector-healthcare",
       "sector-telecom",
       "security-maturity-tiers",
+      "self-update-integrity",
       "skill-update-loop",
       "supply-chain-integrity",
       "threat-model-currency",
       "threat-modeling-methodology",
+      "vc-wallet-trust",
       "webapp-security",
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 42
+    "skill_count": 51
   },
   "UK": {
     "skills": [
@@ -60,6 +69,7 @@
       "compliance-theater",
       "container-runtime-security",
       "coordinated-vuln-disclosure",
+      "decompression-dos",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "email-security-anti-phishing",
@@ -71,11 +81,15 @@
       "idp-incident-response",
       "incident-response-playbook",
       "kernel-lpe-triage",
+      "log-injection-telemetry",
       "mcp-agent-trust",
       "mlops-security",
+      "multitenancy-isolation",
+      "network-trust",
       "ot-ics-security",
       "policy-exception-gen",
       "pqc-first",
+      "privacy-consent-ops",
       "rag-pipeline-security",
       "ransomware-response",
       "researcher",
@@ -85,15 +99,17 @@
       "sector-healthcare",
       "sector-telecom",
       "security-maturity-tiers",
+      "self-update-integrity",
       "skill-update-loop",
       "supply-chain-integrity",
       "threat-model-currency",
       "threat-modeling-methodology",
+      "vc-wallet-trust",
       "webapp-security",
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 42
+    "skill_count": 49
   },
   "AU": {
     "skills": [
@@ -108,6 +124,7 @@
       "compliance-theater",
       "container-runtime-security",
       "coordinated-vuln-disclosure",
+      "decompression-dos",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "email-security-anti-phishing",
@@ -119,11 +136,14 @@
       "idp-incident-response",
       "incident-response-playbook",
       "kernel-lpe-triage",
+      "log-injection-telemetry",
       "mcp-agent-trust",
       "mlops-security",
+      "multitenancy-isolation",
       "ot-ics-security",
       "policy-exception-gen",
       "pqc-first",
+      "privacy-consent-ops",
       "rag-pipeline-security",
       "ransomware-response",
       "researcher",
@@ -133,6 +153,7 @@
       "sector-healthcare",
       "sector-telecom",
       "security-maturity-tiers",
+      "self-update-integrity",
       "skill-update-loop",
       "supply-chain-integrity",
       "threat-model-currency",
@@ -141,7 +162,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 42
+    "skill_count": 47
   },
   "SG": {
     "skills": [
@@ -235,16 +256,18 @@
       "global-grc",
       "identity-assurance",
       "idp-incident-response",
+      "network-trust",
       "sector-energy",
       "sector-federal-government",
       "sector-financial",
       "sector-healthcare",
       "sector-telecom",
+      "self-update-integrity",
       "skill-update-loop",
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 17
+    "skill_count": 19
   },
   "BR": {
     "skills": [
@@ -497,11 +520,12 @@
   },
   "NO": {
     "skills": [
+      "mail-server-hardening",
       "sector-energy",
       "skill-update-loop"
     ],
     "example_excerpts": {},
-    "skill_count": 2
+    "skill_count": 3
   },
   "MX": {
     "skills": [

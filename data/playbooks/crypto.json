@@ -50,6 +50,7 @@
       }
     ],
     "fed_by": [
+      "network-trust",
       "post-quantum-migration"
     ]
   },
@@ -716,7 +717,11 @@
             "system_libssl_upgrade_safe == true"
           ],
           "priority": 1,
-          "for_signals": ["ml-kem-absent","ml-dsa-slh-dsa-absent","openssl-pre-3-5"],
+          "for_signals": [
+            "ml-kem-absent",
+            "ml-dsa-slh-dsa-absent",
+            "openssl-pre-3-5"
+          ],
           "compensating_controls": [
             "pin classical-only group fallback for legacy peers via per-service override"
           ],
@@ -730,7 +735,9 @@
             "ops_authorization_for_service_restart == true"
           ],
           "priority": 2,
-          "for_signals": ["tls-no-hybrid-group"],
+          "for_signals": [
+            "tls-no-hybrid-group"
+          ],
           "compensating_controls": [
             "client_compat_canary_for_each_service",
             "monitoring_for_negotiation_failures"
@@ -745,7 +752,9 @@
             "operator_authorized_for_sshd_change == true"
           ],
           "priority": 3,
-          "for_signals": ["sshd-no-pqc-kex"],
+          "for_signals": [
+            "sshd-no-pqc-kex"
+          ],
           "compensating_controls": [
             "bastion_session_recording_for_legacy_kex_fallback",
             "monitoring_for_kex_negotiation_downgrades"
@@ -759,7 +768,9 @@
             "ca_supports_hybrid_signatures == true OR internal_ca_can_be_extended == true"
           ],
           "priority": 4,
-          "for_signals": ["rsa-2048-cert-long-life"],
+          "for_signals": [
+            "rsa-2048-cert-long-life"
+          ],
           "compensating_controls": [
             "legacy_chain_for_pre-PQC_client_compat",
             "transparency_log_entries_for_hybrid_certs"
@@ -773,7 +784,9 @@
             "asset_inventory_baseline_exists == true"
           ],
           "priority": 5,
-          "for_signals": ["no-crypto-inventory"],
+          "for_signals": [
+            "no-crypto-inventory"
+          ],
           "compensating_controls": [],
           "estimated_time_hours": 40
         },

@@ -40,6 +40,7 @@
       }
     ],
     "fed_by": [
+      "audit-log-integrity",
       "cicd-pipeline-compromise",
       "cloud-iam-incident",
       "identity-sso-compromise",
@@ -48,6 +49,7 @@
       "runtime",
       "secrets",
       "supply-chain-recovery",
+      "vc-wallet-trust",
       "webhook-callback-abuse"
     ]
   },
@@ -739,7 +741,9 @@
             "user_enrolled_in_sso == true"
           ],
           "priority": 1,
-          "for_signals": ["aws-static-key-present"],
+          "for_signals": [
+            "aws-static-key-present"
+          ],
           "compensating_controls": [
             "iam-key-deactivated",
             "cloudtrail-monitor-on-old-key-for-residual-use"
@@ -753,7 +757,9 @@
             "org_has_workforce_identity_pool == true OR user_has_authorized_user_credentials == true"
           ],
           "priority": 1,
-          "for_signals": ["gcp-service-account-json-adc"],
+          "for_signals": [
+            "gcp-service-account-json-adc"
+          ],
           "compensating_controls": [
             "gcp-key-deleted",
             "gcp-audit-log-monitor-on-old-key"
@@ -767,7 +773,9 @@
             "cluster_supports_oidc == true OR cluster_is_managed_cloud_k8s == true"
           ],
           "priority": 1,
-          "for_signals": ["kube-static-token"],
+          "for_signals": [
+            "kube-static-token"
+          ],
           "compensating_controls": [
             "kube-token-revoked",
             "k8s-audit-log-monitor-on-old-token"
@@ -781,7 +789,9 @@
             "target_registry_supports_cred_helper == true"
           ],
           "priority": 1,
-          "for_signals": ["docker-cleartext-auth"],
+          "for_signals": [
+            "docker-cleartext-auth"
+          ],
           "compensating_controls": [
             "docker-token-rotated"
           ],
@@ -794,7 +804,10 @@
             "org_authority_to_rotate == true"
           ],
           "priority": 2,
-          "for_signals": ["npm-pat-present","pypi-token-present"],
+          "for_signals": [
+            "npm-pat-present",
+            "pypi-token-present"
+          ],
           "compensating_controls": [
             "token-scope-tightened",
             "publish-mfa-required"
@@ -808,7 +821,9 @@
             "file_owner_is_current_user"
           ],
           "priority": 2,
-          "for_signals": ["credentials-file-bad-perms"],
+          "for_signals": [
+            "credentials-file-bad-perms"
+          ],
           "compensating_controls": [],
           "estimated_time_hours": 0.25
         },
@@ -819,7 +834,10 @@
             "all_authorized_hosts_known == true"
           ],
           "priority": 2,
-          "for_signals": ["ssh-key-rsa-short-bits","ssh-key-old"],
+          "for_signals": [
+            "ssh-key-rsa-short-bits",
+            "ssh-key-old"
+          ],
           "compensating_controls": [
             "ssh-key-inventory-updated"
           ],

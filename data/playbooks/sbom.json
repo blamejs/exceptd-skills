@@ -115,6 +115,7 @@
       "library-author",
       "mcp",
       "post-quantum-migration",
+      "self-update-integrity",
       "supply-chain-recovery",
       "webhook-callback-abuse"
     ]
@@ -1261,7 +1262,11 @@
             "operator_authorized_for_package_upgrade == true"
           ],
           "priority": 1,
-          "for_signals": ["package-matches-catalogued-cve","kev-listed-match","windsurf-vulnerable-version"],
+          "for_signals": [
+            "package-matches-catalogued-cve",
+            "kev-listed-match",
+            "windsurf-vulnerable-version"
+          ],
           "compensating_controls": [
             "restart_affected_services_post_upgrade",
             "regression_test_post_upgrade"
@@ -1275,7 +1280,9 @@
             "ci_pipeline_modifiable == true"
           ],
           "priority": 2,
-          "for_signals": ["lockfile-no-integrity"],
+          "for_signals": [
+            "lockfile-no-integrity"
+          ],
           "compensating_controls": [
             "lockfile_review_in_pr_template"
           ],
@@ -1300,7 +1307,9 @@
             "sbom_tooling_supports_transitive == true"
           ],
           "priority": 4,
-          "for_signals": ["transitive-deps-incomplete-sbom"],
+          "for_signals": [
+            "transitive-deps-incomplete-sbom"
+          ],
           "compensating_controls": [
             "sbom_completeness_gate_in_ci"
           ],
@@ -1313,7 +1322,9 @@
             "security_team_capacity_for_vex == true"
           ],
           "priority": 5,
-          "for_signals": ["matched-cve-without-vex"],
+          "for_signals": [
+            "matched-cve-without-vex"
+          ],
           "compensating_controls": [
             "vex_template_in_security_playbook"
           ],
@@ -1327,7 +1338,9 @@
             "ci_or_pre-commit_modifiable == true"
           ],
           "priority": 6,
-          "for_signals": ["ai-code-no-provenance"],
+          "for_signals": [
+            "ai-code-no-provenance"
+          ],
           "compensating_controls": [
             "pr_review_for_ai_emitted_code",
             "ai_code_review_checklist"
@@ -1341,7 +1354,9 @@
             "ml_loader_modifiable == true OR ml_inference_pipeline_owned == true"
           ],
           "priority": 7,
-          "for_signals": ["model-weight-unsigned-and-executable-format"],
+          "for_signals": [
+            "model-weight-unsigned-and-executable-format"
+          ],
           "compensating_controls": [
             "model_inventory_review",
             "non-safetensors_models_quarantined"
