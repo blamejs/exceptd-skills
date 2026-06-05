@@ -217,7 +217,7 @@ jobs:
         if: |
           steps.dry.outputs.upsert_diffs != '0' &&
           (github.event_name == 'schedule' || inputs.apply == 'true')
-        uses: actions/upload-artifact@e6a3b3b56226e6c2f43c0a1cc8b6c1aaa12e57b8  # v5.0.0
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4  # v5.0.0
         with:
           name: refresh-bundle-${{ github.run_id }}
           path: /tmp/refresh-bundle/
@@ -226,7 +226,7 @@ jobs:
 
       - name: Upload refresh-report.json artifact (always — for operator debug)
         if: always()
-        uses: actions/upload-artifact@e6a3b3b56226e6c2f43c0a1cc8b6c1aaa12e57b8  # v5.0.0
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4  # v5.0.0
         with:
           name: refresh-report-${{ github.run_id }}
           path: refresh-report.json
