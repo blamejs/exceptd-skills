@@ -99,6 +99,32 @@ test('a cisa_kev_date diff does not touch rwep_factors or rwep_score', async () 
   assert.equal(e.rwep_score, scoring.RWEP_WEIGHTS.cisa_kev + 10, 'score untouched');
 });
 
+test('a first KEV listing emits the flag AND the listing date for a null-date entry', async () => {
+  // The diff producer once required a truthy local cisa_kev_date before it
+  // would emit a date diff — so a first listing (local date null) flipped the
+  // flag alone, and the applied tree failed strict validation (KEV-listed
+  // entries must carry their listing date).
+  const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-kev-cache-'));
+  fs.mkdirSync(path.join(cacheDir, 'kev'), { recursive: true });
+  fs.writeFileSync(
+    path.join(cacheDir, 'kev', 'known_exploited_vulnerabilities.json'),
+    JSON.stringify({ vulnerabilities: [{ cveID: 'CVE-2099-0001', dateAdded: '2026-06-01' }] })
+  );
+  const ctx = {
+    cacheDir,
+    forceStale: true,
+    cveCatalog: { 'CVE-2099-0001': { cisa_kev: false, cisa_kev_date: null } },
+  };
+  const r = await ALL_SOURCES.kev.fetchDiff(ctx);
+  const flag = r.diffs.find((d) => d.id === 'CVE-2099-0001' && d.field === 'cisa_kev');
+  const date = r.diffs.find((d) => d.id === 'CVE-2099-0001' && d.field === 'cisa_kev_date');
+  assert.ok(flag, 'flag diff emitted');
+  assert.equal(flag.after, true, 'flag diff lists the CVE');
+  assert.ok(date, 'date diff emitted despite null local date — first-listing case');
+  assert.equal(date.before, null, 'before is the null local date');
+  assert.equal(date.after, '2026-06-01', 'after is the upstream listing date');
+});
+
 test('an entry without rwep_factors gets the flag but no synthesized factors', async () => {
   const p = makeCatalog({ cisa_kev: false });
   await ALL_SOURCES.kev.applyDiff({ cvePath: p }, [
