@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.26 — 2026-06-06
+
+The end-to-end scenario runner no longer passes a scenario that did not actually exercise the CLI. A run killed by the 60-second timeout, or one that failed to launch, was read only through its exit status — so it surfaced as a confusing JSON-parse failure (or, with no assertions, as a pass); the runner now reports the spawn error and the terminating signal directly. A scenario that declares neither an expected exit code nor any output assertion is now a configuration error rather than a silent pass, so an empty expectation can no longer green-light any CLI behavior, including a crash.
+
 ## 0.16.25 — 2026-06-05
 
 The `refresh` air-gap guidance now consistently names `--prefetch` as the cache-populate command. The `refresh --help` synopsis and the `--from-cache` missing-path error hint previously presented `--no-network` as a populate alias — but `--no-network` is the report-only dry run that writes nothing, so an operator following that guidance produced an empty cache and then hit a confusing "path does not exist" on the offline host. `--no-network` is now documented as the report-only mode it actually is, and the air-gap hint points at `--prefetch`.
