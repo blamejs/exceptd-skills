@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.25 — 2026-06-05
+
+The `refresh` air-gap guidance now consistently names `--prefetch` as the cache-populate command. The `refresh --help` synopsis and the `--from-cache` missing-path error hint previously presented `--no-network` as a populate alias — but `--no-network` is the report-only dry run that writes nothing, so an operator following that guidance produced an empty cache and then hit a confusing "path does not exist" on the offline host. `--no-network` is now documented as the report-only mode it actually is, and the air-gap hint points at `--prefetch`.
+
 ## 0.16.24 — 2026-06-05
 
 Attestation replay tamper-gating, collector detection integrity, and lock-lifecycle fixes.
