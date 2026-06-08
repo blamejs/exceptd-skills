@@ -1,6 +1,12 @@
 # Changelog
 
-## 0.16.26 — 2026-06-06
+## 0.16.27 — 2026-06-08
+
+The automated external-data refresh runs to completion again, and the NVD score sync no longer regresses curated severities.
+
+Warming the upstream cache fans out hundreds (daily) to thousands (weekly) of rate-limited per-CVE and per-RFC requests, and a single transient fetch error — a timeout or a rate-limit response, counted only after its retries are exhausted — previously aborted the entire refresh before any data was applied. The cache warm now tolerates a bounded number of transient per-entry errors, failing only when the error count signals a systemic upstream outage, and names the affected sources in its summary (and on the error channel under `--quiet`) so a recurring dead source is visible in the run log.
+
+The NVD synchronization no longer downgrades a curated CVSS 3.1 entry to NVD's legacy CVSS 2.0 score. NVD marks the v2 metric as the primary score on many pre-2016 CVEs even when a 3.1 re-score is present, and emits that v2 vector without its `CVSS:2.0/` prefix; the refresh selected the v2 metric and overwrote the catalog's curated 3.1 score and vector, producing an unprefixed vector the catalog validator rejects and silently regressing the score. The refresh now selects the newest CVSS version a CVE carries (4.0, then 3.1, then 3.0, then 2.0), normalizes a bare v2 vector to its canonical prefixed form, and never replaces a curated score or vector with an older CVSS version — a genuine same-version or newer re-score still flows through. The same selection applies on the live network refresh path and to auto-imported draft entries.
 
 The end-to-end scenario runner no longer passes a scenario that did not actually exercise the CLI. A run killed by the 60-second timeout, or one that failed to launch, was read only through its exit status — so it surfaced as a confusing JSON-parse failure (or, with no assertions, as a pass); the runner now reports the spawn error and the terminating signal directly. A scenario that declares neither an expected exit code nor any output assertion is now a configuration error rather than a silent pass, so an empty expectation can no longer green-light any CLI behavior, including a crash.
 
