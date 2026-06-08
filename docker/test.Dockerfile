@@ -41,7 +41,7 @@
 #   `docker buildx imagetools inspect node:<new-tag>`).
 
 # ── base ───────────────────────────────────────────────────────────────────
-FROM node:24.14.1-alpine3.23@sha256:8510330d3eb72c804231a834b1a8ebb55cb3796c3e4431297a24d246b8add4d5 AS base
+FROM node:25.9.0-alpine3.23@sha256:bdf2cca6fe3dabd014ea60163eca3f0f7015fbd5c7ee1b0e9ccb4ced6eb02ef4 AS base
 
 # Run as a non-root user to match GitHub Actions runner behavior.
 # `node` is the upstream image's existing non-root user.
