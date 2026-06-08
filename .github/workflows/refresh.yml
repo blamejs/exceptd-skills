@@ -135,9 +135,10 @@ jobs:
         # queue exhausts its retries) are expected and must not fail the whole
         # refresh — the downstream dry-run reads whatever landed and treats a
         # miss as a non-fatal "missing entry". A larger error count signals a
-        # systemic upstream outage and still fails the step. The per-source
-        # error breakdown lands in the prefetch summary so a recurring dead
-        # source is visible in the log.
+        # systemic upstream outage and still fails the step, as does any single
+        # feed that returns nothing at all (so a dead KEV feed can't be silently
+        # skipped). The per-source error breakdown lands in the prefetch summary
+        # so a recurring dead source is visible in the log.
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

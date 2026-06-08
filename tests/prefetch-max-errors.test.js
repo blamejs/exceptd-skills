@@ -58,6 +58,30 @@ test('exitCodeForResult: a systemic outage still fails over a percentage budget'
   assert.equal(exitCodeForResult(result(353, 500), { maxErrors: '50%' }), 1, 'half-dead upstream fails');
 });
 
+test('a source that is entirely unreachable fails regardless of the global budget', () => {
+  // A complete KEV outage: 1 planned, 0 landed, 1 error — well under the
+  // budget, but the refresh would finish having silently skipped KEV.
+  const deadKev = {
+    fetched: 800, skipped_fresh: 0, errors: 1,
+    by_source: { kev: { fetched: 0, skipped_fresh: 0, errors: 1 }, nvd: { fetched: 800, skipped_fresh: 0, errors: 0 } },
+  };
+  assert.equal(exitCodeForResult(deadKev, { maxErrors: 50 }), 1, 'a fully-dead feed must fail even under budget');
+
+  // A partially-degraded source (some entries landed) stays tolerated.
+  const partial = {
+    fetched: 417, skipped_fresh: 0, errors: 23,
+    by_source: { nvd: { fetched: 417, skipped_fresh: 0, errors: 23 } },
+  };
+  assert.equal(exitCodeForResult(partial, { maxErrors: 50 }), 0);
+
+  // An all-fresh source (cache hit, nothing fetched, no errors) does not trip it.
+  const allFresh = {
+    fetched: 0, skipped_fresh: 440, errors: 0,
+    by_source: { nvd: { fetched: 0, skipped_fresh: 440, errors: 0 } },
+  };
+  assert.equal(exitCodeForResult(allFresh, { maxErrors: 50 }), 0);
+});
+
 test('parseErrorThreshold + parseArgs accept integer and percentage; default is 0', () => {
   assert.equal(parseErrorThreshold('50'), 50);
   assert.equal(parseErrorThreshold('5%'), '5%');

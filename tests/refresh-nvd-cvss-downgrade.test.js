@@ -56,6 +56,10 @@ function run(localEntry, buckets) {
   }
 }
 
+test('nvdDiffFromCache is exported for direct testing', () => {
+  assert.equal(typeof nvdDiffFromCache, 'function');
+});
+
 test('v2-Primary + v3.1-Secondary against a curated v3.1 entry emits NO diff (the shipped-bug repro)', () => {
   const r = run(
     { cvss_vector: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H', cvss_score: 9.8 },
