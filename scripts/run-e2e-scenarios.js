@@ -110,6 +110,47 @@ function tryParseJson(s) {
   return null;
 }
 
+// Evaluate a spawnSync result against a scenario's expectations. Pure: takes
+// the raw spawnSync result so the failure logic is unit-testable without
+// spawning a process. Surfaces spawn-level failures (timeout/launch error)
+// that res.status alone hides, and refuses to pass a scenario that binds no
+// assertion.
+function evaluateScenario(scenario, expect, res) {
+  const stdout = res.stdout || "";
+  const stderr = res.stderr || "";
+  const status = res.status;
+  const body = tryParseJson(stdout);
+  const failures = [];
+
+  // spawnSync failure channels: a timeout sets res.error (ETIMEDOUT) +
+  // res.signal 'SIGTERM' with status null; a launch failure (ENOENT/EACCES)
+  // sets res.error with status null. Reading only res.status lets a killed-
+  // or-never-launched run masquerade as a plain non-zero exit or a JSON-parse
+  // failure, hiding the real cause.
+  if (res.error) failures.push(`spawn error: ${res.error.code || res.error.message}`);
+  if (res.signal) failures.push(`killed by signal ${res.signal}${res.signal === "SIGTERM" ? " (likely the 60s timeout)" : ""}`);
+
+  // Assertion floor: every scenario must bind at least one positive check.
+  // Without an expect_exit or a json_path_* matcher, both gates below are
+  // skipped and the scenario would pass for ANY CLI behavior, including a
+  // crash. (stderr_must_not_match is a negative guard and cannot bind
+  // behavior on its own, so it does not satisfy the floor.)
+  const hasExitAssertion = typeof scenario.expect_exit === "number";
+  const hasJsonAssertion = !!(expect.json_path_equals || expect.json_path_present || expect.json_path_min || expect.json_path_match);
+  if (!hasExitAssertion && !hasJsonAssertion) {
+    failures.push("scenario has no binding assertion (set expect_exit or an expect.json_path_* matcher) — refusing to pass vacuously");
+  }
+
+  if (hasExitAssertion && status !== scenario.expect_exit) {
+    failures.push(`exit: want ${scenario.expect_exit}, got ${status}`);
+  }
+  if (!body && hasJsonAssertion) {
+    failures.push(`stdout did not parse as JSON; first 200 chars: ${stdout.slice(0, 200)}`);
+  }
+  if (body) failures.push(...diffExpect(body, expect, { stdout, stderr, status }));
+  return failures;
+}
+
 function runScenario(scenarioPath) {
   const name = path.basename(scenarioPath);
   const scenarioFile = path.join(scenarioPath, "scenario.json");
@@ -165,28 +206,16 @@ function runScenario(scenarioPath) {
       timeout: 60000,
     });
 
-    const stdout = res.stdout || "";
-    const stderr = res.stderr || "";
-    const status = res.status;
-    const body = tryParseJson(stdout);
-
-    const failures = [];
-    if (typeof scenario.expect_exit === "number" && status !== scenario.expect_exit) {
-      failures.push(`exit: want ${scenario.expect_exit}, got ${status}`);
-    }
-    if (!body && (expect.json_path_equals || expect.json_path_present || expect.json_path_min || expect.json_path_match)) {
-      failures.push(`stdout did not parse as JSON; first 200 chars: ${stdout.slice(0, 200)}`);
-    }
-    if (body) failures.push(...diffExpect(body, expect, { stdout, stderr, status }));
+    const failures = evaluateScenario(scenario, expect, res);
 
     return {
       name,
       description: scenario.description || "",
       ok: failures.length === 0,
-      exit_status: status,
+      exit_status: res.status,
       failures,
-      stdout_preview: stdout.slice(0, 200),
-      stderr_preview: stderr.slice(0, 200),
+      stdout_preview: (res.stdout || "").slice(0, 200),
+      stderr_preview: (res.stderr || "").slice(0, 200),
     };
   } finally {
     fs.rmSync(work, { recursive: true, force: true });
@@ -237,4 +266,6 @@ function main() {
   process.exit(failed.length === 0 ? 0 : 1);
 }
 
-main();
+module.exports = { evaluateScenario, diffExpect, runScenario };
+
+if (require.main === module) main();
