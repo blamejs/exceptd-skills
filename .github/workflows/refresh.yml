@@ -320,7 +320,7 @@ jobs:
         if: |
           steps.dry.outputs.upsert_diffs != '0' &&
           (github.event_name == 'schedule' || inputs.apply == 'true')
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4  # v5.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: refresh-bundle-${{ github.run_id }}
           path: /tmp/refresh-bundle/
@@ -329,7 +329,7 @@ jobs:
 
       - name: Upload refresh-report.json artifact (always — for operator debug)
         if: always()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4  # v5.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: refresh-report-${{ github.run_id }}
           path: refresh-report.json
@@ -360,9 +360,9 @@ jobs:
 
       - name: Download refresh-data bundle
         if: needs.refresh-data.outputs.upsert_diffs != '0'
-        # download-artifact v8 reads artifacts written by upload-artifact v5
+        # download-artifact v8 reads artifacts written by upload-artifact v7
         # above — both use the v4+ artifact backend, so the cross-major
-        # upload(v5)/download(v8) round-trip is compatible.
+        # upload(v7)/download(v8) round-trip is compatible.
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           name: refresh-bundle-${{ github.run_id }}
@@ -396,7 +396,7 @@ jobs:
         # token is minted per-run, scoped to this repo, and expires with the job.
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
         with:
-          app-id: ${{ secrets.REFRESH_APP_ID }}
+          client-id: ${{ secrets.REFRESH_APP_CLIENT_ID }}
           private-key: ${{ secrets.REFRESH_APP_PRIVATE_KEY }}
           # Request only the scopes the PR step needs, rather than inheriting
           # everything the installation grants. The minted token stays
