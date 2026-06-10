@@ -398,6 +398,11 @@ jobs:
         with:
           app-id: ${{ secrets.REFRESH_APP_ID }}
           private-key: ${{ secrets.REFRESH_APP_PRIVATE_KEY }}
+          # Request only the scopes the PR step needs, rather than inheriting
+          # everything the installation grants. The minted token stays
+          # least-privilege even if the App's permissions are widened later.
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Open auto-PR with applied diffs
         if: needs.refresh-data.outputs.upsert_diffs != '0'
