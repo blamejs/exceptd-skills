@@ -385,11 +385,30 @@ jobs:
             echo "::warning::refresh-bundle marker but no changes.tar.gz — refresh-data produced no on-disk mutations despite upsert_diffs != 0."
           fi
 
+      - name: Mint a scoped GitHub App token for PR creation
+        id: app-token
+        if: needs.refresh-data.outputs.upsert_diffs != '0'
+        # GITHUB_TOKEN is barred from creating pull requests under this repo's
+        # policy, and a GITHUB_TOKEN-authored PR would not trigger the required
+        # CI checks (GitHub's recursion guard) — so such a PR could never
+        # satisfy branch protection to merge. A GitHub App installation token
+        # does both: it opens the PR, and the PR it opens runs ci.yml. The
+        # token is minted per-run, scoped to this repo, and expires with the job.
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
+        with:
+          app-id: ${{ secrets.REFRESH_APP_ID }}
+          private-key: ${{ secrets.REFRESH_APP_PRIVATE_KEY }}
+          # Request only the scopes the PR step needs, rather than inheriting
+          # everything the installation grants. The minted token stays
+          # least-privilege even if the App's permissions are widened later.
+          permission-contents: write
+          permission-pull-requests: write
+
       - name: Open auto-PR with applied diffs
         if: needs.refresh-data.outputs.upsert_diffs != '0'
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # v8.1.1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
           branch: data-refresh/auto
           title: "data-refresh: ${{ github.run_id }}"
           commit-message: |
