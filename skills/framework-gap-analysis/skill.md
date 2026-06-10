@@ -20,7 +20,7 @@ data_deps:
 atlas_refs: []
 attack_refs: []
 framework_gaps: []
-last_threat_review: "2026-05-22"
+last_threat_review: "2026-06-10"
 ---
 
 # Framework Gap Analysis

@@ -56,7 +56,7 @@ forward_watch:
   - UL 2941 (DER cybersecurity) and IEEE 1547.3-2023 (DER cyber) adoption into US state PUC interconnection rules
   - MadIoT-class research on consumer-IoT-driven grid frequency manipulation moving from proof-of-concept to attributed campaigns
   - ICS-CERT advisory feed (https://www.cisa.gov/news-events/cybersecurity-advisories/ics-advisories) for vendor CVEs in Siemens, Rockwell, Schneider Electric, ABB, GE Vernova, Hitachi Energy, AVEVA / OSIsoft PI
-last_threat_review: "2026-05-11"
+last_threat_review: "2026-06-10"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief sector-energy` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 

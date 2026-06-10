@@ -47,7 +47,7 @@ d3fend_refs:
   - D3-IOPR
   - D3-CSPP
   - D3-MFA
-last_threat_review: "2026-05-11"
+last_threat_review: "2026-06-10"
 ---
 
 # Healthcare Sector Cybersecurity (mid-2026)

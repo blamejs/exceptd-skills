@@ -23,7 +23,7 @@ forward_watch:
   - EU CRA exceptions for AI pipeline components
   - NIST SP 800-204 series updates for microservices
   - FedRAMP updates for container/serverless authorization
-last_threat_review: "2026-05-22"
+last_threat_review: "2026-06-10"
 ---
 
 # Policy Exception Generation

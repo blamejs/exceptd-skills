@@ -21,7 +21,7 @@ framework_gaps:
   - ALL-PROMPT-INJECTION-ACCESS-CONTROL
   - FedRAMP-Rev5-Moderate
   - CMMC-2.0-Level-2
-last_threat_review: "2026-05-22"
+last_threat_review: "2026-06-10"
 ---
 
 # Compliance Theater Detection

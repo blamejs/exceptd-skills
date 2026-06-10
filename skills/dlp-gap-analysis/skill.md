@@ -61,7 +61,7 @@ d3fend_refs:
   - D3-IOPR
   - D3-NTA
   - D3-NTPM
-last_threat_review: "2026-05-15"
+last_threat_review: "2026-06-10"
 ---
 
 # DLP Gap Analysis

@@ -58,7 +58,7 @@ forward_watch:
   - AI product age policy enforcement — Character.ai litigation (2024 child-suicide complaint) testing duty-of-care for AI companion apps; ChatGPT / Claude / Gemini under-13 / under-18 enforcement evolving via FTC + state AG actions
   - France SREN (Securing and Regulating the Digital Space) Act 2024 — ARCOM age-verification referential for adult content services; double-anonymity model under deployment
   - US state adult-site age-verification laws — 19+ states by mid-2026 (TX HB 18 upheld by SCOTUS June 2025 in Free Speech Coalition v. Paxton); track ongoing challenges in remaining states
-last_threat_review: "2026-05-11"
+last_threat_review: "2026-06-10"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief age-gates-child-safety` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 

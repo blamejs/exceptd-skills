@@ -47,7 +47,7 @@ d3fend_refs:
   - D3-PSEP
   - D3-RPA
   - D3-SCP
-last_threat_review: "2026-05-11"
+last_threat_review: "2026-06-10"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief defensive-countermeasure-mapping` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 

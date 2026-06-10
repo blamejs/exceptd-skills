@@ -22,7 +22,7 @@ forward_watch:
   - New CISA KEV entries in kernel/AI/supply chain categories
   - New MCP or agent protocol security disclosures
   - Emerging malware families using AI for evasion
-last_threat_review: "2026-05-18"
+last_threat_review: "2026-06-10"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief threat-model-currency` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 

@@ -49,7 +49,7 @@ d3fend_refs:
   - D3-NI
   - D3-NTA
   - D3-NTPM
-last_threat_review: "2026-05-17"
+last_threat_review: "2026-06-10"
 ---
 
 # AI C2 Detection

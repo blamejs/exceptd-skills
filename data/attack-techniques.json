@@ -2,7 +2,7 @@
   "_meta": {
     "schema_version": "1.0.0",
     "last_updated": "2026-06-10",
-    "last_threat_review": "2026-05-19",
+    "last_threat_review": "2026-06-10",
     "attack_version": "19.1",
     "attack_version_date": "2026-05-12",
     "tactic_split_note": "ATT&CK v19 split Defense Evasion (TA0005) into Stealth (TA0005) and Defense Impairment (TA0112). Entries here record their post-split tactic; entries whose tactic moved carry `tactic_moved_from: \"Defense Evasion\"` for traceability.",

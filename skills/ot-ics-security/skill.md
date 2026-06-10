@@ -43,7 +43,7 @@ cwe_refs:
   - CWE-306
   - CWE-1037
 d3fend_refs: []
-last_threat_review: "2026-05-11"
+last_threat_review: "2026-06-10"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief ot-ics-security` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 

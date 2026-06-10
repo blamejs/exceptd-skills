@@ -67,7 +67,7 @@ d3fend_refs:
   - D3-CBAN
   - D3-EAL
   - D3-EHB
-last_threat_review: "2026-05-15"
+last_threat_review: "2026-06-10"
 ---
 
 # Supply-Chain Integrity Assessment

@@ -59,7 +59,7 @@ forward_watch:
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — Chroma vector DB CWE-190 + CWE-362 chain by haehae; impacts RAG vector store integrity; track patch and downstream RAG advisory
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — NVIDIA Megatron Bridge overly permissive allowed list by Satoki Tsuji; AI training-stack supply-chain exposure; track patch and SBOM advisory
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — NVIDIA Megatron Bridge path traversal by haehae; AI training-stack file-system trust boundary; track patch and SBOM advisory
-last_threat_review: "2026-05-17"
+last_threat_review: "2026-06-10"
 ---
 
 # AI Attack Surface Assessment

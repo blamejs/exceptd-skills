@@ -67,7 +67,7 @@ forward_watch:
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LiteLLM full SSRF + Code Injection by Out Of Bounds (Byung Young Yi); duplicate-class with the k3vg3n entry; track unified patch advisory
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LM Studio 5-bug exploit chain by STARLabs SG; impacts local MCP/agent runtime trust; track patch and integration advisories
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — Claude Code MCP collision-scored entry by Viettel Cyber Security; CVE in flight; track MCP trust and tool-collision advisory
-last_threat_review: "2026-05-17"
+last_threat_review: "2026-06-10"
 ---
 
 # MCP Agent Trust Assessment

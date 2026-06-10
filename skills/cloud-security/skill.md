@@ -70,7 +70,7 @@ forward_watch:
   - AWS Bedrock, Azure OpenAI, GCP Vertex AI shared-responsibility documentation drift — each major CSP refreshes the AI-service responsibility line every 6–12 months; track for control-mapping breakage
   - eBPF-based runtime detection coverage of confidential-computing enclaves (AWS Nitro Enclaves, Azure Confidential VMs, GCP Confidential Space) — partial visibility is a tracked detection gap
   - CISA KEV additions for cloud-control-plane CVEs (IMDSv1 abuses, federation token mishandling, cross-tenant boundary failures); CISA Cybersecurity Advisories for cross-cloud advisories
-last_threat_review: "2026-05-11"
+last_threat_review: "2026-06-10"
 ---
 
 # Cloud Security (mid-2026)

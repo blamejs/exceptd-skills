@@ -47,7 +47,7 @@ forward_watch:
   - Forthcoming IETF work on AI vulnerability disclosure (proposed BoF under SECDISPATCH) and any update to RFC 9116 (security.txt) covering AI/model artifact disclosure endpoints
   - UK NCSC Vulnerability Disclosure Toolkit revisions and AU ISM CVD guidance updates
   - NYDFS 23 NYCRR 500 amendments potentially adding explicit CVD program requirements
-last_threat_review: "2026-05-11"
+last_threat_review: "2026-06-10"
 ---
 
 # Coordinated Vulnerability Disclosure

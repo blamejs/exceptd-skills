@@ -62,7 +62,7 @@ forward_watch:
   - HIPAA Security Rule update (NPRM late 2024 → final rule expected 2026) — explicit ransomware-recovery and encryption-at-rest requirements
   - No More Ransom Project decryptor releases — affiliate-takedown decryptor drops (Operation Cronos LockBit decryptor, BlackCat post-exit-scam decryptors)
   - SCOTUS or circuit-court rulings on ransomware payment, sanctions liability, and insurance-policy enforcement
-last_threat_review: "2026-05-22"
+last_threat_review: "2026-06-10"
 ---
 
 # Ransomware Response Playbook
