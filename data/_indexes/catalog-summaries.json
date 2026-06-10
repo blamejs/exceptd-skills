@@ -7,9 +7,9 @@
   "catalogs": {
     "atlas-ttps.json": {
       "path": "data/atlas-ttps.json",
-      "purpose": "MITRE ATLAS TTPs (AML.T0xxx) cited by skills, with tactic, name, description. Pinned to ATLAS v5.6.0 (May 2026).",
+      "purpose": "MITRE ATLAS TTPs (AML.T0xxx) cited by skills, with tactic, name, description. Pinned to ATLAS v2026.05 (May 2026).",
       "schema_version": "1.0.0",
-      "last_updated": "2026-05-19",
+      "last_updated": "2026-06-10",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -31,7 +31,7 @@
       "path": "data/attack-techniques.json",
       "purpose": null,
       "schema_version": "1.0.0",
-      "last_updated": "2026-05-19",
+      "last_updated": "2026-06-10",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {

@@ -84,7 +84,9 @@ function scanFile(rel) {
 
 test('atlas-ttps.json._meta.atlas_version is the canonical pin', () => {
   assert.equal(typeof CANONICAL_ATLAS, 'string');
-  assert.match(CANONICAL_ATLAS, /^\d+\.\d+\.\d+$/, `atlas_version must be semver; got ${CANONICAL_ATLAS}`);
+  // ATLAS moved its content versioning to CalVer (YYYY.MM[.N]) at v2026.05;
+  // earlier pins were 3-part semver. Accept either shape.
+  assert.match(CANONICAL_ATLAS, /^(\d{4}\.\d{2}(?:\.\d+)?|\d+\.\d+\.\d+)$/, `atlas_version must be CalVer YYYY.MM[.N] or semver; got ${CANONICAL_ATLAS}`);
 });
 
 test('every ATLAS version reference in operator-facing docs matches the canonical pin', () => {

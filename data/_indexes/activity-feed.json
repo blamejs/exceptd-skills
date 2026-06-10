@@ -6,6 +6,22 @@
   },
   "events": [
     {
+      "date": "2026-06-10",
+      "type": "catalog_update",
+      "artifact": "data/atlas-ttps.json",
+      "path": "data/atlas-ttps.json",
+      "schema_version": "1.0.0",
+      "entry_count": 170
+    },
+    {
+      "date": "2026-06-10",
+      "type": "catalog_update",
+      "artifact": "data/attack-techniques.json",
+      "path": "data/attack-techniques.json",
+      "schema_version": "1.0.0",
+      "entry_count": 805
+    },
+    {
       "date": "2026-06-02",
       "type": "skill_review",
       "artifact": "vc-wallet-trust",
@@ -166,22 +182,6 @@
     {
       "date": "2026-05-19",
       "type": "catalog_update",
-      "artifact": "data/atlas-ttps.json",
-      "path": "data/atlas-ttps.json",
-      "schema_version": "1.0.0",
-      "entry_count": 170
-    },
-    {
-      "date": "2026-05-19",
-      "type": "catalog_update",
-      "artifact": "data/attack-techniques.json",
-      "path": "data/attack-techniques.json",
-      "schema_version": "1.0.0",
-      "entry_count": 805
-    },
-    {
-      "date": "2026-05-19",
-      "type": "catalog_update",
       "artifact": "data/d3fend-catalog.json",
       "path": "data/d3fend-catalog.json",
       "schema_version": "1.0.0",
@@ -235,7 +235,7 @@
       "type": "skill_review",
       "artifact": "ai-attack-surface",
       "path": "skills/ai-attack-surface/skill.md",
-      "note": "Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v5.6.0 with explicit framework gap flags"
+      "note": "Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v2026.05 with explicit framework gap flags"
     },
     {
       "date": "2026-05-17",

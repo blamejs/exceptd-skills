@@ -182,9 +182,9 @@ This attack requires:
 
 ---
 
-## TTP Mapping (MITRE ATLAS v5.6.0)
+## TTP Mapping (MITRE ATLAS v2026.05)
 
-Descriptions sourced verbatim from `data/atlas-ttps.json` (ATLAS v5.6.0, released 2026-05-08). Partial-coverage controls from `data/framework-control-gaps.json`.
+Descriptions sourced verbatim from `data/atlas-ttps.json` (ATLAS v2026.05, released 2026-05-08). Partial-coverage controls from `data/framework-control-gaps.json`.
 
 | ATLAS ID | ATLAS Name | RAG Attack Class | Control Gap That Lets It Land | Controls That Partially Cover It |
 |---|---|---|---|---|
@@ -198,7 +198,7 @@ Descriptions sourced verbatim from `data/atlas-ttps.json` (ATLAS v5.6.0, release
 
 ## Exploit Availability Matrix
 
-**No CVE catalog entry as of 2026-05 maps directly to RAG embedding manipulation, vector store poisoning, or RAG indirect prompt injection.** These attack classes are tracked via MITRE ATLAS TTPs (v5.6.0) and public incident reporting rather than vendor CVEs, because they exploit architectural properties of the RAG pattern rather than a single vendor's implementation flaw. `data/exploit-availability.json` therefore has no RAG-specific rows; the rows below source ATLAS `real_world_instances` and the framework-gap entries.
+**No CVE catalog entry as of 2026-05 maps directly to RAG embedding manipulation, vector store poisoning, or RAG indirect prompt injection.** These attack classes are tracked via MITRE ATLAS TTPs (v2026.05) and public incident reporting rather than vendor CVEs, because they exploit architectural properties of the RAG pattern rather than a single vendor's implementation flaw. `data/exploit-availability.json` therefore has no RAG-specific rows; the rows below source ATLAS `real_world_instances` and the framework-gap entries.
 
 | ATLAS Technique | PoC / Public Demo Available? | CISA KEV? | AI-Accelerated? | Patch Available? | Reboot / Version Bump Required? |
 |---|---|---|---|---|---|

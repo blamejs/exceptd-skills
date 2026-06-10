@@ -105,7 +105,7 @@ Webapps still ship CWE-79 (Cross-Site Scripting), CWE-89 (SQL Injection), and CW
 
 ---
 
-## TTP Mapping (MITRE ATT&CK Enterprise + ATLAS v5.6.0)
+## TTP Mapping (MITRE ATT&CK Enterprise + ATLAS v2026.05)
 
 | TTP ID | Technique | Webapp Manifestation | CWE Root-Causes | Framework Coverage |
 |---|---|---|---|---|

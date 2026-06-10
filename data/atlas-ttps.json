@@ -1,14 +1,14 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "atlas_version": "5.6.0",
-    "atlas_release_date": "2026-05-08",
+    "atlas_version": "2026.05",
+    "atlas_release_date": "2026-05-27",
     "secure_ai_v2_release_date": "2026-05-06",
     "secure_ai_v2_source": "https://ctid.mitre.org/blog/2026/05/06/secure-ai-v2-release",
-    "last_updated": "2026-05-19",
+    "last_updated": "2026-06-10",
     "last_threat_review": "2026-05-19",
     "source": "https://atlas.mitre.org",
-    "note": "AI-relevant ATLAS v5.6.0 TTPs with framework_gap field. framework_gap: no framework has a control that addresses this TTP. secure_ai_v2_layer flags entries included in the CTID Secure AI v2 layered set (May 2026); maturity reflects CTID's technique-maturity classification (low / moderate / high).",
+    "note": "AI-relevant ATLAS v2026.05 TTPs with framework_gap field. ATLAS content now follows a YYYY.MM calendar-versioning scheme; v2026.05 adds platform tags (Predictive AI, Generative AI, Agentic AI, Enterprise) to every technique, with no technique-ID removals or renames. framework_gap: no framework has a control that addresses this TTP. secure_ai_v2_layer flags entries included in the CTID Secure AI v2 layered set (May 2026); maturity reflects CTID's technique-maturity classification (low / moderate / high).",
     "tlp": "CLEAR",
     "source_confidence": {
       "scheme": "Admiralty (A-F + 1-6)",
