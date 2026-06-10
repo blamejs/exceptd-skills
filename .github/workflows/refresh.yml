@@ -63,7 +63,7 @@ jobs:
         # v0.13.3: persist-credentials: false. The downstream `open-pr` job
         # does a fresh checkout with credentials at PR-creation time; this
         # data-refresh job has no write capability against the repo.
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
         with:
           persist-credentials: false
           fetch-depth: 0
@@ -320,7 +320,7 @@ jobs:
         if: |
           steps.dry.outputs.upsert_diffs != '0' &&
           (github.event_name == 'schedule' || inputs.apply == 'true')
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4  # v5.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: refresh-bundle-${{ github.run_id }}
           path: /tmp/refresh-bundle/
@@ -329,7 +329,7 @@ jobs:
 
       - name: Upload refresh-report.json artifact (always — for operator debug)
         if: always()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4  # v5.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: refresh-report-${{ github.run_id }}
           path: refresh-report.json
@@ -353,7 +353,7 @@ jobs:
 
     steps:
       - name: Checkout repository (credentials persisted only here)
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
         with:
           persist-credentials: true
           fetch-depth: 0
