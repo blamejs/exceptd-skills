@@ -17,8 +17,8 @@ const PINS = require(path.join(__dirname, "..", "lib", "version-pins.js"));
 
 test("getAtlasVersion returns the live value from data/atlas-ttps.json", () => {
   const v = PINS.getAtlasVersion();
-  assert.ok(typeof v === "string" && /^\d+\.\d+\.\d+$/.test(v),
-    "atlas_version must be a semver-like string sourced from _meta");
+  assert.ok(typeof v === "string" && /^(\d{4}\.\d{2}(?:\.\d+)?|\d+\.\d+\.\d+)$/.test(v),
+    "atlas_version must be CalVer YYYY.MM[.N] or legacy semver, sourced from _meta");
 });
 
 test("getAttackVersion returns the live value from data/attack-techniques.json", () => {

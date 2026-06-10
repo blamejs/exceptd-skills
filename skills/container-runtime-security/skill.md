@@ -57,7 +57,7 @@ d3fend_refs:
   - D3-IOPR
 forward_watch:
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — NVIDIA Container Toolkit container escape ($50K award) by chompie / IBM X-Force XOR; high-severity container/hypervisor boundary break; track patch and KEV add post-embargo
-last_threat_review: "2026-05-15"
+last_threat_review: "2026-06-10"
 ---
 
 # Container + Kubernetes Runtime Security (mid-2026)
@@ -124,9 +124,9 @@ State of standards baselines:
 | Container escape to host | T1611 — Escape to Host | ATT&CK Enterprise | Kernel LPE (Copy Fail CVE-2026-31431, Dirty Frag CVE-2026-43284 family); historical runc CVE-2024-21626 LeakyVessels family; cgroup v1 release_agent legacy abuses; abuse of overly permissive capabilities (`CAP_SYS_ADMIN`, `CAP_SYS_MODULE`) | NIST 800-190 predates kernel-LPE-as-container-escape as the dominant vector. Defense requires kernel patching cadence (hand off to `kernel-lpe-triage`) plus seccomp default profile, capability drops, read-only rootfs, and runtime detection. None of these are framework-mandated. |
 | Privilege escalation within the container | T1068 — Exploitation for Privilege Escalation | ATT&CK Enterprise | In-container kernel LPE (yields host root via T1611 chain); abuse of writable hostPath; abuse of mounted Docker socket | Method-neutral framework controls; the actual control is seccomp + dropped capabilities + read-only rootfs + non-root runAsUser, all enforced by PSS-Restricted profile |
 | Exploit public-facing K8s component | T1190 — Exploit Public-Facing Application | ATT&CK Enterprise | Exposed kube-apiserver (rare but seen on self-managed clusters); exposed kubelet read-only port (10255) or read/write port (10250) without authentication; exposed Kubernetes Dashboard with no auth; exposed Argo CD or Jenkins on the cluster; ingress controller CVEs (ingress-nginx CVE-2025 family) | NSA/CISA Hardening Guide v1.2 addresses control-plane exposure; managed services close this by default; self-managed clusters in CI/government still expose these |
-| Compromised container image at a public/private registry | AML.T0010 — ML Supply Chain Compromise (umbrella) | ATLAS v5.6.0 | Poisoned base image; backdoored model-serving image; typosquatted MCP server in a sidecar; AI-pipeline-specific (KServe / vLLM / Triton image with embedded malicious payload) | ATLAS classifies; no framework mandates signature verification at admission. Hand off the build-side provenance to `supply-chain-integrity`; the container-runtime control is `ClusterImagePolicy` enforcement |
+| Compromised container image at a public/private registry | AML.T0010 — ML Supply Chain Compromise (umbrella) | ATLAS v2026.05 | Poisoned base image; backdoored model-serving image; typosquatted MCP server in a sidecar; AI-pipeline-specific (KServe / vLLM / Triton image with embedded malicious payload) | ATLAS classifies; no framework mandates signature verification at admission. Hand off the build-side provenance to `supply-chain-integrity`; the container-runtime control is `ClusterImagePolicy` enforcement |
 
-ATT&CK Containers matrix (sub-matrix, since 2021) and ATT&CK for Kubernetes (Microsoft's threat matrix, 2020, since absorbed conceptually into ATT&CK Containers) are both relevant prior art. The Enterprise IDs above are canonical in ATLAS v5.6.0 alignment and pass the linter regex `^T\d{4}(\.\d{3})?$`.
+ATT&CK Containers matrix (sub-matrix, since 2021) and ATT&CK for Kubernetes (Microsoft's threat matrix, 2020, since absorbed conceptually into ATT&CK Containers) are both relevant prior art. The Enterprise IDs above are canonical in ATLAS v2026.05 alignment and pass the linter regex `^T\d{4}(\.\d{3})?$`.
 
 CWE cross-walk (see `data/cwe-catalog.json`):
 

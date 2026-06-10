@@ -65,7 +65,7 @@ d3fend_refs:
   - D3-MFA
 forward_watch:
   - NGINX Rift CVE-2026-42945 (disclosed 2026-05-13, source depthfirst) — KEV-watch predicted CISA KEV listing by 2026-05-29; AI-assisted discovery angle; track for active-exploitation confirmation and patch advisory affecting front-door web app deployments
-last_threat_review: "2026-05-11"
+last_threat_review: "2026-06-10"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief webapp-security` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
@@ -105,7 +105,7 @@ Webapps still ship CWE-79 (Cross-Site Scripting), CWE-89 (SQL Injection), and CW
 
 ---
 
-## TTP Mapping (MITRE ATT&CK Enterprise + ATLAS v5.6.0)
+## TTP Mapping (MITRE ATT&CK Enterprise + ATLAS v2026.05)
 
 | TTP ID | Technique | Webapp Manifestation | CWE Root-Causes | Framework Coverage |
 |---|---|---|---|---|
