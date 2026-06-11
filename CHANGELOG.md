@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.28 — 2026-06-10
+
+Refreshes the pinned MITRE threat-framework versions. MITRE ATLAS is now pinned to v2026.05: its content moved to a YYYY.MM calendar-versioning scheme, and the release adds platform tags (Predictive AI, Generative AI, Agentic AI, Enterprise) to every technique. MITRE ATT&CK is pinned to v19.1, a point release of typo and data corrections over v19.0. Both bumps were audited against every ATLAS and ATT&CK technique ID the catalog cites: none was removed, renamed, or revoked, so all existing references remain valid.
+
 ## 0.16.27 — 2026-06-08
 
 The automated external-data refresh runs to completion again, and the NVD score sync no longer regresses curated severities.

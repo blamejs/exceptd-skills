@@ -67,7 +67,7 @@ forward_watch:
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LiteLLM full SSRF + Code Injection by Out Of Bounds (Byung Young Yi); duplicate-class with the k3vg3n entry; track unified patch advisory
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — LM Studio 5-bug exploit chain by STARLabs SG; impacts local MCP/agent runtime trust; track patch and integration advisories
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — Claude Code MCP collision-scored entry by Viettel Cyber Security; CVE in flight; track MCP trust and tool-collision advisory
-last_threat_review: "2026-05-17"
+last_threat_review: "2026-06-10"
 ---
 
 # MCP Agent Trust Assessment
@@ -165,7 +165,7 @@ Every MCP server listed in popular registries (MCP Hub, npm `@modelcontextprotoc
 |---|---|---|---|
 | AML.T0010 | ML Supply Chain Compromise | Direct: malicious MCP server in public registry compromises AI assistant's tool execution | ATLAS covers this conceptually; no framework has a technical control |
 | AML.T0054 | LLM Jailbreak | Indirect: adversarial prompt in tool response bypasses guardrails and triggers AI to call next malicious action | No framework control |
-| AML.T0096 | LLM Integration Abuse | AI assistant is the integration point being abused — MCP tool calls are the mechanism | Not in ATT&CK; only in ATLAS v5.6.0 |
+| AML.T0096 | LLM Integration Abuse | AI assistant is the integration point being abused — MCP tool calls are the mechanism | Not in ATT&CK; only in ATLAS v2026.05 |
 | T1195.001 | Supply Chain Compromise: Compromise Software Dependencies | MCP server package as supply chain attack target | ATT&CK covers but enterprise controls don't reach developer MCP configs |
 | T1059 | Command and Script Interpreter | MCP server causes shell command execution via model-mediated tool call | Standard SI-3/EDR doesn't attribute this to the MCP server as origin |
 | T1190 | Exploit Public-Facing Application | CVE-2026-30615: MCP client vulnerability driven by a locally-installed malicious server (AV:L) | Standard vuln management covers client; MCP server trust is unaddressed |

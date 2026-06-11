@@ -468,7 +468,7 @@
       "Treating 'Top 25 addressed' as a compliance signal creates a compliance-theatre risk for organisations with significant AI surface",
       "No cross-walk requirement to ATLAS TTPs — CWE addresses weaknesses; ATLAS addresses adversary techniques. Both are needed for AI coverage"
     ],
-    "real_requirement": "Programmes that claim 'Top 25 addressed' as compliance evidence must additionally: (1) enumerate AI-relevant CWEs outside the Top 25 (CWE-1426 Improper Output Validation, CWE-1039 Inadequate Detection of Adversarial Input, CWE-1230 Exposure of Sensitive Info Through Metadata) with explicit treatment, (2) cross-walk to ATLAS v5.6.0 TTPs for adversarial coverage, (3) re-baseline against the next-published Top 25 with delta analysis. Aligns with EU CRA Annex I, UK NCSC, AU ISM, ISO 27001 A.8.28.",
+    "real_requirement": "Programmes that claim 'Top 25 addressed' as compliance evidence must additionally: (1) enumerate AI-relevant CWEs outside the Top 25 (CWE-1426 Improper Output Validation, CWE-1039 Inadequate Detection of Adversarial Input, CWE-1230 Exposure of Sensitive Info Through Metadata) with explicit treatment, (2) cross-walk to ATLAS v2026.05 TTPs for adversarial coverage, (3) re-baseline against the next-published Top 25 with delta analysis. Aligns with EU CRA Annex I, UK NCSC, AU ISM, ISO 27001 A.8.28.",
     "status": "open",
     "opened_date": "2026-05-11",
     "evidence_cves": [],
@@ -1804,7 +1804,7 @@
       "LLM-API-as-C2 (SesameOp pattern, ATLAS AML.T0096) is not in the clause 6.1.2 example threat list — risk register templates omit it",
       "No requirement to link AI risk register entries to specific TTP IDs (ATLAS / ATT&CK) — risks remain framework-internal abstractions"
     ],
-    "real_requirement": "Clause 6.1.2 risk registers must (1) ingest ATLAS v5.6.0 TTPs as enumerated AI-specific threat sources, (2) cross-reference jurisdictional obligations (EU AI Act Annex III, NIS2 Art. 21, DORA Art. 28, UK CAF B4, AU ISM AI annex, ISO 27001:2022 A.5.7), (3) include AI-API-as-C2 and prompt-injection-as-RCE as named scenarios, (4) be re-run on threat-intel triggers, not only on calendar cycles.",
+    "real_requirement": "Clause 6.1.2 risk registers must (1) ingest ATLAS v2026.05 TTPs as enumerated AI-specific threat sources, (2) cross-reference jurisdictional obligations (EU AI Act Annex III, NIS2 Art. 21, DORA Art. 28, UK CAF B4, AU ISM AI annex, ISO 27001:2022 A.5.7), (3) include AI-API-as-C2 and prompt-injection-as-RCE as named scenarios, (4) be re-run on threat-intel triggers, not only on calendar cycles.",
     "status": "open",
     "opened_date": "2026-05-11",
     "evidence_cves": [],
@@ -7145,7 +7145,7 @@
     }
   },
   "ATLAS-AML.T0048": {
-    "framework": "MITRE ATLAS v5.6.0",
+    "framework": "MITRE ATLAS v2026.05",
     "control_id": "AML.T0048",
     "control_name": "External Harms — ML Supply Chain Compromise (bundled-codec / inference-server class)",
     "designed_for": "ATLAS AML.T0048 catalogues external harms from ML supply-chain compromise, including malicious model weights, poisoned training data, and compromised ML libraries. The technique-level guidance covers detection and mitigation at the model-artifact and library-consumption layer.",

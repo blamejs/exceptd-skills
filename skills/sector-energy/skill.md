@@ -56,7 +56,7 @@ forward_watch:
   - UL 2941 (DER cybersecurity) and IEEE 1547.3-2023 (DER cyber) adoption into US state PUC interconnection rules
   - MadIoT-class research on consumer-IoT-driven grid frequency manipulation moving from proof-of-concept to attributed campaigns
   - ICS-CERT advisory feed (https://www.cisa.gov/news-events/cybersecurity-advisories/ics-advisories) for vendor CVEs in Siemens, Rockwell, Schneider Electric, ABB, GE Vernova, Hitachi Energy, AVEVA / OSIsoft PI
-last_threat_review: "2026-05-11"
+last_threat_review: "2026-06-10"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief sector-energy` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
@@ -133,7 +133,7 @@ Energy-sector TTPs span ATT&CK for ICS, ATT&CK Enterprise (for the IT side of th
 | Hard-coded / shared / default credentials in energy assets | CWE-798 | CWE | Vendor default credentials on PLC, RTU, smart inverter, smart meter, EVSE, OCPP back-end; shared substation operator accounts | NERC CIP-007 R5 partially addresses but exempts asset classes lacking user-account features; AWWA guidance non-binding for water |
 | Firmware-image integrity at L1 | CWE-1037 + CWE-345 family (insufficient verification of data authenticity) | CWE | Unsigned firmware accepted by relay, RTU, smart inverter; vendor build-pipeline compromise propagating to substation fleet | NERC CIP-010 baseline-change management does not require firmware-image signature verification at install time; signed-firmware support varies by vendor and product line |
 | Authentication weakness in energy protocols | CWE-287 + CWE-306 | CWE | IEC 60870-5-104 and IEC 61850 MMS deployed without IEC 62351 authentication retrofit; DNP3 deployed without DNP3-SA; Modbus/TCP without any authentication layer | IEC 62443-3-3 SR 1.1/1.2 unenforceable at protocol layer for installed brownfield; retrofit cost and operational risk routinely defer indefinitely |
-| AI-pipeline poisoning in dispatch / forecasting | (closest ATLAS mapping addressed in `ai-attack-surface`) | ATLAS v5.6.0 | ML-poisoning of load forecast inputs, renewables forecast inputs, congestion model training data, or unit-commitment optimization features | No ATT&CK for ICS technique for AI-mediated market or dispatch manipulation; NERC CIP-007 R4 silent on AI event sources; NIST 800-82r3 silent. Cross-reference `ai-attack-surface`, `rag-pipeline-security`. |
+| AI-pipeline poisoning in dispatch / forecasting | (closest ATLAS mapping addressed in `ai-attack-surface`) | ATLAS v2026.05 | ML-poisoning of load forecast inputs, renewables forecast inputs, congestion model training data, or unit-commitment optimization features | No ATT&CK for ICS technique for AI-mediated market or dispatch manipulation; NERC CIP-007 R4 silent on AI event sources; NIST 800-82r3 silent. Cross-reference `ai-attack-surface`, `rag-pipeline-security`. |
 
 **Note on ATT&CK for ICS ID format.** ATT&CK for ICS uses `T0xxx` IDs (T0855, T0883, T0867). The linter regex `^T\d{4}(\.\d{3})?$` accepts this shape. ATT&CK Enterprise IDs (T1190, T1078, T1068) are cited alongside for IT/OT pivot.
 

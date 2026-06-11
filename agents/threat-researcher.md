@@ -52,9 +52,9 @@ Research and validate new threat intelligence — CVEs, attack campaigns, new AT
    - Distinguish: "CISA KEV confirmed" vs. "suspected" vs. "no evidence"
 
 6. **Map to ATLAS/ATT&CK**
-   - Identify which ATLAS v5.6.0 TTPs are relevant to this CVE's attack vector
+   - Identify which ATLAS v2026.05 TTPs are relevant to this CVE's attack vector
    - Identify which ATT&CK techniques are relevant
-   - Flag any ATLAS gaps (attack pattern not in ATLAS v5.6.0)
+   - Flag any ATLAS gaps (attack pattern not in ATLAS v2026.05)
 
 7. **Identify affected skills**
    - Which skills cover the CVE's technology domain?
