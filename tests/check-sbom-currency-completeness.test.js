@@ -18,7 +18,8 @@ const path = require('node:path');
 const os = require('node:os');
 
 const ROOT = path.join(__dirname, '..');
-const { checkSbomCurrency } = require(path.join(ROOT, 'scripts', 'check-sbom-currency.js'));
+const { checkSbomCurrency, DESCRIPTION_ENTRY_TOKENS, catalogEntryCount } = require(path.join(ROOT, 'scripts', 'check-sbom-currency.js'));
+const { expandAllowlist, bundleDigest } = require(path.join(ROOT, 'scripts', 'refresh-sbom.js'));
 
 const BRING = ['manifest.json', 'package.json', 'data', 'keys', 'agents', 'bin', 'lib', 'orchestrator',
   'scripts', 'sources', 'vendor', 'skills', 'manifest-snapshot.json', 'manifest-snapshot.sha256',
@@ -39,6 +40,24 @@ function shadow(mutate) {
   }
   return tmp;
 }
+
+test('the SBOM helper exports are usable (DESCRIPTION_ENTRY_TOKENS / catalogEntryCount / expandAllowlist / bundleDigest)', () => {
+  // These are reused across check-sbom-currency, sync-package-description, and
+  // the completeness check; pin the exported surface + basic behavior.
+  assert.ok(Array.isArray(DESCRIPTION_ENTRY_TOKENS) && DESCRIPTION_ENTRY_TOKENS.length > 0,
+    'DESCRIPTION_ENTRY_TOKENS must be a non-empty array');
+  assert.equal(typeof catalogEntryCount, 'function');
+  const n = catalogEntryCount(path.join(ROOT, 'data'), 'cve-catalog.json');
+  assert.ok(typeof n === 'number' && n > 0, `catalogEntryCount must count cve-catalog entries; got ${n}`);
+  assert.equal(typeof expandAllowlist, 'function');
+  const files = expandAllowlist(['manifest.json']);
+  assert.ok(Array.isArray(files) && files.includes('manifest.json'),
+    'expandAllowlist must expand a file entry to its repo-relative path');
+  assert.equal(typeof bundleDigest, 'function');
+  const digest = bundleDigest([{ name: 'a', hashes: [{ content: 'deadbeef' }] }]);
+  assert.equal(typeof digest, 'string');
+  assert.ok(/^[0-9a-f]{64}$/.test(digest), 'bundleDigest must return a SHA-256 hex string');
+});
 
 test('check-sbom-currency: a stale "N catalogs" description count fails the gate', () => {
   const tmp = shadow((sbom) => {
