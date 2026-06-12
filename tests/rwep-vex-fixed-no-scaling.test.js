@@ -48,3 +48,24 @@ test('a VEX-fixed top CVE does not drive RWEP factor scaling or inflate adjusted
   assert.ok(fixedAe && fixedAe.factor_scale < 1.0,
     `vex-fixed run active_exploitation factor_scale (${fixedAe?.factor_scale}) must reflect the eligible CVE, not the vex-fixed confirmed one`);
 });
+
+test('when EVERY matched CVE is VEX-fixed, factor scaling is suppressed (adjusted RWEP stays 0)', () => {
+  // codex P2: with rwepEligible empty, factorCve must not fall back to a fixed
+  // matchedCves[0]; base is 0, and a vendor-fixed CVE's KEV/exploitation/PoC
+  // factors must not lift the adjusted score above 0 (the finding is remediated).
+  const cves = kernel.domain.cve_refs;
+  const sig = { 'kver-in-affected-range': true };
+  for (const c of cves) sig[c] = true;
+  const allFixed = runner.analyze('kernel', DIR, DET, { ...sig, vex_fixed: cves }, {});
+
+  assert.ok((allFixed.matched_cves || []).length > 0, 'expected matched CVEs in this scenario');
+  assert.equal((allFixed.matched_cves || []).filter((c) => c.vex_status !== 'fixed').length, 0,
+    'every matched CVE must be VEX-fixed in this scenario');
+  assert.equal(allFixed.rwep.base, 0, 'base must be 0 when all matched CVEs are fixed');
+  assert.equal(allFixed.rwep.adjusted, 0,
+    `adjusted must not be lifted above 0 by a vendor-fixed CVE; got ${allFixed.rwep.adjusted}`);
+  for (const b of (allFixed.rwep.breakdown || []).filter((x) => x.fired)) {
+    assert.equal(b.factor_scale, 0,
+      `fired factor ${b.rwep_factor} must scale by 0 when all matched CVEs are fixed`);
+  }
+});
