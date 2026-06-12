@@ -228,7 +228,7 @@ exceptd run [playbook]                Phases 4-7. Auto-detects cwd context when
   --evidence-dir <dir>                Per-playbook submission files (cron-friendly).
   --scope <type> | --all              Multi-playbook run.
   --vex <file>                        CycloneDX / OpenVEX filter (drop not_affected).
-  --format <fmt> ...                  csaf-2.0 | sarif | openvex | markdown | summary.
+  --format <fmt> ...                  csaf-2.0 | sarif | openvex | markdown | summary | json.
                                       Repeatable. CSAF is primary; extras go to
                                       close.evidence_package.bundles_by_format.
   --diff-from-latest                  Drift vs prior attestation for same playbook.

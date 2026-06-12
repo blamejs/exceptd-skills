@@ -266,6 +266,13 @@ const OUTPUTS = [
       for (const s of ctx.skills) {
         const body = ctx.skillBodies[s.name];
         for (const code of codes) {
+          // Skip bare 2-letter ISO codes in free-text matching. `\bID\b`,
+          // `\bCA\b`, `\bNO\b` etc. collide with prose words ("the ID",
+          // "US-based") and control/countermeasure id grammar (`\bCA\b` matches
+          // inside `D3-CA`, `\bSA\b` inside `SA-12`), polluting coverage
+          // (Indonesia landed on 41/51 skills). These jurisdictions are mapped
+          // via the curated NAME_TO_CODE regulation-name table below instead.
+          if (code.length <= 2) continue;
           const re = new RegExp("\\b" + code + "\\b");
           if (re.test(body) && !out[code].skills.includes(s.name)) out[code].skills.push(s.name);
         }
@@ -499,7 +506,7 @@ const OUTPUTS = [
   {
     name: "stale-content",
     file: "stale-content.json",
-    deps: [isManifest, isAnySkillBody, isAnyCatalog],
+    deps: [isManifest, isAnySkillBody, isAnyCatalog, (p) => p === "README.md"],
     build: (ctx) => {
       const { buildStaleContent } = require("./builders/stale-content");
       return buildStaleContent({ root: ctx.root, manifest: ctx.manifest, skills: ctx.skills, catalogFiles: ctx.catalogFiles });
@@ -518,6 +525,10 @@ function loadPriorMeta() {
 function liveSourceSet(ctx) {
   const out = new Set();
   out.add("manifest.json");
+  // README.md is consumed by the stale-content builder (badge-count drift), so
+  // it must be a hashed source — otherwise a README edit is invisible to
+  // --changed and the validate-indexes freshness gate.
+  if (fs.existsSync(ABS("README.md"))) out.add("README.md");
   for (const c of ctx.catalogFiles) out.add(c);
   for (const s of ctx.skills) out.add(s.path);
   return out;

@@ -119,9 +119,15 @@ module.exports = {
 const ROOT = path.resolve(__dirname, "..");
 
 function emit(msg) { process.stdout.write(`[verify-shipped-tarball] ${msg}\n`); }
+// Sentinel thrown by fail() so the script body's try/finally still runs its
+// temp-dir cleanup. process.exit() would preempt the finally, leaking the
+// npm-pack temp dir on every run (predeploy gate + `npm test`). Abort by
+// throwing instead and set the exit code via process.exitCode.
+const ABORT = Symbol("verify-shipped-tarball:abort");
 function fail(msg, code = 1) {
   process.stderr.write(`[verify-shipped-tarball] FAIL: ${msg}\n`);
-  process.exit(code);
+  process.exitCode = code;
+  throw ABORT;
 }
 
 // Gate the script body behind require.main === module so tests can
@@ -374,15 +380,20 @@ try {
   emit(`tarball verify result: ${pass}/${total} pass, ${fail_count} fail, ${miss} missing`);
   if (fail_count === 0 && miss === 0 && pass === total) {
     emit(`PASS — shipped tarball is internally consistent`);
-    process.exit(0);
+    process.exitCode = 0;
+  } else {
+    for (const f of failures.slice(0, 10)) emit(`  - ${f}`);
+    if (failures.length > 10) emit(`  ... and ${failures.length - 10} more`);
+    emit(`FAIL — shipped tarball would be broken on every fresh install. Refusing to publish.`);
+    process.exitCode = 1;
   }
-  for (const f of failures.slice(0, 10)) emit(`  - ${f}`);
-  if (failures.length > 10) emit(`  ... and ${failures.length - 10} more`);
-  emit(`FAIL — shipped tarball would be broken on every fresh install. Refusing to publish.`);
-  process.exit(1);
+} catch (e) {
+  // ABORT is the fail() sentinel — cleanup still runs via finally below. Any
+  // other error is unexpected: let finally run, then re-propagate it.
+  if (e !== ABORT) throw e;
 } finally {
   // Best-effort cleanup; leave on failure for diagnostics.
-  if (process.exitCode === 0) {
+  if (process.exitCode === 0 || process.exitCode === undefined) {
     try { fs.rmSync(tmpRoot, { recursive: true, force: true }); } catch {}
   } else {
     emit(`temp dir preserved for inspection: ${tmpRoot}`);

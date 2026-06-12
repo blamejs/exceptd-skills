@@ -29,7 +29,7 @@ documented public incidents, or framework control IDs that fail to cover this.
 No hypotheticals — real-world grounding is required (AGENTS.md hard rule #1).
 
 - **CVE(s):**
-- **ATLAS TTP(s) (v5.1.0):**
+- **ATLAS TTP(s) (v2026.05):**
 - **ATT&CK technique(s):**
 - **Public incidents / write-ups:**
 - **Framework control IDs implicated:**

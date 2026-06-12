@@ -115,3 +115,25 @@ test('every agent body referencing ATLAS uses the canonical version', () => {
   assert.equal(drift.length, 0,
     `ATLAS version drift in agent bodies (canonical v${CANONICAL_ATLAS}):\n  ${drift.join('\n  ')}`);
 });
+
+test('no legacy semver ATLAS version (v5.x) lingers in .github workflows / issue templates', () => {
+  // The canonical ATLAS pin moved to CalVer (2026.05); a `v5.x` ATLAS-era
+  // reference in an operator-facing .github file is stale drift. The main
+  // adjacency regex misses these because the version sits a few words after
+  // "ATLAS" (e.g. "ATLAS version (v5.1.0)", "ATLAS TTP(s) (v5.1.0)").
+  const ghFiles = [];
+  for (const sub of ['workflows', 'ISSUE_TEMPLATE']) {
+    const dir = path.join(ROOT, '.github', sub);
+    if (!fs.existsSync(dir)) continue;
+    for (const f of fs.readdirSync(dir)) {
+      if (/\.(ya?ml|md)$/.test(f)) ghFiles.push(path.join('.github', sub, f));
+    }
+  }
+  const stale = [];
+  for (const rel of ghFiles) {
+    const text = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+    const m = text.match(/ATLAS[^\n]{0,40}?v5\.\d+(?:\.\d+)?/gi);
+    if (m) stale.push(`${rel}: ${m.join(', ')}`);
+  }
+  assert.equal(stale.length, 0, `stale legacy ATLAS v5.x in .github:\n  ${stale.join('\n  ')}`);
+});

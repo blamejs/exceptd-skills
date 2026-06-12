@@ -136,19 +136,42 @@ function checkSbomCurrency(root) {
     );
   }
 
-  // component-level cross-check. A renamed or version-bumped
-  // skill that never made it into the SBOM refresh will pass the count
-  // check (the cardinality is unchanged) but the per-component name +
-  // version comparison surfaces it. Two component classes are recognised:
-  //
-  //   1. Skill components — bom-ref begins with "skill:" OR the component
-  //      name matches a manifest.skills[].name. Each one must exist in
-  //      manifest.skills with the same version.
-  //   2. Vendor components — bom-ref begins with "vendor:". Validated
-  //      against vendor/blamejs/_PROVENANCE.json when present.
-  //
-  // Components that don't fit either pattern are surfaced as warnings
-  // (not errors) so the gate isn't brittle against future component types.
+  // The "N catalogs" and "N jurisdictions" free-text counts in the same
+  // description string were never validated — only the per-catalog entry tokens
+  // and the skill count were. Pin them to the live values so a stale
+  // description (e.g. after an auto-refresh changed a count) fails the gate.
+  const catalogMatch = description.match(/(\d+)\s+catalogs?\b/i);
+  if (catalogMatch && Number(catalogMatch[1]) !== liveCatalogs) {
+    errors.push(
+      `SBOM description catalog count is ${Number(catalogMatch[1])} but live data/ has ${liveCatalogs} catalogs — description is stale; update package.json.description and \`npm run refresh-sbom\``
+    );
+  }
+  const liveJurisdictions = (() => {
+    try {
+      const gf = JSON.parse(fs.readFileSync(path.join(dataDir, "global-frameworks.json"), "utf8"));
+      // Non-underscore top-level keys — the canonical jurisdiction count the
+      // README badge and catalog-summaries use.
+      return Object.keys(gf).filter((k) => !k.startsWith("_")).length;
+    } catch {
+      return null;
+    }
+  })();
+  const jurisdictionMatch = description.match(/(\d+)\s+jurisdictions?\b/i);
+  if (liveJurisdictions !== null && jurisdictionMatch && Number(jurisdictionMatch[1]) !== liveJurisdictions) {
+    errors.push(
+      `SBOM description jurisdiction count is ${Number(jurisdictionMatch[1])} but live global-frameworks.json has ${liveJurisdictions} — description is stale; update package.json.description and \`npm run refresh-sbom\``
+    );
+  }
+
+  // Component-level cross-check (defense-in-depth). In normal operation
+  // refresh-sbom emits NO per-skill "skill:" components — skill drift is caught
+  // by the file:skills/<name>/skill.md and file:manifest.json content hashes in
+  // the file: component pass below (a bumped or renamed skill changes those
+  // bytes). This branch is therefore not exercised by a clean SBOM, but it is
+  // retained as a tamper guard: a forged or buggy SBOM that injected a skill
+  // component with a stale version (or a skill name no longer in the manifest)
+  // is still caught here. Vendor components are validated against
+  // vendor/blamejs/_PROVENANCE.json.
   const components = Array.isArray(sbom.components) ? sbom.components : [];
   const skillByName = new Map(
     (manifest.skills || []).map((s) => [s.name, s])
@@ -281,6 +304,45 @@ function checkSbomCurrency(root) {
     fileComponentsChecked++;
   }
 
+  // Completeness + bundle-digest integrity. The per-file pass above verifies
+  // every RECORDED file: component, but never checked that every SHIPPED file
+  // (the package.json.files expansion) actually HAS a component — a
+  // newly-shipped file would ship unhashed and silent. And the aggregate
+  // bundle digest in metadata.component.hashes[] was never recomputed. Reuse
+  // refresh-sbom's exact allowlist expansion + digest so the gate can't drift
+  // from the generator.
+  try {
+    const { expandAllowlist, bundleDigest } = require("./refresh-sbom");
+    const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+    const expected = expandAllowlist(pkg.files || []);
+    const fileComps = components.filter(
+      (c) => typeof c["bom-ref"] === "string" && c["bom-ref"].startsWith("file:")
+    );
+    const fileCompNames = new Set(fileComps.map((c) => c.name));
+    for (const rel of expected) {
+      if (!fileCompNames.has(rel)) {
+        errors.push(
+          `Shipped file "${rel}" (package.json.files) has no file: component in the SBOM — run \`npm run refresh-sbom\``
+        );
+      }
+    }
+    // Recompute the aggregate bundle digest from the file: components' recorded
+    // SHA-256 hashes and compare to metadata.component.hashes[] (the per-file
+    // pass already tied each recorded hash to live bytes).
+    const compHashes = (sbom.metadata && sbom.metadata.component && sbom.metadata.component.hashes) || [];
+    const recorded = (compHashes.find((h) => h && h.alg === "SHA-256") || {}).content;
+    if (recorded && fileComps.length) {
+      const recomputed = bundleDigest(fileComps);
+      if (recomputed !== recorded) {
+        errors.push(
+          `SBOM bundle digest mismatch: metadata.component.hashes SHA-256 ${String(recorded).slice(0, 12)}… != recomputed ${recomputed.slice(0, 12)}… from file: components — run \`npm run refresh-sbom\``
+        );
+      }
+    }
+  } catch (e) {
+    errors.push(`SBOM completeness/bundle-digest check failed: ${e.message}`);
+  }
+
   return {
     ok: errors.length === 0,
     errors,
@@ -310,6 +372,6 @@ function main() {
   );
 }
 
-module.exports = { checkSbomCurrency, resolveRoot };
+module.exports = { checkSbomCurrency, resolveRoot, DESCRIPTION_ENTRY_TOKENS, catalogEntryCount };
 
 if (require.main === module) main();
