@@ -214,6 +214,17 @@ jobs:
           # via the auto-PR.
           node lib/refresh-external.js --apply --from-cache .cache/upstream --swarm --force-stale $SOURCE_ARG
 
+      - name: Sync package.json description counts to the applied data
+        if: |
+          steps.dry.outputs.upsert_diffs != '0' &&
+          (github.event_name == 'schedule' || inputs.apply == 'true')
+        # package.json.description embeds entry counts (N CVEs / N skills / N
+        # catalogs / N jurisdictions / ...) that refresh-sbom copies into
+        # sbom.cdx.json and the SBOM-currency gate validates token-by-token. An
+        # apply that changes a count must update the description FIRST (before
+        # the SBOM regen below), or the description-token gate fails the auto-PR.
+        run: node scripts/sync-package-description.js
+
       - name: Refresh SBOM over the applied data
         if: |
           steps.dry.outputs.upsert_diffs != '0' &&

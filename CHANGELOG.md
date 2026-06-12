@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.16.29 — 2026-06-12
+
+A correctness pass across the refresh pipeline, scoring, attestation, the collectors, and offline mode.
+
+`refresh --apply` over the network no longer downgrades a curated CVSS 3.1 score and vector to NVD's legacy v2 metric on older CVEs — the offline cache path already guarded this in 0.16.27, and the live path now applies the same cross-version guard. New-RFC discovery now honors `--air-gap` (it previously queried IETF Datatracker live regardless), and an intrinsically air-gapped playbook — secrets, cred-stores, containers — refuses the `--upstream-check` npm-registry probe without the explicit flag. The `--from-cache` help no longer implies new-RFC discovery is offline; it stays live unless `--air-gap` is also passed.
+
+A CVE that a VEX statement marks fixed no longer inflates a finding's adjusted RWEP through its exploitation, KEV, and proof-of-concept multipliers, and a patched CVE's exploitation status no longer drives the notification draft. Jurisdiction coverage no longer attributes a skill to a jurisdiction from a bare two-letter ISO code that appears only in prose or inside a control identifier; coverage is driven by the regulation-name mapping. The skill-currency staleness check can now reach the warn and critical tiers it gates on — they were unreachable, so the scheduled currency workflow could never flag a skill past its review window; a genuinely abandoned skill now scores into them while a maintained one does not.
+
+`attest diff --against` now verifies the comparison attestation's Ed25519 signature, not only the local side, and refuses a tampered `--against` attestation (exit 6; `--force-replay` overrides). Both sides' verification is recorded in the output.
+
+The collectors no longer raise false findings from `#`-commented YAML — a commented `npm install`, `runs-on: self-hosted`, or `secrets.NPM_TOKEN` is no longer read as the real thing — and a commented `npm publish --provenance` no longer suppresses the missing-build-provenance finding. A documentation or redaction-pattern snippet of a service-account private key no longer registers as an embedded secret. A skill.md with CRLF line endings no longer produces a misleading frontmatter-parse error, and the `run --format` reference now lists `json`, which the runtime already accepts.
+
+The scheduled external-data refresh keeps the package description's entry counts in sync with the data it applies, so an auto-refresh that changes a count no longer fails the SBOM currency check on its pull request.
+
 ## 0.16.28 — 2026-06-10
 
 Refreshes the pinned MITRE threat-framework versions. MITRE ATLAS is now pinned to v2026.05: its content moved to a YYYY.MM calendar-versioning scheme, and the release adds platform tags (Predictive AI, Generative AI, Agentic AI, Enterprise) to every technique. MITRE ATT&CK is pinned to v19.1, a point release of typo and data corrections over v19.0. Both bumps were audited against every ATLAS and ATT&CK technique ID the catalog cites: none was removed, renamed, or revoked, so all existing references remain valid.

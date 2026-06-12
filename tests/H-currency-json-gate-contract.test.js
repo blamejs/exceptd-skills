@@ -25,6 +25,7 @@ const { spawnSync } = require("node:child_process");
 
 const ROOT = path.join(__dirname, "..");
 const ORCH = path.join(ROOT, "orchestrator", "index.js");
+const pipeline = require("../orchestrator/pipeline");
 
 // Two distinct thresholds drive the JSON gate fields (orchestrator/pipeline.js):
 //   - action_required: true iff ANY skill's currency_score < 70 (the warn
@@ -107,4 +108,26 @@ test("action_required equals the value-derived below-threshold predicate", () =>
       `per-skill action_required must derive from the score (${s.skill})`
     );
   }
+});
+
+// The two assertions above pass vacuously while every shipped skill scores at
+// or above the action threshold — they never exercise the TRUE branch the
+// workflow gate depends on. This hermetic case proves the schedule can actually
+// reach the warn (< 70) and critical (< 50) tiers: a -30-max schedule floored
+// the score at 70, so the gate (and its issue) could never fire.
+test("the currency schedule can reach the warn (<70) and critical (<50) tiers", () => {
+  assert.equal(typeof pipeline._currencyScore, "function",
+    "_currencyScore must be exported for the gate-reachability contract");
+  // A recently-reviewed skill stays acceptable (no false trip on current skills).
+  assert.equal(pipeline._currencyScore(0), 100);
+  assert.ok(pipeline._currencyScore(42) >= ACTION_THRESHOLD,
+    "a 42-day-old review must stay at/above the action threshold");
+  // A genuinely stale review must cross the warn tier...
+  const warn = pipeline._currencyScore(200);
+  assert.ok(warn < ACTION_THRESHOLD && warn >= CRITICAL_THRESHOLD,
+    `a >180d review must land in the warn tier [${CRITICAL_THRESHOLD},${ACTION_THRESHOLD}) (got ${warn})`);
+  // ...and an abandoned one must cross the critical tier.
+  assert.ok(pipeline._currencyScore(300) < CRITICAL_THRESHOLD,
+    `a >270d review must land below the critical threshold ${CRITICAL_THRESHOLD} (got ${pipeline._currencyScore(300)})`);
+  assert.equal(pipeline._currencyScore(400), 0, "a year+ unreviewed scores 0");
 });

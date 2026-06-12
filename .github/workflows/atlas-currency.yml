@@ -84,13 +84,14 @@ jobs:
         with:
           script: |
             const report = process.env.REPORT_TEXT || '';
+            const atlasPin = JSON.parse(require('fs').readFileSync('data/atlas-ttps.json', 'utf8'))._meta.atlas_version;
             const title = '[currency] Skills past review window';
             const body = [
-              'The scheduled ATLAS currency check found one or more skills scoring below 50% currency.',
+              'The scheduled ATLAS currency check found one or more skills below the 70% currency review-window threshold (skills below 50% are critical).',
               '',
               'Per AGENTS.md hard rule #12 (external data version pinning) and DR-7 (stale ATLAS version),',
               'review each flagged skill, refresh `last_threat_review`, and audit `atlas_refs` against the',
-              'current pinned ATLAS version (v5.1.0).',
+              `current pinned ATLAS version (${atlasPin}).`,
               '',
               '## Currency report',
               '',

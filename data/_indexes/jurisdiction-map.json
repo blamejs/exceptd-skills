@@ -35,7 +35,6 @@
       "policy-exception-gen",
       "pqc-first",
       "privacy-consent-ops",
-      "rag-pipeline-security",
       "ransomware-response",
       "researcher",
       "sector-energy",
@@ -54,7 +53,7 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 51
+    "skill_count": 50
   },
   "UK": {
     "skills": [
@@ -63,15 +62,11 @@
       "ai-c2-detection",
       "ai-risk-management",
       "api-security",
-      "attack-surface-pentest",
-      "cloud-iam-incident",
       "cloud-security",
       "compliance-theater",
       "container-runtime-security",
       "coordinated-vuln-disclosure",
-      "decompression-dos",
       "defensive-countermeasure-mapping",
-      "dlp-gap-analysis",
       "email-security-anti-phishing",
       "exploit-scoring",
       "framework-gap-analysis",
@@ -80,36 +75,22 @@
       "identity-assurance",
       "idp-incident-response",
       "incident-response-playbook",
-      "kernel-lpe-triage",
-      "log-injection-telemetry",
       "mcp-agent-trust",
-      "mlops-security",
-      "multitenancy-isolation",
-      "network-trust",
-      "ot-ics-security",
       "policy-exception-gen",
       "pqc-first",
-      "privacy-consent-ops",
-      "rag-pipeline-security",
       "ransomware-response",
       "researcher",
       "sector-energy",
       "sector-federal-government",
-      "sector-financial",
-      "sector-healthcare",
       "sector-telecom",
-      "security-maturity-tiers",
-      "self-update-integrity",
       "skill-update-loop",
       "supply-chain-integrity",
       "threat-model-currency",
       "threat-modeling-methodology",
-      "vc-wallet-trust",
-      "webapp-security",
-      "zeroday-gap-learn"
+      "webapp-security"
     ],
     "example_excerpts": {},
-    "skill_count": 49
+    "skill_count": 31
   },
   "AU": {
     "skills": [
@@ -138,13 +119,11 @@
       "kernel-lpe-triage",
       "log-injection-telemetry",
       "mcp-agent-trust",
-      "mlops-security",
       "multitenancy-isolation",
       "ot-ics-security",
       "policy-exception-gen",
       "pqc-first",
       "privacy-consent-ops",
-      "rag-pipeline-security",
       "ransomware-response",
       "researcher",
       "sector-energy",
@@ -162,72 +141,51 @@
       "zeroday-gap-learn"
     ],
     "example_excerpts": {},
-    "skill_count": 47
+    "skill_count": 45
   },
   "SG": {
     "skills": [
-      "age-gates-child-safety",
-      "ai-attack-surface",
-      "api-security",
-      "cloud-iam-incident",
-      "cloud-security",
       "container-runtime-security",
-      "coordinated-vuln-disclosure",
-      "email-security-anti-phishing",
       "framework-gap-analysis",
       "global-grc",
       "identity-assurance",
-      "incident-response-playbook",
-      "mcp-agent-trust",
-      "mlops-security",
       "researcher",
-      "sector-federal-government",
       "sector-financial",
-      "sector-healthcare",
-      "sector-telecom",
       "threat-modeling-methodology",
       "webapp-security"
     ],
     "example_excerpts": {},
-    "skill_count": 21
+    "skill_count": 8
   },
   "JP": {
     "skills": [
       "age-gates-child-safety",
-      "ai-risk-management",
       "api-security",
       "cloud-iam-incident",
-      "cloud-security",
       "container-runtime-security",
-      "coordinated-vuln-disclosure",
       "dlp-gap-analysis",
       "email-security-anti-phishing",
       "framework-gap-analysis",
       "global-grc",
       "identity-assurance",
       "incident-response-playbook",
-      "mlops-security",
       "ot-ics-security",
       "pqc-first",
-      "ransomware-response",
       "sector-energy",
       "sector-federal-government",
       "sector-financial",
       "sector-healthcare",
-      "sector-telecom",
       "supply-chain-integrity",
       "threat-modeling-methodology",
       "webapp-security"
     ],
     "example_excerpts": {},
-    "skill_count": 25
+    "skill_count": 19
   },
   "IN": {
     "skills": [
       "age-gates-child-safety",
       "ai-risk-management",
-      "api-security",
-      "cloud-security",
       "dlp-gap-analysis",
       "email-security-anti-phishing",
       "framework-gap-analysis",
@@ -242,51 +200,36 @@
       "threat-modeling-methodology"
     ],
     "example_excerpts": {},
-    "skill_count": 16
+    "skill_count": 14
   },
   "CA": {
     "skills": [
       "age-gates-child-safety",
-      "ai-c2-detection",
-      "cloud-iam-incident",
-      "cloud-security",
-      "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "framework-gap-analysis",
       "global-grc",
-      "identity-assurance",
       "idp-incident-response",
-      "network-trust",
-      "sector-energy",
-      "sector-federal-government",
-      "sector-financial",
-      "sector-healthcare",
-      "sector-telecom",
-      "self-update-integrity",
-      "skill-update-loop",
-      "zeroday-gap-learn"
+      "sector-financial"
     ],
     "example_excerpts": {},
-    "skill_count": 19
+    "skill_count": 6
   },
   "BR": {
     "skills": [
       "age-gates-child-safety",
       "ai-risk-management",
-      "api-security",
       "cloud-security",
       "dlp-gap-analysis",
       "framework-gap-analysis",
       "global-grc",
       "incident-response-playbook",
       "pqc-first",
-      "sector-financial",
       "sector-healthcare",
       "supply-chain-integrity",
       "threat-modeling-methodology"
     ],
     "example_excerpts": {},
-    "skill_count": 13
+    "skill_count": 11
   },
   "CN": {
     "skills": [
@@ -315,53 +258,33 @@
     "skill_count": 1
   },
   "AE": {
-    "skills": [
-      "incident-response-playbook",
-      "sector-financial"
-    ],
+    "skills": [],
     "example_excerpts": {},
-    "skill_count": 2
+    "skill_count": 0
   },
   "SA": {
     "skills": [
       "age-gates-child-safety",
-      "compliance-theater",
-      "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
-      "framework-gap-analysis",
-      "fuzz-testing-strategy",
-      "global-grc",
-      "mcp-agent-trust",
-      "mlops-security",
-      "pqc-first",
-      "sector-energy",
-      "sector-federal-government",
-      "sector-financial",
-      "sector-healthcare",
-      "supply-chain-integrity",
-      "zeroday-gap-learn"
+      "sector-financial"
     ],
     "example_excerpts": {},
-    "skill_count": 16
+    "skill_count": 3
   },
   "NZ": {
-    "skills": [
-      "sector-financial",
-      "sector-telecom"
-    ],
+    "skills": [],
     "example_excerpts": {},
-    "skill_count": 2
+    "skill_count": 0
   },
   "KR": {
     "skills": [
       "age-gates-child-safety",
       "dlp-gap-analysis",
       "framework-gap-analysis",
-      "global-grc",
-      "supply-chain-integrity"
+      "global-grc"
     ],
     "example_excerpts": {},
-    "skill_count": 5
+    "skill_count": 4
   },
   "CL": {
     "skills": [],
@@ -371,8 +294,6 @@
   "IL": {
     "skills": [
       "ai-risk-management",
-      "api-security",
-      "cloud-iam-incident",
       "cloud-security",
       "container-runtime-security",
       "coordinated-vuln-disclosure",
@@ -394,7 +315,7 @@
       "webapp-security"
     ],
     "example_excerpts": {},
-    "skill_count": 22
+    "skill_count": 20
   },
   "CH": {
     "skills": [
@@ -423,11 +344,22 @@
   },
   "TW": {
     "skills": [
-      "cloud-security",
       "container-runtime-security",
+      "global-grc",
+      "ot-ics-security",
+      "pqc-first",
+      "supply-chain-integrity"
+    ],
+    "example_excerpts": {},
+    "skill_count": 5
+  },
+  "ID": {
+    "skills": [
+      "ai-risk-management",
       "dlp-gap-analysis",
       "framework-gap-analysis",
       "global-grc",
+      "identity-assurance",
       "ot-ics-security",
       "pqc-first",
       "supply-chain-integrity"
@@ -435,62 +367,10 @@
     "example_excerpts": {},
     "skill_count": 8
   },
-  "ID": {
-    "skills": [
-      "age-gates-child-safety",
-      "ai-attack-surface",
-      "ai-c2-detection",
-      "ai-risk-management",
-      "api-security",
-      "attack-surface-pentest",
-      "cloud-iam-incident",
-      "cloud-security",
-      "compliance-theater",
-      "container-runtime-security",
-      "coordinated-vuln-disclosure",
-      "defensive-countermeasure-mapping",
-      "dlp-gap-analysis",
-      "email-security-anti-phishing",
-      "exploit-scoring",
-      "framework-gap-analysis",
-      "fuzz-testing-strategy",
-      "global-grc",
-      "identity-assurance",
-      "idp-incident-response",
-      "incident-response-playbook",
-      "kernel-lpe-triage",
-      "mcp-agent-trust",
-      "mlops-security",
-      "ot-ics-security",
-      "policy-exception-gen",
-      "pqc-first",
-      "rag-pipeline-security",
-      "ransomware-response",
-      "researcher",
-      "sector-energy",
-      "sector-federal-government",
-      "sector-financial",
-      "sector-healthcare",
-      "sector-telecom",
-      "skill-update-loop",
-      "supply-chain-integrity",
-      "threat-model-currency",
-      "threat-modeling-methodology",
-      "webapp-security",
-      "zeroday-gap-learn"
-    ],
-    "example_excerpts": {},
-    "skill_count": 41
-  },
   "VN": {
-    "skills": [
-      "dlp-gap-analysis",
-      "framework-gap-analysis",
-      "global-grc",
-      "supply-chain-integrity"
-    ],
+    "skills": [],
     "example_excerpts": {},
-    "skill_count": 4
+    "skill_count": 0
   },
   "US_NYDFS": {
     "skills": [
@@ -520,33 +400,26 @@
   },
   "NO": {
     "skills": [
-      "mail-server-hardening",
       "sector-energy",
       "skill-update-loop"
     ],
     "example_excerpts": {},
-    "skill_count": 3
+    "skill_count": 2
   },
   "MX": {
-    "skills": [
-      "sector-financial"
-    ],
+    "skills": [],
     "example_excerpts": {},
-    "skill_count": 1
+    "skill_count": 0
   },
   "AR": {
-    "skills": [
-      "age-gates-child-safety"
-    ],
+    "skills": [],
     "example_excerpts": {},
-    "skill_count": 1
+    "skill_count": 0
   },
   "TR": {
-    "skills": [
-      "sector-telecom"
-    ],
+    "skills": [],
     "example_excerpts": {},
-    "skill_count": 1
+    "skill_count": 0
   },
   "TH": {
     "skills": [],

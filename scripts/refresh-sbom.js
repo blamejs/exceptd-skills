@@ -409,4 +409,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { buildSbom };
+module.exports = { buildSbom, expandAllowlist, bundleDigest };

@@ -233,11 +233,20 @@ function _currencyScore(daysSinceReview, _forwardWatchCount) {
   // currency even on the day after a review. forward_watch is a
   // signal of ACTIVE maintenance, not staleness, so the count no
   // longer affects the score. The arg is retained for ABI compat.
+  // The penalty schedule must be able to cross the tiers the gate checks
+  // against (currencyCheck: action_required at < 70, critical_count at < 50;
+  // _currencyLabel: 'stale' < 70, 'critical_stale' < 50). A schedule whose
+  // worst penalty was -30 floored the score at 70, so the warn/critical tiers —
+  // and the workflow issue they gate — could never fire. The deeper penalties
+  // only bite past 180/270/365 days, so a normally-maintained skill stays
+  // 'acceptable' while a genuinely abandoned one reaches the gate.
   let score = 100;
-  if (daysSinceReview > 180) score -= 30;
-  else if (daysSinceReview > 90) score -= 20;
-  else if (daysSinceReview > 60) score -= 10;
-  else if (daysSinceReview > 30) score -= 5;
+  if (daysSinceReview > 365) score -= 100;      // a year+ unreviewed → 0 (critical_stale)
+  else if (daysSinceReview > 270) score -= 60;  // → 40 (critical_stale, < 50)
+  else if (daysSinceReview > 180) score -= 40;  // → 60 (stale, < 70 warn tier)
+  else if (daysSinceReview > 90) score -= 20;   // → 80 (acceptable)
+  else if (daysSinceReview > 60) score -= 10;   // → 90 (current)
+  else if (daysSinceReview > 30) score -= 5;    // → 95 (current)
   return Math.max(0, score);
 }
 
@@ -265,4 +274,7 @@ module.exports = {
   getAgentDefinition,
   MANIFEST_CACHE_TTL_MS,
   _resetManifestCache,
+  // Exported for the gate-reachability contract test: the schedule must be able
+  // to reach the warn (< 70) and critical (< 50) tiers the workflow issues on.
+  _currencyScore,
 };

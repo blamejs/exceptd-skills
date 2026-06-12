@@ -3406,8 +3406,10 @@ function cmdRun(runner, args, runOpts, pretty) {
     // Audit 3 A.6: --air-gap must refuse the registry probe. The
     // upstream-check helper has no air-gap awareness of its own; the
     // central refusal lives here so any future caller of --upstream-check
-    // inherits it.
-    if (runOpts.airGap || process.env.EXCEPTD_AIR_GAP === "1") {
+    // inherits it. Mirror the line-3444 hoist: an intrinsically air-gapped
+    // playbook (_meta.air_gap_mode — secrets / cred-stores / containers) must
+    // refuse the egress too, even without the explicit --air-gap flag.
+    if (runOpts.airGap || process.env.EXCEPTD_AIR_GAP === "1" || pb._meta?.air_gap_mode) {
       upstreamCheck = {
         ok: false,
         source: "air-gap",
@@ -5641,24 +5643,26 @@ function cmdAttest(runner, args, runOpts, pretty) {
       //      attestation.json cannot shadow the real attestation in the
       //      diff.
       let other = null;
+      let otherPath = null;
       const otherAttestationPath = path.join(otherDir, "attestation.json");
       if (fs.existsSync(otherAttestationPath)) {
         try {
           const parsed = JSON.parse(fs.readFileSync(otherAttestationPath, "utf8"));
-          if (parsed && parsed.kind !== "replay") other = parsed;
+          if (parsed && parsed.kind !== "replay") { other = parsed; otherPath = otherAttestationPath; }
         } catch { /* fall through to scan */ }
       }
       if (!other) {
         const candidates = [];
         for (const f of otherFiles) {
           try {
-            const parsed = JSON.parse(fs.readFileSync(path.join(otherDir, f), "utf8"));
+            const fp = path.join(otherDir, f);
+            const parsed = JSON.parse(fs.readFileSync(fp, "utf8"));
             if (!parsed || parsed.kind === "replay") continue;
-            candidates.push(parsed);
+            candidates.push({ parsed, file: fp });
           } catch { /* skip malformed */ }
         }
-        candidates.sort((a, b) => (b.captured_at || "").localeCompare(a.captured_at || ""));
-        other = candidates[0] || null;
+        candidates.sort((a, b) => (b.parsed.captured_at || "").localeCompare(a.parsed.captured_at || ""));
+        if (candidates[0]) { other = candidates[0].parsed; otherPath = candidates[0].file; }
       }
       if (!other) {
         return emitError(`attest diff --against ${args.against}: no attestations under that session id.`, null, pretty);
@@ -5673,6 +5677,33 @@ function cmdAttest(runner, args, runOpts, pretty) {
           pretty
         );
       }
+      // Verify BOTH attestations' sidecars — the --against (B-side) drives the
+      // drift verdict as much as the A-side, so a forged comparison attestation
+      // must be refused too, not silently diffed under an A-only green sidecar
+      // line. Mirrors reattest's tamper-refusal contract (exit TAMPERED unless
+      // --force-replay); surfaces a_/b_sidecar_verify either way.
+      const aSidecarVerify = verifyAttestationSidecar(path.join(dir, "attestation.json"));
+      const bSidecarVerify = otherPath
+        ? verifyAttestationSidecar(otherPath)
+        : { file: null, signed: false, verified: false, reason: "no B-side attestation file resolved" };
+      const aTampered = isTamperedSidecarVerify(aSidecarVerify);
+      const bTampered = isTamperedSidecarVerify(bSidecarVerify);
+      if ((aTampered || bTampered) && !args["force-replay"]) {
+        const sides = [aTampered && "A-side", bTampered && "--against (B-side)"].filter(Boolean).join(" + ");
+        process.stderr.write(`[exceptd attest diff] TAMPERED: ${sides} attestation failed Ed25519 verification. Refusing to diff against forged input. Pass --force-replay to override (the output records a_sidecar_verify + b_sidecar_verify).\n`);
+        emit({
+          ok: false,
+          error: `attest diff: ${sides} attestation failed signature verification — refusing to diff`,
+          verb: "attest diff",
+          a_session: sessionId,
+          b_session: args.against,
+          a_sidecar_verify: aSidecarVerify,
+          b_sidecar_verify: bSidecarVerify,
+          hint: "If a sidecar was intentionally removed/rotated and you have inspected the attestation, pass --force-replay.",
+        }, pretty);
+        process.exitCode = EXIT_CODES.TAMPERED;
+        return;
+      }
       emit({
         verb: "attest diff",
         a_session: sessionId,
@@ -5683,7 +5714,9 @@ function cmdAttest(runner, args, runOpts, pretty) {
         a_evidence_hash: self.evidence_hash,
         b_evidence_hash: other.evidence_hash,
         status: self.evidence_hash === other.evidence_hash ? "unchanged" : "drifted",
-        sidecar_verify: verifyAttestationSidecar(path.join(dir, "attestation.json")),
+        sidecar_verify: aSidecarVerify,
+        a_sidecar_verify: aSidecarVerify,
+        b_sidecar_verify: bSidecarVerify,
         // v0.11.8 (#102): normalize submissions before diffing so flat-shape
         // (observations + verdict) submissions emit meaningful artifact_diff
         // counts. Pre-0.11.8 (self.submission||{}).artifacts was undefined
