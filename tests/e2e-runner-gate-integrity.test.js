@@ -20,7 +20,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 
-const { evaluateScenario, diffExpect, runScenario } = require(path.join(__dirname, '..', 'scripts', 'run-e2e-scenarios.js'));
+const { evaluateScenario, diffExpect, stderrBanFailures, runScenario } = require(path.join(__dirname, '..', 'scripts', 'run-e2e-scenarios.js'));
 
 test('a spawnSync timeout (status null + SIGTERM + ETIMEDOUT) is surfaced, not masked', () => {
   const res = { status: null, signal: 'SIGTERM', error: Object.assign(new Error('spawnSync ETIMEDOUT'), { code: 'ETIMEDOUT' }), stdout: '', stderr: '' };
@@ -57,27 +57,30 @@ test('a scenario crash (non-zero exit, no JSON) is caught even with only a json 
   assert.deepEqual(goodFailures, [], 'a clean run meeting its assertions must pass');
 });
 
-test('diffExpect reports every matcher class and passes a fully-satisfied expect', () => {
+test('diffExpect reports every JSON matcher class and passes a fully-satisfied expect', () => {
   const body = { ok: true, score: 7, label: 'CRITICAL', nested: { id: 'x' } };
   const ctx = { stdout: '', stderr: 'warning: stale', status: 0 };
 
-  // Each matcher class produces a distinct, attributable failure.
+  // Each JSON matcher class produces a distinct, attributable failure.
   assert.ok(diffExpect(body, { json_path_equals: { ok: false } }, ctx).some(f => /json_path_equals\.ok/.test(f)));
   assert.ok(diffExpect(body, { json_path_present: ['missing'] }, ctx).some(f => /json_path_present\.missing: missing/.test(f)));
   assert.ok(diffExpect(body, { json_path_min: { score: 10 } }, ctx).some(f => /json_path_min\.score/.test(f)));
   assert.ok(diffExpect(body, { json_path_match: { label: '^low$' } }, ctx).some(f => /json_path_match\.label/.test(f)));
-  assert.ok(diffExpect(body, { stderr_must_not_match: ['stale'] }, ctx).some(f => /stderr_must_not_match/.test(f)));
 
-  // A fully-satisfied expect (including a nested path and a negative guard
-  // that does NOT match) yields zero failures.
+  // The negative stderr ban lives in stderrBanFailures (not diffExpect), so
+  // it holds regardless of whether stdout parses as JSON.
+  assert.ok(stderrBanFailures({ stderr_must_not_match: ['stale'] }, ctx.stderr).some(f => /stderr_must_not_match/.test(f)));
+
+  // A fully-satisfied JSON expect (including a nested path) yields zero
+  // failures, and a stderr ban that does NOT match yields none either.
   const pass = diffExpect(body, {
     json_path_equals: { 'nested.id': 'x' },
     json_path_present: ['ok'],
     json_path_min: { score: 5 },
     json_path_match: { label: '^CRIT' },
-    stderr_must_not_match: ['ETIMEDOUT'],
   }, ctx);
   assert.deepEqual(pass, []);
+  assert.deepEqual(stderrBanFailures({ stderr_must_not_match: ['ETIMEDOUT'] }, ctx.stderr), []);
 });
 
 test('runScenario skips a directory with no scenario.json instead of throwing', () => {

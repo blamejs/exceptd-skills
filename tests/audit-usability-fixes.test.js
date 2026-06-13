@@ -157,7 +157,9 @@ test('multiple --format values: first format to stdout, note to stderr', () => {
 // ===================================================================
 
 test('sarif bundle: no top-level ok, carries spec marker', () => {
-  const r = cli(['run', 'crypto', '--evidence', '-', '--format', 'sarif'], { input: '{}' });
+  // crypto gates on a Linux-platform precondition; satisfy it so the run
+  // proceeds to emit a bundle regardless of the test host's OS.
+  const r = cli(['run', 'crypto', '--evidence', '-', '--format', 'sarif'], { input: '{"precondition_checks":{"linux-platform":true}}' });
   assert.equal(r.status, 0, `expected exit 0; got ${r.status} (stderr: ${r.stderr.slice(0, 200)})`);
   const body = tryJson(r.stdout.trim());
   assert.ok(body, `sarif stdout must parse; got: ${r.stdout.slice(0, 200)}`);
@@ -167,7 +169,7 @@ test('sarif bundle: no top-level ok, carries spec marker', () => {
 });
 
 test('csaf-2.0 bundle: no top-level ok, carries document object', () => {
-  const r = cli(['run', 'crypto', '--evidence', '-', '--format', 'csaf-2.0'], { input: '{}' });
+  const r = cli(['run', 'crypto', '--evidence', '-', '--format', 'csaf-2.0'], { input: '{"precondition_checks":{"linux-platform":true}}' });
   assert.equal(r.status, 0, `expected exit 0; got ${r.status} (stderr: ${r.stderr.slice(0, 200)})`);
   const body = tryJson(r.stdout.trim());
   assert.ok(body, `csaf stdout must parse; got: ${r.stdout.slice(0, 200)}`);
@@ -177,7 +179,7 @@ test('csaf-2.0 bundle: no top-level ok, carries document object', () => {
 });
 
 test('openvex bundle: no top-level ok, carries @context string', () => {
-  const r = cli(['run', 'crypto', '--evidence', '-', '--format', 'openvex'], { input: '{}' });
+  const r = cli(['run', 'crypto', '--evidence', '-', '--format', 'openvex'], { input: '{"precondition_checks":{"linux-platform":true}}' });
   assert.equal(r.status, 0, `expected exit 0; got ${r.status} (stderr: ${r.stderr.slice(0, 200)})`);
   const body = tryJson(r.stdout.trim());
   assert.ok(body, `openvex stdout must parse; got: ${r.stdout.slice(0, 200)}`);

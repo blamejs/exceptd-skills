@@ -884,7 +884,14 @@ function emit(obj, pretty, humanRenderer) {
   // the body. Per-site `verb: "<name>"` is set at the call site; this
   // helper guarantees the `ok` field's presence but does not synthesize
   // verb (the caller knows its own name).
-  if (obj && typeof obj === 'object' && !('ok' in obj)) {
+  //
+  // Arrays are excluded: spreading an array into an object literal would
+  // produce numeric string keys ({"0":…,"1":…}) plus a spurious ok:true
+  // envelope, corrupting array-shaped output. Array bodies (standard
+  // documents like SARIF results / OpenVEX statements) pass through
+  // verbatim — matching the verbatim-write path those documents already
+  // use, which deliberately strips the envelope rather than injecting it.
+  if (obj && typeof obj === 'object' && !Array.isArray(obj) && !('ok' in obj)) {
     obj = { ok: true, ...obj };
   }
   const wantJson = !!global.__exceptdWantJson || !!process.env.EXCEPTD_RAW_JSON;
@@ -1745,6 +1752,33 @@ function dispatchPlaybook(cmd, argv) {
       );
     }
     runOpts.operator_consent = { acked_at: new Date().toISOString(), explicit: true };
+  }
+
+  // Relevance guard for PASSTHROUGH_FLAGS that are meaningful on only a subset
+  // of verbs. PASSTHROUGH_FLAGS short-circuits the typo loop above so it never
+  // reaches the cross-verb guidance fall-through — which meant a run-class flag
+  // (e.g. --max-rwep, consumed only by `ci`) parked there was silently dropped
+  // (exit 0, output unchanged) when supplied to an info-only verb, instead of
+  // refused with the same "pass it on a run-class verb" guidance the bundle
+  // flags (--csaf-status / --tlp / --ack) already give. Each entry maps the
+  // flag to the verbs that actually consume it; supplying it elsewhere is an
+  // irrelevant-flag refusal.
+  const SINGLE_VERB_PASSTHROUGH = {
+    "max-rwep": ["ci"],
+    "diff-from-latest": ["run"],
+    "upstream-check": ["run"],
+  };
+  for (const [flag, relevantVerbs] of Object.entries(SINGLE_VERB_PASSTHROUGH)) {
+    // A value-less boolean flag parses as `true`; a value-bearing one as its
+    // string. Either way, presence (not absence) is what we gate on. `false`
+    // never occurs from the parser but is treated as "not supplied" for safety.
+    if (args[flag] === undefined || args[flag] === false) continue;
+    if (relevantVerbs.includes(cmd)) continue;
+    return emitError(
+      `${cmd}: --${flag} is irrelevant on this verb (nothing here consumes it). --${flag} only applies to: ${relevantVerbs.slice().sort().join(", ")}. Re-invoke without --${flag}, or pass it on \`exceptd ${relevantVerbs[0]} …\`.`,
+      { verb: cmd, flag, error_class: "irrelevant-flag", accepted_verbs: relevantVerbs.slice().sort() },
+      pretty
+    );
   }
 
   let runner;
@@ -2675,6 +2709,18 @@ function cmdLint(runner, args, runOpts, pretty) {
     p => !(((submission.precondition_checks || {}).hasOwnProperty(p)) || ((normalized.precondition_checks || {}).hasOwnProperty(p)))
   );
 
+  // Symmetric to unknownArtifactKeys/unknownSignalKeys: flag precondition_checks
+  // keys the playbook does not declare. Pre-fix, the flat `observations` shape
+  // surfaced a foreign precondition id (e.g. crypto collector attesting
+  // `linux-platform`, which belongs to kernel/runtime/hardening) as an
+  // unknown_observation_key, but the nested `precondition_checks` shape every
+  // collector actually emits was never checked — so collector↔playbook
+  // precondition-id drift was silent on the canonical collect→lint path.
+  const unknownPreconditionKeys = [...new Set([
+    ...Object.keys(submission.precondition_checks || {}),
+    ...Object.keys(normalized.precondition_checks || {}),
+  ])].filter(k => !knownPreconditions.has(k));
+
   const issues = [];
   // v0.11.6 (#94): missing_required_artifact downgraded from error to warn.
   // The runner doesn't refuse a submission missing required artifacts — it
@@ -2697,6 +2743,15 @@ function cmdLint(runner, args, runOpts, pretty) {
   }
   for (const p of unsuppliedPreconditions) {
     issues.push({ severity: "info", kind: "precondition_unverified", precondition_id: p, hint: `Add submission.precondition_checks.${p} = true|false (or under observations in the flat shape).` });
+  }
+  for (const k of unknownPreconditionKeys) {
+    const recognized = [...knownPreconditions];
+    issues.push({
+      severity: "warn",
+      kind: "unknown_precondition_key",
+      precondition_id: k,
+      hint: `Not in playbook ${playbookId} _meta.preconditions[].${recognized.length ? ` Recognized: ${recognized.slice(0, 10).join(", ")}.` : " This playbook declares no preconditions."} A collector emitting a foreign precondition id (e.g. the crypto collector attesting \`linux-platform\`, which belongs to kernel/runtime/hardening) means the attestation will not satisfy any real gate.`,
+    });
   }
   for (const k of unknownObservationKeys) {
     issues.push({ severity: "warn", kind: "unknown_observation_key", key: k });
@@ -5019,6 +5074,39 @@ function verifyAttestationSidecar(attFile) {
 }
 
 /**
+ * Resolve the A-side ("self") attestation for `attest diff` to its actual
+ * on-disk file, NOT a hardcoded attestation.json.
+ *
+ * The two diff branches (`--against` and the auto-prior default) both need
+ * the A-side's real signed file to route its sidecar through the tamper
+ * refusal. A single-`run` / `reattest` session writes attestation.json; a
+ * multi-playbook (run-all) session writes per-playbook `<id>.json` +
+ * `<id>.json.sig` with no attestation.json. Selection mirrors the B-side
+ * resolution: prefer attestation.json when present, else the newest by
+ * captured_at. Returns { parsed, file } or null when no attestation exists.
+ *
+ * `attestations[i]` is paired with `files[i]` (the partition loop pushes
+ * them in lockstep), so this never has to re-read the directory.
+ */
+function resolveSelfAttestation(dir, attestations, files) {
+  if (!Array.isArray(attestations) || attestations.length === 0) return null;
+  const canonicalPath = path.join(dir, "attestation.json");
+  const canonicalIdx = files.indexOf(canonicalPath);
+  if (canonicalIdx !== -1) {
+    return { parsed: attestations[canonicalIdx], file: files[canonicalIdx] };
+  }
+  // No canonical attestation.json (run-all session) — pick the newest entry
+  // by captured_at, keeping its paired path so the sidecar verify is exact.
+  let best = { parsed: attestations[0], file: files[0] };
+  for (let i = 1; i < attestations.length; i++) {
+    const cur = attestations[i].captured_at || "";
+    const bestCap = best.parsed.captured_at || "";
+    if (cur.localeCompare(bestCap) > 0) best = { parsed: attestations[i], file: files[i] };
+  }
+  return best;
+}
+
+/**
  * `attest prune --all-older-than <ISO>` — GC for attestation growth.
  *
  * One attestation is written per `run`, with no cleanup, so the store grows
@@ -5601,14 +5689,22 @@ function cmdAttest(runner, args, runOpts, pretty) {
   // sessions. Gate on the parsed payload — not filename prefix — so a
   // renamed file cannot smuggle a replay into the attestations[] list.
   const attestations = [];
+  const attestationFiles = [];
   const replays = [];
   for (const f of files) {
     let parsed;
-    try { parsed = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")); }
+    const fp = path.join(dir, f);
+    try { parsed = JSON.parse(fs.readFileSync(fp, "utf8")); }
     catch { continue; }
     if (!parsed) continue;
     if (parsed.kind === "replay") replays.push(parsed);
-    else attestations.push(parsed);
+    // Track the on-disk path alongside the parsed attestation so the A-side
+    // sidecar verify resolves the ACTUAL signed file. A multi-playbook
+    // (run-all) session writes per-playbook `<id>.json` + `<id>.json.sig`
+    // and NEVER an attestation.json — so a hardcoded attestation.json path
+    // would point at a non-existent file and silently report "no .sig
+    // sidecar", letting a forged run-all A-side pass diff at exit 0.
+    else { attestations.push(parsed); attestationFiles.push(fp); }
   }
 
   if (subverb === "show") {
@@ -5667,7 +5763,8 @@ function cmdAttest(runner, args, runOpts, pretty) {
       if (!other) {
         return emitError(`attest diff --against ${args.against}: no attestations under that session id.`, null, pretty);
       }
-      const self = attestations[0];
+      const selfResolved = resolveSelfAttestation(dir, attestations, attestationFiles);
+      const self = selfResolved && selfResolved.parsed;
       if (!self) {
         // Session dir contains only replay records, no attestation —
         // diff has nothing to compare on the A side.
@@ -5681,8 +5778,11 @@ function cmdAttest(runner, args, runOpts, pretty) {
       // drift verdict as much as the A-side, so a forged comparison attestation
       // must be refused too, not silently diffed under an A-only green sidecar
       // line. Mirrors reattest's tamper-refusal contract (exit TAMPERED unless
-      // --force-replay); surfaces a_/b_sidecar_verify either way.
-      const aSidecarVerify = verifyAttestationSidecar(path.join(dir, "attestation.json"));
+      // --force-replay); surfaces a_/b_sidecar_verify either way. The A-side
+      // verifies its RESOLVED file (selfResolved.file) so a run-all session,
+      // whose real signed sidecar is `<id>.json.sig` not attestation.json.sig,
+      // is checked against its actual signature rather than a missing path.
+      const aSidecarVerify = verifyAttestationSidecar(selfResolved.file);
       const bSidecarVerify = otherPath
         ? verifyAttestationSidecar(otherPath)
         : { file: null, signed: false, verified: false, reason: "no B-side attestation file resolved" };
@@ -5736,7 +5836,8 @@ function cmdAttest(runner, args, runOpts, pretty) {
     // No --against: find the most-recent prior attestation for the
     // SAME playbook as `sessionId` and diff against that. Pure
     // comparison — no replay.
-    const self = attestations[0];
+    const selfResolved = resolveSelfAttestation(dir, attestations, attestationFiles);
+    const self = selfResolved && selfResolved.parsed;
     if (!self) {
       return emitError(
         `attest diff ${sessionId}: no attestation found in session dir.`,
@@ -5761,7 +5862,35 @@ function cmdAttest(runner, args, runOpts, pretty) {
     }
     const other = prior.parsed;
     const status = self.evidence_hash === other.evidence_hash ? "unchanged" : "drifted";
-    const sidecarVerify = verifyAttestationSidecar(path.join(dir, "attestation.json"));
+    // Verify BOTH sidecars and apply the same dual-side tamper refusal as the
+    // --against branch. Pre-fix this branch verified only the A-side and never
+    // the auto-selected prior, so a forged prior (or a forged run-all A-side,
+    // which the hardcoded attestation.json path missed entirely) produced a
+    // drift verdict at exit 0 under a green sidecar line. The A-side uses its
+    // RESOLVED file; the B-side uses the prior's actual on-disk path
+    // (prior.file), so a run-all prior is checked against its real signature.
+    const aSidecarVerify = verifyAttestationSidecar(selfResolved.file);
+    const bSidecarVerify = prior.file
+      ? verifyAttestationSidecar(prior.file)
+      : { file: null, signed: false, verified: false, reason: "no prior attestation file resolved" };
+    const aTampered = isTamperedSidecarVerify(aSidecarVerify);
+    const bTampered = isTamperedSidecarVerify(bSidecarVerify);
+    if ((aTampered || bTampered) && !args["force-replay"]) {
+      const sides = [aTampered && "A-side", bTampered && "prior (B-side)"].filter(Boolean).join(" + ");
+      process.stderr.write(`[exceptd attest diff] TAMPERED: ${sides} attestation failed Ed25519 verification. Refusing to diff against forged input. Pass --force-replay to override (the output records a_sidecar_verify + b_sidecar_verify).\n`);
+      emit({
+        ok: false,
+        error: `attest diff: ${sides} attestation failed signature verification — refusing to diff`,
+        verb: "attest diff",
+        a_session: sessionId,
+        b_session: prior.sessionId,
+        a_sidecar_verify: aSidecarVerify,
+        b_sidecar_verify: bSidecarVerify,
+        hint: "If a sidecar was intentionally removed/rotated and you have inspected the attestation, pass --force-replay.",
+      }, pretty);
+      process.exitCode = EXIT_CODES.TAMPERED;
+      return;
+    }
     emit({
       verb: "attest diff",
       a_session: sessionId,
@@ -5772,7 +5901,11 @@ function cmdAttest(runner, args, runOpts, pretty) {
       a_evidence_hash: self.evidence_hash,
       b_evidence_hash: other.evidence_hash,
       status,
-      sidecar_verify: sidecarVerify,
+      // Retain `sidecar_verify` (A-side) for back-compat; add a_/b_ pair so the
+      // default branch's output shape matches the --against branch.
+      sidecar_verify: aSidecarVerify,
+      a_sidecar_verify: aSidecarVerify,
+      b_sidecar_verify: bSidecarVerify,
       artifact_diff: diffArtifacts(
         normalizedArtifacts(self.submission, runner, self.playbook_id),
         normalizedArtifacts(other.submission, runner, other.playbook_id),
@@ -6170,9 +6303,42 @@ function normalizedSignalOverrides(submission, runner, playbookId) {
 }
 
 /**
+ * Order-insensitive JSON serializer for the per-field artifact comparison.
+ * Object keys are sorted recursively so two artifacts that differ ONLY in
+ * key insertion order compare equal — matching the key-sorted canonical form
+ * that evidence_hash (and therefore top-level `status`) already uses. Without
+ * this, a side stored as nested `{captured, value}` (raw operator order) vs a
+ * side normalized to `{value, captured}` serialized unequal under
+ * JSON.stringify, so `artifact_diff.changed[]` reported a false "changed"
+ * while `status` said "unchanged" — a self-contradicting diff. Depth-bounded
+ * to defend against adversarial/cyclic input; callers treat a throw as
+ * "cannot canonicalize" and fall back to raw stringify (diff output is
+ * non-fatal context, never a gate).
+ */
+function stableArtifactStringify(v, depth = 0) {
+  if (depth > 200) throw new Error("artifact too deep to canonicalize");
+  if (v === null || typeof v !== "object") return JSON.stringify(v);
+  if (Array.isArray(v)) {
+    return "[" + v.map((x) => stableArtifactStringify(x, depth + 1)).join(",") + "]";
+  }
+  const keys = Object.keys(v).sort();
+  return "{" + keys.map((k) => JSON.stringify(k) + ":" + stableArtifactStringify(v[k], depth + 1)).join(",") + "}";
+}
+
+function artifactsDiffer(av, bv) {
+  try {
+    return stableArtifactStringify(av) !== stableArtifactStringify(bv);
+  } catch {
+    // Canonicalization bailed (too deep / cyclic) — fall back to the
+    // order-sensitive comparison rather than masking a real difference.
+    return JSON.stringify(av) !== JSON.stringify(bv);
+  }
+}
+
+/**
  * Per-artifact diff between two submissions. Returns { added, removed, changed }
- * keyed by artifact id. Used by `attest diff` (bug #34 fix) so operators get
- * field-level context instead of a binary evidence_hash signal.
+ * keyed by artifact id. Used by `attest diff` so operators get field-level
+ * context instead of a binary evidence_hash signal.
  */
 function diffArtifacts(a, b) {
   a = a || {}; b = b || {};
@@ -6187,7 +6353,7 @@ function diffArtifacts(a, b) {
       out.added.push({ id, captured: !!bv.captured, value_preview: previewValue(bv.value) });
     } else if (av && !bv) {
       out.removed.push({ id, captured: !!av.captured, value_preview: previewValue(av.value) });
-    } else if (av && bv && JSON.stringify(av) !== JSON.stringify(bv)) {
+    } else if (av && bv && artifactsDiffer(av, bv)) {
       out.changed.push({
         id,
         a_captured: !!av.captured, b_captured: !!bv.captured,
@@ -9101,4 +9267,7 @@ module.exports = {
   _isTamperedSidecarVerify: isTamperedSidecarVerify,
   _classifySidecarVerify: classifySidecarVerify,
   _verifyAttestationSidecar: verifyAttestationSidecar,
+  _emit: emit,
+  _diffArtifacts: diffArtifacts,
+  _resolveSelfAttestation: resolveSelfAttestation,
 };

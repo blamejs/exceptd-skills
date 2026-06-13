@@ -62,8 +62,9 @@ exceptd collect <playbook> | exceptd run <playbook> --evidence -   # full loop
 Exit codes:
 
 - `0` — submission emitted successfully (operator should check `collector_errors[]` for partial-evidence warnings)
-- `1` — no collector exists for the playbook id (the AI-evidence path remains)
-- `2` — collector threw an unhandled exception (file a bug)
+- `1` — failure: either no collector exists for the playbook id (the AI-evidence path remains) **or** the collector threw an unhandled exception (file a bug). Both go through the shared error path, so both exit `1`; the JSON envelope on stderr distinguishes them — `type: "collector_not_found"` for the missing-collector case, an `"threw an unhandled exception"` message plus a `stack` for the crash case.
+
+Run `exceptd doctor --exit-codes` for the full exit-code map. Code `2` is reserved for the CI escalation gate (`detected` classification), not used by `collect`.
 
 ## When to write a collector
 

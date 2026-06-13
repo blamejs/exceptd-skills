@@ -55,6 +55,27 @@ function getJsonPath(obj, dotted) {
   return dotted.split(".").reduce((acc, key) => acc?.[key], obj);
 }
 
+// Evaluate the negative stderr guard against raw stderr text. Lives here, NOT
+// inside diffExpect, because the ban must hold regardless of whether stdout
+// parsed as JSON — a scenario whose stdout is a human banner (no JSON body,
+// only an expect_exit assertion) must still enforce a forbidden-token ban on
+// stderr. evaluateScenario calls this unconditionally.
+function stderrBanFailures(expect, stderr) {
+  const failures = [];
+  if (expect.stderr_must_not_match) {
+    for (const regex of expect.stderr_must_not_match) {
+      if (new RegExp(regex).test(stderr || "")) {
+        failures.push(`stderr_must_not_match /${regex}/: stderr contains it`);
+      }
+    }
+  }
+  return failures;
+}
+
+// Diff a parsed JSON body against the positive expect matchers. The negative
+// stderr guard is NOT evaluated here (see stderrBanFailures); this function
+// only inspects the JSON body so it cannot be silently skipped when stdout
+// fails to parse.
 function diffExpect(jsonBody, expect, ctx) {
   const failures = [];
   if (expect.json_path_equals) {
@@ -89,23 +110,26 @@ function diffExpect(jsonBody, expect, ctx) {
       }
     }
   }
-  if (expect.stderr_must_not_match) {
-    for (const regex of expect.stderr_must_not_match) {
-      if (new RegExp(regex).test(ctx.stderr)) {
-        failures.push(`stderr_must_not_match /${regex}/: stderr contains it`);
-      }
-    }
-  }
   return failures;
 }
 
 function tryParseJson(s) {
   if (!s) return null;
-  try { return JSON.parse(s.trim()); } catch { /* ignore */ }
-  // Some verbs may emit trailing logs; pick the LAST complete JSON object on stdout.
+  try {
+    const v = JSON.parse(s.trim());
+    if (v && typeof v === "object") return v;
+  } catch { /* ignore */ }
+  // Some verbs may emit trailing logs; pick the LAST complete JSON object or
+  // array on stdout. A verb envelope is always an object/array, so bare
+  // scalars (a trailing JSON-parseable "done"/42/true log line) are skipped —
+  // binding assertions against a trailing scalar would silently test the
+  // wrong value.
   const lines = s.trim().split("\n");
   for (let i = lines.length - 1; i >= 0; i--) {
-    try { return JSON.parse(lines[i]); } catch { /* keep looking */ }
+    try {
+      const v = JSON.parse(lines[i]);
+      if (v && typeof v === "object") return v;
+    } catch { /* keep looking */ }
   }
   return null;
 }
@@ -148,6 +172,12 @@ function evaluateScenario(scenario, expect, res) {
     failures.push(`stdout did not parse as JSON; first 200 chars: ${stdout.slice(0, 200)}`);
   }
   if (body) failures.push(...diffExpect(body, expect, { stdout, stderr, status }));
+
+  // The forbidden-token ban on stderr runs unconditionally — it does not
+  // depend on stdout parsing as JSON. A scenario with only an expect_exit
+  // assertion (human-banner stdout) must still fail if stderr carries a banned
+  // token.
+  failures.push(...stderrBanFailures(expect, stderr));
   return failures;
 }
 
@@ -266,6 +296,6 @@ function main() {
   process.exit(failed.length === 0 ? 0 : 1);
 }
 
-module.exports = { evaluateScenario, diffExpect, runScenario };
+module.exports = { evaluateScenario, diffExpect, tryParseJson, stderrBanFailures, runScenario, SCENARIO_DIR };
 
 if (require.main === module) main();
