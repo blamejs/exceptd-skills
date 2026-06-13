@@ -3,7 +3,7 @@
  * Docker test harness regression tests.
  *
  * The harness lives in docker/test.Dockerfile and only exists to give
- * contributors a local Linux+Node-24.14.1 reproduction of CI. The most
+ * contributors a local Linux+Node-24.16.0 reproduction of CI. The most
  * common failure mode is silent drift: CI bumps Node but the Dockerfile
  * keeps an old tag, so "passes locally" stops meaning "passes on CI".
  * These tests fail fast on that drift.
@@ -112,7 +112,7 @@ test("Dockerfile Node version matches the CI workflow Node version", () => {
   const ciMatch = ci.match(/node-version:\s*'(\d+\.\d+\.\d+)'/);
   assert.ok(
     ciMatch,
-    "ci.yml must declare an exact node-version: '24.14.1'-style version"
+    "ci.yml must declare an exact node-version: '24.16.0'-style version"
   );
   const ciNode = ciMatch[1];
 

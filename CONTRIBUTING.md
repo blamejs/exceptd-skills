@@ -79,7 +79,7 @@ When a framework update closes a gap:
    git add manifest-snapshot.json
    ```
 
-   On Windows or macOS, you can reproduce CI's Linux + Node 24.14.1 environment locally with the Docker harness — useful for catching OS-specific regressions before pushing:
+   On Windows or macOS, you can reproduce CI's Linux + Node 24.16.0 environment locally with the Docker harness — useful for catching OS-specific regressions before pushing:
    ```bash
    npm run test:docker          # runs predeploy in a clean Linux container
    npm run test:docker:fresh    # also wipes signing state and re-bootstraps

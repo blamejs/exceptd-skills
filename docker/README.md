@@ -2,7 +2,7 @@
 
 A clean-room test environment for the exceptd-skills pre-deploy gates.
 **Not a release artifact** — this image exists only so contributors can
-reproduce CI's Linux + Node 24.14.1 LTS environment locally before
+reproduce CI's Linux + Node 24.16.0 LTS environment locally before
 pushing.
 
 ## When to use it
@@ -23,7 +23,7 @@ Three build targets defined in `test.Dockerfile`:
 
 | Target           | What it does                                                                                       | When to run                                                                 |
 |------------------|----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
-| `predeploy`      | Runs `npm run predeploy` against the repo state as-is.                                              | Day-to-day: "does my change break a gate on Linux/Node 24.14.1?"             |
+| `predeploy`      | Runs `npm run predeploy` against the repo state as-is.                                              | Day-to-day: "does my change break a gate on Linux/Node 24.16.0?"             |
 | `fresh-bootstrap`| Wipes inherited signing state, runs `npm run bootstrap`, then `npm run predeploy`.                  | After touching the signing toolchain or onboarding docs.                    |
 | `e2e`            | Runs `npm run test:e2e` — the end-to-end scenario gate that release.yml also runs.                  | After changing a playbook's detection layer or an e2e scenario fixture.      |
 
@@ -71,7 +71,7 @@ docker run --rm exceptd-test:e2e
 
 ## Pinning policy
 
-The base image tag (`node:24.14.1-alpine3.23`) is pinned to match the
+The base image tag (`node:24.16.0-alpine3.23`) is pinned to match the
 `node-version` field in `.github/workflows/ci.yml`. When the workflow
 bumps Node, bump this tag in the same commit. The
 `tests/docker.test.js` regression test enforces the alignment.

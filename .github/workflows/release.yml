@@ -74,7 +74,7 @@ jobs:
           # gates here and the published-artifact build run the same Node a
           # Node-minor-sensitive regression would expose. tests/docker.test.js
           # asserts these three stay in lockstep.
-          node-version: '24.14.1'
+          node-version: '24.16.0'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Verify tag matches package.json version
@@ -232,7 +232,7 @@ jobs:
           # Same exact patch as ci.yml / docker/test.Dockerfile — the publish
           # path must not build the tarball on a different Node than the gates
           # verified against.
-          node-version: '24.14.1'
+          node-version: '24.16.0'
           registry-url: 'https://registry.npmjs.org'
           # `always-auth: true` makes the published .npmrc authenticate
           # against NPM_TOKEN — required because we don't `npm install`
