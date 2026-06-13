@@ -96,9 +96,11 @@ test('legitimate upgrade: local v3.0, upstream v3.1 still emits a diff (guard bl
   assert.equal(score.after, 9.8);
 });
 
-test('same-version score drift still flows (not a downgrade)', () => {
+test('same-version score drift on a curated entry is surfaced but held for review (not a downgrade)', () => {
   // Catalog score hand-adjusted to 9.3 vs NVD v3.1 9.8 — a legitimate same-
-  // version drift the refresh should surface.
+  // version drift the refresh surfaces. The default catalog entry is
+  // curator-owned (no _auto_imported flag), so the drift is held for review
+  // rather than auto-applied (the curator accepts an NVD re-score deliberately).
   const r = run(
     { cvss_vector: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H', cvss_score: 9.3 },
     { cvssMetricV31: [{ type: 'Secondary', cvssData: { version: '3.1', baseScore: 9.8, vectorString: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H' } }] },
@@ -106,6 +108,19 @@ test('same-version score drift still flows (not a downgrade)', () => {
   assert.equal(r.diffs.filter((d) => d.field === 'cvss_vector').length, 0, 'vectors match -> no vector diff');
   const score = r.diffs.find((d) => d.field === 'cvss_score');
   assert.ok(score && score.after === 9.8, 'same-version score drift is surfaced');
+  assert.equal(score.review_only, true, 'a curator-owned entry holds the drift for review, not auto-applied');
+});
+
+test('same-version score drift on a raw auto-imported entry applies (not curator-owned)', () => {
+  // An _auto_imported draft is not yet curated — NVD is its source of truth,
+  // so a same-version re-score applies directly (no review_only).
+  const r = run(
+    { cvss_vector: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H', cvss_score: 9.3, _auto_imported: true },
+    { cvssMetricV31: [{ type: 'Secondary', cvssData: { version: '3.1', baseScore: 9.8, vectorString: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H' } }] },
+  );
+  const score = r.diffs.find((d) => d.field === 'cvss_score');
+  assert.ok(score && score.after === 9.8, 'a raw entry surfaces the same-version drift');
+  assert.notEqual(score.review_only, true, 'a raw auto-imported entry applies the NVD re-score directly');
 });
 
 test('bare v2 upstream against a curated v2.0 entry: normalized, no spurious diff, validator-legal', () => {
