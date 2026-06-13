@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.16.30 — 2026-06-12
+
+The analyze-phase cross-reference layer now returns the correlations it always claimed to. The `byCwe`/`byTtp`/`bySkill` skill links, the per-CVE framework-gap and compliance-theater-test correlations, and the global framework context were reading index and catalog records under field names the data never carried, so every lookup came back empty. They now read the real fields and populate — a CWE resolves its skills, a CVE resolves its framework gaps and theater tests, and the global framework context spans the catalogs it documents.
+
+A malformed or timezone-less operator clock value no longer breaks a run. An unparseable `clock_started_at_<event>` signal previously threw out of the close phase, destroying the entire notification, CSAF, deadline, and attestation output and crashing every later reattest of the stored submission; it now degrades to a pending clock with a surfaced reason. A zone-less timestamp is normalized to UTC deterministically instead of the host's local zone, so a statutory deadline (NIS2 24h, DORA 4h, GDPR 72h) no longer shifts by the host's UTC offset. The analyze- and validate-completion clocks now auto-start under operator consent.
+
+Standards-bundle identifiers are correct across formats. CSAF `product_tree` branches are named from the package, not from a version-range operator sliced out of a catalog version string; SARIF `helpUri` points GHSA, OSV, RUSTSEC, and malicious-package identifiers at their own authority instead of fabricating an NVD CVE link; and the OpenVEX vulnerability `@id` keeps the canonical identifier case its `name` already carries.
+
+`attest diff` closes its remaining tamper-detection gaps. A tampered attestation in a multi-playbook session, and a tampered auto-selected prior attestation, are now detected on every diff path — previously only the explicit `--against` side was verified, so a forged multi-playbook or prior attestation passed at exit 0. Two artifacts that differ only in JSON key order no longer report as changed, and the VEX disposition note no longer lists a fixed disposition as a drop reason.
+
+`prefetch` validates its arguments and cache. An empty or comma-only `--source` is refused instead of silently warming every source; a value-less `--cache-dir`, `--source`, or `--max-age` is refused instead of crashing or silently changing scope; and a future-dated (clock-skewed) cache entry is re-fetched instead of trusted as fresh. `refresh --prefetch` reports a clear error naming the prefetchable sources when handed a live-only one, and auto-refresh no longer silently de-lists a curated CISA-KEV entry — matching the curated-CVSS protection already in place.
+
+RWEP scoring no longer produces a NaN delta or a false "broadly aligned" verdict when a comparison lacks a CVSS score, and custom scoring rejects a non-numeric blast radius the factor validator already rejected. The crypto playbook declares its Linux-only precondition, so a scan on a non-Linux host blocks rather than reporting a false "not detected." Playbook directive overrides and `applies_to` references are validated and cross-referenced, the CVE framework-control-gap cross-reference for orphaned control identifiers is enforced under `--strict`, and `lint` flags an unknown precondition key. The pre-publish scenario harness enforces its stderr guards even when a verb emits non-JSON output, binds assertions to the correct object, and holds a scenario-count floor under the standard test gate. An irrelevant passthrough flag on a read-only verb is now refused rather than silently ignored.
+
 ## 0.16.29 — 2026-06-12
 
 A correctness pass across the refresh pipeline, scoring, attestation, the collectors, and offline mode.

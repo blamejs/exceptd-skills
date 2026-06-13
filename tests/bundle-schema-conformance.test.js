@@ -50,7 +50,7 @@ test("CSAF: tracking.version equals the last revision number, homogeneous versio
 });
 
 test("CSAF: an informational advisory omits vulnerabilities + product_tree and carries an external reference", () => {
-  const doc = tryJson(cli(["run", "crypto", "--evidence", "-", "--format", "csaf-2.0", "--json"], { input: "{}" }).stdout);
+  const doc = tryJson(cli(["run", "crypto", "--evidence", "-", "--format", "csaf-2.0", "--json"], { input: '{"precondition_checks":{"linux-platform":true}}' }).stdout);
   assert.equal(doc.document.category, "csaf_informational_advisory");
   assert.ok(!("vulnerabilities" in doc), "informational advisory must NOT carry /vulnerabilities (6.1.27.3)");
   assert.ok(!("product_tree" in doc), "informational advisory must NOT carry /product_tree (§4.3)");

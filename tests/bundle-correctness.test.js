@@ -171,7 +171,9 @@ describe('OpenVEX 0.2.0 — B1 (products) + B2 (status) + B3 (no framework gaps)
   it('every @id is a valid URN (B4)', () => {
     // CVE statements: urn:cve:<id>
     // Indicator statements: urn:exceptd:indicator:<playbook>:<indicator-id>
-    const urnRe = /^urn:[a-z][a-z0-9-]*:[a-z0-9_-]+(?::[a-z0-9_-]+)*$/;
+    // NID (first segment) is conventionally lowercase; the NSS is case-sensitive
+    // per RFC 8141 and carries the canonical identifier case (e.g. CVE-2026-43284).
+    const urnRe = /^urn:[a-z][a-z0-9-]*:[A-Za-z0-9_-]+(?::[A-Za-z0-9_-]+)*$/;
     for (const s of bundle.statements) {
       const id = String(s.vulnerability['@id']);
       assert.match(id, urnRe, `vulnerability @id is not a valid URN: ${id}`);

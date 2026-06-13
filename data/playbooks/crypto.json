@@ -36,6 +36,12 @@
         "description": "At least one TLS library must be present and queryable. If none, the host has no crypto surface this playbook scopes.",
         "check": "exists_any(['openssl', 'libssl.so*', 'libcrypto.so*']) == true",
         "on_fail": "warn"
+      },
+      {
+        "id": "linux-platform",
+        "description": "Host must be Linux — crypto enumeration reads /etc/ssh and invokes the system openssl/ssh binaries.",
+        "check": "host.platform == 'linux'",
+        "on_fail": "halt"
       }
     ],
     "mutex": [],

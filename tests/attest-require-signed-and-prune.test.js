@@ -109,7 +109,7 @@ test("attest prune --all-older-than previews with --dry-run, then deletes", () =
   const env = { EXCEPTD_HOME: home };
   try {
     assert.equal(cli(["run", "secrets", "--evidence", "-", "--session-id", "p1"], { input: "{}", env }).status, 0);
-    assert.equal(cli(["run", "crypto", "--evidence", "-", "--session-id", "p2"], { input: "{}", env }).status, 0);
+    assert.equal(cli(["run", "crypto", "--evidence", "-", "--session-id", "p2"], { input: '{"precondition_checks":{"linux-platform":true}}', env }).status, 0);
 
     const dry = cli(["attest", "prune", "--all-older-than", "2099-01-01", "--dry-run", "--json"], { env });
     assert.equal(dry.status, 0);

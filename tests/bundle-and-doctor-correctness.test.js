@@ -81,7 +81,7 @@ test("OpenVEX impact_statement renders 'not assessed' for null blast_radius (not
 });
 
 test("an empty-evidence run emits a csaf_informational_advisory, not a security_advisory with empty vulnerabilities", () => {
-  const r = cli(["run", "crypto", "--evidence", "-", "--format", "csaf-2.0", "--json"], { input: "{}" });
+  const r = cli(["run", "crypto", "--evidence", "-", "--format", "csaf-2.0", "--json"], { input: '{"precondition_checks":{"linux-platform":true}}' });
   const doc = tryJson(r.stdout);
   assert.ok(doc && doc.document, "expected a CSAF document");
   assert.equal((doc.vulnerabilities || []).length, 0, "this run has no vulnerabilities");
