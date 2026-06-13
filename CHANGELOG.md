@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.31 — 2026-06-13
+
+The data refresh no longer overwrites a curator-pinned CVSS score or vector with NVD's same-version re-score. A curated catalog entry — the hand-verified norm — keeps its maintainer-set CVSS; the NVD delta is surfaced in the refresh report for a maintainer to accept deliberately, instead of silently lowering a curated 10.0 to NVD's 9.8. Raw auto-imported drafts, which are not yet curated, still take NVD's score directly. This extends the existing curated-data protections — the CVSS version-downgrade guard and the CISA-KEV de-listing guard — to same-version CVSS re-scores: an upstream that disagrees with curated intel is surfaced, never silently applied.
+
 ## 0.16.30 — 2026-06-12
 
 The analyze-phase cross-reference layer now returns the correlations it always claimed to. The `byCwe`/`byTtp`/`bySkill` skill links, the per-CVE framework-gap and compliance-theater-test correlations, and the global framework context were reading index and catalog records under field names the data never carried, so every lookup came back empty. They now read the real fields and populate — a CWE resolves its skills, a CVE resolves its framework gaps and theater tests, and the global framework context spans the catalogs it documents.
