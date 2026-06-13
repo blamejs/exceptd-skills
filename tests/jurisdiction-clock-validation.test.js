@@ -168,6 +168,27 @@ describe('jurisdictional clock — analyze_complete / validate_complete auto-sta
     assert.equal(vc.deadline, expectedVc);
   });
 
+  it('analyze_complete / validate_complete auto-start clocks root in the frozen epoch under deterministic mode', () => {
+    const EPOCH = '2021-06-01T00:00:00.000Z';
+    const runOpts = { operator_consent: { explicit: true }, bundleDeterministic: true, bundleEpoch: EPOCH };
+    const run = () => runner.run(AIAPI, AIAPI_DIR, {
+      signals: { detection_classification: 'detected' }, artifacts: {},
+    }, runOpts);
+
+    const a = run();
+    const acA = a.phases.close.jurisdiction_notifications.find(n => n.clock_start_event === 'analyze_complete');
+    const vcA = a.phases.close.jurisdiction_notifications.find(n => n.clock_start_event === 'validate_complete');
+    assert.equal(acA.clock_started_at, EPOCH, 'analyze_complete clock must be the frozen epoch, not wall-clock now');
+    assert.equal(vcA.clock_started_at, EPOCH, 'validate_complete clock must be the frozen epoch, not wall-clock now');
+
+    // Reproducibility: a second deterministic run over the same evidence emits
+    // identical clock_started_at and deadline values.
+    const b = run();
+    const acB = b.phases.close.jurisdiction_notifications.find(n => n.clock_start_event === 'analyze_complete');
+    assert.equal(acB.clock_started_at, acA.clock_started_at, 'two deterministic runs must agree on clock_started_at');
+    assert.equal(acB.deadline, acA.deadline, 'two deterministic runs must agree on the deadline');
+  });
+
   it('without --ack the analyze_complete clock reports pending + clock_pending_ack', () => {
     const result = runner.run(AIAPI, AIAPI_DIR, {
       signals: { detection_classification: 'detected' }, artifacts: {},

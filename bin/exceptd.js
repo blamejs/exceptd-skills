@@ -4989,6 +4989,31 @@ function verifyAttestationSidecar(attFile) {
     }
   }
   if (!fs.existsSync(sigPath)) {
+    // A missing sidecar is benign ONLY when none was ever expected (the
+    // attestation was written on a keyless host and no peer in the same
+    // session is signed). When a sig SHOULD exist — a signing key is present,
+    // or a signed peer attestation sits beside this one — an absent sidecar is
+    // a deletion-to-evade-tamper signal. Carry the tamper_class so `attest
+    // diff` and `reattest` refuse a forged attestation whose .sig was stripped,
+    // matching `attest verify`. The keyless case stays benign so keyless CI is
+    // unaffected.
+    const privKeyPath = path.join(PKG_ROOT, ".keys", "private.pem");
+    let expected = fs.existsSync(privKeyPath);
+    if (!expected) {
+      try {
+        const dir = path.dirname(attFile);
+        for (const sf of fs.readdirSync(dir)) {
+          if (!sf.endsWith(".sig")) continue;
+          try {
+            const sd = JSON.parse(fs.readFileSync(path.join(dir, sf), "utf8"));
+            if (sd && sd.algorithm === "Ed25519") { expected = true; break; }
+          } catch { /* skip unparseable sidecar */ }
+        }
+      } catch { /* dir unreadable — fall through to benign */ }
+    }
+    if (expected) {
+      return { file: attFile, signed: false, verified: false, reason: "no .sig sidecar, but one was expected (signing key present or a signed peer attestation exists) — sidecar deletion suspected", tamper_class: "sidecar-missing" };
+    }
     return { file: attFile, signed: false, verified: false, reason: "no .sig sidecar" };
   }
   let sigDoc;
@@ -5572,6 +5597,12 @@ function isTamperedSidecarVerify(verify) {
     // swapped key proves nothing, so replay refuses exactly like the
     // other tamper classes (attest verify already refuses on this).
     || verify.tamper_class === "fingerprint-mismatch"
+    // A sidecar that should exist (a signing key is present, or a signed peer
+    // attestation sits in the same session) but is absent is a
+    // deletion-to-evade-tamper signal — refuse exactly as reattest and attest
+    // verify already do, so a forged attestation can't dodge the diff gate by
+    // stripping its .sig.
+    || verify.tamper_class === "sidecar-missing"
   );
   return Boolean(isSignedTamper || isClassTamper);
 }

@@ -96,3 +96,31 @@ test('attest diff (no --against) verifies the auto-selected prior and refuses a 
     assert.equal(fBody.b_sidecar_verify.verified, false,
       'force-replay output must still record the failed prior verify for audit');
   });
+
+test('attest diff refuses a prior whose .sig was stripped — sidecar deletion is tamper (exit 6)',
+  { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem to produce a signed attestation' },
+  () => {
+    // The evasion the signed-but-invalid case misses: an attacker forges the
+    // content AND deletes the .sig, so verify reports "no .sig sidecar" rather
+    // than a signature mismatch. With a signing key present (or a signed peer),
+    // an absent sidecar is itself tamper evidence — diff must refuse, matching
+    // reattest / attest verify.
+    const prior = 'noagainst-stripped-prior-' + Date.now();
+    const priorAtt = makeSession(prior, 'crypto');
+    const a = 'noagainst-stripped-self-' + (Date.now() + 1);
+    makeSession(a, 'crypto');
+
+    const forged = JSON.parse(fs.readFileSync(priorAtt.jsonFile, 'utf8'));
+    forged.evidence_hash = 'stripped00000000000000000000000000000000000000000000000000000000';
+    fs.writeFileSync(priorAtt.jsonFile, JSON.stringify(forged, null, 2));
+    fs.rmSync(priorAtt.sigFile, { force: true });
+    assert.equal(fs.existsSync(priorAtt.sigFile), false, 'the prior sidecar must be deleted for this case');
+
+    const r = cli(['attest', 'diff', a, '--json']);
+    assert.equal(r.status, TAMPERED,
+      `a stripped-sidecar prior must exit ${TAMPERED} (TAMPERED), not 0/drifted. Got ${r.status}. stderr=${r.stderr.slice(0, 400)}`);
+    const body = lastJson([r.stdout, r.stderr].join('\n'));
+    assert.equal(body.ok, false, 'tamper refusal body must carry ok:false');
+    assert.equal(body.b_sidecar_verify.tamper_class, 'sidecar-missing',
+      'a deleted-but-expected sidecar must be classed sidecar-missing, not treated as benign');
+  });
