@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.17.0 — 2026-06-13
+
+Twenty newly-listed CISA KEV vulnerabilities are now curated into the catalog (439 → 459 CVEs). Each carries verified CVSS and vector, CWE classification, confirmed active-exploitation status, affected versions, framework-control-gap mapping, ATT&CK (and where applicable ATLAS) references, RWEP scoring, behavioral indicators of compromise, and a matching zero-day lesson — every fact sourced from NVD, the CISA KEV catalog, and the vendor advisory.
+
+Coverage spans the AI/LLM surface and broad infrastructure: BerriAI LiteLLM's MCP test-endpoint command injection (authenticated host RCE on the LLM gateway), Ivanti Sentry unauthenticated root RCE, Palo Alto PAN-OS and Check Point gateway authentication bypasses, Oracle PeopleSoft and WebLogic, Cisco Catalyst SD-WAN Manager, Chromium V8, the Linux kernel cgroups container escape, Android, FreeType, two EOL GeoVision command-injection flaws recruited into a Mirai botnet, and a trojanized DAEMON Tools Lite supply-chain compromise.
+
+Four CWE classes new to the catalog are added with their AI-gap framing: improper output encoding (CWE-116), improper privilege management (CWE-266), hidden functionality / backdoor (CWE-912), and incomplete comparison with missing factors (CWE-1023).
+
 ## 0.16.31 — 2026-06-13
 
 The data refresh no longer overwrites a curator-pinned CVSS score or vector with NVD's same-version re-score. A curated catalog entry — the hand-verified norm — keeps its maintainer-set CVSS; the NVD delta is surfaced in the refresh report for a maintainer to accept deliberately, instead of silently lowering a curated 10.0 to NVD's 9.8. Raw auto-imported drafts, which are not yet curated, still take NVD's score directly. This extends the existing curated-data protections — the CVSS version-downgrade guard and the CISA-KEV de-listing guard — to same-version CVSS re-scores: an upstream that disagrees with curated intel is surfaced, never silently applied.

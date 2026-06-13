@@ -62,7 +62,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 439,
+      "entry_count": 459,
       "sample_keys": [
         "CVE-2022-23812",
         "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM",
@@ -84,7 +84,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 177,
+      "entry_count": 181,
       "sample_keys": [
         "CWE-20",
         "CWE-22",
@@ -238,7 +238,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 439,
+      "entry_count": 459,
       "sample_keys": [
         "CVE-2026-31431",
         "CVE-2025-53773",

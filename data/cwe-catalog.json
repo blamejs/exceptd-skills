@@ -175,6 +175,7 @@
       "CVE-2026-30617",
       "CVE-2026-30624",
       "CVE-2026-30625",
+      "CVE-2026-42271",
       "MAL-2026-3083"
     ],
     "framework_controls_partially_addressing": [
@@ -211,7 +212,9 @@
       "CVE-2014-6278",
       "CVE-2023-39780",
       "CVE-2023-6019",
+      "CVE-2024-11120",
       "CVE-2024-12987",
+      "CVE-2024-6047",
       "CVE-2025-11953",
       "CVE-2025-12686",
       "CVE-2025-1753",
@@ -224,6 +227,7 @@
       "CVE-2025-64328",
       "CVE-2025-66644",
       "CVE-2025-9377",
+      "CVE-2026-10520",
       "CVE-2026-1731",
       "CVE-2026-22252",
       "CVE-2026-22688",
@@ -235,7 +239,8 @@
       "CVE-2026-30624",
       "CVE-2026-30625",
       "CVE-2026-39987",
-      "CVE-2026-40933"
+      "CVE-2026-40933",
+      "CVE-2026-42271"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -501,6 +506,7 @@
       "CVE-2025-48633",
       "CVE-2025-5419",
       "CVE-2025-5777",
+      "CVE-2026-11645",
       "CVE-2026-24213",
       "CVE-2026-3055"
     ],
@@ -543,6 +549,7 @@
     "evidence_cves": [
       "CVE-2023-43791",
       "CVE-2023-47117",
+      "CVE-2024-21182",
       "CVE-2024-40635",
       "CVE-2025-31125",
       "CVE-2026-20133",
@@ -733,6 +740,7 @@
       "CVE-2019-19006",
       "CVE-2020-10148",
       "CVE-2021-32030",
+      "CVE-2022-0492",
       "CVE-2023-27351",
       "CVE-2024-12776",
       "CVE-2024-1709",
@@ -741,7 +749,8 @@
       "CVE-2025-49706",
       "CVE-2025-64513",
       "CVE-2026-20127",
-      "CVE-2026-20182"
+      "CVE-2026-20182",
+      "CVE-2026-50751"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-IA-2",
@@ -785,6 +794,7 @@
       "CVE-2026-24423",
       "CVE-2026-26190",
       "CVE-2026-33017",
+      "CVE-2026-35273",
       "CVE-2026-39987",
       "CVE-2026-41940"
     ],
@@ -1224,6 +1234,7 @@
       "CVE-2023-41974",
       "CVE-2023-43000",
       "CVE-2025-27038",
+      "CVE-2025-30400",
       "CVE-2025-32701",
       "CVE-2025-32709",
       "CVE-2025-43529",
@@ -1403,7 +1414,8 @@
       "CVE-2026-20963",
       "CVE-2026-3059",
       "CVE-2026-3060",
-      "CVE-2026-31229"
+      "CVE-2026-31229",
+      "CVE-2026-45247"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -1441,6 +1453,7 @@
       "CVE-2026-33634",
       "CVE-2026-45321",
       "CVE-2026-48027",
+      "CVE-2026-8398",
       "MAL-2026-3083",
       "MAL-2026-MOIKA-DEPCONFUSION",
       "MAL-2026-NODE-IPC-STEALER",
@@ -1687,10 +1700,12 @@
       "CVE-2025-21042",
       "CVE-2025-21043",
       "CVE-2025-22457",
+      "CVE-2025-27363",
       "CVE-2025-5419",
       "CVE-2025-6965",
       "CVE-2025-9242",
       "CVE-2026-0300",
+      "CVE-2026-11645",
       "CVE-2026-22778",
       "CVE-2026-3909",
       "CVE-2026-42945",
@@ -1808,6 +1823,7 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2022-0492",
       "CVE-2023-48022",
       "CVE-2023-52163",
       "CVE-2023-6038",
@@ -2438,6 +2454,7 @@
     "evidence_cves": [
       "CVE-2018-14634",
       "CVE-2021-30952",
+      "CVE-2025-48595",
       "CVE-2026-21385",
       "CVE-2026-24214"
     ],
@@ -3073,6 +3090,7 @@
       "CVE-2023-44487",
       "CVE-2023-50868",
       "CVE-2026-24215",
+      "CVE-2026-28318",
       "CVE-2026-45498"
     ],
     "last_verified": "2026-05-19",
@@ -3490,7 +3508,9 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2026-0257"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
@@ -4633,5 +4653,91 @@
       "log-injection-telemetry"
     ],
     "evidence_cves": []
+  },
+  "CWE-116": {
+    "id": "CWE-116",
+    "name": "Improper Encoding or Escaping of Output",
+    "abstraction": "Base",
+    "category": "Injection",
+    "description": "The product prepares a structured message for a downstream component but does not correctly encode or escape special elements, so the output is parsed in an unintended way (command, markup, or control-character injection in a management interface).",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [],
+    "related_attack_patterns_capec": [
+      "CAPEC-73",
+      "CAPEC-81"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2026-20245"
+    ],
+    "framework_controls_partially_addressing": [],
+    "real_requirement": "Context-aware output encoding at every trust boundary where data crosses into a structured interpreter (shell, HTML, config). For AI agent tooling, tool-call output rendered into a downstream interpreter must be escaped for that interpreter, not just the original input.",
+    "lag_notes": "Frameworks treat output handling as a coding-quality concern (SI-10 covers input, not output encoding). No framework operationalizes per-interpreter output encoding for management-plane or agent-tool output.",
+    "last_verified": "2026-06-13"
+  },
+  "CWE-266": {
+    "id": "CWE-266",
+    "name": "Improper Privilege Management",
+    "abstraction": "Base",
+    "category": "Privilege",
+    "description": "The product does not properly assign, track, or relinquish privileges, allowing an actor to gain a higher privilege level than intended (a plugin or low-privilege role escalating to root or administrator).",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [],
+    "related_attack_patterns_capec": [
+      "CAPEC-122",
+      "CAPEC-233"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2026-48172"
+    ],
+    "framework_controls_partially_addressing": [],
+    "real_requirement": "Least-privilege enforcement with explicit privilege-drop after elevated operations and per-component privilege boundaries; for AI agents, the effective privilege must be the minimum for the current task, not the maximum the service account holds.",
+    "lag_notes": "AC-6 least-privilege is a stated design principle but is not operationalized for plugin/extension components or AI-agent invocation contexts that inherit a broad service-account privilege.",
+    "last_verified": "2026-06-13"
+  },
+  "CWE-912": {
+    "id": "CWE-912",
+    "name": "Hidden Functionality",
+    "abstraction": "Base",
+    "category": "Malicious Code",
+    "description": "The product contains functionality that is not documented, not part of the stated requirements, and not visible to the operator (a backdoor or covert capability), such as a messaging app that silently retains or forwards plaintext beyond its stated end-to-end guarantee.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [],
+    "related_attack_patterns_capec": [
+      "CAPEC-670"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2025-47729"
+    ],
+    "framework_controls_partially_addressing": [],
+    "real_requirement": "Provenance and behavioral attestation for shipped software: documented capability inventory, build-from-source reproducibility, and runtime monitoring that flags undocumented network or data flows. For AI and model supply chains this extends to undisclosed model behaviors and covert data exfiltration.",
+    "lag_notes": "Supply-chain controls (SR family, A.5.23) verify build integrity, not the absence of undocumented functionality in a validly-signed artifact. No framework requires a capability-inventory attestation.",
+    "last_verified": "2026-06-13"
+  },
+  "CWE-1023": {
+    "id": "CWE-1023",
+    "name": "Incomplete Comparison with Missing Factors",
+    "abstraction": "Base",
+    "category": "Comparison",
+    "description": "The product performs a comparison that omits one or more factors required to correctly distinguish the cases, so inputs that should be treated differently are treated the same (a packet or tunnel filter that compares only some fields and forwards unconfigured types).",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [],
+    "related_attack_patterns_capec": [
+      "CAPEC-13"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2026-7473"
+    ],
+    "framework_controls_partially_addressing": [],
+    "real_requirement": "Complete, deny-by-default comparison logic that enumerates every distinguishing factor for a security decision; security filters must fail closed on any unmatched factor rather than forwarding the default case.",
+    "lag_notes": "Frameworks specify that filtering exist (SC-7 boundary protection) but not that comparison logic be complete and fail-closed across all factors. Partial-match forwarding passes a control review while leaving an access-control bypass.",
+    "last_verified": "2026-06-13"
   }
 }
