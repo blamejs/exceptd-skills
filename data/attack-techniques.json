@@ -288,6 +288,7 @@
       "CVE-2023-6016",
       "CVE-2023-6019",
       "CVE-2024-0129",
+      "CVE-2024-11120",
       "CVE-2024-11392",
       "CVE-2024-11393",
       "CVE-2024-11394",
@@ -307,6 +308,7 @@
       "CVE-2024-50050",
       "CVE-2024-5565",
       "CVE-2024-56145",
+      "CVE-2024-6047",
       "CVE-2024-8069",
       "CVE-2025-10035",
       "CVE-2025-10164",
@@ -371,10 +373,12 @@
       "CVE-2025-8876",
       "CVE-2025-9377",
       "CVE-2026-0766",
+      "CVE-2026-10520",
       "CVE-2026-1281",
       "CVE-2026-1340",
       "CVE-2026-1731",
       "CVE-2026-20045",
+      "CVE-2026-20245",
       "CVE-2026-21858",
       "CVE-2026-21877",
       "CVE-2026-22252",
@@ -405,7 +409,10 @@
       "CVE-2026-39884",
       "CVE-2026-39987",
       "CVE-2026-40933",
+      "CVE-2026-42271",
+      "CVE-2026-45247",
       "CVE-2026-45829",
+      "CVE-2026-48172",
       "CVE-2026-5760",
       "CVE-2026-6973"
     ],
@@ -524,6 +531,7 @@
       "CVE-2021-22555",
       "CVE-2021-30952",
       "CVE-2021-43226",
+      "CVE-2022-0492",
       "CVE-2023-0386",
       "CVE-2023-36424",
       "CVE-2023-41974",
@@ -538,6 +546,7 @@
       "CVE-2025-24201",
       "CVE-2025-24990",
       "CVE-2025-27038",
+      "CVE-2025-30400",
       "CVE-2025-31277",
       "CVE-2025-32463",
       "CVE-2025-32701",
@@ -550,6 +559,7 @@
       "CVE-2025-43300",
       "CVE-2025-48543",
       "CVE-2025-48572",
+      "CVE-2025-48595",
       "CVE-2025-48633",
       "CVE-2025-59230",
       "CVE-2025-60710",
@@ -559,6 +569,7 @@
       "CVE-2025-6558",
       "CVE-2026-0300",
       "CVE-2026-20122",
+      "CVE-2026-20245",
       "CVE-2026-20805",
       "CVE-2026-21385",
       "CVE-2026-21533",
@@ -570,6 +581,7 @@
       "CVE-2026-43500",
       "CVE-2026-46300",
       "CVE-2026-46333",
+      "CVE-2026-48172",
       "CVE-2026-6973"
     ],
     "description_full": "Adversaries may exploit software vulnerabilities in an attempt to elevate privileges. Exploitation of a software vulnerability occurs when an adversary takes advantage of a programming error in a program, service, or within the operating system software or kernel itself to execute adversary-controlled code. Security constructs such as permission levels will often hinder access to information and use of certain techniques, so adversaries will likely need to perform privilege escalation to include use of software exploitation to circumvent those restrictions. When initially gaining access to a system, an adversary may be operating within a lower privileged process which will prevent them from accessing certain resources on the system. Vulnerabilities may exist, usually in operating system components and software commonly running at higher permissions, that can be exploited to gain higher levels of access on the system. This could enable someone to move from unprivileged or user level permissions to SYSTEM or root permissions depending on the component that is vulnerable. This could also enable an adversary to move from a virtualized environment, such as within a virtual machine or container, onto the underlying host. This may be a necessary step for an adversary compromising an endpoint system that has been properly configured and limits other privilege escalation methods. Adversaries may bring a signed vulnerable driver onto a compromised machine so that they can exploit the vulnerability to execute code in kernel mode. This process is sometimes referred to as Bring Your Own Vulnerable Driver (BYOVD).(Citation: ESET InvisiMole June 2020)(Citation: Unit42 AcidBox June 2020) Adversaries may include the vulnerable driver with files delivered during Initial Access or download it to a compromised system via [Ingress Tool Transfer](https://attack.mitre.org/techniques/T1105) or [Lateral Tool Transfer](https://attack.mitre.org/techniques/T1570).",
@@ -651,6 +663,7 @@
       "CVE-2025-6205",
       "CVE-2025-64513",
       "CVE-2025-69286",
+      "CVE-2026-0257",
       "CVE-2026-1603",
       "CVE-2026-20127",
       "CVE-2026-20182",
@@ -661,11 +674,13 @@
       "CVE-2026-24423",
       "CVE-2026-24858",
       "CVE-2026-33825",
+      "CVE-2026-35273",
       "CVE-2026-39884",
       "CVE-2026-41940",
       "CVE-2026-41947",
       "CVE-2026-41950",
       "CVE-2026-42897",
+      "CVE-2026-50751",
       "CVE-2026-6973",
       "MAL-2026-NODE-IPC-STEALER",
       "MAL-2026-SHAI-HULUD-OSS"
@@ -928,8 +943,11 @@
       "CVE-2024-21762",
       "CVE-2025-0282",
       "CVE-2025-22457",
+      "CVE-2026-0257",
       "CVE-2026-0300",
-      "CVE-2026-39987"
+      "CVE-2026-10520",
+      "CVE-2026-39987",
+      "CVE-2026-50751"
     ],
     "description_full": "Adversaries may leverage external-facing remote services to initially access and/or persist within a network. Remote services such as VPNs, Citrix, and other access mechanisms allow users to connect to internal enterprise network resources from external locations. There are often remote service gateways that manage connections and credential authentication for these services. Services such as [Windows Remote Management](https://attack.mitre.org/techniques/T1021/006) and [VNC](https://attack.mitre.org/techniques/T1021/005) can also be used externally.(Citation: MacOS VNC software for Remote Desktop) Access to [Valid Accounts](https://attack.mitre.org/techniques/T1078) to use the service is often a requirement, which could be obtained through credential pharming or by obtaining the credentials from users after compromising the enterprise network.(Citation: Volexity Virtual Private Keylogging) Access to remote services may be used as a redundant or persistent access mechanism during an operation. Access may also be gained through an exposed service that doesn’t require authentication. In containerized environments, this may include an exposed Docker API, Kubernetes API server, kubelet, or web application such as the Kubernetes dashboard.(Citation: Trend Micro Exposed Docker Server)(Citation: Unit 42 Hildegard Malware) Adversaries may also establish persistence on network by configuring a Tor hidden service on a compromised system. Adversaries may utilize the tool `ShadowLink` to facilitate the installation and configuration of the Tor hidden service. Tor hidden service is then accessible via the Tor network because `ShadowLink` sets up a .onion address on the compromised system. `ShadowLink` may be used to forward any inbound connections to RDP, allowing the adversaries to have remote access.(Citation: The BadPilot campaign) Adversaries may get `ShadowLink` to persist on a system by masquerading it as an MS Defender application.(Citation: Russian threat actors dig in, prepare to seize on war fatigue)",
     "platforms": [
@@ -1027,6 +1045,7 @@
       "CVE-2023-6021",
       "CVE-2023-6038",
       "CVE-2024-0769",
+      "CVE-2024-11120",
       "CVE-2024-11182",
       "CVE-2024-12450",
       "CVE-2024-12776",
@@ -1035,6 +1054,7 @@
       "CVE-2024-1561",
       "CVE-2024-1708",
       "CVE-2024-1709",
+      "CVE-2024-21182",
       "CVE-2024-21575",
       "CVE-2024-21576",
       "CVE-2024-21762",
@@ -1055,6 +1075,7 @@
       "CVE-2024-56145",
       "CVE-2024-57726",
       "CVE-2024-57728",
+      "CVE-2024-6047",
       "CVE-2024-6587",
       "CVE-2024-7399",
       "CVE-2024-7694",
@@ -1179,8 +1200,10 @@
       "CVE-2025-8876",
       "CVE-2025-9242",
       "CVE-2025-9377",
+      "CVE-2026-0257",
       "CVE-2026-0300",
       "CVE-2026-0766",
+      "CVE-2026-10520",
       "CVE-2026-1281",
       "CVE-2026-1340",
       "CVE-2026-1603",
@@ -1228,6 +1251,7 @@
       "CVE-2026-33017",
       "CVE-2026-34159",
       "CVE-2026-34197",
+      "CVE-2026-35273",
       "CVE-2026-35616",
       "CVE-2026-39987",
       "CVE-2026-40933",
@@ -1235,11 +1259,15 @@
       "CVE-2026-41947",
       "CVE-2026-41950",
       "CVE-2026-42208",
+      "CVE-2026-42271",
       "CVE-2026-42897",
       "CVE-2026-42945",
+      "CVE-2026-45247",
       "CVE-2026-45829",
+      "CVE-2026-50751",
       "CVE-2026-5760",
       "CVE-2026-6973",
+      "CVE-2026-7473",
       "CVE-2026-7482",
       "CVE-2026-9082",
       "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP"
@@ -1282,7 +1310,8 @@
       "Initial Access"
     ],
     "cve_refs": [
-      "CVE-2025-54136"
+      "CVE-2025-54136",
+      "CVE-2026-8398"
     ]
   },
   "T1195.001": {
@@ -1341,6 +1370,7 @@
       "CVE-2026-3502",
       "CVE-2026-45321",
       "CVE-2026-5760",
+      "CVE-2026-8398",
       "MAL-2024-PYPI-ULTRALYTICS-XMRIG",
       "MAL-2025-PYPI-COLORAMA-SOLANA-STEALER",
       "MAL-2026-3083",
@@ -1415,7 +1445,9 @@
       "CVE-2025-21042",
       "CVE-2025-21043",
       "CVE-2025-24201",
+      "CVE-2025-27363",
       "CVE-2025-30397",
+      "CVE-2025-30400",
       "CVE-2025-31277",
       "CVE-2025-33053",
       "CVE-2025-43200",
@@ -1429,6 +1461,7 @@
       "CVE-2025-6554",
       "CVE-2025-6558",
       "CVE-2025-8088",
+      "CVE-2026-11645",
       "CVE-2026-20700",
       "CVE-2026-21519",
       "CVE-2026-2441",
@@ -1459,6 +1492,7 @@
     "version": "v19",
     "cve_refs": [
       "CVE-2023-43791",
+      "CVE-2024-21182",
       "CVE-2025-14174",
       "CVE-2025-1796",
       "CVE-2025-69286"
@@ -1572,6 +1606,9 @@
     "description": "Adversaries may abuse legitimate extensible development features of servers to establish persistent access to systems.",
     "tactic": [
       "Persistence"
+    ],
+    "cve_refs": [
+      "CVE-2026-8398"
     ]
   },
   "T1518": {
@@ -1652,6 +1689,7 @@
       "Collection"
     ],
     "cve_refs": [
+      "CVE-2025-47729",
       "CVE-2026-41947"
     ]
   },
@@ -1895,7 +1933,8 @@
     "version": "v19",
     "cve_refs": [
       "CVE-2024-3094",
-      "CVE-2025-11837"
+      "CVE-2025-11837",
+      "CVE-2025-47729"
     ],
     "description_full": "Adversaries may modify host software binaries to establish persistent access to systems. Software binaries/executables provide a wide range of system commands or services, programs, and libraries. Common software binaries are SSH clients, FTP clients, email clients, web browsers, and many other user or server applications. Adversaries may establish persistence though modifications to host software binaries. For example, an adversary may replace or otherwise infect a legitimate application binary (or support files) with a backdoor. Since these binaries may be routinely executed by applications or the user, the adversary can leverage this for persistent access to the host. An adversary may also modify a software binary such as an SSH client in order to persistently collect credentials during logins (i.e., [Modify Authentication Process](https://attack.mitre.org/techniques/T1556)).(Citation: Google Cloud Mandiant UNC3886 2024) An adversary may also modify an existing binary by patching in malicious functionality (e.g., IAT Hooking/Entry point patching)(Citation: Unit42 Banking Trojans Hooking 2022) prior to the binary’s legitimate execution. For example, an adversary may modify the entry point of a binary to point to malicious code patched in by the adversary before resuming normal execution flow.(Citation: ESET FontOnLake Analysis 2021) After modifying a binary, an adversary may attempt to impair defenses by preventing it from updating (e.g., via the `yum-versionlock` command or `versionlock.list` file in Linux systems that use the yum package manager).(Citation: Google Cloud Mandiant UNC3886 2024)",
     "platforms": [
@@ -2365,6 +2404,7 @@
       "DS0029"
     ],
     "cve_refs": [
+      "CVE-2022-0492",
       "CVE-2024-0132",
       "CVE-2024-21626",
       "CVE-2024-3154",
@@ -2796,7 +2836,8 @@
       "CVE-2025-14174",
       "CVE-2025-24201",
       "CVE-2025-43529",
-      "CVE-2025-4919"
+      "CVE-2025-4919",
+      "CVE-2026-11645"
     ],
     "description_full": "Adversaries may gain access to a system through a user visiting a website over the normal course of browsing. Multiple ways of delivering exploit code to a browser exist (i.e., [Drive-by Target](https://attack.mitre.org/techniques/T1608/004)), including: * A legitimate website is compromised, allowing adversaries to inject malicious code * Script files served to a legitimate website from a publicly writeable cloud storage bucket are modified by an adversary * Malicious ads are paid for and served through legitimate ad providers (i.e., [Malvertising](https://attack.mitre.org/techniques/T1583/008)) * Built-in web application interfaces that allow user-controllable content are leveraged for the insertion of malicious scripts or iFrames (e.g., cross-site scripting) Browser push notifications may also be abused by adversaries and leveraged for malicious code injection via [User Execution](https://attack.mitre.org/techniques/T1204). By clicking \"allow\" on browser push notifications, users may be granting a website permission to run JavaScript code on their browser.(Citation: Push notifications - viruspositive)(Citation: push notification -mcafee)(Citation: push notifications - malwarebytes) Often the website used by an adversary is one visited by a specific community, such as government, a particular industry, or a particular region, where the goal is to compromise a specific user or set of users based on a shared interest. This kind of targeted campaign is often referred to a strategic web compromise or watering hole attack. There are several known examples of this occurring.(Citation: Shadowserver Strategic Web Compromise) Typical drive-by compromise process: 1. A user visits a website that is used to host the adversary controlled content. 2. Scripts automatically execute, typically searching versions of the browser and plugins for a potentially vulnerable version. The user may be required to assist in this process by enabling scripting, notifications, or active website components and ignoring warning dialog boxes. 3. Upon finding a vulnerable version, exploit code is delivered to the browser. 4. If exploitation is successful, the adversary will gain code execution on the user's system unless other protections are in place. In some cases, a second visit to the website after the initial scan is required before exploit code is delivered. Unlike [Exploit Public-Facing Application](https://attack.mitre.org/techniques/T1190), the focus of this technique is to exploit software on a client endpoint upon visiting a website. This will commonly give an adversary access to systems on the internal network instead of external systems that may be in a DMZ.",
     "platforms": [
@@ -3077,6 +3118,7 @@
       "CVE-2025-30202",
       "CVE-2025-6543",
       "CVE-2026-24215",
+      "CVE-2026-28318",
       "CVE-2026-45498"
     ],
     "description_full": "Adversaries may perform Endpoint Denial of Service (DoS) attacks to degrade or block the availability of services to users. Endpoint DoS can be performed by exhausting the system resources those services are hosted on or exploiting the system to cause a persistent crash condition. Example services include websites, email services, DNS, and web-based applications. Adversaries have been observed conducting DoS attacks for political purposes(Citation: FireEye OpPoisonedHandover February 2016) and to support other malicious activities, including distraction(Citation: FSISAC FraudNetDoS September 2012), hacktivism, and extortion.(Citation: Symantec DDoS October 2014) An Endpoint DoS denies the availability of a service without saturating the network used to provide access to the service. Adversaries can target various layers of the application stack that is hosted on the system used to provide the service. These layers include the Operating Systems (OS), server applications such as web servers, DNS servers, databases, and the (typically web-based) applications that sit on top of them. Attacking each layer requires different techniques that take advantage of bottlenecks that are unique to the respective components. A DoS attack may be generated by a single system or multiple systems spread across the internet, which is commonly referred to as a distributed DoS (DDoS). To perform DoS attacks against endpoint resources, several aspects apply to multiple methods, including IP address spoofing and botnets. Adversaries may use the original IP address of an attacking system, or spoof the source IP address to make the attack traffic more difficult to trace back to the attacking system or to enable reflection. This can increase the difficulty defenders have in defending against the attack by reducing or eliminating the effectiveness of filtering by the source address on network defense devices. Botnets are commonly used to conduct DDoS attacks against networks and services. Large botnets can generate a significant amount of traffic from systems spread across the global internet. Adversaries may have the resources to build out and control their own botnet infrastructure or may rent time on an existing botnet to conduct an attack. In some of the worst cases for DDoS, so many systems are used to generate requests that each one only needs to send out a small amount of traffic to produce enough volume to exhaust the target's resources. In such circumstances, distinguishing DDoS traffic from legitimate clients becomes exceedingly difficult. Botnets have been used in some of the most high-profile DDoS attacks, such as the 2012 series of incidents that targeted major US banks.(Citation: USNYAG IranianBotnet March 2016) In cases where traffic manipulation is used, there may be points in the global network (such as high traffic gateway routers) where packets can be altered and cause legitimate clients to execute code that directs network packets toward a target in high volume. This type of capability was previously used for the purposes of web censorship where client HTTP traffic was modified to include a reference to JavaScript that generated the DDoS code to overwhelm target web servers.(Citation: ArsTechnica Great Firewall of China) For attacks attempting to saturate the providing network, see [Network Denial of Service](https://attack.mitre.org/techniques/T1498).",
@@ -5225,7 +5267,10 @@
       "Identity Provider"
     ],
     "stix_id": "attack-pattern--67720091-eee3-4d2d-ae16-8264567f6f5b",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2026-48172"
+    ]
   },
   "T1550": {
     "id": "T1550",
@@ -5772,7 +5817,10 @@
       "Network Devices"
     ],
     "stix_id": "attack-pattern--b8017880-4b1e-42de-ad10-ae7ac6705166",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2026-7473"
+    ]
   },
   "T1601": {
     "id": "T1601",
@@ -12233,6 +12281,7 @@
       "CVE-2024-7694",
       "CVE-2025-2749",
       "CVE-2025-31324",
+      "CVE-2025-47729",
       "CVE-2025-49704",
       "CVE-2025-52691",
       "CVE-2025-53770"
@@ -13835,7 +13884,10 @@
     "stix_id": "attack-pattern--32901740-b42c-4fdd-bc02-345b5dc57082",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2026-8398"
+    ]
   },
   "T1553.003": {
     "id": "T1553.003",
@@ -16354,7 +16406,11 @@
     "stix_id": "attack-pattern--810d8072-afb6-4a56-9ee7-86379ac4a6f3",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2024-11120",
+      "CVE-2024-6047"
+    ]
   },
   "T1584.006": {
     "id": "T1584.006",

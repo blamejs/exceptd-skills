@@ -1830,7 +1830,10 @@
       "ATLAS"
     ],
     "stix_id": "attack-pattern--07421f1a-a5ae-5936-9713-c77e4758177c",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2026-42271"
+    ]
   },
   "AML.T0052": {
     "id": "AML.T0052",

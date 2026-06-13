@@ -17,7 +17,7 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "entry_count": 439
+    "entry_count": 459
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -25629,5 +25629,1019 @@
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
     "ai_assist_factor": "none"
+  },
+  "CVE-2022-0492": {
+    "name": "Linux Kernel cgroups v1 release_agent Privilege Escalation / Container Escape",
+    "lesson_date": "2026-06-13",
+    "attack_vector": {
+      "description": "The cgroups v1 release_agent write in kernel/cgroup/cgroup-v1.c does not check the writer's namespace authority. An unprivileged process that creates user + cgroup namespaces gets a writable cgroupfs, writes an attacker path into release_agent, and the kernel runs it as root in the initial namespace - escaping container/namespace isolation. Fixed by kernel commit 24f60085 and per-series kernel updates.",
+      "privileges_required": "low (local unprivileged user; from inside a container only when run without AppArmor/SELinux and without seccomp, or on a host with unprivileged user namespaces enabled)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered; disclosed via the upstream Linux kernel fix commit and NVD. The lesson: container isolation is not a security boundary on its own - a single missing-authorization kernel path turns an unprivileged container into host root unless mandatory-access-control confinement, seccomp, and namespace restrictions are layered on top."
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-6": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Least-privilege controls on the workload do not bound real privilege when a kernel cgroups path runs attacker-supplied code as root in the host namespace."
+      },
+      "NIST-800-53-SC-39": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Process/namespace isolation is treated as a boundary, but a single cgroups v1 release_agent flaw crosses it from container to host."
+      },
+      "AU-ISM-1807": {
+        "covered": true,
+        "adequate": false,
+        "gap": "OS-hardening guidance does not mandate disabling unprivileged user namespaces and requiring MAC + seccomp confinement on container hosts - the compensating controls that block this escape before the kernel is patched."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 71,
+      "basis": "Container fleets pass audits on image scanning and RBAC while running on host kernels that permit unprivileged user namespaces and without per-container MAC/seccomp confinement, leaving the documented release_agent escape reachable until every host kernel is patched and rebooted.",
+      "theater_pattern": "container_isolation_assumed_as_boundary"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "CONTAINER-HOST-NAMESPACE-ESCAPE-HARDENING",
+        "name": "CONTAINER-HOST-NAMESPACE-ESCAPE-HARDENING",
+        "description": "Container hosts must treat the kernel - not the namespace boundary - as the last line of defense against a confined workload. Patch host kernels to the fixed release for each maintained series (with reboot) or apply a vendor live-kernel-patch, and layer compensating controls that block cgroups/namespace escapes even on an unpatched kernel: confine every container with AppArmor or SELinux and a seccomp profile, drop CAP_SYS_ADMIN, and disable unprivileged user namespaces where workloads do not need them. The distinguishing test: from inside a representative container on a staging host, attempt the release_agent escape (create user+cgroup namespaces, mount cgroupfs, write a payload path to release_agent, trigger cgroup release) and confirm it is refused before any code runs as root - a fleet that passes image-scan and RBAC audits but permits this on an unpatched, unconfined host still allows container-to-host root.",
+        "evidence": "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=24f6008564183aa120d07c03d9289519c2fe02af",
+        "gap_closes": [
+          "NIST-800-53-AC-6",
+          "NIST-800-53-SC-39",
+          "AU-ISM-1807"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2024-11120": {
+    "name": "GeoVision EOL IP Devices Unauthenticated OS Command Injection",
+    "lesson_date": "2026-06-13",
+    "attack_vector": {
+      "description": "An unauthenticated remote attacker injects arbitrary OS commands (CWE-78) into end-of-life GeoVision IP cameras and video servers. Because the affected models are retired with no firmware fix, exposed devices stay exploitable forever; a Mirai-style botnet (LZRD variant, \"boatnet\" ARM binary) recruits internet-exposed devices in the wild. CISA KEV-listed 2025-05-07; remediation is replacing the device, not patching it.",
+      "privileges_required": "none (unauthenticated network-reachable injection sink)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered; disclosed via the GeoVision/TWCERT/CC advisory and confirmed in the wild by Akamai SIRT. The lesson is not about AI: it is that internet-exposed end-of-life devices which can never be patched are permanent attack surface. A patch SLA is meaningless for hardware the vendor has retired — the only remediation is enumerating unsupported components (NIST SA-22) and removing or replacing them."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SA-22": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Unsupported System Components is the controlling requirement, but most programs never apply it to embedded IP devices — EOL cameras and video servers stay in production with no replace-or-risk-accept decision, so an unpatchable RCE remains exploitable indefinitely."
+      },
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Flaw remediation assumes a patch can be deployed; for an EOL device with no firmware fix the SI-2 SLA can never resolve, and the program has no workflow for replacement-as-remediation."
+      },
+      "NIST-800-53-CM-8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Component inventory rarely tracks end-of-support lifecycle of embedded network devices, so unpatchable assets persist unnoticed until a botnet finds them."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 84,
+      "basis": "Organizations that pass patch-management and vulnerability-management audits still run end-of-life IP cameras and video servers, because audit scope treats 'patch available + applied' as the bar and has no requirement to enumerate and retire devices the vendor will never fix.",
+      "theater_pattern": "eol_device_unpatchable_exposed"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-EOL-DEVICE-RETIREMENT",
+        "name": "UNSUPPORTED-NETWORK-DEVICE-ENUMERATION-AND-RETIREMENT",
+        "description": "Every network-attached embedded device (IP cameras, video servers, NVRs, routers, print/scan appliances) must carry an end-of-support date in the asset inventory, and any device past that date that exposes a remotely reachable management or media surface must be removed from untrusted networks and scheduled for replacement — patching is not an option once the vendor retires the model. The distinguishing test: query the asset inventory for devices whose firmware lifecycle has ended and whose management interface is reachable from an untrusted segment; any non-empty result that lacks a replace-or-formally-risk-accept decision is a finding. Paper patch-management policies that assume a fix always exists leave actively-exploited EOL devices (GeoVision IP cameras, recruited by Mirai-style botnets) on the network indefinitely.",
+        "evidence": "https://www.akamai.com/blog/security-research/active-exploitation-mirai-geovision-iot-botnet",
+        "gap_closes": [
+          "NIST-800-53-SA-22",
+          "NIST-800-53-SI-2",
+          "NIST-800-53-CM-8"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2024-21182": {
+    "name": "Oracle WebLogic Server Unauthenticated T3/IIOP Data Access",
+    "lesson_date": "2026-06-13",
+    "attack_vector": {
+      "description": "An unauthenticated attacker with network access to Oracle WebLogic Server over T3 or IIOP gains unauthorized access to critical data (confidentiality-only, C:H/I:N/A:N). Easily exploitable, no authentication, no user interaction. Fixed by the July 2024 Oracle Critical Patch Update.",
+      "privileges_required": "none (unauthenticated network access over T3/IIOP)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered; disclosed via the Oracle Critical Patch Update for July 2024 and NVD. The lesson: application-server remoting protocols (WebLogic T3/IIOP) are a recurring unauthenticated attack surface, and exposing those ports to untrusted networks turns a single middleware flaw into direct data exposure - the network restriction is as load-bearing as the patch."
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access enforcement does not gate unauthenticated retrieval of critical data over the application server's T3/IIOP remoting protocols."
+      },
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Boundary protection does not restrict WebLogic T3/IIOP listen ports to trusted hosts, leaving the unauthenticated data-access path internet-reachable."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patch-application guidance does not single out middleware critical patch updates (Oracle CPU) for accelerated application when the flaw is KEV-listed and the protocol is network-exposed."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 69,
+      "basis": "WebLogic estates pass audits on perimeter-firewall and quarterly-patch policy while leaving T3/IIOP remoting ports reachable from untrusted segments and applying Oracle CPUs on a slow cycle, so a KEV-listed unauthenticated data-access flaw stays exploitable on exposed instances between quarterly windows.",
+      "theater_pattern": "appserver_remoting_protocol_exposed"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "APPSERVER-REMOTING-PROTOCOL-RESTRICTION",
+        "name": "APPSERVER-REMOTING-PROTOCOL-RESTRICTION",
+        "description": "Application servers that expose binary remoting protocols (Oracle WebLogic T3/IIOP, and equivalents) must restrict those protocols to trusted hosts and apply vendor critical patch updates on an accelerated schedule when a remoting flaw is KEV-listed. Place T3/IIOP behind a connection filter (weblogic.security.net.ConnectionFilterImpl) or network ACLs so only known hosts can reach them, never expose the ports to untrusted networks, and apply the Oracle CPU bundle (with server restart) rather than deferring to the next quarterly window. The distinguishing test: from an untrusted network segment, attempt an unauthenticated T3/IIOP connection to a staging WebLogic instance and confirm it is refused at the connection filter before any data is served - a perimeter-firewall + quarterly-patch policy that still leaves T3/IIOP reachable from an internal untrusted segment leaves the unauthenticated data-access path open.",
+        "evidence": "https://www.oracle.com/security-alerts/cpujul2024.html",
+        "gap_closes": [
+          "NIST-800-53-AC-3",
+          "NIST-800-53-SC-7",
+          "AU-ISM-1546"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2024-6047": {
+    "name": "GeoVision EOL Devices Unauthenticated OS Command Injection",
+    "lesson_date": "2026-06-13",
+    "attack_vector": {
+      "description": "An unauthenticated remote attacker injects arbitrary OS commands (CWE-78) into a broad fleet of end-of-life GeoVision devices that fail to filter user input — IP cameras, video servers, and license-plate-recognition units. Because the affected models are retired with no firmware fix, exposed devices stay exploitable forever; a Mirai-style botnet (LZRD variant, \"boatnet\" ARM binary) recruits internet-exposed devices in the wild. CISA KEV-listed 2025-05-07; remediation is replacing the device, not patching it.",
+      "privileges_required": "none (unauthenticated network-reachable injection sink)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered; disclosed via the GeoVision/TWCERT/CC advisory and confirmed in the wild by Akamai SIRT. The lesson is not about AI: it is that internet-exposed end-of-life devices which can never be patched are permanent attack surface. A patch SLA is meaningless for hardware the vendor has retired — the only remediation is enumerating unsupported components (NIST SA-22) and removing or replacing them."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SA-22": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Unsupported System Components is the controlling requirement, but most programs never apply it to embedded IP devices — EOL cameras, video servers, and LPR units stay in production with no replace-or-risk-accept decision, so an unpatchable RCE remains exploitable indefinitely."
+      },
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Flaw remediation assumes a patch can be deployed; for an EOL device with no firmware fix the SI-2 SLA can never resolve, and the program has no workflow for replacement-as-remediation."
+      },
+      "NIST-800-53-CM-8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Component inventory rarely tracks end-of-support lifecycle of embedded network devices, so a broad fleet of unpatchable assets persists unnoticed until a botnet finds them."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 84,
+      "basis": "Organizations that pass patch-management and vulnerability-management audits still run end-of-life IP cameras, video servers, and LPR units, because audit scope treats 'patch available + applied' as the bar and has no requirement to enumerate and retire devices the vendor will never fix.",
+      "theater_pattern": "eol_device_unpatchable_exposed"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-EOL-DEVICE-RETIREMENT",
+        "name": "UNSUPPORTED-NETWORK-DEVICE-ENUMERATION-AND-RETIREMENT",
+        "description": "Every network-attached embedded device (IP cameras, video servers, NVRs, LPR units, routers, print/scan appliances) must carry an end-of-support date in the asset inventory, and any device past that date that exposes a remotely reachable management or media surface must be removed from untrusted networks and scheduled for replacement — patching is not an option once the vendor retires the model. The distinguishing test: query the asset inventory for devices whose firmware lifecycle has ended and whose management interface is reachable from an untrusted segment; any non-empty result that lacks a replace-or-formally-risk-accept decision is a finding. Paper patch-management policies that assume a fix always exists leave actively-exploited EOL devices (a broad GeoVision fleet, recruited by Mirai-style botnets) on the network indefinitely.",
+        "evidence": "https://www.akamai.com/blog/security-research/active-exploitation-mirai-geovision-iot-botnet",
+        "gap_closes": [
+          "NIST-800-53-SA-22",
+          "NIST-800-53-SI-2",
+          "NIST-800-53-CM-8"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2025-27363": {
+    "name": "FreeType TrueType GX / Variable-Font Subglyph Out-of-Bounds Write",
+    "lesson_date": "2026-06-13",
+    "attack_vector": {
+      "description": "Parsing TrueType GX and variable-font subglyph structures, FreeType assigns a signed short to an unsigned long and adds a static value that wraps, allocates an undersized heap buffer, then writes up to six signed long values past it. A crafted variable font delivered anywhere FreeType rasterizes attacker-supplied input triggers the heap out-of-bounds write and can lead to code execution. Fixed upstream in the release following 2.13.0.",
+      "privileges_required": "none (a crafted font is parsed wherever FreeType is invoked on attacker-supplied input)",
+      "complexity": "high",
+      "ai_factor": "Not AI-discovered; disclosed via Meta/Facebook Security and the oss-security coordinated disclosure. The lesson: an embedded media-parsing library is part of every application's attack surface, and the patch must reach every place the library is statically or dynamically bundled - an OS-level FreeType update does not cover an app that ships its own copy."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Bound the subglyph size arithmetic before allocation so a signed-to-unsigned wrap cannot under-allocate, and inventory every embedded FreeType copy so the fix is applied across the whole software estate.",
+        "was_this_required": "Partially - input validation and embedded-component inventory are required controls, but no framework names embedded font-rendering libraries as a tracked patch target.",
+        "framework_requiring_it": "NIST-800-53-SI-10, NIST-800-53-SA-22, ISO-27001-2022-A.8.8",
+        "adequacy": "Inadequate - vulnerability management tracks OS packages but rarely the third-party media-parsing libraries vendored inside applications, so the patch is missed where an app bundles its own FreeType."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on applications that link FreeType crashing or behaving anomalously while rendering fonts received from untrusted sources, and inventory which binaries embed a vulnerable FreeType.",
+        "was_this_required": "Partially - malicious-code protection (SI-3) is required but does not model a crafted font parsed by an embedded library as a code-execution channel.",
+        "framework_requiring_it": "NIST-800-53-SI-3",
+        "adequacy": "Inadequate - generic anti-malware does not watch for font-parsing memory corruption inside an embedded library."
+      },
+      "response": {
+        "what_would_have_worked": "Upgrade FreeType to the fixed upstream release (or the distribution backport) and rebuild/restart every application and service that links it, including apps that vendor their own copy.",
+        "was_this_required": "Yes - CISA BOD 22-01 required federal agencies to remediate by 2025-05-27.",
+        "framework_requiring_it": "NIST-800-53-SI-2, AU-ISM-1493, DORA-Art-9",
+        "adequacy": "Adequate only if the response inventories every embedded copy - patching the OS package alone leaves applications that bundle their own FreeType exposed."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Flaw remediation tracks OS packages but not the FreeType copies vendored inside individual applications, so the fix is applied unevenly."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation did not bound the subglyph size arithmetic before allocation, so an integer wrap produced an undersized heap buffer."
+      },
+      "NIST-800-53-SA-22": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No control requires inventorying embedded third-party media-parsing libraries, so a vendored FreeType copy escapes the patch program entirely."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 88,
+      "basis": "FreeType is embedded across browsers, document viewers, mobile platforms, and rendering toolchains; organizations patch the OS package but not the copies bundled inside individual applications, so audit-passing estates retain vulnerable embedded copies.",
+      "theater_pattern": "embedded_media_library_unpatched_copies"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-105",
+        "name": "EMBEDDED-MEDIA-PARSER-LIBRARY-INVENTORY-AND-PATCH-PARITY",
+        "description": "An organization must inventory every place a high-risk embedded media-parsing library (FreeType, image/codec/font/document parsers) is statically or dynamically bundled - including copies vendored inside individual applications - and apply the security update to all of them, not only the OS-level package. The distinguishing test: after applying the OS FreeType update, scan the application estate for binaries that bundle their own FreeType copy and confirm each reports the fixed version - a paper patch-management policy that closes the OS package while leaving an application's vendored copy at <= 2.13.0 still permits the crafted-font out-of-bounds write.",
+        "evidence": "https://www.facebook.com/security/advisories/cve-2025-27363",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SA-22",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2025-30400": {
+    "name": "Microsoft Windows DWM Core Library Use-After-Free Local Privilege Escalation",
+    "lesson_date": "2026-06-13",
+    "attack_vector": {
+      "description": "A use-after-free in the Windows Desktop Window Manager (DWM) Core Library is reachable from a local, low-privilege context. An attacker who already has code execution on the host triggers the freed-object reuse to corrupt memory and elevate to SYSTEM. Remediated by the May 2025 Windows cumulative security update.",
+      "privileges_required": "low (an existing local foothold / standard-user code execution)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered; disclosed and patched by Microsoft at May 2025 Patch Tuesday. The lesson: an actively-exploited OS local-privilege-escalation primitive is the second half of an intrusion chain, so the monthly cumulative update must be applied within the KEV remediation window across the whole endpoint fleet - least-privilege account policy does not contain a compositor use-after-free that reaches SYSTEM."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the May 2025 Windows cumulative security update across every affected Windows 10/11 and Windows Server SKU within the KEV remediation window, and reboot to complete it.",
+        "was_this_required": "Yes - CISA BOD 22-01 required federal agencies to remediate by 2025-06-03; flaw remediation and OS patching are required controls.",
+        "framework_requiring_it": "NIST-800-53-SI-2, NIST-800-53-CM-6, AU-ISM-1501",
+        "adequacy": "Adequate if applied in window - the monthly rollup plus reboot fully remediates; the only gap is patch latency, since there is no live-patch path."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on a low-privilege process gaining SYSTEM rights shortly after DWM Core Library interaction, and inventory endpoints missing the May 2025 cumulative update.",
+        "was_this_required": "Partially - malware protection and memory protection are required but do not specifically model a DWM use-after-free as a privilege-escalation step.",
+        "framework_requiring_it": "NIST-800-53-SI-16, ISO-27001-2022-A.8.7",
+        "adequacy": "Inadequate alone - EDR may catch the privilege transition, but the use-after-free itself executes inside a trusted OS component, so detection is a backstop, not a substitute for the patch."
+      },
+      "response": {
+        "what_would_have_worked": "Patch and reboot the affected endpoints, then hunt for the initial-access foothold the LPE was paired with, since the use-after-free is the escalation half of a larger intrusion.",
+        "was_this_required": "Yes - vulnerability handling under NIS2 Art.21 and DORA Art.9 requires timely remediation of an actively-exploited OS flaw.",
+        "framework_requiring_it": "NIS2-Art21-vulnerability-handling, DORA-Art-9",
+        "adequacy": "Adequate - patch closes the escalation path; the response must also address the foothold the escalation depended on."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Flaw remediation is required but monthly OS patch latency leaves an actively-exploited LPE primitive open past the KEV remediation window on slower-patching endpoints."
+      },
+      "NIST-800-53-AC-6": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Least-privilege account policy does not contain a DWM Core Library use-after-free that elevates a low-privilege user to SYSTEM regardless of assigned rights."
+      },
+      "NIST-800-53-SI-16": {
+        "covered": false,
+        "adequate": false,
+        "gap": "Memory-protection mechanisms do not prevent the freed-object reuse inside the trusted OS compositor component."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 71,
+      "basis": "Every supported Windows desktop and server SKU is affected; audit-passing organizations with monthly-patch cadences still carry the LPE on endpoints that lag the May 2025 cumulative update or defer reboots.",
+      "theater_pattern": "os_lpe_monthly_patch_latency"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-106",
+        "name": "ACTIVELY-EXPLOITED-OS-LPE-REMEDIATION-WINDOW-ENFORCEMENT",
+        "description": "When an OS vendor flags a local-privilege-escalation flaw as exploited in the wild (and it is KEV-listed), the monthly cumulative update that fixes it must be applied and rebooted across the entire affected endpoint fleet within the KEV remediation window, not on the normal patch cadence, and account-privilege policy must not be relied on to contain it. The distinguishing test: enumerate the fleet's installed build numbers against the fixed build for each SKU and confirm zero endpoints remain below it past the due date - a paper patch-management policy that ships monthly rollups on a 30-day cadence still leaves an actively-exploited LPE open during the window the vendor flagged it as exploited.",
+        "evidence": "https://msrc.microsoft.com/update-guide/en-US/vulnerability/CVE-2025-30400",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-CM-6",
+          "AU-ISM-1501"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2025-47729": {
+    "name": "TeleMessage TM SGNL Archiving-Backend Cleartext Message Retention (Hidden Functionality)",
+    "lesson_date": "2026-06-13",
+    "attack_vector": {
+      "description": "TM SGNL (aka Archive Signal) advertised end-to-end encryption from the phone through to the corporate archive, but the TeleMessage archiving backend retained cleartext copies of users' messages (CWE-912 hidden functionality). A breach of that backend in May 2025 exposed the plaintext of communications operators believed were end-to-end encrypted. No fixed version closes the design property; CISA's guidance is mitigate-or-discontinue.",
+      "privileges_required": "high (access to the archiving backend, e.g. via a backend breach)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered; surfaced via reporting and security research after a breach of the TeleMessage backend, catalogued in NVD. The lesson is that a vendor's end-to-end-encryption claim must be independently verified against the backend's actual data handling - a product can advertise E2E while its archive silently retains cleartext, and that hidden functionality only becomes visible when the backend is breached."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SC-28": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Protection of information at rest was assumed from the vendor's end-to-end claim, but the archiving backend stored message plaintext."
+      },
+      "NIST-800-53-SI-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Behavior-integrity verification did not detect that the product's actual data handling (cleartext retention) diverged from its documented end-to-end behavior."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires verifying that a messaging product's actual backend data handling matches its marketed cryptographic properties, so undocumented cleartext retention goes unchecked until a breach reveals it."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 90,
+      "basis": "Organizations procure E2E-marketed messaging on the strength of the vendor's documentation; a compliant buyer that records 'end-to-end encryption: yes' from the datasheet remains exposed because the cleartext retention lives in the backend, invisible to a controls audit that trusts the claim.",
+      "theater_pattern": "e2e_claim_unverified_backend_cleartext"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-MESSAGING-E2E-CLAIM-VERIFICATION",
+        "name": "VERIFY-MESSAGING-BACKEND-DATA-HANDLING-AGAINST-E2E-CLAIM",
+        "description": "Do not accept a messaging or archiving product's end-to-end-encryption claim from documentation alone. Before trusting a vendor backend with sensitive communications, require evidence that the archive holds no recoverable cleartext - independent cryptographic review, a documented key-custody model that excludes the vendor, or contractual/technical proof that the backend cannot read message contents. The distinguishing test: ask the vendor (or test in a controlled deployment) whether the archiving backend can produce the plaintext of a stored message without the endpoint's keys; if it can, the 'end-to-end' claim does not hold and the backend is a cleartext-exposure surface regardless of marketing. A product that passes a paper controls audit on the strength of its E2E datasheet still exposes plaintext if its backend silently retains it.",
+        "evidence": "https://nvd.nist.gov/vuln/detail/CVE-2025-47729",
+        "gap_closes": [
+          "NIST-800-53-SC-28",
+          "NIST-800-53-SA-9",
+          "NIST-800-53-SI-7",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ]
+  },
+  "CVE-2025-48595": {
+    "name": "Android Framework Integer Overflow Local Privilege Escalation",
+    "lesson_date": "2026-06-13",
+    "attack_vector": {
+      "description": "An integer overflow in the Android Framework (CWE-190) reaches a code-execution path, letting a local app with no privileges and no user interaction escalate to elevated/system privilege. Fixed at the 2026-06-01 Android security-patch level.",
+      "privileges_required": "none (local app, no additional execution privilege, no user interaction)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered; disclosed via the Android Security Bulletin and NVD. The lesson: a memory-safety flaw in the core mobile OS framework collapses the app-sandbox privilege boundary, and remediation is only as fast as the slowest OEM/carrier OTA - so a managed fleet's real exposure is governed by enforced minimum patch level, not by the bulletin date."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Flaw-remediation timelines do not account for OEM/carrier-gated mobile patch delivery; a KEV-listed Framework flaw can remain unpatched on devices well past the bulletin date."
+      },
+      "NIST-800-53-CM-6": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Mobile baseline configuration does not enforce a minimum Android security-patch level, so devices below 2026-06-01 stay in service exposed."
+      },
+      "AU-ISM-1407": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Mobile patching guidance does not require enforcing the current monthly Android patch level as the remediation control for Framework privilege-escalation flaws."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 78,
+      "basis": "MDM-enrolled fleets pass audits on encryption and screen-lock posture while not enforcing a minimum Android security-patch level, leaving devices below 2026-06-01 exposed to a local privilege escalation until the OEM/carrier OTA arrives.",
+      "theater_pattern": "mobile_patch_level_unenforced"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "MOBILE-OS-MINIMUM-PATCH-LEVEL-ENFORCEMENT",
+        "name": "MOBILE-OS-MINIMUM-PATCH-LEVEL-ENFORCEMENT",
+        "description": "Managed mobile fleets must enforce a minimum OS security-patch level as a condition of access to organizational data, not merely report it. For Android, the MDM/EMM must read the device security-patch level and block or quarantine devices below the patch level that fixes a KEV-listed Framework flaw (here, 2026-06-01), and constrain installation of untrusted/side-loaded apps on devices that cannot yet update - since the privilege escalation is driven by locally running code. The distinguishing test: enroll a device pinned below 2026-06-01 and confirm the MDM policy denies it access to protected resources (rather than only recording the stale patch level on a dashboard) - paper 'mobile patching' policies that surface patch level without enforcing it leave exploitable devices in production.",
+        "evidence": "https://source.android.com/docs/security/bulletin/2026/2026-06-01",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-CM-6",
+          "AU-ISM-1407"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-0257": {
+    "name": "Palo Alto Networks PAN-OS GlobalProtect Authentication Bypass",
+    "lesson_date": "2026-06-13",
+    "attack_vector": {
+      "description": "An unauthenticated remote attacker bypasses GlobalProtect portal/gateway authentication on PAN-OS (CWE-565) and establishes an unauthorized remote-access VPN connection, obtaining a foothold inside the perimeter the firewall defends. Fixed by upgrading to a patched PAN-OS maintenance release; Panorama and Cloud NGFW are unaffected.",
+      "privileges_required": "none (unauthenticated network access to the GlobalProtect portal/gateway)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered; disclosed via the Palo Alto Networks security advisory. The lesson is structural: a VPN gateway is itself the authentication enforcement point for the perimeter, so a pre-credential bypass on that device converts the boundary control into the attacker's entry path. Framework patch SLAs calibrated to CVSS are insufficient once CISA confirms in-the-wild exploitation and sets a 3-day due date."
+    },
+    "framework_coverage": {
+      "NIST-800-53-IA-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Authentication of the VPN caller is satisfied on paper but bypassed — an unauthenticated attacker reaches an authenticated session at the perimeter."
+      },
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Boundary protection fails at its enforcement point: the firewall that provides the boundary is the device whose VPN authentication is bypassed."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Network-security and access-control measures trust the VPN gateway as an enforcement point and carry no KEV-tied expedited SLA for an actively exploited perimeter auth bypass."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 82,
+      "basis": "Audit-passing organizations operate GlobalProtect VPN gateways as trusted perimeter enforcement points and treat firewall firmware patching on routine maintenance windows, leaving an internet-facing authentication-bypass surface exposed past the KEV due date.",
+      "theater_pattern": "perimeter_vpn_auth_bypass_trusted_enforcer"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-PERIMETER-VPN-AUTH-BYPASS-EXPEDITED-PATCH",
+        "name": "PERIMETER-VPN-GATEWAY-AUTH-BYPASS-EXPEDITED-REMEDIATION",
+        "description": "A remote-access VPN gateway (GlobalProtect, IKEv1/IKEv2 concentrators, SSL-VPN portals) is itself the authentication enforcement point for the network perimeter; an authentication-bypass flaw on that device must be remediated on a KEV-tied expedited clock, not the routine appliance-patch window. Require: enumerate every internet-facing VPN/portal authentication surface, subscribe to the vendor's advisory feed, apply vendor interim mitigations within hours of a confirmed-exploited auth bypass, and restrict gateway exposure to known client networks where feasible. The distinguishing test: on a staging gateway running the vulnerable release, send an unauthenticated request to the portal/gateway and confirm no VPN session or interior reachability is granted before authentication completes — paper 'VPN authentication enforced' policies do not detect a pre-credential bypass that grants an interior foothold.",
+        "evidence": "https://security.paloaltonetworks.com/CVE-2026-0257",
+        "gap_closes": [
+          "NIST-800-53-IA-2",
+          "NIST-800-53-AC-3",
+          "NIST-800-53-SC-7"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-10520": {
+    "name": "Ivanti Sentry Unauthenticated OS Command Injection to Root RCE",
+    "lesson_date": "2026-06-13",
+    "attack_vector": {
+      "description": "An unauthenticated HTTP POST to /mics/api/v2/sentry/mics-config/handleMessage reaches an OS command injection sink (CWE-78) in the Sentry ConfigServiceController and executes arbitrary commands as root, fully compromising the MDM gateway. Fixed by upgrading to Ivanti Sentry 10.5.2 / 10.6.2 / 10.7.1; exposure is gated by whether the appliance is unmanaged with externally reachable endpoints versus protected by mTLS with EPMM or restricted HTTPS via Neurons for MDM.",
+      "privileges_required": "none (unauthenticated network access to the externally reachable config endpoint)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered; disclosed via the Ivanti security advisory with technical analysis and a public PoC published by watchTowr Labs. The lesson is structural: a device-management gateway sitting at the perimeter is a privileged root-execution surface, and an unauthenticated config endpoint that fails to neutralize OS-command input inverts the gateway's trust position the moment its endpoints are externally reachable. A same-week public PoC plus a 3-day KEV due date compresses the remediation window to hours."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation does not neutralize OS-command metacharacters on the appliance config endpoint, permitting unauthenticated command injection to root."
+      },
+      "NIST-800-53-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A root-level command-execution endpoint is reachable without authentication when the appliance is unmanaged and externally exposed."
+      },
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Boundary protection fails: the perimeter MDM gateway is itself remotely compromised to root, inverting its trust position rather than enforcing it."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 84,
+      "basis": "Audit-passing organizations stand up MDM/device-management gateways at the perimeter and leave standalone Sentry instances unmanaged with externally reachable endpoints, treating appliance config endpoints as trusted rather than as unauthenticated root-execution surfaces; a same-week public PoC and active scanning leave exposed instances compromised before routine patch windows close.",
+      "theater_pattern": "perimeter_mdm_gateway_unauth_root_rce"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-MDM-GATEWAY-UNAUTH-CONFIG-ENDPOINT-NEUTRALIZE-AND-CONTAIN",
+        "name": "DEVICE-MANAGEMENT-GATEWAY-CONFIG-ENDPOINT-AUTH-INPUT-NEUTRALIZATION",
+        "description": "A device-management / MDM gateway (Ivanti Sentry, MobileIron, and similar) is a privileged root-execution surface at the network perimeter; every config/message endpoint must authenticate the caller and must neutralize OS-command input before any shell or process invocation, and the appliance must never be left unmanaged with externally reachable endpoints. Require: inventory all gateway HTTP endpoints, ensure they are managed (mTLS with the management server or restricted HTTPS) so config interfaces are not externally reachable, neutralize OS-command metacharacters at every message handler, and remediate any confirmed-exploited unauthenticated root RCE on a KEV-tied expedited clock with mandatory forensic triage of exposed instances. The distinguishing test: send an unauthenticated request carrying an OS-command metacharacter payload to each gateway config endpoint on a staging instance and confirm it is refused before any command runs — paper 'appliance hardened' policies that leave an unmanaged instance's config endpoint wired to a root command sink still permit unauthenticated root RCE.",
+        "evidence": "https://labs.watchtowr.com/more-evidence-that-words-dont-mean-what-we-thought-they-meant-ivanti-sentry-pre-auth-os-command-injection-cve-2026-10520/",
+        "gap_closes": [
+          "NIST-800-53-SI-10",
+          "NIST-800-53-AC-3",
+          "NIST-800-53-SC-7"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-11645": {
+    "name": "Google Chromium V8 Out-of-Bounds Read and Write Remote Code Execution",
+    "lesson_date": "2026-06-13",
+    "attack_vector": {
+      "description": "An out-of-bounds read and write in Chromium's V8 engine lets a remote attacker who serves a crafted HTML page corrupt memory and execute arbitrary code inside the renderer sandbox; the bug ships in every Chromium-based browser (Chrome, Edge, Opera, Brave) until each rebases onto the fixed V8. Fixed in Chrome 149.0.7827.103.",
+      "privileges_required": "none (remote; victim must load attacker-controlled web content)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered; disclosed via the Chrome stable-channel security release and NVD. The lesson is reach, not novelty: a single V8 memory-corruption bug is simultaneously a vulnerability in Chrome AND in every other Chromium-derived browser, so patch tracking that watches only 'Chrome' misses the same defect riding in Edge, Opera and Brave on the same endpoints."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A KEV-listed, actively exploited renderer RCE on the most widely deployed client engine often falls outside the expedited patch SLA that server CVEs get - browser-engine updates are treated as routine auto-update, not urgent flaw remediation."
+      },
+      "NIST-800-53-SI-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Malicious-code protection trusts the browser sandbox; it does not account for a memory-corruption primitive inside the engine that is chained toward host code execution."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Technical-vulnerability management does not enumerate every Chromium-derived browser in the estate as carrying the same V8 defect, so remediation tracking on 'Chrome' alone leaves Edge/Opera/Brave unpatched."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 72,
+      "basis": "Organizations rely on browser auto-update and assume it closes the window, but managed-update lag, machines that have not relaunched the browser, and unenumerated secondary Chromium-based browsers leave the patched build not actually running on a meaningful fraction of endpoints.",
+      "theater_pattern": "browser_autoupdate_assumed_complete"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      "Enforce timely remediation of CISA KEV-listed RCE in Google Chrome and Chromium-based browsers before Chrome 149: KEV due-date as the binding SLA, not a 30-day default."
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-20245": {
+    "name": "Cisco Catalyst SD-WAN Manager Root Command Execution via Improper Output Encoding",
+    "lesson_date": "2026-06-13",
+    "attack_vector": {
+      "description": "An authenticated netadmin user on Cisco Catalyst SD-WAN Manager uploads a crafted file; insufficient input validation in the management CLI (improper output encoding, CWE-116) injects commands that run as root. Root on the controller governs the WAN fabric - observed exploitation pushed configuration changes to edge devices. The netadmin precondition is reachable by chaining CVE-2026-20182 / CVE-2026-20127. Fixed in 20.9.9.2 / 20.12.7.2 / 20.15.4.5 / 20.15.5.3 / 20.18.3.1 / 26.1.1.2.",
+      "privileges_required": "low (authenticated netadmin on the management console; obtainable by chaining CVE-2026-20182 / CVE-2026-20127)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered; disclosed via the Cisco PSIRT advisory and NVD. The lesson is blast radius through the management plane: a role-scoped administrative account reaching host root on a fabric controller does not merely compromise one box - it pushes configuration to every edge device, and the 'low' privilege precondition is itself an exploit chain away."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input-validation controls did not catch a crafted-file upload turning into injected root commands on a privileged management CLI."
+      },
+      "NIST-800-53-AC-6": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Least-privilege does not hold: a netadmin role escalates to root on the controller, and that role is itself reachable by chaining authentication CVEs."
+      },
+      "NIST-800-53-CM-5": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access-restrictions-for-change do not contain the blast radius - root on the SD-WAN Manager pushes configuration to edge devices fleet-wide."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 68,
+      "basis": "Network-controller hardening audits verify that administrative roles exist and are scoped, but rarely test whether a scoped role can reach host root through an injection flaw, nor whether the role itself is reachable by chaining authentication bypass CVEs.",
+      "theater_pattern": "mgmt_role_to_root_unverified"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      "Enforce timely remediation of CISA KEV-listed Privilege Escalation in Cisco Catalyst SD-WAN Manager (formerly SD-WAN vManage) and SD-WAN vSmart Controller across the affected 20: KEV due-date as the binding SLA, not a 30-day default."
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-28318": {
+    "name": "SolarWinds Serv-U Uncontrolled Resource Consumption Denial of Service",
+    "lesson_date": "2026-06-13",
+    "attack_vector": {
+      "description": "SolarWinds Serv-U is crashed by a specially crafted unauthenticated POST request using the Content-Encoding: deflate header that drives the service into resource exhaustion (CWE-400) - an unauthenticated denial of service against the managed file-transfer surface. Remediated by updating to Serv-U 15.5.4 Hotfix 1 or later and restarting the service.",
+      "privileges_required": "none (unauthenticated network request)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered; disclosed via a SolarWinds Trust Center security advisory and CISA KEV listing. The lesson: an internet-exposed managed file-transfer server must reject malformed or abusive request encodings before they reach a resource-consuming decode path - a single crafted compressed POST should never be able to crash the service for every other user."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SC-5": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Denial-of-service protection does not treat an internet-exposed file-transfer service as a single-request crash target through an abusive Content-Encoding body."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation does not reject malformed / abusive compressed request bodies before they reach the resource-consuming decode path."
+      },
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Flaw remediation does not enforce emergency patch timelines for an actively exploited unauthenticated DoS on an internet-facing file-transfer server."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 81,
+      "basis": "Managed file-transfer servers are routinely exposed to the internet for partner file exchange; availability-protection audits focus on network-layer DDoS controls and do not verify that the application rejects malformed request encodings before resource-consuming decode.",
+      "theater_pattern": "mft_unauth_request_encoding_crash"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "MFT-REQUEST-ENCODING-RESOURCE-GUARD",
+        "name": "FILE-TRANSFER-SERVICE-REQUEST-ENCODING-RESOURCE-GUARD",
+        "description": "An internet-exposed managed file-transfer / FTP / HTTP file service (SolarWinds Serv-U and similar) must bound the resources consumed when decoding a request body and must reject malformed or abusive content encodings (oversized or malformed Content-Encoding: deflate / gzip payloads) before they reach the decode path, so that no single unauthenticated request can exhaust resources and crash the service. The distinguishing test: send an unauthenticated request with a malformed or pathological Content-Encoding: deflate body to a staging instance and confirm the request is rejected with bounded resource use and the service stays available - paper 'DoS protection' that relies only on network-layer rate limiting still permits an application-layer single-request crash.",
+        "evidence": "https://www.solarwinds.com/trust-center/security-advisories/CVE-2026-28318",
+        "gap_closes": [
+          "NIST-800-53-SC-5",
+          "NIST-800-53-SI-10",
+          "NIST-800-53-SI-2"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-35273": {
+    "name": "Oracle PeopleSoft Enterprise PeopleTools Missing Authentication for Critical Function",
+    "lesson_date": "2026-06-13",
+    "attack_vector": {
+      "description": "Oracle PeopleSoft Enterprise PeopleTools exposes a critical environment-management function without authentication (CWE-306); an unauthenticated network attacker reaches full takeover of PeopleTools. Remediated via the Oracle Security Alert / Critical Patch Update fix for 8.61 and 8.62.",
+      "privileges_required": "none (unauthenticated network access via HTTP)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered; disclosed via an Oracle out-of-cycle Security Alert and CISA KEV listing. The lesson: enterprise ERP management planes carry takeover-capable functions that must authenticate every caller - an unauthenticated critical function on a core business platform is a direct path to compromising the HR/finance/student data the platform governs."
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access enforcement is absent on a critical ERP management function - it is reachable without authentication."
+      },
+      "NIST-800-53-IA-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The ERP platform does not authenticate callers before exposing a takeover-capable function."
+      },
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Flaw remediation does not enforce emergency patch timelines for unauthenticated-takeover flaws on core ERP platforms even when the vendor ships an out-of-cycle alert."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 78,
+      "basis": "PeopleSoft management surfaces are frequently exposed on internal or partner-reachable networks under trusted-network assumptions; access-control audits attest authentication on the application's user-facing logins but do not verify that every critical management function enforces it.",
+      "theater_pattern": "erp_management_plane_unauth_critical_function"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "ERP-MGMT-PLANE-CRITICAL-FUNCTION-AUTH",
+        "name": "ENTERPRISE-ERP-MANAGEMENT-FUNCTION-AUTHENTICATION",
+        "description": "An enterprise ERP platform (Oracle PeopleSoft, Oracle E-Business Suite, SAP, and similar) must authenticate every management-plane and environment-management function before it can be invoked, and must not expose any takeover-capable function to an unauthenticated network caller. Segment the ERP management surface from untrusted networks and place it behind authenticated access control. The distinguishing test: send an unauthenticated network request to each environment-management / configuration endpoint on a staging instance and confirm it is refused before any privileged action runs - paper 'ERP access control' policies that attest user-login authentication while leaving a critical management function reachable without credentials still permit unauthenticated takeover.",
+        "evidence": "https://www.oracle.com/security-alerts/alert-cve-2026-35273.html",
+        "gap_closes": [
+          "NIST-800-53-AC-3",
+          "NIST-800-53-IA-2",
+          "NIST-800-53-SI-2"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-42271": {
+    "name": "BerriAI LiteLLM MCP Test-Endpoint Authenticated Command Injection",
+    "lesson_date": "2026-06-13",
+    "attack_vector": {
+      "description": "LiteLLM's MCP REST test endpoints (/mcp-rest/test/connection, /mcp-rest/test/tools/list) accept a request-supplied MCP server configuration whose stdio transport spawns an arbitrary subprocess on the proxy host. The config-save endpoint requires PROXY_ADMIN, but the test endpoints did not - so any authenticated caller, including a low-privilege internal-user key, reaches command execution on the host. Fixed in 1.83.7.",
+      "privileges_required": "low (any authenticated key, including a low-privilege internal-user key)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered; disclosed via the BerriAI GitHub Security Advisory. The lesson: an LLM gateway's MCP integration is a code-execution surface, and every endpoint that can spawn a subprocess from a supplied server config must be gated at the same admin privilege as the save endpoint - testing a connection is not a lower-trust action than saving it when both reach the same subprocess-spawn path."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Gate every MCP endpoint that can spawn a subprocess from a supplied server config behind the same PROXY_ADMIN privilege the save endpoint enforces, and never spawn a host subprocess from a request-supplied stdio config without sandboxing.",
+        "was_this_required": "Partially - access enforcement and least-privilege are required controls, but no framework names MCP test endpoints as admin-equivalent execution surfaces.",
+        "framework_requiring_it": "NIST-800-53-AC-3, NIST-800-53-AC-6, NIST-800-53-CM-7, ISO-27001-2022-A.8.2",
+        "adequacy": "Inadequate - the controls exist but were applied to the save endpoint and not to the test endpoints that reach the same subprocess-spawn path; the privilege gate was placed on the wrong half of the surface."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on the LiteLLM proxy spawning child processes that are not legitimate MCP servers, and on low-privilege internal-user keys calling the /mcp-rest/test/* endpoints.",
+        "was_this_required": "Partially - malicious-code protection (SI-3) is required but does not model an LLM gateway's MCP endpoints as a subprocess-spawn channel.",
+        "framework_requiring_it": "NIST-800-53-SI-3",
+        "adequacy": "Inadequate - generic anti-malware does not watch an LLM gateway's MCP test endpoints for request-driven subprocess spawning."
+      },
+      "response": {
+        "what_would_have_worked": "Upgrade to LiteLLM 1.83.7-stable, rotate any keys that could have reached the MCP test endpoints, and audit the proxy host for unexpected child processes spawned via MCP configs.",
+        "was_this_required": "Yes - CISA BOD 22-01 required federal agencies to remediate by 2026-06-22.",
+        "framework_requiring_it": "AU-ISM-1546, DORA-Art-9",
+        "adequacy": "Adequate once the privilege mismatch is understood - the fix is the upstream upgrade plus closing exposure of the MCP test endpoints to untrusted callers."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access enforcement gated the config-save endpoint but not the MCP test endpoints, which reach the same subprocess-spawn path - the privilege gate was on the wrong half of the surface."
+      },
+      "NIST-800-53-AC-6": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Least-privilege is broken: a low-privilege internal-user key reaches an admin-equivalent host-command-execution path."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires enumerating every MCP endpoint of an LLM gateway as an execution surface, so a test endpoint that spawns subprocesses escaped the admin gate the save endpoint enforced."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 82,
+      "basis": "LLM gateways/proxies are deployed to front model traffic for many internal callers and their MCP integrations are enabled for tooling; the test endpoints are assumed lower-trust than the save endpoint even though both reach a subprocess-spawn path.",
+      "theater_pattern": "llm_gateway_mcp_unauth_exec"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-104",
+        "name": "LLM-GATEWAY-MCP-EXECUTION-ENDPOINT-PRIVILEGE-PARITY",
+        "description": "An LLM gateway/proxy (LiteLLM and similar) must enforce the same administrative privilege on every endpoint that can spawn a subprocess or reach a code-execution path from a supplied MCP server configuration - test-connection, list-tools, and save-config must share one privilege gate - and must not spawn a host subprocess from a request-supplied stdio transport config without sandboxing. The distinguishing test: call each MCP test endpoint on a staging instance with a low-privilege (non-admin) authenticated key and a server config whose command attempts a non-MCP host action, and confirm it is refused before any subprocess spawns - paper access-control policies that gate the save endpoint but leave the test endpoints open still permit an authenticated low-privilege key to run host commands.",
+        "evidence": "https://github.com/BerriAI/litellm/security/advisories/GHSA-v4p8-mg3p-g94g",
+        "gap_closes": [
+          "NIST-800-53-AC-3",
+          "NIST-800-53-AC-6",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-45247": {
+    "name": "Mirasvit Full Page Cache Warmer (Magento) Deserialization of Untrusted Data Remote Code Execution",
+    "lesson_date": "2026-06-13",
+    "attack_vector": {
+      "description": "Mirasvit Full Page Cache Warmer for Magento 2 passes a crafted serialized PHP object from the CacheWarmer cookie to PHP's native unserialize() on attacker-controlled data (CWE-502), giving unauthenticated remote code execution on the storefront. The flaw fires on ordinary unauthenticated storefront traffic; remediated by updating the extension to 1.11.12 or later.",
+      "privileges_required": "none (unauthenticated storefront request)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered; disclosed via Sansec research and a VulnCheck advisory. The lesson: a third-party e-commerce extension is part of the storefront's code-execution surface - request-supplied data (a cookie value) must never reach a native deserialization sink, and patch programs must track every installed Magento / Adobe Commerce extension, not only the core platform, because the extension widened the RCE surface beyond what core-platform monitoring covers."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation does not stop request-supplied data from flowing into a native PHP deserialization function on a public storefront request path."
+      },
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Flaw remediation tracks the core e-commerce platform but not the third-party extensions that extend its code-execution surface."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires enumerating every installed third-party storefront extension as a code-execution surface, so a deserialization sink in an extension is invisible to core-platform-scoped controls."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 84,
+      "basis": "Magento / Adobe Commerce stores run numerous third-party extensions; patch-management and secure-coding audits attest the core platform and the merchant's own code but rarely enumerate every extension's request-handling paths, so a deserialization sink inside an extension passes audit while remaining exploitable.",
+      "theater_pattern": "ecommerce_extension_unauth_deserialization"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "ECOMMERCE-EXTENSION-DESERIALIZATION-GUARD",
+        "name": "ECOMMERCE-PLATFORM-EXTENSION-UNTRUSTED-DESERIALIZATION-GUARD",
+        "description": "An e-commerce platform (Magento / Adobe Commerce and similar) and every third-party extension it loads must never pass request-supplied data (cookies, headers, body, query parameters) to a native deserialization function (PHP unserialize(), and equivalents in other runtimes) on an unauthenticated storefront request path. Patch-management and secure-coding programs must enumerate every installed extension as part of the storefront's code-execution surface, not only the core platform. The distinguishing test: send an unauthenticated storefront request carrying a crafted serialized object in each cookie / header an extension reads, on a staging store, and confirm it is rejected before any deserialization runs - paper 'platform patched' attestations that ignore the installed extensions still permit unauthenticated RCE through an extension's object-injection sink.",
+        "evidence": "https://sansec.io/research/mirasvit-cache-warmer-object-injection",
+        "gap_closes": [
+          "NIST-800-53-SI-10",
+          "NIST-800-53-SI-2",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-48172": {
+    "name": "LiteSpeed User-End cPanel Plugin redisAble Root Privilege Escalation",
+    "lesson_date": "2026-06-13",
+    "attack_vector": {
+      "description": "The LiteSpeed user-end cPanel plugin mishandles its Redis enable/disable feature (lsws.redisAble, cpanel_jsonapi_func=redisAble), which runs as root but is reachable by any cPanel user. Any panel account - including a compromised tenant - can drive it to execute arbitrary scripts as root, escalating to full root over a shared hosting server (CWE-266). Fixed in cPanel plugin v2.4.7 (WHM plugin v5.3.1.0+).",
+      "privileges_required": "low (any cPanel user account)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered; disclosed via the LiteSpeed security update (https://blog.litespeedtech.com/2026/05/21/security-update-for-litespeed-cpanel-plugin/). The lesson is that a user-facing control-panel plugin must never expose a root-privileged operation to the tenant surface - on a multi-tenant host a single user-to-root bridge collapses isolation across every site on the box."
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-6": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Least-privilege did not prevent a user-end plugin function from executing as root on behalf of any unprivileged tenant."
+      },
+      "NIST-800-53-SC-39": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Process isolation on a multi-tenant host was defeated: one tenant's plugin call escalated to root across all tenants."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires enumerating every control-panel plugin function that bridges an unprivileged tenant surface to a root-privileged backend, so a user-to-root escalation ships in a routine plugin feature."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 82,
+      "basis": "Shared-hosting providers run control-panel plugins as trusted root-capable components; a compliant host that audits OS-level least-privilege still exposes the plugin function because the escalation lives inside the application's own privileged backend.",
+      "theater_pattern": "control_panel_plugin_user_to_root"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_disclosure",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-CONTROLPANEL-PLUGIN-PRIVILEGE-SEPARATION",
+        "name": "CONTROL-PANEL-PLUGIN-USER-SURFACE-MUST-NOT-REACH-ROOT-OPERATIONS",
+        "description": "On a multi-tenant hosting control panel (cPanel/WHM and similar), no function reachable from the unprivileged user-end plugin surface may execute as root or run tenant-supplied scripts with host privileges. Privileged operations must live behind an administrative trust boundary with their own authorization, and the user-facing surface must only request them through a constrained, validated interface. The distinguishing test: from an ordinary tenant account on a staging panel, invoke each user-end plugin function (including enable/disable and configuration calls) with a payload that attempts a root-level action, and confirm the action is refused before any privileged code runs - a panel that passes an OS-hardening audit but wires a tenant-callable function to a root operation still grants user-to-root escalation.",
+        "evidence": "https://blog.litespeedtech.com/2026/05/21/security-update-for-litespeed-cpanel-plugin/",
+        "gap_closes": [
+          "NIST-800-53-AC-6",
+          "NIST-800-53-SC-39",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-50751": {
+    "name": "Check Point Security Gateway IKEv1 Remote-Access VPN Authentication Bypass",
+    "lesson_date": "2026-06-13",
+    "attack_vector": {
+      "description": "A logic-flow weakness in Remote Access / Mobile Access certificate validation within the deprecated IKEv1 key exchange (CWE-287) lets an unauthenticated remote attacker bypass user authentication and establish a remote-access VPN connection without a valid password, landing inside the protected network. Fixed via the sk185033 hotfix (Jumbo Hotfix Accumulator) plus a gateway reboot; mitigable by disabling IKEv1 for remote access or requiring a machine certificate.",
+      "privileges_required": "none (unauthenticated network access to the IKEv1 remote-access surface)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered; disclosed via the Check Point security advisory. The lesson is structural: a deprecated key-exchange protocol left enabled on a perimeter VPN gateway is a latent authentication-enforcement surface, and a certificate-validation logic flaw there converts the boundary control into an attacker's entry path — exploited here by a Qilin ransomware affiliate. Disabling deprecated protocols and requiring machine certificates closes the surface independent of the patch clock."
+    },
+    "framework_coverage": {
+      "NIST-800-53-IA-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Authentication of the VPN caller is satisfied on paper but bypassed via the IKEv1 certificate-validation flaw — an unauthenticated attacker reaches an authenticated remote-access session."
+      },
+      "NIST-800-53-SC-8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Deprecated key-exchange protocols (IKEv1) remain enabled on perimeter gateways; controls do not require disabling unsound legacy protocols whose certificate validation is exploitable."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Network-security and access-control measures trust the VPN gateway as an enforcement point and carry no KEV-tied expedited SLA for an actively exploited, ransomware-linked perimeter auth bypass."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 80,
+      "basis": "Audit-passing organizations leave deprecated IKEv1 remote-access enabled on perimeter gateways for legacy-client compatibility and patch appliance firmware on routine windows, leaving a network-reachable authentication-bypass surface exposed and exploited by a ransomware affiliate.",
+      "theater_pattern": "deprecated_vpn_protocol_auth_bypass_left_enabled"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-DEPRECATED-VPN-PROTOCOL-DISABLE-AND-EXPEDITED-PATCH",
+        "name": "DEPRECATED-VPN-KEY-EXCHANGE-DISABLE-AND-MACHINE-CERT-ENFORCEMENT",
+        "description": "Deprecated VPN key-exchange protocols (IKEv1 and similar) left enabled on a perimeter gateway are a latent authentication-enforcement surface; a certificate-validation logic flaw there yields an unauthenticated remote-access foothold. Require: inventory every gateway's enabled key-exchange protocols, disable deprecated protocols (IKEv1) for remote access unless a documented legacy-client need exists, require a machine certificate for remote-access connections, and remediate any confirmed-exploited gateway auth bypass on a KEV-tied expedited clock with a reboot-required hotfix. The distinguishing test: on a staging gateway with IKEv1 remote access enabled, attempt a remote-access connection without a valid user password and confirm it is refused before any tunnel is established — paper 'VPN authentication enforced' policies do not detect a deprecated-protocol certificate-validation bypass that grants an interior foothold to a ransomware affiliate.",
+        "evidence": "https://support.checkpoint.com/results/sk/sk185033",
+        "gap_closes": [
+          "NIST-800-53-IA-2",
+          "NIST-800-53-AC-3",
+          "NIST-800-53-SC-8"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-7473": {
+    "name": "Arista EOS Tunnel Decapsulation Access-Control Bypass via Incomplete Comparison",
+    "lesson_date": "2026-06-13",
+    "attack_vector": {
+      "description": "An Arista EOS switch matches inbound packets for tunnel decapsulation only on the destination IP equal to its configured decapsulation IP, omitting the tunnel-protocol-type from the comparison (CWE-1023). An attacker sends an unconfigured tunnel type to that IP; the switch decapsulates and forwards it, injecting traffic past the intended tunnel-type filter - an access-control bypass in the network fabric. Arista plans no software fix; mitigation is ACL-based.",
+      "privileges_required": "none (remote; attacker sends crafted tunneled packets to the configured decapsulation IP)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered; disclosed via Arista Security Advisory 0137 and NVD. The lesson is that a comparison missing one factor (tunnel type) in network-fabric decapsulation logic silently voids a segmentation boundary - and when the vendor declines a fix to avoid breaking deployments, the security control has to move to compensating ACLs that patch-SLA processes never anticipated."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Boundary protection assumes the decapsulation device enforces the configured tunnel-type filter, but the missing protocol-type comparison lets unexpected tunnel types cross the boundary - and no patch restores the check."
+      },
+      "NIST-800-53-AC-4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Information-flow enforcement based on tunnel type is silently bypassed when the device decapsulates and forwards tunnel types it was never configured for."
+      },
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Flaw remediation has no software path - the vendor declined a fix - so the control must rely on compensating ACLs, which standard patch-management processes do not track or schedule."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 81,
+      "basis": "Segmentation and boundary-protection audits verify that tunnel decapsulation is configured, not that the device filters on tunnel TYPE - and because there is no patch, an org that 'applied all updates' remains exposed until it deploys compensating ACLs that the audit never asked for.",
+      "theater_pattern": "fabric_decap_type_filter_assumed"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      "Enforce timely remediation of CISA KEV-listed Access Control Bypass in Arista EOS - all release trains: KEV due-date as the binding SLA, not a 30-day default."
+    ],
+    "_auto_imported": false,
+    "_intake_method": "manual-verified-curation"
+  },
+  "CVE-2026-8398": {
+    "name": "DAEMON Tools Lite Trojanized Installer Supply-Chain Compromise",
+    "lesson_date": "2026-06-13",
+    "attack_vector": {
+      "description": "An attacker compromised AVB Disc Soft's build/distribution infrastructure and shipped trojanized DAEMON Tools Lite binaries (DTHelper.exe, DiscSoftBusServiceLite.exe, DTShellHlp.exe) inside the official installer, signed with the vendor's legitimate code-signing certificate, served from daemon-tools.cc between approximately 2026-04-08 and 2026-05-05. Users who installed Lite during the window ran attacker-controlled code (CWE-506).",
+      "privileges_required": "none (the victim installs a trusted, signed vendor package)",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered; disclosed via the vendor's security-incident notice (https://blog.daemon-tools.cc/post/security-incident). The lesson is that a valid code signature from a trusted vendor is not proof of integrity when the signing/build pipeline itself is the breach point - signature-based trust must be paired with independent integrity verification of distributed artifacts."
+    },
+    "framework_coverage": {
+      "NIST-800-53-SR-4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Provenance was assumed from the vendor's code signature, but the attacker abused the legitimate signing infrastructure - so signature validity established nothing about integrity."
+      },
+      "NIST-800-53-SI-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Software integrity verification did not catch unauthorized changes to the distributed binaries between the legitimate build and the published installer."
+      },
+      "ALL-AI-PIPELINE-INTEGRITY": {
+        "covered": false,
+        "adequate": false,
+        "gap": "No framework requires independent integrity verification (reproducible build, second-source hash, behavioral baseline) of a vendor-signed installer before trusting it, so a compromised build pipeline ships signed malware undetected."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 88,
+      "basis": "Endpoint and software-allowlisting controls trust vendor-signed installers implicitly; a compliant organization that allowlists by publisher signature would have run the trojanized build because the signature was valid.",
+      "theater_pattern": "signed_installer_pipeline_compromise"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_disclosure",
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-SUPPLYCHAIN-SIGNED-INSTALLER-INTEGRITY",
+        "name": "INDEPENDENT-INTEGRITY-VERIFICATION-OF-SIGNED-VENDOR-INSTALLERS",
+        "description": "Do not treat a valid code signature as proof of artifact integrity. For software installed from third-party vendors, verify distributed artifacts against an independent integrity source - published per-release hashes from a separate channel, reproducible-build attestation, or a behavioral baseline of the installed binaries - because a compromised vendor build/signing pipeline can ship validly signed malware (DAEMON Tools Lite, 2026). The distinguishing test: take a known-good and a suspect release of the same vendor binary, confirm both carry valid signatures, and verify that an independent integrity check (hash from a second channel, reproducible build, or behavioral diff) can still flag the substituted one - publisher-signature allowlisting alone passes both and so cannot detect a pipeline compromise.",
+        "evidence": "https://blog.daemon-tools.cc/post/security-incident",
+        "gap_closes": [
+          "NIST-800-53-SR-4",
+          "NIST-800-53-SR-11",
+          "NIST-800-53-SI-7",
+          "ALL-AI-PIPELINE-INTEGRITY"
+        ]
+      }
+    ]
   }
 }
