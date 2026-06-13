@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.0 — 2026-06-13
+
+The minimum supported Node.js is raised to 24.16.0 (`engines.node` is now `>=24.16.0`), the current Node 24 LTS patch. This makes the runtime's accumulated security fixes across the 24.x line — V8 and OpenSSL patches — the supported baseline rather than an older floor. CI, the release workflow, the daily-refresh and currency workflows, and the Docker reproduction harness are all pinned to 24.16.0 (the Docker base image is re-pinned by digest), and a `.nvmrc` is added so `nvm use` selects the supported version automatically. Installs on Node 22 will surface an `engines` warning; upgrade to Node 24 LTS.
+
 ## 0.17.0 — 2026-06-13
 
 Twenty newly-listed CISA KEV vulnerabilities are now curated into the catalog (439 → 459 CVEs). Each carries verified CVSS and vector, CWE classification, confirmed active-exploitation status, affected versions, framework-control-gap mapping, ATT&CK (and where applicable ATLAS) references, RWEP scoring, behavioral indicators of compromise, and a matching zero-day lesson — every fact sourced from NVD, the CISA KEV catalog, and the vendor advisory.
