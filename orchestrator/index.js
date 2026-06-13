@@ -114,7 +114,10 @@ async function main() {
       runCurrency();
       break;
     case 'report':
-      await runReport(args[0] || 'technical');
+      // Resolve the format from the first NON-FLAG positional so `report --json`
+      // (no format given) defaults to technical instead of treating "--json" as
+      // an invalid format and exiting 1.
+      await runReport(args.find((a) => typeof a === 'string' && !a.startsWith('--')) || 'technical');
       break;
     case 'watch':
       await runWatch();
@@ -580,6 +583,25 @@ async function runReport(format) {
   const scanResult = await scan();
   const plan = dispatch(scanResult.findings);
   const { currency_report } = currencyCheck();
+
+  // The help advertises `--json for machine-readable output`. Previously only
+  // `report csaf` emitted JSON; executive/technical/compliance silently
+  // rendered Markdown even with --json. Honor the flag for those formats too.
+  if (args.includes('--json')) {
+    process.stdout.write(JSON.stringify({
+      ok: true,
+      verb: 'report',
+      format,
+      generated_at: new Date().toISOString(),
+      summary: scanResult.summary,
+      priority_actions: plan.plan
+        .filter((p) => p.priority <= 2)
+        .map((p) => ({ severity: p.finding_severity, skill: p.skill_name, action_required: p.action_required })),
+      skill_currency: currency_report,
+      host: scanResult.host,
+    }, null, 2) + '\n');
+    return;
+  }
 
   // Bug #48: header now self-describes the report flavor so a piped-to-file
   // report carries its provenance internally. Previously only stderr

@@ -56,11 +56,17 @@ function listTestFiles(dir) {
 }
 
 function countTests(filePath) {
-  const text = fs.readFileSync(filePath, 'utf8');
-  const lines = text.split('\n');
+  let text = fs.readFileSync(filePath, 'utf8');
+  // Strip block comments first so a `/* test('x'); */`-disabled test is not
+  // counted — the most common "temporarily disable" action, which previously
+  // defeated this gate's entire purpose (it only stripped whole-line `//`).
+  text = text.replace(/\/\*[\s\S]*?\*\//g, '');
   let count = 0;
-  for (const line of lines) {
-    const stripped = line.replace(/^\s*\/\/.*$/, '').trim();
+  for (const rawLine of text.split('\n')) {
+    // Drop a trailing line comment too (`test('x'); // disabled`). Best-effort:
+    // a `//` inside a string literal would over-strip, which under-counts — the
+    // SAFE direction for a no-silent-shrinkage gate.
+    const stripped = rawLine.replace(/\/\/.*$/, '').trim();
     if (!stripped) continue;
     if (/(?<![A-Za-z0-9_$.])test(?:\.only|\.skip)?\s*\(/.test(stripped)) count++;
   }

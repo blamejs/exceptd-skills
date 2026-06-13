@@ -309,11 +309,34 @@ function extractLibExports(content) {
   const stripped = content
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/^\s*\/\/.*$/gm, "");
-  const m = stripped.match(/module\.exports\s*=\s*\{([^}]+)\}/);
-  if (m) {
-    for (const tok of m[1].split(",")) {
-      const id = tok.split(":")[0].trim();
-      if (/^[a-zA-Z_$][\w$]*$/.test(id)) out.add(id);
+  // Capture the `module.exports = { ... }` body with brace-balancing so a
+  // nested object/array member (e.g. `{ CONFIG: { a: 1 }, x, y }`) does not
+  // truncate the export list at the first inner `}` and hide later exports —
+  // which would let an uncovered new export ship green (the gate's blind spot).
+  const objStart = stripped.search(/module\.exports\s*=\s*\{/);
+  if (objStart !== -1) {
+    const openIdx = stripped.indexOf("{", objStart);
+    let depth = 0, end = -1;
+    for (let i = openIdx; i < stripped.length; i++) {
+      const ch = stripped[i];
+      if (ch === "{") depth++;
+      else if (ch === "}") { depth--; if (depth === 0) { end = i; break; } }
+    }
+    if (end !== -1) {
+      const body = stripped.slice(openIdx + 1, end);
+      let d = 0, cur = "";
+      const members = [];
+      for (const ch of body) {
+        if (ch === "{" || ch === "[") d++;
+        else if (ch === "}" || ch === "]") d--;
+        if (ch === "," && d === 0) { members.push(cur); cur = ""; }
+        else cur += ch;
+      }
+      members.push(cur);
+      for (const tok of members) {
+        const id = tok.split(":")[0].trim();
+        if (/^[a-zA-Z_$][\w$]*$/.test(id)) out.add(id);
+      }
     }
   }
   const re = /module\.exports\.([a-zA-Z_$][\w$]*)\s*=/g;
