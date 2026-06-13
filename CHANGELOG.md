@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.18.1 — 2026-06-13
+
+A correctness pass across the playbook engine's condition evaluator, the release gates, and the CLI.
+
+Conditions that reference a hyphenated signal or indicator id — the catalog's naming convention (`no-security-md`, `kver-in-affected-range`, and many more) — now evaluate correctly. The condition mini-language's token pattern excluded hyphens, so every such escalation criterion, feeds-into chain, and remediation precondition silently evaluated to false; they now fire as authored. `finding.severity >= 'high'` compares by the severity ladder (low < medium < high < critical) instead of lexicographically, so a critical finding chains downstream where it previously did not. An operator-submitted signal can no longer override an engine-computed value (rwep, finding, analyze) in an escalation or feeds-into condition. `contains` is accepted as a synonym for `includes`, and a condition the evaluator cannot parse now surfaces a `condition_unparsed` runtime error instead of silently disabling its rule.
+
+`exceptd ci --required ""` / `--scope ""` no longer fall through to cwd auto-detection and emit a green pass for an unrequested playbook set — an empty selector is refused. `exceptd ci --required` with no value gives a clean usage error instead of an internal-error report. `exceptd report --json` (no format) emits JSON instead of failing, and `--json` now produces machine-readable output for the executive, technical, and compliance formats, not only csaf. A `--cwd` passed to a verb that does not consume it (run, ci) is refused rather than silently ignored.
+
+The release gates are hardened: the test-count gate no longer counts `test(` occurrences inside block or trailing comments (commenting a test out now registers as a removal); the SBOM currency gate fails when the aggregate bundle digest is absent rather than silently skipping it; the diff-coverage analyzer reads the full `module.exports` object across nested members; and an informational predeploy gate killed by a signal (OOM) is treated as a failure.
+
 ## 0.18.0 — 2026-06-13
 
 The minimum supported Node.js is raised to 24.16.0 (`engines.node` is now `>=24.16.0`), the current Node 24 LTS patch. This makes the runtime's accumulated security fixes across the 24.x line — V8 and OpenSSL patches — the supported baseline rather than an older floor. CI, the release workflow, the daily-refresh and currency workflows, and the Docker reproduction harness are all pinned to 24.16.0 (the Docker base image is re-pinned by digest), and a `.nvmrc` is added so `nvm use` selects the supported version automatically. Installs on Node 22 will surface an `engines` warning; upgrade to Node 24 LTS.

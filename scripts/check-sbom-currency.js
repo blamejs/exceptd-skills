@@ -331,12 +331,22 @@ function checkSbomCurrency(root) {
     // pass already tied each recorded hash to live bytes).
     const compHashes = (sbom.metadata && sbom.metadata.component && sbom.metadata.component.hashes) || [];
     const recorded = (compHashes.find((h) => h && h.alg === "SHA-256") || {}).content;
-    if (recorded && fileComps.length) {
-      const recomputed = bundleDigest(fileComps);
-      if (recomputed !== recorded) {
+    if (fileComps.length) {
+      // A missing aggregate digest is NOT benign: it is the bundle-as-a-whole
+      // verification anchor. An absent one must fail the gate (symmetric with
+      // the per-file SHA3-512 hard-error that defeats downgrade/strip attacks) —
+      // previously an absent digest silently skipped the comparison entirely.
+      if (!recorded) {
         errors.push(
-          `SBOM bundle digest mismatch: metadata.component.hashes SHA-256 ${String(recorded).slice(0, 12)}… != recomputed ${recomputed.slice(0, 12)}… from file: components — run \`npm run refresh-sbom\``
+          "SBOM metadata.component.hashes lacks a SHA-256 bundle digest — the aggregate verification anchor is missing; run `npm run refresh-sbom`"
         );
+      } else {
+        const recomputed = bundleDigest(fileComps);
+        if (recomputed !== recorded) {
+          errors.push(
+            `SBOM bundle digest mismatch: metadata.component.hashes SHA-256 ${String(recorded).slice(0, 12)}… != recomputed ${recomputed.slice(0, 12)}… from file: components — run \`npm run refresh-sbom\``
+          );
+        }
       }
     }
   } catch (e) {

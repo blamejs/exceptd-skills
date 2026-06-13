@@ -1316,6 +1316,7 @@ function dispatchPlaybook(cmd, argv) {
     "against", "since", "bundle-epoch", "attestation-root", "format",
     "cwd",  // exceptd collect <pb> --cwd <path>
     "limit",  // exceptd attest list --limit <n>
+    "required",  // exceptd ci --required <pb,pb> — value-less form must refuse, not `true.split(",")`
   ]);
   const verbAllowlist = flagsFor(cmd);
   const allowlistSet = new Set(verbAllowlist);
@@ -1767,6 +1768,10 @@ function dispatchPlaybook(cmd, argv) {
     "max-rwep": ["ci"],
     "diff-from-latest": ["run"],
     "upstream-check": ["run"],
+    // --cwd is only consumed by collect/discover (which scan a directory). On
+    // run/ci/etc. it was silently accepted-and-ignored, so `run secrets --cwd
+    // /target` returned a falsely-clean result for a directory never inspected.
+    "cwd": ["collect", "discover"],
   };
   for (const [flag, relevantVerbs] of Object.entries(SINGLE_VERB_PASSTHROUGH)) {
     // A value-less boolean flag parses as `true`; a value-bearing one as its
@@ -8704,11 +8709,12 @@ function cmdCi(runner, args, runOpts, pretty) {
       );
     }
     ids = positional;
-  } else if (args.required) {
+  } else if (args.required !== undefined) {
+    // Gate on PRESENCE, not truthiness: an empty `--required ""` is falsy and
+    // previously fell through to the cwd auto-detect branch, emitting a green
+    // PASS for an unrequested, auto-detected playbook set — a false green.
     // Refuse `--required + --all` / `--required + --scope` as ambiguous
-    // (matches the positional-args refusal at top of cmdCi). Pre-fix
-    // the runner silently picked --required and dropped --all/--scope,
-    // which is operator error — surface it loudly.
+    // (matches the positional-args refusal at top of cmdCi).
     const conflictingFlags = [];
     if (args.all) conflictingFlags.push('--all');
     if (args.scope) conflictingFlags.push('--scope');
@@ -8719,8 +8725,15 @@ function cmdCi(runner, args, runOpts, pretty) {
         pretty,
       );
     }
-    const requestedRaw = Array.isArray(args.required) ? args.required.join(",") : args.required;
+    const requestedRaw = Array.isArray(args.required) ? args.required.join(",") : String(args.required);
     const requested = requestedRaw.split(",").map(s => s.trim()).filter(Boolean);
+    if (requested.length === 0) {
+      return emitError(
+        `ci --required: empty playbook list. Pass at least one playbook id (e.g. --required secrets,containers), or use --all / --scope <type>.`,
+        null,
+        pretty,
+      );
+    }
     const all = runner.listPlaybooks();
     const unknown = requested.filter(r => !all.includes(r));
     if (unknown.length > 0) {
@@ -8732,7 +8745,10 @@ function cmdCi(runner, args, runOpts, pretty) {
     ids = runner.listPlaybooks().filter(id =>
       includeJudgementShaped || !POLICY_SKIPPED_PLAYBOOKS.has(id)
     );
-  } else if (scope) {
+  } else if (scope !== undefined) {
+    // Presence, not truthiness: an empty `--scope ""` must reach
+    // filterPlaybooksByScope (which rejects it with the accepted-set message),
+    // not silently fall through to the cwd auto-detect branch below.
     const includeJudgementShaped = args["include-judgement-shaped"] === true;
     try { ids = filterPlaybooksByScope(runner, scope, { includeJudgementShaped }); }
     catch (e) { return emitError(`ci: ${e.message}`, { provided_scope: scope }, pretty); }

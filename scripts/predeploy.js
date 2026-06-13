@@ -308,11 +308,17 @@ function runGate(gate) {
     const ceil = typeof gate.informationalMaxExitCode === "number"
       ? gate.informationalMaxExitCode
       : Infinity;
-    if (r.status !== null && r.status > ceil) {
+    // A signal kill (spawnSync returns status:null with r.signal set — e.g. a
+    // 137 OOM kill) is a crash, not an informational soft-signal. Without this,
+    // an OOM-killed informational gate fell through to "informational" and the
+    // release proceeded as if the gate had merely produced advisory output.
+    if (r.signal || (r.status !== null && r.status > ceil)) {
       return {
         status: "failed",
         exitCode: r.status,
-        message: `informational gate crashed (exit ${r.status} > informationalMaxExitCode=${ceil})`,
+        message: r.signal
+          ? `informational gate killed by signal ${r.signal} (treated as a crash)`
+          : `informational gate crashed (exit ${r.status} > informationalMaxExitCode=${ceil})`,
         durationMs,
         warnCount,
       };
