@@ -5174,18 +5174,30 @@ function cmdPruneAttestations(runner, args, runOpts, pretty) {
       // attestation. A session with no parseable captured_at is left alone
       // (never delete something we can't date).
       let captured = null;
+      let replayFallback = null;
       try {
         for (const f of fs.readdirSync(sdir)) {
           if (!f.endsWith(".json") || f.endsWith(".sig")) continue;
           let j; try { j = JSON.parse(fs.readFileSync(path.join(sdir, f), "utf8")); } catch { continue; }
-          if (!j || j.kind === "replay") continue;
+          if (!j) continue;
+          if (j.kind === "replay") {
+            // A session holding only replay records (its attestation was
+            // removed) would otherwise be undateable and never GC'd, so the
+            // store grows without bound. Fall back to the newest replay
+            // timestamp so prune can still age such a session out.
+            if (typeof j.replayed_at === "string" && (!replayFallback || j.replayed_at > replayFallback)) replayFallback = j.replayed_at;
+            continue;
+          }
           if (typeof j.captured_at === "string" && (!captured || j.captured_at > captured)) captured = j.captured_at;
         }
       } catch { continue; }
-      const ts = captured ? Date.parse(captured) : NaN;
+      // Prefer the signed attestation's captured_at; fall back to the newest
+      // replay timestamp for replay-only sessions.
+      const dateStr = captured || replayFallback;
+      const ts = dateStr ? Date.parse(dateStr) : NaN;
       if (!Number.isFinite(ts)) { kept++; continue; }
       if (ts < cutoffMs) {
-        pruned.push({ session_id: sid, captured_at: captured, dir: sdir });
+        pruned.push({ session_id: sid, captured_at: captured, replayed_at: captured ? undefined : replayFallback, dir: sdir });
         if (!dryRun) {
           // Confinement: resolve and confirm sdir is a direct child of root
           // before removing, so a crafted session name can't escape the root.
@@ -5209,13 +5221,13 @@ function cmdPruneAttestations(runner, args, runOpts, pretty) {
     scanned,
     pruned_count: pruned.length,
     kept,
-    pruned: pruned.map(p => ({ session_id: p.session_id, captured_at: p.captured_at })),
+    pruned: pruned.map(p => ({ session_id: p.session_id, captured_at: p.captured_at, replayed_at: p.replayed_at })),
     roots_searched: roots,
   }, pretty, (obj) => {
     const lines = [];
     lines.push(`attest prune${obj.dry_run ? " (DRY-RUN)" : ""}: cutoff ${obj.cutoff}`);
     lines.push(`  scanned ${obj.scanned} session(s)  |  ${obj.dry_run ? "would prune" : "pruned"} ${obj.pruned_count}  |  kept ${obj.kept}`);
-    for (const p of obj.pruned.slice(0, 20)) lines.push(`  ${obj.dry_run ? "[would-delete]" : "[deleted]"} ${p.session_id}  (${(p.captured_at || "").slice(0, 19)})`);
+    for (const p of obj.pruned.slice(0, 20)) lines.push(`  ${obj.dry_run ? "[would-delete]" : "[deleted]"} ${p.session_id}  (${((p.captured_at || p.replayed_at) || "").slice(0, 19)})`);
     if (obj.pruned_count > 20) lines.push(`  … ${obj.pruned_count - 20} more`);
     if (obj.dry_run && obj.pruned_count > 0) lines.push(`  → re-run without --dry-run to delete.`);
     return lines.join("\n");
