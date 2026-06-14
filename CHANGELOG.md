@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.5 — 2026-06-14
+
+The manifest's per-skill cross-reference arrays — data dependencies, framework gaps, and ATT&CK / ATLAS / D3FEND / RFC / CWE references — now include every reference a skill declares in its own frontmatter. Previously a reference present in a skill's frontmatter but missing from the manifest cache could silently drop out of the reverse-reference surfaces (for instance, a skill not appearing under a D3FEND technique it actually maps). A predeploy gate now holds the manifest cache to cover frontmatter, so the reference graph cannot drift again.
+
 ## 0.18.4 — 2026-06-14
 
 Correctness fixes in the skill linter, attestation diffing, and the jurisdiction index. The required-section check no longer accepts a heading that appears only inside a fenced code example, nor a deeper sub-heading standing in for a top-level section — both previously let a non-compliant skill pass. `attest diff` no longer reports an object-valued signal override (the per-indicator false-positive-check maps) as changed when its content is identical, so the field-level diff agrees with the overall evidence verdict. ENISA references now index under the dedicated EU_ENISA jurisdiction instead of collapsing into the generic EU bucket, and the indexed-jurisdiction count in the index metadata reflects every mapped jurisdiction.

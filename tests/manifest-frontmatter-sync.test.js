@@ -48,25 +48,31 @@ test('manifest last_threat_review mirrors each skill frontmatter', () => {
     `manifest last_threat_review out of sync — run \`node scripts/sync-manifest-metadata.js\`:\n  ${drift.join('\n  ')}`);
 });
 
-test('manifest cwe_refs covers every frontmatter-declared CWE', () => {
-  // cwe_refs is enrichment-richer on the manifest side (many entries carry
-  // manifest-only refs, which is fine), but a CWE declared in a skill's
-  // frontmatter MUST appear in its manifest entry — the derived indexes and
-  // the reverse-ref refresh read the manifest, so a frontmatter-only ref
-  // silently vanishes from every cross-reference surface.
+// Cross-reference arrays the manifest caches as an enriched superset of
+// frontmatter. build-indexes overlays these and refresh-reverse-refs reads
+// them, so a frontmatter-declared ref MISSING from the manifest silently
+// vanishes from every cross-reference surface (xref index, reverse-refs,
+// summary cards). Manifest-only refs are intended enrichment and fine — the
+// invariant is COVER, not exact mirror.
+const COVER_FIELDS = ['data_deps', 'framework_gaps', 'atlas_refs', 'attack_refs', 'rfc_refs', 'cwe_refs', 'd3fend_refs'];
+
+test('manifest cross-ref arrays cover every frontmatter-declared ref', () => {
   const drift = [];
   for (const entry of manifest.skills) {
     const id = entry.id || entry.name;
     const fm = frontmatterOf(id);
-    if (!fm || !Array.isArray(fm.cwe_refs) || fm.cwe_refs.length === 0) continue;
-    const have = new Set(Array.isArray(entry.cwe_refs) ? entry.cwe_refs : []);
-    const missing = fm.cwe_refs.filter((c) => !have.has(c));
-    if (missing.length) {
-      drift.push(`${id}: frontmatter declares ${missing.join(', ')} but the manifest entry omits ${missing.length > 1 ? 'them' : 'it'}`);
+    if (!fm) continue;
+    for (const field of COVER_FIELDS) {
+      if (!Array.isArray(fm[field]) || fm[field].length === 0) continue;
+      const have = new Set(Array.isArray(entry[field]) ? entry[field] : []);
+      const missing = fm[field].filter((r) => !have.has(r));
+      if (missing.length) {
+        drift.push(`${id}.${field}: manifest omits ${missing.join(', ')}`);
+      }
     }
   }
   assert.equal(drift.length, 0,
-    `manifest cwe_refs missing frontmatter-declared CWEs — add them to the manifest entry and re-run refresh-reverse-refs:\n  ${drift.join('\n  ')}`);
+    `manifest cross-ref arrays omit frontmatter-declared refs (they would vanish from cross-references) — run \`node scripts/sync-manifest-metadata.js\` then refresh-reverse-refs:\n  ${drift.join('\n  ')}`);
 });
 
 test('manifest forward_watch mirrors each skill frontmatter', () => {
