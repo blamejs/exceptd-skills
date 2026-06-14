@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.6 — 2026-06-14
+
+`attest prune` now ages out sessions that hold only replay records (whose attestation was removed). Such a session had no datable timestamp, so it was kept indefinitely and the attestation store could grow without bound; it is now dated by its newest replay timestamp and pruned past the cutoff like any other session.
+
 ## 0.18.5 — 2026-06-14
 
 The manifest's per-skill cross-reference arrays — data dependencies, framework gaps, and ATT&CK / ATLAS / D3FEND / RFC / CWE references — now include every reference a skill declares in its own frontmatter. Previously a reference present in a skill's frontmatter but missing from the manifest cache could silently drop out of the reverse-reference surfaces (for instance, a skill not appearing under a D3FEND technique it actually maps). A predeploy gate now holds the manifest cache to cover frontmatter, so the reference graph cannot drift again.
