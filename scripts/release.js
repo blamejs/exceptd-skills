@@ -215,6 +215,26 @@ function _unresolvedThreads(prNum) {
   try { return JSON.parse(rv.stdout || "[]"); } catch (_e) { return []; }
 }
 
+// Open CodeQL code-scanning alerts on the PR's merge ref. CodeQL SAST runs on
+// every PR (.github/workflows/codeql.yml); an open, un-triaged alert is a
+// per-release gate on par with the codex review-thread gate. Returns the alert
+// array (possibly empty) on success, or null when the query can't run (code
+// scanning unavailable, API error, or the GET-param form not supported) so a
+// transient failure fails OPEN rather than blocking a release — the pre-flight
+// checklist is the human backstop.
+function _openCodeqlAlerts(prNum) {
+  var rv = _capture("gh", ["api", "repos/:owner/:repo/code-scanning/alerts",
+    "-X", "GET",
+    "-f", "ref=refs/pull/" + prNum + "/merge",
+    "-f", "state=open",
+    "-f", "tool_name=CodeQL"]);
+  if (rv.status !== 0) return null;
+  try {
+    var arr = JSON.parse(rv.stdout || "[]");
+    return Array.isArray(arr) ? arr : null;
+  } catch (_e) { return null; }
+}
+
 // ---- Subcommands ---------------------------------------------------------
 
 function cmdPrepare(opts) {
@@ -394,6 +414,27 @@ function cmdWatch() {
     failed.forEach(function (c) { console.log("  ✗ " + c.name + "  " + (c.link || "")); });
     console.log("\nFix in code, push, then re-run: node scripts/release.js watch");
     process.exit(3);
+  }
+
+  // CodeQL SAST gate — a standing per-release step. An open, un-triaged CodeQL
+  // alert blocks the release the same way an unresolved codex thread does.
+  var codeqlAlerts = _openCodeqlAlerts(prNum);
+  if (codeqlAlerts === null) {
+    console.log("\nnote: could not query CodeQL alerts (code scanning unavailable / API error) — " +
+      "verify manually per the pre-flight checklist before merge.");
+  } else if (codeqlAlerts.length > 0) {
+    console.log("\nopen CodeQL alerts (" + codeqlAlerts.length + "):");
+    codeqlAlerts.forEach(function (a) {
+      var loc = (a.most_recent_instance && a.most_recent_instance.location) || {};
+      var sev = (a.rule && (a.rule.security_severity_level || a.rule.severity)) || "?";
+      console.log("  ⚠ " + (a.rule && a.rule.id) + " [" + sev + "]  " +
+        (loc.path ? loc.path + ":" + loc.start_line : "") + "  " + (a.html_url || ""));
+    });
+    console.log("\nFix real findings in code (push, let CodeQL re-scan) OR dismiss by-design FPs with a " +
+      "written reason, then re-run: node scripts/release.js watch");
+    process.exit(3);
+  } else {
+    _ok("zero open CodeQL alerts");
   }
 
   var unresolved = _unresolvedThreads(prNum);

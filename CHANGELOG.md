@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.2 — 2026-06-13
+
+The project now runs CodeQL static analysis (the `security-extended` query suite) on every push and pull request, and a clean result is a release gate — the same supply-chain assurance posture as the Ed25519 skill signing and the CycloneDX SBOM. The playbook engine's phase-override merge no longer copies `__proto__`, `constructor`, or `prototype` keys, closing a prototype-pollution shape in an exported merge helper before any future caller could reach `Object.prototype` through it.
+
 ## 0.18.1 — 2026-06-13
 
 A correctness pass across the playbook engine's condition evaluator, the release gates, and the CLI.
