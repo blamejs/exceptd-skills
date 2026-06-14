@@ -6410,7 +6410,11 @@ function diffSignalOverrides(a, b) {
   const allIds = new Set([...Object.keys(a), ...Object.keys(b)]);
   const out = { total_compared: allIds.size, changed: [], unchanged_count: 0 };
   for (const id of allIds) {
-    if (a[id] !== b[id]) out.changed.push({ id, a: a[id] || null, b: b[id] || null });
+    // Deep, order-insensitive compare — signal_overrides hold OBJECT values
+    // (the `<indicator-id>__fp_checks` maps), so a reference-strict `!==` would
+    // report byte-identical FP-check content as "changed", contradicting the
+    // evidence_hash verdict. Reuse the same comparator diffArtifacts uses.
+    if (artifactsDiffer(a[id], b[id])) out.changed.push({ id, a: a[id] ?? null, b: b[id] ?? null });
     else out.unchanged_count++;
   }
   return out;
@@ -9316,5 +9320,6 @@ module.exports = {
   _verifyAttestationSidecar: verifyAttestationSidecar,
   _emit: emit,
   _diffArtifacts: diffArtifacts,
+  _diffSignalOverrides: diffSignalOverrides,
   _resolveSelfAttestation: resolveSelfAttestation,
 };
