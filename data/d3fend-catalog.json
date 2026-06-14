@@ -51,13 +51,20 @@
       "Executable Script"
     ],
     "skills_referencing": [
+      "ai-attack-surface",
       "attack-surface-pentest",
+      "cloud-security",
+      "container-runtime-security",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "fuzz-testing-strategy",
       "kernel-lpe-triage",
       "mcp-agent-trust",
-      "supply-chain-integrity"
+      "mlops-security",
+      "sector-energy",
+      "sector-federal-government",
+      "supply-chain-integrity",
+      "webapp-security"
     ],
     "implementation_examples": [
       "AppLocker (Windows)",
@@ -101,8 +108,11 @@
       "File Hash"
     ],
     "skills_referencing": [
+      "container-runtime-security",
       "defensive-countermeasure-mapping",
       "mcp-agent-trust",
+      "mlops-security",
+      "sector-federal-government",
       "supply-chain-integrity"
     ],
     "implementation_examples": [
@@ -143,9 +153,11 @@
       "Process Segment"
     ],
     "skills_referencing": [
+      "container-runtime-security",
       "defensive-countermeasure-mapping",
       "fuzz-testing-strategy",
-      "kernel-lpe-triage"
+      "kernel-lpe-triage",
+      "sector-energy"
     ],
     "implementation_examples": [
       "NX bit (x86_64)",
@@ -216,7 +228,8 @@
       "System Call"
     ],
     "skills_referencing": [
-      "defensive-countermeasure-mapping"
+      "defensive-countermeasure-mapping",
+      "kernel-lpe-triage"
     ],
     "implementation_examples": [
       "seccomp-bpf profiles (Docker default, gVisor)",
@@ -363,10 +376,14 @@
       "Authentication Service"
     ],
     "skills_referencing": [
+      "api-security",
       "cloud-iam-incident",
+      "cloud-security",
       "defensive-countermeasure-mapping",
       "idp-incident-response",
       "mcp-agent-trust",
+      "sector-federal-government",
+      "sector-financial",
       "supply-chain-integrity"
     ],
     "implementation_examples": [
@@ -405,10 +422,17 @@
       "Authentication Service"
     ],
     "skills_referencing": [
+      "age-gates-child-safety",
+      "api-security",
       "cloud-iam-incident",
       "defensive-countermeasure-mapping",
+      "email-security-anti-phishing",
+      "identity-assurance",
       "idp-incident-response",
-      "mcp-agent-trust"
+      "mcp-agent-trust",
+      "sector-financial",
+      "sector-healthcare",
+      "webapp-security"
     ],
     "implementation_examples": [
       "FIDO2 / WebAuthn (phishing-resistant)",
@@ -531,14 +555,21 @@
     "skills_referencing": [
       "ai-attack-surface",
       "ai-c2-detection",
+      "api-security",
       "attack-surface-pentest",
       "cloud-iam-incident",
+      "cloud-security",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
+      "email-security-anti-phishing",
       "idp-incident-response",
+      "incident-response-playbook",
       "rag-pipeline-security",
       "ransomware-response",
-      "sector-telecom"
+      "sector-energy",
+      "sector-financial",
+      "sector-telecom",
+      "webapp-security"
     ],
     "implementation_examples": [
       "Zeek / Suricata flow analysis",
@@ -578,8 +609,11 @@
     ],
     "skills_referencing": [
       "ai-c2-detection",
+      "cloud-security",
+      "container-runtime-security",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
+      "sector-energy",
       "sector-telecom"
     ],
     "implementation_examples": [
@@ -624,13 +658,21 @@
       "Application Payload"
     ],
     "skills_referencing": [
+      "age-gates-child-safety",
+      "ai-attack-surface",
       "ai-c2-detection",
+      "api-security",
       "attack-surface-pentest",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
+      "email-security-anti-phishing",
+      "identity-assurance",
+      "incident-response-playbook",
       "mcp-agent-trust",
       "rag-pipeline-security",
-      "ransomware-response"
+      "ransomware-response",
+      "sector-healthcare",
+      "webapp-security"
     ],
     "implementation_examples": [
       "AI-API request body inspection at egress proxy (CloudFlare AI Gateway, LiteLLM proxy)",
@@ -668,16 +710,27 @@
       "Resource Access"
     ],
     "skills_referencing": [
+      "age-gates-child-safety",
       "ai-attack-surface",
       "ai-c2-detection",
+      "ai-risk-management",
+      "api-security",
       "cloud-iam-incident",
+      "cloud-security",
+      "container-runtime-security",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
+      "email-security-anti-phishing",
       "fuzz-testing-strategy",
       "idp-incident-response",
+      "incident-response-playbook",
+      "mlops-security",
       "rag-pipeline-security",
       "ransomware-response",
-      "sector-telecom"
+      "sector-financial",
+      "sector-healthcare",
+      "sector-telecom",
+      "webapp-security"
     ],
     "implementation_examples": [
       "LLM output classifier for safety-bypass content (Llama Guard, Granite Guardian)",
@@ -714,6 +767,7 @@
     ],
     "skills_referencing": [
       "defensive-countermeasure-mapping",
+      "incident-response-playbook",
       "ransomware-response"
     ],
     "implementation_examples": [
@@ -754,7 +808,9 @@
       "File Access"
     ],
     "skills_referencing": [
-      "defensive-countermeasure-mapping"
+      "ai-attack-surface",
+      "defensive-countermeasure-mapping",
+      "rag-pipeline-security"
     ],
     "implementation_examples": [
       "auditd FIM with behavioral rules",
@@ -792,7 +848,9 @@
     ],
     "skills_referencing": [
       "ai-c2-detection",
+      "container-runtime-security",
       "defensive-countermeasure-mapping",
+      "sector-energy",
       "sector-telecom"
     ],
     "implementation_examples": [
@@ -834,7 +892,8 @@
       "Process Tree"
     ],
     "skills_referencing": [
-      "defensive-countermeasure-mapping"
+      "defensive-countermeasure-mapping",
+      "kernel-lpe-triage"
     ],
     "implementation_examples": [
       "Sysmon process-creation events with parent-child Sigma rules",
@@ -909,7 +968,8 @@
       "Process Environment Variable Access"
     ],
     "skills_referencing": [
-      "cloud-iam-incident"
+      "cloud-iam-incident",
+      "mcp-agent-trust"
     ],
     "implementation_examples": [
       "AWS Secrets Manager + CloudTrail GetSecretValue audit with anomaly baseline per principal",
@@ -1027,7 +1087,9 @@
       "Source Code",
       "Configuration File"
     ],
-    "skills_referencing": [],
+    "skills_referencing": [
+      "rag-pipeline-security"
+    ],
     "implementation_examples": [
       "gitleaks / trufflehog pre-commit and CI-time secret scanning",
       "YARA rules on uploaded files at SaaS file-upload boundaries",
