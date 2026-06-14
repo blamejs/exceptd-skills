@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.3 — 2026-06-14
+
+The release pipeline now enforces the project's patch-only version cadence as a predeploy gate: a minor or major version bump fails the gates unless it carries an explicit, committed authorization. A release-engineering safeguard; the CLI surface is unchanged.
+
 ## 0.18.2 — 2026-06-13
 
 The project now runs CodeQL static analysis (the `security-extended` query suite) on every push and pull request, and a clean result is a release gate — the same supply-chain assurance posture as the Ed25519 skill signing and the CycloneDX SBOM. The playbook engine's phase-override merge no longer copies `__proto__`, `constructor`, or `prototype` keys, closing a prototype-pollution shape in an exported merge helper before any future caller could reach `Object.prototype` through it.

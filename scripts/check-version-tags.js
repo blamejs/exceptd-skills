@@ -75,6 +75,12 @@ const COMMENT_EXEMPT = new Set([
   // heading-completeness check can skip them — load-bearing references to git
   // tags, an authoritative version surface.
   "scripts/check-changelog-extract.js",
+  // The version-bump cadence gate's subject IS version comparison: its doc
+  // shows an example ack naming a target version, and its test compares real
+  // X.Y.Z transitions (patch vs minor vs major vs downgrade). Those version
+  // literals are load-bearing data, not sprinkled release tags.
+  "scripts/check-version-bump.js",
+  "tests/version-bump-cadence.test.js",
 ]);
 
 // Git-ignored files (a contributor's local-only working docs, scratch) are

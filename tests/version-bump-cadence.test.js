@@ -1,0 +1,89 @@
+'use strict';
+
+/**
+ * Regression for the patch-only-cadence gate (scripts/check-version-bump.js).
+ * Patch is the only default bump; minor/major require an explicit committed
+ * ack naming the exact target version. These tests pin both the bump
+ * classification and the authorization policy.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+
+const { classifyBump, checkBump, changelogVersions } =
+  require(path.resolve(__dirname, '..', 'scripts', 'check-version-bump.js'));
+
+test('classifyBump distinguishes patch / minor / major / none / downgrade', () => {
+  assert.equal(classifyBump('0.18.2', '0.18.3'), 'patch');
+  assert.equal(classifyBump('0.18.2', '0.19.0'), 'minor');
+  assert.equal(classifyBump('0.18.2', '1.0.0'), 'major');
+  assert.equal(classifyBump('0.18.2', '0.18.2'), 'none');
+  assert.equal(classifyBump('0.18.2', '0.18.1'), 'downgrade');
+  assert.equal(classifyBump('0.18.2', '0.17.9'), 'downgrade');
+  assert.equal(classifyBump('0.18.2', '0.0.0'), 'downgrade');
+  assert.equal(classifyBump('not-a-version', '0.18.3'), 'unknown');
+});
+
+test('a patch bump passes with no ack required', () => {
+  const r = checkBump('0.18.2', '0.18.3', null);
+  assert.equal(r.ok, true);
+  assert.equal(r.bump, 'patch');
+});
+
+test('an equal version (re-run) passes', () => {
+  const r = checkBump('0.18.2', '0.18.2', null);
+  assert.equal(r.ok, true);
+  assert.equal(r.bump, 'none');
+});
+
+test('an UNAUTHORIZED minor bump is blocked', () => {
+  const r = checkBump('0.18.2', '0.19.0', null);
+  assert.equal(r.ok, false);
+  assert.equal(r.bump, 'minor');
+  assert.match(r.reason, /not the patch-only default/);
+});
+
+test('a minor bump with a matching ack is allowed', () => {
+  const r = checkBump('0.18.2', '0.19.0', { version: '0.19.0', type: 'minor' });
+  assert.equal(r.ok, true);
+  assert.equal(r.bump, 'minor');
+});
+
+test('an ack for a DIFFERENT version does not authorize the bump', () => {
+  const r = checkBump('0.18.2', '0.19.0', { version: '0.20.0', type: 'minor' });
+  assert.equal(r.ok, false, 'a stale/mismatched ack must not authorize');
+});
+
+test('an ack with the wrong type does not authorize the bump', () => {
+  const r = checkBump('0.18.2', '1.0.0', { version: '1.0.0', type: 'minor' });
+  assert.equal(r.ok, false, 'a major bump needs a major ack, not a minor ack');
+});
+
+test('an UNAUTHORIZED major bump is blocked', () => {
+  const r = checkBump('0.18.2', '1.0.0', null);
+  assert.equal(r.ok, false);
+  assert.equal(r.bump, 'major');
+});
+
+test('a major bump with a matching ack is allowed', () => {
+  const r = checkBump('0.18.2', '1.0.0', { version: '1.0.0', type: 'major' });
+  assert.equal(r.ok, true);
+  assert.equal(r.bump, 'major');
+});
+
+test('a downgrade is blocked even with an ack', () => {
+  const r = checkBump('0.18.2', '0.18.1', { version: '0.18.1', type: 'minor' });
+  assert.equal(r.ok, false);
+  assert.equal(r.bump, 'downgrade');
+});
+
+test('the first release (no previous version) passes', () => {
+  const r = checkBump(null, '0.1.0', null);
+  assert.equal(r.ok, true);
+});
+
+test('changelogVersions extracts headings in document order', () => {
+  const md = '# Changelog\n\n## 0.19.0 — 2026-06-14\n\nstuff\n\n## 0.18.2 — 2026-06-13\n\nmore\n';
+  assert.deepEqual(changelogVersions(md), ['0.19.0', '0.18.2']);
+});

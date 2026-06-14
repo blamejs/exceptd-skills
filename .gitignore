@@ -12,6 +12,9 @@
 !tests/.test-count-baseline.json
 # Track the version-tag drift baseline so CI can compare against it.
 !tests/.version-tag-baseline.json
+# Track the version-bump authorization (an authorized minor/major commits this
+# so the cadence gate can verify it in CI); the `.*` catch-all above hides it.
+!tests/.version-bump-ack.json
 
 # Node
 node_modules/

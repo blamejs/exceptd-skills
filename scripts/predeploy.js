@@ -262,6 +262,20 @@ const GATES = [
     args: [path.join(ROOT, "scripts", "check-changelog-extract.js")],
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
+  {
+    // Version-bump cadence gate. Patch is the ONLY default bump; a minor or
+    // major requires an explicit, committed authorization
+    // (tests/.version-bump-ack.json naming the exact target version).
+    // Compares the top two `## X.Y.Z` CHANGELOG headings — hermetic, so it
+    // enforces identically locally and in the release.yml validate job. A
+    // hand-bumped minor without the ack fails here rather than shipping a
+    // wrong version number (the class of error behind two mis-versioned
+    // releases). Full contract at the top of check-version-bump.js.
+    name: "Version-bump cadence (patch-only default)",
+    command: process.execPath,
+    args: [path.join(ROOT, "scripts", "check-version-bump.js")],
+    ciJobName: "Data integrity (catalog + manifest snapshot)",
+  },
 ];
 
 function runGate(gate) {
