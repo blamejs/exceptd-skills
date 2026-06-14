@@ -235,7 +235,7 @@ const OUTPUTS = [
     build: (ctx) => {
       const codes = Object.keys(ctx.globalFrameworks).filter((k) => !k.startsWith("_") && k !== "GLOBAL");
       const NAME_TO_CODE = {
-        "GDPR": "EU", "NIS2": "EU", "DORA": "EU", "EU AI Act": "EU", "ENISA": "EU",
+        "GDPR": "EU", "NIS2": "EU", "DORA": "EU", "EU AI Act": "EU", "ENISA": "EU_ENISA",
         "NCSC": "UK", "Children's Code": "UK", "Online Safety Act": "UK",
         "ISM": "AU", "Essential 8": "AU", "APRA": "AU", "eSafety": "AU",
         "MAS TRM": "SG", "CSA Singapore": "SG",
@@ -336,8 +336,10 @@ const OUTPUTS = [
           entry_types: ["CVE", "CWE"],
         },
       };
-      // CVE half
-      for (const cveId of Object.keys(ctx.cveCatalog).filter((k) => !k.startsWith("_"))) {
+      // CVE half. Skip draft (_draft) CVEs so this derivation agrees with the
+      // reverse-ref index (refresh-reverse-refs.js excludes drafts) — both must
+      // reflect the same operator-queryable, curated truth.
+      for (const cveId of Object.keys(ctx.cveCatalog).filter((k) => !k.startsWith("_") && ctx.cveCatalog[k] && ctx.cveCatalog[k]._draft !== true)) {
         const cve = ctx.cveCatalog[cveId];
         const referencingSkills = ctx.skills
           .filter((s) => {
@@ -692,7 +694,11 @@ function writeMeta(ctx, results) {
       trigger_table_entries: Object.keys(trigger).length,
       chains_cve_entries: cveChainCount,
       chains_cwe_entries: cweChainCount,
-      jurisdictions_indexed: Object.keys(jurisdictionClocks.by_jurisdiction || {}).length || Object.keys(readBack("jurisdiction-map") || {}).length,
+      // The jurisdiction-map indexes EVERY jurisdiction code (including those
+      // with no breach/patch clocks), so it — not the clocks table — is the
+      // count of jurisdictions actually indexed. (`jurisdiction_clocks` below
+      // reports the clocks-only subset.)
+      jurisdictions_indexed: Object.keys(readBack("jurisdiction-map") || {}).length || Object.keys(jurisdictionClocks.by_jurisdiction || {}).length,
       handoff_dag_nodes: handoff.nodes?.length || 0,
       summary_cards: Object.keys(summaryCards.skills || {}).length,
       section_offsets_skills: Object.keys(sectionOffsets.skills || {}).length,

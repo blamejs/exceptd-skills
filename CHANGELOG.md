@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.4 — 2026-06-14
+
+Correctness fixes in the skill linter, attestation diffing, and the jurisdiction index. The required-section check no longer accepts a heading that appears only inside a fenced code example, nor a deeper sub-heading standing in for a top-level section — both previously let a non-compliant skill pass. `attest diff` no longer reports an object-valued signal override (the per-indicator false-positive-check maps) as changed when its content is identical, so the field-level diff agrees with the overall evidence verdict. ENISA references now index under the dedicated EU_ENISA jurisdiction instead of collapsing into the generic EU bucket, and the indexed-jurisdiction count in the index metadata reflects every mapped jurisdiction.
+
 ## 0.18.3 — 2026-06-14
 
 The release pipeline now enforces the project's patch-only version cadence as a predeploy gate: a minor or major version bump fails the gates unless it carries an explicit, committed authorization. A release-engineering safeguard; the CLI surface is unchanged.

@@ -488,8 +488,23 @@
     "skill_count": 2
   },
   "EU_ENISA": {
-    "skills": [],
+    "skills": [
+      "ai-c2-detection",
+      "cloud-security",
+      "compliance-theater",
+      "container-runtime-security",
+      "coordinated-vuln-disclosure",
+      "incident-response-playbook",
+      "pqc-first",
+      "researcher",
+      "sector-energy",
+      "sector-federal-government",
+      "sector-financial",
+      "sector-healthcare",
+      "sector-telecom",
+      "skill-update-loop"
+    ],
     "example_excerpts": {},
-    "skill_count": 0
+    "skill_count": 14
   }
 }
