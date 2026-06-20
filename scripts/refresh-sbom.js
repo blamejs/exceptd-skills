@@ -338,7 +338,7 @@ function buildSbom() {
         version: pkg.version,
         description: pkg.description,
         licenses: [{ license: { id: 'Apache-2.0' } }],
-        purl: `pkg:npm/${pkg.name.replace('@', '%40')}@${pkg.version}`,
+        purl: `pkg:npm/${pkg.name.replace(/@/g, '%40')}@${pkg.version}`,
         // Bundle digest over every shipped file (see bundleDigest above
         // for the canonical-input rule). Operators can recompute this
         // from the per-file components[] list and compare without

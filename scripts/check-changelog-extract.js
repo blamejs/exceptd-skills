@@ -47,7 +47,7 @@ function extractSection(text, version) {
   const lines = text.split(/\r?\n/);
   const out = [];
   let capturing = false;
-  const startRe = new RegExp('^## ' + version.replace(/\./g, '\\.') + ' ');
+  const startRe = new RegExp('^## ' + version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' ');
   for (const ln of lines) {
     if (capturing) {
       if (/^## /.test(ln)) break;
@@ -65,7 +65,7 @@ function extractSection(text, version) {
 
 // Returns the `## <version> — <date>` heading line for the version, or null.
 function headingLine(text, version) {
-  const re = new RegExp('^## ' + version.replace(/\./g, '\\.') + ' ');
+  const re = new RegExp('^## ' + version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' ');
   return text.split(/\r?\n/).find((l) => re.test(l)) || null;
 }
 
@@ -152,7 +152,7 @@ function main() {
     return;
   }
   // Heading must carry an ISO date: `## <version> — YYYY-MM-DD`.
-  if (!new RegExp('^## ' + version.replace(/\./g, '\\.') + ' [—-] \\d{4}-\\d{2}-\\d{2}\\s*$').test(heading)) {
+  if (!new RegExp('^## ' + version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' [—-] \\d{4}-\\d{2}-\\d{2}\\s*$').test(heading)) {
     console.error('[check-changelog-extract] FAIL: heading does not match `## ' + version + ' — YYYY-MM-DD`:');
     console.error('[check-changelog-extract]   got: ' + JSON.stringify(heading));
     process.exitCode = 1;
