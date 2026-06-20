@@ -1697,18 +1697,24 @@ async function validateAllCvesPreferCache(catalog, cacheDir) {
   function readCached(source, id) {
     const safe = id.replace(/[^A-Za-z0-9._-]/g, '_');
     const p = path.join(cacheDir, source, `${safe}.json`);
-    if (!fs.existsSync(p)) return null;
+    let fd;
+    // Open once and fstat the descriptor — no existsSync→statSync→read TOCTOU.
+    try { fd = fs.openSync(p, 'r'); }
+    catch { return null; } // absent / unreadable (matches the old existsSync:false skip)
     try {
-      const st = fs.statSync(p);
+      const st = fs.fstatSync(fd);
       if (st.size > CACHE_FILE_MAX_BYTES) {
         console.error(`[validate-cves] cache file ${p} exceeds ${CACHE_FILE_MAX_BYTES} byte cap (${st.size}); refusing to read.`);
         return null;
       }
-      const parsed = JSON.parse(fs.readFileSync(p, 'utf8'));
+      const buf = Buffer.alloc(st.size);
+      fs.readSync(fd, buf, 0, st.size, 0);
+      const parsed = JSON.parse(buf.toString('utf8'));
       if (!cacheEntryVerified(source, id, parsed)) return null;
       return parsed;
     }
     catch { return null; }
+    finally { if (fd !== undefined) { try { fs.closeSync(fd); } catch { /* non-fatal */ } } }
   }
 
   function extractNvd(payload) {
