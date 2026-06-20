@@ -510,7 +510,7 @@ test('ci --max-rwep <N> overrides the playbook escalate threshold', () => {
 });
 
 test('ci --block-on-jurisdiction-clock fails when a clock fires (F18: exit 5 = CLOCK_STARTED)', () => {
-  const tmp = path.join(os.tmpdir(), `cidir-${Date.now()}`);
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cidir-'));
   fs.mkdirSync(tmp, { recursive: true });
   fs.writeFileSync(path.join(tmp, 'secrets.json'), JSON.stringify({
     observations: { w: { captured: true, value: 'AKIA', indicator: 'aws-access-key-id', result: 'hit' } },
@@ -551,7 +551,7 @@ test('ci --block-on-jurisdiction-clock fails when a clock fires (F18: exit 5 = C
 });
 
 test('ci --evidence-dir <dir> routes per-playbook submission files', () => {
-  const tmp = path.join(os.tmpdir(), `cidir2-${Date.now()}`);
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cidir2-'));
   fs.mkdirSync(tmp, { recursive: true });
   // Stage two distinct submissions keyed by playbook id.
   fs.writeFileSync(path.join(tmp, 'secrets.json'), JSON.stringify({
@@ -582,7 +582,7 @@ test('ci --evidence-dir <dir> routes per-playbook submission files', () => {
 // ===================================================================
 
 test('run --vex applies the VEX filter and surfaces analyze.vex.filter_applied', () => {
-  const vexPath = path.join(os.tmpdir(), `vex-${Date.now()}.json`);
+  const vexPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'vex-')), 'vex.json');
   fs.writeFileSync(vexPath, JSON.stringify({
     '@context': 'https://openvex.dev/ns/v0.2.0',
     statements: [{

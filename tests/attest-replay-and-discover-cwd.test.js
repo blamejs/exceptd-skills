@@ -72,7 +72,7 @@ test("collect warns when a non-platform precondition fails (artifacts still emit
 });
 
 test("lint flags a present-but-uncaptured required artifact distinctly from an absent one", () => {
-  const tmp = path.join(os.tmpdir(), `lint-uncaptured-${Date.now()}.json`);
+  const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'lint-uncaptured-')), 'ev.json');
   // secrets requires `world-writable-secret-files`; supply it present but
   // captured:false (the shape a collector emits when it skips a platform probe).
   fs.writeFileSync(tmp, JSON.stringify({
