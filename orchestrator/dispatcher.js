@@ -65,7 +65,10 @@ function dispatch(findings) {
         action_required: finding.action_required,
         priority: severityToPriority(finding.severity),
         last_threat_review: skill.last_threat_review || 'unknown',
-        evidence,
+        // Omit `evidence` entirely when it has no content (no items / cve_id /
+        // rwep_score) rather than emitting a bare {} — a field-present-but-empty
+        // object reads to a consumer as "evidence was captured" when none was.
+        ...(Object.keys(evidence).length > 0 ? { evidence } : {}),
       });
     }
   }

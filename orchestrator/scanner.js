@@ -89,6 +89,10 @@ function kernelScan() {
       value: kernel,
       cve_id: cveId,
       rwep_score: cve.rwep_score,
+      // Carry the catalog CVSS so the CSAF report emits a real cvss_v3 block
+      // (base score + vector) instead of a placeholder base_score:0.
+      cvss_score: cve.cvss_score,
+      cvss_vector: cve.cvss_vector,
       cisa_kev: cve.cisa_kev,
       action_required: 'Cross-reference kernel version against patched version for this CVE',
       skill_hint: 'kernel-lpe-triage',
