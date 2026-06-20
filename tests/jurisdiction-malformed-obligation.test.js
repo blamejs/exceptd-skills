@@ -36,9 +36,8 @@ function writePlaybook(dir, id, body) {
 function synthPlaybook(govObligations, notificationActions) {
   return {
     _meta: {
-      id: 'jur-malformed', version: '0.1.0', last_threat_review: '2026-05-11',
+      id: 'jur-malformed', last_threat_review: '2026-05-11',
       threat_currency_score: 95,
-      changelog: [{ version: '0.1.0', date: '2026-05-11', summary: 'synthetic' }],
       owner: '@blamejs/test', air_gap_mode: false, preconditions: [], mutex: [], feeds_into: [],
     },
     domain: {
