@@ -170,3 +170,22 @@ test('a non-theater framework run does NOT chain into sbom', () => {
   assert.deepEqual(out.phases.close.feeds_into, [],
     'a clear verdict does not chain framework → sbom');
 });
+
+test('contains matches an obligation jurisdiction field via a quoted member; IN list membership works; string-array contains is unaffected', () => {
+  const obligations = [
+    { jurisdiction: 'EU', regulation: 'NIS2 Art.21', window_hours: 720 },
+    { jurisdiction: 'US', regulation: 'SEC', window_hours: 96 },
+  ];
+  const ctx = { compliance_theater_check: { verdict: 'theater' }, jurisdiction_obligations: obligations };
+  // Previously-dead theater + EU-jurisdiction escalation/feeds_into atom now resolves.
+  assert.equal(evalCondition("compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'", ctx, {}), true);
+  assert.equal(evalCondition("jurisdiction_obligations contains 'EU'", ctx, {}), true);
+  assert.equal(evalCondition("jurisdiction_obligations contains 'JP'", ctx, {}), false);
+  // .length on the same array still works.
+  assert.equal(evalCondition('jurisdiction_obligations.length == 0', { jurisdiction_obligations: [] }, {}), true);
+  // IN [...] membership (matched_cve.attack_class IN [...]).
+  assert.equal(evalCondition("x.attack_class IN ['kernel-lpe', 'rce']", { x: { attack_class: 'rce' } }, {}), true);
+  assert.equal(evalCondition("x.attack_class IN ['kernel-lpe']", { x: { attack_class: 'rce' } }, {}), false);
+  // The pre-existing string-array contains shape is unaffected.
+  assert.equal(evalCondition('scope.targets contains named-remote', { scope: { targets: ['named-remote', 'local'] } }, {}), true);
+});
