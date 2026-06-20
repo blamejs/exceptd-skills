@@ -321,3 +321,14 @@ test('scoreCustom counts the AI factor from the catalog field name ai_assisted_w
   assert.ok(!warns.some(w => w.includes('ai_assisted_weapon: missing')),
     'ai_assisted_weaponization must satisfy the ai_assisted_weapon presence check');
 });
+
+test('compare guards an absent/non-numeric rwep_score instead of emitting delta:NaN + false alignment', () => {
+  // No rwep_score must not flow into delta (NaN) and must not fall through to
+  // the "broadly aligned" arm — the same hardening the CVSS side already had.
+  const r = scoring.compare('CVE-X', { 'CVE-X': { cvss_score: 5 } });
+  assert.equal(r.rwep, null, 'absent rwep must serialize as null, not NaN/undefined');
+  assert.equal(r.delta, null, 'delta must be null (not NaN) when rwep is unusable');
+  assert.match(r.explanation, /absent or non-numeric/);
+  assert.notEqual(r.explanation, 'CVSS and RWEP are broadly aligned for this CVE.');
+  assert.equal(r.rwep_actual_sla.hours, null, 'no bogus SLA for an absent rwep');
+});
