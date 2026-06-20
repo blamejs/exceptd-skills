@@ -5170,7 +5170,24 @@ function cmdPruneAttestations(runner, args, runOpts, pretty) {
   const cutoffMs = Date.parse(cutoffRaw);
   const dryRun = !!args["dry-run"];
 
-  const roots = [...new Set([resolveAttestationRoot(runOpts), path.join(process.cwd(), ".exceptd", "attestations")])];
+  // Canonicalize before dedup. A plain Set over the two root strings only
+  // collapses byte-identical paths, so when the default root and the cwd-
+  // relative root resolve to the SAME directory via different strings (e.g. a
+  // relative EXCEPTD_HOME like `.exceptd`, or the home-mkdir-fail fallback),
+  // both survive and every session under that dir is scanned twice — inflating
+  // scanned/kept/pruned_count and double-listing each session in the preview.
+  // realpathSync resolves symlinks + makes absolute for an existing dir; for a
+  // not-yet-created root it throws, so fall back to path.resolve (absolute +
+  // normalized). Mirrors the realpath confinement used at delete time below.
+  const canonicalRoot = (p) => { try { return fs.realpathSync(p); } catch { return path.resolve(p); } };
+  const roots = [];
+  const seenRoots = new Set();
+  for (const r of [resolveAttestationRoot(runOpts), path.join(process.cwd(), ".exceptd", "attestations")]) {
+    const c = canonicalRoot(r);
+    if (seenRoots.has(c)) continue;
+    seenRoots.add(c);
+    roots.push(c);
+  }
   const pruned = [];
   let kept = 0;
   let scanned = 0;
@@ -5208,16 +5225,29 @@ function cmdPruneAttestations(runner, args, runOpts, pretty) {
       const ts = dateStr ? Date.parse(dateStr) : NaN;
       if (!Number.isFinite(ts)) { kept++; continue; }
       if (ts < cutoffMs) {
-        pruned.push({ session_id: sid, captured_at: captured, replayed_at: captured ? undefined : replayFallback, dir: sdir });
+        // Confinement: resolve and confirm sdir is a direct child of root
+        // before it can be deleted, so a crafted session name can't escape the
+        // root. Evaluate this in BOTH modes so the dry-run preview lists exactly
+        // the set a real run will remove — a session the real run would refuse
+        // (realpath escapes the root, or realpathSync throws) must not show up
+        // as [would-delete]. realDir is reused for the rmSync below so the
+        // delete and the gate operate on the same canonical path (no TOCTOU
+        // between the check and the removal).
+        let realDir = null;
+        try {
+          const realRoot = fs.realpathSync(root);
+          const candidate = fs.realpathSync(sdir);
+          if (path.dirname(candidate) === realRoot) realDir = candidate;
+        } catch { /* unresolvable -> not deletable */ }
+        if (realDir === null) { kept++; continue; }
         if (!dryRun) {
-          // Confinement: resolve and confirm sdir is a direct child of root
-          // before removing, so a crafted session name can't escape the root.
-          try {
-            const realRoot = fs.realpathSync(root);
-            const realDir = fs.realpathSync(sdir);
-            if (path.dirname(realDir) === realRoot) fs.rmSync(realDir, { recursive: true, force: true });
-          } catch { /* skip undeletable */ }
+          // Real run: count the session as pruned only after the delete
+          // succeeds, so pruned_count is a post-condition (sessions actually
+          // removed from disk), never a candidate tally.
+          try { fs.rmSync(realDir, { recursive: true, force: true }); }
+          catch { kept++; continue; /* skip undeletable */ }
         }
+        pruned.push({ session_id: sid, captured_at: captured, replayed_at: captured ? undefined : replayFallback, dir: sdir });
       } else {
         kept++;
       }
