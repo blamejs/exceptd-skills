@@ -1157,9 +1157,9 @@ function hasReadableStdin() {
  * on failure so the caller can wrap it with its own verb prefix.
  */
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?$/;
-function validateIsoSince(raw) {
+function validateIsoSince(raw, flagName = "--since") {
   if (typeof raw !== "string" || !ISO_DATE_RE.test(raw) || isNaN(Date.parse(raw))) {
-    return `--since must be a parseable ISO-8601 calendar timestamp (e.g. 2026-05-01 or 2026-05-01T00:00:00Z). Got: ${JSON.stringify(String(raw)).slice(0, 80)}`;
+    return `${flagName} must be a parseable ISO-8601 calendar timestamp (e.g. 2026-05-01 or 2026-05-01T00:00:00Z). Got: ${JSON.stringify(String(raw)).slice(0, 80)}`;
   }
   return null;
 }
@@ -5165,7 +5165,7 @@ function cmdPruneAttestations(runner, args, runOpts, pretty) {
       pretty,
     );
   }
-  const isoErr = validateIsoSince(cutoffRaw);
+  const isoErr = validateIsoSince(cutoffRaw, "--all-older-than");
   if (isoErr) return emitError(`attest prune: ${isoErr}`, { verb: "attest prune" }, pretty);
   const cutoffMs = Date.parse(cutoffRaw);
   const dryRun = !!args["dry-run"];
@@ -5881,14 +5881,23 @@ function cmdAttest(runner, args, runOpts, pretty) {
         // counts. Pre-0.11.8 (self.submission||{}).artifacts was undefined
         // for flat submissions; the diff returned all zeros even when
         // artifacts were present in observations.
-        artifact_diff: diffArtifacts(
-          normalizedArtifacts(self.submission, runner, self.playbook_id),
-          normalizedArtifacts(other.submission, runner, other.playbook_id)
-        ),
-        signal_override_diff: diffSignalOverrides(
-          normalizedSignalOverrides(self.submission, runner, self.playbook_id),
-          normalizedSignalOverrides(other.submission, runner, other.playbook_id)
-        ),
+        // The catalog stub stands in for an empty side ONLY when BOTH sides
+        // are empty — substituting it for one empty side while the peer passes
+        // through its real keys manufactures phantom drift (every catalog id
+        // the populated side did not submit reads as added/changed).
+        ...(() => {
+          const bothEmpty = !submissionHasData(self.submission) && !submissionHasData(other.submission);
+          return {
+            artifact_diff: diffArtifacts(
+              normalizedArtifacts(self.submission, runner, self.playbook_id, bothEmpty),
+              normalizedArtifacts(other.submission, runner, other.playbook_id, bothEmpty)
+            ),
+            signal_override_diff: diffSignalOverrides(
+              normalizedSignalOverrides(self.submission, runner, self.playbook_id, bothEmpty),
+              normalizedSignalOverrides(other.submission, runner, other.playbook_id, bothEmpty)
+            ),
+          };
+        })(),
       }, pretty, renderAttestDiff);
       return;
     }
@@ -5965,14 +5974,22 @@ function cmdAttest(runner, args, runOpts, pretty) {
       sidecar_verify: aSidecarVerify,
       a_sidecar_verify: aSidecarVerify,
       b_sidecar_verify: bSidecarVerify,
-      artifact_diff: diffArtifacts(
-        normalizedArtifacts(self.submission, runner, self.playbook_id),
-        normalizedArtifacts(other.submission, runner, other.playbook_id),
-      ),
-      signal_override_diff: diffSignalOverrides(
-        normalizedSignalOverrides(self.submission, runner, self.playbook_id),
-        normalizedSignalOverrides(other.submission, runner, other.playbook_id),
-      ),
+      // Catalog stub stands in for an empty side only when BOTH sides are
+      // empty (same peer-symmetric gate as the --against branch); real-vs-empty
+      // diffs the populated side's keys against {}, not against the full catalog.
+      ...(() => {
+        const bothEmpty = !submissionHasData(self.submission) && !submissionHasData(other.submission);
+        return {
+          artifact_diff: diffArtifacts(
+            normalizedArtifacts(self.submission, runner, self.playbook_id, bothEmpty),
+            normalizedArtifacts(other.submission, runner, other.playbook_id, bothEmpty),
+          ),
+          signal_override_diff: diffSignalOverrides(
+            normalizedSignalOverrides(self.submission, runner, self.playbook_id, bothEmpty),
+            normalizedSignalOverrides(other.submission, runner, other.playbook_id, bothEmpty),
+          ),
+        };
+      })(),
     }, pretty, renderAttestDiff);
     return;
   }
@@ -6313,9 +6330,25 @@ function _playbookSignalCatalog(runner, playbookId) {
     return Object.fromEntries(inds.map(i => [i.id, 'inconclusive']));
   } catch { return null; }
 }
-function normalizedArtifacts(submission, runner, playbookId) {
+// A submission carries real operator data for a diff when it supplied
+// artifacts, signal_overrides, OR observations. The empty case ({} or
+// {observations:{}}) is "no operator data was supplied." Diff symmetry hinges
+// on this predicate: the playbook catalog stub may only stand in for an empty
+// side when BOTH sides are empty (so the count reflects "N catalog ids,
+// uniformly empty on both sides"). Substituting the full catalog for one empty
+// side while the peer passes through its real keys manufactures phantom drift —
+// every catalog id the populated side did not submit shows up as "added"
+// (artifacts) or "changed" (signals). See callers for the bothEmpty gate.
+function submissionHasData(submission) {
+  if (!submission || typeof submission !== "object") return false;
+  const nonEmpty = (o) => o && typeof o === "object" && Object.keys(o).length > 0;
+  return nonEmpty(submission.artifacts)
+    || nonEmpty(submission.signal_overrides)
+    || nonEmpty(submission.observations);
+}
+function normalizedArtifacts(submission, runner, playbookId, applyEmptyFallback = true) {
   if (!submission || typeof submission !== "object") {
-    return _playbookArtifactCatalog(runner, playbookId) || {};
+    return applyEmptyFallback ? (_playbookArtifactCatalog(runner, playbookId) || {}) : {};
   }
   if (submission.artifacts && Object.keys(submission.artifacts).length > 0) return submission.artifacts;
   if (submission.observations && Object.keys(submission.observations).length > 0) {
@@ -6337,15 +6370,16 @@ function normalizedArtifacts(submission, runner, playbookId) {
     }
     return out;
   }
-  // v0.11.13 (#128): empty submission ({} or {observations:{}}). Identical
-  // hashes still mean "no operator data was supplied, same on both sides."
-  // Fall back to the playbook's look.artifacts catalog so total_compared
-  // reflects "N catalog artifacts, all uniformly empty on both sides."
-  return _playbookArtifactCatalog(runner, playbookId) || {};
+  // Empty submission ({} or {observations:{}}). The catalog stub may only
+  // stand in when the PEER side is also empty (applyEmptyFallback). When the
+  // peer carried real artifacts, return an empty map so the populated side's
+  // keys diff against nothing — yielding genuine added/removed instead of one
+  // fabricated "added" per catalog id the operator never submitted.
+  return applyEmptyFallback ? (_playbookArtifactCatalog(runner, playbookId) || {}) : {};
 }
-function normalizedSignalOverrides(submission, runner, playbookId) {
+function normalizedSignalOverrides(submission, runner, playbookId, applyEmptyFallback = true) {
   if (!submission || typeof submission !== "object") {
-    return _playbookSignalCatalog(runner, playbookId) || {};
+    return applyEmptyFallback ? (_playbookSignalCatalog(runner, playbookId) || {}) : {};
   }
   if (submission.signal_overrides && Object.keys(submission.signal_overrides).length > 0) return submission.signal_overrides;
   if (submission.observations && Object.keys(submission.observations).length > 0) {
@@ -6364,7 +6398,10 @@ function normalizedSignalOverrides(submission, runner, playbookId) {
     }
     return out;
   }
-  return _playbookSignalCatalog(runner, playbookId) || {};
+  // Empty submission — same peer-symmetric gate as normalizedArtifacts: only
+  // stand in the inconclusive catalog stub when the peer is also empty, so a
+  // real-vs-empty signal diff reports only the genuinely-differing indicators.
+  return applyEmptyFallback ? (_playbookSignalCatalog(runner, playbookId) || {}) : {};
 }
 
 /**
@@ -6415,14 +6452,14 @@ function diffArtifacts(a, b) {
   for (const id of allIds) {
     const av = a[id], bv = b[id];
     if (!av && bv) {
-      out.added.push({ id, captured: !!bv.captured, value_preview: previewValue(bv.value) });
+      out.added.push({ id, captured: !!bv.captured, value_preview: artifactPreview(bv) });
     } else if (av && !bv) {
-      out.removed.push({ id, captured: !!av.captured, value_preview: previewValue(av.value) });
+      out.removed.push({ id, captured: !!av.captured, value_preview: artifactPreview(av) });
     } else if (av && bv && artifactsDiffer(av, bv)) {
       out.changed.push({
         id,
         a_captured: !!av.captured, b_captured: !!bv.captured,
-        a_value_preview: previewValue(av.value), b_value_preview: previewValue(bv.value),
+        a_value_preview: artifactPreview(av), b_value_preview: artifactPreview(bv),
       });
     } else if (av && bv) {
       // v0.11.8 (#102): both sides have the entry AND they're identical →
@@ -6453,6 +6490,23 @@ function previewValue(v) {
   if (v === null || v === undefined) return null;
   const s = typeof v === "string" ? v : JSON.stringify(v);
   return s.length > 80 ? s.slice(0, 80) + "…" : s;
+}
+
+// Preview the evidence an artifact carries for the diff output. `.value` is the
+// canonical carrier, but observations legitimately store their secret/path/match
+// under other keys (path, matched, reason, or a custom key). When `.value` is
+// absent, fall back to a preview of the remaining evidence-bearing keys (every
+// key except the bookkeeping `captured`/`captured_at` flags) so non-`value`
+// carriers still render instead of collapsing to a null preview — which hid the
+// actual differing content even when the per-field equality compare correctly
+// flagged the artifact as changed.
+function artifactPreview(art) {
+  if (art === null || typeof art !== "object" || Array.isArray(art)) return previewValue(art);
+  if (art.value !== undefined && art.value !== null) return previewValue(art.value);
+  const { captured, captured_at, _captured_at, value, ...evidence } = art;
+  const keys = Object.keys(evidence);
+  if (keys.length === 0) return null;
+  return previewValue(evidence);
 }
 
 // ---------------------------------------------------------------------------
