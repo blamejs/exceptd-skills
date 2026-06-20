@@ -32,7 +32,7 @@ function topLevelPkgRootRequires() {
   const found = [];
   for (const line of lines) {
     const m = line.match(
-      /^(?:const|var|let)\s+.*=\s*require\(path\.join\(PKG_ROOT,\s*((?:"[^"]+"\s*,?\s*)+)\)\)/
+      /^(?:const|var|let)\s+.*=\s*require\(path\.join\(PKG_ROOT,\s*("[^"]+"(?:\s*,\s*"[^"]+")*)\s*\)\)/
     );
     if (m && depth === 0) {
       const parts = m[1].match(/"[^"]+"/g).map((s) => s.slice(1, -1));

@@ -28,9 +28,11 @@ function stubFetch(nvdPayload) {
   const orig = global.fetch;
   global.fetch = async (url) => {
     const u = String(url);
-    if (u.includes('nvd.nist.gov')) return jsonRes(nvdPayload);
-    if (u.includes('first.org')) return jsonRes({ status: 'OK', data: [] }); // EPSS: none
-    if (u.includes('known_exploited')) return jsonRes({ vulnerabilities: [] }); // KEV: empty
+    let host = '';
+    try { host = new URL(u).hostname; } catch { /* non-URL input */ }
+    if (host === 'nvd.nist.gov' || host.endsWith('.nvd.nist.gov')) return jsonRes(nvdPayload);
+    if (host === 'first.org' || host.endsWith('.first.org')) return jsonRes({ status: 'OK', data: [] }); // EPSS: none
+    if (u.includes('known_exploited')) return jsonRes({ vulnerabilities: [] }); // KEV: empty (path token, not host)
     throw new Error('unexpected fetch in test: ' + u);
   };
   return () => { global.fetch = orig; };

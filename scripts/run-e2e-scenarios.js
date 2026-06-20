@@ -254,12 +254,15 @@ function runScenario(scenarioPath) {
 
 function main() {
   const filter = process.argv.find(a => a.startsWith("--filter="));
-  const filterRe = filter ? new RegExp(filter.slice("--filter=".length)) : null;
+  // Plain substring match, not new RegExp(operatorArg): a regex compiled from a
+  // CLI argument is a regex-injection / ReDoS vector, and scenario filtering only
+  // needs substring selection (e.g. --filter=library-author).
+  const filterStr = filter ? filter.slice("--filter=".length) : null;
   const json = process.argv.includes("--json");
 
   const scenarios = fs.readdirSync(SCENARIO_DIR)
     .filter(d => /^\d+-/.test(d))
-    .filter(d => !filterRe || filterRe.test(d))
+    .filter(d => !filterStr || d.includes(filterStr))
     .map(d => path.join(SCENARIO_DIR, d))
     .sort();
 
