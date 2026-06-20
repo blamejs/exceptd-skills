@@ -28,6 +28,7 @@ const { currencyCheck, initPipeline } = require('./pipeline');
 const { bus, EVENT_TYPES } = require('./event-bus');
 const { start: startScheduler, stop: stopScheduler, runCurrencyNow } = require('./scheduler');
 const { EXIT_CODES, safeExit } = require('../lib/exit-codes');
+const { withRetry } = require('../vendor/blamejs/retry.js');
 
 const cmd = process.argv[2];
 const args = process.argv.slice(3);
@@ -1998,21 +1999,49 @@ async function runWatchlistOrgScan(rawArgs = []) {
     safeExit(EXIT_CODES.GENERIC_FAILURE);
     return;
   }
+  // Patterns whose query exhausted retries on a transient failure. Surfaced
+  // in the envelope so a dropped pattern is observable rather than reading as
+  // a clean zero — the false-negative-on-transient class (a flaky 5xx /
+  // reset / timeout silently yielding "no matches found" for a threat-actor
+  // naming pattern) is exactly what NEW-CTRL-052 exists to defend against.
+  const erroredPatterns = [];
+  // A 5xx / timeout / reset is retried with backoff + jitter (mirrors
+  // lib/source-advisories.js#fetchFeed); a permanent 4xx other than the
+  // rate-limit codes is not. 403/429 short-circuit to the rateLimited flag.
+  const retryable = (err) => {
+    // 403/429 are the documented rate-limit signal — surface them at once
+    // (preserving the prior continue-on-rate-limit semantics) rather than
+    // burning the retry budget; the operator re-runs with GITHUB_TOKEN set.
+    if (err && err._rateLimit) return false;
+    if (err && typeof err.statusCode === 'number') return err.statusCode >= 500;
+    if (err && (err.name === 'AbortError' || err.name === 'TimeoutError')) return true;
+    const code = err && (err.code || (err.cause && err.cause.code));
+    return !!code && /^(ECONNRESET|ECONNREFUSED|ECONNABORTED|ETIMEDOUT|EPIPE|EAGAIN|ENOTFOUND|ENETUNREACH|UND_ERR)/.test(String(code));
+  };
   for (const p of patterns) {
     const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(p.q + ' org:' + org)}&per_page=100`;
     const headers = { 'User-Agent': 'exceptd-watchlist-org-scan/0.13.3 (+https://exceptd.com)', 'Accept': 'application/vnd.github+json' };
     if (token) headers.Authorization = `Bearer ${token}`;
-    try {
+    // Each attempt gets a fresh abort timer.
+    const attempt = async () => {
       const ac = new AbortController();
       const timer = setTimeout(() => ac.abort(), 10000);
-      const r = await fetch(url, { headers, signal: ac.signal });
-      clearTimeout(timer);
-      if (r.status === 403 || r.status === 429) {
-        rateLimited = true;
-        continue;
+      try {
+        const r = await fetch(url, { headers, signal: ac.signal });
+        if (r.status === 403 || r.status === 429) {
+          const e = new Error(`HTTP ${r.status}`);
+          e.statusCode = r.status;
+          e._rateLimit = true; // surfaced as rateLimited, never retried
+          throw e;
+        }
+        if (!r.ok) { const e = new Error(`HTTP ${r.status}`); e.statusCode = r.status; throw e; }
+        return await r.json();
+      } finally {
+        clearTimeout(timer);
       }
-      if (!r.ok) continue;
-      const body = await r.json();
+    };
+    try {
+      const body = await withRetry(attempt, { maxAttempts: 3, baseDelayMs: 100, maxDelayMs: 2000, jitterFactor: 0.5, isRetryable: retryable });
       for (const item of body.items || []) {
         matches.push({
           pattern_id: p.id,
@@ -2026,12 +2055,23 @@ async function runWatchlistOrgScan(rawArgs = []) {
           stars: item.stargazers_count || 0,
         });
       }
-    } catch { /* network failure — best effort */ }
+    } catch (err) {
+      // 403/429 (incl. after retries) is the documented rate-limit signal.
+      // Any other exhausted-retry failure marks the pattern errored so the
+      // operator can distinguish a dropped query from a clean no-match.
+      if (err && err._rateLimit) {
+        rateLimited = true;
+      } else {
+        erroredPatterns.push({ pattern_id: p.id, error: (err && err.message) || String(err) });
+      }
+    }
   }
   const generated_at = new Date().toISOString();
   if (outputFormat === 'json') {
     process.stdout.write(JSON.stringify({
-      ok: !rateLimited,
+      // A rate-limited OR errored pattern means the scan is incomplete — a
+      // zero match-count is no longer trustworthy as "clean".
+      ok: !rateLimited && erroredPatterns.length === 0,
       verb: 'watchlist',
       mode: 'org-scan',
       generated_at,
@@ -2040,6 +2080,7 @@ async function runWatchlistOrgScan(rawArgs = []) {
       match_count: matches.length,
       matches,
       rate_limited: rateLimited,
+      errored_patterns: erroredPatterns,
       unauthenticated: unauth,
       control_reference: 'NEW-CTRL-052 (MAL-2026-SHAI-HULUD-OSS lesson)',
     }) + '\n');
@@ -2063,6 +2104,10 @@ async function runWatchlistOrgScan(rawArgs = []) {
       lines.push('> **Warning:** GitHub rate limit hit on at least one pattern query. Some matches may be missing. Re-run with `GITHUB_TOKEN` set to lift the limit.');
       lines.push('');
     }
+    if (erroredPatterns.length > 0) {
+      lines.push(`> **Warning:** ${erroredPatterns.length} pattern quer${erroredPatterns.length === 1 ? 'y' : 'ies'} failed after retries (${erroredPatterns.map((e) => e.pattern_id).join(', ')}). A zero match-count for ${erroredPatterns.length === 1 ? 'that pattern' : 'those patterns'} is NOT a clean result — re-run to confirm.`);
+      lines.push('');
+    }
     if (matches.length === 0) {
       lines.push('_No repositories matching threat-actor patterns found._');
     } else {
@@ -2084,6 +2129,9 @@ async function runWatchlistOrgScan(rawArgs = []) {
   console.log(`Org: ${org}  patterns: ${patterns.length}  matches: ${matches.length}`);
   if (unauth) console.log('(unauthenticated — set GITHUB_TOKEN for private-repo coverage + higher rate limit)');
   if (rateLimited) console.log('WARNING: GitHub rate limit hit on at least one query. Re-run with GITHUB_TOKEN set.');
+  if (erroredPatterns.length > 0) {
+    console.log(`WARNING: ${erroredPatterns.length} pattern quer${erroredPatterns.length === 1 ? 'y' : 'ies'} failed after retries (${erroredPatterns.map((e) => e.pattern_id).join(', ')}). A zero match-count for those is NOT a clean result — re-run to confirm.`);
+  }
   if (matches.length === 0) {
     console.log('No threat-actor-pattern repos found.');
     return;
