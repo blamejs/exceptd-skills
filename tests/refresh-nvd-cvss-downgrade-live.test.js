@@ -89,3 +89,26 @@ test('live NVD path still reports a same-version CVSS re-score drift', async () 
     resetKevCache();
   }
 });
+
+// RC-4: NVD can return a baseScore with a MISSING vectorString. The live guard
+// derived the upstream version from the vector (cvssVersionOf(null) === null),
+// so the downgrade was NOT suppressed on the live path while the cache path —
+// which uses the declared metric version — suppressed it. The live guard now
+// prefers the declared version too.
+const V2_NO_VECTOR = nvd({
+  cvssMetricV2: [{ type: 'Primary', cvssData: { version: '2.0', baseScore: 7.5 } }], // no vectorString
+});
+
+test('live NVD path suppresses a v2-over-v3.1 downgrade even when the upstream vectorString is missing', async () => {
+  resetKevCache();
+  const restore = stubFetch(V2_NO_VECTOR);
+  try {
+    const r = await validateCve('CVE-2014-0002', CURATED);
+    const cvss = r.discrepancies.filter(d => d.field === 'cvss_score' || d.field === 'cvss_vector');
+    assert.equal(cvss.length, 0,
+      `a v2 metric with no vectorString must still be read as an older version and suppressed; got ${JSON.stringify(cvss)}`);
+  } finally {
+    restore();
+    resetKevCache();
+  }
+});
