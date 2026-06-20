@@ -60,9 +60,9 @@ function frameworkRegion(frameworkText) {
   if (!frameworkText) return 'OTHER';
   if (/NIST|FedRAMP|CMMC|HIPAA|HITRUST|PCI|SOC|CIS Controls|OFAC|SEC|NYDFS|CIRCIA/i.test(frameworkText)) return 'US';
   if (/NIS2|DORA|GDPR|^EU |EU-|ENISA|CRA |AI Act|EU 2014\/833/i.test(frameworkText)) return 'EU';
-  if (/^UK|CAF|Ofcom|NCSC|OFSI|UK-GDPR/i.test(frameworkText)) return 'UK';
-  if (/^AU|ACSC|ISM|Essential 8|APRA|eSafety|AU NDB/i.test(frameworkText)) return 'AU';
-  if (/^ISO|IEC \d|3GPP|GSMA|ITU|FCC|TSA |OWASP|SLSA|CycloneDX|SPDX/i.test(frameworkText)) return 'INTL';
+  if (/\b(?:UK|CAF|Ofcom|NCSC|OFSI|UK-GDPR)\b/i.test(frameworkText)) return 'UK';
+  if (/\b(?:AU|ACSC|ISM|Essential 8|APRA|eSafety|AU NDB)\b/i.test(frameworkText)) return 'AU';
+  if (/\b(?:ISO|IEC \d|3GPP|GSMA|ITU|FCC|TSA|OWASP|SLSA|CycloneDX|SPDX)\b/i.test(frameworkText)) return 'INTL';
   return 'OTHER';
 }
 
@@ -116,7 +116,7 @@ test('Cross-format CVE consistency — CSAF + OpenVEX + SARIF agree on the catal
     artifacts: { 'kernel-release': '5.15.0-69-generic' },
     signal_overrides: { 'kver-in-affected-range': 'hit' },
   });
-  const evFile = path.join(os.tmpdir(), `cycle16-${Date.now()}-${Math.random().toString(16).slice(2, 8)}.json`);
+  const evFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'cycle16-')), 'ev.json');
   fs.writeFileSync(evFile, evidence);
   try {
     const CLI = path.join(ROOT, 'bin', 'exceptd.js');

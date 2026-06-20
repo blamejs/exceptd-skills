@@ -249,7 +249,7 @@ test("ci FAIL prints Next steps even when no playbook hit `detected` (delta-cap 
       signal_overrides: { "active-exploitation-published": "hit" }
     }
   });
-  const tmpFile = path.join(os.tmpdir(), `fail-delta-${process.pid}.json`);
+  const tmpFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'fail-delta-')), 'ev.json');
   fs.writeFileSync(tmpFile, evidence);
   try {
     const r = cli(["ci", "--required", "kernel", "--evidence", tmpFile, "--max-rwep", "0"]);
@@ -456,7 +456,7 @@ test("lint flags nested submission with artifacts-but-no-signal_overrides (the w
       "secret-regex-scan-text-files": { value: "scanned 47 files; 0 hits", captured: true }
     }
   });
-  const tmpFile = path.join(os.tmpdir(), `lint-no-overrides-${process.pid}.json`);
+  const tmpFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'lint-no-overrides-')), 'ev.json');
   fs.writeFileSync(tmpFile, evidence);
   try {
     const r = cli(["lint", "secrets", tmpFile, "--json"]);

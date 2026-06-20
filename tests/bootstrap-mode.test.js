@@ -132,12 +132,12 @@ test("README.md quickstart points at the canonical blamejs/exceptd-skills repo",
   const readme = fs.readFileSync(path.join(ROOT, "README.md"), "utf8");
   assert.match(
     readme,
-    /github\.com\/blamejs\/exceptd-skills/,
+    /\bgithub\.com\/blamejs\/exceptd-skills\b/,
     "README must reference the canonical blamejs/exceptd-skills repo"
   );
   assert.doesNotMatch(
     readme,
-    /github\.com\/exceptd\/security/,
+    /\bgithub\.com\/exceptd\/security\b/,
     "README must NOT reference the placeholder exceptd/security path"
   );
 });

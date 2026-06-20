@@ -23,7 +23,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { spawnSync } = require('node:child_process');
 
-const { ROOT, CLI, makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+const { ROOT, CLI, makeSuiteHome, makeCli, tryJson, secureTmpFile } = require('./_helpers/cli');
 const runner = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
 
 const SUITE_HOME = makeSuiteHome('exceptd-operator-bugs-');
@@ -503,7 +503,7 @@ test('#83 lint follows val.artifact indirection', () => {
     }
   });
   // Write to a tmp file for lint.
-  const tmpFile = path.join(require('os').tmpdir(), `lint-${Date.now()}.json`);
+  const tmpFile = secureTmpFile('ev.json', 'lint-');
   fs.writeFileSync(tmpFile, sub);
   const r = cli(['lint', 'library-author', tmpFile, '--json']);
   fs.unlinkSync(tmpFile);
@@ -532,7 +532,7 @@ test('#83 lint and run agree on the same flat submission', () => {
     };
   });
   const sub = JSON.stringify({ observations });
-  const tmpFile = path.join(require('os').tmpdir(), `agree-${Date.now()}.json`);
+  const tmpFile = secureTmpFile('ev.json', 'agree-');
   fs.writeFileSync(tmpFile, sub);
   try {
     const lintRes = cli(['lint', 'library-author', tmpFile, '--json']);
@@ -662,7 +662,7 @@ test('#93 SARIF defines every rule referenced by ruleId', () => {
 
 test('#94 lint missing_required_artifact is a warning, not error', () => {
   // Lint should not error on a submission the runner accepts.
-  const tmpFile = path.join(require('os').tmpdir(), `lint94-${Date.now()}.json`);
+  const tmpFile = secureTmpFile('ev.json', 'lint94-');
   fs.writeFileSync(tmpFile, JSON.stringify({ observations: {} }));
   const r = cli(['lint', 'library-author', tmpFile, '--json']);
   fs.unlinkSync(tmpFile);
@@ -898,7 +898,7 @@ test('#104 jurisdiction clocks fire on detected classification (with --ack — E
       verdict: { classification: 'detected', blast_radius: 4 }
     }
   });
-  const tmpFile = path.join(require('os').tmpdir(), `civ-${Date.now()}.json`);
+  const tmpFile = secureTmpFile('ev.json', 'civ-');
   fs.writeFileSync(tmpFile, sub);
   const r = cli(['ci', '--required', 'secrets', '--evidence', tmpFile, '--ack', '--json']);
   fs.unlinkSync(tmpFile);
@@ -980,7 +980,7 @@ test('#100 ci with NO --evidence + all inconclusive exits 3 (not 0)', () => {
   // makes any non-overridden indicator inconclusive) WITHOUT setting
   // signal_overrides — equivalent to the pre-E2 default empty-submission
   // outcome from a behavioral standpoint.
-  const tmp = path.join(require('os').tmpdir(), `incon-${Date.now()}.json`);
+  const tmp = secureTmpFile('ev.json', 'incon-');
   // Submission with a captured artifact but no signal_overrides → all
   // indicators inconclusive → ci no-evidence guard fires (--evidence WAS
   // supplied so the guard's predicate skips it; this test now just asserts
@@ -1063,7 +1063,7 @@ test('#125/#134 ci with real preflight halt exits 4 BLOCKED (not 2 FAIL, not 0)'
   // Real preflight halt: secrets has a halt-on-fail precondition `repo-context`
   // (cwd_readable == true). Submit it false explicitly so autoDetect doesn't
   // override it, keyed by playbook id so cmdCi's bundle dispatch routes it.
-  const tmp = path.join(require('os').tmpdir(), `block-${Date.now()}.json`);
+  const tmp = secureTmpFile('ev.json', 'block-');
   fs.writeFileSync(tmp, JSON.stringify({ secrets: { precondition_checks: { 'repo-context': false } } }));
   const r = cli(['ci', '--required', 'secrets', '--evidence', tmp, '--json']);
   fs.unlinkSync(tmp);
@@ -1170,8 +1170,7 @@ test('#131 run <typo-playbook-id> suggests nearest playbooks', () => {
 // ===================================================================
 
 function withFixture(version, daysAgo) {
-  const dir = require('os').tmpdir();
-  const file = path.join(dir, `npm-fixture-${Date.now()}-${Math.random().toString(36).slice(2)}.json`);
+  const file = secureTmpFile('npm-fixture.json', 'npm-fixture-');
   const publishedAt = new Date(Date.now() - daysAgo * 24 * 3600 * 1000).toISOString();
   fs.writeFileSync(file, JSON.stringify({
     "dist-tags": { latest: version },

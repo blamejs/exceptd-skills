@@ -77,6 +77,13 @@ test('process-exit-after-stdout-write: catches a planted violation and a marker 
 
   const inMain = fixture('if (require.main === module) {\n  process.stdout.write("x");\n  process.exit(1);\n}\n');
   assert.equal(gate.detectProcessExitAfterStdout([inMain]).length, 0, 'a require.main CLI-entry block is exempt');
+
+  // A `//` inside a string literal (e.g. a URL) on the process.exit line must
+  // NOT be treated as a comment — otherwise the line is truncated at `http:`
+  // and the real process.exit is never seen by the detector.
+  const urlLine = fixture('function f() {\n  process.stdout.write("x");\n  const u = "http://e.com/p"; process.exit(1);\n}\n');
+  assert.equal(gate.detectProcessExitAfterStdout([urlLine]).length, 1,
+    'a URL string containing // must not hide the trailing process.exit');
 });
 
 test('dynamic-regex: catches new RegExp(<non-literal>) and a marker suppresses it', () => {

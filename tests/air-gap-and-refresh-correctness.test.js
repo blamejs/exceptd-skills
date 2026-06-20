@@ -93,6 +93,23 @@ test('refresh --network refuses under --air-gap flag (exit 4)', () => {
 });
 
 // ===================================================================
+// 2b. tarball fetch-destination allowlist (SSRF guard)
+// ===================================================================
+
+test('refresh-network pins the tarball fetch host to the npm registry', () => {
+  const { isAllowedTarballHost } = require('../lib/refresh-network.js');
+  // The registry the /latest metadata is queried from, and its tarball path.
+  assert.equal(isAllowedTarballHost('https://registry.npmjs.org/@blamejs/exceptd-skills/-/exceptd-skills.tgz'), true);
+  assert.equal(isAllowedTarballHost('https://npmjs.com/x.tgz'), true);
+  // A tampered metadata response / fixture must not be able to steer the fetch
+  // at an internal or attacker-controlled host.
+  assert.equal(isAllowedTarballHost('https://registry.npmjs.org.attacker.test/x.tgz'), false);
+  assert.equal(isAllowedTarballHost('https://evil.example/x.tgz'), false);
+  assert.equal(isAllowedTarballHost('http://169.254.169.254/latest/meta-data/'), false);
+  assert.equal(isAllowedTarballHost('not a url'), false);
+});
+
+// ===================================================================
 // 3. prefetch honors EXCEPTD_AIR_GAP / --air-gap (dry-run, no egress)
 // ===================================================================
 

@@ -42,7 +42,7 @@
     "feeds_into": [
       {
         "playbook_id": "sbom",
-        "condition": "any compliance_theater_check.verdict == 'theater' AND blast_radius_score >= 4"
+        "condition": "analyze.compliance_theater_check.verdict == 'theater' AND analyze.blast_radius_score >= 4"
       }
     ],
     "fed_by": [
@@ -717,7 +717,7 @@
           "action": "raise_severity"
         },
         {
-          "condition": "any compliance_theater_check.verdict == 'theater' AND blast_radius_score >= 3",
+          "condition": "analyze.compliance_theater_check.verdict == 'theater' AND blast_radius_score >= 3",
           "action": "trigger_playbook",
           "target_playbook": "sbom"
         }

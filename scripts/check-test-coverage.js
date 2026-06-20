@@ -316,17 +316,37 @@ function extractLibExports(content) {
   const objStart = stripped.search(/module\.exports\s*=\s*\{/);
   if (objStart !== -1) {
     const openIdx = stripped.indexOf("{", objStart);
-    let depth = 0, end = -1;
+    // String-aware brace balance: a `}` inside a string/template value (e.g.
+    // `{ PATTERN: "a}b", realExport }`) must NOT close the object early and
+    // hide the exports that follow — that blind spot let an uncovered export
+    // ship green.
+    let depth = 0, end = -1, inStr = null;
     for (let i = openIdx; i < stripped.length; i++) {
       const ch = stripped[i];
+      if (inStr) {
+        if (ch === "\\") { i++; continue; }
+        if (ch === inStr) inStr = null;
+        continue;
+      }
+      if (ch === "'" || ch === '"' || ch === "`") { inStr = ch; continue; }
       if (ch === "{") depth++;
       else if (ch === "}") { depth--; if (depth === 0) { end = i; break; } }
     }
     if (end !== -1) {
       const body = stripped.slice(openIdx + 1, end);
-      let d = 0, cur = "";
+      // String-aware member split: a `,` or bracket inside a string value must
+      // not split a member or skew the bracket depth.
+      let d = 0, cur = "", sInStr = null;
       const members = [];
-      for (const ch of body) {
+      for (let i = 0; i < body.length; i++) {
+        const ch = body[i];
+        if (sInStr) {
+          cur += ch;
+          if (ch === "\\") { cur += (body[i + 1] || ""); i++; continue; }
+          if (ch === sInStr) sInStr = null;
+          continue;
+        }
+        if (ch === "'" || ch === '"' || ch === "`") { sInStr = ch; cur += ch; continue; }
         if (ch === "{" || ch === "[") d++;
         else if (ch === "}" || ch === "]") d--;
         if (ch === "," && d === 0) { members.push(cur); cur = ""; }

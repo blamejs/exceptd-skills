@@ -532,7 +532,7 @@ test('v0.12.11 F5 normalizeAdvisory leaves epss_note null for CVE-keyed drafts',
   const out = osv.normalizeAdvisory(fixture[1]);
   const entry = out['CVE-9999-99998'];
   assert.equal(entry.epss_note, null, 'CVE-keyed drafts get epss_source URL, not epss_note');
-  assert.match(entry.epss_source, /first\.org/);
+  assert.match(entry.epss_source, /^https:\/\/(?:[\w-]+\.)*first\.org\//);
 });
 
 // -- F6: verification_sources dedupe -----------------------------------

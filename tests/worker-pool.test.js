@@ -9,7 +9,7 @@ const { WorkerPool, runAll, DEFAULT_SIZE } = require('../lib/worker-pool');
 
 // Write a tiny worker script to a tempfile; the pool requires an absolute path.
 function tempWorker(body) {
-  const p = path.join(os.tmpdir(), `wp-test-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}.js`);
+  const p = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wp-test-')), 'worker.js');
   fs.writeFileSync(p, body, 'utf8');
   return p;
 }

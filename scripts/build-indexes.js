@@ -689,6 +689,11 @@ function writeMeta(ctx, results) {
     source_hashes: sourceHashes,
     skill_count: ctx.skills.length,
     catalog_count: ctx.catalogFiles.length,
+    // The derived index files this build produces. validate-indexes confirms
+    // every one still exists and parses — source hashes alone do not detect a
+    // deleted/truncated/corrupted OUTPUT (an index file removed from a clean
+    // source tree would otherwise pass the freshness gate as "current").
+    outputs: OUTPUTS.map((o) => o.file).sort(),
     index_stats: {
       xref_entries: xrefStats,
       trigger_table_entries: Object.keys(trigger).length,

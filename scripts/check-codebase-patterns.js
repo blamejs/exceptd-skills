@@ -104,11 +104,25 @@ function readLines(rel) {
 }
 
 // Strip a trailing `//` line comment for code-shape detection (so a class
-// name mentioned in a comment doesn't arm a detector). Leaves string contents
-// alone enough for the coarse line-level checks here.
+// name mentioned in a comment doesn't arm a detector). String-aware: a `//`
+// inside a quoted string (e.g. a `http://` URL) is NOT a comment, so the
+// scanner skips string contents — otherwise the rest of the line, including a
+// real `process.exit(...)` / `new RegExp(...)`, was silently truncated away and
+// the detector never fired.
 function stripLineComment(line) {
-  const idx = line.indexOf("//");
-  return idx === -1 ? line : line.slice(0, idx);
+  let inStr = null; // active quote char, or null
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inStr) {
+      if (ch === "\\") { i++; continue; } // skip the escaped char
+      if (ch === inStr) inStr = null;
+    } else if (ch === "'" || ch === '"' || ch === "`") {
+      inStr = ch;
+    } else if (ch === "/" && line[i + 1] === "/") {
+      return line.slice(0, i);
+    }
+  }
+  return line;
 }
 
 // ---- allow-marker engine -------------------------------------------------

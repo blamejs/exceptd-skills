@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.18.7 — 2026-06-19
+
+Escalation and feeds_into conditions that use an `any`/`all` quantifier prefix, a quoted `matches '…'` pattern, or a quoted `contains` member now evaluate instead of silently failing closed. Several catalog chains that depended on these forms — most visibly the compliance-theater → SBOM correlation — were dead and now fire; the feeds_into evaluation context also exposes the bare `blast_radius_score`, `theater_verdict`, and `compliance_theater_check` tokens the catalog references, so an engine-computed value is no longer lost to a `null` lookup.
+
+The secrets collector no longer double-reports an Anthropic `sk-ant-…` key as both an OpenAI and an Anthropic key, and now surfaces subtrees skipped for exceeding the depth cap instead of leaving them silently unscanned. The library-author collector no longer flags npm-workspaces lockfile links (`link: true`) as missing integrity — a false positive on every workspaces monorepo. The CI/CD collector matches the GitHub OIDC issuer and a `GITHUB_TOKEN` secret name exactly, so a look-alike issuer host or a custom `GITHUB_TOKEN_*` secret is no longer mis-handled.
+
+CVE-catalog validation rejects impossible calendar dates (for example `2026-02-30`, or Feb 29 in a non-leap year) on KEV deadline fields instead of letting them roll over to a valid-looking date, and the public-exploit URL classifier is anchored so a look-alike host such as `exploit-db.com.attacker.example` is no longer treated as a public-exploit source.
+
+The index-freshness gate now verifies that every derived index file still exists and parses, not only that the source hashes match — a deleted or truncated index no longer passes as current. `refresh --network` and the vendored-file online validator pin their fetches to the npm registry / GitHub hosts, so a tampered metadata response or redirect cannot steer a download at an arbitrary address.
+
+Internal: the diff-coverage export extractor and the codebase-pattern detectors are now string-aware, so a brace or `//` inside a string literal can no longer hide a new export from the coverage gate or disarm the process-exit / dynamic-regex detectors. Temp files in the test suite are created inside owner-only directories.
+
 ## 0.18.6 — 2026-06-14
 
 `attest prune` now ages out sessions that hold only replay records (whose attestation was removed). Such a session had no datable timestamp, so it was kept indefinitely and the attestation store could grow without bound; it is now dated by its newest replay timestamp and pruned past the cutoff like any other session.

@@ -71,8 +71,26 @@ function rawUrlForPin(sourceRepo, commit, upstreamPath) {
 
 const MAX_REDIRECTS = 5;
 
+// Only GitHub-controlled hosts may be fetched. The initial URL is always a
+// raw.githubusercontent.com URL computed from the committed _PROVENANCE.json,
+// but redirects re-enter fetchBuffer with a server-supplied Location; pinning
+// the host to github.com / *.githubusercontent.com stops a redirect (or a
+// tampered provenance source_repo) from steering the fetch at an internal or
+// attacker-controlled address.
+const ALLOWED_FETCH_HOST = /(?:^|\.)githubusercontent\.com$|^github\.com$/;
+
+function assertAllowedHost(url) {
+  let host;
+  try { host = new URL(url).hostname.toLowerCase(); }
+  catch { throw new Error(`unparseable fetch URL: ${url}`); }
+  if (!ALLOWED_FETCH_HOST.test(host)) {
+    throw new Error(`refusing to fetch from non-allowlisted host: ${host}`);
+  }
+}
+
 function fetchBuffer(url, timeoutMs, redirectsLeft = MAX_REDIRECTS) {
   return new Promise((resolve, reject) => {
+    try { assertAllowedHost(url); } catch (e) { return reject(e); }
     const req = https.get(url, (res) => {
       // v0.12.14 (codex P2): cap redirect hops. A redirect loop (or a
       // hostile / mis-configured upstream that keeps returning 3xx with

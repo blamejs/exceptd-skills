@@ -331,3 +331,25 @@ test("Audit G F11: data/*.json edits land in manual-review, not silent allowlist
   const m = (r.json.manual_review || []).find(x => x.file === "data/some-other.json");
   assert.ok(m, `expected manual_review entry for data/some-other.json; got ${JSON.stringify(r.json)}`);
 });
+
+test("extractLibExports is string-aware: a brace/comma inside a string value does not hide later exports", () => {
+  const { extractLibExports } = require(ANALYZER);
+  // The PATTERN value contains `}` `]` and `,` inside strings/regex; a naive
+  // brace/comma counter would close the object (or split a member) early and
+  // miss realExportA / realExportB — letting an uncovered export ship green.
+  const src = [
+    'function realExportA(){}',
+    'function realExportB(){}',
+    'const PATTERN = "a}b,c]d";',
+    'module.exports = { PATTERN, realExportA, realExportB };',
+  ].join("\n");
+  const ex = extractLibExports(src);
+  assert.ok(ex.has("realExportA"), `expected realExportA in ${JSON.stringify([...ex])}`);
+  assert.ok(ex.has("realExportB"), `expected realExportB in ${JSON.stringify([...ex])}`);
+
+  // And an inline string value with braces must not truncate the list.
+  const src2 = 'module.exports = { A: "x}y", B, C };';
+  const ex2 = extractLibExports(src2);
+  assert.ok(ex2.has("A") && ex2.has("B") && ex2.has("C"),
+    `all of A,B,C expected; got ${JSON.stringify([...ex2])}`);
+});

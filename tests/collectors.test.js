@@ -2316,6 +2316,66 @@ test("cicd-pipeline-compromise collector misses on a clean SHA-pinned + env-boun
   }
 });
 
+test("cicd-pipeline-compromise collector does not treat a lookalike OIDC issuer as the GitHub issuer", () => {
+  // The issuer pre-filter is boundary-anchored: a trust policy that references a
+  // host merely embedding the GitHub OIDC issuer as a label
+  // (`token.actions.githubusercontent.com.attacker.example`) is a different,
+  // attacker-controlled issuer and must not surface as a GitHub-OIDC wildcard.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-oidc-lookalike-"));
+  try {
+    fs.mkdirSync(path.join(tmp, ".git"));
+    fs.writeFileSync(path.join(tmp, "trust-policy.json"), JSON.stringify({
+      Version: "2012-10-17",
+      Statement: [{
+        Effect: "Allow",
+        Principal: { Federated: "arn:aws:iam::123:oidc-provider/token.actions.githubusercontent.com.attacker.example" },
+        Action: "sts:AssumeRoleWithWebIdentity",
+        Condition: { StringLike: { "token.actions.githubusercontent.com.attacker.example:sub": "*" } },
+      }],
+    }));
+    const { collect } = require("../lib/collectors/cicd-pipeline-compromise.js");
+    const r = collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["wildcarded-oidc-sub-claim"], "miss");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("cicd-pipeline-compromise distinguishes a custom GITHUB_TOKEN_PROD secret from the built-in token", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-secret-name-"));
+  try {
+    fs.mkdirSync(path.join(tmp, ".git"));
+    const wfDir = path.join(tmp, ".github", "workflows");
+    fs.mkdirSync(wfDir, { recursive: true });
+    const wf = (secretName) => [
+      "name: ci",
+      "on: pull_request_target",
+      "jobs:",
+      "  build:",
+      "    runs-on: ubuntu-latest",
+      "    steps:",
+      "      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29",
+      "      - name: deploy",
+      "        env:",
+      `          TOKEN: \${{ secrets.${secretName} }}`,
+      "        run: ./deploy.sh",
+      "",
+    ].join("\n");
+    const { collect } = require("../lib/collectors/cicd-pipeline-compromise.js");
+
+    // A custom secret whose name merely STARTS WITH GITHUB_TOKEN is not the
+    // built-in token and must flip secret-exposed-to-fork-pr.
+    fs.writeFileSync(path.join(wfDir, "ci.yml"), wf("GITHUB_TOKEN_PROD"));
+    assert.equal(collect({ cwd: tmp }).signal_overrides["secret-exposed-to-fork-pr"], "hit");
+
+    // The built-in GITHUB_TOKEN alone must NOT flip it.
+    fs.writeFileSync(path.join(wfDir, "ci.yml"), wf("GITHUB_TOKEN"));
+    assert.equal(collect({ cwd: tmp }).signal_overrides["secret-exposed-to-fork-pr"], "miss");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("cicd-pipeline-compromise collector attests ci-config-readable on the success path (filesystem read genuinely performed)", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-preconds-"));
   try {
