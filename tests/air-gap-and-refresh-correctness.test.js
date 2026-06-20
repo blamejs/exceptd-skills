@@ -324,14 +324,37 @@ function refreshNetworkSwapHarness() {
   for (const rel of ['keys', 'manifest.json', 'package.json', 'lib', 'vendor', 'skills', 'data']) {
     fs.cpSync(path.join(REPO, rel), path.join(inst, rel), { recursive: true });
   }
-  const priv = fs.readFileSync(path.join(REPO, '.keys', 'private.pem'), 'utf8');
-  const pub = fs.readFileSync(path.join(inst, 'keys', 'public.pem'), 'utf8');
+  // EPHEMERAL signing identity — never read the repo's .keys/private.pem, which
+  // is gitignored and absent on a fresh CI checkout. The install copy's public
+  // key, every per-skill signature, and the manifest envelope are all re-signed
+  // with this key, so the swap path's signature + fingerprint checks verify
+  // against an identity that exists only inside this test.
+  const { privateKey: priv, publicKey: pub } = crypto.generateKeyPairSync('ed25519', {
+    privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+    publicKeyEncoding: { type: 'spki', format: 'pem' },
+  });
+  fs.writeFileSync(path.join(inst, 'keys', 'public.pem'), pub);
+  // Re-pin keys/EXPECTED_FINGERPRINT to the ephemeral key (same SHA256:<base64-
+  // of-spki-der> form the swap path compares), else the fingerprint-pin guard
+  // refuses the swap because the install copy still carries the repo key's pin.
+  const ephFp = crypto.createHash('sha256')
+    .update(crypto.createPublicKey(pub).export({ type: 'spki', format: 'der' }))
+    .digest('base64');
+  fs.writeFileSync(path.join(inst, 'keys', 'EXPECTED_FINGERPRINT'), `SHA256:${ephFp}\n`);
 
-  // Re-sign the manifest envelope (version bumped so the swap is not a no-op)
-  // with the real private key so manifest_signature verifies; skill bodies are
-  // untouched, so every per-skill signature still verifies.
+  // Version bumped so the swap is not a no-op; re-sign every per-skill body and
+  // the manifest envelope with the ephemeral key so they verify against the
+  // ephemeral public key written above.
+  // Per-skill signature in the exact form lib/sign.js#signContent produces
+  // (normalize → Ed25519 ieee-p1363) — signContent itself is not exported, but
+  // normalize is, and lib/verify.js uses the identical transform.
+  const signBody = (body) =>
+    crypto.sign(null, Buffer.from(sign.normalize(body), 'utf8'), { key: priv, dsaEncoding: 'ieee-p1363' }).toString('base64');
   const manifest = JSON.parse(fs.readFileSync(path.join(inst, 'manifest.json'), 'utf8'));
   manifest.version = '999.0.0';
+  for (const sk of manifest.skills) {
+    sk.signature = signBody(fs.readFileSync(path.join(inst, sk.path), 'utf8'));
+  }
   delete manifest.manifest_signature;
   manifest.manifest_signature = sign.signCanonicalManifest(manifest, priv);
 

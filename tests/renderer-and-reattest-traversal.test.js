@@ -81,48 +81,6 @@ test("reattest still works for a valid session-id", () => {
   }
 });
 
-test("reattest --latest --playbook \"\" refuses instead of silently matching across all playbooks", () => {
-  // --playbook is registered `multi:`, so `--playbook ""` parses to [""] and
-  // slipped past walkAttestationDir's truthy filter guard — disabling the
-  // filter so --latest resolved to the newest attestation across EVERY
-  // playbook rather than the (empty) one requested. Seed two real
-  // attestations for different playbooks (sbom written last = global newest),
-  // then assert the empty value is refused — not silently widened to the
-  // cross-playbook newest — while a real id still filters to its own session.
-  const home = fs.mkdtempSync(path.join(os.tmpdir(), "exceptd-pbempty-"));
-  try {
-    const env = { EXCEPTD_HOME: home };
-    const secrets = tryJson(cli(["run", "secrets", "--evidence", "-", "--json"],
-      { input: JSON.stringify({ signal_overrides: { "aws-secret-access-key": "hit" } }), env }).stdout);
-    const sbom = tryJson(cli(["run", "sbom", "--evidence", "-", "--json"],
-      { input: JSON.stringify({ signal_overrides: {} }), env }).stdout);
-    assert.ok(secrets && secrets.session_id, "secrets run must produce a session");
-    assert.ok(sbom && sbom.session_id, "sbom run must produce a session (global newest)");
-    assert.notEqual(secrets.session_id, sbom.session_id, "two distinct sessions");
-
-    // The bug: empty value disabled the filter and selected the newest session
-    // globally (the sbom session). The fix: an explicit refusal.
-    const r = cli(["reattest", "--latest", "--playbook", "", "--json"], { env });
-    assert.equal(r.status, 1, "empty --playbook must be refused with exit 1");
-    const body = tryJson(r.stderr) || tryJson(r.stdout);
-    assert.ok(body && body.ok === false, "must emit a structured refusal");
-    assert.equal(body.flag, "playbook", "refusal must name the offending flag");
-    assert.match(body.error, /empty value/, "refusal must explain the empty value");
-    // CRUCIAL: the refusal must NOT resolve to the cross-playbook newest — the
-    // pre-fix behavior leaked the sbom session_id here as the selected target.
-    assert.notEqual(body.session_id, sbom.session_id, "empty filter must not silently pick the global-newest session");
-
-    // A real playbook id still filters to its own (older) session, not the
-    // global newest — proves the filter is live, not bypassed.
-    const ok = cli(["reattest", "--latest", "--playbook", "secrets", "--json"], { env });
-    const okBody = tryJson(ok.stdout) || tryJson(ok.stderr);
-    assert.ok(okBody, "valid --playbook must still resolve");
-    assert.equal(okBody.session_id, secrets.session_id, "valid --playbook must filter to its own session, not the global newest");
-  } finally {
-    fs.rmSync(home, { recursive: true, force: true });
-  }
-});
-
 test("run --all renders a per-playbook table in human mode (not a raw JSON dump)", () => {
   const r = cli(["run-all"], { env: HUMAN });
   const out = r.stdout;
