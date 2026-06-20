@@ -1868,3 +1868,19 @@ test('#87 doctor --fix is registered (smoke)', () => {
   assert.match(text, /--fix\b/,
     'doctor --help must advertise the --fix flag so operators can discover it. Got: ' + text.slice(0, 400));
 });
+
+test('empty-string --evidence / --cwd are operator errors, not a silent false-clean run', () => {
+  // `--evidence ""` / `--cwd ""` were falsy and silently produced a no-evidence
+  // "not_detected" run (exit 0) or a scan of the wrong directory.
+  const ev = cli(['run', 'library-author', '--evidence', '', '--json']);
+  assert.equal(ev.status, 1, 'run --evidence "" must exit 1, not a false-clean exit 0');
+  assert.match(ev.stdout + ev.stderr, /--evidence was given an empty value/);
+
+  const cc = cli(['collect', 'library-author', '--cwd', '', '--json']);
+  assert.equal(cc.status, 1, 'collect --cwd "" must exit 1');
+  assert.match(cc.stdout + cc.stderr, /--cwd was given an empty value/);
+
+  const dc = cli(['discover', '--cwd', '', '--json']);
+  assert.equal(dc.status, 1, 'discover --cwd "" must exit 1');
+  assert.match(dc.stdout + dc.stderr, /--cwd was given an empty value/);
+});

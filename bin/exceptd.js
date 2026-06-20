@@ -2497,6 +2497,11 @@ async function cmdCollect(runner, args, runOpts, pretty) {
   // --cwd <path> overrides process.cwd(). Validated as an existing
   // directory; non-existent / non-directory cwd is operator error.
   let cwd = process.cwd();
+  // An explicit empty value (`--cwd ""`) would otherwise be falsy and silently
+  // scan process.cwd() — the wrong directory — reported as a successful run.
+  if (args.cwd === "") {
+    return emitError(`collect: --cwd was given an empty value; pass an existing directory path`, { verb: "collect", playbook_id: playbookId }, pretty);
+  }
   if (args.cwd) {
     const resolved = path.resolve(String(args.cwd));
     let stat;
@@ -3358,6 +3363,12 @@ function cmdRun(runner, args, runOpts, pretty) {
   // first, then falls back to a strict isTTY===false check only on Windows
   // (where fstat on a pipe is unreliable). MSYS-bash on win32 reports
   // isTTY === false for genuine piped input, so that path still works.
+  // An explicit empty value (`--evidence ""`) is operator error: it would
+  // otherwise be falsy and silently produce a no-evidence "not_detected" run at
+  // exit 0, masking the fact that the intended evidence never loaded.
+  if (args.evidence === "") {
+    return emitError("run: --evidence was given an empty value; pass a file path, '-' for stdin, or omit --evidence for a no-evidence run", { verb: "run" }, pretty);
+  }
   const autoStdin = !args.evidence && hasReadableStdin();
   if (autoStdin) {
     args.evidence = "-";
@@ -6454,6 +6465,11 @@ function cmdDiscover(runner, args, runOpts, pretty) {
   // process cwd. Pre-fix it was silently ignored — recommendations were
   // computed for the wrong directory with no signal. Validated like collect.
   let cwd = process.cwd();
+  // An explicit empty value (`--cwd ""`) would otherwise be falsy and silently
+  // scan process.cwd() — the wrong directory — reported as a successful run.
+  if (args.cwd === "") {
+    return emitError(`discover: --cwd was given an empty value; pass an existing directory path`, { verb: "discover" }, pretty);
+  }
   if (args.cwd) {
     const resolved = path.resolve(String(args.cwd));
     let stat;
