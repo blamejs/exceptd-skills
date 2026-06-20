@@ -207,3 +207,35 @@ test('a first-listing (false->true) is unaffected by the de-listing guard', asyn
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
+
+test('RC-1: the LIVE KEV path holds a curated-exploitation de-listing for review (not just --from-cache)', async () => {
+  // fetchDiff lazily requires ../sources/validators; swap it in require.cache so
+  // we can drive a de-listing discrepancy without any network call.
+  const validatorsPath = require.resolve('../sources/validators');
+  const orig = require.cache[validatorsPath];
+  require.cache[validatorsPath] = {
+    id: validatorsPath, filename: validatorsPath, loaded: true, exports: {
+      validateAllCves: async () => ({
+        total: 1,
+        results: [{
+          cve_id: 'CVE-2099-0001', status: 'ok',
+          discrepancies: [{ field: 'cisa_kev', local: true, fetched: false, severity: 'high' }],
+        }],
+      }),
+    },
+  };
+  try {
+    const kev = ALL_SOURCES['kev'];
+    // Confirmed-exploitation entry → de-listing must be review_only.
+    const strong = await kev.fetchDiff({ cveCatalog: { 'CVE-2099-0001': { active_exploitation: 'confirmed', cisa_kev: true } } });
+    const ds = strong.diffs.find((x) => x.field === 'cisa_kev');
+    assert.ok(ds, 'a cisa_kev de-listing diff is produced');
+    assert.equal(ds.review_only, true, 'a curated-exploitation de-listing must be held for review on the live path');
+    // Weak entry (no exploitation signal) → de-lists normally.
+    const weak = await kev.fetchDiff({ cveCatalog: { 'CVE-2099-0001': { cisa_kev: true } } });
+    const dw = weak.diffs.find((x) => x.field === 'cisa_kev');
+    assert.ok(!dw.review_only, 'a weak-signal de-listing is not held for review');
+  } finally {
+    if (orig) require.cache[validatorsPath] = orig; else delete require.cache[validatorsPath];
+  }
+});
