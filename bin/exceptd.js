@@ -6233,8 +6233,14 @@ function cmdAttest(runner, args, runOpts, pretty) {
       artifacts_redacted: Object.fromEntries(Object.entries((a.submission && a.submission.artifacts) || {})
         .map(([k, v]) => [k, { captured: !!v.captured, reason: v.reason || null, redacted_value: "[redacted]" }])),
       signal_overrides: (a.submission && a.submission.signal_overrides) || {},
+      // Redact the VALUES, not just drop obviously-sensitive keys: a submitted
+      // signal value can hold operator data (e.g. a captured credential string),
+      // and this field is labelled "redacted". The keyname denylist still drops
+      // the obviously-sensitive keys entirely; every retained key keeps only a
+      // "[redacted]" placeholder value, matching artifacts_redacted above.
       signals_redacted: Object.fromEntries(Object.entries((a.submission && a.submission.signals) || {})
-        .filter(([k]) => !/_filter$|_key$|token|secret|password/i.test(k))),
+        .filter(([k]) => !/_filter$|_key$|token|secret|password/i.test(k))
+        .map(([k]) => [k, "[redacted]"])),
       precondition_checks: (a.submission && a.submission.precondition_checks) || {},
     }));
 
