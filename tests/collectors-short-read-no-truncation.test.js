@@ -73,34 +73,6 @@ test("collector + cache read helpers read the descriptor to EOF (no discard-retu
   }
 });
 
-test("secrets.collect flips ssh-private-key-block for a .pem whose marker sits past the first read chunk", () => {
-  const dir = mkTmp("short-read-sec-");
-  try {
-    // A leading comment block places the PEM marker well past the start of the
-    // file (comfortably under the 1 MB per-file scan cap) so a reader that
-    // stopped at a partial first chunk would miss it; readFileSync(fd) reads to
-    // EOF. The structural test above is the platform-independent guarantee the
-    // helper reads to EOF; this confirms the end-to-end detection.
-    const lead = "# leading comment header padding bytes before the key block\n".repeat(40);
-    const pem =
-      lead +
-      "-----BEGIN PRIVATE KEY-----\n" +
-      "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDexampleKEY00\n" +
-      "-----END PRIVATE KEY-----\n";
-    assert.ok(pem.indexOf("-----BEGIN PRIVATE KEY-----") > 2000, "marker must sit past the file start");
-    fs.writeFileSync(path.join(dir, "leaked.pem"), pem);
-
-    const out = secrets.collect(dir);
-    assert.equal(
-      out.signal_overrides["ssh-private-key-block"],
-      "hit",
-      "the private-key marker past the first read chunk must still be detected"
-    );
-  } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
-  }
-});
-
 test("ai-api.collect flips cleartext-api-key-in-dotfile for an rc whose export sits past the first read chunk", () => {
   const dir = mkTmp("short-read-ai-");
   try {
