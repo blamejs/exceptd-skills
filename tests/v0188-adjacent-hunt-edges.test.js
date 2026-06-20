@@ -1,7 +1,8 @@
 'use strict';
 
 /**
- * Adjacent-hunt regression coverage (v0.18.8 batch): the unit-testable fixes.
+ * Adjacent-hunt regression coverage: the unit-testable fixes from the
+ * read-only adjacent/non-surfaced bug hunt.
  *
  *  - reattest BUG-2: the sidecar classifier checks tamper_class BEFORE the
  *    reason strings, so an unsigned-SUBSTITUTION attestation (reason contains
@@ -45,20 +46,21 @@ test('brief --phase "" is rejected, not silently treated as the full brief', () 
   try {
     const cli = makeCli(home);
     const r = cli(['brief', 'secrets', '--phase', '', '--json'], { env: { EXCEPTD_HOME: home } });
-    assert.notEqual(r.status, 0, 'empty --phase must be refused');
+    assert.notEqual(r.status, 0, 'empty --phase must be refused'); // allow-notEqual: a structured refusal; any non-zero exit is correct, the point is it does not run the full brief
   } finally {
     fs.rmSync(home, { recursive: true, force: true });
   }
 });
 
 test('brief --all --playbook "" is rejected, not silently planned across all playbooks', () => {
-  // `plan` was removed in v0.13.0; the live multi-playbook path is `brief --all`,
-  // which delegates to cmdPlan — where the empty --playbook guard lives.
+  // The legacy standalone multi-playbook verb was removed; the live path is
+  // `brief --all`, which delegates to the multi-playbook planner where the empty
+  // --playbook guard lives.
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'v0188-plan-'));
   try {
     const cli = makeCli(home);
     const r = cli(['brief', '--all', '--playbook', '', '--json'], { env: { EXCEPTD_HOME: home } });
-    assert.notEqual(r.status, 0, 'empty --playbook must be refused');
+    assert.notEqual(r.status, 0, 'empty --playbook must be refused'); // allow-notEqual: structured refusal; any non-zero is correct, the point is it does not plan across all playbooks
     let body = null;
     for (const s of [r.stdout, r.stderr]) { try { const j = JSON.parse(s); if (j) { body = j; break; } } catch { /* not this stream */ } }
     assert.ok(body && body.flag === 'playbook', `the refusal must name the offending flag; got ${r.stdout || r.stderr}`);
