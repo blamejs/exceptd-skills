@@ -2733,3 +2733,23 @@ test("crypto collector leaves indicators unflipped (inconclusive) when openssl +
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
+
+test("cred-stores kube-static-token fires on a user.token under non-2-space indentation", () => {
+  const h = fakeHome("cred-kube-indent-");
+  try {
+    // 4-space indentation: the user-vs-auth-provider anchor must be
+    // indentation-agnostic, not hardcoded to the literal "\n  user:" (2-space).
+    h.write(".kube/config", [
+      "apiVersion: v1",
+      "kind: Config",
+      "users:",
+      "  - name: admin",
+      "    user:",
+      "      token: abcdef1234567890",
+    ].join("\n"));
+    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["kube-static-token"], "hit");
+  } finally {
+    h.cleanup();
+  }
+});
