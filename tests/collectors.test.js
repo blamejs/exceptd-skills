@@ -319,6 +319,52 @@ test("sbom collector probes one level into docs/ + packages/ subdirs", () => {
   }
 });
 
+test("sbom collector counts CycloneDX components correctly under a short read (does not fall back to null)", () => {
+  // A single fs.readSync(fd, buf, 0, stat.size, 0) is not guaranteed to fill
+  // the buffer — a network/FUSE mount (or a signal) can return a short read,
+  // leaving the tail NUL-padded and truncating valid JSON. JSON.parse then
+  // throws, swallowed by the inner catch, and component_count silently becomes
+  // null on a present, parseable SBOM. readFileSync(fd) loops to EOF instead
+  // and never touches the JS-level fs.readSync wrapper.
+  //
+  // The stub below makes the FIRST large fs.readSync return only a partial
+  // chunk. Production code that reads via a single readSync(stat.size) gets a
+  // truncated buffer and reports component_count: null; production code that
+  // reads via readFileSync(fd) never calls the wrapper, reads the whole file,
+  // and reports the true count. So this test fails on the buggy form and
+  // passes on the fixed form.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sbom-shortread-"));
+  const realReadSync = fs.readSync;
+  try {
+    const sbom = { bomFormat: "CycloneDX", specVersion: "1.6", components: [] };
+    for (let i = 0; i < 50; i++) {
+      sbom.components.push({ type: "library", name: `pkg-${i}`, version: "1.0.0", purl: `pkg:npm/pkg-${i}@1.0.0` });
+    }
+    fs.writeFileSync(path.join(tmp, "sbom.cdx.json"), JSON.stringify(sbom, null, 2), "utf8");
+
+    fs.readSync = function (fd, buffer, offset, length, position) {
+      // Truncate the first large read — emulate a partial-read mount.
+      if (typeof length === "number" && length > 4096) {
+        return realReadSync.call(fs, fd, buffer, offset, 4096, position);
+      }
+      return realReadSync.call(fs, fd, buffer, offset, length, position);
+    };
+
+    const { collect } = require("../lib/collectors/sbom.js");
+    const r = collect({ cwd: tmp });
+
+    // The count must be the TRUE component count (50), not null.
+    assert.match(
+      r.artifacts["sbom-document"].value,
+      /sbom\.cdx\.json \(\d+ bytes, 50 components\)/,
+      `expected '50 components', got: ${r.artifacts["sbom-document"].value}`,
+    );
+  } finally {
+    fs.readSync = realReadSync;
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("sbom collector does not double-count requirements.txt when both root-LOCKFILES match and glob match are eligible", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sbom-no-dup-"));
   try {

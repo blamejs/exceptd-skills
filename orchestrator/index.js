@@ -1707,9 +1707,11 @@ async function validateAllCvesPreferCache(catalog, cacheDir) {
         console.error(`[validate-cves] cache file ${p} exceeds ${CACHE_FILE_MAX_BYTES} byte cap (${st.size}); refusing to read.`);
         return null;
       }
-      const buf = Buffer.alloc(st.size);
-      fs.readSync(fd, buf, 0, st.size, 0);
-      const parsed = JSON.parse(buf.toString('utf8'));
+      // readFileSync(fd) loops read() to EOF — a single readSync may return
+      // fewer than st.size bytes on network/FUSE/sync-backed fds, leaving the
+      // tail NUL-filled and truncating the JSON. Reading via the open fd keeps
+      // the open→fstat ordering TOCTOU-free.
+      const parsed = JSON.parse(fs.readFileSync(fd, 'utf8'));
       if (!cacheEntryVerified(source, id, parsed)) return null;
       return parsed;
     }
