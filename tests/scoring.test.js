@@ -299,3 +299,25 @@ test('validate() flags rwep_score that diverges from the formula by more than 5'
   const errs = validate(bad);
   assert.ok(errs.some(e => /diverges from calculated/.test(e)), `got: ${errs.join('|')}`);
 });
+
+test('scoreCustom counts the AI factor from the catalog field name ai_assisted_weaponization', () => {
+  // A factor bag built straight from a catalog entry carries
+  // `ai_assisted_weaponization` (the field the catalog declares), not the
+  // legacy `ai_assisted_weapon`. Pre-fix scoreCustom only read the legacy
+  // name, so the +15 AI factor was silently dropped for every such bag.
+  const base = { cisa_kev: false, poc_available: false, active_exploitation: 'none', blast_radius: 0 };
+  const withAi = scoring.scoreCustom({ ...base, ai_assisted_weaponization: true });
+  const withoutAi = scoring.scoreCustom({ ...base });
+  assert.equal(withAi - withoutAi, scoring.RWEP_WEIGHTS.ai_factor,
+    'ai_assisted_weaponization:true must add exactly the ai_factor weight');
+  // The legacy name still works, and validateFactors does not spuriously warn
+  // the catalog field is "missing".
+  assert.equal(scoring.scoreCustom({ ...base, ai_assisted_weapon: true }) - withoutAi,
+    scoring.RWEP_WEIGHTS.ai_factor, 'legacy ai_assisted_weapon still counts');
+  const warns = scoring.validateFactors({
+    ...base, ai_assisted_weaponization: true, cisa_kev: false, poc_available: false,
+    ai_discovered: false, patch_available: false, live_patch_available: false, reboot_required: false,
+  });
+  assert.ok(!warns.some(w => w.includes('ai_assisted_weapon: missing')),
+    'ai_assisted_weaponization must satisfy the ai_assisted_weapon presence check');
+});
