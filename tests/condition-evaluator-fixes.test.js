@@ -13,6 +13,9 @@
  *   - `contains` is a synonym for `includes`
  *   - an operator-submitted signal cannot override an engine-computed value
  *   - an unparseable condition surfaces a condition_unparsed runtime error
+ *   - a contains/IN clause whose LHS path is absent surfaces a
+ *     condition_path_unresolved runtime error (a parsed-but-dead clause), while a
+ *     present-but-empty collection stays a silent legitimate false
  */
 
 const test = require('node:test');
@@ -231,6 +234,175 @@ test('bare `any <path>` / `all <path>` is a non-emptiness test, not condition_un
     'malformed inner clause is still observable as condition_unparsed');
 });
 
+test('`IN [...]` member parsing is quote-aware — a comma inside a quoted member stays one member', () => {
+  // A naive `.split(',')` is quote-unaware, so a quoted member that itself
+  // contains a comma (`'EU, US'`) was torn into two members (`EU`, `US`),
+  // neither equal to the author's whole member. The clause then evaluated false
+  // with no diagnostic — the regex still matched the bracket, so condition_unparsed
+  // never fired. The list is now split tracking quote state.
+  assert.equal(evalCondition("x IN ['EU, US', 'AU']", { x: 'EU, US' }), true,
+    "a comma inside a quoted member does not split the member");
+  assert.equal(evalCondition("x IN ['a,b']", { x: 'a,b' }), true,
+    "a single quoted member containing a comma matches the whole member");
+  // The sibling member is still independently selectable.
+  assert.equal(evalCondition("x IN ['EU, US', 'AU']", { x: 'AU' }), true,
+    "the second member after a comma-bearing first member is still a member");
+  // A value equal to only a comma-split FRAGMENT must NOT match (proves the
+  // member is whole, not the broken 'EU' / 'US' fragments).
+  assert.equal(evalCondition("x IN ['EU, US', 'AU']", { x: 'EU' }), false,
+    "a fragment of a comma-bearing quoted member is not itself a member");
+  assert.equal(evalCondition("x IN ['EU, US', 'AU']", { x: 'US' }), false,
+    "the trailing fragment of a comma-bearing quoted member is not a member");
+  // Double-quoted members behave identically.
+  assert.equal(evalCondition('x IN ["EU, US", "AU"]', { x: 'EU, US' }), true,
+    "double-quoted comma-bearing member stays whole");
+
+  // No condition_unparsed is recorded — this was a parsed-but-wrong path, and
+  // the fix must keep it parsed (not regress into the unparsed diagnostic).
+  const errs = [];
+  evalCondition("x IN ['EU, US', 'AU']", { x: 'EU, US', _runErrors: errs });
+  assert.equal(errs.filter((e) => e.kind === 'condition_unparsed').length, 0,
+    'a quoted comma member is parsed, not surfaced as condition_unparsed');
+
+  // Regression guards: the catalog's actual `IN` forms still evaluate correctly.
+  // sbom.json:101 — the quoted multi-member form with hyphenated members.
+  assert.equal(
+    evalCondition("matched_cve.attack_class IN ['ai-c2', 'prompt-injection']",
+      { matched_cve: { attack_class: 'ai-c2' } }), true,
+    'the shipped quoted multi-member IN list still matches');
+  assert.equal(
+    evalCondition("matched_cve.attack_class IN ['ai-c2', 'prompt-injection']",
+      { matched_cve: { attack_class: 'kernel-lpe' } }), false,
+    'a non-member still returns false');
+  // Bare (unquoted) members still parse.
+  assert.equal(evalCondition('x IN [ai-c2, prompt-injection]', { x: 'prompt-injection' }), true,
+    'bare unquoted members still parse');
+  // Array LHS intersection still works.
+  assert.equal(
+    evalCondition("x IN ['EU, US', 'AU']", { x: ['JP', 'EU, US'] }), true,
+    'array LHS intersects the comma-bearing member list');
+  // Quantifier-prefixed IN still re-roots over array elements.
+  assert.equal(evalCondition("any tags IN ['EU, US', 'AU']", { tags: ['EU, US'] }), true,
+    'any … IN [...] with a comma-bearing member fires existentially');
+});
+
+test('`IN [...]` closing bracket is quote-aware — a `]` inside a quoted member does not terminate the list', () => {
+  // A `[^\]]*]$` capture stops at the FIRST `]`, so a quoted member that itself
+  // contains a literal `]` (`'a]b'`) truncated the bracket early and left trailing
+  // text (`, 'c']`) the `$` anchor couldn't match — the WHOLE clause then fell
+  // through to condition_unparsed and returned false for every input, including a
+  // value that IS in the list. The closing bracket is now located at quote-depth 0.
+  assert.equal(evalCondition("x IN ['a]b', 'c']", { x: 'a]b' }), true,
+    "a quoted member containing a literal ']' matches its whole value");
+  assert.equal(evalCondition("x IN ['a]b', 'c']", { x: 'c' }), true,
+    "the sibling member after a ']'-bearing member is still selectable");
+  assert.equal(evalCondition("x IN ['a]b', 'c']", { x: 'a' }), false,
+    "a fragment of the ']'-bearing member is not itself a member");
+  // Double-quoted members behave identically.
+  assert.equal(evalCondition('x IN ["a]b", "c"]', { x: 'a]b' }), true,
+    "double-quoted ']'-bearing member stays whole");
+  // Array LHS intersection over a ']'-bearing list.
+  assert.equal(evalCondition("x IN ['a]b', 'rce']", { x: ['z', 'a]b'] }), true,
+    "array LHS intersects a ']'-bearing member list");
+  // Quantifier-prefixed form (the catalog's `any … IN [...]` shape) re-roots too.
+  assert.equal(
+    evalCondition("any matched_cve.attack_class IN ['a]b', 'rce']",
+      { matched_cve: [{ attack_class: 'a]b' }, { attack_class: 'x' }] }), true,
+    "any … IN ['a]b', …] fires when one array element equals the ']'-bearing member");
+
+  // This was a parsed-as-unparsed path (the regex never matched), so the fix must
+  // NOT surface condition_unparsed for the now-valid clause.
+  const errs = [];
+  evalCondition("x IN ['a]b', 'c']", { x: 'c', _runErrors: errs });
+  assert.equal(errs.filter((e) => e.kind === 'condition_unparsed').length, 0,
+    "a quoted ']'-bearing member is parsed, not surfaced as condition_unparsed");
+
+  // Genuinely malformed lists stay observable: an unterminated bracket and
+  // trailing text after the closing bracket both surface condition_unparsed
+  // (the fix must not start silently accepting these).
+  const badErrs = [];
+  assert.equal(evalCondition("x IN ['a', 'b'", { x: 'a', _runErrors: badErrs }), false,
+    'an unterminated IN list does not match');
+  assert.equal(badErrs.filter((e) => e.kind === 'condition_unparsed').length, 1,
+    'an unterminated IN list is observable as condition_unparsed');
+  const junkErrs = [];
+  assert.equal(evalCondition("x IN ['a', 'b'] extra", { x: 'a', _runErrors: junkErrs }), false,
+    'trailing text after the closing bracket does not match');
+  assert.equal(junkErrs.filter((e) => e.kind === 'condition_unparsed').length, 1,
+    'trailing text after the closing bracket is observable as condition_unparsed');
+});
+
+test('AND/OR splitting and outer-paren stripping are quote-aware — a quoted member is not torn at an inner AND/OR or an unbalanced paren', () => {
+  // splitAtTopLevel counted `(`/`)` and split on ` AND `/` OR ` at depth 0 with
+  // no awareness of quotes; stripOuterParens scanned parens the same way. Two
+  // failure modes followed:
+  //   (a) an UNBALANCED paren inside a quoted member (a regex literal like
+  //       `matches 'foo('`) left depth=1, so the real top-level OR/AND never
+  //       split — silently disabling the surrounding disjunct/conjunct;
+  //   (b) a quoted member containing ` AND `/` OR ` (e.g. `contains 'EU AND US'`)
+  //       was torn at the inner keyword as if it were a boolean operator, leaving
+  //       two unparseable atoms that both evaluated false.
+  // Both are now scanned tracking single/double quote state.
+
+  // (a) The unbalanced `(` inside the quote must NOT swallow the top-level OR.
+  // The first disjunct is false (a !== 'foo(' here) but the second (b == 1) is
+  // true, so the OR must be true. Pre-fix this returned false.
+  assert.equal(evalCondition("a matches 'foo(' OR b == 1", { a: 'fooX', b: 1 }), true,
+    'an unbalanced ( inside a quoted regex member does not disable the top-level OR');
+  // …and the OR is genuinely short-circuiting, not coincidentally true: with
+  // b != 1 and a not matching, the whole thing is false.
+  assert.equal(evalCondition("a matches 'foo(' OR b == 1", { a: 'fooX', b: 2 }), false,
+    'both disjuncts false → false (the OR is really evaluating each side)');
+  // A trailing unbalanced `)` inside a quote is handled symmetrically.
+  assert.equal(evalCondition("a matches 'bar)' OR b == 1", { a: 'whatever', b: 1 }), true,
+    'an unbalanced ) inside a quoted member does not disable the top-level OR');
+
+  // (b) ` AND `/` OR ` inside a quoted member is literal text, not an operator.
+  // `o contains 'EU AND US'` must match an array member equal to the whole
+  // string. Pre-fix it split into `o contains 'EU` AND `US'` (both unparseable
+  // → false).
+  assert.equal(evalCondition("o contains 'EU AND US'", { o: ['EU AND US'] }), true,
+    'an inner AND inside a quoted contains-member is not split as a conjunction');
+  assert.equal(evalCondition("o contains 'x OR y'", { o: ['x OR y'] }), true,
+    'an inner OR inside a quoted contains-member is not split as a disjunction');
+  // And it is genuinely the whole member, not a coincidental fragment match.
+  assert.equal(evalCondition("o contains 'EU AND US'", { o: ['EU'] }), false,
+    'a fragment of the quoted member does not satisfy the whole-member contains');
+
+  // No condition_unparsed is recorded for any of the above — these are
+  // parsed-correctly paths now, not the unparsed diagnostic.
+  const errs = [];
+  evalCondition("a matches 'foo(' OR b == 1", { a: 'fooX', b: 1, _runErrors: errs });
+  evalCondition("o contains 'EU AND US'", { o: ['EU AND US'], _runErrors: errs });
+  assert.equal(errs.filter((e) => e.kind === 'condition_unparsed').length, 0,
+    'a quote-aware split leaves no condition_unparsed residue');
+
+  // Regression guards: real (depth-0, outside-quote) boolean structure still
+  // splits, and outer parens still strip.
+  assert.equal(evalCondition('a == 1 OR b == 2', { a: 0, b: 2 }), true, 'plain OR still splits');
+  assert.equal(evalCondition('a == 1 AND b == 2', { a: 1, b: 2 }), true, 'plain AND still splits');
+  assert.equal(evalCondition('(a == 1 OR b == 2)', { a: 0, b: 2 }), true, 'outer parens still strip');
+  assert.equal(evalCondition('a == 1 OR (b == 2 AND c == 3)', { a: 0, b: 2, c: 3 }), true,
+    'a depth-0 OR with a parenthesised AND group still parses');
+  assert.equal(evalCondition('a == 1 OR (b == 2 AND c == 3)', { a: 0, b: 2, c: 0 }), false,
+    'the parenthesised AND group gates the OR correctly');
+
+  // The exact mcp.json condition (balanced-paren regex member + a real top-level
+  // OR/AND) keeps firing — the one paren-bearing machine-evaluated condition in
+  // the shipped catalog. Fires via the regex OR-branch alone.
+  const mcpCond = "finding.mcp_server_location matches '(github_actions|gitlab_runner|jenkins|buildkite|circleci)'"
+    + " OR finding.tool_invoked_from == 'ci_pipeline'"
+    + " OR analyze.blast_radius_score >= 4 AND finding.pipeline_credentials_in_scope == true";
+  assert.equal(evalCondition(mcpCond, {
+    finding: { mcp_server_location: 'buildkite', tool_invoked_from: 'manual', pipeline_credentials_in_scope: false },
+    analyze: { blast_radius_score: 0 },
+  }), true, 'the shipped mcp.json balanced-paren-regex condition still fires via its OR-branch');
+  assert.equal(evalCondition(mcpCond, {
+    finding: { mcp_server_location: 'desktop', tool_invoked_from: 'manual', pipeline_credentials_in_scope: false },
+    analyze: { blast_radius_score: 0 },
+  }), false, 'no branch satisfied → the mcp condition is false');
+});
+
 test('a submitted signal cannot override an engine-computed value in an escalation condition', () => {
   // ai-api declares escalations gated on engine values. Run it with detection
   // confirmed so the engine computes a high rwep, then try to suppress the
@@ -353,4 +525,74 @@ test('object-array contains is field-targeted: a non-jurisdiction field equal to
       { jurisdiction_obligations: ['EU/EU CRA Art.14 24h'] }, {}),
     true,
     "a plain string-array element still matches by value");
+});
+
+test('contains/IN against an absent LHS path surfaces condition_path_unresolved (not an invisible false)', () => {
+  // A contains/IN clause PARSES, then resolves its LHS to a collection. When the
+  // LHS path is absent (an authoring typo in the token, or a ctx that never
+  // populated the collection) the branch returns a silent false that disables
+  // the escalation/feeds_into it gates — with no signal, because the clause
+  // parsed, so condition_unparsed never fires. A distinct condition_path_unresolved
+  // diagnostic makes the dead clause observable. A present-but-empty array (or a
+  // present scalar simply not in the list) is a LEGITIMATE false and pushes nothing.
+
+  // contains: absent LHS → diagnostic, still false.
+  const absent = [];
+  assert.equal(evalCondition("jurisdiction_obligations contains 'EU'", { _runErrors: absent }, {}), false,
+    'absent LHS contains is still false');
+  assert.equal(absent.length, 1, 'exactly one runtime error recorded');
+  assert.equal(absent[0].kind, 'condition_path_unresolved', 'it is the path-unresolved diagnostic, not condition_unparsed');
+  assert.equal(absent[0].condition, "jurisdiction_obligations contains 'EU'", 'the dead condition string is captured');
+
+  // The finding's typo example: a misspelled LHS path is now observable.
+  const typo = [];
+  assert.equal(
+    evalCondition("juristiction_obligations contains 'EU'",
+      { jurisdiction_obligations: [{ jurisdiction: 'EU' }], _runErrors: typo }, {}),
+    false, 'typo LHS contains is false');
+  assert.equal(typo.length, 1, 'the LHS-token typo surfaces a diagnostic');
+  assert.equal(typo[0].kind, 'condition_path_unresolved');
+
+  // Present-but-empty array → legitimate false, NO diagnostic.
+  const empty = [];
+  assert.equal(evalCondition("jo contains 'EU'", { jo: [], _runErrors: empty }, {}), false,
+    'empty-array contains is false');
+  assert.equal(empty.length, 0, 'present-but-empty array pushes no diagnostic');
+
+  // The engine-supplied escalation context always passes jurisdiction_obligations
+  // as at least [] (never null), so a real notify_legal eval does NOT spuriously
+  // fire this diagnostic — guard the regression at the catalog default.
+  const engineDefault = [];
+  assert.equal(
+    evalCondition("compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'",
+      { compliance_theater_check: { verdict: 'theater' }, jurisdiction_obligations: [], _runErrors: engineDefault }, {}),
+    false, 'non-EU run is false');
+  assert.equal(engineDefault.length, 0, 'the engine-default [] obligations array fires no path-unresolved diagnostic');
+
+  // IN: absent LHS → diagnostic, still false.
+  const inAbsent = [];
+  assert.equal(evalCondition("matched_cve.attack_class IN ['kernel-lpe']", { _runErrors: inAbsent }, {}), false,
+    'absent LHS IN is still false');
+  assert.equal(inAbsent.length, 1, 'IN absent LHS surfaces a diagnostic');
+  assert.equal(inAbsent[0].kind, 'condition_path_unresolved');
+
+  // IN: present scalar simply not in the list → legitimate false, NO diagnostic.
+  const inMiss = [];
+  assert.equal(evalCondition("x IN ['kernel-lpe']", { x: 'rce', _runErrors: inMiss }, {}), false,
+    'present scalar not in list is false');
+  assert.equal(inMiss.length, 0, 'a present-but-non-matching scalar pushes no diagnostic');
+
+  // A correct, resolving condition fires true with no diagnostic.
+  const ok = [];
+  assert.equal(
+    evalCondition("jurisdiction_obligations contains 'EU'",
+      { jurisdiction_obligations: [{ jurisdiction: 'EU' }], _runErrors: ok }, {}),
+    true, 'correct contains fires true');
+  assert.equal(ok.length, 0, 'a resolving condition records no diagnostic');
+
+  // Dedupe: the same dead condition evaluated repeatedly records ONE diagnostic.
+  const dup = [];
+  evalCondition("missing_path contains 'EU'", { _runErrors: dup }, {});
+  evalCondition("missing_path contains 'EU'", { _runErrors: dup }, {});
+  assert.equal(dup.length, 1, 'the path-unresolved diagnostic dedupes on the condition string');
 });
