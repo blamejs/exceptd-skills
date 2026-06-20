@@ -817,7 +817,7 @@
       ],
       "escalation_criteria": [
         {
-          "condition": "no-cryptographic-asset-register == fired AND jurisdiction_obligations contains NIS2-Art21-2h",
+          "condition": "no-cryptographic-asset-register == fired AND jurisdiction_obligations contains 'EU'",
           "action": "notify_legal"
         },
         {
