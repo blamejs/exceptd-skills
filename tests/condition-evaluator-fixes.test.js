@@ -120,6 +120,117 @@ test('`any`/`all` quantifier prefix parses and fires (not condition_unparsed)', 
     'all is true when every element satisfies the predicate');
 });
 
+test('`any`/`all` quantifier re-roots EVERY operator over an array element, not just comparisons (IN/contains/matches)', () => {
+  // sbom.json's feeds_into into ai-api is `any matched_cve.attack_class IN
+  // ['ai-c2', 'prompt-injection']`. `IN` is not a comparison operator, so the
+  // quantifier branch used to skip the per-element re-root and evaluate the
+  // clause against the whole ctx — where `matched_cve.attack_class` resolves to
+  // undefined on the array — leaving the sbom→ai-api chain permanently dead while
+  // the `== 'kernel-lpe'` / `== 'mcp-supply-chain'` siblings fired.
+  const cves = [{ attack_class: 'supply-chain' }, { attack_class: 'ai-c2' }];
+  assert.equal(
+    evalCondition("any matched_cve.attack_class IN ['ai-c2', 'prompt-injection']", { matched_cve: cves }),
+    true,
+    'any … IN [...] fires when one array element is in the list');
+  assert.equal(
+    evalCondition("any matched_cve.attack_class IN ['kernel-lpe']", { matched_cve: cves }),
+    false,
+    'any … IN [...] is false when no element is in the list');
+  assert.equal(
+    evalCondition("all matched_cve.attack_class IN ['supply-chain', 'ai-c2']", { matched_cve: cves }),
+    true,
+    'all … IN [...] is true when every element is in the list');
+  assert.equal(
+    evalCondition("all matched_cve.attack_class IN ['supply-chain']", { matched_cve: cves }),
+    false,
+    'all … IN [...] is false when one element is outside the list');
+  // `all` over an empty array is false (vacuous-truth guard preserved).
+  assert.equal(
+    evalCondition("all matched_cve.attack_class IN ['ai-c2']", { matched_cve: [] }),
+    false,
+    'all … over an empty array is false, not vacuously true');
+
+  // contains under a quantifier (array element holds its own array field).
+  assert.equal(
+    evalCondition("any finding.tags contains 'eu'", { finding: [{ tags: ['us'] }, { tags: ['eu', 'jp'] }] }),
+    true,
+    'any … contains fires existentially across array elements');
+
+  // matches under a quantifier (slash + quote delimiters, the only forms the
+  // leaf parser accepts).
+  assert.equal(
+    evalCondition('any matched_cve.vector matches /userns/', { matched_cve: [{ vector: 'remote' }, { vector: 'local-userns-bpf' }] }),
+    true,
+    'any … matches /re/ fires existentially across array elements');
+  assert.equal(
+    evalCondition("any matched_cve.vector matches 'kptr'", { matched_cve: [{ vector: 'remote' }, { vector: 'local-userns-bpf' }] }),
+    false,
+    "any … matches 're' is false when no element matches");
+
+  // The scalar-object head (framework theater prose-quantifier) is unaffected —
+  // a non-array head still routes to the bare inner comparison.
+  assert.equal(
+    evalCondition("any compliance_theater_check.verdict == 'theater'", { compliance_theater_check: { verdict: 'theater' } }),
+    true,
+    'a scalar-object head still evaluates the inner comparison directly');
+});
+
+test('bare `any <path>` / `all <path>` is a non-emptiness test, not condition_unparsed', () => {
+  // `any X` with no comparison operator means "at least one X exists" — a
+  // non-emptiness / existence test. Pre-fix the operator-less inner token had no
+  // comparison branch to parse it and fell through to condition_unparsed → false,
+  // so it returned false even for a populated array. sbom.json's EU CRA Art.14
+  // (24h) notify_legal escalation `any actively_exploited_match AND …` was dead.
+  let errs = [];
+  assert.equal(evalCondition('any actively_exploited_match',
+    { actively_exploited_match: [{ id: 'x' }], _runErrors: errs }), true,
+    'any over a non-empty array is true');
+  assert.equal(errs.filter((e) => e.kind === 'condition_unparsed').length, 0,
+    'no condition_unparsed for the bare non-emptiness form');
+
+  errs = [];
+  assert.equal(evalCondition('any actively_exploited_match',
+    { actively_exploited_match: [], _runErrors: errs }), false,
+    'any over an empty array is false');
+  assert.equal(errs.filter((e) => e.kind === 'condition_unparsed').length, 0,
+    'empty-array path is parsed, not unparsed');
+
+  // missing path / falsy scalar → false; truthy scalar → true.
+  assert.equal(evalCondition('any nonexistent', {}), false, 'missing path is false');
+  assert.equal(evalCondition('any kev_listed', { kev_listed: true }), true, 'truthy scalar is true');
+  assert.equal(evalCondition('any kev_listed', { kev_listed: false }), false, 'falsy scalar is false');
+
+  // `all <path>`: non-empty AND every element truthy.
+  assert.equal(evalCondition('all flags', { flags: [true, true] }), true, 'all-truthy non-empty array');
+  assert.equal(evalCondition('all flags', { flags: [true, false] }), false, 'a falsy element fails all');
+  assert.equal(evalCondition('all flags', { flags: [] }), false, 'empty array fails all');
+
+  // The exact sbom.json:1250 condition fires when both conjuncts hold, with zero
+  // condition_unparsed runtime errors.
+  errs = [];
+  const sbomCond = "any actively_exploited_match AND jurisdiction_obligations contains 'EU/EU CRA Art.14 24h'";
+  assert.equal(evalCondition(sbomCond, {
+    actively_exploited_match: [{ id: 'CVE-x' }],
+    jurisdiction_obligations: ['EU/EU CRA Art.14 24h'],
+    _runErrors: errs,
+  }), true, 'the EU CRA Art.14 notify_legal escalation fires when both conjuncts hold');
+  assert.equal(errs.filter((e) => e.kind === 'condition_unparsed').length, 0,
+    'the full sbom:1250 condition is fully parsed');
+  // First conjunct gates: an empty actively_exploited_match array keeps it false.
+  assert.equal(evalCondition(sbomCond, {
+    actively_exploited_match: [],
+    jurisdiction_obligations: ['EU/EU CRA Art.14 24h'],
+  }), false, 'no active-exploitation matches → escalation does not fire');
+
+  // A genuinely malformed inner clause (operator-like garbage) must still surface
+  // condition_unparsed — the bare-path handler must not swallow it.
+  errs = [];
+  assert.equal(evalCondition('any foo ~~ bar', { foo: [1], _runErrors: errs }), false,
+    'malformed inner clause stays false');
+  assert.equal(errs.filter((e) => e.kind === 'condition_unparsed').length, 1,
+    'malformed inner clause is still observable as condition_unparsed');
+});
+
 test('a submitted signal cannot override an engine-computed value in an escalation condition', () => {
   // ai-api declares escalations gated on engine values. Run it with detection
   // confirmed so the engine computes a high rwep, then try to suppress the
@@ -188,4 +299,58 @@ test('contains matches an obligation jurisdiction field via a quoted member; IN 
   assert.equal(evalCondition("x.attack_class IN ['kernel-lpe']", { x: { attack_class: 'rce' } }, {}), false);
   // The pre-existing string-array contains shape is unaffected.
   assert.equal(evalCondition('scope.targets contains named-remote', { scope: { targets: ['named-remote', 'local'] } }, {}), true);
+});
+
+test('object-array contains is field-targeted: a non-jurisdiction field equal to the member does NOT match', () => {
+  // `jurisdiction_obligations contains 'EU'` means "the obligation is for
+  // jurisdiction EU" — NOT "some field of the obligation equals 'EU'". An
+  // unscoped Object.values().includes() over-matched: a non-jurisdiction field
+  // (a tag, the obligation name, clock_starts) that happened to equal the member
+  // forced the predicate true, which could fire a notify_legal escalation via a
+  // non-jurisdiction field, and made the match order-insensitive across fields.
+
+  // Over-match via an unrelated tag field: jurisdiction is US, only some_tag == 'EU'.
+  assert.equal(
+    evalCondition("jurisdiction_obligations contains 'EU'",
+      { jurisdiction_obligations: [{ jurisdiction: 'US', some_tag: 'EU' }] }, {}),
+    false,
+    "a non-jurisdiction field equal to 'EU' must NOT satisfy contains 'EU'");
+
+  // Over-match via clock_starts: 'detect_confirmed' is a real shipped field value
+  // on EU obligations; matching it via contains is a field-agnostic accident.
+  assert.equal(
+    evalCondition("jurisdiction_obligations contains 'detect_confirmed'",
+      { jurisdiction_obligations: [{ jurisdiction: 'EU', clock_starts: 'detect_confirmed' }] }, {}),
+    false,
+    "the clock_starts field value must NOT satisfy a jurisdiction-membership test");
+
+  // Over-match via the obligation name field.
+  assert.equal(
+    evalCondition("jurisdiction_obligations contains 'notify_regulator'",
+      { jurisdiction_obligations: [{ jurisdiction: 'EU', obligation: 'notify_regulator' }] }, {}),
+    false,
+    "the obligation name field must NOT satisfy a jurisdiction-membership test");
+
+  // The legitimate jurisdiction match still fires (positive path preserved).
+  assert.equal(
+    evalCondition("jurisdiction_obligations contains 'EU'",
+      { jurisdiction_obligations: [{ jurisdiction: 'EU', regulation: 'NIS2 Art.21', clock_starts: 'detect_confirmed' }] }, {}),
+    true,
+    "an obligation whose jurisdiction IS 'EU' still matches");
+
+  // The full catalog escalation atom: theater verdict + EU jurisdiction. The
+  // EU conjunct must come from the jurisdiction field, not a field collision.
+  assert.equal(
+    evalCondition("compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'",
+      { compliance_theater_check: { verdict: 'theater' },
+        jurisdiction_obligations: [{ jurisdiction: 'US', obligation: 'EU' }] }, {}),
+    false,
+    "the notify_legal escalation must NOT fire when only a non-jurisdiction field equals 'EU'");
+
+  // String-array membership is still matched by element value (no object scoping).
+  assert.equal(
+    evalCondition("jurisdiction_obligations contains 'EU/EU CRA Art.14 24h'",
+      { jurisdiction_obligations: ['EU/EU CRA Art.14 24h'] }, {}),
+    true,
+    "a plain string-array element still matches by value");
 });
