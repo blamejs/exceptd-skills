@@ -166,3 +166,27 @@ test('build-indexes OUTPUTS exports every output advertised in the help text', (
     'theater-fingerprints', 'token-budget', 'trigger-table', 'xref',
   ]);
 });
+
+test('outputsMissingOrCorrupt is empty on an intact tree and reports a deleted output', async () => {
+  // Direct reference to the exported guard the incremental build consults
+  // before trusting a clean source hash. It returns a map of broken output ->
+  // reason (empty on an intact tree). Both arms are asserted so a regression
+  // that made it always-empty (the idx-02 false-pass class) is caught.
+  const { outputsMissingOrCorrupt, OUTPUTS } = require('../scripts/build-indexes.js');
+  assert.equal(typeof outputsMissingOrCorrupt, 'function');
+  const clean = outputsMissingOrCorrupt();
+  assert.ok(clean instanceof Set, 'returns a Set of broken output names');
+  assert.equal(clean.size, 0,
+    `intact tree must report no missing/corrupt outputs; got ${[...clean].join(', ')}`);
+
+  // Delete a real derived output under a snapshot; the guard must surface its
+  // name (not silently pass on a clean source hash — the idx-02 false-pass).
+  const target = OUTPUTS.find((o) => o.file !== '_meta.json' && fs.existsSync(path.join(IDX, o.file)));
+  assert.ok(target, 'OUTPUTS must enumerate at least one present derived output');
+  await withFileSnapshot([path.join(IDX, target.file)], async () => {
+    fs.unlinkSync(path.join(IDX, target.file));
+    const broken = outputsMissingOrCorrupt();
+    assert.ok(broken.has(target.name),
+      `a deleted output (${target.file}) must be reported as ${target.name}; got ${[...broken].join(', ')}`);
+  });
+});

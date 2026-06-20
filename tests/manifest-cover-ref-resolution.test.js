@@ -77,3 +77,14 @@ test('an absent optional catalog (null key-set) skips that field rather than cra
   const errors = lint.findUnresolvedManifestCoverRefs(synthetic, partialCtx);
   assert.deepEqual(errors, []);
 });
+
+test('MANIFEST_COVER_RESOLUTION enumerates the cover-ref fields the resolver walks', () => {
+  // Direct reference to the exported config the resolver iterates — pins its
+  // shape so a future edit that drops a field/ctxKey/catalog tuple is caught.
+  assert.ok(Array.isArray(lint.MANIFEST_COVER_RESOLUTION) && lint.MANIFEST_COVER_RESOLUTION.length >= 1);
+  for (const row of lint.MANIFEST_COVER_RESOLUTION) {
+    assert.equal(typeof row.field, 'string');
+    assert.equal(typeof row.ctxKey, 'string');
+    assert.equal(typeof row.catalog, 'string');
+  }
+});
