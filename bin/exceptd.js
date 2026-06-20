@@ -1207,7 +1207,7 @@ function detectVexShape(doc) {
   // OpenVEX: @context starts with https://openvex.dev AND statements[]
   const ctx = doc["@context"];
   const ctxStr = Array.isArray(ctx) ? ctx[0] : ctx;
-  if (typeof ctxStr === "string" && ctxStr.startsWith("https://openvex.dev") && Array.isArray(doc.statements)) {
+  if (typeof ctxStr === "string" && ctxStr.startsWith("https://openvex.dev/") && Array.isArray(doc.statements)) {
     return { ok: true, detected: "openvex", top_level_keys: keys };
   }
   // Common false-positive shapes — give the operator a hint.
