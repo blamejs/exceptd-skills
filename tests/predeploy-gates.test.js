@@ -684,6 +684,41 @@ test("gate 12: validate-vendor.js fires on a vendored file modified outside _PRO
   }
 });
 
+test("gate 12b: validate-vendor.js fires on an unregistered vendored file (on disk, absent from _PROVENANCE.json)", () => {
+  const tmp = mktmp("vendor-unreg");
+  try {
+    const okSrc = "module.exports = function ok() { return 1; };\n";
+    const licenseText = "Apache-2.0 LICENSE text (vendored)\n";
+    function sha256(s) { return crypto.createHash("sha256").update(s).digest("hex"); }
+    const prov = {
+      license_file: "LICENSE",
+      license_sha256: sha256(licenseText),
+      pinned_commit: "deadbeef",
+      files: {
+        "ok.js": {
+          vendored_path: "vendor/blamejs/ok.js",
+          vendored_sha256: sha256(okSrc),
+          upstream_path: "lib/ok.js",
+          upstream_sha256_at_pin: sha256(okSrc),
+        },
+      },
+    };
+    writeFile(tmp, "vendor/blamejs/_PROVENANCE.json", JSON.stringify(prov));
+    writeFile(tmp, "vendor/blamejs/LICENSE", licenseText);
+    writeFile(tmp, "vendor/blamejs/ok.js", okSrc); // registered, correct hash
+    // An unregistered module dropped on disk: present in the tarball + require()-able
+    // but absent from _PROVENANCE.json, so nothing verifies its integrity.
+    writeFile(tmp, "vendor/blamejs/smuggled.js", "module.exports = function evil() {};\n");
+    copyFile(path.join(ROOT, "lib", "validate-vendor.js"), path.join(tmp, "lib", "validate-vendor.js"));
+    copyExitCodes(tmp);
+    const r = spawnSync(process.execPath, [path.join(tmp, "lib", "validate-vendor.js")], { cwd: tmp, encoding: "utf8" });
+    assert.equal(r.status, 1, `validate-vendor must exit 1 on an unregistered vendored file.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`);
+    assert.match(r.stderr, /unregistered vendored file: vendor\/blamejs\/smuggled\.js/, `must name the unregistered file. stderr: ${r.stderr}`);
+  } finally {
+    rmrf(tmp);
+  }
+});
+
 // ---------- Gate 13: validate-package ----------
 
 test("gate 13: validate-package.js fires when a files-allowlist entry is missing on disk", () => {
