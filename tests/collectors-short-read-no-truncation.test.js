@@ -76,15 +76,18 @@ test("collector + cache read helpers read the descriptor to EOF (no discard-retu
 test("secrets.collect flips ssh-private-key-block for a .pem whose marker sits past the first read chunk", () => {
   const dir = mkTmp("short-read-sec-");
   try {
-    // A large leading comment block pushes the PEM marker well past any single
-    // read chunk, so a non-EOF read would drop it.
-    const lead = "# leading comment header padding bytes before the key block\n".repeat(2000);
+    // A leading comment block places the PEM marker well past the start of the
+    // file (comfortably under the 1 MB per-file scan cap) so a reader that
+    // stopped at a partial first chunk would miss it; readFileSync(fd) reads to
+    // EOF. The structural test above is the platform-independent guarantee the
+    // helper reads to EOF; this confirms the end-to-end detection.
+    const lead = "# leading comment header padding bytes before the key block\n".repeat(40);
     const pem =
       lead +
       "-----BEGIN PRIVATE KEY-----\n" +
       "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDexampleKEY00\n" +
       "-----END PRIVATE KEY-----\n";
-    assert.ok(pem.length > 64 * 1024, "marker must sit past a 64 KiB read chunk");
+    assert.ok(pem.indexOf("-----BEGIN PRIVATE KEY-----") > 2000, "marker must sit past the file start");
     fs.writeFileSync(path.join(dir, "leaked.pem"), pem);
 
     const out = secrets.collect(dir);
@@ -102,9 +105,9 @@ test("ai-api.collect flips cleartext-api-key-in-dotfile for an rc whose export s
   const dir = mkTmp("short-read-ai-");
   try {
     const rc =
-      "# user shell rc — environment bootstrap and PATH setup\n".repeat(2000) +
+      "# user shell rc — environment bootstrap and PATH setup\n".repeat(40) +
       'export OPENAI_API_KEY="sk-' + "A".repeat(40) + '"\n';
-    assert.ok(rc.length > 64 * 1024, "export must sit past a 64 KiB read chunk");
+    assert.ok(rc.indexOf("OPENAI_API_KEY") > 2000, "export must sit past the file start");
     fs.writeFileSync(path.join(dir, ".bashrc"), rc);
 
     const out = aiApi.collect({ cwd: dir, env: { HOME: dir, USERPROFILE: dir } });

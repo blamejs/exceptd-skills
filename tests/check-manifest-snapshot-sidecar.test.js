@@ -33,7 +33,6 @@ const SCRIPT = path.join(ROOT, 'scripts', 'check-manifest-snapshot.js');
 const { checkSnapshotIntegrity } = require(SCRIPT);
 
 const SNAPSHOT = path.join(ROOT, 'manifest-snapshot.json');
-const SIDECAR = path.join(ROOT, 'manifest-snapshot.sha256');
 
 // Build a minimal shadow tree containing only what the integrity check
 // needs: <tmp>/manifest-snapshot.json (+ optional sidecar). The exported
