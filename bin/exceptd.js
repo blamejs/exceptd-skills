@@ -4253,67 +4253,63 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
         return emitError(`run: --evidence-dir entry ${f} resolves outside the directory; refusing.`, null, pretty);
       }
       // The path.resolve check above only catches `..` traversal in the
-      // joined path; fs.readFileSync(entryPath) still follows symlinks, so
-      // a `<pb-id>.json -> /etc/shadow` symlink inside the dir would happily
-      // slurp the target. lstat is symlink-aware (it does NOT follow);
-      // refuse anything that's not a regular file. Defense in depth on top
-      // of the readdir filter — a junction (Windows) or bind-mount can
-      // shape-shift in between filter and read.
-      let lst;
-      try { lst = fs.lstatSync(entryPath); }
-      catch (e) {
-        return emitError(`run: --evidence-dir entry ${f}: lstat failed: ${e.message}`, null, pretty);
-      }
-      if (lst.isSymbolicLink()) {
-        return emitError(`run: --evidence-dir entry ${f} is a symbolic link; refusing (symlinks bypass the directory-confinement check).`, { entry: f }, pretty);
-      }
-      if (!lst.isFile()) {
-        return emitError(`run: --evidence-dir entry ${f} is not a regular file; refusing.`, { entry: f }, pretty);
-      }
-      // Windows directory junctions are reparse-point dirs that
-      // `lstat().isSymbolicLink()` returns FALSE for (Node treats them as
-      // ordinary directories), bypassing the symlink refusal above. Use
-      // realpathSync to resolve the entry and confirm it still lives under
-      // the resolved evidence-dir — the realpath approach is portable
-      // (catches POSIX symlinks too, defense in depth) and works regardless
-      // of whether the OS exposes reparse-point bits.
-      let realEntry;
-      try { realEntry = fs.realpathSync(entryPath); }
-      catch (e) {
-        return emitError(`run: --evidence-dir entry ${f}: realpath failed: ${e.message}`, null, pretty);
-      }
-      if (realEntry !== entryPath && !realEntry.startsWith(resolvedDir + path.sep)) {
-        return emitError(
-          `run: --evidence-dir entry ${f} resolves outside the directory (junction / reparse-point / symlink target). Refusing.`,
-          { entry: f, resolved_to: realEntry },
-          pretty
-        );
-      }
-      // Hardlink defense in depth: no clean cross-platform refusal exists —
-      // hardlinks are indistinguishable from regular files at the inode
-      // level. Surface a stderr warning when nlink > 1 so the operator is
-      // aware a second name may point at the same file. Not a refusal —
-      // legitimate use cases (atomic rename, package-manager dedup) produce
-      // nlink > 1 without malicious intent.
-      if (lst.nlink > 1) {
-        process.stderr.write(`[exceptd run --evidence-dir] WARNING: ${f} has nlink=${lst.nlink}; a hardlink to this file exists elsewhere on the filesystem. Hardlinks cannot be refused cross-platform — confirm the file content is what you expect.\n`);
-      }
-      // Read through a single descriptor opened with O_NOFOLLOW and re-confirm
-      // via fstat that it is still a regular file. This closes the window
-      // between the lstat/realpath validation above and the read (a swap to a
-      // symlink/fifo/dir in between is refused at open or by the fstat recheck),
-      // rather than re-resolving the path a second time with readFileSync.
+      // joined path; reading the path would still follow symlinks, so a
+      // `<pb-id>.json -> /etc/shadow` symlink inside the dir would slurp the
+      // target. Rather than lstat/realpath the PATH and then re-open it
+      // (a check-then-use TOCTOU window), open a single O_NOFOLLOW descriptor
+      // FIRST and make every subsequent decision about that exact descriptor.
+      // O_NOFOLLOW refuses a symlinked leaf at open (ELOOP) on POSIX; on
+      // Windows it is a no-op, so the fstat type check + realpath gate below
+      // carry the junction/symlink defense. Opening before any path stat means
+      // the bytes read come from the inode we validated, not a path that could
+      // be re-pointed between check and read.
+      let efd;
       try {
         const O_NOFOLLOW = fs.constants.O_NOFOLLOW || 0;
-        const efd = fs.openSync(entryPath, fs.constants.O_RDONLY | O_NOFOLLOW);
-        try {
-          if (!fs.fstatSync(efd).isFile()) {
-            return emitError(`run: --evidence-dir entry ${f} is not a regular file at read time; refusing.`, { entry: f }, pretty);
-          }
-          bundle[pbId] = JSON.parse(fs.readFileSync(efd, "utf8"));
-        } finally { fs.closeSync(efd); }
+        efd = fs.openSync(entryPath, fs.constants.O_RDONLY | O_NOFOLLOW);
+      } catch (e) {
+        const why = e.code === "ELOOP"
+          ? "symbolic link refused (symlinks bypass the directory-confinement check)"
+          : e.message;
+        return emitError(`run: --evidence-dir entry ${f}: open failed: ${why}`, { entry: f }, pretty);
+      }
+      try {
+        const st = fs.fstatSync(efd);
+        if (!st.isFile()) {
+          return emitError(`run: --evidence-dir entry ${f} is not a regular file; refusing (symlink / junction / dir / fifo bypass the directory-confinement check).`, { entry: f }, pretty);
+        }
+        // Hardlink defense in depth: no clean cross-platform refusal exists —
+        // hardlinks are indistinguishable from regular files at the inode
+        // level. Surface a stderr warning when nlink > 1 so the operator is
+        // aware a second name may point at the same file. Not a refusal —
+        // legitimate use cases (atomic rename, package-manager dedup) produce
+        // nlink > 1 without malicious intent.
+        if (st.nlink > 1) {
+          process.stderr.write(`[exceptd run --evidence-dir] WARNING: ${f} has nlink=${st.nlink}; a hardlink to this file exists elsewhere on the filesystem. Hardlinks cannot be refused cross-platform — confirm the file content is what you expect.\n`);
+        }
+        // Windows directory junctions are reparse-point dirs that
+        // lstat().isSymbolicLink() returns FALSE for, and O_NOFOLLOW is a
+        // no-op there; realpath resolves the entry and confirms it still lives
+        // under the resolved evidence-dir. This is a pure gate — the bytes are
+        // read from `efd` (opened above), never from a re-resolved path, so
+        // there is no check-then-reopen.
+        let realEntry;
+        try { realEntry = fs.realpathSync(entryPath); }
+        catch (e) {
+          return emitError(`run: --evidence-dir entry ${f}: realpath failed: ${e.message}`, null, pretty);
+        }
+        if (realEntry !== entryPath && !realEntry.startsWith(resolvedDir + path.sep)) {
+          return emitError(
+            `run: --evidence-dir entry ${f} resolves outside the directory (junction / reparse-point / symlink target). Refusing.`,
+            { entry: f, resolved_to: realEntry },
+            pretty
+          );
+        }
+        bundle[pbId] = JSON.parse(fs.readFileSync(efd, "utf8"));
       } catch (e) {
         return emitError(`run: failed to read --evidence-dir entry ${f}: ${e.message}`, null, pretty);
+      } finally {
+        try { fs.closeSync(efd); } catch { /* already closed / invalid fd */ }
       }
     }
   }

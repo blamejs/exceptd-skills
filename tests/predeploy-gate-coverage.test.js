@@ -91,7 +91,13 @@ test('PP P1-1: acquireLock returns null for same-PID lockfile with fresh mtime (
     JSON.stringify({ pid: process.pid, started_at: new Date().toISOString(), playbook: playbookId }, null, 2),
   );
   // Read mtime before the acquireLock call so we can confirm it was not touched.
-  const mtimeBefore = fs.statSync(lockFile).mtimeMs;
+  // Capture it through a descriptor (fstat), not a path stat, so the before/after
+  // comparison never does a path check-then-use (no statSync-then-openSync race).
+  let mtimeBefore;
+  {
+    const fd0 = fs.openSync(lockFile, 'r');
+    try { mtimeBefore = fs.fstatSync(fd0).mtimeMs; } finally { fs.closeSync(fd0); }
+  }
 
   const result = playbookRunner._acquireLock(playbookId);
   assert.equal(
