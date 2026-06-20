@@ -162,6 +162,10 @@ function mcpScan() {
           tool,
           config_path: p,
           severity: 'low',
+          // Route directly like the successful mcp_server_detected finding, so a
+          // parse-error finding reaches mcp-agent-trust even if the domain
+          // routing table changes — domain fallback alone left it brittle.
+          skill_hint: 'mcp-agent-trust',
           action_required: 'MCP config file exists but could not be parsed'
         });
       }
