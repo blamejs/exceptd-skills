@@ -156,8 +156,21 @@ try {
   }
   const tarballName = pack.stdout.trim().split(/\r?\n/).filter(Boolean).pop();
   const tarballPath = path.join(tmpRoot, tarballName);
-  if (!fs.existsSync(tarballPath)) fail(`expected tarball at ${tarballPath}, not found`, 2);
-  emit(`tarball: ${tarballPath} (${fs.statSync(tarballPath).size} bytes)`);
+  // Open the packed tarball once and fstat + read via the descriptor so the
+  // existence check, size report, and read all observe the same inode — no
+  // existsSync→statSync→readFileSync TOCTOU on the path.
+  let tgz;
+  try {
+    const fd = fs.openSync(tarballPath, "r");
+    try {
+      const st = fs.fstatSync(fd);
+      emit(`tarball: ${tarballPath} (${st.size} bytes)`);
+      tgz = Buffer.alloc(st.size);
+      fs.readSync(fd, tgz, 0, st.size, 0);
+    } finally { fs.closeSync(fd); }
+  } catch (e) {
+    fail(`expected tarball at ${tarballPath}: ${e.message}`, 2);
+  }
 
   // Extract via Node — bypasses GNU tar's "C:..." path quirk on Windows
   // where it interprets the colon as a remote-host separator.
@@ -165,7 +178,6 @@ try {
   fs.mkdirSync(extractDir, { recursive: true });
   const zlib = require("zlib");
   const { parseTar: parseTarSource } = require(path.join(ROOT, "lib", "refresh-network.js"));
-  const tgz = fs.readFileSync(tarballPath);
   const tarBuf = zlib.gunzipSync(tgz);
   const entries = parseTarSource(tarBuf);
   for (const e of entries) {

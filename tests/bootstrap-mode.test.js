@@ -130,14 +130,14 @@ test("bootstrap.js writes the .bootstrap-complete marker in every mode", () => {
 
 test("README.md quickstart points at the canonical blamejs/exceptd-skills repo", () => {
   const readme = fs.readFileSync(path.join(ROOT, "README.md"), "utf8");
-  assert.match(
-    readme,
-    /\bgithub\.com\/blamejs\/exceptd-skills\b/,
+  // Plain substring search — this greps doc content for a literal URL, it does
+  // not validate a hostname, so anchoring is neither possible nor wanted.
+  assert.ok(
+    readme.includes("github.com/blamejs/exceptd-skills"),
     "README must reference the canonical blamejs/exceptd-skills repo"
   );
-  assert.doesNotMatch(
-    readme,
-    /\bgithub\.com\/exceptd\/security\b/,
+  assert.ok(
+    !readme.includes("github.com/exceptd/security"),
     "README must NOT reference the placeholder exceptd/security path"
   );
 });
