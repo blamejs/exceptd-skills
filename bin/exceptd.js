@@ -1469,9 +1469,11 @@ function dispatchPlaybook(cmd, argv) {
     }
     runOpts.session_key = args["session-key"];
   }
-  if (args.mode) {
+  if (args.mode !== undefined) {
     // Bug #32: validate --mode against the accepted set. Previously
-    // `--mode garbage` was silently accepted.
+    // `--mode garbage` was silently accepted. Gate on `!== undefined` (not
+    // truthiness) so `--mode ""` is also rejected by the set check below rather
+    // than silently slipping past as a falsy value.
     const VALID_MODES = ["self_service", "authorized_pentest", "ir_response", "ctf", "research", "compliance_audit"];
     if (!VALID_MODES.includes(args.mode)) {
       // v0.13.2: did-you-mean on flag-value typos (Levenshtein ≤ 2).
@@ -2842,7 +2844,10 @@ function cmdLint(runner, args, runOpts, pretty) {
 
 function cmdBrief(runner, args, runOpts, pretty) {
   const playbookId = args._[0];
-  const onlyPhase = args.phase || null;
+  // Preserve an explicit empty string (don't coerce "" -> null) so the
+  // accepted-set check below rejects `--phase ""` instead of silently treating
+  // it as "no filter" and emitting the full brief. Only an OMITTED flag is null.
+  const onlyPhase = args.phase === undefined ? null : args.phase;
 
   // v0.12.9 (P2 #7 from production smoke): refuse garbage values to --phase.
   // Pre-v0.12.9 `brief secrets --phase foo` silently accepted any string and
@@ -2965,6 +2970,11 @@ function cmdVerifyAttestation(runner, args, runOpts, pretty) {
 }
 
 function cmdPlan(runner, args, runOpts, pretty) {
+  // Reject an empty --playbook value rather than letting the truthy gate below
+  // coerce it to null and silently plan across ALL playbooks (wrong scope).
+  if (args.playbook === "" || (Array.isArray(args.playbook) && args.playbook.some(p => p === ""))) {
+    return emitError("plan: --playbook was given an empty value; pass a playbook id, or omit --playbook to plan across all.", { verb: "plan", flag: "playbook" }, pretty);
+  }
   let playbookIds = args.playbook
     ? (Array.isArray(args.playbook) ? args.playbook : [args.playbook])
     : null;
@@ -4288,10 +4298,22 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
       if (lst.nlink > 1) {
         process.stderr.write(`[exceptd run --evidence-dir] WARNING: ${f} has nlink=${lst.nlink}; a hardlink to this file exists elsewhere on the filesystem. Hardlinks cannot be refused cross-platform — confirm the file content is what you expect.\n`);
       }
+      // Read through a single descriptor opened with O_NOFOLLOW and re-confirm
+      // via fstat that it is still a regular file. This closes the window
+      // between the lstat/realpath validation above and the read (a swap to a
+      // symlink/fifo/dir in between is refused at open or by the fstat recheck),
+      // rather than re-resolving the path a second time with readFileSync.
       try {
-        bundle[pbId] = JSON.parse(fs.readFileSync(entryPath, "utf8"));
+        const O_NOFOLLOW = fs.constants.O_NOFOLLOW || 0;
+        const efd = fs.openSync(entryPath, fs.constants.O_RDONLY | O_NOFOLLOW);
+        try {
+          if (!fs.fstatSync(efd).isFile()) {
+            return emitError(`run: --evidence-dir entry ${f} is not a regular file at read time; refusing.`, { entry: f }, pretty);
+          }
+          bundle[pbId] = JSON.parse(fs.readFileSync(efd, "utf8"));
+        } finally { fs.closeSync(efd); }
       } catch (e) {
-        return emitError(`run: failed to parse --evidence-dir entry ${f}: ${e.message}`, null, pretty);
+        return emitError(`run: failed to read --evidence-dir entry ${f}: ${e.message}`, null, pretty);
       }
     }
   }
@@ -5641,8 +5663,8 @@ function cmdReattest(runner, args, runOpts, pretty) {
     lines.push(`attest diff: ${obj.session_id} (${obj.playbook_id})`);
     const icon = obj.status === "unchanged" ? "[ok]" : "[i  DRIFTED]";
     lines.push(`\n${icon}  status=${obj.status}`);
-    lines.push(`  prior:  ${obj.prior_evidence_hash}  (${obj.prior_captured_at})`);
-    lines.push(`  replay: ${obj.replay_evidence_hash}  (${obj.replayed_at})`);
+    lines.push(`  prior:  ${obj.prior_evidence_hash}  (${obj.prior_captured_at || '(no detail)'})`);
+    lines.push(`  replay: ${obj.replay_evidence_hash}  (${obj.replayed_at || '(no detail)'})`);
     if (obj.replay_classification) {
       lines.push(`  replay classification: ${obj.replay_classification}  RWEP=${obj.replay_rwep_adjusted ?? 0}`);
     }
@@ -5748,13 +5770,13 @@ function renderAttestDiff(obj) {
   lines.push(`  artifact diff:  ${ad.added?.length ?? 0} added, ${ad.removed?.length ?? 0} removed, ${ad.changed?.length ?? 0} changed, ${ad.unchanged_count ?? 0} unchanged (of ${ad.total_compared ?? 0})`);
   lines.push(`  signal diff:    ${sd.changed?.length ?? 0} changed, ${sd.unchanged_count ?? 0} unchanged (of ${sd.total_compared ?? 0})`);
   if (obj.sidecar_verify) {
-    const sv = obj.sidecar_verify;
-    let sidecarClass = "verified";
-    if (!sv.signed && sv.reason && sv.reason.includes("explicitly unsigned")) sidecarClass = "explicitly-unsigned";
-    else if (!sv.signed && sv.reason && sv.reason.includes("no .sig sidecar")) sidecarClass = "no-sidecar";
-    else if (sv.signed && !sv.verified) sidecarClass = "tamper-detected";
-    else if (!sv.signed) sidecarClass = "no-public-key";
-    lines.push(`  sidecar verify: ${sidecarClass}`);
+    // Use the canonical classifier, which checks tamper_class BEFORE the reason
+    // strings. The previous inline logic matched reason.includes("explicitly
+    // unsigned") first, so an unsigned-SUBSTITUTION attack (whose reason also
+    // contains "explicitly unsigned" but carries tamper_class:
+    // 'unsigned-substitution') was mislabeled as the benign 'explicitly-unsigned'
+    // — hiding the substitution signal in the human diff output.
+    lines.push(`  sidecar verify: ${classifySidecarVerify(obj.sidecar_verify)}`);
   }
   return lines.join("\n");
 }
@@ -6685,11 +6707,13 @@ function cmdDiscover(runner, args, runOpts, pretty) {
   let hostDistro = null;
   if (hostPlatform === "linux") {
     try {
-      const res = spawnSync("cat", ["/etc/os-release"], { encoding: "utf8" });
-      if (res.status === 0 && res.stdout) {
-        const idMatch = res.stdout.match(/^ID=(.+)$/m);
-        const verMatch = res.stdout.match(/^VERSION_ID=(.+)$/m);
-        const prettyMatch = res.stdout.match(/^PRETTY_NAME=(.+)$/m);
+      // Read the file directly instead of spawning `cat` (a process to do what
+      // fs does, and a static-analysis "unnecessary use of cat" flag).
+      const osRelease = fs.readFileSync("/etc/os-release", "utf8");
+      if (osRelease) {
+        const idMatch = osRelease.match(/^ID=(.+)$/m);
+        const verMatch = osRelease.match(/^VERSION_ID=(.+)$/m);
+        const prettyMatch = osRelease.match(/^PRETTY_NAME=(.+)$/m);
         hostDistro = {
           id: idMatch ? idMatch[1].replace(/^"|"$/g, "") : null,
           version_id: verMatch ? verMatch[1].replace(/^"|"$/g, "") : null,
