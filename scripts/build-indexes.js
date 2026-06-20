@@ -69,7 +69,14 @@ function sha256(buf) {
 }
 
 function writeJson(name, obj) {
-  fs.writeFileSync(path.join(IDX, name), JSON.stringify(obj, null, 2) + "\n", "utf8");
+  // Atomic write: a crash / disk-full / SIGKILL mid-write would otherwise leave
+  // a truncated JSON output on disk. Write to a temp sibling and rename — rename
+  // is atomic on POSIX and Windows, so a reader (or the next build's
+  // parse-check) only ever sees the complete old or complete new file.
+  const abs = path.join(IDX, name);
+  const tmp = `${abs}.tmp-${process.pid}`;
+  fs.writeFileSync(tmp, JSON.stringify(obj, null, 2) + "\n", "utf8");
+  fs.renameSync(tmp, abs);
 }
 
 function readJson(p) {
@@ -662,10 +669,23 @@ async function runBuilders(ctx, names, opts) {
   return results;
 }
 
-function writeMeta(ctx, results) {
+function writeMeta(ctx, results, opts = {}) {
+  const prior = loadPriorMeta();
   const sourceFiles = [...liveSourceSet(ctx)];
-  const sourceHashes = {};
-  for (const p of sourceFiles) sourceHashes[p] = sha256(fs.readFileSync(ABS(p)));
+  const computedSourceHashes = {};
+  for (const p of sourceFiles) computedSourceHashes[p] = sha256(fs.readFileSync(ABS(p)));
+
+  // A `--only` build regenerates an ARBITRARY subset of outputs (not the set
+  // implied by source changes), so the un-rebuilt outputs are not guaranteed to
+  // be consistent with the current sources. Preserve the prior source_hashes in
+  // that case, so validate-indexes still detects drift and demands a full
+  // rebuild — overwriting them with current hashes would fail OPEN, recording
+  // stale outputs as fresh. (--changed rebuilds exactly the change-affected
+  // outputs and a full build rebuilds all, so their current hashes are accurate.)
+  const partial = !!(opts && opts.only);
+  const sourceHashes = (partial && prior && prior.source_hashes && typeof prior.source_hashes === "object")
+    ? prior.source_hashes
+    : computedSourceHashes;
 
   const outputsList = OUTPUTS.map((o) => o.file).sort();
 
@@ -678,7 +698,6 @@ function writeMeta(ctx, results) {
   // contract for --changed (and the idempotence the predeploy gate relies on).
   // Reuse the prior timestamp on a genuine no-op; mint a new one only when the
   // hashed surface actually moved (or there is no prior meta to inherit from).
-  const prior = loadPriorMeta();
   const sourcesUnchanged = prior && prior.source_hashes &&
     JSON.stringify(prior.source_hashes) === JSON.stringify(sourceHashes) &&
     JSON.stringify(prior.outputs || []) === JSON.stringify(outputsList);
@@ -723,7 +742,7 @@ function writeMeta(ctx, results) {
     schema_version: "1.1.0",
     generated_at: generatedAt,
     generator: "scripts/build-indexes.js",
-    source_count: sourceFiles.length,
+    source_count: Object.keys(sourceHashes).length,
     source_hashes: sourceHashes,
     skill_count: ctx.skills.length,
     catalog_count: ctx.catalogFiles.length,
@@ -801,7 +820,7 @@ async function main() {
       // byte-identical, so a genuine no-op leaves the file unchanged — no
       // spurious timestamp-only diff. Re-stamping would add no freshness signal
       // (validate-indexes keys on source_hashes/outputs, not the timestamp).
-      writeMeta(ctx, {});
+      writeMeta(ctx, {}, opts);
       return;
     }
   } else {
@@ -811,7 +830,7 @@ async function main() {
   log(`build-indexes — ${chosen.size} output(s) ${opts.parallel ? "in parallel" : "sequential"}${opts.changed ? " (--changed)" : ""}${opts.only ? ` (--only ${opts.only})` : ""}`);
 
   const results = await runBuilders(ctx, chosen, opts);
-  writeMeta(ctx, results);
+  writeMeta(ctx, results, opts);
 
   log(`build-indexes — done`);
 }
