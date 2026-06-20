@@ -47,7 +47,7 @@ function extractSection(text, version) {
   const lines = text.split(/\r?\n/);
   const out = [];
   let capturing = false;
-  const startRe = new RegExp('^## ' + version.replace(/\./g, '\\.') + ' ');
+  const startRe = new RegExp('^## ' + version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' ');
   for (const ln of lines) {
     if (capturing) {
       if (/^## /.test(ln)) break;
@@ -65,7 +65,7 @@ function extractSection(text, version) {
 
 // Returns the `## <version> — <date>` heading line for the version, or null.
 function headingLine(text, version) {
-  const re = new RegExp('^## ' + version.replace(/\./g, '\\.') + ' ');
+  const re = new RegExp('^## ' + version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' ');
   return text.split(/\r?\n/).find((l) => re.test(l)) || null;
 }
 
@@ -82,7 +82,7 @@ const FORBIDDEN = [
   { id: 'agent-dispatch', re: /\b(?:sub-?agent|parallel agent|agent dispatch|fan(?:ned)?[ -]out|multi-agent)\b/i, why: 'implementation detail (agent/parallelization)' },
   { id: 'conversation-residue', re: /\b(?:as discussed|per your|operator-confirmed|as you (?:noted|requested)|per the conversation|PR feedback:)\b/i, why: 'conversation residue (invisible to the reader)' },
   { id: 'process-narrative', re: /\b(?:audit-derived|post-phase-\d|as part of the \d|the \d+-gap closure)\b/i, why: 'internal-process narrative' },
-  { id: 'tautological-green', re: /\b(?:all tests (?:pass|passing|green)|CI green|smoke \+ e2e (?:clean|pass)|tests? (?:are )?passing)\b/i, why: 'tautological pass/green claim (noise — the release exists)' },
+  { id: 'tautological-green', re: /\b(?:all(?:\s+\d+)?\s+(?:tests?|checks?|gates?|suites?)\s+(?:pass(?:ing)?|green)|(?:the\s+)?(?:whole|entire|full)\s+(?:test\s+)?suite\s+(?:is\s+)?(?:pass(?:ing|ed|es)?|green)|every\s+(?:test|check|gate)\s+(?:pass(?:es|ing|ed)?|is\s+green)|\d+\s*\/\s*\d+\s+(?:tests?|gates?|checks?)\s+(?:pass(?:ing|es|ed)?|green)|CI green|smoke \+ e2e (?:clean|pass)|tests? (?:are )?passing)\b/i, why: 'tautological pass/green claim (noise — the release exists). Covers the numbered ("all 288 tests green"), count ("288/288 tests pass", "21/21 gates pass"), and synonym ("full suite green", "every check passes") forms of the same banned claim.' },
 ];
 
 function lintOperatorClean(sectionLines) {
@@ -152,7 +152,7 @@ function main() {
     return;
   }
   // Heading must carry an ISO date: `## <version> — YYYY-MM-DD`.
-  if (!new RegExp('^## ' + version.replace(/\./g, '\\.') + ' [—-] \\d{4}-\\d{2}-\\d{2}\\s*$').test(heading)) {
+  if (!new RegExp('^## ' + version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' [—-] \\d{4}-\\d{2}-\\d{2}\\s*$').test(heading)) {
     console.error('[check-changelog-extract] FAIL: heading does not match `## ' + version + ' — YYYY-MM-DD`:');
     console.error('[check-changelog-extract]   got: ' + JSON.stringify(heading));
     process.exitCode = 1;

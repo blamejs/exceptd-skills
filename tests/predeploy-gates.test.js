@@ -684,6 +684,208 @@ test("gate 12: validate-vendor.js fires on a vendored file modified outside _PRO
   }
 });
 
+test("gate 12b: validate-vendor.js fires on an unregistered vendored file (on disk, absent from _PROVENANCE.json)", () => {
+  const tmp = mktmp("vendor-unreg");
+  try {
+    const okSrc = "module.exports = function ok() { return 1; };\n";
+    const licenseText = "Apache-2.0 LICENSE text (vendored)\n";
+    function sha256(s) { return crypto.createHash("sha256").update(s).digest("hex"); }
+    const prov = {
+      license_file: "LICENSE",
+      license_sha256: sha256(licenseText),
+      pinned_commit: "deadbeef",
+      files: {
+        "ok.js": {
+          vendored_path: "vendor/blamejs/ok.js",
+          vendored_sha256: sha256(okSrc),
+          upstream_path: "lib/ok.js",
+          upstream_sha256_at_pin: sha256(okSrc),
+        },
+      },
+    };
+    writeFile(tmp, "vendor/blamejs/_PROVENANCE.json", JSON.stringify(prov));
+    writeFile(tmp, "vendor/blamejs/LICENSE", licenseText);
+    writeFile(tmp, "vendor/blamejs/ok.js", okSrc); // registered, correct hash
+    // An unregistered module dropped on disk: present in the tarball + require()-able
+    // but absent from _PROVENANCE.json, so nothing verifies its integrity.
+    writeFile(tmp, "vendor/blamejs/smuggled.js", "module.exports = function evil() {};\n");
+    copyFile(path.join(ROOT, "lib", "validate-vendor.js"), path.join(tmp, "lib", "validate-vendor.js"));
+    copyExitCodes(tmp);
+    const r = spawnSync(process.execPath, [path.join(tmp, "lib", "validate-vendor.js")], { cwd: tmp, encoding: "utf8" });
+    assert.equal(r.status, 1, `validate-vendor must exit 1 on an unregistered vendored file.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`);
+    assert.match(r.stderr, /unregistered vendored file: vendor\/blamejs\/smuggled\.js/, `must name the unregistered file. stderr: ${r.stderr}`);
+  } finally {
+    rmrf(tmp);
+  }
+});
+
+test("gate 12c: validate-vendor.js fires when license_file is recorded but license_sha256 is absent (LICENSE tampered, hash stripped)", () => {
+  const tmp = mktmp("vendor-license-nohash");
+  try {
+    const okSrc = "module.exports = function ok() { return 1; };\n";
+    function sha256(s) { return crypto.createHash("sha256").update(s).digest("hex"); }
+    // license_file present, license_sha256 deliberately ABSENT — the
+    // fail-open class: the integrity check must NOT skip just because the
+    // recorded hash was stripped from the manifest.
+    const prov = {
+      license_file: "LICENSE",
+      pinned_commit: "deadbeef",
+      files: {
+        "ok.js": {
+          vendored_path: "vendor/blamejs/ok.js",
+          vendored_sha256: sha256(okSrc),
+          upstream_path: "lib/ok.js",
+          upstream_sha256_at_pin: sha256(okSrc),
+        },
+      },
+    };
+    writeFile(tmp, "vendor/blamejs/_PROVENANCE.json", JSON.stringify(prov));
+    // LICENSE bytes are whatever — they cannot be verified without the hash.
+    writeFile(tmp, "vendor/blamejs/LICENSE", "TAMPERED license text\n");
+    writeFile(tmp, "vendor/blamejs/ok.js", okSrc);
+    copyFile(path.join(ROOT, "lib", "validate-vendor.js"), path.join(tmp, "lib", "validate-vendor.js"));
+    copyExitCodes(tmp);
+    const r = spawnSync(process.execPath, [path.join(tmp, "lib", "validate-vendor.js")], { cwd: tmp, encoding: "utf8" });
+    assert.equal(r.status, 1, `validate-vendor must exit 1 when license_file is set but license_sha256 is absent (must not fail open).\nstdout: ${r.stdout}\nstderr: ${r.stderr}`);
+    assert.match(r.stderr, /license_file recorded.*without license_sha256.*integrity unverifiable/i, `must name the missing-license-hash class. stderr: ${r.stderr}`);
+  } finally {
+    rmrf(tmp);
+  }
+});
+
+test("gate 12d: validate-vendor.js reports a clean issue (not a TypeError crash) when a files[] entry lacks vendored_sha256", () => {
+  const tmp = mktmp("vendor-file-nohash");
+  try {
+    const okSrc = "module.exports = function ok() { return 1; };\n";
+    const licenseText = "Apache-2.0 LICENSE text (vendored)\n";
+    function sha256(s) { return crypto.createHash("sha256").update(s).digest("hex"); }
+    const prov = {
+      license_file: "LICENSE",
+      license_sha256: sha256(licenseText),
+      pinned_commit: "deadbeef",
+      files: {
+        // vendored_sha256 deliberately ABSENT — formatting the drift message
+        // must not crash on `undefined.slice()`.
+        "ok.js": {
+          vendored_path: "vendor/blamejs/ok.js",
+          upstream_path: "lib/ok.js",
+          upstream_sha256_at_pin: sha256(okSrc),
+        },
+      },
+    };
+    writeFile(tmp, "vendor/blamejs/_PROVENANCE.json", JSON.stringify(prov));
+    writeFile(tmp, "vendor/blamejs/LICENSE", licenseText);
+    writeFile(tmp, "vendor/blamejs/ok.js", okSrc);
+    copyFile(path.join(ROOT, "lib", "validate-vendor.js"), path.join(tmp, "lib", "validate-vendor.js"));
+    copyExitCodes(tmp);
+    const r = spawnSync(process.execPath, [path.join(tmp, "lib", "validate-vendor.js")], { cwd: tmp, encoding: "utf8" });
+    assert.equal(r.status, 1, `validate-vendor must exit 1 when a files[] entry lacks vendored_sha256.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`);
+    assert.match(r.stderr, /recorded without vendored_sha256.*integrity unverifiable/i, `must report a clean missing-hash message. stderr: ${r.stderr}`);
+    assert.doesNotMatch(r.stderr, /TypeError|Cannot read properties of undefined/, `must not crash with a TypeError. stderr: ${r.stderr}`);
+  } finally {
+    rmrf(tmp);
+  }
+});
+
+test("gate 12e: validate-vendor.js fires OFFLINE on a forged upstream_sha256_at_pin for an unstripped vendored file", () => {
+  // The vendored_sha256 compare is self-attesting — it proves only that the
+  // file matches its OWN recorded hash, never that the bytes matched
+  // blamejs@<pin> upstream. The full upstream check
+  // (scripts/validate-vendor-online.js) needs the network and is not a
+  // predeploy gate. For a file with NO strip rules the vendored bytes are
+  // byte-identical to upstream, so upstream_sha256_at_pin must equal
+  // vendored_sha256 — a forged pin is therefore catchable offline inside
+  // this gate.
+  const tmp = mktmp("vendor-forged-pin");
+  try {
+    const okSrc = "module.exports = function ok() { return 1; };\n";
+    const licenseText = "Apache-2.0 LICENSE text (vendored)\n";
+    function sha256(s) { return crypto.createHash("sha256").update(s).digest("hex"); }
+    const prov = {
+      license_file: "LICENSE",
+      license_sha256: sha256(licenseText),
+      pinned_commit: "deadbeef",
+      files: {
+        "ok.js": {
+          vendored_path: "vendor/blamejs/ok.js",
+          vendored_sha256: sha256(okSrc), // on-disk bytes match — offline self-check passes
+          upstream_path: "lib/ok.js",
+          // No strip rules: vendored MUST equal upstream. This pin is forged
+          // (a value that never existed upstream) — the gate must catch it.
+          upstream_sha256_at_pin: "deadbeef".padEnd(64, "0"),
+          stripped: [],
+        },
+      },
+    };
+    writeFile(tmp, "vendor/blamejs/_PROVENANCE.json", JSON.stringify(prov));
+    writeFile(tmp, "vendor/blamejs/LICENSE", licenseText);
+    writeFile(tmp, "vendor/blamejs/ok.js", okSrc); // bytes match vendored_sha256
+    copyFile(path.join(ROOT, "lib", "validate-vendor.js"), path.join(tmp, "lib", "validate-vendor.js"));
+    copyExitCodes(tmp);
+    const r = spawnSync(process.execPath, [path.join(tmp, "lib", "validate-vendor.js")], { cwd: tmp, encoding: "utf8" });
+    // Pin to exact code 1: notEqual(0) would silently pass if a future change
+    // routed this through a different non-zero exit.
+    assert.equal(
+      r.status,
+      1,
+      `validate-vendor must exit 1 OFFLINE on a forged upstream_sha256_at_pin for an unstripped file.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+    );
+    assert.match(
+      r.stderr,
+      /forged or inconsistent upstream pin/i,
+      `must label the forged-pin class. stderr: ${r.stderr}`
+    );
+    // No network was touched — the gate is offline-enforceable.
+    assert.doesNotMatch(r.stderr, /fetch|ENOTFOUND|getaddrinfo|raw\.githubusercontent/i, `gate must not touch the network. stderr: ${r.stderr}`);
+  } finally {
+    rmrf(tmp);
+  }
+});
+
+test("gate 12f: validate-vendor.js does NOT false-positive on an unverifiable-offline stripped file whose upstream pin differs from vendored", () => {
+  // A file WITH strip rules legitimately differs from upstream (the strips
+  // change bytes), so upstream_sha256_at_pin != vendored_sha256 is EXPECTED.
+  // The offline gate cannot verify the upstream side for stripped files (that
+  // is what the manual scripts/validate-vendor-online.js exists for), so it
+  // must NOT flag the difference — otherwise the real retry.js / worker-pool.js
+  // entries (both stripped) would fail every build.
+  const tmp = mktmp("vendor-stripped-ok");
+  try {
+    const okSrc = "module.exports = function ok() { return 1; };\n";
+    const licenseText = "Apache-2.0 LICENSE text (vendored)\n";
+    function sha256(s) { return crypto.createHash("sha256").update(s).digest("hex"); }
+    const prov = {
+      license_file: "LICENSE",
+      license_sha256: sha256(licenseText),
+      pinned_commit: "deadbeef",
+      files: {
+        "ok.js": {
+          vendored_path: "vendor/blamejs/ok.js",
+          vendored_sha256: sha256(okSrc),
+          upstream_path: "lib/ok.js",
+          // Differs from vendored — but that is EXPECTED for a stripped file.
+          upstream_sha256_at_pin: "abc123".padEnd(64, "0"),
+          stripped: ["removed audit event sink"],
+        },
+      },
+    };
+    writeFile(tmp, "vendor/blamejs/_PROVENANCE.json", JSON.stringify(prov));
+    writeFile(tmp, "vendor/blamejs/LICENSE", licenseText);
+    writeFile(tmp, "vendor/blamejs/ok.js", okSrc);
+    copyFile(path.join(ROOT, "lib", "validate-vendor.js"), path.join(tmp, "lib", "validate-vendor.js"));
+    copyExitCodes(tmp);
+    const r = spawnSync(process.execPath, [path.join(tmp, "lib", "validate-vendor.js")], { cwd: tmp, encoding: "utf8" });
+    assert.equal(
+      r.status,
+      0,
+      `validate-vendor must NOT fail on a stripped file whose upstream pin differs from vendored (offline can't verify it).\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+    );
+    assert.doesNotMatch((r.stdout || "") + (r.stderr || ""), /forged or inconsistent upstream pin/i, `must not claim a forged pin for a legitimately-stripped file. stderr: ${r.stderr}`);
+  } finally {
+    rmrf(tmp);
+  }
+});
+
 // ---------- Gate 13: validate-package ----------
 
 test("gate 13: validate-package.js fires when a files-allowlist entry is missing on disk", () => {

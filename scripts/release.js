@@ -413,7 +413,7 @@ function cmdWatch() {
     console.log("\nfailed checks (" + failed.length + "):");
     failed.forEach(function (c) { console.log("  ✗ " + c.name + "  " + (c.link || "")); });
     console.log("\nFix in code, push, then re-run: node scripts/release.js watch");
-    process.exit(3);
+    process.exit(3); // allow:process-exit-after-stdout-write — maintainer-run release orchestrator; the guidance line above is human-read on a TTY, not a piped result channel
   }
 
   // CodeQL SAST gate — a standing per-release step. An open, un-triaged CodeQL
@@ -432,7 +432,7 @@ function cmdWatch() {
     });
     console.log("\nFix real findings in code (push, let CodeQL re-scan) OR dismiss by-design FPs with a " +
       "written reason, then re-run: node scripts/release.js watch");
-    process.exit(3);
+    process.exit(3); // allow:process-exit-after-stdout-write — maintainer-run release orchestrator; the guidance line above is human-read on a TTY, not a piped result channel
   } else {
     _ok("zero open CodeQL alerts");
   }
@@ -445,7 +445,7 @@ function cmdWatch() {
       if (c) console.log("  - by " + c.author.login + ": " + c.body.split("\n")[0]);
     });
     console.log("\nFix in code, push, resolve the thread, then re-run: node scripts/release.js watch");
-    process.exit(3);
+    process.exit(3); // allow:process-exit-after-stdout-write — maintainer-run release orchestrator; the guidance line above is human-read on a TTY, not a piped result channel
   }
   _ok("zero unresolved review threads");
   console.log("\nnext: node scripts/release.js merge");

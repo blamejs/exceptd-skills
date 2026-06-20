@@ -108,12 +108,48 @@ function verifyExtractedManifestSignature(manifest, publicKeyPem) {
   return ok ? { status: "valid" } : { status: "invalid", reason: "Ed25519 manifest signature did not verify against extracted public.pem" };
 }
 
+// Decide one skill entry's verification outcome. Pulled out as a pure
+// function so the missing-signature guard is unit-testable without
+// spawning `npm pack`. Mirrors lib/verify.js verifySkill()'s missing_sig
+// branch: a manifest skill entry MAY legally omit `signature` (it is not
+// in the schema's skillEntry.required set — a freshly-added skill, or one
+// skipped during a partial sign-all, leaves it absent while the manifest
+// envelope is still validly re-signed over that field-absent state). Such
+// an entry must be a STRUCTURED miss, not Buffer.from(undefined,'base64')
+// throwing a TypeError that the script body's catch re-throws as an
+// uncaught stack trace.
+//   { status: 'missing' }            — no Ed25519 signature in manifest
+//   { status: 'pass' }               — signature verified
+//   { status: 'fail' }               — signature did not verify
+//   { status: 'fail', reason: str }  — malformed base64 / verify threw
+function verifySkillSignatureOutcome(s, normalizedContent, pubKey) {
+  const cryptoMod = require("crypto");
+  if (typeof s.signature !== "string" || s.signature.length === 0) {
+    return { status: "missing" };
+  }
+  let sigBytes;
+  try {
+    sigBytes = Buffer.from(s.signature, "base64");
+  } catch (e) {
+    return { status: "fail", reason: `malformed base64 signature: ${e.message}` };
+  }
+  let ok = false;
+  try {
+    ok = cryptoMod.verify(null, normalizedContent, pubKey, sigBytes);
+  } catch (e) {
+    return { status: "fail", reason: `crypto.verify threw: ${e.message}` };
+  }
+  return ok ? { status: "pass" } : { status: "fail" };
+}
+
 // Exported so tests/normalize-contract.test.js can assert byte-identical
-// normalize() behavior across all four implementations.
+// normalize() behavior across all four implementations, and so the
+// missing-signature guard above is unit-testable.
 module.exports = {
   normalizeSkillBytes,
   verifyExtractedManifestSignature,
   canonicalManifestBytesForTarball,
+  verifySkillSignatureOutcome,
 };
 
 const ROOT = path.resolve(__dirname, "..");
@@ -156,8 +192,21 @@ try {
   }
   const tarballName = pack.stdout.trim().split(/\r?\n/).filter(Boolean).pop();
   const tarballPath = path.join(tmpRoot, tarballName);
-  if (!fs.existsSync(tarballPath)) fail(`expected tarball at ${tarballPath}, not found`, 2);
-  emit(`tarball: ${tarballPath} (${fs.statSync(tarballPath).size} bytes)`);
+  // Open the packed tarball once and fstat + read via the descriptor so the
+  // existence check, size report, and read all observe the same inode — no
+  // existsSync→statSync→readFileSync TOCTOU on the path.
+  let tgz;
+  try {
+    const fd = fs.openSync(tarballPath, "r");
+    try {
+      const st = fs.fstatSync(fd);
+      emit(`tarball: ${tarballPath} (${st.size} bytes)`);
+      tgz = Buffer.alloc(st.size);
+      fs.readSync(fd, tgz, 0, st.size, 0);
+    } finally { fs.closeSync(fd); }
+  } catch (e) {
+    fail(`expected tarball at ${tarballPath}: ${e.message}`, 2);
+  }
 
   // Extract via Node — bypasses GNU tar's "C:..." path quirk on Windows
   // where it interprets the colon as a remote-host separator.
@@ -165,7 +214,6 @@ try {
   fs.mkdirSync(extractDir, { recursive: true });
   const zlib = require("zlib");
   const { parseTar: parseTarSource } = require(path.join(ROOT, "lib", "refresh-network.js"));
-  const tgz = fs.readFileSync(tarballPath);
   const tarBuf = zlib.gunzipSync(tgz);
   const entries = parseTarSource(tarBuf);
   for (const e of entries) {
@@ -353,7 +401,17 @@ try {
     // pack. This is the recurring CRLF/line-ending-bypass class.
     const rawContent = fs.readFileSync(skillPath);
     const normalizedContent = normalizeSkillBytes(rawContent);
-    const ok = crypto.verify(null, normalizedContent, pubKey, Buffer.from(s.signature, "base64"));
+    const outcome = verifySkillSignatureOutcome(s, normalizedContent, pubKey);
+    // A skill entry that legally omits `signature` (not in the schema's
+    // required set) must be a STRUCTURED miss — not Buffer.from(undefined,
+    // 'base64') throwing a TypeError that the body's catch re-throws as an
+    // uncaught stack trace. Mirrors lib/verify.js verifySkill()'s missing_sig.
+    if (outcome.status === "missing") {
+      miss++;
+      failures.push(`${s.name}: no Ed25519 signature in manifest`);
+      continue;
+    }
+    const ok = outcome.status === "pass";
     if (ok) pass++;
     else {
       fail_count++;
@@ -372,7 +430,8 @@ try {
         srcSha = crypto.createHash("sha256").update(normalizeSkillBytes(srcContent)).digest("hex").slice(0, 16);
       }
       const equal = srcContent && rawContent.equals(srcContent) ? "equal" : "DIFFER";
-      failures.push(`${s.name}: signature did not verify (tarball size=${rawContent.length} sha-normalized=${tarSha}; source size=${srcSize} sha-normalized=${srcSha}; raw bytes ${equal})`);
+      const reasonSuffix = outcome.reason ? ` [${outcome.reason}]` : "";
+      failures.push(`${s.name}: signature did not verify${reasonSuffix} (tarball size=${rawContent.length} sha-normalized=${tarSha}; source size=${srcSize} sha-normalized=${srcSha}; raw bytes ${equal})`);
     }
   }
 

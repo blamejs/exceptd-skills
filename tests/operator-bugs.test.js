@@ -23,7 +23,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { spawnSync } = require('node:child_process');
 
-const { ROOT, CLI, makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+const { ROOT, CLI, makeSuiteHome, makeCli, tryJson, secureTmpFile } = require('./_helpers/cli');
 const runner = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
 
 const SUITE_HOME = makeSuiteHome('exceptd-operator-bugs-');
@@ -503,7 +503,7 @@ test('#83 lint follows val.artifact indirection', () => {
     }
   });
   // Write to a tmp file for lint.
-  const tmpFile = path.join(require('os').tmpdir(), `lint-${Date.now()}.json`);
+  const tmpFile = secureTmpFile('ev.json', 'lint-');
   fs.writeFileSync(tmpFile, sub);
   const r = cli(['lint', 'library-author', tmpFile, '--json']);
   fs.unlinkSync(tmpFile);
@@ -532,7 +532,7 @@ test('#83 lint and run agree on the same flat submission', () => {
     };
   });
   const sub = JSON.stringify({ observations });
-  const tmpFile = path.join(require('os').tmpdir(), `agree-${Date.now()}.json`);
+  const tmpFile = secureTmpFile('ev.json', 'agree-');
   fs.writeFileSync(tmpFile, sub);
   try {
     const lintRes = cli(['lint', 'library-author', tmpFile, '--json']);
@@ -662,7 +662,7 @@ test('#93 SARIF defines every rule referenced by ruleId', () => {
 
 test('#94 lint missing_required_artifact is a warning, not error', () => {
   // Lint should not error on a submission the runner accepts.
-  const tmpFile = path.join(require('os').tmpdir(), `lint94-${Date.now()}.json`);
+  const tmpFile = secureTmpFile('ev.json', 'lint94-');
   fs.writeFileSync(tmpFile, JSON.stringify({ observations: {} }));
   const r = cli(['lint', 'library-author', tmpFile, '--json']);
   fs.unlinkSync(tmpFile);
@@ -898,7 +898,7 @@ test('#104 jurisdiction clocks fire on detected classification (with --ack — E
       verdict: { classification: 'detected', blast_radius: 4 }
     }
   });
-  const tmpFile = path.join(require('os').tmpdir(), `civ-${Date.now()}.json`);
+  const tmpFile = secureTmpFile('ev.json', 'civ-');
   fs.writeFileSync(tmpFile, sub);
   const r = cli(['ci', '--required', 'secrets', '--evidence', tmpFile, '--ack', '--json']);
   fs.unlinkSync(tmpFile);
@@ -980,7 +980,7 @@ test('#100 ci with NO --evidence + all inconclusive exits 3 (not 0)', () => {
   // makes any non-overridden indicator inconclusive) WITHOUT setting
   // signal_overrides — equivalent to the pre-E2 default empty-submission
   // outcome from a behavioral standpoint.
-  const tmp = path.join(require('os').tmpdir(), `incon-${Date.now()}.json`);
+  const tmp = secureTmpFile('ev.json', 'incon-');
   // Submission with a captured artifact but no signal_overrides → all
   // indicators inconclusive → ci no-evidence guard fires (--evidence WAS
   // supplied so the guard's predicate skips it; this test now just asserts
@@ -1063,7 +1063,7 @@ test('#125/#134 ci with real preflight halt exits 4 BLOCKED (not 2 FAIL, not 0)'
   // Real preflight halt: secrets has a halt-on-fail precondition `repo-context`
   // (cwd_readable == true). Submit it false explicitly so autoDetect doesn't
   // override it, keyed by playbook id so cmdCi's bundle dispatch routes it.
-  const tmp = path.join(require('os').tmpdir(), `block-${Date.now()}.json`);
+  const tmp = secureTmpFile('ev.json', 'block-');
   fs.writeFileSync(tmp, JSON.stringify({ secrets: { precondition_checks: { 'repo-context': false } } }));
   const r = cli(['ci', '--required', 'secrets', '--evidence', tmp, '--json']);
   fs.unlinkSync(tmp);
@@ -1170,8 +1170,7 @@ test('#131 run <typo-playbook-id> suggests nearest playbooks', () => {
 // ===================================================================
 
 function withFixture(version, daysAgo) {
-  const dir = require('os').tmpdir();
-  const file = path.join(dir, `npm-fixture-${Date.now()}-${Math.random().toString(36).slice(2)}.json`);
+  const file = secureTmpFile('npm-fixture.json', 'npm-fixture-');
   const publishedAt = new Date(Date.now() - daysAgo * 24 * 3600 * 1000).toISOString();
   fs.writeFileSync(file, JSON.stringify({
     "dist-tags": { latest: version },
@@ -1868,4 +1867,92 @@ test('#87 doctor --fix is registered (smoke)', () => {
   const text = (r.stdout || '') + (r.stderr || '');
   assert.match(text, /--fix\b/,
     'doctor --help must advertise the --fix flag so operators can discover it. Got: ' + text.slice(0, 400));
+});
+
+test('empty-string --evidence / --cwd are operator errors, not a silent false-clean run', () => {
+  // `--evidence ""` / `--cwd ""` were falsy and silently produced a no-evidence
+  // "not_detected" run (exit 0) or a scan of the wrong directory.
+  const ev = cli(['run', 'library-author', '--evidence', '', '--json']);
+  assert.equal(ev.status, 1, 'run --evidence "" must exit 1, not a false-clean exit 0');
+  assert.match(ev.stdout + ev.stderr, /--evidence was given an empty value/);
+
+  // ai-run --no-stream tested args.evidence for truthiness, so `--evidence ""`
+  // fell through to the stdin branch and — with closed stdin in the harness —
+  // ran an empty submission to ok:true / evidence_hash at exit 0. The AI-facing
+  // verb must refuse the empty value identically to `run`.
+  const air = cli(['ai-run', 'secrets', '--no-stream', '--evidence', '', '--json']);
+  assert.equal(air.status, 1, 'ai-run --no-stream --evidence "" must exit 1, not a false-clean exit 0');
+  assert.match(air.stdout + air.stderr, /--evidence was given an empty value/);
+  // The run must be refused before it executes — no vacuous success body and no
+  // evidence_hash for the empty submission may reach stdout.
+  assert.doesNotMatch(air.stdout, /"ok":true/, 'ai-run --evidence "" must not emit a vacuous ok:true run');
+  assert.doesNotMatch(air.stdout, /"evidence_hash"/, 'ai-run --evidence "" must not emit an evidence_hash for an empty submission');
+
+  const cc = cli(['collect', 'library-author', '--cwd', '', '--json']);
+  assert.equal(cc.status, 1, 'collect --cwd "" must exit 1');
+  assert.match(cc.stdout + cc.stderr, /--cwd was given an empty value/);
+
+  const dc = cli(['discover', '--cwd', '', '--json']);
+  assert.equal(dc.status, 1, 'discover --cwd "" must exit 1');
+  assert.match(dc.stdout + dc.stderr, /--cwd was given an empty value/);
+});
+
+test('ci --evidence "" / --evidence-dir "" are operator errors, not a silent false-green PASS', () => {
+  // `ci <pb> --evidence ""` was falsy, so the truthiness-gated evidence read
+  // skipped, every playbook ran with no evidence, and the gate reported
+  // verdict=PASS at exit 0 — a false security green. The run verb was hardened
+  // against this; the fix must hold for ci too (same class, sibling verb).
+  const ev = cli(['ci', 'secrets', '--evidence', '', '--format', 'summary', '--json']);
+  assert.equal(ev.status, 1, 'ci --evidence "" must exit 1, not a false-green exit 0');
+  assert.match(ev.stdout + ev.stderr, /--evidence was given an empty value/);
+  // It must NOT have produced a verdict — the gate is refused before it runs.
+  assert.doesNotMatch(ev.stdout, /"verdict":"PASS"/, 'ci --evidence "" must not emit a PASS verdict');
+
+  const evEq = cli(['ci', 'secrets', '--evidence=', '--format', 'summary', '--json']);
+  assert.equal(evEq.status, 1, 'ci --evidence= (equals form) must exit 1');
+  assert.match(evEq.stdout + evEq.stderr, /--evidence was given an empty value/);
+
+  const ed = cli(['ci', 'framework', '--evidence-dir', '', '--format', 'summary', '--json']);
+  assert.equal(ed.status, 1, 'ci --evidence-dir "" must exit 1');
+  assert.match(ed.stdout + ed.stderr, /--evidence-dir was given an empty value/);
+});
+
+test('run --all / --scope / run-all with --evidence "" / --evidence-dir "" are operator errors, not a silent no-evidence contract run', () => {
+  // cmdRunMulti (the engine behind `run --all`, `run --scope <type>`, and the
+  // `run-all` alias) gated the evidence read on truthiness (`if (args.evidence)`),
+  // so `--evidence ""` was dropped and the contract ran with an empty bundle,
+  // reporting verdict=not_detected at exit 0 — a false-clean from a security
+  // tool. The single-playbook `run` and the `ci` verb were already hardened;
+  // the multi path was not. The `--evidence-dir ""` path additionally carried a
+  // dead `dir.length === 0` guard nested inside `if (args["evidence-dir"])`,
+  // which excludes "" (falsy) and so could never fire.
+  //
+  // Scope to `cross-cutting` (runs only the non-blocking `framework` playbook),
+  // so a non-zero exit can ONLY come from the empty-value guard — never
+  // coincidentally from a platform-blocked playbook (the way `--all` masks it).
+  const ev = cli(['run', '--scope', 'cross-cutting', '--evidence', '', '--json']);
+  assert.equal(ev.status, 1, 'run --scope --evidence "" must exit 1, not a false-clean exit 0');
+  assert.match(ev.stdout + ev.stderr, /--evidence was given an empty value/);
+  assert.doesNotMatch(ev.stdout, /"verdict":"not_detected"/, 'run --scope --evidence "" must not emit a not_detected verdict — the contract is refused before it runs');
+
+  const evEq = cli(['run', '--scope', 'cross-cutting', '--evidence=', '--json']);
+  assert.equal(evEq.status, 1, 'run --scope --evidence= (equals form) must exit 1');
+  assert.match(evEq.stdout + evEq.stderr, /--evidence was given an empty value/);
+
+  const ed = cli(['run', '--scope', 'cross-cutting', '--evidence-dir', '', '--json']);
+  assert.equal(ed.status, 1, 'run --scope --evidence-dir "" must exit 1, not the dead length-0 path');
+  assert.match(ed.stdout + ed.stderr, /--evidence-dir was given an empty value/);
+  assert.doesNotMatch(ed.stdout, /"verdict":"not_detected"/, 'run --scope --evidence-dir "" must not emit a not_detected verdict');
+
+  // run-all is `run --all`; it must inherit the same guard.
+  const ra = cli(['run-all', '--evidence', '', '--json']);
+  assert.equal(ra.status, 1, 'run-all --evidence "" must exit 1');
+  assert.match(ra.stdout + ra.stderr, /--evidence was given an empty value/);
+
+  // Negative control: omitting --evidence entirely is NOT an error — a
+  // no-evidence contract run is a supported mode and must still reach a verdict
+  // at exit 0. (Guards on presence === "", not on truthiness.)
+  const noEv = cli(['run', '--scope', 'cross-cutting', '--json']);
+  assert.equal(noEv.status, 0, 'run --scope with --evidence omitted must still run at exit 0');
+  assert.doesNotMatch(noEv.stdout + noEv.stderr, /was given an empty value/, 'omitted --evidence must not trip the empty-value guard');
 });

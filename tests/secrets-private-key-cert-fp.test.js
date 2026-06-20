@@ -121,3 +121,46 @@ test("ssh-private-key-block: a .key holding a real private key still HITS", () =
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
+
+// ---------------------------------------------------------------------------
+// Short-read robustness — carriesPrivateKey must read the whole file, not just
+// whatever the first read() returns. A partial read on a network / FUSE /
+// interrupted descriptor can return fewer bytes than requested; if the BEGIN
+// marker sits past that boundary (a .pem with a leading `Bag Attributes` /
+// subject= header — the default OpenSSL pkcs12→PEM layout), classifying off a
+// truncated buffer would mis-label a real private key as "no key" and silently
+// drop the leak from the findings.
+// ---------------------------------------------------------------------------
+
+test("ssh-private-key-block: a .pem with the BEGIN marker past a short-read boundary still HITS", () => {
+  const tmp = mkTmp("sec-shortread-");
+  // Leading header block (OpenSSL pkcs12→PEM default) pushes BEGIN well past a
+  // plausible short-read length, so a single truncated read() would miss it.
+  const HEADER =
+    "Bag Attributes\n" +
+    "    localKeyID: 01 00 00 00\n" +
+    "    friendlyName: deploy-svc-account\n" +
+    "subject=/CN=deploy.internal\n" +
+    "issuer=/CN=Internal CA\n";
+  const realReadSync = fs.readSync;
+  try {
+    fs.writeFileSync(path.join(tmp, "deploy.pem"), HEADER + FULL_PRIV);
+    const beginOffset = (HEADER + FULL_PRIV).indexOf("-----BEGIN");
+    assert.ok(beginOffset > 64,
+      "test fixture must place BEGIN past the simulated short-read boundary");
+    // Force every readSync to return at most 64 bytes — a short read that stops
+    // before the BEGIN marker. The fix reads to EOF, so this must not matter.
+    fs.readSync = function (fd, buf, off, len, pos) {
+      return realReadSync(fd, buf, off, Math.min(64, len), pos);
+    };
+    const r = secrets.collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["ssh-private-key-block"], "hit",
+      "a real private key whose BEGIN marker falls past a short read must still fire");
+    assert.ok(
+      /deploy\.pem/.test(r.artifacts["ssh-private-keys"].value),
+      "the leaked key file must appear in the ssh-private-keys artifact");
+  } finally {
+    fs.readSync = realReadSync;
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});

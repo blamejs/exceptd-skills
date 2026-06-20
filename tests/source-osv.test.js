@@ -532,7 +532,7 @@ test('v0.12.11 F5 normalizeAdvisory leaves epss_note null for CVE-keyed drafts',
   const out = osv.normalizeAdvisory(fixture[1]);
   const entry = out['CVE-9999-99998'];
   assert.equal(entry.epss_note, null, 'CVE-keyed drafts get epss_source URL, not epss_note');
-  assert.match(entry.epss_source, /first\.org/);
+  assert.match(entry.epss_source, /^https:\/\/(?:[\w-]+\.)*first\.org\//);
 });
 
 // -- F6: verification_sources dedupe -----------------------------------
@@ -882,4 +882,65 @@ test('v0.12.14 normalizeAdvisory rejects garbage published date without crashing
     'non-ISO published date must coerce to null');
   // last_updated falls through to today when modified is unusable.
   assert.match(entry.last_updated, /^\d{4}-\d{2}-\d{2}$/);
+});
+
+// ===========================================================================
+// Streaming response size cap — a hostile / hijacked endpoint (OSV_HOST_OVERRIDE
+// at a malicious server, hijacked DNS, compromised CDN) must not be able to
+// stream unbounded bytes into RAM. Mirrors the JSON cap getJsonOnce enforces in
+// lib/refresh-network.js. Cap is tunable via EXCEPTD_OSV_RESPONSE_CAP_BYTES.
+// ===========================================================================
+
+test('osvRequestOnce aborts and returns structured error when response exceeds the streaming cap', async () => {
+  // 64 KB cap; server streams ~1 MB so the cap fires mid-stream.
+  process.env.EXCEPTD_OSV_RESPONSE_CAP_BYTES = String(64 * 1024);
+  const BODY_BYTES = 1024 * 1024;
+  const { server, port } = await startStubServer((req, res) => {
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.write('[');
+    const chunk = Buffer.alloc(32 * 1024, 0x20);
+    let sent = 0;
+    (function pump() {
+      while (sent < BODY_BYTES) {
+        const ok = res.write(chunk);
+        sent += chunk.length;
+        if (!ok) { res.once('drain', pump); return; }
+      }
+      res.end(']');
+    })();
+  });
+  process.env.OSV_HOST_OVERRIDE = `127.0.0.1:${port}`;
+  try {
+    const r = await osv.fetchAdvisoryById('MAL-2026-3083', { timeoutMs: 30000 });
+    // Exact contract: structured offline refusal, not a buffered parse, not a throw.
+    assert.equal(r.ok, false, `over-cap response must refuse, got: ${JSON.stringify(r)}`);
+    assert.equal(r.source, 'offline');
+    assert.match(r.error, /exceeds \d+-byte cap/,
+      `error must name the byte cap, got: ${r.error}`);
+  } finally {
+    delete process.env.OSV_HOST_OVERRIDE;
+    delete process.env.EXCEPTD_OSV_RESPONSE_CAP_BYTES;
+    await new Promise((res) => server.close(res));
+  }
+});
+
+test('osvRequestOnce accepts an under-cap response normally (cap does not break the happy path)', async () => {
+  // Cap well above the small valid body — the cap must be transparent.
+  process.env.EXCEPTD_OSV_RESPONSE_CAP_BYTES = String(16 * 1024 * 1024);
+  const record = { id: 'MAL-2026-3083', summary: 'under-cap body returns normally' };
+  const { server, port } = await startStubServer((req, res) => {
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify(record));
+  });
+  process.env.OSV_HOST_OVERRIDE = `127.0.0.1:${port}`;
+  try {
+    const r = await osv.fetchAdvisoryById('MAL-2026-3083', { timeoutMs: 30000 });
+    assert.equal(r.ok, true, `under-cap body must resolve normally, got: ${JSON.stringify(r)}`);
+    assert.equal(r.advisories[0].id, 'MAL-2026-3083');
+    assert.equal(r.advisories[0].summary, 'under-cap body returns normally');
+  } finally {
+    delete process.env.OSV_HOST_OVERRIDE;
+    delete process.env.EXCEPTD_OSV_RESPONSE_CAP_BYTES;
+    await new Promise((res) => server.close(res));
+  }
 });

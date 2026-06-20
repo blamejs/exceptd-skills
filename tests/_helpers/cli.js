@@ -94,4 +94,29 @@ function tryJson(s) {
   try { return JSON.parse(s); } catch { return null; }
 }
 
-module.exports = { ROOT, CLI, makeSuiteHome, makeCli, tryJson };
+const _tmpDirs = [];
+let _tmpCleanupRegistered = false;
+/**
+ * Allocate a uniquely-named temp file path inside an owner-only mkdtemp
+ * directory, and register a single process-exit cleanup that removes every such
+ * directory. Writing directly to a predictable name under the world-writable
+ * os.tmpdir() is a symlink-preplant / TOCTOU hazard (CodeQL
+ * js/insecure-temporary-file); the 0700 mkdtemp parent removes it. The shared
+ * exit hook avoids the MaxListenersExceededWarning a per-call hook would raise.
+ * Returns the file path; the caller writes to it as usual.
+ */
+function secureTmpFile(name = 'evidence.json', prefix = 'exceptd-tmp-') {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  _tmpDirs.push(dir);
+  if (!_tmpCleanupRegistered) {
+    _tmpCleanupRegistered = true;
+    process.on('exit', () => {
+      for (const d of _tmpDirs) {
+        try { fs.rmSync(d, { recursive: true, force: true }); } catch { /* non-fatal */ }
+      }
+    });
+  }
+  return path.join(dir, name);
+}
+
+module.exports = { ROOT, CLI, makeSuiteHome, makeCli, tryJson, secureTmpFile };

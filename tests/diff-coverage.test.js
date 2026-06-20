@@ -331,3 +331,102 @@ test("Audit G F11: data/*.json edits land in manual-review, not silent allowlist
   const m = (r.json.manual_review || []).find(x => x.file === "data/some-other.json");
   assert.ok(m, `expected manual_review entry for data/some-other.json; got ${JSON.stringify(r.json)}`);
 });
+
+test("extractLibExports is string-aware: a brace/comma inside a string value does not hide later exports", () => {
+  const { extractLibExports } = require(ANALYZER);
+  // The PATTERN value contains `}` `]` and `,` inside strings/regex; a naive
+  // brace/comma counter would close the object (or split a member) early and
+  // miss realExportA / realExportB — letting an uncovered export ship green.
+  const src = [
+    'function realExportA(){}',
+    'function realExportB(){}',
+    'const PATTERN = "a}b,c]d";',
+    'module.exports = { PATTERN, realExportA, realExportB };',
+  ].join("\n");
+  const ex = extractLibExports(src);
+  assert.ok(ex.has("realExportA"), `expected realExportA in ${JSON.stringify([...ex])}`);
+  assert.ok(ex.has("realExportB"), `expected realExportB in ${JSON.stringify([...ex])}`);
+
+  // And an inline string value with braces must not truncate the list.
+  const src2 = 'module.exports = { A: "x}y", B, C };';
+  const ex2 = extractLibExports(src2);
+  assert.ok(ex2.has("A") && ex2.has("B") && ex2.has("C"),
+    `all of A,B,C expected; got ${JSON.stringify([...ex2])}`);
+});
+
+test("extractLibExports captures method-shorthand members so a new exported method is coverage-checked", () => {
+  const { extractLibExports } = require(ANALYZER);
+  // A method-shorthand member (`fn(a){...}`) previously failed the
+  // `name:`/`name,` id test and was dropped, so a newly-added exported method
+  // shipped with no diff-coverage requirement. The name must surface.
+  const ex = extractLibExports('module.exports = { fn(a){ return a; }, real };');
+  assert.ok(ex.has("fn"), `expected method-shorthand "fn" in ${JSON.stringify([...ex])}`);
+  assert.ok(ex.has("real"), `expected "real" in ${JSON.stringify([...ex])}`);
+
+  // A comma inside a default-param string value must not split the member or
+  // hide the method name.
+  const ex2 = extractLibExports('module.exports = { fn(a = "x,y"){ return a; }, real };');
+  assert.ok(ex2.has("fn") && ex2.has("real"),
+    `both fn and real expected; got ${JSON.stringify([...ex2])}`);
+
+  // async / get / set / generator modifiers resolve to the method name.
+  const ex3 = extractLibExports(
+    'module.exports = { async load(){}, get g(){}, set s(v){}, *gen(){}, real };');
+  for (const name of ["load", "g", "s", "gen", "real"]) {
+    assert.ok(ex3.has(name), `expected "${name}" in ${JSON.stringify([...ex3])}`);
+  }
+});
+
+test("extractLibExports captures the single-identifier whole-module export form", () => {
+  const { extractLibExports } = require(ANALYZER);
+  // `module.exports = mainFn;` is the entire public surface of a lib file as
+  // one assigned function. Previously no extractor matched it, so the file's
+  // only export was invisible to the gate and a change to it needed no test.
+  const ex = extractLibExports("function mainFn(){} module.exports = mainFn;");
+  assert.ok(ex.has("mainFn"), `expected "mainFn" in ${JSON.stringify([...ex])}`);
+  assert.equal(ex.size, 1, `only mainFn expected; got ${JSON.stringify([...ex])}`);
+
+  // Function/arrow/class expression whole-module exports have no extractable
+  // name and must NOT spuriously add a bogus export.
+  assert.equal(extractLibExports("module.exports = function ok(){ return 1; };").size, 0);
+  assert.equal(extractLibExports("module.exports = () => 1;").size, 0);
+  assert.equal(extractLibExports("module.exports = class Foo {};").size, 0);
+});
+
+test("new single-identifier lib export without a test → red with the export name", () => {
+  // End-to-end: a lib file whose entire surface is `module.exports = fn;` and
+  // has no covering test must fail the gate, not silently pass.
+  const repo = mkRepo();
+  seedBaseline(repo);
+  write(repo, "lib/single.js", "function alpha(){ return 1; }\n");
+  // Reference alpha's file but DO NOT cover it; create the export in the same
+  // commit so it counts as an added surface.
+  write(repo, "lib/single.js",
+    "function soleExport(){ return 1; }\nmodule.exports = soleExport;\n");
+  commit(repo, "add single-ident export");
+
+  const r = runAnalyzer(repo);
+  assert.equal(r.status, 1, "expected red for uncovered single-identifier export; stderr=" + r.stderr);
+  const f = r.json.findings.find(x => x.surface === "soleExport");
+  assert.ok(f, "expected finding for soleExport in " + JSON.stringify(r.json.findings));
+  assert.equal(f.kind, "lib-export");
+  assert.equal(f.change, "added");
+  assert.equal(f.file, "lib/single.js");
+});
+
+test("new method-shorthand lib export without a test → red with the method name", () => {
+  const repo = mkRepo();
+  seedBaseline(repo);
+  // scoring.js baseline exports { score }. Add a method-shorthand export with
+  // no covering test.
+  write(repo, "lib/scoring.js",
+    "function score(){} module.exports = { score, freshMethod(a){ return a; } };\n");
+  commit(repo, "add method-shorthand export");
+
+  const r = runAnalyzer(repo);
+  assert.equal(r.status, 1, "expected red for uncovered method-shorthand export; stderr=" + r.stderr);
+  const f = r.json.findings.find(x => x.surface === "freshMethod");
+  assert.ok(f, "expected finding for freshMethod in " + JSON.stringify(r.json.findings));
+  assert.equal(f.kind, "lib-export");
+  assert.equal(f.change, "added");
+});

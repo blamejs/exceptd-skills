@@ -422,7 +422,7 @@ function main() {
       ".\n"
   );
 
-  process.exit(failures.length > 0 ? 1 : 0);
+  process.exit(failures.length > 0 ? 1 : 0); // allow:process-exit-after-stdout-write — local-only gate runner; output is the human/CI summary written synchronously above, never a piped --json result channel
 }
 
 module.exports = { GATES };

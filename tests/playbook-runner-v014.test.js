@@ -786,6 +786,121 @@ describe('F28: lockDir lives in a stable global path (not process.cwd)', () => {
 });
 
 // ===========================================================================
+// lockDir prefers the per-user home over the shared OS tempdir
+// ===========================================================================
+//
+// The mutex lockfiles previously rooted at os.tmpdir()/exceptd-locks-<plat>.
+// A per-user dir (EXCEPTD_HOME || ~/.exceptd) is both safer (not the
+// world-writable shared tempdir a preplant/symlink attack targets) and a
+// better fit for lockDir's cross-cwd stable-lock goal — and it stops tripping
+// the os-temp-file scanner on the 'wx' write sites. EXCEPTD_LOCK_DIR still
+// wins outright; a non-writable home falls back to os.tmpdir() so locks never
+// silently no-op.
+
+describe('lockDir: per-user home preference with tmpdir fallback', () => {
+  function withEnv(overrides, fn) {
+    const keys = ['EXCEPTD_LOCK_DIR', 'EXCEPTD_HOME'];
+    const prev = {};
+    for (const k of keys) prev[k] = process.env[k];
+    for (const k of keys) delete process.env[k];
+    for (const [k, v] of Object.entries(overrides)) process.env[k] = v;
+    try { return fn(); }
+    finally {
+      for (const k of keys) {
+        if (prev[k] === undefined) delete process.env[k];
+        else process.env[k] = prev[k];
+      }
+    }
+  }
+
+  it('default (no EXCEPTD_LOCK_DIR) roots the lockfile under EXCEPTD_HOME/locks, NOT os.tmpdir()', () => {
+    const home = tmpDir('lockdir-home');
+    try {
+      const p = withEnv({ EXCEPTD_HOME: home }, () => {
+        const runner = freshRunner();
+        return runner._lockFilePath('kernel');
+      });
+      assert.equal(typeof p, 'string');
+      assert.equal(p.startsWith(path.join(home, 'locks')), true,
+        'lockfile must be rooted under EXCEPTD_HOME/locks');
+      // It must NOT be under the bare shared OS tempdir (the os-temp-file
+      // scanner source). Guard against false coincidence when tmpDir itself
+      // lives under os.tmpdir(): assert the lockfile is under home, which is
+      // the authoritative check.
+      assert.equal(p.startsWith(path.join(os.tmpdir(), 'exceptd-locks-')), false,
+        'lockfile must not be rooted at the shared os.tmpdir()/exceptd-locks dir');
+    } finally {
+      fs.rmSync(home, { recursive: true, force: true });
+      delete require.cache[RUNNER_PATH];
+    }
+  });
+
+  it('EXCEPTD_LOCK_DIR override still wins over the per-user home', () => {
+    const override = tmpDir('lockdir-override');
+    const home = tmpDir('lockdir-home2');
+    try {
+      const p = withEnv({ EXCEPTD_LOCK_DIR: override, EXCEPTD_HOME: home }, () => {
+        const runner = freshRunner();
+        return runner._lockFilePath('kernel');
+      });
+      assert.equal(p, path.join(override, 'kernel.lock'));
+    } finally {
+      fs.rmSync(override, { recursive: true, force: true });
+      fs.rmSync(home, { recursive: true, force: true });
+      delete require.cache[RUNNER_PATH];
+    }
+  });
+
+  it('non-writable EXCEPTD_HOME falls back to os.tmpdir() and the lock still acquires', () => {
+    // Point EXCEPTD_HOME at a path *under a regular file* so mkdirSync fails
+    // on every platform (can't create a directory beneath a file).
+    const blockerDir = tmpDir('lockdir-blocker');
+    const blockerFile = path.join(blockerDir, 'blocker.txt');
+    fs.writeFileSync(blockerFile, 'x');
+    const badHome = path.join(blockerFile, 'cannot-mkdir-under-a-file');
+    try {
+      const { p, lock } = withEnv({ EXCEPTD_HOME: badHome }, () => {
+        const runner = freshRunner();
+        const pp = runner._lockFilePath('kernel');
+        const ll = runner._acquireLock('kernel');
+        if (ll) runner._releaseLock(ll);
+        return { p: pp, lock: ll };
+      });
+      assert.equal(p.startsWith(path.join(os.tmpdir(), 'exceptd-locks-')), true,
+        'a non-writable home must fall back to os.tmpdir()/exceptd-locks');
+      assert.equal(typeof lock, 'string',
+        'the lock must still acquire via the tmpdir fallback (locks never silently no-op)');
+    } finally {
+      fs.rmSync(blockerDir, { recursive: true, force: true });
+      delete require.cache[RUNNER_PATH];
+    }
+  });
+
+  it('cross-process mutex refusal still fires under the per-user dir (reentrancy held)', () => {
+    const home = tmpDir('lockdir-home3');
+    try {
+      const result = withEnv({ EXCEPTD_HOME: home }, () => {
+        const runner = freshRunner();
+        const first = runner._acquireLock('kernel');
+        // A fresh same-process lockfile is legitimate reentrancy: a second
+        // acquire must be refused (null) while the first hold is live.
+        const second = runner._acquireLock('kernel');
+        const diag = runner._acquireLockDiagnostic('kernel');
+        if (first) runner._releaseLock(first);
+        return { first, second, diag };
+      });
+      assert.equal(typeof result.first, 'string', 'first acquire succeeds');
+      assert.equal(result.second, null, 'second acquire is refused while held');
+      assert.equal(result.diag.ok, false);
+      assert.equal(result.diag.reason, 'held_by_self');
+    } finally {
+      fs.rmSync(home, { recursive: true, force: true });
+      delete require.cache[RUNNER_PATH];
+    }
+  });
+});
+
+// ===========================================================================
 // F30 — regression_next_run_reason annotation
 // ===========================================================================
 

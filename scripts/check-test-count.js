@@ -63,10 +63,13 @@ function countTests(filePath) {
   text = text.replace(/\/\*[\s\S]*?\*\//g, '');
   let count = 0;
   for (const rawLine of text.split('\n')) {
-    // Drop a trailing line comment too (`test('x'); // disabled`). Best-effort:
-    // a `//` inside a string literal would over-strip, which under-counts — the
-    // SAFE direction for a no-silent-shrinkage gate.
-    const stripped = rawLine.replace(/\/\/.*$/, '').trim();
+    // Blank out single-line string/template literal BODIES first so a `test(`
+    // mentioned inside a string (e.g. an assertion on output text, or this very
+    // file's docstring examples) is not miscounted as a declaration — that
+    // phantom inflated the baseline and could mask a real test deletion.
+    const noStrings = rawLine.replace(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`/g, "''");
+    // Drop a trailing line comment too (`test('x'); // disabled`).
+    const stripped = noStrings.replace(/\/\/.*$/, '').trim();
     if (!stripped) continue;
     if (/(?<![A-Za-z0-9_$.])test(?:\.only|\.skip)?\s*\(/.test(stripped)) count++;
   }
@@ -77,17 +80,33 @@ function main() {
   const wantJson = process.argv.includes('--json');
   const wantUpdate = process.argv.includes('--update-baseline');
 
-  if (!fs.existsSync(BASELINE_PATH)) {
+  // Read the baseline once and branch on the read RESULT, not on a prior
+  // existsSync probe. A separate existsSync(BASELINE_PATH)-then-read opens a
+  // check-then-use window (CodeQL js/file-system-race) where the file the
+  // gate decides about is not the file it later reads. ENOENT from the single
+  // read IS the "missing" signal — no second path access needed.
+  let baselineRaw = null;
+  try {
+    baselineRaw = fs.readFileSync(BASELINE_PATH, 'utf8');
+  } catch (e) {
+    if (e.code !== 'ENOENT') {
+      console.error(`[check-test-count] cannot read baseline: ${e.message}`);
+      process.exit(2);
+    }
+    // ENOENT — baseline absent.
     if (wantUpdate) {
       const files = listTestFiles(TESTS_DIR);
       const observed = files.reduce((n, f) => n + countTests(f), 0);
+      // Exclusive create ('wx'): fails with EEXIST if the file appeared
+      // between the read above and this write, so we never clobber a baseline
+      // a concurrent run just produced — atomic, no check-then-write window.
       fs.writeFileSync(BASELINE_PATH, JSON.stringify({
         baseline: observed,
         tolerance: 1,
         update_baseline_when_growth_exceeds: 20,
         notes: 'Operator-pinned canonical test count. Bump when new test files land in a release. See scripts/check-test-count.js for the contract.',
         recorded_at: new Date().toISOString().slice(0, 10),
-      }, null, 2) + '\n', 'utf8');
+      }, null, 2) + '\n', { encoding: 'utf8', flag: 'wx' });
       console.error(`[check-test-count] wrote initial baseline: ${observed}`);
       process.exit(0);
     }
@@ -96,7 +115,7 @@ function main() {
   }
 
   let baselineFile;
-  try { baselineFile = JSON.parse(fs.readFileSync(BASELINE_PATH, 'utf8')); }
+  try { baselineFile = JSON.parse(baselineRaw); }
   catch (e) {
     console.error(`[check-test-count] cannot parse baseline: ${e.message}`);
     process.exit(2);

@@ -583,6 +583,20 @@ test('MM P1-D — sanitizeOperatorText caps at 256 CODEPOINTS, not UTF-16 code u
     `cap must apply at 256 codepoints (not 256 UTF-16 code units); got ${Array.from(out).length}`);
 });
 
+test('MM P1-D — sanitizeOperatorText strips one-of-each named family AND the \\p{C} backstop-only U+007F', () => {
+  const runnerMod = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
+  // One codepoint from each named family the centralizing strip helper owns,
+  // plus U+007F (DEL) which the named-family regexes do NOT cover (C0_CTRL
+  // stops at U+001F) and only the \p{C} backstop removes. Interleaved with
+  // ASCII so a missed strip would leave a visible residue.
+  const F = String.fromCodePoint;
+  const input = 'a' + F(0x202D) + 'b' + F(0x0001) + 'c' + F(0x200B) +
+    'd' + F(0x0000) + 'e' + F(0x007F) + 'f';
+  const out = runnerMod.sanitizeOperatorText(input);
+  assert.equal(out, 'abcdef',
+    `every named-family codepoint AND the backstop-only U+007F must be stripped; got ${JSON.stringify(out)}`);
+});
+
 test('MM P1-D — sanitizeOperatorText returns null for non-string input', () => {
   const runnerMod = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
   assert.equal(runnerMod.sanitizeOperatorText(null), null);

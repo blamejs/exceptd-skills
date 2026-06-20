@@ -71,8 +71,18 @@ const commitOnly =
   argv.includes("--commit-only") ||
   process.env.EXCEPTD_SNAPSHOT_AUDIT_ACK === "1";
 
-if (fs.existsSync(SNAPSHOT_PATH) && !commitOnly) {
-  const current = fs.readFileSync(SNAPSHOT_PATH, "utf8");
+// Read the committed snapshot once and branch on the read RESULT rather than
+// an existsSync(SNAPSHOT_PATH)-then-readFileSync probe — the latter is a
+// check-then-use window (CodeQL js/file-system-race) where the existence the
+// guard decides on may not be the file it then reads. ENOENT IS the "no prior
+// snapshot, write a fresh one" signal.
+let current = null;
+try {
+  current = fs.readFileSync(SNAPSHOT_PATH, "utf8");
+} catch (e) {
+  if (e.code !== "ENOENT") throw e;
+}
+if (current !== null && !commitOnly) {
   // Normalise the _generated_at timestamp for comparison — that field
   // changes every run and shouldn't trigger the guard.
   const stripGenerated = (s) => s.replace(
@@ -80,7 +90,7 @@ if (fs.existsSync(SNAPSHOT_PATH) && !commitOnly) {
   );
   if (stripGenerated(current) === stripGenerated(newJson)) {
     console.log("[refresh-manifest-snapshot] snapshot unchanged — nothing to do.");
-    process.exit(0);
+    process.exit(0); // allow:process-exit-after-stdout-write — local snapshot-refresh tool; the status line above is human-read on a TTY, not a piped --json result channel
   }
   process.stderr.write(
     "[refresh-manifest-snapshot] REFUSING to overwrite manifest-snapshot.json — " +
@@ -90,7 +100,7 @@ if (fs.existsSync(SNAPSHOT_PATH) && !commitOnly) {
     "force a deliberate decision about removed skills / triggers / refs before " +
     "the baseline is rewritten.\n"
   );
-  process.exit(1);
+  process.exit(1); // allow:process-exit-after-stdout-write — local snapshot-refresh tool; the refusal note above goes to stderr on a TTY, not a piped --json result channel
 }
 
 fs.writeFileSync(SNAPSHOT_PATH, newJson, "utf8");

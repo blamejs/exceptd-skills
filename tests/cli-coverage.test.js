@@ -281,6 +281,60 @@ test('attest export <sid> --format csaf wraps the export in a CSAF 2.0 envelope'
     'exceptd_export.session_id must match the requested sid');
 });
 
+test('attest export redacts submitted signal VALUES, not just denylisted keys (no raw-value leak)', () => {
+  const sid = 'leak-' + Date.now();
+  const CANARY = 'LEAKCANARY-' + Date.now();
+  // jurisdiction_marker is NOT on the keyname denylist (token/secret/password/
+  // _key/_filter), so pre-fix its raw value was exported under signals_redacted.
+  cli(['run', 'library-author', '--evidence', '-', '--session-id', sid],
+    { input: JSON.stringify({ signals: { jurisdiction_marker: CANARY } }) });
+  const r = cli(['attest', 'export', sid, '--json']);
+  assert.equal(r.status, 0, 'attest export must exit 0');
+  assert.ok(!r.stdout.includes(CANARY),
+    'attest export must NOT leak a raw submitted signal value in any field');
+  const data = tryJson(r.stdout);
+  const att = (data?.attestations || [])[0];
+  if (att && att.signals_redacted && Object.prototype.hasOwnProperty.call(att.signals_redacted, 'jurisdiction_marker')) {
+    assert.equal(att.signals_redacted.jurisdiction_marker, '[redacted]',
+      'a retained signal key must carry a redacted placeholder, not its raw value');
+  }
+});
+
+test('attest export redacts free-form signal_overrides values + denylisted keys (verdicts kept verbatim)', () => {
+  const sid = 'soleak-' + Date.now();
+  const CANARY = 'SOLEAKCANARY-' + Date.now();
+  const FP_CANARY = 'FPMAPCANARY-' + Date.now();
+  // signal_overrides is operator-controllable: hit/miss/inconclusive are the
+  // only audit-meaningful verdicts. A free-form value (the runner stores it
+  // verbatim, only emitting signal_override_unrecognized), a token-named key,
+  // and an __fp_checks attestation map must all be redacted under the bundle
+  // labelled "redacted ... suitable for audit submission" — same no-raw-value-
+  // leak contract the signals_redacted sibling already enforces.
+  cli(['run', 'library-author', '--evidence', '-', '--session-id', sid],
+    { input: JSON.stringify({ signal_overrides: {
+        'no-security-md': 'hit',
+        'free-form-ind': CANARY,
+        'token': 'hit',
+        'some-ind__fp_checks': { check1: true, note: FP_CANARY },
+      } }) });
+  const r = cli(['attest', 'export', sid, '--json']);
+  assert.equal(r.status, 0, 'attest export must exit 0');
+  assert.ok(!r.stdout.includes(CANARY),
+    'attest export must NOT leak a free-form signal_overrides value');
+  assert.ok(!r.stdout.includes(FP_CANARY),
+    'attest export must NOT leak an __fp_checks attestation-map value');
+  const data = tryJson(r.stdout);
+  const so = (data?.attestations || [])[0]?.signal_overrides || {};
+  assert.equal(so['no-security-md'], 'hit',
+    'an exact hit/miss/inconclusive verdict must be preserved verbatim (audit-meaningful)');
+  assert.equal(so['free-form-ind'], '[redacted]',
+    'a non-enum signal_overrides value must be redacted to the placeholder');
+  assert.equal(so['some-ind__fp_checks'], '[redacted]',
+    'an __fp_checks object value must be redacted to the placeholder, not emitted verbatim');
+  assert.ok(!Object.prototype.hasOwnProperty.call(so, 'token'),
+    'a denylisted key (token) must be dropped from signal_overrides, matching signals_redacted');
+});
+
 test('verify-attestation <sid> alias dispatches to attest verify with verified=true', () => {
   const sid = 'va-' + Date.now();
   cli(['run', 'library-author', '--evidence', '-', '--session-id', sid], { input: '{}' });
@@ -491,7 +545,7 @@ test('ci --max-rwep <N> overrides the playbook escalate threshold', () => {
 });
 
 test('ci --block-on-jurisdiction-clock fails when a clock fires (F18: exit 5 = CLOCK_STARTED)', () => {
-  const tmp = path.join(os.tmpdir(), `cidir-${Date.now()}`);
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cidir-'));
   fs.mkdirSync(tmp, { recursive: true });
   fs.writeFileSync(path.join(tmp, 'secrets.json'), JSON.stringify({
     observations: { w: { captured: true, value: 'AKIA', indicator: 'aws-access-key-id', result: 'hit' } },
@@ -532,7 +586,7 @@ test('ci --block-on-jurisdiction-clock fails when a clock fires (F18: exit 5 = C
 });
 
 test('ci --evidence-dir <dir> routes per-playbook submission files', () => {
-  const tmp = path.join(os.tmpdir(), `cidir2-${Date.now()}`);
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cidir2-'));
   fs.mkdirSync(tmp, { recursive: true });
   // Stage two distinct submissions keyed by playbook id.
   fs.writeFileSync(path.join(tmp, 'secrets.json'), JSON.stringify({
@@ -563,7 +617,7 @@ test('ci --evidence-dir <dir> routes per-playbook submission files', () => {
 // ===================================================================
 
 test('run --vex applies the VEX filter and surfaces analyze.vex.filter_applied', () => {
-  const vexPath = path.join(os.tmpdir(), `vex-${Date.now()}.json`);
+  const vexPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'vex-')), 'vex.json');
   fs.writeFileSync(vexPath, JSON.stringify({
     '@context': 'https://openvex.dev/ns/v0.2.0',
     statements: [{

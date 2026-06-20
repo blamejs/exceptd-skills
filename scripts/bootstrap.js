@@ -121,6 +121,7 @@ function run(label, scriptPath, scriptArgs) {
     });
   } catch (err) {
     console.error(`[bootstrap] FAILED at step "${label}".`);
+    // allow:process-exit-after-stdout-write — local first-run setup script; the step banner above is human-read on a TTY (stdio:'inherit'), not a piped --json result channel
     process.exit(err.status && Number.isInteger(err.status) ? err.status : 1);
   }
 }

@@ -22,6 +22,9 @@ const {
   scoreCustom,
   validate,
   validateFactors,
+  deriveRwepFromFactors,
+  resolveActiveExploitation,
+  activeExploitationMultiplier,
 } = require('../lib/scoring.js');
 
 // ---------- 1. compare(): absent cvss_score ----------
@@ -241,4 +244,105 @@ test('validate() flags the symmetric case: reboot earned but alias factor stores
     errs[0],
     "CVE-TEST-REBOOT: rwep_factors.patch_required_reboot is 0 but the entry's source fields imply 5",
   );
+});
+
+// ---------- 4. scoreCustom(): out-of-vocab active_exploitation ----------
+//
+// An active_exploitation string not in the ladder previously resolved to
+// `?? 0` and silently dropped up to 20 active-exploitation points with no
+// diagnostic — while validateFactors() flagged the same string. The scorer
+// must (a) keep contributing 0 for a genuinely-unknown value, (b) surface
+// that zeroing observably (the bare-number path emits a process warning;
+// the collectWarnings path carries the structured warning), and (c)
+// case-normalise so a stray-cased canonical value scores correctly instead
+// of zeroing.
+
+test('scoreCustom() and validateFactors agree: an out-of-vocab active_exploitation is flagged', () => {
+  // Wire the two surfaces together: every AE string validateFactors flags as
+  // non-enum, scoreCustom must contribute 0 AE weight for (cisa_kev is the
+  // only other signal, so the score is 25 + AE-contribution).
+  const outOfVocab = ['exploited', 'in-the-wild', 'active', 'KEV'];
+  for (const ae of outOfVocab) {
+    const warns = validateFactors({ active_exploitation: ae });
+    const flagged = warns.some((w) => /^active_exploitation: expected one of/.test(w));
+    assert.equal(flagged, true, `validateFactors should flag active_exploitation=${JSON.stringify(ae)}`);
+    // 25 (cisa_kev) + 0 (unrecognised AE) — the AE 20-pt contribution is dropped.
+    assert.equal(
+      scoreCustom({ active_exploitation: ae, cisa_kev: true }),
+      25,
+      `scoreCustom must contribute 0 AE weight for the validator-flagged active_exploitation=${JSON.stringify(ae)}`,
+    );
+  }
+});
+
+test('scoreCustom() emits an observable warning when active_exploitation is out-of-vocab (no longer silent)', () => {
+  const seen = [];
+  const handler = (w) => { if (w && w.code === 'RWEP_AE_UNRECOGNISED') seen.push(w); };
+  process.on('warning', handler);
+  try {
+    // resolveActiveExploitation is the synchronous source of truth for the
+    // recognised flag; assert it directly so the test does not race the async
+    // process-warning emission.
+    const r = resolveActiveExploitation('exploited');
+    assert.equal(r.recognised, false, 'out-of-vocab AE must be recognised:false');
+    assert.equal(r.multiplier, 0, 'out-of-vocab AE must contribute multiplier 0');
+    // the canonical theoretical/none entries score 0 but are RECOGNISED — they
+    // must not be conflated with the unrecognised case.
+    assert.equal(resolveActiveExploitation('theoretical').recognised, true);
+    assert.equal(resolveActiveExploitation('none').recognised, true);
+    assert.equal(resolveActiveExploitation(undefined).recognised, true);
+    assert.equal(resolveActiveExploitation(null).recognised, true);
+  } finally {
+    process.removeListener('warning', handler);
+  }
+});
+
+test('scoreCustom() case-normalises a stray-cased canonical active_exploitation instead of zeroing it', () => {
+  // 'Confirmed' / '  CONFIRMED  ' must resolve to the same contribution as the
+  // canonical 'confirmed' — pre-fix they fell through `?? 0` to 25.
+  const canonical = scoreCustom({ active_exploitation: 'confirmed', cisa_kev: true });
+  assert.equal(canonical, 45, 'confirmed + cisa_kev = 25 + 20 = 45');
+  assert.equal(scoreCustom({ active_exploitation: 'Confirmed', cisa_kev: true }), 45);
+  assert.equal(scoreCustom({ active_exploitation: '  CONFIRMED  ', cisa_kev: true }), 45);
+  assert.equal(scoreCustom({ active_exploitation: 'SUSPECTED' }), 10);
+  // resolveActiveExploitation reports these as recognised (no spurious warning).
+  assert.equal(resolveActiveExploitation('Confirmed').recognised, true);
+  assert.equal(resolveActiveExploitation('  CONFIRMED  ').normalised, 'confirmed');
+});
+
+test('deriveRwepFromFactors() inherits the AE fix on the Shape-A route', () => {
+  // Shape A (a boolean present routes through scoreCustom): an out-of-vocab AE
+  // inside the factor bag must drop only the AE weight, not poison the score.
+  const inVocab = deriveRwepFromFactors({ cisa_kev: true, active_exploitation: 'confirmed', blast_radius: 10 });
+  assert.equal(inVocab, 55, '25 + 20 + 10 = 55');
+  const outOfVocab = deriveRwepFromFactors({ cisa_kev: true, active_exploitation: 'exploited', blast_radius: 10 });
+  assert.equal(outOfVocab, 35, '25 + 0 (AE dropped) + 10 = 35 — observable via process warning');
+});
+
+// ---------- 4. activeExploitationMultiplier(): bare-number call path ----------
+// resolveActiveExploitation returns the structured {multiplier, recognised,
+// normalised}; activeExploitationMultiplier is the bare-number wrapper the
+// production scoreCustom path calls. Both are exported and tested directly so
+// the no-match -> observable-warning contract is pinned at the unit level, not
+// only through scoreCustom integration.
+
+test('activeExploitationMultiplier maps canonical + stray-cased values to the ladder, unknowns to 0', () => {
+  // Canonical and case/whitespace variants resolve to the same non-zero weight.
+  const confirmed = activeExploitationMultiplier('confirmed');
+  assert.equal(typeof confirmed, 'number');
+  assert.ok(confirmed > 0, 'a recognised active_exploitation must contribute a non-zero multiplier');
+  assert.equal(activeExploitationMultiplier(' CONFIRMED '), confirmed,
+    'a stray-cased / padded canonical value must normalise to the same multiplier, not zero');
+
+  // null/undefined are the documented "treated as none" default (recognised, 0).
+  const none = resolveActiveExploitation(null);
+  assert.equal(none.recognised, true);
+  assert.equal(none.normalised, 'none');
+
+  // An out-of-vocabulary value is UNRECOGNISED and contributes 0.
+  const r = resolveActiveExploitation('in-the-wild');
+  assert.equal(r.recognised, false, 'an out-of-vocab active_exploitation must be flagged unrecognised');
+  assert.equal(r.multiplier, 0);
+  assert.equal(activeExploitationMultiplier('in-the-wild'), 0,
+    'the bare-number path returns 0 for an unrecognised value (and emits a process warning)');
 });

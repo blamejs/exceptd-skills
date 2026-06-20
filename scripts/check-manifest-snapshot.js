@@ -37,7 +37,6 @@ const crypto = require("crypto");
 const ROOT = path.join(__dirname, "..");
 const MANIFEST_PATH = path.join(ROOT, "manifest.json");
 const SNAPSHOT_PATH = path.join(ROOT, "manifest-snapshot.json");
-const SNAPSHOT_SHA_PATH = path.join(ROOT, "manifest-snapshot.sha256");
 
 function captureSurface(manifest) {
   // Public surface = the set of facts downstream consumers may have
@@ -171,7 +170,71 @@ function formatDiff(result) {
   return lines.join("\n");
 }
 
-module.exports = { captureSurface, diff, formatDiff };
+/**
+ * Verify the on-disk snapshot still hashes to the value recorded in its
+ * .sha256 sidecar. The sidecar is the only thing that catches a hand-edit
+ * of manifest-snapshot.json that bypassed refresh-manifest-snapshot.js
+ * (the surface diff alone is defeated by editing manifest.json AND the
+ * baseline in lockstep — e.g. to hide a removed skill/trigger). The
+ * sidecar pins the baseline's exact bytes so that lockstep edit no longer
+ * produces a matching pair.
+ *
+ * Pairing invariant: refresh-manifest-snapshot.js always writes BOTH the
+ * snapshot and its sidecar, and package.json `files` ships them together.
+ * So a snapshot present WITHOUT its sidecar is not a benign legacy state
+ * for any tree the current gate runs against (CI/predeploy run on the
+ * committed tree, where both are present; the shipped tarball ships both).
+ * An absent sidecar next to a present snapshot is the integrity-evasion
+ * shape — treat it as a failure, symmetric with the present-but-mismatch
+ * failure. Returns { ok, error } so callers can surface a hard exit.
+ *
+ * @param {string} root  repo root containing the snapshot + sidecar
+ * @returns {{ok: boolean, error: (string|null)}}
+ */
+function checkSnapshotIntegrity(root) {
+  const snapshotPath = path.join(root, "manifest-snapshot.json");
+  const shaPath = path.join(root, "manifest-snapshot.sha256");
+
+  if (!fs.existsSync(snapshotPath)) {
+    // No snapshot at all — the caller's baseline-read handles this as a
+    // distinct error. Nothing for the integrity check to anchor against.
+    return { ok: true, error: null };
+  }
+
+  if (!fs.existsSync(shaPath)) {
+    return {
+      ok: false,
+      error:
+        "manifest-snapshot.sha256 missing while manifest-snapshot.json is present — " +
+        "the integrity sidecar that detects a hand-edited baseline is gone. " +
+        "The two ship as a pair (package.json `files`) and refresh-manifest-snapshot.js " +
+        "always writes both; an absent sidecar next to a present snapshot is the " +
+        "integrity-evasion shape, not a benign state. " +
+        "Re-run `node scripts/refresh-manifest-snapshot.js --commit-only` to regenerate it.",
+    };
+  }
+
+  const expectedLine = fs.readFileSync(shaPath, "utf8").trim();
+  const expectedSha = expectedLine.split(/\s+/)[0];
+  const liveSha = crypto
+    .createHash("sha256")
+    .update(fs.readFileSync(snapshotPath))
+    .digest("hex");
+  if (expectedSha !== liveSha) {
+    return {
+      ok: false,
+      error:
+        `manifest-snapshot.json integrity check FAILED ` +
+        `(expected ${expectedSha.slice(0, 12)}…, live ${liveSha.slice(0, 12)}…). ` +
+        "Someone edited manifest-snapshot.json without running refresh-manifest-snapshot.js. " +
+        "Re-run `node scripts/refresh-manifest-snapshot.js --commit-only` to regenerate.",
+    };
+  }
+
+  return { ok: true, error: null };
+}
+
+module.exports = { captureSurface, diff, formatDiff, checkSnapshotIntegrity };
 
 if (require.main === module) {
   try {
@@ -190,34 +253,15 @@ if (require.main === module) {
       process.exit(2);
     }
 
-    // when manifest-snapshot.sha256 is present, validate that
-    // the on-disk snapshot still hashes to the recorded value. Catches a
-    // hand-edit of manifest-snapshot.json that bypassed refresh-manifest-
-    // snapshot.js (so the F5 commit-only guard never had a chance to fire).
-    // The file is OPTIONAL: when absent, the gate warns-and-continues so
-    // pre-v0.12.14 trees still work.
-    if (fs.existsSync(SNAPSHOT_SHA_PATH)) {
-      const expectedLine = fs.readFileSync(SNAPSHOT_SHA_PATH, "utf8").trim();
-      const expectedSha = expectedLine.split(/\s+/)[0];
-      const liveSha = crypto
-        .createHash("sha256")
-        .update(fs.readFileSync(SNAPSHOT_PATH))
-        .digest("hex");
-      if (expectedSha !== liveSha) {
-        console.error(
-          "[check-manifest-snapshot] manifest-snapshot.json integrity check FAILED " +
-          `(expected ${expectedSha.slice(0, 12)}…, live ${liveSha.slice(0, 12)}…). ` +
-          "Someone edited manifest-snapshot.json without running refresh-manifest-snapshot.js. " +
-          "Re-run `node scripts/refresh-manifest-snapshot.js --commit-only` to regenerate."
-        );
-        process.exit(1);
-      }
-    } else {
-      console.warn(
-        "[check-manifest-snapshot] WARN: manifest-snapshot.sha256 missing — " +
-        "integrity check skipped. Run `node scripts/refresh-manifest-snapshot.js --commit-only` " +
-        "to generate it."
-      );
+    // Integrity gate: the snapshot must hash to its recorded sidecar value,
+    // and the sidecar must be present whenever the snapshot is. A missing
+    // sidecar next to a present snapshot is itself a failure — it is the
+    // only thing that would have caught a lockstep hand-edit of manifest.json
+    // + the baseline, so allowing it to be deleted re-opens that bypass.
+    const integrity = checkSnapshotIntegrity(ROOT);
+    if (!integrity.ok) {
+      console.error("[check-manifest-snapshot] " + integrity.error);
+      process.exit(1);
     }
 
     const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf8"));

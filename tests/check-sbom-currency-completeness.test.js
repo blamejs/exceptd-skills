@@ -72,6 +72,35 @@ test('check-sbom-currency: a stale "N catalogs" description count fails the gate
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
 });
 
+test('check-sbom-currency: an ABSENT "N catalogs" description token fails the gate (fail-closed, not fail-open)', () => {
+  // The stale-count test above keeps the token present. This asserts the
+  // asymmetric-absent path: dropping the token entirely must error, symmetric
+  // with the entry/skill tokens — not silently skip via a `match && ...` guard.
+  const tmp = shadow((sbom) => {
+    sbom.metadata.component.description =
+      sbom.metadata.component.description.replace(/,?\s*\d+ catalogs?\b/i, '');
+  });
+  try {
+    const r = checkSbomCurrency(tmp);
+    assert.equal(r.ok, false, 'a missing catalog-count token must fail the gate');
+    assert.ok(r.errors.some((e) => /missing the catalog-count token/.test(e)),
+      `expected a missing-catalog-token error; got ${JSON.stringify(r.errors.slice(0, 6))}`);
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
+test('check-sbom-currency: an ABSENT "N jurisdictions" description token fails the gate (fail-closed, not fail-open)', () => {
+  const tmp = shadow((sbom) => {
+    sbom.metadata.component.description =
+      sbom.metadata.component.description.replace(/,?\s*\d+ jurisdictions?\b/i, '');
+  });
+  try {
+    const r = checkSbomCurrency(tmp);
+    assert.equal(r.ok, false, 'a missing jurisdiction-count token must fail the gate');
+    assert.ok(r.errors.some((e) => /missing the jurisdiction-count token/.test(e)),
+      `expected a missing-jurisdiction-token error; got ${JSON.stringify(r.errors.slice(0, 6))}`);
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
 test('check-sbom-currency: a shipped file with no file: component fails the gate', () => {
   const tmp = shadow((sbom) => {
     sbom.components = sbom.components.filter((c) => c.name !== 'manifest.json');

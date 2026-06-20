@@ -57,8 +57,10 @@
       "vendored_path": "vendor/blamejs/codepoint-class.js",
       "vendored_sha256": "2be79cf25de87f46b608aec98ee790f4cf1035ffee48fe70ff082d3cf6f324ba",
       "upstream_path": "lib/codepoint-class.js",
-      "upstream_sha256_at_pin": "2be79cf25de87f46b608aec98ee790f4cf1035ffee48fe70ff082d3cf6f324ba",
-      "stripped": [],
+      "upstream_sha256_at_pin": "18bcf1e99d168845a41c34e351e2323951319d2054634ca5021b002093e0fc03",
+      "stripped": [
+        "`// allow:raw-byte-literal — …` lint-suppression markers on 12 inline comments (the raw-byte-literal codebase-pattern rule does not scan vendor/, so the marker prefix is dropped to `// …`; comment text otherwise preserved)"
+      ],
       "surface_preserved": [
         "BIDI_RE / C0_CTRL_RE / ZERO_WIDTH_RE / NULL_BYTE (classification regexes)",
         "BIDI_RE_G / C0_CTRL_RE_G / ZW_RE_G / NULL_RE_G (global strip regexes)",

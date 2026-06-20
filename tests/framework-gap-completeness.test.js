@@ -49,6 +49,75 @@ test('P1-3: restrictWindowsAcl is a no-op on non-Windows platforms', () => {
   }
 });
 
+// SVM-07: a failed Windows ACL hardening must be detectable by automation,
+// not buried under a 0 exit. Before the fix, generate-keypair returned
+// { aclHardened:false } but the CLI dispatch discarded it — the key was
+// written group/other-readable while the process exited 0 and the success
+// banner printed, so bootstrap.js / doctor --fix (which gate on the exit
+// code) treated an unhardened key as a clean generation.
+//
+// We build a throwaway sandbox so the real repo .keys/keys are never touched,
+// then spawn `generate-keypair` with a preload that forces win32 and makes
+// icacls throw (reproducible on any host, including CI Linux). Exit code is
+// asserted EXACTLY, never just `!== 0`.
+function buildSignSandbox() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-svm07-'));
+  fs.mkdirSync(path.join(dir, 'lib', 'schemas'), { recursive: true });
+  fs.mkdirSync(path.join(dir, 'keys'), { recursive: true });
+  fs.mkdirSync(path.join(dir, '.keys'), { recursive: true });
+  for (const rel of ['lib/sign.js', 'lib/verify.js', 'lib/exit-codes.js',
+                     'lib/schemas/manifest.schema.json', 'manifest.json']) {
+    fs.copyFileSync(path.join(ROOT, rel), path.join(dir, rel));
+  }
+  const preload = path.join(dir, 'preload-force.js');
+  fs.writeFileSync(preload,
+    "'use strict';\n" +
+    "Object.defineProperty(process,'platform',{value:'win32',configurable:true});\n" +
+    "process.env.USERNAME = process.env.USERNAME || 'svm07user';\n" +
+    "const cp=require('child_process');const real=cp.execFileSync;\n" +
+    "cp.execFileSync=function(c,a,o){if(c==='icacls'){const e=new Error('icacls forced-fail (test)');e.code='ENOENT';throw e;}return real(c,a,o);};\n",
+    'utf8');
+  return { dir, preload };
+}
+
+test('SVM-07: generate-keypair exits non-zero when Windows ACL hardening fails (no opt-out)', () => {
+  const { dir, preload } = buildSignSandbox();
+  try {
+    const r = spawnSync(process.execPath,
+      ['--require', preload, path.join(dir, 'lib', 'sign.js'), 'generate-keypair'],
+      { cwd: dir, encoding: 'utf8', env: { ...process.env, EXCEPTD_ALLOW_WEAK_KEY_ACL: '' } });
+    assert.equal(r.status, 1,
+      `unhardened-key generation must exit 1; got ${r.status}\nSTDOUT:\n${r.stdout}\nSTDERR:\n${r.stderr}`);
+    // The key write itself still succeeds (exit signals "present-but-unhardened").
+    assert.equal(fs.existsSync(path.join(dir, '.keys', 'private.pem')), true,
+      'the private key must still be written even when ACL hardening fails');
+    // The failure must be loud on stderr so automation/operators see WHY.
+    assert.match(r.stderr, /ACL hardening FAILED/,
+      'stderr must carry the explicit ACL-hardening-failed error');
+    // The success banner must still drain (exitCode idiom, not process.exit
+    // truncating buffered stdout).
+    assert.match(r.stdout, /Ed25519 keypair generated/,
+      'success banner must still flush to stdout despite the non-zero exit');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('SVM-07: EXCEPTD_ALLOW_WEAK_KEY_ACL=1 lets generate-keypair exit 0 on a single-user host', () => {
+  const { dir, preload } = buildSignSandbox();
+  try {
+    const r = spawnSync(process.execPath,
+      ['--require', preload, path.join(dir, 'lib', 'sign.js'), 'generate-keypair'],
+      { cwd: dir, encoding: 'utf8', env: { ...process.env, EXCEPTD_ALLOW_WEAK_KEY_ACL: '1' } });
+    assert.equal(r.status, 0,
+      `opt-out must restore a 0 exit; got ${r.status}\nSTDERR:\n${r.stderr}`);
+    assert.match(r.stderr, /EXCEPTD_ALLOW_WEAK_KEY_ACL=1/,
+      'the opt-out path must still warn that the ACL was not hardened');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 // --- P1-4: manifest signature ---
 
 test('P1-4: canonicalManifestBytes is deterministic regardless of stale signature field', () => {

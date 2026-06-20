@@ -41,6 +41,39 @@ test('build-indexes --changed no-ops when sources unchanged', () => {
   assert.match(r.stdout, /no outputs need rebuilding/);
 });
 
+test('build-indexes --changed no-op leaves _meta.json byte-identical (no spurious timestamp diff)', async () => {
+  // Regression: writeMeta unconditionally re-stamped generated_at with a fresh
+  // wall-clock value, so a no-op --changed run (zero changed sources, nothing
+  // rebuilt) still mutated _meta.json on every invocation — a CI step running
+  // `build-indexes --changed` then `git diff --exit-status` would always report
+  // a dirty _meta.json even on a genuinely current tree, contradicting the
+  // documented "--changed: identical inputs always produce identical outputs"
+  // contract. The fix preserves the prior generated_at when the hashed surface
+  // (source_hashes + outputs) is byte-identical; validate-indexes never reads
+  // the timestamp, so determinism costs no freshness signal.
+  const metaPath = path.join(IDX, '_meta.json');
+  await withFileSnapshot([metaPath], async () => {
+    // Full rebuild so _meta records the current source hashes + output set.
+    assert.equal(run(['--quiet']).status, 0);
+    const before = fs.readFileSync(metaPath);
+    const gaBefore = JSON.parse(before.toString('utf8')).generated_at;
+    assert.equal(typeof gaBefore, 'string');
+
+    // No-op incremental run: zero sources changed.
+    const r = run(['--changed']);
+    assert.equal(r.status, 0, `stderr: ${r.stderr}`);
+    assert.match(r.stdout, /no outputs need rebuilding/);
+
+    // _meta.json must be byte-for-byte identical — generated_at included.
+    const after = fs.readFileSync(metaPath);
+    assert.deepEqual(after, before, '_meta.json changed across a no-op --changed run');
+    assert.equal(JSON.parse(after.toString('utf8')).generated_at, gaBefore,
+      'generated_at advanced on a no-op run (spurious non-deterministic diff)');
+  });
+  // Restore _indexes to the committed state for downstream tests.
+  run(['--quiet']);
+});
+
 test('build-indexes --changed picks up a touched skill body', async () => {
   // Pick a low-stakes skill body to mutate.
   const skillPath = path.join(ROOT, 'skills', 'compliance-theater', 'skill.md');
@@ -64,6 +97,44 @@ test('build-indexes --changed picks up a touched skill body', async () => {
   });
   // Final full rebuild so the working tree _indexes match the restored
   // skill body (otherwise _indexes still reference the polluted hash).
+  run(['--quiet']);
+});
+
+test('build-indexes --changed regenerates a deleted output even when sources are unchanged', async () => {
+  // Regression: --changed selected outputs purely from source-hash deltas, so
+  // a derived index deleted/corrupted with NO source change was treated as
+  // "nothing to do" — the no-op path returned without rebuilding it, yet
+  // writeMeta refreshed generated_at and recorded a 0 count for the file it
+  // never rebuilt. Output existence/integrity is now a rebuild trigger.
+  const recipesPath = path.join(IDX, 'recipes.json');
+  const metaPath = path.join(IDX, '_meta.json');
+  await withFileSnapshot([recipesPath, metaPath], async () => {
+    // Full rebuild so _meta records current source hashes + the real count.
+    assert.equal(run(['--quiet']).status, 0);
+    const priorCount = JSON.parse(fs.readFileSync(metaPath, 'utf8')).index_stats.recipes;
+    assert.ok(priorCount > 0, `expected a non-zero baseline recipes count, got ${priorCount}`);
+    const recipesBytes = fs.readFileSync(recipesPath);
+
+    // Delete an output whose only dep (manifest.json) did NOT change.
+    fs.unlinkSync(recipesPath);
+    assert.equal(fs.existsSync(recipesPath), false);
+
+    const r = run(['--changed']);
+    assert.equal(r.status, 0, `stderr: ${r.stderr}`);
+    // The planner must have selected the missing output for rebuild.
+    assert.match(r.stdout, /recipes/);
+
+    // File is back and byte-identical (deterministic builder).
+    assert.equal(fs.existsSync(recipesPath), true, 'recipes.json was not regenerated');
+    assert.deepEqual(fs.readFileSync(recipesPath), recipesBytes, 'regenerated recipes.json differs from the original');
+
+    // _meta records the REAL count, not a fabricated 0 from the empty default.
+    const after = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+    assert.equal(typeof after.index_stats.recipes, 'number');
+    assert.equal(after.index_stats.recipes, priorCount,
+      `expected recipes stat to stay ${priorCount}; got ${after.index_stats.recipes} (fabricated zero?)`);
+  });
+  // Restore _indexes to the committed state for downstream tests.
   run(['--quiet']);
 });
 
@@ -94,4 +165,28 @@ test('build-indexes OUTPUTS exports every output advertised in the help text', (
     'recipes', 'section-offsets', 'stale-content', 'summary-cards',
     'theater-fingerprints', 'token-budget', 'trigger-table', 'xref',
   ]);
+});
+
+test('outputsMissingOrCorrupt is empty on an intact tree and reports a deleted output', async () => {
+  // Direct reference to the exported guard the incremental build consults
+  // before trusting a clean source hash. It returns a map of broken output ->
+  // reason (empty on an intact tree). Both arms are asserted so a regression
+  // that made it always-empty (the idx-02 false-pass class) is caught.
+  const { outputsMissingOrCorrupt, OUTPUTS } = require('../scripts/build-indexes.js');
+  assert.equal(typeof outputsMissingOrCorrupt, 'function');
+  const clean = outputsMissingOrCorrupt();
+  assert.ok(clean instanceof Set, 'returns a Set of broken output names');
+  assert.equal(clean.size, 0,
+    `intact tree must report no missing/corrupt outputs; got ${[...clean].join(', ')}`);
+
+  // Delete a real derived output under a snapshot; the guard must surface its
+  // name (not silently pass on a clean source hash — the idx-02 false-pass).
+  const target = OUTPUTS.find((o) => o.file !== '_meta.json' && fs.existsSync(path.join(IDX, o.file)));
+  assert.ok(target, 'OUTPUTS must enumerate at least one present derived output');
+  await withFileSnapshot([path.join(IDX, target.file)], async () => {
+    fs.unlinkSync(path.join(IDX, target.file));
+    const broken = outputsMissingOrCorrupt();
+    assert.ok(broken.has(target.name),
+      `a deleted output (${target.file}) must be reported as ${target.name}; got ${[...broken].join(', ')}`);
+  });
 });

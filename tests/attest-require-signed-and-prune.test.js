@@ -162,3 +162,22 @@ test("attest prune requires --all-older-than", () => {
     fs.rmSync(home, { recursive: true, force: true });
   }
 });
+
+test("attest prune invalid-date error names --all-older-than, not --since", () => {
+  // An unparseable cutoff must point the operator at the flag prune actually
+  // consumes (--all-older-than). Naming the shared --since validator's flag
+  // would send the operator to a flag prune silently ignores, looping them
+  // between "fix --since" and "missing --all-older-than".
+  const home = freshHome("exceptd-prune3-");
+  const cli = makeCli(home);
+  try {
+    const r = cli(["attest", "prune", "--all-older-than", "99", "--json"], { env: { EXCEPTD_HOME: home } });
+    assert.equal(r.status, 1);
+    const body = tryJson(r.stderr);
+    assert.ok(body && body.ok === false);
+    assert.match(body.error, /--all-older-than must be a parseable ISO-8601/);
+    assert.doesNotMatch(body.error, /--since/);
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});

@@ -35,7 +35,8 @@ function writeNvdCache(cacheDir, id, payload) {
   fs.writeFileSync(path.join(cacheDir, 'nvd', `${id}.json`), JSON.stringify(payload, null, 2) + '\n');
   const sha = crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex');
   const idxPath = path.join(cacheDir, '_index.json');
-  const idx = fs.existsSync(idxPath) ? JSON.parse(fs.readFileSync(idxPath, 'utf8')) : { entries: {} };
+  let idx;
+  try { idx = JSON.parse(fs.readFileSync(idxPath, 'utf8')); } catch { idx = { entries: {} }; }
   idx.entries[`nvd/${id}`] = { sha256: sha, fetched_at: new Date().toISOString(), url: 'test' };
   fs.writeFileSync(idxPath, JSON.stringify(idx, null, 2) + '\n');
 }

@@ -47,12 +47,15 @@ function tryJson(s) { try { return JSON.parse(s); } catch { return null; } }
 
 test('F1: lib/sign.js generateKeypair() guards keys/public.pem overwrite', () => {
   const src = fs.readFileSync(path.join(ROOT, 'lib', 'sign.js'), 'utf8');
-  // The fix must check PUBLIC_KEY_PATH existence + refuse without --rotate
-  // BEFORE writing PRIVATE_KEY_PATH. Pin both the existence check AND the
-  // operator-facing refusal message so a future refactor that drops one
-  // doesn't slip through.
-  assert.match(src, /fs\.existsSync\(PUBLIC_KEY_PATH\).*!rotate/s,
-    'lib/sign.js generateKeypair must guard against existing public key without --rotate');
+  // The guard must create the public key EXCLUSIVELY (O_EXCL via the 'wx' flag,
+  // gated on !rotate) so an existing pubkey is refused atomically — no racy
+  // existsSync pre-check — AND surface the refusal reason. Pin the exclusive
+  // flag derivation, the exclusive open of PUBLIC_KEY_PATH, and the
+  // operator-facing message so a future refactor that drops one is caught.
+  assert.match(src, /openFlag\s*=\s*rotate\s*\?\s*'w'\s*:\s*'wx'/,
+    'generateKeypair must derive an exclusive (wx) create flag unless --rotate');
+  assert.match(src, /openSync\(PUBLIC_KEY_PATH,\s*openFlag/,
+    'generateKeypair must create the public key with the exclusive flag, not overwrite blindly');
   assert.match(src, /Refusing to overwrite the public key/,
     'lib/sign.js must surface the refusal reason to the operator');
 });

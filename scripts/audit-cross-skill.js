@@ -263,4 +263,4 @@ if (issues.length === 0) {
 } else {
   for (const i of issues) console.log("  • " + i);
 }
-process.exit(issues.length === 0 ? 0 : 1);
+process.exit(issues.length === 0 ? 0 : 1); // allow:process-exit-after-stdout-write — top-level local audit script; the issue list above is human-read on a TTY, not a piped --json result channel

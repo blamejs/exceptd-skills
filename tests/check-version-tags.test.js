@@ -52,8 +52,29 @@ test("a synthetic new version-tag comment in an unsanctioned file is caught", ()
       `check must fail on a new version-tag comment; got status=${r.status}, stderr=${r.stderr.slice(0, 400)}`);
     assert.match(r.stderr, /scripts[\\/]_fake_version_tag_probe\.js/,
       "check must name the offending file path");
-    assert.match(r.stderr, /comment-level version-tag count grew/,
+    assert.match(r.stderr, /version-tag line count grew|version-tag line\(s\)/,
       "check must explain WHY the violation matters");
+  } finally {
+    fs.unlinkSync(fakePath);
+  }
+});
+
+test("a version literal inside a quoted string on a code line IS counted (whole-line contract)", () => {
+  // The scan is deliberately whole-line, not comment-only: a 0.x stamp inside a
+  // shipped string literal (CLI --help text, error message, test fixture) is
+  // operator-readable residue and must be caught the same as a `//` comment.
+  // This locks that contract so a future "comment-only" narrowing can't silently
+  // stop catching version stamps in operator-facing strings.
+  const fakePath = path.join(ROOT, "scripts", "_fake_version_string_probe.js");
+  const fakeVer = "0." + "99." + "98";
+  // No `//` on this line — the version stamp lives ONLY inside a string literal.
+  fs.writeFileSync(fakePath, `module.exports = { version: "${fakeVer}" };\n`);
+  try {
+    const r = spawnSync(process.execPath, [SCRIPT], { encoding: "utf8", cwd: ROOT });
+    assert.equal(r.status, 1,
+      `a 0.x stamp inside a code-line string must trip the gate; got status=${r.status}, stderr=${r.stderr.slice(0, 400)}`);
+    assert.match(r.stderr, /scripts[\\/]_fake_version_string_probe\.js/,
+      "check must name the offending file path even when the stamp is in a string, not a comment");
   } finally {
     fs.unlinkSync(fakePath);
   }

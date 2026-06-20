@@ -294,6 +294,28 @@ test('deriveRwepFromFactors returns 0 for empty / null / undefined', () => {
   assert.equal(deriveRwepFromFactors(undefined), 0);
 });
 
+// Shape B clamps blast_radius to its [0, 30] per-factor ceiling before summing,
+// matching scoreCustom — so an out-of-range stored blast (a unit error) cannot
+// silently saturate or zero the score by being absorbed only by the final
+// aggregate clamp, and the two scorers agree on the same logical factors.
+test('deriveRwepFromFactors Shape B clamps blast_radius to [0, 30] before summing', () => {
+  // 300 must be treated as 30 (the weight ceiling), not summed raw.
+  // cisa_kev 25 + blast clamped 30 = 55, NOT a saturated 100.
+  assert.equal(deriveRwepFromFactors({ cisa_kev: 25, blast_radius: 300 }), 55);
+  // A negative blast is floored at 0, not subtracted: 25 + 20 + 0 = 45.
+  assert.equal(deriveRwepFromFactors({ cisa_kev: 25, poc_available: 20, blast_radius: -300 }), 45);
+  // The Shape B sum and scoreCustom must now produce the SAME score for the
+  // same logical factors when blast is out of range.
+  const factorsB = { cisa_kev: 25, poc_available: 20, blast_radius: 300 };
+  assert.equal(
+    deriveRwepFromFactors(factorsB),
+    scoreCustom({ cisa_kev: true, poc_available: true, blast_radius: 300 }),
+  );
+  assert.equal(deriveRwepFromFactors(factorsB), 75);
+  // An in-range blast is unaffected (no behavior change for valid data).
+  assert.equal(deriveRwepFromFactors({ cisa_kev: 25, blast_radius: 20 }), 45);
+});
+
 // audit J F8: RECOGNISED_FACTOR_KEYS is the authoritative set.
 test('RECOGNISED_FACTOR_KEYS contains every key scoreCustom destructures', () => {
   const required = [

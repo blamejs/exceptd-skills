@@ -60,7 +60,7 @@ const PKG_ROOT = path.resolve(__dirname, "..");
 // constants so a new verb cannot regress the exit-code contract by typo,
 // and so the help-text dump (`doctor --exit-codes`) and the runtime
 // behavior share the same source of truth.
-const { EXIT_CODES, listExitCodes } = require(path.join(PKG_ROOT, "lib", "exit-codes.js"));
+const { EXIT_CODES, listExitCodes, safeExit } = require(path.join(PKG_ROOT, "lib", "exit-codes.js"));
 const { validateIdComponent } = require(path.join(PKG_ROOT, "lib", "id-validation.js"));
 const { suggestFlag, flagsFor, VERB_FLAG_ALLOWLIST } = require(path.join(PKG_ROOT, "lib", "flag-suggest.js"));
 const codepointClass = require(path.join(PKG_ROOT, "vendor", "blamejs", "codepoint-class.js"));
@@ -612,7 +612,7 @@ function main() {
   }
   if (cmd === "version" || cmd === "--version" || cmd === "-v") {
     process.stdout.write(readPkgVersion() + "\n");
-    process.exit(0);
+    safeExit(EXIT_CODES.SUCCESS); return;
   }
   if (cmd === "path") {
     // v0.11.14 (#130): `path copy` was silently consuming the `copy` arg and
@@ -638,14 +638,14 @@ function main() {
       if (copied) {
         process.stderr.write(`[exceptd path] copied to clipboard: ${PKG_ROOT}\n`);
         process.stdout.write(PKG_ROOT + "\n");
-        process.exit(0);
+        safeExit(EXIT_CODES.SUCCESS); return;
       }
       process.stderr.write(`[exceptd path] copy: no clipboard tool available (tried: ${tried.join(", ")}). Path printed to stdout instead.\n`);
       process.stdout.write(PKG_ROOT + "\n");
-      process.exit(0);
+      safeExit(EXIT_CODES.SUCCESS); return;
     }
     process.stdout.write(PKG_ROOT + "\n");
-    process.exit(0);
+    safeExit(EXIT_CODES.SUCCESS); return;
   }
 
   // v0.13.0: hard-refuse the v0.10.x legacy verbs that were
@@ -1157,9 +1157,9 @@ function hasReadableStdin() {
  * on failure so the caller can wrap it with its own verb prefix.
  */
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?$/;
-function validateIsoSince(raw) {
+function validateIsoSince(raw, flagName = "--since") {
   if (typeof raw !== "string" || !ISO_DATE_RE.test(raw) || isNaN(Date.parse(raw))) {
-    return `--since must be a parseable ISO-8601 calendar timestamp (e.g. 2026-05-01 or 2026-05-01T00:00:00Z). Got: ${JSON.stringify(String(raw)).slice(0, 80)}`;
+    return `${flagName} must be a parseable ISO-8601 calendar timestamp (e.g. 2026-05-01 or 2026-05-01T00:00:00Z). Got: ${JSON.stringify(String(raw)).slice(0, 80)}`;
   }
   return null;
 }
@@ -1207,7 +1207,7 @@ function detectVexShape(doc) {
   // OpenVEX: @context starts with https://openvex.dev AND statements[]
   const ctx = doc["@context"];
   const ctxStr = Array.isArray(ctx) ? ctx[0] : ctx;
-  if (typeof ctxStr === "string" && ctxStr.startsWith("https://openvex.dev") && Array.isArray(doc.statements)) {
+  if (typeof ctxStr === "string" && ctxStr.startsWith("https://openvex.dev/") && Array.isArray(doc.statements)) {
     return { ok: true, detected: "openvex", top_level_keys: keys };
   }
   // Common false-positive shapes — give the operator a hint.
@@ -1399,13 +1399,20 @@ function dispatchPlaybook(cmd, argv) {
     );
     process.env.EXCEPTD_AIR_GAP_NOTICE_SHOWN = "1";
   }
-  if (args["session-id"]) {
+  if (args["session-id"] !== undefined) {
     // --session-id is a filesystem path component (resolves to
     // .exceptd/attestations/<id>/attestation.json). Operator-supplied input
     // with `..` or path separators escapes the attestation root. Route
     // through the shared validateIdComponent('session') helper so the regex
     // + all-dots refusal stay aligned with persistAttestation /
     // validateSessionIdForRead.
+    //
+    // Presence-gated (`!== undefined`), not truthy-gated: `--session-id ""`
+    // / `--session-id=` carry an explicit empty value the operator meant to
+    // pin. A truthy gate skips the validator for "", silently substituting a
+    // random id and discarding the operator's intent. validateIdComponent
+    // rejects "" with "must not be empty", matching the --operator empty
+    // refusal below.
     const sid = args["session-id"];
     const r = validateIdComponent(sid, "session");
     if (!r.ok) {
@@ -2497,6 +2504,11 @@ async function cmdCollect(runner, args, runOpts, pretty) {
   // --cwd <path> overrides process.cwd(). Validated as an existing
   // directory; non-existent / non-directory cwd is operator error.
   let cwd = process.cwd();
+  // An explicit empty value (`--cwd ""`) would otherwise be falsy and silently
+  // scan process.cwd() — the wrong directory — reported as a successful run.
+  if (args.cwd === "") {
+    return emitError(`collect: --cwd was given an empty value; pass an existing directory path`, { verb: "collect", playbook_id: playbookId }, pretty);
+  }
   if (args.cwd) {
     const resolved = path.resolve(String(args.cwd));
     let stat;
@@ -3358,6 +3370,12 @@ function cmdRun(runner, args, runOpts, pretty) {
   // first, then falls back to a strict isTTY===false check only on Windows
   // (where fstat on a pipe is unreliable). MSYS-bash on win32 reports
   // isTTY === false for genuine piped input, so that path still works.
+  // An explicit empty value (`--evidence ""`) is operator error: it would
+  // otherwise be falsy and silently produce a no-evidence "not_detected" run at
+  // exit 0, masking the fact that the intended evidence never loaded.
+  if (args.evidence === "") {
+    return emitError("run: --evidence was given an empty value; pass a file path, '-' for stdin, or omit --evidence for a no-evidence run", { verb: "run" }, pretty);
+  }
   const autoStdin = !args.evidence && hasReadableStdin();
   if (autoStdin) {
     args.evidence = "-";
@@ -4168,6 +4186,20 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
   runOpts.session_id = sessionId;
 
   let bundle = {};
+  // An explicit empty value (--evidence "" / --evidence= / an unset shell
+  // variable) is falsy, so the truthiness-gated reads below would skip
+  // entirely, the bundle would stay {}, every playbook would run with no
+  // evidence, and the contract would report a clean not_detected at exit 0 —
+  // a false-clean that hides the fact the operator's intended evidence never
+  // loaded. Mirror the single-playbook run / ci empty-value guards: refuse
+  // the empty value loudly rather than running a vacuous contract. Presence,
+  // not truthiness, is the test.
+  if (args.evidence === "") {
+    return emitError("run: --evidence was given an empty value; pass a file path, '-' for stdin, or omit --evidence for a no-evidence run", { verb: "run", flag: "evidence" }, pretty);
+  }
+  if (args["evidence-dir"] === "") {
+    return emitError("run: --evidence-dir was given an empty value; pass an existing directory, or omit --evidence-dir", { verb: "run", flag: "evidence-dir" }, pretty);
+  }
   if (args.evidence) {
     try { bundle = readEvidence(args.evidence); } catch (e) {
       return emitError(`run: failed to read evidence bundle: ${e.message}`, { evidence: args.evidence }, pretty);
@@ -4176,11 +4208,12 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
   // --evidence-dir <dir>: each <playbook-id>.json under the directory is read
   // as that playbook's submission. Lets operators wire up one cron job that
   // collects per-playbook evidence into a directory, then runs the whole
-  // contract in one pass.
+  // contract in one pass. The empty-string form is already refused above; the
+  // truthy gate here only ever sees a non-empty directory path.
   if (args["evidence-dir"]) {
     const dir = args["evidence-dir"];
-    if (typeof dir !== "string" || dir.length === 0) {
-      return emitError("run: --evidence-dir must be a non-empty string.", null, pretty);
+    if (typeof dir !== "string") {
+      return emitError("run: --evidence-dir must be a string.", null, pretty);
     }
     if (!fs.existsSync(dir)) {
       return emitError(`run: --evidence-dir ${dir} does not exist.`, null, pretty);
@@ -4951,7 +4984,11 @@ function walkAttestationDir(root, opts, candidates) {
         // Gate on the parsed kind so a renamed file cannot smuggle a replay
         // record into the listing.
         if (j && j.kind === "replay") continue;
-        if (opts.playbookId && j.playbook_id !== opts.playbookId) continue;
+        // Filter on an explicitly-supplied playbook id. `!= null` (not a
+        // truthiness check) so a future caller that threads an empty-string
+        // id can't silently disable the filter and widen the match to every
+        // playbook; the only legitimate "no filter" is `null`/`undefined`.
+        if (opts.playbookId != null && j.playbook_id !== opts.playbookId) continue;
         if (opts.since && (j.captured_at || "") < opts.since) continue;
         if (opts.excludeSessionId && sid === opts.excludeSessionId) continue;
         candidates.push({ sessionId: sid, playbookId: j.playbook_id, file: p, parsed: j });
@@ -5154,12 +5191,29 @@ function cmdPruneAttestations(runner, args, runOpts, pretty) {
       pretty,
     );
   }
-  const isoErr = validateIsoSince(cutoffRaw);
+  const isoErr = validateIsoSince(cutoffRaw, "--all-older-than");
   if (isoErr) return emitError(`attest prune: ${isoErr}`, { verb: "attest prune" }, pretty);
   const cutoffMs = Date.parse(cutoffRaw);
   const dryRun = !!args["dry-run"];
 
-  const roots = [...new Set([resolveAttestationRoot(runOpts), path.join(process.cwd(), ".exceptd", "attestations")])];
+  // Canonicalize before dedup. A plain Set over the two root strings only
+  // collapses byte-identical paths, so when the default root and the cwd-
+  // relative root resolve to the SAME directory via different strings (e.g. a
+  // relative EXCEPTD_HOME like `.exceptd`, or the home-mkdir-fail fallback),
+  // both survive and every session under that dir is scanned twice — inflating
+  // scanned/kept/pruned_count and double-listing each session in the preview.
+  // realpathSync resolves symlinks + makes absolute for an existing dir; for a
+  // not-yet-created root it throws, so fall back to path.resolve (absolute +
+  // normalized). Mirrors the realpath confinement used at delete time below.
+  const canonicalRoot = (p) => { try { return fs.realpathSync(p); } catch { return path.resolve(p); } };
+  const roots = [];
+  const seenRoots = new Set();
+  for (const r of [resolveAttestationRoot(runOpts), path.join(process.cwd(), ".exceptd", "attestations")]) {
+    const c = canonicalRoot(r);
+    if (seenRoots.has(c)) continue;
+    seenRoots.add(c);
+    roots.push(c);
+  }
   const pruned = [];
   let kept = 0;
   let scanned = 0;
@@ -5197,16 +5251,29 @@ function cmdPruneAttestations(runner, args, runOpts, pretty) {
       const ts = dateStr ? Date.parse(dateStr) : NaN;
       if (!Number.isFinite(ts)) { kept++; continue; }
       if (ts < cutoffMs) {
-        pruned.push({ session_id: sid, captured_at: captured, replayed_at: captured ? undefined : replayFallback, dir: sdir });
+        // Confinement: resolve and confirm sdir is a direct child of root
+        // before it can be deleted, so a crafted session name can't escape the
+        // root. Evaluate this in BOTH modes so the dry-run preview lists exactly
+        // the set a real run will remove — a session the real run would refuse
+        // (realpath escapes the root, or realpathSync throws) must not show up
+        // as [would-delete]. realDir is reused for the rmSync below so the
+        // delete and the gate operate on the same canonical path (no TOCTOU
+        // between the check and the removal).
+        let realDir = null;
+        try {
+          const realRoot = fs.realpathSync(root);
+          const candidate = fs.realpathSync(sdir);
+          if (path.dirname(candidate) === realRoot) realDir = candidate;
+        } catch { /* unresolvable -> not deletable */ }
+        if (realDir === null) { kept++; continue; }
         if (!dryRun) {
-          // Confinement: resolve and confirm sdir is a direct child of root
-          // before removing, so a crafted session name can't escape the root.
-          try {
-            const realRoot = fs.realpathSync(root);
-            const realDir = fs.realpathSync(sdir);
-            if (path.dirname(realDir) === realRoot) fs.rmSync(realDir, { recursive: true, force: true });
-          } catch { /* skip undeletable */ }
+          // Real run: count the session as pruned only after the delete
+          // succeeds, so pruned_count is a post-condition (sessions actually
+          // removed from disk), never a candidate tally.
+          try { fs.rmSync(realDir, { recursive: true, force: true }); }
+          catch { kept++; continue; /* skip undeletable */ }
         }
+        pruned.push({ session_id: sid, captured_at: captured, replayed_at: captured ? undefined : replayFallback, dir: sdir });
       } else {
         kept++;
       }
@@ -5246,13 +5313,27 @@ function cmdReattest(runner, args, runOpts, pretty) {
     const sinceErr = validateIsoSince(args.since);
     if (sinceErr) return emitError(`reattest: ${sinceErr}`, null, pretty);
   }
+  // Normalize --playbook (registered `multi:`, so a single value arrives as a
+  // one-element array) and refuse an empty value. `--playbook ""` would
+  // otherwise unwrap to "" and slip past walkAttestationDir's truthy filter
+  // guard — silently widening --latest to the newest attestation across ALL
+  // playbooks rather than the requested one. Refuse explicitly, the same way
+  // --since refuses a malformed value above, so the operator sees the bad
+  // input instead of an unintended cross-playbook match.
+  let playbookFilter = null;
+  if (args.playbook != null) {
+    playbookFilter = Array.isArray(args.playbook) ? args.playbook[0] : args.playbook;
+    if (typeof playbookFilter !== "string" || playbookFilter === "") {
+      return emitError("reattest: --playbook was given an empty value. Pass a playbook id (e.g. --playbook kernel) or omit --playbook to match across all playbooks.", { verb: "reattest", flag: "playbook" }, pretty);
+    }
+  }
   // --latest [--playbook <id>] [--since <ISO>] — find prior attestation
   // without requiring the operator to know the session-id.
   let sessionId = args._[0];
   let attFile = null;
   if (!sessionId && args.latest) {
     const found = findLatestAttestation({
-      playbookId: args.playbook ? (Array.isArray(args.playbook) ? args.playbook[0] : args.playbook) : null,
+      playbookId: playbookFilter,
       since: args.since || null,
     });
     if (!found) return emitError("reattest: --latest found no matching attestations.", { filter: { playbook: args.playbook || null, since: args.since || null } }, pretty);
@@ -5765,6 +5846,22 @@ function cmdAttest(runner, args, runOpts, pretty) {
     // comparison. Without --against, replays current state against prior
     // session (= reattest). With --against, compares two sessions A vs B
     // by evidence_hash + artifact-level field diff.
+    //
+    // An empty `--against ""` / `--against=` parses to the empty string, which
+    // is falsy — without this guard it would skip the explicit two-session
+    // branch and silently fall through to the auto-prior path, comparing
+    // against a DIFFERENT baseline than the operator named (a `--against
+    // "$VAR"` that expanded to empty is the common footgun). REQUIRES_VALUE
+    // only catches the value-less `--against` (parsed as `true`), not the
+    // empty-string form. Refuse explicitly so the dropped target is signalled
+    // rather than swapped under the operator.
+    if (args.against === "") {
+      return emitError(
+        'attest diff: --against was given an empty value; pass a session-id, or omit --against to diff against the most-recent prior.',
+        { verb: "attest diff", flag: "against" },
+        pretty
+      );
+    }
     if (args.against) {
       // Validate the --against id with the same gate as the primary sid, so a
       // traversal/garbage value (`../../etc/passwd`) gets the explicit "invalid
@@ -5870,14 +5967,23 @@ function cmdAttest(runner, args, runOpts, pretty) {
         // counts. Pre-0.11.8 (self.submission||{}).artifacts was undefined
         // for flat submissions; the diff returned all zeros even when
         // artifacts were present in observations.
-        artifact_diff: diffArtifacts(
-          normalizedArtifacts(self.submission, runner, self.playbook_id),
-          normalizedArtifacts(other.submission, runner, other.playbook_id)
-        ),
-        signal_override_diff: diffSignalOverrides(
-          normalizedSignalOverrides(self.submission, runner, self.playbook_id),
-          normalizedSignalOverrides(other.submission, runner, other.playbook_id)
-        ),
+        // The catalog stub stands in for an empty side ONLY when BOTH sides
+        // are empty — substituting it for one empty side while the peer passes
+        // through its real keys manufactures phantom drift (every catalog id
+        // the populated side did not submit reads as added/changed).
+        ...(() => {
+          const bothEmpty = !submissionHasData(self.submission) && !submissionHasData(other.submission);
+          return {
+            artifact_diff: diffArtifacts(
+              normalizedArtifacts(self.submission, runner, self.playbook_id, bothEmpty),
+              normalizedArtifacts(other.submission, runner, other.playbook_id, bothEmpty)
+            ),
+            signal_override_diff: diffSignalOverrides(
+              normalizedSignalOverrides(self.submission, runner, self.playbook_id, bothEmpty),
+              normalizedSignalOverrides(other.submission, runner, other.playbook_id, bothEmpty)
+            ),
+          };
+        })(),
       }, pretty, renderAttestDiff);
       return;
     }
@@ -5954,14 +6060,22 @@ function cmdAttest(runner, args, runOpts, pretty) {
       sidecar_verify: aSidecarVerify,
       a_sidecar_verify: aSidecarVerify,
       b_sidecar_verify: bSidecarVerify,
-      artifact_diff: diffArtifacts(
-        normalizedArtifacts(self.submission, runner, self.playbook_id),
-        normalizedArtifacts(other.submission, runner, other.playbook_id),
-      ),
-      signal_override_diff: diffSignalOverrides(
-        normalizedSignalOverrides(self.submission, runner, self.playbook_id),
-        normalizedSignalOverrides(other.submission, runner, other.playbook_id),
-      ),
+      // Catalog stub stands in for an empty side only when BOTH sides are
+      // empty (same peer-symmetric gate as the --against branch); real-vs-empty
+      // diffs the populated side's keys against {}, not against the full catalog.
+      ...(() => {
+        const bothEmpty = !submissionHasData(self.submission) && !submissionHasData(other.submission);
+        return {
+          artifact_diff: diffArtifacts(
+            normalizedArtifacts(self.submission, runner, self.playbook_id, bothEmpty),
+            normalizedArtifacts(other.submission, runner, other.playbook_id, bothEmpty),
+          ),
+          signal_override_diff: diffSignalOverrides(
+            normalizedSignalOverrides(self.submission, runner, self.playbook_id, bothEmpty),
+            normalizedSignalOverrides(other.submission, runner, other.playbook_id, bothEmpty),
+          ),
+        };
+      })(),
     }, pretty, renderAttestDiff);
     return;
   }
@@ -6232,9 +6346,29 @@ function cmdAttest(runner, args, runOpts, pretty) {
       run_opts: a.run_opts,
       artifacts_redacted: Object.fromEntries(Object.entries((a.submission && a.submission.artifacts) || {})
         .map(([k, v]) => [k, { captured: !!v.captured, reason: v.reason || null, redacted_value: "[redacted]" }])),
-      signal_overrides: (a.submission && a.submission.signal_overrides) || {},
+      // signal_overrides are operator-controllable: the contract canonicalizes
+      // hit/miss/inconclusive verdicts but does NOT reject free-form values
+      // (an unrecognized value surfaces a signal_override_unrecognized runtime
+      // error yet is still stored verbatim in the submission), and the sibling
+      // `<id>__fp_checks` keys carry arbitrary operator attestation maps. Under
+      // a bundle labelled "redacted ... suitable for audit submission" the only
+      // audit-meaningful content is the indicator verdict itself, so keep an
+      // exact hit/miss/inconclusive value and replace everything else (free-form
+      // strings, captured-data values, __fp_checks objects) with "[redacted]".
+      // Apply the same keyname denylist as signals_redacted so an obviously-
+      // sensitive key can't ride through under this field either. Matches the
+      // signal-value-redaction contract asserted in tests/cli-coverage.js.
+      signal_overrides: Object.fromEntries(Object.entries((a.submission && a.submission.signal_overrides) || {})
+        .filter(([k]) => !/_filter$|_key$|token|secret|password/i.test(k))
+        .map(([k, v]) => [k, (v === "hit" || v === "miss" || v === "inconclusive") ? v : "[redacted]"])),
+      // Redact the VALUES, not just drop obviously-sensitive keys: a submitted
+      // signal value can hold operator data (e.g. a captured credential string),
+      // and this field is labelled "redacted". The keyname denylist still drops
+      // the obviously-sensitive keys entirely; every retained key keeps only a
+      // "[redacted]" placeholder value, matching artifacts_redacted above.
       signals_redacted: Object.fromEntries(Object.entries((a.submission && a.submission.signals) || {})
-        .filter(([k]) => !/_filter$|_key$|token|secret|password/i.test(k))),
+        .filter(([k]) => !/_filter$|_key$|token|secret|password/i.test(k))
+        .map(([k]) => [k, "[redacted]"])),
       precondition_checks: (a.submission && a.submission.precondition_checks) || {},
     }));
 
@@ -6256,7 +6390,7 @@ function cmdAttest(runner, args, runOpts, pretty) {
         verb: "attest export",
         session_id: sessionId,
         exported_at: new Date().toISOString(),
-        redaction_policy: "v0.10.3-default — artifact values stripped; signal_overrides + precondition_checks + evidence_hash + signature preserved.",
+        redaction_policy: "v0.10.3-default — artifact values stripped; signal_overrides reduced to hit/miss/inconclusive verdicts (free-form values redacted); precondition_checks + evidence_hash + signature preserved.",
         attestations: redacted,
       }, pretty);
     }
@@ -6296,9 +6430,25 @@ function _playbookSignalCatalog(runner, playbookId) {
     return Object.fromEntries(inds.map(i => [i.id, 'inconclusive']));
   } catch { return null; }
 }
-function normalizedArtifacts(submission, runner, playbookId) {
+// A submission carries real operator data for a diff when it supplied
+// artifacts, signal_overrides, OR observations. The empty case ({} or
+// {observations:{}}) is "no operator data was supplied." Diff symmetry hinges
+// on this predicate: the playbook catalog stub may only stand in for an empty
+// side when BOTH sides are empty (so the count reflects "N catalog ids,
+// uniformly empty on both sides"). Substituting the full catalog for one empty
+// side while the peer passes through its real keys manufactures phantom drift —
+// every catalog id the populated side did not submit shows up as "added"
+// (artifacts) or "changed" (signals). See callers for the bothEmpty gate.
+function submissionHasData(submission) {
+  if (!submission || typeof submission !== "object") return false;
+  const nonEmpty = (o) => o && typeof o === "object" && Object.keys(o).length > 0;
+  return nonEmpty(submission.artifacts)
+    || nonEmpty(submission.signal_overrides)
+    || nonEmpty(submission.observations);
+}
+function normalizedArtifacts(submission, runner, playbookId, applyEmptyFallback = true) {
   if (!submission || typeof submission !== "object") {
-    return _playbookArtifactCatalog(runner, playbookId) || {};
+    return applyEmptyFallback ? (_playbookArtifactCatalog(runner, playbookId) || {}) : {};
   }
   if (submission.artifacts && Object.keys(submission.artifacts).length > 0) return submission.artifacts;
   if (submission.observations && Object.keys(submission.observations).length > 0) {
@@ -6320,15 +6470,16 @@ function normalizedArtifacts(submission, runner, playbookId) {
     }
     return out;
   }
-  // v0.11.13 (#128): empty submission ({} or {observations:{}}). Identical
-  // hashes still mean "no operator data was supplied, same on both sides."
-  // Fall back to the playbook's look.artifacts catalog so total_compared
-  // reflects "N catalog artifacts, all uniformly empty on both sides."
-  return _playbookArtifactCatalog(runner, playbookId) || {};
+  // Empty submission ({} or {observations:{}}). The catalog stub may only
+  // stand in when the PEER side is also empty (applyEmptyFallback). When the
+  // peer carried real artifacts, return an empty map so the populated side's
+  // keys diff against nothing — yielding genuine added/removed instead of one
+  // fabricated "added" per catalog id the operator never submitted.
+  return applyEmptyFallback ? (_playbookArtifactCatalog(runner, playbookId) || {}) : {};
 }
-function normalizedSignalOverrides(submission, runner, playbookId) {
+function normalizedSignalOverrides(submission, runner, playbookId, applyEmptyFallback = true) {
   if (!submission || typeof submission !== "object") {
-    return _playbookSignalCatalog(runner, playbookId) || {};
+    return applyEmptyFallback ? (_playbookSignalCatalog(runner, playbookId) || {}) : {};
   }
   if (submission.signal_overrides && Object.keys(submission.signal_overrides).length > 0) return submission.signal_overrides;
   if (submission.observations && Object.keys(submission.observations).length > 0) {
@@ -6347,7 +6498,10 @@ function normalizedSignalOverrides(submission, runner, playbookId) {
     }
     return out;
   }
-  return _playbookSignalCatalog(runner, playbookId) || {};
+  // Empty submission — same peer-symmetric gate as normalizedArtifacts: only
+  // stand in the inconclusive catalog stub when the peer is also empty, so a
+  // real-vs-empty signal diff reports only the genuinely-differing indicators.
+  return applyEmptyFallback ? (_playbookSignalCatalog(runner, playbookId) || {}) : {};
 }
 
 /**
@@ -6398,14 +6552,14 @@ function diffArtifacts(a, b) {
   for (const id of allIds) {
     const av = a[id], bv = b[id];
     if (!av && bv) {
-      out.added.push({ id, captured: !!bv.captured, value_preview: previewValue(bv.value) });
+      out.added.push({ id, captured: !!bv.captured, value_preview: artifactPreview(bv) });
     } else if (av && !bv) {
-      out.removed.push({ id, captured: !!av.captured, value_preview: previewValue(av.value) });
+      out.removed.push({ id, captured: !!av.captured, value_preview: artifactPreview(av) });
     } else if (av && bv && artifactsDiffer(av, bv)) {
       out.changed.push({
         id,
         a_captured: !!av.captured, b_captured: !!bv.captured,
-        a_value_preview: previewValue(av.value), b_value_preview: previewValue(bv.value),
+        a_value_preview: artifactPreview(av), b_value_preview: artifactPreview(bv),
       });
     } else if (av && bv) {
       // v0.11.8 (#102): both sides have the entry AND they're identical →
@@ -6438,6 +6592,23 @@ function previewValue(v) {
   return s.length > 80 ? s.slice(0, 80) + "…" : s;
 }
 
+// Preview the evidence an artifact carries for the diff output. `.value` is the
+// canonical carrier, but observations legitimately store their secret/path/match
+// under other keys (path, matched, reason, or a custom key). When `.value` is
+// absent, fall back to a preview of the remaining evidence-bearing keys (every
+// key except the bookkeeping `captured`/`captured_at` flags) so non-`value`
+// carriers still render instead of collapsing to a null preview — which hid the
+// actual differing content even when the per-field equality compare correctly
+// flagged the artifact as changed.
+function artifactPreview(art) {
+  if (art === null || typeof art !== "object" || Array.isArray(art)) return previewValue(art);
+  if (art.value !== undefined && art.value !== null) return previewValue(art.value);
+  const { captured, captured_at, _captured_at, value, ...evidence } = art;
+  const keys = Object.keys(evidence);
+  if (keys.length === 0) return null;
+  return previewValue(evidence);
+}
+
 // ---------------------------------------------------------------------------
 // v0.11.0: cmdDiscover — context-aware playbook recommender.
 // Collapses scan + dispatch + recommend into one verb. Sniffs the cwd, reads
@@ -6448,6 +6619,11 @@ function cmdDiscover(runner, args, runOpts, pretty) {
   // process cwd. Pre-fix it was silently ignored — recommendations were
   // computed for the wrong directory with no signal. Validated like collect.
   let cwd = process.cwd();
+  // An explicit empty value (`--cwd ""`) would otherwise be falsy and silently
+  // scan process.cwd() — the wrong directory — reported as a successful run.
+  if (args.cwd === "") {
+    return emitError(`discover: --cwd was given an empty value; pass an existing directory path`, { verb: "discover" }, pretty);
+  }
   if (args.cwd) {
     const resolved = path.resolve(String(args.cwd));
     let stat;
@@ -7935,6 +8111,14 @@ function cmdAiRun(runner, args, runOpts, pretty) {
   if (!playbookId) {
     return emitError("ai-run: missing <playbook> positional argument.", null, pretty);
   }
+  // An explicit empty value (`--evidence ""`) is operator error, same as `run`.
+  // The `--no-stream` path tests `args.evidence` for truthiness, so `""` fell
+  // through to the stdin branch and — with empty/closed stdin — ran an empty
+  // submission to ok:true at exit 0, masking that the intended evidence never
+  // loaded. Reject it here so both stream and no-stream entry behave like `run`.
+  if (args.evidence === "") {
+    return emitError("ai-run: --evidence was given an empty value; pass a file path, '-' for stdin, or omit --evidence to read evidence from the stream", { verb: "ai-run" }, pretty);
+  }
   if (refuseInvalidPlaybookId("ai-run", playbookId, pretty)) return;
   let pb;
   try { pb = runner.loadPlaybook(playbookId); }
@@ -8681,6 +8865,27 @@ function cmdCi(runner, args, runOpts, pretty) {
     return emitError(
       `ci: --max-rwep must be a non-negative number; got ${JSON.stringify(String(args["max-rwep"]))}.`,
       { verb: "ci", provided: args["max-rwep"] },
+      pretty,
+    );
+  }
+  // An explicit empty value (`--evidence ""` / `--evidence=` / an unset shell
+  // variable) is falsy, so the truthiness-gated evidence reads below skip
+  // entirely, the bundle stays {}, every playbook runs with no evidence, and
+  // the gate reports a clean PASS at exit 0 — a false-green that hides the fact
+  // the operator's intended evidence never loaded. Mirror the run/collect/
+  // discover empty-value guards: refuse the empty value loudly rather than
+  // running a vacuous gate.
+  if (args.evidence === "") {
+    return emitError(
+      "ci: --evidence was given an empty value; pass a file path, '-' for stdin, or omit --evidence for a no-evidence run",
+      { verb: "ci", flag: "evidence" },
+      pretty,
+    );
+  }
+  if (args["evidence-dir"] === "") {
+    return emitError(
+      "ci: --evidence-dir was given an empty value; pass an existing directory, or omit --evidence-dir",
+      { verb: "ci", flag: "evidence-dir" },
       pretty,
     );
   }

@@ -52,7 +52,7 @@ test("every registered handle has an activity feed in FEEDS", () => {
     const feed = feedsByName.get(h.feed);
     assert.ok(feed, `FEEDS must include "${h.feed}" — handle "${h.name}" anchored by catalog entries`);
     assert.equal(feed.kind, "gitlab-activity", `${h.feed} must be gitlab-activity (handle tracker)`);
-    assert.match(feed.url, /gitlab\.com\/[^/]+\.atom/,
+    assert.match(feed.url, /^https:\/\/gitlab\.com\/[^/]+\.atom$/,
       `${h.feed} must point at the GitLab public-activity Atom feed for the handle`);
     assert.equal(feed.researcher_handle, "Nightmare-Eclipse",
       `${h.feed} must declare researcher_handle explicitly`);

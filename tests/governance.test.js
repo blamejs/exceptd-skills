@@ -124,13 +124,13 @@ test("package.json carries the canonical repository + bugs URLs for the blamejs 
   assert.ok(pkg.repository, "package.json declares repository");
   assert.match(
     pkg.repository.url || "",
-    /github\.com\/blamejs\/exceptd-skills/,
+    /^git\+https:\/\/github\.com\/blamejs\/exceptd-skills\.git$/,
     "repository URL points at blamejs/exceptd-skills"
   );
   assert.ok(pkg.bugs, "package.json declares bugs");
   assert.match(
     pkg.bugs.url,
-    /github\.com\/blamejs\/exceptd-skills\/issues/,
+    /^https:\/\/github\.com\/blamejs\/exceptd-skills\/issues$/,
     "bugs URL points at the blamejs org's issue tracker"
   );
   assert.equal(pkg.license, "Apache-2.0");

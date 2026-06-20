@@ -252,16 +252,26 @@ function runScenario(scenarioPath) {
   }
 }
 
+// Select scenario directories under SCENARIO_DIR, optionally narrowed by a
+// filter. The filter is matched as a plain substring (String.includes), NOT
+// compiled with new RegExp: a regex built from a CLI argument is a regex-
+// injection / ReDoS vector, and scenario names are literal NN-name strings, so
+// substring selection is behavior-equivalent for every legitimate filter
+// (e.g. --filter=library-author). Returns sorted basenames.
+function selectScenarios(filterStr, dir = SCENARIO_DIR) {
+  return fs.readdirSync(dir)
+    .filter(d => /^\d+-/.test(d))
+    .filter(d => !filterStr || d.includes(filterStr))
+    .sort();
+}
+
 function main() {
   const filter = process.argv.find(a => a.startsWith("--filter="));
-  const filterRe = filter ? new RegExp(filter.slice("--filter=".length)) : null;
+  const filterStr = filter ? filter.slice("--filter=".length) : null;
   const json = process.argv.includes("--json");
 
-  const scenarios = fs.readdirSync(SCENARIO_DIR)
-    .filter(d => /^\d+-/.test(d))
-    .filter(d => !filterRe || filterRe.test(d))
-    .map(d => path.join(SCENARIO_DIR, d))
-    .sort();
+  const scenarios = selectScenarios(filterStr)
+    .map(d => path.join(SCENARIO_DIR, d));
 
   const results = [];
   for (const s of scenarios) {
@@ -293,9 +303,9 @@ function main() {
     process.stdout.write(`\n${passed.length}/${results.length} scenarios passed${failed.length ? `, ${failed.length} failed` : ""}${skipped.length ? `, ${skipped.length} skipped` : ""}.\n`);
   }
 
-  process.exit(failed.length === 0 ? 0 : 1);
+  process.exit(failed.length === 0 ? 0 : 1); // allow:process-exit-after-stdout-write — local e2e runner; the pass/fail summary above is human/CI-read on a TTY, not a piped --json result channel
 }
 
-module.exports = { evaluateScenario, diffExpect, tryParseJson, stderrBanFailures, runScenario, SCENARIO_DIR };
+module.exports = { evaluateScenario, diffExpect, tryParseJson, stderrBanFailures, runScenario, selectScenarios, SCENARIO_DIR };
 
 if (require.main === module) main();

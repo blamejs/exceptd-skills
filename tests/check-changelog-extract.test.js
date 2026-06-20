@@ -62,6 +62,59 @@ test('lintOperatorClean catches each internal-narrative class', () => {
   }
 });
 
+test('tautological-green rule catches numbered, count, and synonym forms (not just "all tests green")', () => {
+  // The previous rule pinned the literal adjacency "all tests <pass|green>",
+  // so a number ("all 288 tests green"), the count form ("288/288 tests pass",
+  // "21/21 gates pass"), and synonyms ("full suite green", "every check passes")
+  // all escaped — the exact family CLAUDE.md names as forbidden release residue.
+  const mustFlag = [
+    'all 288 tests green',
+    '288/288 tests pass',
+    '21/21 gates pass',
+    '42/42 checks pass',
+    '15/15 gates green',
+    'full suite green',
+    'full suite is green',
+    'the entire test suite is green',
+    'every check is green',
+    'every check passes',
+    'all gates green',
+    'every test passes',
+    // Forms the original rule already caught — must keep catching them.
+    'all tests passing',
+    'all tests green',
+    'CI green',
+    'tests are passing',
+  ];
+  for (const line of mustFlag) {
+    const f = G.lintOperatorClean([line]);
+    assert.ok(
+      f.some((x) => x.rule === 'tautological-green'),
+      `expected a tautological-green finding for: ${JSON.stringify(line)}`
+    );
+  }
+});
+
+test('tautological-green rule does not false-positive on legitimate prose', () => {
+  // Descriptive prose that merely contains "green", "suite", "pass", or a count
+  // must NOT trip the rule.
+  const mustNotFlag = [
+    'The green-field deployment path is now supported.',
+    'A new test suite for the engine covers the collectors.',
+    'The 288-test suite covers the new collector.',
+    'Passes the new validation step before emit.',
+    'The full suite of collectors now runs against sibling repos.',
+    'Adds green badges to the README install section.',
+  ];
+  for (const line of mustNotFlag) {
+    const f = G.lintOperatorClean([line]);
+    assert.ok(
+      !f.some((x) => x.rule === 'tautological-green'),
+      `unexpected tautological-green false positive for: ${JSON.stringify(line)}`
+    );
+  }
+});
+
 test('lintOperatorClean is silent on clean operator-facing prose', () => {
   const clean = [
     'Adds a typosquat detector that flags name-impersonation by edit-distance.',

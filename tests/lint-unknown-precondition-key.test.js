@@ -17,15 +17,14 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+const { makeSuiteHome, makeCli, tryJson, secureTmpFile } = require('./_helpers/cli');
 
 const SUITE_HOME = makeSuiteHome('exceptd-lint-precondition-');
 const cli = makeCli(SUITE_HOME);
 
 function writeEvidence(name, obj) {
-  const p = path.join(os.tmpdir(), `exceptd-lint-pre-${name}-${Date.now()}.json`);
+  const p = secureTmpFile(`${name}.json`, 'exceptd-lint-pre-');
   fs.writeFileSync(p, JSON.stringify(obj));
-  process.on('exit', () => { try { fs.rmSync(p, { force: true }); } catch { /* non-fatal */ } });
   return p;
 }
 

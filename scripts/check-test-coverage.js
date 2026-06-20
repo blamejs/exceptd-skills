@@ -316,17 +316,37 @@ function extractLibExports(content) {
   const objStart = stripped.search(/module\.exports\s*=\s*\{/);
   if (objStart !== -1) {
     const openIdx = stripped.indexOf("{", objStart);
-    let depth = 0, end = -1;
+    // String-aware brace balance: a `}` inside a string/template value (e.g.
+    // `{ PATTERN: "a}b", realExport }`) must NOT close the object early and
+    // hide the exports that follow — that blind spot let an uncovered export
+    // ship green.
+    let depth = 0, end = -1, inStr = null;
     for (let i = openIdx; i < stripped.length; i++) {
       const ch = stripped[i];
+      if (inStr) {
+        if (ch === "\\") { i++; continue; }
+        if (ch === inStr) inStr = null;
+        continue;
+      }
+      if (ch === "'" || ch === '"' || ch === "`") { inStr = ch; continue; }
       if (ch === "{") depth++;
       else if (ch === "}") { depth--; if (depth === 0) { end = i; break; } }
     }
     if (end !== -1) {
       const body = stripped.slice(openIdx + 1, end);
-      let d = 0, cur = "";
+      // String-aware member split: a `,` or bracket inside a string value must
+      // not split a member or skew the bracket depth.
+      let d = 0, cur = "", sInStr = null;
       const members = [];
-      for (const ch of body) {
+      for (let i = 0; i < body.length; i++) {
+        const ch = body[i];
+        if (sInStr) {
+          cur += ch;
+          if (ch === "\\") { cur += (body[i + 1] || ""); i++; continue; }
+          if (ch === sInStr) sInStr = null;
+          continue;
+        }
+        if (ch === "'" || ch === '"' || ch === "`") { sInStr = ch; cur += ch; continue; }
         if (ch === "{" || ch === "[") d++;
         else if (ch === "}" || ch === "]") d--;
         if (ch === "," && d === 0) { members.push(cur); cur = ""; }
@@ -335,9 +355,29 @@ function extractLibExports(content) {
       members.push(cur);
       for (const tok of members) {
         const id = tok.split(":")[0].trim();
-        if (/^[a-zA-Z_$][\w$]*$/.test(id)) out.add(id);
+        if (/^[a-zA-Z_$][\w$]*$/.test(id)) { out.add(id); continue; }
+        // Method-shorthand member (`fn(a){...}`, `async load(){}`, `get x(){}`,
+        // `*gen(){}`): the colon-split above fails the id test because the token
+        // is `name(...)...`, so the export name would be silently dropped and a
+        // new exported method would ship with no diff-coverage requirement.
+        // Recover the name as the identifier immediately before the first `(`,
+        // after any leading modifier keyword (async/get/set) or generator `*`.
+        const beforeParen = tok.split("(")[0].trim();
+        const parts = beforeParen.split(/\s+/);
+        const cand = parts[parts.length - 1].replace(/^\*/, "").trim();
+        if (/^[a-zA-Z_$][\w$]*$/.test(cand)) out.add(cand);
       }
     }
+  }
+  // Single-identifier whole-module export (`module.exports = mainFn;`): the
+  // entire public surface of a lib file is one assigned function. The object
+  // extractor above matches nothing, so without this the file's only export is
+  // invisible to the gate and a change to it requires no test. Capture the bare
+  // identifier on the RHS of `module.exports =` when it is not an object/array/
+  // function-expression/arrow (those are handled elsewhere or have no name).
+  const singleIdent = stripped.match(/module\.exports\s*=\s*([a-zA-Z_$][\w$]*)\s*;/);
+  if (singleIdent && !/^(function|async|class)$/.test(singleIdent[1])) {
+    out.add(singleIdent[1]);
   }
   const re = /module\.exports\.([a-zA-Z_$][\w$]*)\s*=/g;
   let mm;

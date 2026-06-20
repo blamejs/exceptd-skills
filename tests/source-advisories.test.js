@@ -73,7 +73,7 @@ test('parseRssAtom: extracts RSS <item> blocks', () => {
   const items = parseRssAtom(rss);
   assert.equal(items.length, 2);
   assert.equal(items[0].title, 'CVE-2026-46333 patched');
-  assert.match(items[0].link, /example\.org\/cve-2026-46333/);
+  assert.match(items[0].link, /^https:\/\/example\.org\/cve-2026-46333$/);
   assert.match(items[0].published, /14 May 2026/);
 });
 

@@ -319,6 +319,52 @@ test("sbom collector probes one level into docs/ + packages/ subdirs", () => {
   }
 });
 
+test("sbom collector counts CycloneDX components correctly under a short read (does not fall back to null)", () => {
+  // A single fs.readSync(fd, buf, 0, stat.size, 0) is not guaranteed to fill
+  // the buffer — a network/FUSE mount (or a signal) can return a short read,
+  // leaving the tail NUL-padded and truncating valid JSON. JSON.parse then
+  // throws, swallowed by the inner catch, and component_count silently becomes
+  // null on a present, parseable SBOM. readFileSync(fd) loops to EOF instead
+  // and never touches the JS-level fs.readSync wrapper.
+  //
+  // The stub below makes the FIRST large fs.readSync return only a partial
+  // chunk. Production code that reads via a single readSync(stat.size) gets a
+  // truncated buffer and reports component_count: null; production code that
+  // reads via readFileSync(fd) never calls the wrapper, reads the whole file,
+  // and reports the true count. So this test fails on the buggy form and
+  // passes on the fixed form.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sbom-shortread-"));
+  const realReadSync = fs.readSync;
+  try {
+    const sbom = { bomFormat: "CycloneDX", specVersion: "1.6", components: [] };
+    for (let i = 0; i < 50; i++) {
+      sbom.components.push({ type: "library", name: `pkg-${i}`, version: "1.0.0", purl: `pkg:npm/pkg-${i}@1.0.0` });
+    }
+    fs.writeFileSync(path.join(tmp, "sbom.cdx.json"), JSON.stringify(sbom, null, 2), "utf8");
+
+    fs.readSync = function (fd, buffer, offset, length, position) {
+      // Truncate the first large read — emulate a partial-read mount.
+      if (typeof length === "number" && length > 4096) {
+        return realReadSync.call(fs, fd, buffer, offset, 4096, position);
+      }
+      return realReadSync.call(fs, fd, buffer, offset, length, position);
+    };
+
+    const { collect } = require("../lib/collectors/sbom.js");
+    const r = collect({ cwd: tmp });
+
+    // The count must be the TRUE component count (50), not null.
+    assert.match(
+      r.artifacts["sbom-document"].value,
+      /sbom\.cdx\.json \(\d+ bytes, 50 components\)/,
+      `expected '50 components', got: ${r.artifacts["sbom-document"].value}`,
+    );
+  } finally {
+    fs.readSync = realReadSync;
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("sbom collector does not double-count requirements.txt when both root-LOCKFILES match and glob match are eligible", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sbom-no-dup-"));
   try {
@@ -2316,6 +2362,66 @@ test("cicd-pipeline-compromise collector misses on a clean SHA-pinned + env-boun
   }
 });
 
+test("cicd-pipeline-compromise collector does not treat a lookalike OIDC issuer as the GitHub issuer", () => {
+  // The issuer pre-filter is boundary-anchored: a trust policy that references a
+  // host merely embedding the GitHub OIDC issuer as a label
+  // (`token.actions.githubusercontent.com.attacker.example`) is a different,
+  // attacker-controlled issuer and must not surface as a GitHub-OIDC wildcard.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-oidc-lookalike-"));
+  try {
+    fs.mkdirSync(path.join(tmp, ".git"));
+    fs.writeFileSync(path.join(tmp, "trust-policy.json"), JSON.stringify({
+      Version: "2012-10-17",
+      Statement: [{
+        Effect: "Allow",
+        Principal: { Federated: "arn:aws:iam::123:oidc-provider/token.actions.githubusercontent.com.attacker.example" },
+        Action: "sts:AssumeRoleWithWebIdentity",
+        Condition: { StringLike: { "token.actions.githubusercontent.com.attacker.example:sub": "*" } },
+      }],
+    }));
+    const { collect } = require("../lib/collectors/cicd-pipeline-compromise.js");
+    const r = collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["wildcarded-oidc-sub-claim"], "miss");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("cicd-pipeline-compromise distinguishes a custom GITHUB_TOKEN_PROD secret from the built-in token", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-secret-name-"));
+  try {
+    fs.mkdirSync(path.join(tmp, ".git"));
+    const wfDir = path.join(tmp, ".github", "workflows");
+    fs.mkdirSync(wfDir, { recursive: true });
+    const wf = (secretName) => [
+      "name: ci",
+      "on: pull_request_target",
+      "jobs:",
+      "  build:",
+      "    runs-on: ubuntu-latest",
+      "    steps:",
+      "      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29",
+      "      - name: deploy",
+      "        env:",
+      `          TOKEN: \${{ secrets.${secretName} }}`,
+      "        run: ./deploy.sh",
+      "",
+    ].join("\n");
+    const { collect } = require("../lib/collectors/cicd-pipeline-compromise.js");
+
+    // A custom secret whose name merely STARTS WITH GITHUB_TOKEN is not the
+    // built-in token and must flip secret-exposed-to-fork-pr.
+    fs.writeFileSync(path.join(wfDir, "ci.yml"), wf("GITHUB_TOKEN_PROD"));
+    assert.equal(collect({ cwd: tmp }).signal_overrides["secret-exposed-to-fork-pr"], "hit");
+
+    // The built-in GITHUB_TOKEN alone must NOT flip it.
+    fs.writeFileSync(path.join(wfDir, "ci.yml"), wf("GITHUB_TOKEN"));
+    assert.equal(collect({ cwd: tmp }).signal_overrides["secret-exposed-to-fork-pr"], "miss");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("cicd-pipeline-compromise collector attests ci-config-readable on the success path (filesystem read genuinely performed)", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-preconds-"));
   try {
@@ -2671,5 +2777,25 @@ test("crypto collector leaves indicators unflipped (inconclusive) when openssl +
     assert.equal(r.artifacts["sshd-config-effective"].captured, false);
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("cred-stores kube-static-token fires on a user.token under non-2-space indentation", () => {
+  const h = fakeHome("cred-kube-indent-");
+  try {
+    // 4-space indentation: the user-vs-auth-provider anchor must be
+    // indentation-agnostic, not hardcoded to the literal "\n  user:" (2-space).
+    h.write(".kube/config", [
+      "apiVersion: v1",
+      "kind: Config",
+      "users:",
+      "  - name: admin",
+      "    user:",
+      "      token: abcdef1234567890",
+    ].join("\n"));
+    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
+    assert.equal(r.signal_overrides["kube-static-token"], "hit");
+  } finally {
+    h.cleanup();
   }
 });
