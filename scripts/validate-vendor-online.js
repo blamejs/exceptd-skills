@@ -48,10 +48,10 @@ function parseArgs(argv) {
       process.stdout.write(
         "Usage: node scripts/validate-vendor-online.js [--timeout <ms>] [--json]\n"
       );
-      process.exit(0);
+      process.exit(0); // allow:process-exit-after-stdout-write — local vendor-check script; the usage line above is human-read on a TTY, not a piped --json result channel
     } else {
       process.stderr.write(`Unknown argument: ${a}\n`);
-      process.exit(2);
+      process.exit(2); // allow:process-exit-after-stdout-write — local vendor-check script; the error note goes to stderr on a TTY, not a piped --json result channel
     }
   }
   return out;

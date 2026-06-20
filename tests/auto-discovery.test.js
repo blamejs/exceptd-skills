@@ -8,6 +8,7 @@ const path = require('path');
 
 const {
   discoverNewKev,
+  discoverNewRfcs,
   buildKevDraftEntry,
   getProjectRfcGroups,
   SEED_RFC_GROUPS,
@@ -249,6 +250,76 @@ test('audit X P1 — buildKevDraftEntry source_verified is a YYYY-MM-DD string (
     'source_verified must be a YYYY-MM-DD string for strict-schema compliance');
   assert.match(entry.source_verified, /^\d{4}-\d{2}-\d{2}$/,
     `source_verified must match YYYY-MM-DD; got ${JSON.stringify(entry.source_verified)}`);
+});
+
+function withStubbedFetch(impl, fn) {
+  const orig = global.fetch;
+  global.fetch = impl;
+  return Promise.resolve().then(fn).finally(() => { global.fetch = orig; });
+}
+
+test('discoverNewRfcs retries a transient Datatracker 503 instead of dropping the WG', async () => {
+  // The Datatracker fetch must adopt the same vendored withRetry primitive
+  // every other network source uses: a transient 503/429/5xx backs off and
+  // retries rather than silently yielding null (which discoverNewRfcs counts
+  // as one working-group skip — a transient blip then loses that WG's RFCs).
+  //
+  // Stub: return 503 on the first two calls for the FIRST WG queried, then a
+  // payload carrying one brand-new RFC. A single-shot fetcher would return
+  // null on the first 503 and discover nothing from that WG; a retry-aware
+  // fetcher recovers the payload on the third attempt.
+  let calls = 0;
+  const ctx = { cacheDir: null, rfcCatalog: {}, airGap: false };
+  // Tiny seam: only the FIRST WG fetch is exercised for the retry; every
+  // later WG fetch returns an empty object set so discovery is deterministic.
+  let firstWgDone = false;
+  const r = await withStubbedFetch(
+    async () => {
+      calls++;
+      if (!firstWgDone) {
+        if (calls <= 2) {
+          // transient 503 — a retry-aware fetcher backs off and tries again
+          return { ok: false, status: 503, async json() { return {}; } };
+        }
+        firstWgDone = true;
+        return {
+          ok: true,
+          status: 200,
+          async json() {
+            return { objects: [{ name: 'rfc99999', title: 'Transient-recovered RFC', time: '2026-06-01T00:00:00Z', std_level: 'ps', group: { acronym: 'tls' } }] };
+          },
+        };
+      }
+      return { ok: true, status: 200, async json() { return { objects: [] }; } };
+    },
+    () => discoverNewRfcs(ctx, { cap: 5, sinceDays: 365 })
+  );
+
+  // The 503s were retried (3 calls for the first WG), not dropped: the
+  // recovered RFC is present in the diffs.
+  assert.ok(calls >= 3, `first WG must be retried past its two 503s (>=3 calls); got ${calls}`);
+  const recovered = r.diffs.find((d) => d.id === 'RFC-99999');
+  assert.ok(recovered, 'the transient-503 WG must be retried and its new RFC discovered, not dropped');
+  assert.equal(recovered.op, 'add');
+  assert.equal(recovered.target, 'rfcCatalog');
+  assert.equal(recovered.entry._auto_imported, true);
+});
+
+test('discoverNewRfcs does NOT retry a permanent Datatracker 404 (one fetch per WG)', async () => {
+  // A genuine 404 (e.g. a renamed/removed WG acronym) is non-retryable: the
+  // classifier must fail it on the first attempt so a retry budget is not
+  // burned on a permanently-absent resource. Exactly one fetch per WG.
+  let calls = 0;
+  const ctx = { cacheDir: null, rfcCatalog: {}, airGap: false };
+  const r = await withStubbedFetch(
+    async () => { calls++; return { ok: false, status: 404, async json() { return {}; } }; },
+    () => discoverNewRfcs(ctx, { cap: 5, sinceDays: 365 })
+  );
+  // One call per seed WG — no WG triggered a retry on its 404.
+  assert.equal(calls, SEED_RFC_GROUPS.length,
+    `a 404 must fail on the first attempt with no retry: expected exactly ${SEED_RFC_GROUPS.length} calls (one per WG), got ${calls}`);
+  assert.equal(r.diffs.length, 0, 'no RFCs discovered when every WG 404s');
+  assert.equal(r.errors, SEED_RFC_GROUPS.length, 'each 404 WG counts as one discovery error');
 });
 
 test('audit X P1 — buildKevDraftEntry validates against the schema-required active_exploitation enum', () => {

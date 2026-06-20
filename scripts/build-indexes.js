@@ -565,6 +565,25 @@ function outputsAffectedBy(changedPaths) {
   return affected;
 }
 
+// An output's absence/corruption is itself a rebuild trigger. --changed keys
+// on source-hash deltas, but a derived file that was deleted, truncated, or
+// left unparseable must be regenerated even when every source is byte-identical
+// — otherwise the no-op path leaves a broken tree while writeMeta records it as
+// fresh (and reports a 0 count for the file it never rebuilt). Mirrors the
+// existence/parse check in lib/validate-indexes.js verifyOutputs.
+function outputsMissingOrCorrupt() {
+  const broken = new Set();
+  for (const o of OUTPUTS) {
+    const p = path.join(IDX, o.file);
+    let ok = fs.existsSync(p);
+    if (ok) {
+      try { readJson(p); } catch { ok = false; }
+    }
+    if (!ok) broken.add(o.name);
+  }
+  return broken;
+}
+
 function withDependencyClosure(names) {
   // Pull in any dependsOn entries (e.g. token-budget needs section-offsets).
   const closure = new Set(names);
@@ -648,6 +667,25 @@ function writeMeta(ctx, results) {
   const sourceHashes = {};
   for (const p of sourceFiles) sourceHashes[p] = sha256(fs.readFileSync(ABS(p)));
 
+  const outputsList = OUTPUTS.map((o) => o.file).sort();
+
+  // Determinism: preserve the prior `generated_at` when the inputs are
+  // byte-identical to the last build (same source hashes AND same output set).
+  // validate-indexes keys freshness on `source_hashes`/`outputs`, never on the
+  // timestamp, so re-stamping a no-op run with a fresh wall-clock value adds
+  // no freshness signal and only produces a spurious git diff — contradicting
+  // the documented "identical inputs always produce identical outputs"
+  // contract for --changed (and the idempotence the predeploy gate relies on).
+  // Reuse the prior timestamp on a genuine no-op; mint a new one only when the
+  // hashed surface actually moved (or there is no prior meta to inherit from).
+  const prior = loadPriorMeta();
+  const sourcesUnchanged = prior && prior.source_hashes &&
+    JSON.stringify(prior.source_hashes) === JSON.stringify(sourceHashes) &&
+    JSON.stringify(prior.outputs || []) === JSON.stringify(outputsList);
+  const generatedAt = sourcesUnchanged && typeof prior.generated_at === "string"
+    ? prior.generated_at
+    : new Date().toISOString();
+
   // Stats are computed from in-memory results when available, else from disk
   // (covers --only / --changed runs that didn't rebuild every output).
   function readBack(name) {
@@ -683,7 +721,7 @@ function writeMeta(ctx, results) {
 
   const meta = {
     schema_version: "1.1.0",
-    generated_at: new Date().toISOString(),
+    generated_at: generatedAt,
     generator: "scripts/build-indexes.js",
     source_count: sourceFiles.length,
     source_hashes: sourceHashes,
@@ -693,7 +731,7 @@ function writeMeta(ctx, results) {
     // every one still exists and parses — source hashes alone do not detect a
     // deleted/truncated/corrupted OUTPUT (an index file removed from a clean
     // source tree would otherwise pass the freshness gate as "current").
-    outputs: OUTPUTS.map((o) => o.file).sort(),
+    outputs: outputsList,
     index_stats: {
       xref_entries: xrefStats,
       trigger_table_entries: Object.keys(trigger).length,
@@ -747,11 +785,22 @@ async function main() {
     const changed = changedSources(ctx, prior);
     log(`changed sources: ${changed.length}`);
     const affected = outputsAffectedBy(changed);
+    // Union in any output that no longer exists on disk or fails to parse.
+    // A deleted/corrupt output is a rebuild trigger independent of source
+    // hashes — without this, --changed reports "nothing to do" and writeMeta
+    // would claim freshness for a tree that's actually broken.
+    const broken = outputsMissingOrCorrupt();
+    for (const name of broken) affected.add(name);
+    if (broken.size > 0) log(`missing/corrupt outputs to regenerate: ${[...broken].sort().join(", ")}`);
     chosen = withDependencyClosure(affected);
     if (chosen.size === 0) {
       log("build-indexes: no outputs need rebuilding (sources unchanged)");
-      // Still rewrite _meta.json with the same hashes — preserves freshness
-      // semantics for the predeploy gate even when nothing else changed.
+      // Rewrite _meta.json so its hash table + outputs list self-heal against
+      // the live source set (e.g. an old-format _meta that predates a field).
+      // writeMeta preserves the prior `generated_at` when the hashed surface is
+      // byte-identical, so a genuine no-op leaves the file unchanged — no
+      // spurious timestamp-only diff. Re-stamping would add no freshness signal
+      // (validate-indexes keys on source_hashes/outputs, not the timestamp).
       writeMeta(ctx, {});
       return;
     }
@@ -774,4 +823,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { OUTPUTS, loadSources, runBuilders, writeMeta };
+module.exports = { OUTPUTS, loadSources, runBuilders, writeMeta, outputsMissingOrCorrupt };

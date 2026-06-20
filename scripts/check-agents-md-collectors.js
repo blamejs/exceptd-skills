@@ -54,25 +54,53 @@ function main() {
     return;
   }
 
-  let collectorFiles;
+  let jsFiles;
   try {
-    collectorFiles = fs.readdirSync(COLLECTOR_DIR)
-      .filter(f => f.endsWith(".js"))
-      // A collector is a module exporting a collect() function. Shared
-      // helpers under lib/collectors/ (e.g. scan-excludes.js, the directory-
-      // walk exclusion policy) are not collectors and must not inflate the
-      // count or be required in the AGENTS.md enumeration.
-      .filter(f => {
-        try { return typeof require(path.join(COLLECTOR_DIR, f)).collect === "function"; }
-        catch { return false; }
-      })
-      .map(f => `lib/collectors/${f}`)
-      .sort();
+    jsFiles = fs.readdirSync(COLLECTOR_DIR).filter(f => f.endsWith(".js")).sort();
   } catch (e) {
     console.error(`[check-agents-md-collectors] cannot read ${COLLECTOR_DIR}: ${e.message}`);
     process.exitCode = 2;
     return;
   }
+
+  // Classify every lib/collectors/*.js into exactly one of three buckets:
+  //   - collector:  require() succeeds AND exports a collect() function
+  //                 (counted; must appear in the AGENTS.md enumeration).
+  //   - helper:     require() succeeds but exports no collect() function
+  //                 (e.g. scan-excludes.js, the directory-walk exclusion
+  //                 policy) — legitimately excluded from the count.
+  //   - load-error: require() THROWS (syntax error, bad top-level require,
+  //                 init-time exception). A broken collector must NOT be
+  //                 silently dropped: doing so excludes it from BOTH the
+  //                 count and the enumeration cross-check, so a file that
+  //                 still ships in the tarball passes the gate undetected.
+  //                 Surface it as a parse error (exit 2) naming the file.
+  const collectorFiles = [];
+  const loadErrors = [];
+  for (const f of jsFiles) {
+    let mod;
+    try {
+      mod = require(path.join(COLLECTOR_DIR, f));
+    } catch (e) {
+      loadErrors.push(`lib/collectors/${f}: ${e.message.split("\n")[0]}`);
+      continue;
+    }
+    if (typeof mod.collect === "function") {
+      collectorFiles.push(`lib/collectors/${f}`);
+    }
+  }
+  collectorFiles.sort();
+
+  if (loadErrors.length > 0) {
+    console.error(
+      `[check-agents-md-collectors] cannot load ${loadErrors.length} module(s) in lib/collectors/ ` +
+      `- a require-time failure must not be silently excluded from the count + enumeration check:\n  ` +
+      loadErrors.join("\n  ")
+    );
+    process.exitCode = 2;
+    return;
+  }
+
   const onDiskCount = collectorFiles.length;
 
   const para = agents.match(/(\b[A-Z][a-z]+)\s+reference collectors ship today\s*\(([^)]+)\)/);

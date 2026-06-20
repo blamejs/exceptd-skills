@@ -404,6 +404,92 @@ test('S3: manifest schema validates against the LIVE manifest.json', () => {
   assert.deepEqual(errors, [], `live manifest must pass schema; got: ${JSON.stringify(errors)}`);
 });
 
+// ---------- sign-side schema gate: signer must be at least as strict as verifier ----------
+//
+// lib/verify.js signAll()/loadManifestValidated() schema-validate the manifest
+// before (re-)signing / verifying. lib/sign.js — the canonical signer behind
+// `node lib/sign.js sign-all` + `npm run bootstrap` — must NOT be the weaker
+// check: a manifest that is path-safe but schema-invalid must be REFUSED by the
+// signer, otherwise it gets a valid manifest_signature here and then
+// lib/verify.js loadManifestValidated() throws on the same schema at install
+// time and refuses to verify any skill (producer emits what the consumer
+// rejects). signAll()/signOne() read the repo's real manifest/keys, so we
+// exercise the extracted validateManifestSchema() helper that both call.
+
+function validBaseManifest() {
+  return {
+    name: 'x',
+    version: '1.2.3',
+    description: 'desc',
+    atlas_version: '5.1.0',
+    threat_review_date: '2026-05-13',
+    skills: [{
+      name: 'one',
+      version: '1.0.0',
+      path: 'skills/one/skill.md',
+      description: 'a real skill entry',
+      triggers: ['x'],
+      data_deps: [],
+      atlas_refs: [],
+      attack_refs: [],
+      framework_gaps: ['foo'],
+      last_threat_review: '2026-05-13',
+    }],
+  };
+}
+
+test('sign-side: validateManifestSchema is exported by lib/sign.js', () => {
+  assert.equal(typeof signMod.validateManifestSchema, 'function');
+});
+
+test('sign-side: validateManifestSchema accepts a well-formed manifest (no throw)', () => {
+  assert.doesNotThrow(() => signMod.validateManifestSchema(validBaseManifest(), 'sign-all'));
+});
+
+test('sign-side: validateManifestSchema THROWS on an unknown per-skill field (the verifier-reject case)', () => {
+  const bad = validBaseManifest();
+  bad.skills[0].malicious_extension = 'oops';
+  assert.throws(
+    () => signMod.validateManifestSchema(bad, 'sign-all'),
+    /failed schema validation.*refusing to sign[\s\S]*malicious_extension/,
+  );
+});
+
+test('sign-side: validateManifestSchema THROWS on a malformed per-skill version', () => {
+  const bad = validBaseManifest();
+  bad.skills[0].version = 'not-a-semver';
+  assert.throws(
+    () => signMod.validateManifestSchema(bad, 'sign'),
+    /failed schema validation.*refusing to sign/,
+  );
+});
+
+test('sign-side: validateManifestSchema THROWS on a missing required per-skill field', () => {
+  const bad = validBaseManifest();
+  delete bad.skills[0].triggers;
+  assert.throws(
+    () => signMod.validateManifestSchema(bad, 'sign-all'),
+    /failed schema validation.*refusing to sign[\s\S]*triggers/,
+  );
+});
+
+test('sign-side: signer and verifier agree — same manifest, same verdict (no asymmetry)', () => {
+  // A schema-invalid manifest the verifier rejects must also be rejected by
+  // the signer. Drive verify's validator directly and sign's helper on the
+  // SAME object; both must flag the violation.
+  const schemaPath = path.join(__dirname, '..', 'lib', 'schemas', 'manifest.schema.json');
+  const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'));
+  const bad = validBaseManifest();
+  bad.skills[0].malicious_extension = 'oops';
+
+  // Verifier side: validator surfaces the error (loadManifestValidated would throw).
+  const verifyErrors = verifyMod.validateAgainstSchema(bad, schema, 'manifest');
+  assert.ok(verifyErrors.length > 0, 'verifier must flag the schema-invalid manifest');
+
+  // Signer side: validateManifestSchema must throw on the SAME manifest.
+  assert.throws(() => signMod.validateManifestSchema(bad, 'sign-all'));
+});
+
 // ---------- v0.12.12 hardening: S4 duplicate frontmatter keys ----------
 
 test('S4: parseFrontmatter rejects duplicate top-level keys', () => {

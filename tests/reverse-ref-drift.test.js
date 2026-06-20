@@ -3,27 +3,56 @@
 /**
  * tests/reverse-ref-drift.test.js
  *
- * Cycle 9 audit fix — every catalog's per-entry reverse skill list must
- * match the manifest forward direction exactly.
+ * Every catalog's per-entry reverse skill list must agree with BOTH the
+ * manifest forward direction and the authoritative skill frontmatter.
+ * Drift hides in two distinct places, so this file checks both:
  *
- * For each of the four catalogs in scope (atlas-ttps, cwe-catalog,
- * d3fend-catalog, rfc-references), recompute the expected reverse
- * field from manifest.json's forward refs and assert set-equality with
- * the catalog's stored value. Any drift means scripts/refresh-reverse-refs.js
- * was not run after a forward-ref change in a skill manifest entry.
+ *   1. GENERATOR-NOT-RUN drift (catalog vs manifest). For each of the four
+ *      catalogs in scope (atlas-ttps, cwe-catalog, d3fend-catalog,
+ *      rfc-references), recompute the expected reverse field from
+ *      manifest.json's forward refs and assert exact set-equality with the
+ *      catalog's stored value. A mismatch means scripts/refresh-reverse-refs.js
+ *      was not re-run after a manifest forward-ref change (or the catalog was
+ *      hand-edited). This is exact-mirror because the generator writes the
+ *      reverse field from precisely this manifest source.
  *
- * Per the anti-coincidence rule, every assertion checks the EXACT
- * value — exact set-equality (sorted-array deep-equal), never `assert.ok()`
- * or partial-match.
+ *   2. MANIFEST-CACHE-vs-FRONTMATTER drift (catalog vs frontmatter). The
+ *      manifest cross-ref arrays are an enriched CACHE of skill frontmatter,
+ *      and the generator reads only that cache — so a ref declared in a
+ *      skill's frontmatter but missing from the manifest silently drops the
+ *      skill out of the reverse surface, and assertion (1) stays green
+ *      because generator and test agree on the same wrong cache. To catch
+ *      that class, recompute an expected reverse index from the authoritative
+ *      frontmatter (same source build-indexes treats as truth) and assert the
+ *      stored reverse field COVERS every frontmatter-declared skill. COVER,
+ *      not exact-mirror: the manifest is intentionally an enriched superset
+ *      (it may carry curated refs absent from frontmatter), so the invariant
+ *      is "no frontmatter ref is missing," matching tests/manifest-frontmatter-
+ *      sync.test.js. An exact frontmatter deep-equal would false-positive on
+ *      legitimate manifest enrichment.
+ *
+ * Per the anti-coincidence rule, the manifest assertion checks the EXACT
+ * value (sorted-array deep-equal) and the frontmatter assertion lists the
+ * EXACT missing skills — never `assert.ok()` or partial-match.
  */
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const lint = require('../lib/lint-skills.js');
 
 const ROOT = path.join(__dirname, '..');
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
+
+// Authoritative frontmatter for a skill (the same source build-indexes
+// loadSources() and the manifest-frontmatter-sync gate treat as truth).
+function frontmatterOf(id) {
+  const p = path.join(ROOT, 'skills', id, 'skill.md');
+  if (!fs.existsSync(p)) return null;
+  const { frontmatter } = lint.extractFrontmatterBlock(fs.readFileSync(p, 'utf8'));
+  return lint.parseFrontmatter(frontmatter);
+}
 
 // Exercise the script's public exports so the diff-coverage gate
 // (Hard Rule #15) registers them as covered. The drift-detection logic
@@ -104,6 +133,66 @@ for (const cfg of CATALOGS) {
         `stored=[${storedSorted.join(',')}] expected=[${expected.join(',')}]. ` +
         `Run \`npm run refresh-reverse-refs\` to regenerate.`);
     }
+  });
+}
+
+// Build the expected reverse index from the AUTHORITATIVE skill frontmatter
+// (not the manifest cache). Mirrors buildExpectedReverse but reads each
+// skill body's frontmatter forward array, so it sees refs the manifest cache
+// may have dropped.
+function buildFrontmatterReverse(forwardField) {
+  const index = new Map();
+  for (const entry of manifest.skills) {
+    const id = entry.id || entry.name;
+    const fm = frontmatterOf(id);
+    if (!fm) continue;
+    const refs = Array.isArray(fm[forwardField]) ? fm[forwardField] : [];
+    for (const techId of refs) {
+      if (!index.has(techId)) index.set(techId, new Set());
+      index.get(techId).add(entry.name);
+    }
+  }
+  return index;
+}
+
+// Catch the manifest-cache-vs-frontmatter drift class the manifest-recompute
+// loop above is structurally blind to: a frontmatter-declared forward ref
+// missing from the manifest cache makes the generator silently omit that
+// skill from the reverse surface, yet the loop above stays green because it
+// recomputes from the SAME (wrong) manifest. Here the expectation comes from
+// frontmatter, so a dropped ref surfaces as a missing skill in the stored
+// reverse field.
+//
+// COVER, not exact-mirror: the manifest cross-ref arrays are an intended
+// enriched superset (curated refs absent from frontmatter are legitimate, and
+// they correctly appear in the reverse field). The invariant is that no
+// frontmatter-declared skill is MISSING — matching the COVER semantics in
+// tests/manifest-frontmatter-sync.test.js. An exact deep-equal would
+// false-positive on legitimate enrichment.
+for (const cfg of CATALOGS) {
+  test(`reverse refs in ${cfg.file} cover every frontmatter-declared ${cfg.forwardField}`, () => {
+    const catalog = JSON.parse(
+      fs.readFileSync(path.join(ROOT, 'data', cfg.file), 'utf8'),
+    );
+    const fmIndex = buildFrontmatterReverse(cfg.forwardField);
+    const drift = [];
+
+    for (const [techId, wantSkills] of fmIndex) {
+      const entry = catalog[techId];
+      const stored = new Set(
+        entry && Array.isArray(entry[cfg.reverseField]) ? entry[cfg.reverseField] : [],
+      );
+      const missing = [...wantSkills].filter((sk) => !stored.has(sk)).sort();
+      if (missing.length) {
+        drift.push(`${techId}.${cfg.reverseField} omits [${missing.join(',')}]`);
+      }
+    }
+
+    assert.deepEqual(drift, [],
+      `${cfg.file} reverse field "${cfg.reverseField}" omits frontmatter-declared ` +
+      `skill(s) — the ref was dropped from the manifest cache, so it silently ` +
+      `vanished from the reverse surface. Run \`node scripts/sync-manifest-metadata.js\` ` +
+      `then \`npm run refresh-reverse-refs\`:\n  ${drift.join('\n  ')}`);
   });
 }
 

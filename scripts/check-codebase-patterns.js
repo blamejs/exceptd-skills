@@ -186,7 +186,7 @@ const FUNCTION_START = /(^|[^.\w])function\b|=>\s*\{?\s*$|^\s*(async\s+)?[A-Za-z
 
 function detectProcessExitAfterStdout(files) {
   const hits = [];
-  for (const rel of (files || filesUnder(["lib", "orchestrator"]))) {
+  for (const rel of (files || filesUnder(["bin/exceptd.js", "lib", "orchestrator", "scripts"]))) {
     const lines = readLines(rel);
     const mainRanges = requireMainRanges(lines);
     for (let i = 0; i < lines.length; i++) {

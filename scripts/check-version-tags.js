@@ -4,8 +4,17 @@
 /**
  * scripts/check-version-tags.js
  *
- * Refuses NEW version-stamped comments / filenames in the tracked
- * source tree. The authoritative version surfaces are:
+ * Refuses NEW version-stamped lines / filenames in the tracked source
+ * tree. "Line" is deliberate and broader than "comment": a 0.x version
+ * stamp is residue wherever a stranger reads it, which per the
+ * operator-facing-surface rules includes string literals that ship to
+ * operators — CLI `--help` text, error messages, and test descriptions —
+ * not just `//` comments. The scan therefore tests the WHOLE line, so a
+ * `version: '0.18.7'` data literal or a `--flag (v0.18.7)` help string
+ * counts the same as a `// v0.18.7` comment. Genuinely-load-bearing
+ * version references (real test fixtures, deprecation timelines) get the
+ * file added to COMMENT_EXEMPT below. The authoritative version surfaces
+ * are:
  *
  *   1. package.json / manifest.json `"version"` field
  *   2. CHANGELOG.md `## X.Y.Z` headings
@@ -22,7 +31,7 @@
  * compare against the baseline:
  *
  *   - Filename violations beyond baseline → fail.
- *   - Comment violations beyond baseline (in any file)        → fail.
+ *   - Line violations beyond baseline (in any file)           → fail.
  *   - Violations strictly within baseline                     → ok.
  *   - Violations below baseline (drift reduced)               → ok +
  *     suggestion to refresh the baseline.
@@ -106,7 +115,11 @@ function gitIgnoredSet(relPaths) {
 // Pattern: project version like `v0.13.22` or bare `0.13.22`. Matches
 // our pre-1.0 release range. External package versions like ATLAS
 // `v5.6.0` or CycloneDX `1.6` don't match because the major is 0.
-const VERSION_TAG_RE = /\bv?0\.\d+\.\d+\b/;
+// The dot/digit lookarounds keep an IPv4 octet run (e.g. `127.0.0.1`, whose
+// `0.0.1` tail would otherwise count as a version tag) and any longer
+// dotted-numeric sequence from registering — a release version is never
+// embedded inside a larger digit.digit run.
+const VERSION_TAG_RE = /(?<![\d.])v?0\.\d+\.\d+(?![\d.])/;
 
 // Phase residue patterns — broader than just version tags.
 const PHASE_RESIDUE_RES = [
@@ -135,7 +148,13 @@ function walk(dir, results = []) {
   return results;
 }
 
-function countCommentViolations(rel) {
+// Counts version-stamp lines in a file. Intentionally WHOLE-LINE, not
+// comment-only: a 0.x stamp inside a shipped string literal (CLI --help text,
+// an error message, a test description) is operator-readable residue just like
+// a `//` comment, so it counts the same. A file with a genuinely load-bearing
+// version literal (real test fixture, deprecation timeline) is exempted by path
+// in COMMENT_EXEMPT, not by narrowing the scan.
+function countLineViolations(rel) {
   if (COMMENT_EXEMPT.has(rel)) return 0;
   const ext = path.extname(rel);
   if (!SCAN_EXTS.has(ext)) return 0;
@@ -163,7 +182,7 @@ function scanCurrent() {
     // scanned — a new file about to be committed is what the gate guards.
     if (ignored.has(rel)) continue;
     if (FILENAME_VERSION_RE.test(rel)) filenameViolations.push(rel);
-    const n = countCommentViolations(rel);
+    const n = countLineViolations(rel);
     if (n > 0) byFile[rel] = n;
   }
   return { byFile, filenameViolations };
@@ -238,7 +257,7 @@ function main() {
         path: rel,
         baseline: prior,
         actual: n,
-        reason: `comment-level version-tag count grew from ${prior} to ${n} — describe the WHY of the current code, not the release that introduced it`,
+        reason: `version-tag line count grew from ${prior} to ${n} (counts stamps in comments, strings, and data) — describe the WHY of the current code, not the release that introduced it`,
       });
     }
   }
@@ -254,7 +273,7 @@ function main() {
         path: rel,
         baseline: 0,
         actual: n,
-        reason: `new file carries ${n} version-tag comment(s) — describe the WHY of the current code, not the release that introduced it`,
+        reason: `new file carries ${n} version-tag line(s) (counts stamps in comments, strings, and data) — describe the WHY of the current code, not the release that introduced it`,
       });
     }
   }

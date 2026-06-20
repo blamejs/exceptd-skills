@@ -239,3 +239,68 @@ test('RC-1: the LIVE KEV path holds a curated-exploitation de-listing for review
     if (orig) require.cache[validatorsPath] = orig; else delete require.cache[validatorsPath];
   }
 });
+
+test('RC-4b: the LIVE KEV path holds ALL de-listings when the live feed is implausibly small (parity with kevDiffFromCache)', async () => {
+  // A live KEV feed that JSON-parses but is far below a real CISA snapshot
+  // (partial CDN response, momentarily near-empty feed) must not de-list a
+  // NON-curated entry on --apply. The cache path already refuses this via
+  // KEV_FEED_MIN_PLAUSIBLE; the live path must match. Feed size is surfaced on
+  // every reachable result as fetched.sources.kev.total_entries.
+  const validatorsPath = require.resolve('../sources/validators');
+  const orig = require.cache[validatorsPath];
+  function mockFeed(totalEntries, { local = true, fetched = false } = {}) {
+    require.cache[validatorsPath] = {
+      id: validatorsPath, filename: validatorsPath, loaded: true, exports: {
+        validateAllCves: async () => ({
+          total: 1,
+          results: [{
+            cve_id: 'CVE-2099-0001', status: 'drift',
+            fetched: totalEntries === undefined
+              ? {}
+              : { sources: { kev: { reachable: true, total_entries: totalEntries } } },
+            discrepancies: [{ field: 'cisa_kev', local, fetched, severity: 'high' }],
+          }],
+        }),
+      },
+    };
+  }
+  try {
+    const kev = ALL_SOURCES['kev'];
+    // 12-entry feed + a weak (non-curated) entry → must be held for review.
+    mockFeed(12);
+    const tiny = await kev.fetchDiff({ cveCatalog: { 'CVE-2099-0001': { cisa_kev: true } } });
+    const dTiny = tiny.diffs.find((x) => x.field === 'cisa_kev' && x.after === false);
+    assert.ok(dTiny, 'a cisa_kev de-listing diff is produced');
+    assert.equal(dTiny.review_only, true, 'an implausibly small live feed must hold even a non-curated de-listing for review');
+    assert.equal(dTiny.kev_delist_review, true, 'the live de-listing review carries the kev_delist_review marker (cache parity)');
+
+    // An empty-but-valid feed (total_entries 0) is the maximal blast-radius case.
+    mockFeed(0);
+    const empty = await kev.fetchDiff({ cveCatalog: { 'CVE-2099-0001': { cisa_kev: true } } });
+    const dEmpty = empty.diffs.find((x) => x.field === 'cisa_kev' && x.after === false);
+    assert.equal(dEmpty.review_only, true, 'an empty live feed (0 entries) must hold de-listings for review');
+
+    // A plausible feed (800) + non-curated entry → de-lists normally (no regression).
+    mockFeed(800);
+    const plausible = await kev.fetchDiff({ cveCatalog: { 'CVE-2099-0001': { cisa_kev: true } } });
+    const dPlaus = plausible.diffs.find((x) => x.field === 'cisa_kev' && x.after === false);
+    assert.notEqual(dPlaus.review_only, true, 'a plausible feed de-lists a non-curated entry normally');
+
+    // Feed size unknown (no total_entries on any result) → fall back to the
+    // per-entry curated-signal guard; a non-curated entry de-lists normally so a
+    // real run that omits the field is not spuriously frozen.
+    mockFeed(undefined);
+    const unknown = await kev.fetchDiff({ cveCatalog: { 'CVE-2099-0001': { cisa_kev: true } } });
+    const dUnknown = unknown.diffs.find((x) => x.field === 'cisa_kev' && x.after === false);
+    assert.notEqual(dUnknown.review_only, true, 'unknown live feed size falls back to the curated-only guard');
+
+    // A first-listing (false→true) against a tiny feed is never held — only the
+    // de-list direction is suppressed.
+    mockFeed(12, { local: false, fetched: true });
+    const listing = await kev.fetchDiff({ cveCatalog: { 'CVE-2099-0001': { cisa_kev: false } } });
+    const dListing = listing.diffs.find((x) => x.field === 'cisa_kev' && x.after === true);
+    assert.notEqual(dListing.review_only, true, 'a first-listing is never held by the feed-size guard');
+  } finally {
+    if (orig) require.cache[validatorsPath] = orig; else delete require.cache[validatorsPath];
+  }
+});

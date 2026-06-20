@@ -1876,6 +1876,18 @@ test('empty-string --evidence / --cwd are operator errors, not a silent false-cl
   assert.equal(ev.status, 1, 'run --evidence "" must exit 1, not a false-clean exit 0');
   assert.match(ev.stdout + ev.stderr, /--evidence was given an empty value/);
 
+  // ai-run --no-stream tested args.evidence for truthiness, so `--evidence ""`
+  // fell through to the stdin branch and — with closed stdin in the harness —
+  // ran an empty submission to ok:true / evidence_hash at exit 0. The AI-facing
+  // verb must refuse the empty value identically to `run`.
+  const air = cli(['ai-run', 'secrets', '--no-stream', '--evidence', '', '--json']);
+  assert.equal(air.status, 1, 'ai-run --no-stream --evidence "" must exit 1, not a false-clean exit 0');
+  assert.match(air.stdout + air.stderr, /--evidence was given an empty value/);
+  // The run must be refused before it executes — no vacuous success body and no
+  // evidence_hash for the empty submission may reach stdout.
+  assert.doesNotMatch(air.stdout, /"ok":true/, 'ai-run --evidence "" must not emit a vacuous ok:true run');
+  assert.doesNotMatch(air.stdout, /"evidence_hash"/, 'ai-run --evidence "" must not emit an evidence_hash for an empty submission');
+
   const cc = cli(['collect', 'library-author', '--cwd', '', '--json']);
   assert.equal(cc.status, 1, 'collect --cwd "" must exit 1');
   assert.match(cc.stdout + cc.stderr, /--cwd was given an empty value/);
@@ -1883,4 +1895,64 @@ test('empty-string --evidence / --cwd are operator errors, not a silent false-cl
   const dc = cli(['discover', '--cwd', '', '--json']);
   assert.equal(dc.status, 1, 'discover --cwd "" must exit 1');
   assert.match(dc.stdout + dc.stderr, /--cwd was given an empty value/);
+});
+
+test('ci --evidence "" / --evidence-dir "" are operator errors, not a silent false-green PASS', () => {
+  // `ci <pb> --evidence ""` was falsy, so the truthiness-gated evidence read
+  // skipped, every playbook ran with no evidence, and the gate reported
+  // verdict=PASS at exit 0 — a false security green. The run verb was hardened
+  // against this; the fix must hold for ci too (same class, sibling verb).
+  const ev = cli(['ci', 'secrets', '--evidence', '', '--format', 'summary', '--json']);
+  assert.equal(ev.status, 1, 'ci --evidence "" must exit 1, not a false-green exit 0');
+  assert.match(ev.stdout + ev.stderr, /--evidence was given an empty value/);
+  // It must NOT have produced a verdict — the gate is refused before it runs.
+  assert.doesNotMatch(ev.stdout, /"verdict":"PASS"/, 'ci --evidence "" must not emit a PASS verdict');
+
+  const evEq = cli(['ci', 'secrets', '--evidence=', '--format', 'summary', '--json']);
+  assert.equal(evEq.status, 1, 'ci --evidence= (equals form) must exit 1');
+  assert.match(evEq.stdout + evEq.stderr, /--evidence was given an empty value/);
+
+  const ed = cli(['ci', 'framework', '--evidence-dir', '', '--format', 'summary', '--json']);
+  assert.equal(ed.status, 1, 'ci --evidence-dir "" must exit 1');
+  assert.match(ed.stdout + ed.stderr, /--evidence-dir was given an empty value/);
+});
+
+test('run --all / --scope / run-all with --evidence "" / --evidence-dir "" are operator errors, not a silent no-evidence contract run', () => {
+  // cmdRunMulti (the engine behind `run --all`, `run --scope <type>`, and the
+  // `run-all` alias) gated the evidence read on truthiness (`if (args.evidence)`),
+  // so `--evidence ""` was dropped and the contract ran with an empty bundle,
+  // reporting verdict=not_detected at exit 0 — a false-clean from a security
+  // tool. The single-playbook `run` and the `ci` verb were already hardened;
+  // the multi path was not. The `--evidence-dir ""` path additionally carried a
+  // dead `dir.length === 0` guard nested inside `if (args["evidence-dir"])`,
+  // which excludes "" (falsy) and so could never fire.
+  //
+  // Scope to `cross-cutting` (runs only the non-blocking `framework` playbook),
+  // so a non-zero exit can ONLY come from the empty-value guard — never
+  // coincidentally from a platform-blocked playbook (the way `--all` masks it).
+  const ev = cli(['run', '--scope', 'cross-cutting', '--evidence', '', '--json']);
+  assert.equal(ev.status, 1, 'run --scope --evidence "" must exit 1, not a false-clean exit 0');
+  assert.match(ev.stdout + ev.stderr, /--evidence was given an empty value/);
+  assert.doesNotMatch(ev.stdout, /"verdict":"not_detected"/, 'run --scope --evidence "" must not emit a not_detected verdict — the contract is refused before it runs');
+
+  const evEq = cli(['run', '--scope', 'cross-cutting', '--evidence=', '--json']);
+  assert.equal(evEq.status, 1, 'run --scope --evidence= (equals form) must exit 1');
+  assert.match(evEq.stdout + evEq.stderr, /--evidence was given an empty value/);
+
+  const ed = cli(['run', '--scope', 'cross-cutting', '--evidence-dir', '', '--json']);
+  assert.equal(ed.status, 1, 'run --scope --evidence-dir "" must exit 1, not the dead length-0 path');
+  assert.match(ed.stdout + ed.stderr, /--evidence-dir was given an empty value/);
+  assert.doesNotMatch(ed.stdout, /"verdict":"not_detected"/, 'run --scope --evidence-dir "" must not emit a not_detected verdict');
+
+  // run-all is `run --all`; it must inherit the same guard.
+  const ra = cli(['run-all', '--evidence', '', '--json']);
+  assert.equal(ra.status, 1, 'run-all --evidence "" must exit 1');
+  assert.match(ra.stdout + ra.stderr, /--evidence was given an empty value/);
+
+  // Negative control: omitting --evidence entirely is NOT an error — a
+  // no-evidence contract run is a supported mode and must still reach a verdict
+  // at exit 0. (Guards on presence === "", not on truthiness.)
+  const noEv = cli(['run', '--scope', 'cross-cutting', '--json']);
+  assert.equal(noEv.status, 0, 'run --scope with --evidence omitted must still run at exit 0');
+  assert.doesNotMatch(noEv.stdout + noEv.stderr, /was given an empty value/, 'omitted --evidence must not trip the empty-value guard');
 });

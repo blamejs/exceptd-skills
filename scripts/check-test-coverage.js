@@ -355,9 +355,29 @@ function extractLibExports(content) {
       members.push(cur);
       for (const tok of members) {
         const id = tok.split(":")[0].trim();
-        if (/^[a-zA-Z_$][\w$]*$/.test(id)) out.add(id);
+        if (/^[a-zA-Z_$][\w$]*$/.test(id)) { out.add(id); continue; }
+        // Method-shorthand member (`fn(a){...}`, `async load(){}`, `get x(){}`,
+        // `*gen(){}`): the colon-split above fails the id test because the token
+        // is `name(...)...`, so the export name would be silently dropped and a
+        // new exported method would ship with no diff-coverage requirement.
+        // Recover the name as the identifier immediately before the first `(`,
+        // after any leading modifier keyword (async/get/set) or generator `*`.
+        const beforeParen = tok.split("(")[0].trim();
+        const parts = beforeParen.split(/\s+/);
+        const cand = parts[parts.length - 1].replace(/^\*/, "").trim();
+        if (/^[a-zA-Z_$][\w$]*$/.test(cand)) out.add(cand);
       }
     }
+  }
+  // Single-identifier whole-module export (`module.exports = mainFn;`): the
+  // entire public surface of a lib file is one assigned function. The object
+  // extractor above matches nothing, so without this the file's only export is
+  // invisible to the gate and a change to it requires no test. Capture the bare
+  // identifier on the RHS of `module.exports =` when it is not an object/array/
+  // function-expression/arrow (those are handled elsewhere or have no name).
+  const singleIdent = stripped.match(/module\.exports\s*=\s*([a-zA-Z_$][\w$]*)\s*;/);
+  if (singleIdent && !/^(function|async|class)$/.test(singleIdent[1])) {
+    out.add(singleIdent[1]);
   }
   const re = /module\.exports\.([a-zA-Z_$][\w$]*)\s*=/g;
   let mm;

@@ -222,7 +222,13 @@ function rebuildCatalog(cfg, manifest, cveCatalog) {
   }
 
   // Surface forward refs that point at catalog entries that don't exist.
-  // Not fatal here — that's a separate validation concern — but we report.
+  // Informational only — orphans never change the exit code (this script is
+  // unconditionally write-mode, exit 0 always; see the file header). The
+  // failing gates for the two signals this script can surface live
+  // elsewhere: orphan forward refs are hard-errored by lib/lint-skills.js
+  // ref-resolution ("<id> not present in data/<catalog>"), and reverse-field
+  // drift is hard-failed by tests/reverse-ref-drift.test.js. Do not wire
+  // this script itself as a "reverse refs clean?" check — it always passes.
   for (const id of index.keys()) {
     if (!seenIds.has(id)) orphans.push(id);
   }

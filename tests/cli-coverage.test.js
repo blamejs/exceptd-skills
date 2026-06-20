@@ -300,6 +300,41 @@ test('attest export redacts submitted signal VALUES, not just denylisted keys (n
   }
 });
 
+test('attest export redacts free-form signal_overrides values + denylisted keys (verdicts kept verbatim)', () => {
+  const sid = 'soleak-' + Date.now();
+  const CANARY = 'SOLEAKCANARY-' + Date.now();
+  const FP_CANARY = 'FPMAPCANARY-' + Date.now();
+  // signal_overrides is operator-controllable: hit/miss/inconclusive are the
+  // only audit-meaningful verdicts. A free-form value (the runner stores it
+  // verbatim, only emitting signal_override_unrecognized), a token-named key,
+  // and an __fp_checks attestation map must all be redacted under the bundle
+  // labelled "redacted ... suitable for audit submission" — same no-raw-value-
+  // leak contract the signals_redacted sibling already enforces.
+  cli(['run', 'library-author', '--evidence', '-', '--session-id', sid],
+    { input: JSON.stringify({ signal_overrides: {
+        'no-security-md': 'hit',
+        'free-form-ind': CANARY,
+        'token': 'hit',
+        'some-ind__fp_checks': { check1: true, note: FP_CANARY },
+      } }) });
+  const r = cli(['attest', 'export', sid, '--json']);
+  assert.equal(r.status, 0, 'attest export must exit 0');
+  assert.ok(!r.stdout.includes(CANARY),
+    'attest export must NOT leak a free-form signal_overrides value');
+  assert.ok(!r.stdout.includes(FP_CANARY),
+    'attest export must NOT leak an __fp_checks attestation-map value');
+  const data = tryJson(r.stdout);
+  const so = (data?.attestations || [])[0]?.signal_overrides || {};
+  assert.equal(so['no-security-md'], 'hit',
+    'an exact hit/miss/inconclusive verdict must be preserved verbatim (audit-meaningful)');
+  assert.equal(so['free-form-ind'], '[redacted]',
+    'a non-enum signal_overrides value must be redacted to the placeholder');
+  assert.equal(so['some-ind__fp_checks'], '[redacted]',
+    'an __fp_checks object value must be redacted to the placeholder, not emitted verbatim');
+  assert.ok(!Object.prototype.hasOwnProperty.call(so, 'token'),
+    'a denylisted key (token) must be dropped from signal_overrides, matching signals_redacted');
+});
+
 test('verify-attestation <sid> alias dispatches to attest verify with verified=true', () => {
   const sid = 'va-' + Date.now();
   cli(['run', 'library-author', '--evidence', '-', '--session-id', sid], { input: '{}' });

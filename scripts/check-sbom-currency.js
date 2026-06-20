@@ -141,7 +141,14 @@ function checkSbomCurrency(root) {
   // and the skill count were. Pin them to the live values so a stale
   // description (e.g. after an auto-refresh changed a count) fails the gate.
   const catalogMatch = description.match(/(\d+)\s+catalogs?\b/i);
-  if (catalogMatch && Number(catalogMatch[1]) !== liveCatalogs) {
+  if (!catalogMatch) {
+    // Symmetric with the entry/skill tokens: absence fails CLOSED. A reworded
+    // description (or an auto-refresh that dropped the token) must not silently
+    // skip the count check — that is the asymmetric-absent fail-open class.
+    errors.push(
+      "SBOM description is missing the catalog-count token (N catalogs) — regenerate via `npm run refresh-sbom`"
+    );
+  } else if (Number(catalogMatch[1]) !== liveCatalogs) {
     errors.push(
       `SBOM description catalog count is ${Number(catalogMatch[1])} but live data/ has ${liveCatalogs} catalogs — description is stale; update package.json.description and \`npm run refresh-sbom\``
     );
@@ -157,10 +164,23 @@ function checkSbomCurrency(root) {
     }
   })();
   const jurisdictionMatch = description.match(/(\d+)\s+jurisdictions?\b/i);
-  if (liveJurisdictions !== null && jurisdictionMatch && Number(jurisdictionMatch[1]) !== liveJurisdictions) {
-    errors.push(
-      `SBOM description jurisdiction count is ${Number(jurisdictionMatch[1])} but live global-frameworks.json has ${liveJurisdictions} — description is stale; update package.json.description and \`npm run refresh-sbom\``
-    );
+  // Only enforce the jurisdiction token when the live source exists — a partial
+  // `--root` tree without global-frameworks.json (liveJurisdictions === null)
+  // skips the check rather than failing, matching catalogEntryCount's null-skip.
+  // When the source IS present, absence of the token fails CLOSED (the
+  // description token is the SBOM's only jurisdiction-count assertion — there is
+  // no structured jurisdiction property — so a dropped token would otherwise
+  // leave the count entirely unvalidated).
+  if (liveJurisdictions !== null) {
+    if (!jurisdictionMatch) {
+      errors.push(
+        "SBOM description is missing the jurisdiction-count token (N jurisdictions) — regenerate via `npm run refresh-sbom`"
+      );
+    } else if (Number(jurisdictionMatch[1]) !== liveJurisdictions) {
+      errors.push(
+        `SBOM description jurisdiction count is ${Number(jurisdictionMatch[1])} but live global-frameworks.json has ${liveJurisdictions} — description is stale; update package.json.description and \`npm run refresh-sbom\``
+      );
+    }
   }
 
   // Component-level cross-check (defense-in-depth). In normal operation

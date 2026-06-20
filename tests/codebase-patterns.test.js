@@ -42,6 +42,42 @@ test('dynamic-regex: live tree is clean (every site fixed or allow-marked)', () 
     'every new RegExp(<non-literal>) is anchored/capped or carries an allow:dynamic-regex marker');
 });
 
+// The process-exit-after-stdout detector must NOT scan a narrower root set than
+// its sibling detectors. bin/exceptd.js (the CLI dispatch surface) and scripts/
+// (gate/build/release tooling) are exactly where write-then-exit recurs, and a
+// detector whose default scope omits them passes green while the class it guards
+// ships unchecked there. These probes fail if the default ever narrows back to
+// lib+orchestrator.
+test('process-exit-after-stdout-write: default scope covers bin/exceptd.js and scripts/ (parity with sibling detectors)', () => {
+  // Structural pin: the no-arg detector's default root list must literally name
+  // bin/exceptd.js and scripts. Reading the function source is the only way to
+  // assert WHICH roots the default walks (filesUnder takes the roots as an arg,
+  // so a count-only probe over the clean live tree can't distinguish the narrow
+  // default from the wide one — both yield 0). This catches a silent revert to
+  // filesUnder(["lib","orchestrator"]).
+  const src = gate.detectProcessExitAfterStdout.toString();
+  const defaultRoots = src.match(/filesUnder\(\[([^\]]*)\]\)/);
+  assert.ok(defaultRoots, 'detectProcessExitAfterStdout has a filesUnder default');
+  const roots = defaultRoots[1];
+  assert.match(roots, /["']bin\/exceptd\.js["']/,
+    'default scope must include bin/exceptd.js — the CLI dispatch surface where version/path write-then-exit');
+  assert.match(roots, /["']scripts["']/,
+    'default scope must include scripts/ — gate/build/release tooling, the other home of write-then-exit');
+
+  // Behavioural pin: a scripts/-shaped fixture with a stdout-write-then-exit is
+  // flagged by the same per-file logic the default walk runs over scripts/.
+  const planted = fixture('function run() {\n  process.stdout.write("summary\\n");\n  process.exit(1);\n}\nrun();\n');
+  assert.equal(gate.detectProcessExitAfterStdout([planted]).length, 1,
+    'a write-then-exit in a scripts/-shaped file is flagged');
+
+  // The widened default must stay clean: every bin/+scripts/ site is either
+  // remediated (safeExit + return) or carries a reviewed allow marker. This is
+  // the assertion the original lib+orchestrator-only default could pass while
+  // bin/+scripts/ shipped the class unflagged.
+  assert.equal(gate.detectProcessExitAfterStdout().length, 0,
+    'with bin/+scripts/ in default scope, every surfaced site is fixed or allow-marked');
+});
+
 test('orphan-allow-class: live tree is clean (no typo\'d or reason-less allow markers)', () => {
   assert.equal(gate.detectOrphanAllowClass().length, 0,
     'every // allow:<class> names a registered class and carries a — reason');
