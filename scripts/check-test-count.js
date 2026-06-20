@@ -63,10 +63,13 @@ function countTests(filePath) {
   text = text.replace(/\/\*[\s\S]*?\*\//g, '');
   let count = 0;
   for (const rawLine of text.split('\n')) {
-    // Drop a trailing line comment too (`test('x'); // disabled`). Best-effort:
-    // a `//` inside a string literal would over-strip, which under-counts — the
-    // SAFE direction for a no-silent-shrinkage gate.
-    const stripped = rawLine.replace(/\/\/.*$/, '').trim();
+    // Blank out single-line string/template literal BODIES first so a `test(`
+    // mentioned inside a string (e.g. an assertion on output text, or this very
+    // file's docstring examples) is not miscounted as a declaration — that
+    // phantom inflated the baseline and could mask a real test deletion.
+    const noStrings = rawLine.replace(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`/g, "''");
+    // Drop a trailing line comment too (`test('x'); // disabled`).
+    const stripped = noStrings.replace(/\/\/.*$/, '').trim();
     if (!stripped) continue;
     if (/(?<![A-Za-z0-9_$.])test(?:\.only|\.skip)?\s*\(/.test(stripped)) count++;
   }
