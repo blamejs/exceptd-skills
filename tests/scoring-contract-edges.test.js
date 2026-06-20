@@ -24,6 +24,7 @@ const {
   validateFactors,
   deriveRwepFromFactors,
   resolveActiveExploitation,
+  activeExploitationMultiplier,
 } = require('../lib/scoring.js');
 
 // ---------- 1. compare(): absent cvss_score ----------
@@ -316,4 +317,32 @@ test('deriveRwepFromFactors() inherits the AE fix on the Shape-A route', () => {
   assert.equal(inVocab, 55, '25 + 20 + 10 = 55');
   const outOfVocab = deriveRwepFromFactors({ cisa_kev: true, active_exploitation: 'exploited', blast_radius: 10 });
   assert.equal(outOfVocab, 35, '25 + 0 (AE dropped) + 10 = 35 — observable via process warning');
+});
+
+// ---------- 4. activeExploitationMultiplier(): bare-number call path ----------
+// resolveActiveExploitation returns the structured {multiplier, recognised,
+// normalised}; activeExploitationMultiplier is the bare-number wrapper the
+// production scoreCustom path calls. Both are exported and tested directly so
+// the no-match -> observable-warning contract is pinned at the unit level, not
+// only through scoreCustom integration.
+
+test('activeExploitationMultiplier maps canonical + stray-cased values to the ladder, unknowns to 0', () => {
+  // Canonical and case/whitespace variants resolve to the same non-zero weight.
+  const confirmed = activeExploitationMultiplier('confirmed');
+  assert.equal(typeof confirmed, 'number');
+  assert.ok(confirmed > 0, 'a recognised active_exploitation must contribute a non-zero multiplier');
+  assert.equal(activeExploitationMultiplier(' CONFIRMED '), confirmed,
+    'a stray-cased / padded canonical value must normalise to the same multiplier, not zero');
+
+  // null/undefined are the documented "treated as none" default (recognised, 0).
+  const none = resolveActiveExploitation(null);
+  assert.equal(none.recognised, true);
+  assert.equal(none.normalised, 'none');
+
+  // An out-of-vocabulary value is UNRECOGNISED and contributes 0.
+  const r = resolveActiveExploitation('in-the-wild');
+  assert.equal(r.recognised, false, 'an out-of-vocab active_exploitation must be flagged unrecognised');
+  assert.equal(r.multiplier, 0);
+  assert.equal(activeExploitationMultiplier('in-the-wild'), 0,
+    'the bare-number path returns 0 for an unrecognised value (and emits a process warning)');
 });
