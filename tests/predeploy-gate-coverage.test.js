@@ -99,11 +99,17 @@ test('PP P1-1: acquireLock returns null for same-PID lockfile with fresh mtime (
     null,
     'acquireLock must return null when the same-PID lockfile is fresh (reentrancy must be blocked)',
   );
-  // Lockfile contents must be unchanged — we didn't reclaim.
-  const reread = JSON.parse(fs.readFileSync(lockFile, 'utf8'));
+  // Re-read the contents AND mtime through a single descriptor so the assertion
+  // observes one consistent inode (no readFileSync-then-statSync TOCTOU on the
+  // path).
+  const lfd = fs.openSync(lockFile, 'r');
+  let reread, mtimeAfter;
+  try {
+    reread = JSON.parse(fs.readFileSync(lfd, 'utf8'));
+    mtimeAfter = fs.fstatSync(lfd).mtimeMs;
+  } finally { fs.closeSync(lfd); }
   assert.equal(reread.pid, process.pid);
   // mtime not rewritten.
-  const mtimeAfter = fs.statSync(lockFile).mtimeMs;
   assert.equal(
     mtimeAfter,
     mtimeBefore,
