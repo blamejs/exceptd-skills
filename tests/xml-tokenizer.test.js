@@ -165,3 +165,134 @@ test("tokenize: streaming handlers fire in document order", () => {
     ["close", "a"]
   ]);
 });
+
+// ---------------------------------------------------------------------------
+// Finding #31 — stray unescaped '<' in a leaf field no longer drops the field.
+// Three lead chars after '<': space, digit, letter.
+// ---------------------------------------------------------------------------
+
+test('#31 space-led stray "<" in title keeps the field non-empty and the CVE recoverable', () => {
+  const xml = '<rss><channel><item>'
+    + '<title>CVE-2026-33333 affects versions < 5.0</title>'
+    + '<link>https://c</link></item></channel></rss>';
+  const items = T.parseFeed(xml);
+  assert.equal(items.length, 1);
+  assert.equal(typeof items[0].title, 'string');
+  assert.ok(items[0].title.length > 0, 'title must not be empty');
+  assert.match(items[0].title, /CVE-2026-33333/);
+  // The literal "< 5.0" survives to display form (stripHtml only removes real
+  // <tag> shapes, and "< 5.0" has no closing '>').
+  assert.match(items[0].title, /<\s*5\.0/);
+});
+
+test('#31 digit-led stray "<5.0" in title keeps the field non-empty and the CVE recoverable', () => {
+  const xml = '<rss><channel><item>'
+    + '<title>CVE-2026-33333 affects <5.0 versions</title>'
+    + '<link>https://c</link></item></channel></rss>';
+  const items = T.parseFeed(xml);
+  assert.equal(typeof items[0].title, 'string');
+  assert.ok(items[0].title.length > 0);
+  assert.match(items[0].title, /CVE-2026-33333/);
+});
+
+test('#31 letter-led stray "<here>" in title keeps the field non-empty and the CVE recoverable', () => {
+  // This is the case the verifier flagged: a letter-led pseudo-tag. It must
+  // still be tolerated (stripHtml collapses "<here>" away) without dropping
+  // the surrounding CVE text.
+  const xml = '<rss><channel><item>'
+    + '<title>CVE-2026-33333 <here> bypass</title>'
+    + '<link>https://c</link></item></channel></rss>';
+  const items = T.parseFeed(xml);
+  assert.equal(typeof items[0].title, 'string');
+  assert.ok(items[0].title.length > 0);
+  assert.match(items[0].title, /CVE-2026-33333/);
+  // "<here>" is a tag shape with a closing '>', so stripHtml removes it.
+  assert.ok(!/<here>/.test(items[0].title), 'pseudo-tag should collapse via stripHtml');
+});
+
+test('#31 a stray "<" inside an otherwise-closed leaf records NO spurious unterminated error', () => {
+  const errors = [];
+  const xml = '<rss><channel><item>'
+    + '<title>CVE-2026-33333 affects versions < 5.0</title>'
+    + '<link>https://c</link></item></channel></rss>';
+  T.parseFeed(xml, errors);
+  assert.deepEqual(errors, [], 'a closed leaf with a stray < must not surface an error');
+});
+
+test('#31 GENUINELY truncated leaf (no later close tag) still surfaces a loud unterminated error', () => {
+  // The fix only reclassifies the false-positive "stray < inside a closed
+  // leaf" case as text — a real truncation must still record errors[].
+  const errors = [];
+  const items = T.parseFeed('<rss><item><title>unterminated', errors);
+  assert.equal(items.length, 0);
+  assert.ok(errors.length > 0, 'truncated input must surface errors[]');
+  assert.match(errors[0].message, /unterminated/i);
+});
+
+test('#31 CDATA title still strips inner HTML and preserves inner text (unchanged)', () => {
+  const xml = '<rss><channel><item>'
+    + '<title><![CDATA[CVE-2026-99999 <b>bold</b> bypass]]></title>'
+    + '<link>https://example.com</link>'
+    + '<description><![CDATA[<p>html in body</p>]]></description>'
+    + '</item></channel></rss>';
+  const items = T.parseFeed(xml);
+  assert.equal(items[0].title, 'CVE-2026-99999 bold bypass');
+  assert.equal(items[0].body, 'html in body');
+});
+
+test('#31 entity-escaped <script> in title decodes then strips (unchanged)', () => {
+  const xml = '<rss><channel><item>'
+    + '<title>CVE-2026 &amp; the &lt;script&gt; bypass</title>'
+    + '<link>https://example.com</link></item></channel></rss>';
+  const items = T.parseFeed(xml);
+  assert.equal(items[0].title, 'CVE-2026 & the bypass');
+});
+
+// ---------------------------------------------------------------------------
+// Finding #33 — rel-aware Atom <link> selection (first-alternate-wins).
+// ---------------------------------------------------------------------------
+
+test('#33 alternate link wins when rel=self appears BEFORE rel=alternate', () => {
+  const xml = '<feed><entry><title>t</title>'
+    + '<link rel="self" href="https://feed-self"/>'
+    + '<link rel="alternate" href="https://article"/>'
+    + '</entry></feed>';
+  const items = T.parseFeed(xml);
+  assert.equal(items[0].link, 'https://article');
+});
+
+test('#33 alternate link wins when rel=alternate appears BEFORE rel=self (no clobber)', () => {
+  const xml = '<feed><entry><title>t</title>'
+    + '<link rel="alternate" href="https://article"/>'
+    + '<link rel="self" href="https://feed-self"/>'
+    + '</entry></feed>';
+  const items = T.parseFeed(xml);
+  assert.equal(items[0].link, 'https://article');
+});
+
+test('#33 only self/edit links → non-alternate fills the slot (non-empty fallback)', () => {
+  const xml = '<feed><entry><title>t</title>'
+    + '<link rel="self" href="https://feed-self"/>'
+    + '<link rel="edit" href="https://edit"/>'
+    + '</entry></feed>';
+  const items = T.parseFeed(xml);
+  assert.equal(typeof items[0].link, 'string');
+  assert.ok(items[0].link.length > 0);
+  // First non-alternate seen fills the empty slot; a later non-alternate must
+  // not clobber it.
+  assert.equal(items[0].link, 'https://feed-self');
+});
+
+test('#33 RSS <link>text</link> is authoritative', () => {
+  const xml = '<rss><channel><item><title>t</title>'
+    + '<link>https://rss-text</link></item></channel></rss>';
+  const items = T.parseFeed(xml);
+  assert.equal(items[0].link, 'https://rss-text');
+});
+
+test('#33 Atom <link href> with NO rel populates the link (defaults to alternate)', () => {
+  const xml = '<feed><entry><title>t</title>'
+    + '<link href="https://norel"/></entry></feed>';
+  const items = T.parseFeed(xml);
+  assert.equal(items[0].link, 'https://norel');
+});

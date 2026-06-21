@@ -21,6 +21,8 @@ const ROOT = path.join(__dirname, "..");
 const SCRIPT = path.join(ROOT, "scripts", "check-version-tags.js");
 const BASELINE = path.join(ROOT, "tests", ".version-tag-baseline.json");
 
+const { VERSION_TAG_RE } = require(SCRIPT);
+
 test("baseline file exists and is well-formed JSON", () => {
   assert.ok(fs.existsSync(BASELINE), `expected baseline at ${path.relative(ROOT, BASELINE)}`);
   const body = JSON.parse(fs.readFileSync(BASELINE, "utf8"));
@@ -57,6 +59,26 @@ test("a synthetic new version-tag comment in an unsanctioned file is caught", ()
   } finally {
     fs.unlinkSync(fakePath);
   }
+});
+
+// --------------------------------------------------------------------------
+// VERSION_TAG_RE allows a sentence-ending period
+// --------------------------------------------------------------------------
+
+test('#26 VERSION_TAG_RE matches a version stamp that ends a sentence (trailing period)', () => {
+  assert.equal(VERSION_TAG_RE.test('// fixed in 0.18.9.'), true);
+});
+
+test('#26 VERSION_TAG_RE matches v-prefixed and bare stamps', () => {
+  assert.equal(VERSION_TAG_RE.test('v0.18.9'), true);
+  assert.equal(VERSION_TAG_RE.test('0.18.9'), true);
+  assert.equal(VERSION_TAG_RE.test('0.18.99'), true); // longer patch still matches
+});
+
+test('#26 VERSION_TAG_RE rejects an IPv4 address and a longer dotted-numeric run', () => {
+  assert.equal(VERSION_TAG_RE.test('127.0.0.1'), false);
+  assert.equal(VERSION_TAG_RE.test('1.2.0.18.9.3'), false);
+  assert.equal(VERSION_TAG_RE.test('// build 0.18.9.42 nightly'), false);
 });
 
 test("a version literal inside a quoted string on a code line IS counted (whole-line contract)", () => {

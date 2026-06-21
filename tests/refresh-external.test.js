@@ -187,3 +187,139 @@ test('refresh --source <unknown>: stderr surfaces error, exits 2 via exitCode', 
   assert.doesNotMatch(r.stderr || '', /at chosenSources/,
     `unknown-source error must not leak an internal stack trace; got ${r.stderr}`);
 });
+
+// ===========================================================================
+// #15 — the advisories→cve-regression-watcher chaining is wired end-to-end
+//       through the real CLI source loop. These spawn the orchestrator so they
+//       exercise the EXACT broken wiring (the prior unit tests passed through
+//       fetchDiff(ctx) directly and bypassed it).
+// ===========================================================================
+
+const REFRESH_EXTERNAL = path.join(ROOT, 'lib', 'refresh-external.js');
+const ADV_FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'refresh', 'advisories.json');
+const WATCHER = require(path.join(ROOT, 'lib', 'cve-regression-watcher.js'));
+
+// Helper: build an isolated fixture dir with the advisories feed bodies (which
+// reference the historical CVE-2020-17103 inline) and a custom CVE catalog
+// where CVE-2020-17103 is a DIRECT key with no *-REREGRESSION-<year> entry, so
+// the watcher's verdict is the unambiguous `annotate`.
+function buildChainFixture() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hunt-F-chain-'));
+  fs.copyFileSync(ADV_FIXTURE, path.join(dir, 'advisories.json'));
+  const catalogPath = path.join(dir, 'cve-catalog.json');
+  fs.writeFileSync(catalogPath, JSON.stringify({
+    _meta: { schema_version: '1.0.0' },
+    'CVE-2020-17103': { aliases: [] },
+  }));
+  return { dir, catalogPath };
+}
+
+function runChain(extraArgs) {
+  const { dir, catalogPath } = buildChainFixture();
+  const reportPath = path.join(dir, 'report.json');
+  const args = [
+    REFRESH_EXTERNAL,
+    '--from-fixture', dir,
+    '--catalog', catalogPath,
+    '--source', 'advisories,cve-regression-watcher',
+    '--report-out', reportPath,
+    '--quiet',
+    ...(extraArgs || []),
+  ];
+  const r = spawnSync(process.execPath, args, {
+    env: { ...process.env, EXCEPTD_TEST_HARNESS: '1' },
+    encoding: 'utf8',
+    maxBuffer: 32 * 1024 * 1024,
+  });
+  const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+  return { r, report };
+}
+
+test('#15 sequential: advisories observations are threaded into the watcher', () => {
+  const { r, report } = runChain([]);
+  assert.equal(r.status, 0, `expected exit 0; got ${r.status} (stderr: ${r.stderr.slice(0, 400)})`);
+
+  const watcher = report.sources['cve-regression-watcher'];
+  assert.equal(typeof watcher, 'object', 'watcher source must be present in the report');
+
+  // Pre-fix: input was empty -> evaluated 0, diff_count 0. Assert the EXACT
+  // non-zero evaluated count (>= 1) that distinguishes fixed from broken.
+  assert.equal(watcher.diff_count, 1, 'exactly one candidate must surface from the threaded observations');
+  assert.match(watcher.summary, /evaluated [1-9]\d* poller observations/,
+    'summary must report a NON-ZERO evaluated-observations count');
+  assert.doesNotMatch(watcher.summary, /evaluated 0 /,
+    'a fixed pipeline must never report "evaluated 0" here');
+
+  // The chaining selected the preferred observations field, not the fallback.
+  assert.equal(watcher._meta.input_field_used, 'advisoriesObservations',
+    'watcher must consume the threaded advisoriesObservations, not the diffs fallback');
+
+  // Content-shape, not just field-presence: the candidate is the in-catalog
+  // historical CVE routed to annotate, surfaced by both press feeds.
+  const cand = watcher.diffs.find((d) => d.historical_cve === 'CVE-2020-17103');
+  assert.equal(typeof cand, 'object', 'the historical CVE candidate must be present');
+  assert.equal(cand.action, 'annotate',
+    'the in-catalog historical CVE (no REREGRESSION entry) must route to annotate');
+  assert.deepEqual(cand.surfaced_by.slice().sort(),
+    ['bleepingcomputer-security', 'thehackernews'],
+    'surfaced_by must list both press feeds that referenced CVE-2020-17103');
+
+  // The orchestrator persists the advisories observations into the report so
+  // the chaining is observable.
+  const adv = report.sources['advisories'];
+  assert.ok(Array.isArray(adv.observations), 'advisories source must persist observations[]');
+  assert.equal(adv.observations.length, 1, 'one deduplicated CVE observation');
+  assert.equal(adv.observations[0].id, 'CVE-2020-17103');
+});
+
+test('#15 --swarm: the watcher runs in a second pass and still sees the observations', () => {
+  const { r, report } = runChain(['--swarm']);
+  assert.equal(r.status, 0, `expected exit 0; got ${r.status} (stderr: ${r.stderr.slice(0, 400)})`);
+
+  const watcher = report.sources['cve-regression-watcher'];
+  assert.equal(watcher.diff_count, 1, 'swarm second-pass must still surface the candidate');
+  assert.equal(watcher._meta.input_field_used, 'advisoriesObservations',
+    'swarm second-pass must read the resolved advisories observations');
+  assert.match(watcher.summary, /evaluated [1-9]/, 'swarm: non-zero evaluated count');
+
+  // Declared --source order (advisories, cve-regression-watcher) must be
+  // preserved in the report even though the watcher ran in a later pass.
+  const keys = Object.keys(report.sources);
+  assert.deepEqual(
+    keys.filter((k) => k === 'advisories' || k === 'cve-regression-watcher'),
+    ['advisories', 'cve-regression-watcher'],
+    'report must preserve the operator-declared source order',
+  );
+});
+
+test('#15 --swarm: watcher selected WITHOUT advisories does not crash (empty-input contract)', () => {
+  const { dir, catalogPath } = buildChainFixture();
+  const reportPath = path.join(dir, 'report.json');
+  const r = spawnSync(process.execPath, [
+    REFRESH_EXTERNAL,
+    '--from-fixture', dir,
+    '--catalog', catalogPath,
+    '--source', 'cve-regression-watcher',
+    '--report-out', reportPath,
+    '--quiet', '--swarm',
+  ], { env: { ...process.env, EXCEPTD_TEST_HARNESS: '1' }, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
+  assert.equal(r.status, 0, `watcher-alone swarm must not crash; got ${r.status} (${r.stderr.slice(0, 300)})`);
+  const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+  assert.equal(report.sources['cve-regression-watcher'].diff_count, 0,
+    'no advisories selected -> watcher legitimately evaluates an empty input');
+});
+
+// ===========================================================================
+// parseArgs — --check-advisories is report-only and source-scoped (no network).
+// ===========================================================================
+
+test('refresh parseArgs: --check-advisories is report-only and source-scoped', () => {
+  const { parseArgs } = require(path.join(ROOT, 'lib', 'refresh-external.js'));
+  const a = parseArgs(['node', 'x', '--check-advisories']);
+  assert.equal(a.source, 'advisories');
+  assert.equal(a.apply, false);
+  assert.equal(a.checkAdvisories, true);
+  // --apply must NOT flip a check-advisories run to write mode, regardless of order.
+  const b = parseArgs(['node', 'x', '--check-advisories', '--apply']);
+  assert.equal(b.apply, false);
+});

@@ -417,3 +417,185 @@ test('obsoleted RFCs are present in the shipped index with obsoleted_by', () => 
   assert.ok(Array.isArray(httpOld.obsoleted_by) && httpOld.obsoleted_by.includes('RFC7230'),
     `RFC-2616 must carry obsoleted_by incl RFC7230; got ${JSON.stringify(httpOld.obsoleted_by)}`);
 });
+
+// ===================================================================
+// resolved-cache record must be bound to the requested id/kind
+// ===================================================================
+// A digest-valid record written under one filename but carrying a different
+// internal id/kind is a swapped-file poisoning the self-digest cannot catch.
+// cacheGet must bind a resolved-cache record to the requested id/kind, not just
+// prove the record is self-consistent + fresh. These cases drive a FRESH copy
+// of the resolver per case via a child `node -e` invocation that sets an
+// isolated cache dir + empty catalog/index env first (the resolver reads those
+// paths at module-require time, so neither the network nor the shipped data
+// files are touched).
+
+const crypto = require('node:crypto');
+const { spawnSync } = require('node:child_process');
+const CITATION = path.join(__dirname, '..', 'lib', 'citation-resolve.js');
+
+// Re-implements the resolver's canonical-bytes digest so a test can write a
+// record the resolver will accept as integrity-valid (and the swapped-key test
+// can prove the binding check — not the digest — is what rejects it).
+function recordDigest(record) {
+  const canon = {};
+  for (const k of Object.keys(record).sort()) {
+    if (k === '_digest') continue;
+    canon[k] = record[k];
+  }
+  return crypto.createHash('sha256').update(JSON.stringify(canon)).digest('hex');
+}
+
+function makeIsolatedDir(prefix) {
+  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+}
+
+test('#29 cacheGet rejects a digest-valid CVE record stored under the wrong filename (swapped-file poisoning)', () => {
+  const dir = makeIsolatedDir('k29-cve-');
+  try {
+    const catalog = path.join(dir, 'empty-catalog.json');
+    fs.writeFileSync(catalog, JSON.stringify({ _meta: {} }));
+    fs.mkdirSync(path.join(dir, 'cve'), { recursive: true });
+
+    // A fully digest-valid, fresh record whose INTERNAL id is CVE-2099-99999,
+    // written to the file the resolver would read for CVE-2099-11111.
+    const rec = {
+      id: 'CVE-2099-99999', kind: 'cve', status: 'published',
+      cvss: 9.9, resolved_at: new Date().toISOString(),
+    };
+    rec._digest = recordDigest(rec);
+    fs.writeFileSync(path.join(dir, 'cve', 'CVE-2099-11111.json'), JSON.stringify(rec));
+
+    const script = `
+      process.env.EXCEPTD_RESOLVE_CACHE_DIR = ${JSON.stringify(dir)};
+      process.env.EXCEPTD_CVE_CATALOG = ${JSON.stringify(catalog)};
+      const { resolveCve } = require(${JSON.stringify(CITATION)});
+      resolveCve('CVE-2099-11111', { noNetwork: true })
+        .then(r => process.stdout.write(JSON.stringify(r)));
+    `;
+    const out = spawnSync(process.execPath, ['-e', script], { encoding: 'utf8' });
+    const r = tryJson(out.stdout.trim());
+    assert.ok(r, `resolveCve must emit JSON; got: ${out.stdout.slice(0, 200)} / ${out.stderr.slice(0, 200)}`);
+    // Pre-fix: the digest-valid record was trusted -> from:'cache' status:'published'.
+    // Post-fix: id mismatch -> cache miss -> offline/unknown.
+    assert.equal(r.from, 'offline');
+    assert.equal(r.status, 'unknown');
+    assert.equal(r.id, 'CVE-2099-11111');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('#29 cacheGet still serves a correctly-keyed CVE record (legit hit preserved)', () => {
+  const dir = makeIsolatedDir('k29-cve-ok-');
+  try {
+    const catalog = path.join(dir, 'empty-catalog.json');
+    fs.writeFileSync(catalog, JSON.stringify({ _meta: {} }));
+    fs.mkdirSync(path.join(dir, 'cve'), { recursive: true });
+
+    const rec = {
+      id: 'CVE-2099-22222', kind: 'cve', status: 'published',
+      cvss: 7.7, resolved_at: new Date().toISOString(),
+    };
+    rec._digest = recordDigest(rec);
+    fs.writeFileSync(path.join(dir, 'cve', 'CVE-2099-22222.json'), JSON.stringify(rec));
+
+    const script = `
+      process.env.EXCEPTD_RESOLVE_CACHE_DIR = ${JSON.stringify(dir)};
+      process.env.EXCEPTD_CVE_CATALOG = ${JSON.stringify(catalog)};
+      const { resolveCve } = require(${JSON.stringify(CITATION)});
+      resolveCve('CVE-2099-22222', { noNetwork: true })
+        .then(r => process.stdout.write(JSON.stringify(r)));
+    `;
+    const out = spawnSync(process.execPath, ['-e', script], { encoding: 'utf8' });
+    const r = tryJson(out.stdout.trim());
+    assert.ok(r, `resolveCve must emit JSON; got: ${out.stdout.slice(0, 200)} / ${out.stderr.slice(0, 200)}`);
+    assert.equal(r.from, 'cache');
+    assert.equal(r.status, 'published');
+    assert.equal(r.cvss, 7.7);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('#29 cacheGet binds RFC records on record.number (legit hit) and rejects a swapped number', () => {
+  const dir = makeIsolatedDir('k29-rfc-');
+  try {
+    const index = path.join(dir, 'empty-rfc.json');
+    fs.writeFileSync(index, JSON.stringify({}));
+    fs.mkdirSync(path.join(dir, 'rfc'), { recursive: true });
+
+    // Legit RFC record: id is the RAW user string ("RFC 88888"), number is the
+    // numeric, file is String(number). The RFC branch MUST bind on number, not
+    // id — binding on id would false-reject this legit hit.
+    const ok = {
+      id: 'RFC 88888', kind: 'rfc', number: 88888, found: true,
+      status: 'obsoleted-or-historic', title: 'X', resolved_at: new Date().toISOString(),
+    };
+    ok._digest = recordDigest(ok);
+    fs.writeFileSync(path.join(dir, 'rfc', '88888.json'), JSON.stringify(ok));
+
+    // Swapped: internal number 77777 written under 99999.json.
+    const bad = {
+      id: 'RFC 77777', kind: 'rfc', number: 77777, found: true,
+      status: 'obsoleted-or-historic', title: 'Y', resolved_at: new Date().toISOString(),
+    };
+    bad._digest = recordDigest(bad);
+    fs.writeFileSync(path.join(dir, 'rfc', '99999.json'), JSON.stringify(bad));
+
+    const script = `
+      process.env.EXCEPTD_RESOLVE_CACHE_DIR = ${JSON.stringify(dir)};
+      process.env.EXCEPTD_RFC_INDEX = ${JSON.stringify(index)};
+      const { resolveRfc } = require(${JSON.stringify(CITATION)});
+      Promise.all([
+        resolveRfc('88888', { noNetwork: true }),
+        resolveRfc('99999', { noNetwork: true }),
+      ]).then(([a, b]) => process.stdout.write(JSON.stringify({ a, b })));
+    `;
+    const out = spawnSync(process.execPath, ['-e', script], { encoding: 'utf8' });
+    const r = tryJson(out.stdout.trim());
+    assert.ok(r, `resolveRfc must emit JSON; got: ${out.stdout.slice(0, 200)} / ${out.stderr.slice(0, 200)}`);
+    // Legit hit survives the number binding.
+    assert.equal(r.a.from, 'cache');
+    assert.equal(r.a.found, true);
+    assert.equal(r.a.number, 88888);
+    // Swapped number is rejected -> cache miss -> offline.
+    assert.equal(r.b.from, 'offline');
+    assert.equal(r.b.found, false);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('#29 cacheGet rejects a record whose kind disagrees with the lookup', () => {
+  const dir = makeIsolatedDir('k29-kind-');
+  try {
+    const catalog = path.join(dir, 'empty-catalog.json');
+    fs.writeFileSync(catalog, JSON.stringify({ _meta: {} }));
+    fs.mkdirSync(path.join(dir, 'cve'), { recursive: true });
+
+    // A digest-valid record matching the requested id but with kind:'rfc' under
+    // the cve directory — the kind guard must reject it.
+    const rec = {
+      id: 'CVE-2099-33333', kind: 'rfc', number: 33333, found: true,
+      status: 'published', resolved_at: new Date().toISOString(),
+    };
+    rec._digest = recordDigest(rec);
+    fs.writeFileSync(path.join(dir, 'cve', 'CVE-2099-33333.json'), JSON.stringify(rec));
+
+    const script = `
+      process.env.EXCEPTD_RESOLVE_CACHE_DIR = ${JSON.stringify(dir)};
+      process.env.EXCEPTD_CVE_CATALOG = ${JSON.stringify(catalog)};
+      const { resolveCve } = require(${JSON.stringify(CITATION)});
+      resolveCve('CVE-2099-33333', { noNetwork: true })
+        .then(r => process.stdout.write(JSON.stringify(r)));
+    `;
+    const out = spawnSync(process.execPath, ['-e', script], { encoding: 'utf8' });
+    const r = tryJson(out.stdout.trim());
+    assert.ok(r, `resolveCve must emit JSON; got: ${out.stdout.slice(0, 200)}`);
+    assert.equal(r.from, 'offline');
+    assert.equal(r.status, 'unknown');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

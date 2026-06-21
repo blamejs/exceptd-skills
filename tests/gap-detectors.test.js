@@ -11,8 +11,11 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 const D = require(path.join(__dirname, "..", "lib", "gap-detectors.js"));
+const gd = D;
 
 // ---------- helpers ----------
 
@@ -373,4 +376,66 @@ test("PLACEHOLDER_SENTINELS: every pattern is a regex and matches its canonical 
     const matched = examples.some((ex) => re.test(ex));
     assert.ok(matched, `regex ${re} must match at least one canonical example string`);
   }
+});
+
+// ---------------------------------------------------------------------------
+// REFERENCE_TOKEN_RE recognizes D3A-* / D3F-* D3FEND ids so a skill/playbook
+// citation removes the referenced entry from the unused-orphan set.
+// ---------------------------------------------------------------------------
+
+function fullTokenMatch(s) {
+  const re = gd.REFERENCE_TOKEN_RE;
+  re.lastIndex = 0;
+  const m = s.match(re);
+  return !!(m && m.includes(s));
+}
+
+test('#14 REFERENCE_TOKEN_RE matches D3A-* and D3F-* D3FEND artifact ids', () => {
+  assert.equal(fullTokenMatch('D3A-AAD'), true, 'D3A-AAD must be recognized as a reference token');
+  assert.equal(fullTokenMatch('D3F-UGPH'), true, 'D3F-UGPH must be recognized as a reference token');
+});
+
+test('#14 REFERENCE_TOKEN_RE still matches every prior token class', () => {
+  assert.equal(fullTokenMatch('D3-EAL'), true);
+  assert.equal(fullTokenMatch('CWE-79'), true);
+  assert.equal(fullTokenMatch('T1059.003'), true);
+  assert.equal(fullTokenMatch('AML.T0051'), true);
+  assert.equal(fullTokenMatch('RFC-8446'), true);
+});
+
+test('#14 a skill body citing a D3A-* id removes that entry from the unused-orphan set', () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'hunt-c14-'));
+  // Synthetic skills tree citing the D3A-* id in prose.
+  const skillDir = path.join(tmp, 'skills', 'example-skill');
+  fs.mkdirSync(skillDir, { recursive: true });
+  fs.writeFileSync(path.join(skillDir, 'skill.md'),
+    '# Example\n\nThis primitive maps to the D3A-AAD digital artifact.\n', 'utf8');
+
+  const refs = gd.buildExternalRefs(tmp);
+  assert.ok(refs.skillRefs.has('D3A-AAD'),
+    'the D3A-AAD citation must be collected into skillRefs');
+
+  // An _auto_imported D3FEND entry that IS referenced must not be flagged.
+  const loaded = {
+    'cve-catalog': { _meta: {} },
+    'd3fend-catalog': {
+      _meta: {},
+      'D3A-AAD': { _auto_imported: true, name: 'Account Access Removal' },
+    },
+  };
+  const referenced = gd.unusedOrphanFindings(loaded, {
+    skillRefs: refs.skillRefs,
+    playbookRefs: refs.playbookRefs,
+  });
+  assert.ok(!referenced.some(f => f.id === 'D3A-AAD'),
+    'a referenced D3A-* entry must NOT be flagged as an unused orphan');
+
+  // Control: an UN-referenced _auto_imported D3A-* entry is still flagged,
+  // proving the test would fail if the guard mis-fired.
+  const unreferenced = gd.unusedOrphanFindings({
+    'cve-catalog': { _meta: {} },
+    'd3fend-catalog': { _meta: {}, 'D3A-ZZZ': { _auto_imported: true, name: 'Orphan' } },
+  }, { skillRefs: new Set(), playbookRefs: new Set() });
+  assert.ok(unreferenced.some(f => f.id === 'D3A-ZZZ'),
+    'an unreferenced auto-imported D3A-* entry must be flagged as orphan');
 });

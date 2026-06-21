@@ -17,10 +17,13 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const { spawnSync } = require("node:child_process");
 
 const ROOT = path.join(__dirname, "..");
 const CI_WORKFLOW = path.join(ROOT, ".github", "workflows", "ci.yml");
 const PACKAGE_JSON = path.join(ROOT, "package.json");
+
+function tryJson(s) { try { return JSON.parse(s); } catch { return null; } }
 
 function loadGates() {
   // Bypass the require-main guard by importing the module path
@@ -140,4 +143,27 @@ test("package.json declares each individual gate alias", () => {
       `package.json must expose an "${name}" script for contributors`
     );
   }
+});
+
+// ---------- test-count gate wiring ----------
+
+test("D: check-test-count.js exists and emits structured JSON", () => {
+  const r = spawnSync(process.execPath, [path.join(ROOT, "scripts", "check-test-count.js"), "--json"], {
+    encoding: "utf8", cwd: ROOT,
+  });
+  assert.equal(r.status, 0, `gate must pass on current state; got ${r.status}. stderr: ${r.stderr.slice(0, 200)}`);
+  const body = tryJson(r.stdout.trim());
+  assert.ok(body, "gate must emit JSON when --json passed");
+  assert.equal(body.verb, "check-test-count");
+  assert.equal(typeof body.observed, "number");
+  assert.equal(typeof body.baseline, "number");
+  assert.equal(typeof body.delta, "number");
+  assert.ok(["ok", "grew_beyond_threshold_consider_bump"].includes(body.status),
+    `status must be ok or grew_beyond_threshold; got ${body.status}`);
+});
+
+test("D: predeploy.js wires test-count gate as #15", () => {
+  const src = fs.readFileSync(path.join(ROOT, "scripts", "predeploy.js"), "utf8");
+  assert.match(src, /Test-count baseline/, "predeploy.js must register the test-count gate");
+  assert.match(src, /scripts.*check-test-count\.js/, "predeploy.js must reference scripts/check-test-count.js");
 });

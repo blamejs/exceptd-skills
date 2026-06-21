@@ -307,3 +307,32 @@ test('v0.12.14 source-ghsa.js exports documented surface', () => {
     assert.ok(ident in ghsa, `lib/source-ghsa.js must export ${ident}`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// fetchAdvisoryById / normalizeAdvisory against the shipped fixture
+// ---------------------------------------------------------------------------
+
+test('source-ghsa.fetchAdvisoryById finds CVE in fixture', async () => {
+  process.env.EXCEPTD_GHSA_FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'ghsa-cve-2026-45321.json');
+  try {
+    const r = await ghsa.fetchAdvisoryById('CVE-2026-45321');
+    assert.equal(r.ok, true);
+    assert.equal(r.source, 'fixture');
+    assert.equal(r.advisories[0].cve_id, 'CVE-2026-45321');
+    assert.equal(r.advisories[0].severity, 'critical');
+  } finally { delete process.env.EXCEPTD_GHSA_FIXTURE; }
+});
+
+test('source-ghsa.normalizeAdvisory produces draft shape with editorial nulls', () => {
+  const fixture = JSON.parse(fs.readFileSync(path.join(ROOT, 'tests', 'fixtures', 'ghsa-cve-2026-45321.json'), 'utf8'));
+  const out = ghsa.normalizeAdvisory(fixture[0]);
+  assert.ok(out);
+  const entry = out['CVE-2026-45321'];
+  assert.equal(entry._auto_imported, true);
+  assert.equal(entry._draft, true);
+  assert.equal(entry.framework_control_gaps, null, 'framework_control_gaps must be null on a draft');
+  assert.equal(entry.atlas_refs.length, 0, 'editorial atlas_refs starts empty');
+  assert.equal(entry.cvss_score, 9.6);
+  assert.equal(entry.cisa_kev_pending, true, 'critical-severity drafts mark cisa_kev_pending');
+  assert.equal(entry._source_ghsa_id, 'GHSA-tnsk-tnsk-tnsk');
+});

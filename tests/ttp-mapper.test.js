@@ -150,3 +150,60 @@ test('universalGaps() includes core AI/MCP/PQC items', () => {
   assert.match(allText, /prompt injection/i);
   assert.match(allText, /quantum/i);
 });
+
+// ---------------------------------------------------------------------------
+// Finding #34 — coverage() input guard + token-boundary framework match.
+// ---------------------------------------------------------------------------
+
+const atlasStub = {
+  'AML.TEST': {
+    name: 'Test',
+    framework_gap: true,
+    controls_that_partially_help: ['NIST-800-53-X', 'iso-27001-y'],
+    controls_that_dont_help: ['soc2-z'],
+    framework_gap_detail: 'detail',
+    detection: 'none',
+  },
+};
+
+test('#34 empty-string frameworkId no longer universal-matches — partially_covered_by is null', () => {
+  const r = mapper.coverage('', 'AML.TEST', {}, atlasStub);
+  assert.equal(r.partially_covered_by, null);
+  assert.equal(r.not_covered_by, null);
+  assert.equal(r.found, false);
+  assert.equal(r.error, 'frameworkId required');
+});
+
+test('#34 a short prefix "IS" must NOT match "NIST-..." via token boundary', () => {
+  const r = mapper.coverage('IS', 'AML.TEST', {}, atlasStub);
+  assert.equal(r.partially_covered_by, null);
+  assert.equal(r.not_covered_by, null);
+});
+
+test('#34 null / undefined frameworkId returns found:false WITHOUT throwing', () => {
+  const rn = mapper.coverage(null, 'AML.TEST', {}, atlasStub);
+  assert.equal(rn.found, false);
+  assert.equal(rn.error, 'frameworkId required');
+  const ru = mapper.coverage(undefined, 'AML.TEST', {}, atlasStub);
+  assert.equal(ru.found, false);
+  assert.equal(ru.error, 'frameworkId required');
+});
+
+test('#34 hyphen-led "-X" (empty first segment) fails closed, not universal-match', () => {
+  const r = mapper.coverage('-X', 'AML.TEST', {}, atlasStub);
+  assert.equal(r.found, false);
+  assert.equal(r.partially_covered_by, null);
+  assert.equal(r.not_covered_by, null);
+});
+
+test('#34 legitimate loose framework matching still works (token-boundary, case-insensitive)', () => {
+  assert.equal(mapper.coverage('NIST-800-53', 'AML.TEST', {}, atlasStub).partially_covered_by, 'NIST-800-53-X');
+  assert.equal(mapper.coverage('ISO-27001-2022', 'AML.TEST', {}, atlasStub).partially_covered_by, 'iso-27001-y');
+  assert.equal(mapper.coverage('SOC2-CC6', 'AML.TEST', {}, atlasStub).not_covered_by, 'soc2-z');
+});
+
+test('#34 unknown TTP still returns found:false cleanly (guard runs first, no throw)', () => {
+  const r = mapper.coverage('NIST-800-53', 'AML.NOPE', {}, atlasStub);
+  assert.equal(r.found, false);
+  assert.equal(r.ttp_id, 'AML.NOPE');
+});
