@@ -64,17 +64,20 @@ function rawUrlForPin(sourceRepo, commit, upstreamPath) {
     /^https?:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?\/?$/
   );
   if (!m) return null;
-  const [, owner, repo] = m;
+  // Validate every file-derived component, then build the URL from the SAME
+  // validated bindings (cleanOwner/cleanRepo/cleanCommit/cleanPath) so a tampered
+  // _PROVENANCE.json cannot steer the request and no unguarded metadata value
+  // reaches the fetch: owner/repo are GitHub-name-shaped, the commit is a hex git
+  // object id, and the path is a relative, traversal-free repo path. With the host
+  // a string literal, the fetch destination is fully constrained.
+  const cleanOwner = m[1];
+  const cleanRepo = m[2];
+  const cleanCommit = String(commit || "");
   const cleanPath = String(upstreamPath || "").replace(/^\/+/, "");
-  // Validate every file-derived component before embedding it in the fetch URL,
-  // so a tampered _PROVENANCE.json cannot steer the request: owner/repo are
-  // GitHub-name-shaped, the commit is a hex git object id, and the path is a
-  // relative, traversal-free repo path. With the host a string literal, the
-  // fetch destination is fully constrained — not metadata-controlled.
-  if (!/^[A-Za-z0-9._-]+$/.test(owner) || !/^[A-Za-z0-9._-]+$/.test(repo)) return null;
-  if (!/^[0-9a-fA-F]{7,64}$/.test(String(commit || ""))) return null;
+  if (!/^[A-Za-z0-9._-]+$/.test(cleanOwner) || !/^[A-Za-z0-9._-]+$/.test(cleanRepo)) return null;
+  if (!/^[0-9a-fA-F]{7,64}$/.test(cleanCommit)) return null;
   if (!/^[A-Za-z0-9._/-]+$/.test(cleanPath) || cleanPath.includes("..")) return null;
-  return `https://raw.githubusercontent.com/${owner}/${repo}/${commit}/${cleanPath}`;
+  return `https://raw.githubusercontent.com/${cleanOwner}/${cleanRepo}/${cleanCommit}/${cleanPath}`;
 }
 
 const MAX_REDIRECTS = 5;

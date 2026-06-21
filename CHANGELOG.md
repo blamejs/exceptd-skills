@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.9 — 2026-06-20
+
+Internal: the refresh tarball pull and the vendor-source online check build their request URL entirely from constant and individually-validated bindings — a GitHub-name-shaped owner/repo, a hex commit id, a traversal-free path, and a strict-semver version — and the request is built from those validated bindings directly, so no unvalidated registry-metadata or provenance value reaches the outbound request. Behavior is unchanged; this tightens the data-flow into the fetchers.
+
 ## 0.18.8 — 2026-06-20
 
 Signature verification now fails closed on the two states an attacker with write access to `keys/` can engineer: a missing `keys/public.pem` makes `loadManifestValidated()` throw rather than return an unverified manifest, and a missing `keys/EXPECTED_FINGERPRINT` makes the manifest-signature check refuse rather than verify against a possibly-swapped key. The pin ships in the tarball and is committed, so its absence is treated as tampering. A missing pin fails closed unconditionally and the error directs you to restore the committed pin; `KEYS_ROTATED=1` governs a key-fingerprint mismatch (a deliberate rotation), which is the only state it applies to — a rotation updates the pin in place, it never removes it.
