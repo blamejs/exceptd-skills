@@ -4294,6 +4294,20 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
         // window at all; the containment gate below decides whether to USE the
         // bytes, and discards them otherwise.
         const raw = fs.readFileSync(efd, "utf8");
+        // Symlink refusal. O_NOFOLLOW already rejects a symlinked leaf at open on
+        // POSIX (ELOOP), but it is a no-op on Windows, where the open follows the
+        // link. Detect and refuse a symlink explicitly via lstat — regardless of
+        // where it points — so a symlinked entry is never accepted. This runs
+        // AFTER the descriptor read (the bytes are dropped on refusal), so there
+        // is no path-check-before-read TOCTOU window.
+        let lst;
+        try { lst = fs.lstatSync(entryPath); }
+        catch (e) {
+          return emitError(`run: --evidence-dir entry ${f}: lstat failed: ${e.message}`, null, pretty);
+        }
+        if (lst.isSymbolicLink()) {
+          return emitError(`run: --evidence-dir entry ${f} is a symbolic link; refusing (symlinks bypass the directory-confinement check).`, { entry: f }, pretty);
+        }
         // Windows directory junctions are reparse-point dirs that
         // lstat().isSymbolicLink() returns FALSE for, and O_NOFOLLOW is a
         // no-op there; realpath resolves the entry and confirms it still lives
