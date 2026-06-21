@@ -4287,12 +4287,18 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
         if (st.nlink > 1) {
           process.stderr.write(`[exceptd run --evidence-dir] WARNING: ${f} has nlink=${st.nlink}; a hardlink to this file exists elsewhere on the filesystem. Hardlinks cannot be refused cross-platform — confirm the file content is what you expect.\n`);
         }
+        // Read the bytes from `efd` FIRST — the descriptor was opened
+        // O_NOFOLLOW and fstat-confirmed a regular file, so this reads the exact
+        // inode we validated. Reading before the realpath gate (rather than
+        // checking the path then reading) means there is no check-then-use
+        // window at all; the containment gate below decides whether to USE the
+        // bytes, and discards them otherwise.
+        const raw = fs.readFileSync(efd, "utf8");
         // Windows directory junctions are reparse-point dirs that
         // lstat().isSymbolicLink() returns FALSE for, and O_NOFOLLOW is a
         // no-op there; realpath resolves the entry and confirms it still lives
-        // under the resolved evidence-dir. This is a pure gate — the bytes are
-        // read from `efd` (opened above), never from a re-resolved path, so
-        // there is no check-then-reopen.
+        // under the resolved evidence-dir. A target that escapes the dir is
+        // refused and the already-read bytes are dropped unused.
         let realEntry;
         try { realEntry = fs.realpathSync(entryPath); }
         catch (e) {
@@ -4305,7 +4311,7 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
             pretty
           );
         }
-        bundle[pbId] = JSON.parse(fs.readFileSync(efd, "utf8"));
+        bundle[pbId] = JSON.parse(raw);
       } catch (e) {
         return emitError(`run: failed to read --evidence-dir entry ${f}: ${e.message}`, null, pretty);
       } finally {

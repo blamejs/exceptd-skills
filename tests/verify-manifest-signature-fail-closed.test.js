@@ -44,14 +44,18 @@ test('loadManifestValidated() throws on no-key (does not warn-and-return an unve
 
 test('a missing key pin fails closed unconditionally (no-pin never carries a rotation override, even with KEYS_ROTATED=1)', () => {
   const saved = process.env.KEYS_ROTATED;
+  // A uniquely-named (mkdtemp) directory; the pin path inside it intentionally
+  // does NOT exist — checkExpectedFingerprint must treat that as no-pin.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-nopin-'));
   try {
     process.env.KEYS_ROTATED = '1';
-    const noPin = verify.checkExpectedFingerprint({ sha256: 'SHA256:abc' }, path.join(os.tmpdir(), `exceptd-nopin-${process.pid}-does-not-exist`));
+    const noPin = verify.checkExpectedFingerprint({ sha256: 'SHA256:abc' }, path.join(dir, 'EXPECTED_FINGERPRINT'));
     assert.equal(noPin.status, 'no-pin');
     assert.equal(noPin.rotationOverride, undefined,
       'no-pin must NOT carry rotationOverride even with KEYS_ROTATED=1 — a missing pin fails closed (KEYS_ROTATED governs a MISMATCH, not a missing pin)');
   } finally {
     if (saved === undefined) delete process.env.KEYS_ROTATED; else process.env.KEYS_ROTATED = saved;
+    fs.rmSync(dir, { recursive: true, force: true });
   }
   // The source resolves no-pin directly to invalid (pin_absent) — the dead
   // `!pinResult.rotationOverride` guard is gone — and the no-pin reason no
@@ -65,7 +69,10 @@ test('a missing key pin fails closed unconditionally (no-pin never carries a rot
 });
 
 test('a fingerprint MISMATCH is the case KEYS_ROTATED governs (rotationOverride reflects the env var)', () => {
-  const tmpPin = path.join(os.tmpdir(), `exceptd-mm-pin-${process.pid}`);
+  // Write the pin into a uniquely-named (mkdtemp) directory, not a predictable
+  // name in the OS temp dir.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-mm-pin-'));
+  const tmpPin = path.join(dir, 'EXPECTED_FINGERPRINT');
   fs.writeFileSync(tmpPin, 'SHA256:A-DIFFERENT-PIN\n');
   const saved = process.env.KEYS_ROTATED;
   try {

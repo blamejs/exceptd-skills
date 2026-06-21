@@ -90,27 +90,20 @@ test('PP P1-1: acquireLock returns null for same-PID lockfile with fresh mtime (
     lockFile,
     JSON.stringify({ pid: process.pid, started_at: new Date().toISOString(), playbook: playbookId }, null, 2),
   );
-  // Read mtime before the acquireLock call so we can confirm it was not touched.
-  // Capture it through a descriptor (fstat), not a path stat, so the before/after
-  // comparison never does a path check-then-use (no statSync-then-openSync race).
-  let mtimeBefore;
-  {
-    const fd0 = fs.openSync(lockFile, 'r');
-    try { mtimeBefore = fs.fstatSync(fd0).mtimeMs; } finally { fs.closeSync(fd0); }
-  }
-
-  const result = playbookRunner._acquireLock(playbookId);
-  assert.equal(
-    result,
-    null,
-    'acquireLock must return null when the same-PID lockfile is fresh (reentrancy must be blocked)',
-  );
-  // Re-read the contents AND mtime through a single descriptor so the assertion
-  // observes one consistent inode (no readFileSync-then-statSync TOCTOU on the
-  // path).
+  // Hold ONE descriptor across the whole assertion: capture mtime before the
+  // acquire, run it, then re-read content + mtime from the SAME fd. A single
+  // open (no second openSync of the path) means there is no stat-then-open
+  // check-then-use race, and every observation is of one consistent inode.
   const lfd = fs.openSync(lockFile, 'r');
-  let reread, mtimeAfter;
+  let reread, mtimeBefore, mtimeAfter;
   try {
+    mtimeBefore = fs.fstatSync(lfd).mtimeMs;
+    const result = playbookRunner._acquireLock(playbookId);
+    assert.equal(
+      result,
+      null,
+      'acquireLock must return null when the same-PID lockfile is fresh (reentrancy must be blocked)',
+    );
     reread = JSON.parse(fs.readFileSync(lfd, 'utf8'));
     mtimeAfter = fs.fstatSync(lfd).mtimeMs;
   } finally { fs.closeSync(lfd); }
