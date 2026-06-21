@@ -148,6 +148,81 @@ function filterMarkers(hits, cls) {
 
 // ---- require.main block ranges -------------------------------------------
 
+// Count `{` / `}` in `line` that are in REAL CODE context, advancing a
+// stateful tokenizer that tracks string / template / comment regions across
+// lines. Braces inside a single/double/template string, a `//` line comment,
+// or a `/* */` block comment do NOT affect depth — otherwise a `{` or `}`
+// typed inside a string literal in the require.main block miscounts the brace
+// balance and the computed block range slides onto an unrelated later function
+// (whose process.exit() is then wrongly treated as a CLI-entry exit and not
+// flagged). `inTemplate` and `inBlockComment` are the cross-line states a
+// per-line stripper cannot model, so the tokenizer state object is threaded
+// line-to-line by the caller.
+//
+// `state` is mutated in place: { inSingle, inDouble, inTemplate, inBlock,
+// templateDepth } — `templateDepth` tracks `${ … }` interpolation nesting so
+// the closing `}` of an interpolation is treated as template punctuation, not
+// a code brace, while braces INSIDE the interpolation expression still count.
+function countCodeBraces(line, state) {
+  let delta = 0;
+  let inLine = false; // `//` line comment — resets each line, never persisted
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    const next = line[i + 1];
+    if (inLine) break; // rest of the line is a comment
+    if (state.inBlock) {
+      if (ch === "*" && next === "/") { state.inBlock = false; i++; }
+      continue;
+    }
+    if (state.inSingle) {
+      if (ch === "\\") { i++; continue; }
+      if (ch === "'") state.inSingle = false;
+      continue;
+    }
+    if (state.inDouble) {
+      if (ch === "\\") { i++; continue; }
+      if (ch === '"') state.inDouble = false;
+      continue;
+    }
+    if (state.inTemplate) {
+      if (ch === "\\") { i++; continue; }
+      if (ch === "`") { state.inTemplate = false; continue; }
+      if (ch === "$" && next === "{") {
+        // Enter an interpolation expression: braces inside ARE code.
+        state.templateExpr.push(0);
+        state.inTemplate = false;
+        i++; // skip the `{`; the `${` opener is template punctuation
+        continue;
+      }
+      continue;
+    }
+    // Code context (possibly inside a template interpolation expression).
+    if (ch === "/" && next === "/") { inLine = true; break; }
+    if (ch === "/" && next === "*") { state.inBlock = true; i++; continue; }
+    if (ch === "'") { state.inSingle = true; continue; }
+    if (ch === '"') { state.inDouble = true; continue; }
+    if (ch === "`") { state.inTemplate = true; continue; }
+    if (ch === "{") {
+      if (state.templateExpr.length) state.templateExpr[state.templateExpr.length - 1]++;
+      delta++;
+    } else if (ch === "}") {
+      if (state.templateExpr.length && state.templateExpr[state.templateExpr.length - 1] === 0) {
+        // Closes the `${ … }` interpolation — back to template body.
+        state.templateExpr.pop();
+        state.inTemplate = true;
+      } else {
+        if (state.templateExpr.length) state.templateExpr[state.templateExpr.length - 1]--;
+        delta--;
+      }
+    }
+  }
+  return delta;
+}
+
+function newBraceState() {
+  return { inSingle: false, inDouble: false, inTemplate: false, inBlock: false, templateExpr: [] };
+}
+
 // Line ranges (1-based, inclusive) of `if (require.main === module) { ... }`
 // blocks — the dual-mode CLI-entry section where synchronous-print-then-exit
 // is correct. process.exit there is owned by tests/safe-exit-grep.test.js and
@@ -156,15 +231,16 @@ function requireMainRanges(lines) {
   const ranges = [];
   for (let i = 0; i < lines.length; i++) {
     if (/\brequire\.main\s*===\s*module\b/.test(lines[i])) {
-      // Find the opening brace (same line or next few), then balance.
+      // Find the opening brace (same line or next few), then balance —
+      // string/comment/template-aware so braces inside literals don't skew the
+      // depth (see countCodeBraces).
       let depth = 0;
       let started = false;
       let j = i;
+      const state = newBraceState();
       for (; j < lines.length; j++) {
-        for (const ch of lines[j]) {
-          if (ch === "{") { depth++; started = true; }
-          else if (ch === "}") { depth--; }
-        }
+        depth += countCodeBraces(lines[j], state);
+        if (depth > 0) started = true;
         if (started && depth <= 0) break;
       }
       if (started) ranges.push([i + 1, j + 1]);
@@ -181,8 +257,14 @@ function inRanges(ranges, lineNo) {
 
 // A line that opens a new function body (so a backward stdout-write scan stops
 // at the enclosing function and doesn't arm an exit from an unrelated earlier
-// function).
-const FUNCTION_START = /(^|[^.\w])function\b|=>\s*\{?\s*$|^\s*(async\s+)?[A-Za-z_$][\w$]*\s*\([^)]*\)\s*\{/;
+// function). The bare-identifier (third) alternative matches a declaration /
+// method-shorthand opener (`foo() {`, `async bar() {`), but it must REFUSE
+// control-flow openers (`for (…) {`, `if (…) {`, `while/switch/catch (…) {`):
+// a control-flow block sitting between a stdout write and a process.exit() is
+// inside the SAME function, so stopping the backward scan there would wrongly
+// leave the exit unflagged. The negative lookahead excludes the control-flow
+// keywords; `function` and arrow alternatives are unchanged.
+const FUNCTION_START = /(^|[^.\w])function\b|=>\s*\{?\s*$|^\s*(async\s+)?(?!(?:if|for|while|switch|catch|do|else|with|finally|return)\b)[A-Za-z_$][\w$]*\s*\([^)]*\)\s*\{/;
 
 function detectProcessExitAfterStdout(files) {
   const hits = [];
@@ -210,6 +292,15 @@ function detectProcessExitAfterStdout(files) {
   return filterMarkers(hits, "process-exit-after-stdout-write");
 }
 
+// The first non-whitespace char of the first arg is `"`, `'`, or `/` => a
+// string/regex literal => static, safe. Anything else (an identifier, a `(`,
+// a backtick template) is operator-derivable and flagged. Backtick is NOT
+// exempt — a template literal can interpolate operator input, so it must be
+// flagged the same as a bare identifier.
+function isStaticRegexFirstChar(ch) {
+  return ch === '"' || ch === "'" || ch === "/";
+}
+
 function detectDynamicRegex(files) {
   const hits = [];
   for (const rel of (files || filesUnder(["lib", "orchestrator", "bin/exceptd.js"]))) {
@@ -217,10 +308,29 @@ function detectDynamicRegex(files) {
     for (let i = 0; i < lines.length; i++) {
       const code = stripLineComment(lines[i]);
       const m = code.match(/\bnew RegExp\s*\(\s*(.)/);
-      if (!m) continue;
-      // Literal first arg => a quote or a `/` regex literal => static, safe.
-      const firstChar = m[1];
-      if (firstChar === '"' || firstChar === "'" || firstChar === "/") continue;
+      if (m) {
+        if (isStaticRegexFirstChar(m[1])) continue;
+        hits.push({ file: rel, line: i + 1, content: lines[i].trim() });
+        continue;
+      }
+      // Multi-line form: `new RegExp(` ends the (comment-stripped) line with the
+      // open paren as the last token, and the pattern arg is on a following
+      // line. The single-line match above can't see the first-arg char, so it
+      // would silently pass a dynamic RegExp whose argument starts next line.
+      // Look ahead, skipping blank and comment-only lines (capped at 5), and
+      // inspect the first code line's first non-whitespace char.
+      if (!/\bnew RegExp\s*\(\s*$/.test(code)) continue;
+      let firstChar = null;
+      for (let k = i + 1; k <= i + 5 && k < lines.length; k++) {
+        const ahead = stripLineComment(lines[k]).replace(/^\s+/, "");
+        if (ahead === "") continue; // blank or comment-only — skip
+        firstChar = ahead[0];
+        break;
+      }
+      // A `new RegExp(` with nothing parseable after it within the cap is
+      // suspicious — flag conservatively. Otherwise apply the SAME literal
+      // exemption as the single-line path.
+      if (firstChar !== null && isStaticRegexFirstChar(firstChar)) continue;
       hits.push({ file: rel, line: i + 1, content: lines[i].trim() });
     }
   }
@@ -453,6 +563,11 @@ module.exports = {
   detectMisalignedMarkedRun,
   scanUnsortedMarkedArray,
   scanMisalignedMarkedRun,
+  requireMainRanges,
+  countCodeBraces,
+  newBraceState,
+  isStaticRegexFirstChar,
+  FUNCTION_START,
   filesUnder,
 };
 

@@ -116,12 +116,12 @@ function main() {
     console.error("Add an explicit budget entry in both:");
     console.error("  scripts/check-catalog-gap-budget.js");
     console.error("  tests/shipped-catalog-integrity.test.js");
-    process.exit(1);
+    process.exitCode = 1; return;
   }
   if (missingBudget.length > 0) {
     console.error("\n[check-catalog-gap-budget] BUDGET missing entries for declared classes:");
     for (const c of missingBudget) console.error(`  ${c}: declared by lib/gap-detectors.js DETECTOR_CLASSES, no BUDGET entry`);
-    process.exit(1);
+    process.exitCode = 1; return;
   }
   if (regressions.length > 0) {
     console.error("\n[check-catalog-gap-budget] REGRESSION beyond budget:");
@@ -131,7 +131,7 @@ function main() {
     console.error("\nClose the gap in this PR (preferred) or update BUDGET in both:");
     console.error("  scripts/check-catalog-gap-budget.js");
     console.error("  tests/shipped-catalog-integrity.test.js");
-    process.exit(1);
+    process.exitCode = 1; return;
   }
   console.log("[check-catalog-gap-budget] all classes within budget; every class is budgeted.");
 }

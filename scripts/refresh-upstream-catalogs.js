@@ -55,10 +55,39 @@ function specRequiredFields(catalogKey) {
   return spec.required_context.map((r) => r.field);
 }
 
-function fetchUrl(url) {
+const MAX_REDIRECTS = 5;
+
+// Hardened fetch helper. Three properties the hand-rolled follower lacked:
+//   1. Redirect-depth cap + base-URL resolution + response drain, so a
+//      redirect loop rejects within the cap (rather than recursing/hanging
+//      unbounded) and a relative Location resolves against the current URL.
+//   2. 4xx/5xx (and a missing statusCode edge) reject instead of resolving an
+//      error body as a "successful" empty result — every consumer fails
+//      closed on an HTTP error rather than stamping _meta on a non-fetch.
+//   3. A 3xx with no Location header rejects with a clear message rather than
+//      throwing an opaque ERR_INVALID_URL on `new URL(undefined, url)`.
+function fetchUrl(url, depth = 0) {
   return new Promise((resolve, reject) => {
     https.get(url, { headers: { "User-Agent": "exceptd-refresh-upstream-catalogs" } }, (r) => {
-      if (r.statusCode >= 300 && r.statusCode < 400) return fetchUrl(r.headers.location).then(resolve, reject);
+      const code = r.statusCode;
+      if (code == null) {
+        r.resume();
+        return reject(new Error(`no HTTP status code for ${url}`));
+      }
+      if (code >= 300 && code < 400) {
+        r.resume(); // drain the redirect response so the socket is freed/reused
+        const loc = r.headers.location;
+        if (!loc) return reject(new Error(`redirect ${code} from ${url} with no Location header`));
+        if (depth >= MAX_REDIRECTS) return reject(new Error(`too many redirects (>${MAX_REDIRECTS}) fetching ${url}`));
+        let next;
+        try { next = new URL(loc, url).toString(); } // resolves relative AND absolute Location
+        catch (e) { return reject(new Error(`invalid redirect target "${loc}" from ${url}: ${e.message}`)); }
+        return fetchUrl(next, depth + 1).then(resolve, reject);
+      }
+      if (code >= 400) {
+        r.resume(); // drain so the socket is freed
+        return reject(new Error("HTTP " + code + " for " + url));
+      }
       let b = "";
       r.on("data", (c) => (b += c));
       r.on("end", () => resolve(b));
@@ -70,8 +99,16 @@ function loadCatalog(rel) {
   return JSON.parse(fs.readFileSync(path.join(ROOT, "data", rel), "utf8"));
 }
 
+// Atomic write: a crash / disk-full / SIGKILL mid-write would otherwise leave a
+// truncated JSON catalog on disk. Write to a temp sibling and rename — rename is
+// atomic on POSIX and on same-volume Windows renames (the .tmp sibling is
+// adjacent to the target, same volume), so a reader / the next run only ever
+// sees the complete old or complete new file. Mirrors build-indexes#writeJson.
 function writeCatalog(rel, obj) {
-  fs.writeFileSync(path.join(ROOT, "data", rel), JSON.stringify(obj, null, 2) + "\n");
+  const abs = path.join(ROOT, "data", rel);
+  const tmp = `${abs}.tmp-${process.pid}`;
+  fs.writeFileSync(tmp, JSON.stringify(obj, null, 2) + "\n");
+  fs.renameSync(tmp, abs);
 }
 
 function getTag(blk, tag) {
@@ -198,9 +235,12 @@ function parseRfcEntry(blk) {
   };
 }
 
-async function refreshRfc({ dry = false } = {}) {
+async function refreshRfc({ dry = false, _deps = {} } = {}) {
+  const _fetchUrl = _deps.fetchUrl || fetchUrl;
+  const _loadCatalog = _deps.loadCatalog || loadCatalog;
+  const _writeCatalog = _deps.writeCatalog || writeCatalog;
   console.log("[refresh-upstream:rfc] fetching IETF RFC index...");
-  const body = await fetchUrl(RFC_SRC);
+  const body = await _fetchUrl(RFC_SRC);
   console.log(`[refresh-upstream:rfc] index size: ${(body.length / 1e6).toFixed(2)} MB`);
   const re = /<rfc-entry>([\s\S]*?)<\/rfc-entry>/g;
   const entries = [];           // current — eligible for new-add
@@ -213,8 +253,17 @@ async function refreshRfc({ dry = false } = {}) {
     if (e.obsoleted || e.status === "HISTORIC" || e.status === "UNKNOWN") continue;
     entries.push(e);
   }
+  // Sanity floor: the IETF index has ~9000+ RFCs, so a successful fetch can
+  // never parse to zero entries. A zero count means the fetch returned an
+  // error/empty/soft-error body (a 200 with a CDN error page, a captive portal,
+  // or a truncated body the HTTP-status guard can't see) — refuse to stamp
+  // _meta or write rfc-references.json, matching the JSON-parse failures the
+  // STIX sources surface for free (an empty index is never a legitimate result).
+  if (backfillable.length === 0) {
+    throw new Error("RFC index parsed 0 entries (fetch likely returned an error/empty body) — refusing to stamp _meta or write rfc-references.json");
+  }
   console.log(`[refresh-upstream:rfc] current entries: ${entries.length} (+ ${backfillable.length - entries.length} obsoleted/historic available for backfill on existing rows)`);
-  const cat = loadCatalog("rfc-references.json");
+  const cat = _loadCatalog("rfc-references.json");
   const existing = new Set(Object.keys(cat).filter((k) => k !== "_meta"));
   let added = 0, statusBumped = 0, backfilledCount = 0;
   // First pass: backfill ALL existing rows from the broader entry set
@@ -293,16 +342,25 @@ async function refreshRfc({ dry = false } = {}) {
     existing.add(id);
     added++;
   }
-  if (cat._meta) {
-    cat._meta.last_updated = TODAY;
-    cat._meta.last_threat_review = TODAY;
-  }
+  // Only restamp _meta + write when something actually changed. A genuine
+  // no-op leaves the file byte-identical so the daily refresh doesn't emit a
+  // spurious _meta-only diff (and so the freshness gates stay honest — a
+  // wall-clock restamp on an unchanged catalog masks real staleness).
+  const changed = added > 0 || backfilledCount > 0 || statusBumped > 0;
   if (dry) {
     console.log(`[refresh-upstream:rfc] DRY-RUN: +${added} new, ${backfilledCount} backfilled, ${statusBumped} status bumps.`);
     return { added, statusBumped, backfilled: backfilledCount };
   }
-  writeCatalog("rfc-references.json", cat);
-  console.log(`[ok] rfc-references.json: +${added} entries, ${backfilledCount} backfilled, ${statusBumped} status bumps (now ${existing.size} total)`);
+  if (changed) {
+    if (cat._meta) {
+      cat._meta.last_updated = TODAY;
+      cat._meta.last_threat_review = TODAY;
+    }
+    _writeCatalog("rfc-references.json", cat);
+    console.log(`[ok] rfc-references.json: +${added} entries, ${backfilledCount} backfilled, ${statusBumped} status bumps (now ${existing.size} total)`);
+  } else {
+    console.log("[ok] rfc-references.json: no upstream changes — file unchanged");
+  }
   return { added, statusBumped, backfilled: backfilledCount };
 }
 
@@ -392,9 +450,12 @@ function backfillAttack(cur, fresh) {
   return touched;
 }
 
-async function refreshAttack({ dry = false, cap = Infinity } = {}) {
+async function refreshAttack({ dry = false, cap = Infinity, _deps = {} } = {}) {
+  const _fetchUrl = _deps.fetchUrl || fetchUrl;
+  const _loadCatalog = _deps.loadCatalog || loadCatalog;
+  const _writeCatalog = _deps.writeCatalog || writeCatalog;
   console.log("[refresh-upstream:attack] fetching MITRE ATT&CK STIX...");
-  const body = await fetchUrl(ATTACK_SRC);
+  const body = await _fetchUrl(ATTACK_SRC);
   const stix = JSON.parse(body);
   // For NEW adds: live techniques only (skip revoked / deprecated).
   // For BACKFILL on existing rows: include revoked too — an operator-
@@ -410,7 +471,7 @@ async function refreshAttack({ dry = false, cap = Infinity } = {}) {
   );
   console.log(`[refresh-upstream:attack] STIX live techniques: ${liveTechs.length} (+ ${backfillTechs.length - liveTechs.length} revoked/deprecated available for backfill on existing rows)`);
   const techs = liveTechs;
-  const local = loadCatalog("attack-techniques.json");
+  const local = _loadCatalog("attack-techniques.json");
   const existing = new Set(Object.keys(local).filter((k) => k !== "_meta"));
   techs.sort((a, b) => {
     const aSub = a.x_mitre_is_subtechnique ? 1 : 0;
@@ -448,9 +509,14 @@ async function refreshAttack({ dry = false, cap = Infinity } = {}) {
     added++;
   }
   if (dry) { console.log(`[refresh-upstream:attack] DRY-RUN: +${added} new, ${backfilled} context backfills`); return { added, backfilled }; }
-  if (local._meta) { local._meta.last_updated = TODAY; local._meta.last_threat_review = TODAY; }
-  writeCatalog("attack-techniques.json", local);
-  console.log(`[ok] attack-techniques.json: +${added} entries, ${backfilled} context backfills (now ${existing.size} total)`);
+  const changed = added > 0 || backfilled > 0;
+  if (changed) {
+    if (local._meta) { local._meta.last_updated = TODAY; local._meta.last_threat_review = TODAY; }
+    _writeCatalog("attack-techniques.json", local);
+    console.log(`[ok] attack-techniques.json: +${added} entries, ${backfilled} context backfills (now ${existing.size} total)`);
+  } else {
+    console.log("[ok] attack-techniques.json: no upstream changes — file unchanged");
+  }
   return { added, backfilled };
 }
 
@@ -472,15 +538,18 @@ const ICS_TACTIC_NAME = {
   "impact": "Impact (ICS)"
 };
 
-async function refreshIcsAttack({ dry = false, cap = Infinity } = {}) {
+async function refreshIcsAttack({ dry = false, cap = Infinity, _deps = {} } = {}) {
+  const _fetchUrl = _deps.fetchUrl || fetchUrl;
+  const _loadCatalog = _deps.loadCatalog || loadCatalog;
+  const _writeCatalog = _deps.writeCatalog || writeCatalog;
   console.log("[refresh-upstream:ics-attack] fetching MITRE ICS-attack STIX...");
-  const body = await fetchUrl(ICS_ATTACK_SRC);
+  const body = await _fetchUrl(ICS_ATTACK_SRC);
   const stix = JSON.parse(body);
   const techs = (stix.objects || []).filter(
     (o) => o.type === "attack-pattern" && !o.revoked && !o.x_mitre_deprecated
   );
   console.log(`[refresh-upstream:ics-attack] STIX live ICS techniques: ${techs.length}`);
-  const local = loadCatalog("attack-techniques.json");
+  const local = _loadCatalog("attack-techniques.json");
   const existing = new Set(Object.keys(local).filter((k) => k !== "_meta"));
   let added = 0, backfilled = 0;
   for (const t of techs) {
@@ -519,9 +588,14 @@ async function refreshIcsAttack({ dry = false, cap = Infinity } = {}) {
     added++;
   }
   if (dry) { console.log(`[refresh-upstream:ics-attack] DRY-RUN: +${added} new, ${backfilled} backfills`); return { added, backfilled }; }
-  if (local._meta) { local._meta.last_updated = TODAY; local._meta.last_threat_review = TODAY; }
-  writeCatalog("attack-techniques.json", local);
-  console.log(`[ok] attack-techniques.json: +${added} ICS entries, ${backfilled} backfills (now ${existing.size} total)`);
+  const changed = added > 0 || backfilled > 0;
+  if (changed) {
+    if (local._meta) { local._meta.last_updated = TODAY; local._meta.last_threat_review = TODAY; }
+    _writeCatalog("attack-techniques.json", local);
+    console.log(`[ok] attack-techniques.json: +${added} ICS entries, ${backfilled} backfills (now ${existing.size} total)`);
+  } else {
+    console.log("[ok] attack-techniques.json: no upstream ICS changes — file unchanged");
+  }
   return { added, backfilled };
 }
 
@@ -591,9 +665,12 @@ function backfillAtlas(cur, fresh) {
   return touched;
 }
 
-async function refreshAtlas({ dry = false } = {}) {
+async function refreshAtlas({ dry = false, _deps = {} } = {}) {
+  const _fetchUrl = _deps.fetchUrl || fetchUrl;
+  const _loadCatalog = _deps.loadCatalog || loadCatalog;
+  const _writeCatalog = _deps.writeCatalog || writeCatalog;
   console.log("[refresh-upstream:atlas] fetching MITRE ATLAS STIX...");
-  const body = await fetchUrl(ATLAS_SRC);
+  const body = await _fetchUrl(ATLAS_SRC);
   const stix = JSON.parse(body);
   const techs = (stix.objects || []).filter(
     (o) => o.type === "attack-pattern" && !o.revoked && !o.x_mitre_deprecated
@@ -609,7 +686,7 @@ async function refreshAtlas({ dry = false } = {}) {
       atlasVersion = o.x_mitre_version; break;
     }
   }
-  const local = loadCatalog("atlas-ttps.json");
+  const local = _loadCatalog("atlas-ttps.json");
   const existing = new Set(Object.keys(local).filter((k) => k !== "_meta"));
   aml.sort((a, b) => {
     const aSub = a.x_mitre_is_subtechnique ? 1 : 0;
@@ -635,13 +712,22 @@ async function refreshAtlas({ dry = false } = {}) {
     added++;
   }
   if (dry) { console.log(`[refresh-upstream:atlas] DRY-RUN: +${added} new, ${backfilled} backfills${atlasVersion ? `, v${atlasVersion}` : ""}`); return { added, backfilled, atlasVersion }; }
-  if (local._meta) {
-    if (atlasVersion) local._meta.atlas_version = atlasVersion;
-    local._meta.last_updated = TODAY;
-    local._meta.last_threat_review = TODAY;
+  // A newly-detected ATLAS matrix version that differs from the recorded one
+  // is itself a change (the catalog should bump atlas_version + last_updated
+  // together), independent of any added/backfilled rows.
+  const versionChanged = !!(atlasVersion && local._meta && local._meta.atlas_version !== atlasVersion);
+  const changed = added > 0 || backfilled > 0 || versionChanged;
+  if (changed) {
+    if (local._meta) {
+      if (atlasVersion) local._meta.atlas_version = atlasVersion;
+      local._meta.last_updated = TODAY;
+      local._meta.last_threat_review = TODAY;
+    }
+    _writeCatalog("atlas-ttps.json", local);
+    console.log(`[ok] atlas-ttps.json: +${added} entries, ${backfilled} backfills (now ${existing.size} total${atlasVersion ? `, ATLAS v${atlasVersion}` : ""})`);
+  } else {
+    console.log("[ok] atlas-ttps.json: no upstream changes — file unchanged");
   }
-  writeCatalog("atlas-ttps.json", local);
-  console.log(`[ok] atlas-ttps.json: +${added} entries, ${backfilled} backfills (now ${existing.size} total${atlasVersion ? `, ATLAS v${atlasVersion}` : ""})`);
   return { added, backfilled, atlasVersion };
 }
 
@@ -673,7 +759,12 @@ function d3fendIdList(t, field) {
 }
 
 function d3fendEntryFromOwl(t) {
-  const id = t["d3f:d3fend-id"];
+  // Strip a trailing period from the OWL d3fend-id: a few upstream artifact ids
+  // (e.g. "D3A-C4.") carry a spurious terminal dot that no id token regex can
+  // round-trip, leaving the entry unmatchable by the orphan/cross-ref scanners.
+  // No legitimate d3fend technique id ends in a period.
+  const rawId = t["d3f:d3fend-id"];
+  const id = typeof rawId === "string" ? rawId.replace(/\.$/, "") : rawId;
   const labelRaw = t["rdfs:label"];
   const name = Array.isArray(labelRaw)
     ? (typeof labelRaw[0] === "object" ? labelRaw[0]["@value"] : labelRaw[0])
@@ -736,14 +827,17 @@ function backfillD3fend(cur, fresh) {
   return touched;
 }
 
-async function refreshD3fend({ dry = false, cap = Infinity } = {}) {
+async function refreshD3fend({ dry = false, cap = Infinity, _deps = {} } = {}) {
+  const _fetchUrl = _deps.fetchUrl || fetchUrl;
+  const _loadCatalog = _deps.loadCatalog || loadCatalog;
+  const _writeCatalog = _deps.writeCatalog || writeCatalog;
   console.log("[refresh-upstream:d3fend] fetching MITRE D3FEND ontology...");
-  const body = await fetchUrl(D3FEND_SRC);
+  const body = await _fetchUrl(D3FEND_SRC);
   const j = JSON.parse(body);
   const graph = j["@graph"] || [];
   const techs = graph.filter((o) => o["@id"] && o["d3f:d3fend-id"] && o["rdfs:label"]);
   console.log(`[refresh-upstream:d3fend] ontology techniques: ${techs.length}`);
-  const local = loadCatalog("d3fend-catalog.json");
+  const local = _loadCatalog("d3fend-catalog.json");
   const existing = new Set(Object.keys(local).filter((k) => k !== "_meta"));
   techs.sort((a, b) => String(a["d3f:d3fend-id"]).localeCompare(String(b["d3f:d3fend-id"])));
   let added = 0, backfilled = 0;
@@ -761,9 +855,14 @@ async function refreshD3fend({ dry = false, cap = Infinity } = {}) {
     added++;
   }
   if (dry) { console.log(`[refresh-upstream:d3fend] DRY-RUN: +${added} new, ${backfilled} backfills`); return { added, backfilled }; }
-  if (local._meta) { local._meta.last_updated = TODAY; local._meta.last_threat_review = TODAY; }
-  writeCatalog("d3fend-catalog.json", local);
-  console.log(`[ok] d3fend-catalog.json: +${added} entries, ${backfilled} backfills (now ${existing.size} total)`);
+  const changed = added > 0 || backfilled > 0;
+  if (changed) {
+    if (local._meta) { local._meta.last_updated = TODAY; local._meta.last_threat_review = TODAY; }
+    _writeCatalog("d3fend-catalog.json", local);
+    console.log(`[ok] d3fend-catalog.json: +${added} entries, ${backfilled} backfills (now ${existing.size} total)`);
+  } else {
+    console.log("[ok] d3fend-catalog.json: no upstream changes — file unchanged");
+  }
   return { added, backfilled };
 }
 
@@ -820,5 +919,9 @@ module.exports = {
   refreshAtlas,
   refreshD3fend,
   SOURCES,
-  runCli
+  runCli,
+  // Exported for regression tests: fetchUrl's status/redirect handling and
+  // writeCatalog's atomicity are load-bearing fail-closed properties.
+  fetchUrl,
+  writeCatalog
 };

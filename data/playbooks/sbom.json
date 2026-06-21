@@ -1247,7 +1247,7 @@
           "action": "notify_legal"
         },
         {
-          "condition": "any actively_exploited_match AND jurisdiction_obligations contains 'EU/EU CRA Art.14 24h'",
+          "condition": "any matched_cve.active_exploitation == 'confirmed' AND jurisdiction_obligations contains 'EU'",
           "action": "notify_legal"
         }
       ]

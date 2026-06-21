@@ -264,14 +264,14 @@ function cmdPrepare(opts) {
   // bootstrap-mode test enforces would otherwise fail at gates time.
   var top = _changelogTopVersion();
   if (top !== next) {
-    console.error("");
-    console.error("release: CHANGELOG.md top heading is '## " + top + "', expected '## " + next + "'.");
-    console.error("Write the " + next + " entry first (terse, behavior-change framed, no internal");
-    console.error("narrative), then re-run prepare. Example heading:");
-    console.error("");
-    console.error("  ## " + next + " — <YYYY-MM-DD>");
-    console.error("");
-    process.exit(2);
+    // Throw (not process.exit) so a stdout write earlier in this phase can't be
+    // truncated when piped, and so `release all` aborts the whole sequence here
+    // rather than continuing past a failed prepare. Matches the throw-style
+    // guards above (clean-tree / on-main); the dispatcher maps it to exit 1.
+    throw new Error(
+      "CHANGELOG.md top heading is '## " + top + "', expected '## " + next + "'. " +
+      "Write the " + next + " entry first (terse, behavior-change framed, no internal " +
+      "narrative), then re-run prepare. Example heading:  ## " + next + " — <YYYY-MM-DD>");
   }
 
   // The `## <next>` heading exists; confirm the section extracts cleanly and
@@ -539,8 +539,25 @@ function cmdRelease() {
   var next = _readJsonVersion("package.json");
 
   _section("release workflow");
-  var runId = _capture("gh", ["run", "list", "--workflow=release.yml", "--limit", "1",
-    "--json", "databaseId", "--jq", ".[0].databaseId"]).stdout;
+  // Select the release.yml run created by THIS tag push — not merely the
+  // newest run. gh exposes the tag ref as headBranch for tag-triggered runs;
+  // event=="push" excludes workflow_dispatch runs. Filtering by headBranch==tag
+  // uniquely identifies this run even when a prior tag points at the same
+  // commit (so it's preferable to headSha matching, and needs no extra git
+  // call). Bounded retries cover the few-seconds window GitHub needs to
+  // register the run after the tag push.
+  var tag = "v" + next;
+  var runId = "";
+  for (var _i = 0; _i < 30 && !runId; _i++) {
+    runId = _capture("gh", ["run", "list", "--workflow=release.yml",
+      "--event=push", "--json", "databaseId,headBranch,event",
+      "--jq", '[.[] | select(.headBranch=="' + tag + '")] | sort_by(.databaseId) | last | .databaseId']).stdout;
+    if (!runId && _i < 29) {
+      // Short bounded wait between polls — the run usually appears within
+      // a few seconds of the tag push.
+      _spawn(process.execPath, ["-e", "setTimeout(function(){},2000)"], { stdio: "ignore" });
+    }
+  }
   if (runId) {
     _run("gh", ["run", "watch", runId, "--exit-status"], { allowFail: true });
     var concl = _capture("gh", ["run", "view", runId, "--json", "conclusion", "--jq", ".conclusion"]).stdout;
@@ -553,7 +570,7 @@ function cmdRelease() {
     }
     _ok("release.yml: success");
   } else {
-    throw new Error("release: no release.yml run found for the tag — the publish workflow has not started; " +
+    throw new Error("release: no release.yml run found for " + tag + " — the publish workflow has not started; " +
       "confirm the tag was pushed and the workflow fired before treating the release as done");
   }
 

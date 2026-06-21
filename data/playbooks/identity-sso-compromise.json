@@ -46,7 +46,7 @@
     "feeds_into": [
       {
         "playbook_id": "idp-incident",
-        "condition": "phases.detect.classification == 'detected'"
+        "condition": "analyze.classification == 'detected'"
       },
       {
         "playbook_id": "cred-stores",
@@ -642,7 +642,7 @@
       ],
       "escalation_criteria": [
         {
-          "condition": "phases.detect.classification == 'detected'",
+          "condition": "analyze.classification == 'detected'",
           "action": "trigger_playbook",
           "target_playbook": "idp-incident"
         },

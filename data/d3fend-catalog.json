@@ -6062,8 +6062,8 @@
     "_auto_imported": true,
     "_intake_method": "mitre-d3fend-owl"
   },
-  "D3A-C4.": {
-    "id": "D3A-C4.",
+  "D3A-C4": {
+    "id": "D3A-C4",
     "name": "C4.5",
     "tactic": "Defensive",
     "description": "C4.5 is an algorithm that is strongly based off ID3.",
@@ -6077,13 +6077,13 @@
     "requires": [],
     "inventories": [],
     "kb_reference": null,
-    "reference_url": "https://d3fend.mitre.org/technique/D3A-C4./",
+    "reference_url": "https://d3fend.mitre.org/technique/D3A-C4/",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
     "_intake_method": "mitre-d3fend-owl"
   },
-  "D3A-C5.": {
-    "id": "D3A-C5.",
+  "D3A-C5": {
+    "id": "D3A-C5",
     "name": "C5.0",
     "tactic": "Defensive",
     "description": "C5.0 is the next version of C4.5, which in turn is the upgrade from ID3.",
@@ -6097,7 +6097,7 @@
     "requires": [],
     "inventories": [],
     "kb_reference": null,
-    "reference_url": "https://d3fend.mitre.org/technique/D3A-C5./",
+    "reference_url": "https://d3fend.mitre.org/technique/D3A-C5/",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
     "_intake_method": "mitre-d3fend-owl"

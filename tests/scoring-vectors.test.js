@@ -283,9 +283,12 @@ test('deriveRwepFromFactors handles Shape B (catalog post-weight) via sum + clam
 });
 
 test('deriveRwepFromFactors clamps Shape B sums to [0, 100]', () => {
-  // Shape B: post-weight values
-  assert.equal(deriveRwepFromFactors({ a: 200, b: 50 }), 100);
-  assert.equal(deriveRwepFromFactors({ a: -50, b: -30 }), 0);
+  // Shape B: post-weight values. Use RECOGNISED factor keys — unknown keys are
+  // now excluded from the derived sum (with an RWEP_FACTOR_UNRECOGNISED warning)
+  // rather than silently inflating the score, so the clamp must be exercised
+  // with real keys whose summed weights exceed/undershoot the [0,100] range.
+  assert.equal(deriveRwepFromFactors({ poc_available: 60, ai_factor: 60 }), 100); // 120 -> 100
+  assert.equal(deriveRwepFromFactors({ patch_available: -50, live_patch_available: -30 }), 0); // -80 -> 0
 });
 
 test('deriveRwepFromFactors returns 0 for empty / null / undefined', () => {

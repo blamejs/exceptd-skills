@@ -50,6 +50,66 @@ function catalogEntryCount(dataDir, file) {
   return 0;
 }
 
+// Files/prefixes that refresh-sbom's expandAllowlist excludes from the shipped
+// file: component inventory. Kept in sync with scripts/refresh-sbom.js
+// (SELF_EXCLUDED + DERIVABLE_PREFIXES): the SBOM never hashes itself, and the
+// pre-computed index cache under data/_indexes/ is regenerated/test-mutated, so
+// it carries no per-file component. The completeness check below must apply the
+// SAME exclusions or it would demand a component for a file the generator never
+// emits one for.
+const SBOM_SELF_EXCLUDED = new Set(["sbom.cdx.json"]);
+const SBOM_DERIVABLE_PREFIXES = ["data/_indexes/"];
+
+function sbomIsDerivable(rel) {
+  return SBOM_DERIVABLE_PREFIXES.some(
+    (p) => rel === p.replace(/\/$/, "") || rel.startsWith(p)
+  );
+}
+
+// Recursively list every regular file under absDir, returned as absolute paths.
+// Mirrors refresh-sbom's walkFiles (which is root-agnostic — it walks whatever
+// absolute dir it is given).
+function walkFilesAbs(absDir) {
+  const out = [];
+  let entries;
+  try { entries = fs.readdirSync(absDir, { withFileTypes: true }); }
+  catch { return out; }
+  for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+    const abs = path.join(absDir, entry.name);
+    if (entry.isDirectory()) out.push(...walkFilesAbs(abs));
+    else if (entry.isFile()) out.push(abs);
+  }
+  return out;
+}
+
+// Root-aware allowlist expansion: the shipped-file set that must each have a
+// file: component, computed against the TARGET tree (`root`), not the running
+// script's source repo. refresh-sbom's exported expandAllowlist is bound to its
+// own REPO_ROOT (it joins/relativizes against __dirname/..), so under a `--root`
+// target the completeness check would otherwise validate the SOURCE repo's file
+// list against the TARGET SBOM — the wrong tree. Replicating the expansion here
+// (same SELF_EXCLUDED + DERIVABLE_PREFIXES exclusions, same dedupe+sort) keeps
+// the gate honest under `--root` without reaching across into the generator's
+// module-level root.
+function expandAllowlistAt(allowlist, root) {
+  const abs = [];
+  for (const entry of allowlist) {
+    const full = path.join(root, entry);
+    let stat;
+    try { stat = fs.statSync(full); }
+    catch { continue; } // tolerate a stale entry; presence checks elsewhere flag
+    if (stat.isDirectory()) abs.push(...walkFilesAbs(full));
+    else if (stat.isFile()) abs.push(full);
+  }
+  const rel = Array.from(
+    new Set(abs.map((a) => path.relative(root, a).split(path.sep).join("/")))
+  )
+    .filter((r) => !SBOM_SELF_EXCLUDED.has(r))
+    .filter((r) => !sbomIsDerivable(r))
+    .sort();
+  return rel;
+}
+
 // The description string embeds per-catalog ENTRY counts as free text, e.g.
 // "11 catalogs (439 CVEs / 177 CWEs / 805 ATT&CK + ICS / 170 ATLAS /
 // 468 D3FEND / 8888 RFCs)". Each token maps to one data/*.json catalog whose
@@ -332,9 +392,15 @@ function checkSbomCurrency(root) {
   // refresh-sbom's exact allowlist expansion + digest so the gate can't drift
   // from the generator.
   try {
-    const { expandAllowlist, bundleDigest } = require("./refresh-sbom");
+    // bundleDigest operates purely on the file: component objects (no tree
+    // walk), so it is root-agnostic and safe to reuse from the generator. The
+    // allowlist expansion, by contrast, MUST run against the target `root`
+    // (expandAllowlistAt below) — refresh-sbom's exported expandAllowlist is
+    // pinned to its own source-repo REPO_ROOT and would validate the wrong tree
+    // under `--root`.
+    const { bundleDigest } = require("./refresh-sbom");
     const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
-    const expected = expandAllowlist(pkg.files || []);
+    const expected = expandAllowlistAt(pkg.files || [], root);
     const fileComps = components.filter(
       (c) => typeof c["bom-ref"] === "string" && c["bom-ref"].startsWith("file:")
     );
@@ -402,6 +468,6 @@ function main() {
   );
 }
 
-module.exports = { checkSbomCurrency, resolveRoot, DESCRIPTION_ENTRY_TOKENS, catalogEntryCount };
+module.exports = { checkSbomCurrency, resolveRoot, DESCRIPTION_ENTRY_TOKENS, catalogEntryCount, expandAllowlistAt };
 
 if (require.main === module) main();

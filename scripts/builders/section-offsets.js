@@ -68,13 +68,19 @@ function buildOne(absPath, relPath) {
   const totalBytes = buf.length;
   const text = buf.toString("utf8");
   const lines = text.split(/\r?\n/);
-  const lineByteOffsets = [];
-  let cursor = 0;
-  for (const line of lines) {
-    lineByteOffsets.push(cursor);
-    // +1 for the newline. Counts as one byte for LF; CRLF would skew slightly
-    // but the file is written via the project's tooling which is LF-uniform.
-    cursor += Buffer.byteLength(line, "utf8") + 1;
+  // EOL-aware line-start byte offsets: walk the actual terminator bytes off the
+  // decoded text rather than assuming a fixed 1-byte newline. On a pure-LF body
+  // every terminator is 1 byte so the offsets are identical to the old `+ 1`
+  // accumulator; on a stray CRLF body the \r\n terminator is 2 bytes and the
+  // offsets stay correct (the old fixed-constant approach undercounted by 1
+  // byte per line and silently misaligned every token-budget slice). The split
+  // above discards terminator bytes, so the width can only be recovered by
+  // reading the terminators off the raw text — done here.
+  const lineByteOffsets = [0];
+  const eolRe = /\r?\n/g;
+  let m;
+  while ((m = eolRe.exec(text)) !== null) {
+    lineByteOffsets.push(Buffer.byteLength(text.slice(0, m.index + m[0].length), "utf8"));
   }
 
   // Frontmatter: lines between the first "---" and the second "---".
@@ -167,4 +173,7 @@ function buildSectionOffsets({ root, skills }) {
   };
 }
 
-module.exports = { buildSectionOffsets };
+// buildOne is exported for regression testing of the EOL-aware byte offsets
+// (a CRLF body must still produce byte_start values that point at the real
+// "## " byte in the raw file).
+module.exports = { buildSectionOffsets, buildOne };

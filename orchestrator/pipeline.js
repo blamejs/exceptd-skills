@@ -140,26 +140,52 @@ function _loadManifestCached() {
   return parsed;
 }
 
+/**
+ * Compute the currency row for a single skill against a reference `now`.
+ *
+ * Pulled out of currencyCheck so the parse-guard is unit-testable without a
+ * real manifest read. A malformed `last_threat_review` (e.g. "2026-13-99",
+ * which is structurally ISO-shaped but not a real calendar date) must map to
+ * maximally STALE — score 0, action_required true — not to the safe-LOOKING
+ * 100 a NaN delta would otherwise yield. The misformat is also surfaced via
+ * `unparseable_review_date` so a bad date is OBSERVABLE rather than silently
+ * defaulting (matching the project rule that a no-match/fall-through path must
+ * surface, not silently pass).
+ *
+ * @param {object} skill
+ * @param {Date} now
+ */
+function _skillCurrencyRow(skill, now) {
+  const rawDate = skill.last_threat_review || '2020-01-01';
+  // Use the timezone-stable date-only convention the sibling builders use
+  // (append T00:00:00Z for bare YYYY-MM-DD) so the day delta doesn't shift by
+  // the runner's local offset.
+  const t = Date.parse(/^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate + 'T00:00:00Z' : rawDate);
+  const unparseable = !Number.isFinite(t);
+  const reviewDate = unparseable ? new Date('2020-01-01T00:00:00Z') : new Date(t);
+  const daysSinceReview = Math.floor((now - reviewDate) / (1000 * 60 * 60 * 24));
+
+  const currencyScore = _currencyScore(daysSinceReview, skill.forward_watch?.length || 0);
+
+  return {
+    skill: skill.name,
+    last_threat_review: skill.last_threat_review,
+    days_since_review: daysSinceReview,
+    currency_score: currencyScore,
+    currency_label: _currencyLabel(currencyScore),
+    forward_watch_count: skill.forward_watch?.length || 0,
+    unparseable_review_date: unparseable,
+    action_required: currencyScore < 70
+  };
+}
+
 function currencyCheck() {
   const manifest = _loadManifestCached();
   const now = new Date();
   const report = [];
 
   for (const skill of manifest.skills) {
-    const reviewDate = new Date(skill.last_threat_review || '2020-01-01');
-    const daysSinceReview = Math.floor((now - reviewDate) / (1000 * 60 * 60 * 24));
-
-    const currencyScore = _currencyScore(daysSinceReview, skill.forward_watch?.length || 0);
-
-    report.push({
-      skill: skill.name,
-      last_threat_review: skill.last_threat_review,
-      days_since_review: daysSinceReview,
-      currency_score: currencyScore,
-      currency_label: _currencyLabel(currencyScore),
-      forward_watch_count: skill.forward_watch?.length || 0,
-      action_required: currencyScore < 70
-    });
+    report.push(_skillCurrencyRow(skill, now));
   }
 
   report.sort((a, b) => a.currency_score - b.currency_score);
@@ -190,6 +216,18 @@ function getAgentDefinition(stageName) {
 // --- private helpers ---
 
 function validateHandoff(stageName, output) {
+  // Guard the `in` deref below: a null / non-object / array `output` would
+  // otherwise throw an opaque "Cannot use 'in' operator …" TypeError deep in
+  // the missing-fields filter. Reject up front with a named error in the same
+  // style as buildHandoff's stageIndex RangeError, so the caller sees which
+  // input was wrong. A handoff payload is a keyed object — an array is not a
+  // valid payload, so Array.isArray is rejected too (today it would yield the
+  // less-precise "missing fields" error).
+  if (output === null || typeof output !== 'object' || Array.isArray(output)) {
+    throw new TypeError(
+      `buildHandoff: stageOutput for ${stageName} must be a non-null object`
+    );
+  }
   const required = {
     'threat-researcher': ['cve_id_or_ttp', 'findings', 'primary_sources', 'confidence'],
     'source-validator': ['verdict', 'verified_claims', 'rejected_claims'],
@@ -240,6 +278,13 @@ function _currencyScore(daysSinceReview, _forwardWatchCount) {
   // and the workflow issue they gate — could never fire. The deeper penalties
   // only bite past 180/270/365 days, so a normally-maintained skill stays
   // 'acceptable' while a genuinely abandoned one reaches the gate.
+  //
+  // Belt-and-suspenders: a NaN delta (the day-count derived from an
+  // unparseable last_threat_review) must map to maximally STALE (0), never the
+  // safe-LOOKING 100 the additive schedule below would leave it at. This is an
+  // exported surface other callers/tests use, so guard here even though
+  // _skillCurrencyRow already substitutes a stale fallback date upstream.
+  if (!Number.isFinite(daysSinceReview)) return 0;
   let score = 100;
   if (daysSinceReview > 365) score -= 100;      // a year+ unreviewed → 0 (critical_stale)
   else if (daysSinceReview > 270) score -= 60;  // → 40 (critical_stale, < 50)
@@ -277,4 +322,7 @@ module.exports = {
   // Exported for the gate-reachability contract test: the schedule must be able
   // to reach the warn (< 70) and critical (< 50) tiers the workflow issues on.
   _currencyScore,
+  // Exported so the malformed-date staleness guard is unit-testable without a
+  // real manifest read.
+  _skillCurrencyRow,
 };

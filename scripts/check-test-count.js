@@ -11,18 +11,24 @@
  * catches test-set shrinkage.
  *
  * Scope + blind spot. This counts test DECLARATIONS, so it detects deleted
- * files / removed `test(` calls / glob-exclusions. It does NOT detect a test
- * neutered in place: `test('name', { skip: true }, fn)` and `test.skip(` both
- * still count as one declaration, so flipping a running test to permanently
- * skipped leaves the count unchanged. Guarding against skip-in-place would
- * need runnable-vs-skipped tracking; that is out of scope for this gate.
+ * files / removed `test(`/`it(` calls / glob-exclusions. It does NOT detect a
+ * test neutered in place: `test('name', { skip: true }, fn)`, `test.skip(`,
+ * and `it.skip(` all still count as one declaration, so flipping a running
+ * test to permanently skipped leaves the count unchanged. Guarding against
+ * skip-in-place would need runnable-vs-skipped tracking; that is out of scope
+ * for this gate.
  *
- * Mechanism: count `test(`, `test.only(`, and `test.skip(` declarations
- * across `tests/*.test.js` via static analysis (faster than running). Compare
- * to a baseline pinned in `tests/.test-count-baseline.json`. Fail if the
- * observed count drops MORE than the configured tolerance (default 1) below
- * the baseline. Growth above baseline is fine; if the count grows by more
- * than `update_baseline_when_growth_exceeds`, surface a notice that the
+ * Mechanism: count `test(`/`it(` declarations (including the `.only`/`.skip`
+ * variants) across `tests/*.test.js` via static analysis (faster than
+ * running). node:test supports both `test()` and the BDD-style `it()`/
+ * `describe()` aliases as first-class declarations, and the suite mixes both,
+ * so counting only `test(` was blind to every `it(` test. `describe(` is NOT
+ * counted — those are containers, not tests, so counting them would inflate
+ * the total and conflate removing a grouping block with removing a test.
+ * Compare to a baseline pinned in `tests/.test-count-baseline.json`. Fail if
+ * the observed count drops MORE than the configured tolerance (default 1)
+ * below the baseline. Growth above baseline is fine; if the count grows by
+ * more than `update_baseline_when_growth_exceeds`, surface a notice that the
  * baseline file should be refreshed (operator commits the refresh as part
  * of the release that added the tests).
  *
@@ -71,7 +77,7 @@ function countTests(filePath) {
     // Drop a trailing line comment too (`test('x'); // disabled`).
     const stripped = noStrings.replace(/\/\/.*$/, '').trim();
     if (!stripped) continue;
-    if (/(?<![A-Za-z0-9_$.])test(?:\.only|\.skip)?\s*\(/.test(stripped)) count++;
+    if (/(?<![A-Za-z0-9_$.])(?:test|it)(?:\.only|\.skip)?\s*\(/.test(stripped)) count++;
   }
   return count;
 }
@@ -165,14 +171,20 @@ function main() {
 
   if (status === 'shrunk_beyond_tolerance') {
     console.error(`[check-test-count] FAIL - test count dropped from ${baseline} to ${observed} (delta ${delta}, tolerance -${tolerance}).`);
-    console.error('[check-test-count] Either a test file was accidentally removed, a test() invocation was deleted, OR the baseline is stale.');
+    console.error('[check-test-count] Either a test file was accidentally removed, a test()/it() invocation was deleted, OR the baseline is stale.');
     console.error('[check-test-count] If the drop is intentional, run: node scripts/check-test-count.js --update-baseline');
-    process.exit(1);
+    // exitCode + return (not process.exit) so the buffered stdout write above
+    // (the --json result / one-line summary) drains before the event loop ends
+    // — process.exit() can truncate piped output.
+    process.exitCode = 1;
+    return;
   }
   if (status === 'grew_beyond_threshold_consider_bump') {
     console.error(`[check-test-count] NOTICE - test count grew by ${delta} (above the ${updateThreshold} notice threshold). Consider refreshing the baseline: node scripts/check-test-count.js --update-baseline`);
   }
-  process.exit(0);
+  process.exitCode = 0;
 }
 
-main();
+module.exports = { countTests, listTestFiles };
+
+if (require.main === module) main();

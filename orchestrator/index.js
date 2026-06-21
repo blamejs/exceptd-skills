@@ -304,9 +304,10 @@ async function runScan() {
   // other verbs (validate-cves, watchlist, etc.). Previously this was a
   // bare `process.argv.includes('--json')`, which differed in style from
   // the verbs below and could miss `--json=true` or similar future forms.
-  // --air-gap / --offline / --no-network are global flags; scan does only
-  // local filesystem probing, so they're accepted-and-ignored rather than
-  // rejected (no network I/O to suppress).
+  // --air-gap / --offline / --no-network are global flags; scan's TLS-reachability
+  // probe is the one network touch, and --air-gap (or EXCEPTD_AIR_GAP=1) now
+  // suppresses it (see scanner.js isAirGap), so the flags are accepted here and
+  // honored downstream rather than silently ignored.
   if (rejectUnknownFlags('scan', args, ['--json', '--air-gap', '--offline', '--no-network'])) return;
   const { flags } = parseFlags(process.argv.slice(2), []);
   const jsonOut = flags.has('--json');
@@ -345,8 +346,9 @@ async function runScan() {
 }
 
 async function runDispatch() {
-  // --air-gap / --offline / --no-network: local-only verb, accepted-and-ignored
-  // (see runScan).
+  // --air-gap / --offline / --no-network: dispatch runs scan() first, whose TLS
+  // probe is suppressed under air-gap (see runScan / scanner.js isAirGap), so the
+  // flags are accepted here and honored downstream.
   if (rejectUnknownFlags('dispatch', args, ['--json', '--air-gap', '--offline', '--no-network'])) return;
   const jsonOut = process.argv.includes('--json');
   if (!jsonOut) console.log('[orchestrator] Scanning then dispatching...\n');
@@ -507,8 +509,8 @@ function runCurrency() {
 async function runReport(format) {
   // Reject unknown flags with the same structured envelope the other verbs
   // emit. report takes only a format positional; --json is accepted for
-  // parity, and the global air-gap flags are accepted-and-ignored (the
-  // report path's scan() is local-only).
+  // parity, and the global air-gap flags are honored downstream — the
+  // report path's scan() TLS probe is suppressed under air-gap (scanner.js).
   if (rejectUnknownFlags('report', args, ['--json', '--air-gap', '--offline', '--no-network'])) return;
   // v0.11.6 (#98): validate format positional. Pre-0.11.6 unknown formats
   // emitted a generic "# exceptd Report" header — silently accepted any
