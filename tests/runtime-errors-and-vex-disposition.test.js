@@ -270,7 +270,12 @@ test('AA P1-3: verifyManifestSignature refuses when keys/public.pem diverges fro
   const src = fs.readFileSync(path.join(ROOT, 'lib', 'verify.js'), 'utf8');
   const fnStart = src.indexOf('function verifyManifestSignature(manifest)');
   assert.ok(fnStart > 0, 'verifyManifestSignature must be present in lib/verify.js');
-  const fnBlock = src.slice(fnStart, fnStart + 3000);
+  // Slice to the actual function boundary, not a fixed char window — the body
+  // grows as guards are added (e.g. the no-pin rejection), and a too-small
+  // window would push crypto.verify out of view and false-fail this ordering
+  // check.
+  const fnEnd = src.indexOf('\nfunction ', fnStart + 1);
+  const fnBlock = src.slice(fnStart, fnEnd > fnStart ? fnEnd : fnStart + 4000);
   const pinIdx = fnBlock.indexOf('checkExpectedFingerprint(');
   const verifyIdx = fnBlock.indexOf('crypto.verify(');
   assert.ok(pinIdx > 0,

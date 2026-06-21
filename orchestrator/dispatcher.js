@@ -42,8 +42,16 @@ function dispatch(findings) {
     }
 
     for (const skill of matched) {
-      if (seen.has(skill.name)) continue;
-      seen.add(skill.name);
+      // De-duplicate by (skill, finding identity), NOT by skill alone. Two
+      // distinct findings (e.g. two different CVEs) that route to the same skill
+      // must BOTH produce a plan entry so their per-CVE evidence is preserved —
+      // deduping on skill.name alone silently dropped every finding after the
+      // first that reached a given skill, defeating the per-CVE evidence the
+      // block below is built to carry. A genuine duplicate (same skill + same
+      // finding identity) is still folded.
+      const dedupeKey = `${skill.name}|${finding.cve_id || finding.signal || ''}`;
+      if (seen.has(dedupeKey)) continue;
+      seen.add(dedupeKey);
 
       // Preserve per-CVE evidence so operators see the actual CVE IDs
       // (not just an aggregate count). Earlier output read "1 CISA
@@ -65,7 +73,10 @@ function dispatch(findings) {
         action_required: finding.action_required,
         priority: severityToPriority(finding.severity),
         last_threat_review: skill.last_threat_review || 'unknown',
-        evidence,
+        // Omit `evidence` entirely when it has no content (no items / cve_id /
+        // rwep_score) rather than emitting a bare {} — a field-present-but-empty
+        // object reads to a consumer as "evidence was captured" when none was.
+        ...(Object.keys(evidence).length > 0 ? { evidence } : {}),
       });
     }
   }

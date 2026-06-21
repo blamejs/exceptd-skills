@@ -1556,7 +1556,10 @@ test('audit-3 B.1: doctor --help advertises every runtime-accepted flag', () => 
   const r = cli(['doctor', '--help']);
   const text = (r.stdout || '') + (r.stderr || '');
   for (const flag of ['--collectors', '--ai-config', '--exit-codes', '--shipped-tarball', '--registry-check', '--fix']) {
-    assert.match(text, new RegExp(`${flag.replace(/-/g, '\\-')}\\b`),
+    // Plain substring search — the flag is a literal token in the help text, so
+    // no regex (and no partial hyphen-only escape that reads as incomplete
+    // sanitization) is needed.
+    assert.ok(text.includes(flag),
       `doctor --help must advertise ${flag}; got: ${text.slice(0, 500)}`);
   }
 });

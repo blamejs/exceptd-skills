@@ -90,20 +90,25 @@ test('PP P1-1: acquireLock returns null for same-PID lockfile with fresh mtime (
     lockFile,
     JSON.stringify({ pid: process.pid, started_at: new Date().toISOString(), playbook: playbookId }, null, 2),
   );
-  // Read mtime before the acquireLock call so we can confirm it was not touched.
-  const mtimeBefore = fs.statSync(lockFile).mtimeMs;
-
-  const result = playbookRunner._acquireLock(playbookId);
-  assert.equal(
-    result,
-    null,
-    'acquireLock must return null when the same-PID lockfile is fresh (reentrancy must be blocked)',
-  );
-  // Lockfile contents must be unchanged — we didn't reclaim.
-  const reread = JSON.parse(fs.readFileSync(lockFile, 'utf8'));
+  // Hold ONE descriptor across the whole assertion: capture mtime before the
+  // acquire, run it, then re-read content + mtime from the SAME fd. A single
+  // open (no second openSync of the path) means there is no stat-then-open
+  // check-then-use race, and every observation is of one consistent inode.
+  const lfd = fs.openSync(lockFile, 'r');
+  let reread, mtimeBefore, mtimeAfter;
+  try {
+    mtimeBefore = fs.fstatSync(lfd).mtimeMs;
+    const result = playbookRunner._acquireLock(playbookId);
+    assert.equal(
+      result,
+      null,
+      'acquireLock must return null when the same-PID lockfile is fresh (reentrancy must be blocked)',
+    );
+    reread = JSON.parse(fs.readFileSync(lfd, 'utf8'));
+    mtimeAfter = fs.fstatSync(lfd).mtimeMs;
+  } finally { fs.closeSync(lfd); }
   assert.equal(reread.pid, process.pid);
   // mtime not rewritten.
-  const mtimeAfter = fs.statSync(lockFile).mtimeMs;
   assert.equal(
     mtimeAfter,
     mtimeBefore,

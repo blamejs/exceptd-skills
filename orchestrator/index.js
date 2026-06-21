@@ -558,14 +558,34 @@ async function runReport(format) {
           revision_history: [{ number: '1', date: new Date().toISOString(), summary: 'Initial report emission' }],
         },
       },
+      // CSAF vulnerabilities[] are CVE-scoped by spec; non-CVE findings (signal
+      // detections without a catalogued CVE) are preserved in
+      // exceptd_extension.scan_summary below, not dropped.
       vulnerabilities: scanResult.findings
         .filter(f => f.cve_id)
-        .map(f => ({
-          cve: f.cve_id,
-          notes: [{ category: 'description', text: f.action_required || f.signal }],
-          scores: [{ products: [], cvss_v3: { base_score: 0 } }],
-          threats: f.severity === 'critical' ? [{ category: 'exploit_status', details: f.action_required }] : [],
-        })),
+        .map(f => {
+          const vuln = {
+            cve: f.cve_id,
+            // Never emit a null description/threat detail — the CSAF schema
+            // requires non-empty strings, so fall back through signal to a
+            // generic label.
+            notes: [{ category: 'description', text: f.action_required || f.signal || 'Vulnerability detected' }],
+            threats: f.severity === 'critical'
+              ? [{ category: 'exploit_status', details: f.action_required || f.signal || 'Critical vulnerability detected' }]
+              : [],
+          };
+          // Emit the REAL catalog CVSS, never a hardcoded base_score:0 (which
+          // reads as "no impact" and inverts the risk for a critical CVE).
+          // Mirror the playbook-runner CSAF emitter: a cvss_v3 block carries
+          // vectorString (CSAF §3.2.1.5), so emit it only when both the score
+          // and vector are known, and omit scores entirely otherwise rather
+          // than fabricate one.
+          if (typeof f.cvss_score === 'number' && Number.isFinite(f.cvss_score) &&
+              typeof f.cvss_vector === 'string' && f.cvss_vector) {
+            vuln.scores = [{ products: [], cvss_v3: { baseScore: f.cvss_score, vectorString: f.cvss_vector } }];
+          }
+          return vuln;
+        }),
       exceptd_extension: {
         scan_summary: scanResult.summary,
         dispatch_plan: plan,
@@ -686,7 +706,11 @@ function _acquireWatchLock() {
   const STALE_MS = 60_000;
 
   function tryCreate() {
-    const fd = fsMod.openSync(lockPath, 'wx');
+    // O_EXCL create with an explicit owner-only (0o600) mode: the predictable
+    // lock-file name is the cross-process mutex, so safety is the exclusive
+    // create + restrictive perms, not an unguessable name. The explicit mode
+    // also clears the insecure-temporary-file static-analysis finding.
+    const fd = fsMod.openSync(lockPath, 'wx', 0o600);
     fsMod.writeSync(fd, JSON.stringify({ pid: process.pid, started_at: new Date().toISOString() }));
     fsMod.closeSync(fd);
   }

@@ -1469,9 +1469,11 @@ function dispatchPlaybook(cmd, argv) {
     }
     runOpts.session_key = args["session-key"];
   }
-  if (args.mode) {
+  if (args.mode !== undefined) {
     // Bug #32: validate --mode against the accepted set. Previously
-    // `--mode garbage` was silently accepted.
+    // `--mode garbage` was silently accepted. Gate on `!== undefined` (not
+    // truthiness) so `--mode ""` is also rejected by the set check below rather
+    // than silently slipping past as a falsy value.
     const VALID_MODES = ["self_service", "authorized_pentest", "ir_response", "ctf", "research", "compliance_audit"];
     if (!VALID_MODES.includes(args.mode)) {
       // v0.13.2: did-you-mean on flag-value typos (Levenshtein ≤ 2).
@@ -2842,7 +2844,10 @@ function cmdLint(runner, args, runOpts, pretty) {
 
 function cmdBrief(runner, args, runOpts, pretty) {
   const playbookId = args._[0];
-  const onlyPhase = args.phase || null;
+  // Preserve an explicit empty string (don't coerce "" -> null) so the
+  // accepted-set check below rejects `--phase ""` instead of silently treating
+  // it as "no filter" and emitting the full brief. Only an OMITTED flag is null.
+  const onlyPhase = args.phase === undefined ? null : args.phase;
 
   // v0.12.9 (P2 #7 from production smoke): refuse garbage values to --phase.
   // Pre-v0.12.9 `brief secrets --phase foo` silently accepted any string and
@@ -2965,6 +2970,11 @@ function cmdVerifyAttestation(runner, args, runOpts, pretty) {
 }
 
 function cmdPlan(runner, args, runOpts, pretty) {
+  // Reject an empty --playbook value rather than letting the truthy gate below
+  // coerce it to null and silently plan across ALL playbooks (wrong scope).
+  if (args.playbook === "" || (Array.isArray(args.playbook) && args.playbook.some(p => p === ""))) {
+    return emitError("plan: --playbook was given an empty value; pass a playbook id, or omit --playbook to plan across all.", { verb: "plan", flag: "playbook" }, pretty);
+  }
   let playbookIds = args.playbook
     ? (Array.isArray(args.playbook) ? args.playbook : [args.playbook])
     : null;
@@ -4243,55 +4253,83 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
         return emitError(`run: --evidence-dir entry ${f} resolves outside the directory; refusing.`, null, pretty);
       }
       // The path.resolve check above only catches `..` traversal in the
-      // joined path; fs.readFileSync(entryPath) still follows symlinks, so
-      // a `<pb-id>.json -> /etc/shadow` symlink inside the dir would happily
-      // slurp the target. lstat is symlink-aware (it does NOT follow);
-      // refuse anything that's not a regular file. Defense in depth on top
-      // of the readdir filter — a junction (Windows) or bind-mount can
-      // shape-shift in between filter and read.
-      let lst;
-      try { lst = fs.lstatSync(entryPath); }
-      catch (e) {
-        return emitError(`run: --evidence-dir entry ${f}: lstat failed: ${e.message}`, null, pretty);
-      }
-      if (lst.isSymbolicLink()) {
-        return emitError(`run: --evidence-dir entry ${f} is a symbolic link; refusing (symlinks bypass the directory-confinement check).`, { entry: f }, pretty);
-      }
-      if (!lst.isFile()) {
-        return emitError(`run: --evidence-dir entry ${f} is not a regular file; refusing.`, { entry: f }, pretty);
-      }
-      // Windows directory junctions are reparse-point dirs that
-      // `lstat().isSymbolicLink()` returns FALSE for (Node treats them as
-      // ordinary directories), bypassing the symlink refusal above. Use
-      // realpathSync to resolve the entry and confirm it still lives under
-      // the resolved evidence-dir — the realpath approach is portable
-      // (catches POSIX symlinks too, defense in depth) and works regardless
-      // of whether the OS exposes reparse-point bits.
-      let realEntry;
-      try { realEntry = fs.realpathSync(entryPath); }
-      catch (e) {
-        return emitError(`run: --evidence-dir entry ${f}: realpath failed: ${e.message}`, null, pretty);
-      }
-      if (realEntry !== entryPath && !realEntry.startsWith(resolvedDir + path.sep)) {
-        return emitError(
-          `run: --evidence-dir entry ${f} resolves outside the directory (junction / reparse-point / symlink target). Refusing.`,
-          { entry: f, resolved_to: realEntry },
-          pretty
-        );
-      }
-      // Hardlink defense in depth: no clean cross-platform refusal exists —
-      // hardlinks are indistinguishable from regular files at the inode
-      // level. Surface a stderr warning when nlink > 1 so the operator is
-      // aware a second name may point at the same file. Not a refusal —
-      // legitimate use cases (atomic rename, package-manager dedup) produce
-      // nlink > 1 without malicious intent.
-      if (lst.nlink > 1) {
-        process.stderr.write(`[exceptd run --evidence-dir] WARNING: ${f} has nlink=${lst.nlink}; a hardlink to this file exists elsewhere on the filesystem. Hardlinks cannot be refused cross-platform — confirm the file content is what you expect.\n`);
+      // joined path; reading the path would still follow symlinks, so a
+      // `<pb-id>.json -> /etc/shadow` symlink inside the dir would slurp the
+      // target. Rather than lstat/realpath the PATH and then re-open it
+      // (a check-then-use TOCTOU window), open a single O_NOFOLLOW descriptor
+      // FIRST and make every subsequent decision about that exact descriptor.
+      // O_NOFOLLOW refuses a symlinked leaf at open (ELOOP) on POSIX; on
+      // Windows it is a no-op, so the fstat type check + realpath gate below
+      // carry the junction/symlink defense. Opening before any path stat means
+      // the bytes read come from the inode we validated, not a path that could
+      // be re-pointed between check and read.
+      let efd;
+      try {
+        const O_NOFOLLOW = fs.constants.O_NOFOLLOW || 0;
+        efd = fs.openSync(entryPath, fs.constants.O_RDONLY | O_NOFOLLOW);
+      } catch (e) {
+        const why = e.code === "ELOOP"
+          ? "symbolic link refused (symlinks bypass the directory-confinement check)"
+          : e.message;
+        return emitError(`run: --evidence-dir entry ${f}: open failed: ${why}`, { entry: f }, pretty);
       }
       try {
-        bundle[pbId] = JSON.parse(fs.readFileSync(entryPath, "utf8"));
+        const st = fs.fstatSync(efd);
+        if (!st.isFile()) {
+          return emitError(`run: --evidence-dir entry ${f} is not a regular file; refusing (symlink / junction / dir / fifo bypass the directory-confinement check).`, { entry: f }, pretty);
+        }
+        // Hardlink defense in depth: no clean cross-platform refusal exists —
+        // hardlinks are indistinguishable from regular files at the inode
+        // level. Surface a stderr warning when nlink > 1 so the operator is
+        // aware a second name may point at the same file. Not a refusal —
+        // legitimate use cases (atomic rename, package-manager dedup) produce
+        // nlink > 1 without malicious intent.
+        if (st.nlink > 1) {
+          process.stderr.write(`[exceptd run --evidence-dir] WARNING: ${f} has nlink=${st.nlink}; a hardlink to this file exists elsewhere on the filesystem. Hardlinks cannot be refused cross-platform — confirm the file content is what you expect.\n`);
+        }
+        // Read the bytes from `efd` FIRST — the descriptor was opened
+        // O_NOFOLLOW and fstat-confirmed a regular file, so this reads the exact
+        // inode we validated. Reading before the realpath gate (rather than
+        // checking the path then reading) means there is no check-then-use
+        // window at all; the containment gate below decides whether to USE the
+        // bytes, and discards them otherwise.
+        const raw = fs.readFileSync(efd, "utf8");
+        // Symlink refusal. O_NOFOLLOW already rejects a symlinked leaf at open on
+        // POSIX (ELOOP), but it is a no-op on Windows, where the open follows the
+        // link. Detect and refuse a symlink explicitly via lstat — regardless of
+        // where it points — so a symlinked entry is never accepted. This runs
+        // AFTER the descriptor read (the bytes are dropped on refusal), so there
+        // is no path-check-before-read TOCTOU window.
+        let lst;
+        try { lst = fs.lstatSync(entryPath); }
+        catch (e) {
+          return emitError(`run: --evidence-dir entry ${f}: lstat failed: ${e.message}`, null, pretty);
+        }
+        if (lst.isSymbolicLink()) {
+          return emitError(`run: --evidence-dir entry ${f} is a symbolic link; refusing (symlinks bypass the directory-confinement check).`, { entry: f }, pretty);
+        }
+        // Windows directory junctions are reparse-point dirs that
+        // lstat().isSymbolicLink() returns FALSE for, and O_NOFOLLOW is a
+        // no-op there; realpath resolves the entry and confirms it still lives
+        // under the resolved evidence-dir. A target that escapes the dir is
+        // refused and the already-read bytes are dropped unused.
+        let realEntry;
+        try { realEntry = fs.realpathSync(entryPath); }
+        catch (e) {
+          return emitError(`run: --evidence-dir entry ${f}: realpath failed: ${e.message}`, null, pretty);
+        }
+        if (realEntry !== entryPath && !realEntry.startsWith(resolvedDir + path.sep)) {
+          return emitError(
+            `run: --evidence-dir entry ${f} resolves outside the directory (junction / reparse-point / symlink target). Refusing.`,
+            { entry: f, resolved_to: realEntry },
+            pretty
+          );
+        }
+        bundle[pbId] = JSON.parse(raw);
       } catch (e) {
-        return emitError(`run: failed to parse --evidence-dir entry ${f}: ${e.message}`, null, pretty);
+        return emitError(`run: failed to read --evidence-dir entry ${f}: ${e.message}`, null, pretty);
+      } finally {
+        try { fs.closeSync(efd); } catch { /* already closed / invalid fd */ }
       }
     }
   }
@@ -5641,8 +5679,8 @@ function cmdReattest(runner, args, runOpts, pretty) {
     lines.push(`attest diff: ${obj.session_id} (${obj.playbook_id})`);
     const icon = obj.status === "unchanged" ? "[ok]" : "[i  DRIFTED]";
     lines.push(`\n${icon}  status=${obj.status}`);
-    lines.push(`  prior:  ${obj.prior_evidence_hash}  (${obj.prior_captured_at})`);
-    lines.push(`  replay: ${obj.replay_evidence_hash}  (${obj.replayed_at})`);
+    lines.push(`  prior:  ${obj.prior_evidence_hash}  (${obj.prior_captured_at || '(no detail)'})`);
+    lines.push(`  replay: ${obj.replay_evidence_hash}  (${obj.replayed_at || '(no detail)'})`);
     if (obj.replay_classification) {
       lines.push(`  replay classification: ${obj.replay_classification}  RWEP=${obj.replay_rwep_adjusted ?? 0}`);
     }
@@ -5748,13 +5786,13 @@ function renderAttestDiff(obj) {
   lines.push(`  artifact diff:  ${ad.added?.length ?? 0} added, ${ad.removed?.length ?? 0} removed, ${ad.changed?.length ?? 0} changed, ${ad.unchanged_count ?? 0} unchanged (of ${ad.total_compared ?? 0})`);
   lines.push(`  signal diff:    ${sd.changed?.length ?? 0} changed, ${sd.unchanged_count ?? 0} unchanged (of ${sd.total_compared ?? 0})`);
   if (obj.sidecar_verify) {
-    const sv = obj.sidecar_verify;
-    let sidecarClass = "verified";
-    if (!sv.signed && sv.reason && sv.reason.includes("explicitly unsigned")) sidecarClass = "explicitly-unsigned";
-    else if (!sv.signed && sv.reason && sv.reason.includes("no .sig sidecar")) sidecarClass = "no-sidecar";
-    else if (sv.signed && !sv.verified) sidecarClass = "tamper-detected";
-    else if (!sv.signed) sidecarClass = "no-public-key";
-    lines.push(`  sidecar verify: ${sidecarClass}`);
+    // Use the canonical classifier, which checks tamper_class BEFORE the reason
+    // strings. The previous inline logic matched reason.includes("explicitly
+    // unsigned") first, so an unsigned-SUBSTITUTION attack (whose reason also
+    // contains "explicitly unsigned" but carries tamper_class:
+    // 'unsigned-substitution') was mislabeled as the benign 'explicitly-unsigned'
+    // — hiding the substitution signal in the human diff output.
+    lines.push(`  sidecar verify: ${classifySidecarVerify(obj.sidecar_verify)}`);
   }
   return lines.join("\n");
 }
@@ -6685,11 +6723,13 @@ function cmdDiscover(runner, args, runOpts, pretty) {
   let hostDistro = null;
   if (hostPlatform === "linux") {
     try {
-      const res = spawnSync("cat", ["/etc/os-release"], { encoding: "utf8" });
-      if (res.status === 0 && res.stdout) {
-        const idMatch = res.stdout.match(/^ID=(.+)$/m);
-        const verMatch = res.stdout.match(/^VERSION_ID=(.+)$/m);
-        const prettyMatch = res.stdout.match(/^PRETTY_NAME=(.+)$/m);
+      // Read the file directly instead of spawning `cat` (a process to do what
+      // fs does, and a static-analysis "unnecessary use of cat" flag).
+      const osRelease = fs.readFileSync("/etc/os-release", "utf8");
+      if (osRelease) {
+        const idMatch = osRelease.match(/^ID=(.+)$/m);
+        const verMatch = osRelease.match(/^VERSION_ID=(.+)$/m);
+        const prettyMatch = osRelease.match(/^PRETTY_NAME=(.+)$/m);
         hostDistro = {
           id: idMatch ? idMatch[1].replace(/^"|"$/g, "") : null,
           version_id: verMatch ? verMatch[1].replace(/^"|"$/g, "") : null,

@@ -89,6 +89,10 @@ function kernelScan() {
       value: kernel,
       cve_id: cveId,
       rwep_score: cve.rwep_score,
+      // Carry the catalog CVSS so the CSAF report emits a real cvss_v3 block
+      // (base score + vector) instead of a placeholder base_score:0.
+      cvss_score: cve.cvss_score,
+      cvss_vector: cve.cvss_vector,
       cisa_kev: cve.cisa_kev,
       action_required: 'Cross-reference kernel version against patched version for this CVE',
       skill_hint: 'kernel-lpe-triage',
@@ -158,6 +162,10 @@ function mcpScan() {
           tool,
           config_path: p,
           severity: 'low',
+          // Route directly like the successful mcp_server_detected finding, so a
+          // parse-error finding reaches mcp-agent-trust even if the domain
+          // routing table changes — domain fallback alone left it brittle.
+          skill_hint: 'mcp-agent-trust',
           action_required: 'MCP config file exists but could not be parsed'
         });
       }

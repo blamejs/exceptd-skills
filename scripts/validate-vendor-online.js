@@ -66,6 +66,14 @@ function rawUrlForPin(sourceRepo, commit, upstreamPath) {
   if (!m) return null;
   const [, owner, repo] = m;
   const cleanPath = String(upstreamPath || "").replace(/^\/+/, "");
+  // Validate every file-derived component before embedding it in the fetch URL,
+  // so a tampered _PROVENANCE.json cannot steer the request: owner/repo are
+  // GitHub-name-shaped, the commit is a hex git object id, and the path is a
+  // relative, traversal-free repo path. With the host a string literal, the
+  // fetch destination is fully constrained — not metadata-controlled.
+  if (!/^[A-Za-z0-9._-]+$/.test(owner) || !/^[A-Za-z0-9._-]+$/.test(repo)) return null;
+  if (!/^[0-9a-fA-F]{7,64}$/.test(String(commit || ""))) return null;
+  if (!/^[A-Za-z0-9._/-]+$/.test(cleanPath) || cleanPath.includes("..")) return null;
   return `https://raw.githubusercontent.com/${owner}/${repo}/${commit}/${cleanPath}`;
 }
 
