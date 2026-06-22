@@ -165,11 +165,9 @@ function filterMarkers(hits, cls) {
 // a code brace, while braces INSIDE the interpolation expression still count.
 function countCodeBraces(line, state) {
   let delta = 0;
-  let inLine = false; // `//` line comment — resets each line, never persisted
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
     const next = line[i + 1];
-    if (inLine) break; // rest of the line is a comment
     if (state.inBlock) {
       if (ch === "*" && next === "/") { state.inBlock = false; i++; }
       continue;
@@ -197,7 +195,7 @@ function countCodeBraces(line, state) {
       continue;
     }
     // Code context (possibly inside a template interpolation expression).
-    if (ch === "/" && next === "/") { inLine = true; break; }
+    if (ch === "/" && next === "/") break; // `//` — rest of the line is a comment
     if (ch === "/" && next === "*") { state.inBlock = true; i++; continue; }
     if (ch === "'") { state.inSingle = true; continue; }
     if (ch === '"') { state.inDouble = true; continue; }

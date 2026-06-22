@@ -758,13 +758,18 @@ function d3fendIdList(t, field) {
   return arr.map((x) => (x && x["@id"]) ? String(x["@id"]).replace(/^d3f:/, "") : null).filter(Boolean);
 }
 
+// Strip a trailing period from an OWL d3fend-id: a few upstream artifact ids
+// (e.g. "D3A-C4.") carry a spurious terminal dot that no id token regex can
+// round-trip, leaving the entry unmatchable by the orphan/cross-ref scanners.
+// No legitimate d3fend technique id ends in a period. The SAME normalization
+// must key the catalog (existing.has / local[id]) as well as the entry payload,
+// or a refresh re-adds the period-keyed row every run (duplicate / churn).
+function normD3fendId(rawId) {
+  return typeof rawId === "string" ? rawId.replace(/\.$/, "") : rawId;
+}
+
 function d3fendEntryFromOwl(t) {
-  // Strip a trailing period from the OWL d3fend-id: a few upstream artifact ids
-  // (e.g. "D3A-C4.") carry a spurious terminal dot that no id token regex can
-  // round-trip, leaving the entry unmatchable by the orphan/cross-ref scanners.
-  // No legitimate d3fend technique id ends in a period.
-  const rawId = t["d3f:d3fend-id"];
-  const id = typeof rawId === "string" ? rawId.replace(/\.$/, "") : rawId;
+  const id = normD3fendId(t["d3f:d3fend-id"]);
   const labelRaw = t["rdfs:label"];
   const name = Array.isArray(labelRaw)
     ? (typeof labelRaw[0] === "object" ? labelRaw[0]["@value"] : labelRaw[0])
@@ -842,7 +847,7 @@ async function refreshD3fend({ dry = false, cap = Infinity, _deps = {} } = {}) {
   techs.sort((a, b) => String(a["d3f:d3fend-id"]).localeCompare(String(b["d3f:d3fend-id"])));
   let added = 0, backfilled = 0;
   for (const t of techs) {
-    const id = t["d3f:d3fend-id"];
+    const id = normD3fendId(t["d3f:d3fend-id"]);
     if (existing.has(id)) {
       const fresh = d3fendEntryFromOwl(t);
       const cur = local[id];

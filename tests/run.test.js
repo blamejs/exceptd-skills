@@ -567,17 +567,14 @@ test.describe('cli-flag-validation', () => {
       const realFile = path.join(outside, 'library-author.json');
       fs.writeFileSync(realFile, JSON.stringify({ observations: {}, verdict: {} }), 'utf8');
       const linkPath = path.join(evDir, 'library-author.json');
-      let createdLink = false;
       try {
         fs.linkSync(realFile, linkPath);  // hardlink: same inode, in evDir
-        createdLink = true;
       } catch (e) {
         if (e.code === 'EPERM' || e.code === 'EXDEV' || e.code === 'EACCES') {
           return;
         }
         throw e;
       }
-      if (!createdLink) return;
       try {
         const r = cli(['run', '--all', '--evidence-dir', evDir]);
         assert.match(r.stderr, /WARNING.*nlink=2|nlink=\d+/,

@@ -928,7 +928,12 @@ function emitError(msg, extra, pretty) {
   // Explicit --json / --pretty / --json-stdout-only also force JSON
   // regardless of TTY (e.g. an operator redirecting to a file).
   const body = Object.assign({ ok: false, error: msg }, extra || {});
-  const wantJson = !!global.__exceptdWantJson || !!process.env.EXCEPTD_RAW_JSON;
+  // --json-stdout-only routes the envelope to stdout (below), so the envelope
+  // MUST be JSON. For a top-level error raised before flag parsing sets
+  // __exceptdWantJson (an unknown/removed verb), the stdout-only flag is the
+  // only signal present — fold it into the JSON selection so a human string is
+  // never written to the machine-readable stdout channel (breaking `| jq`).
+  const wantJson = !!global.__exceptdWantJson || !!process.env.EXCEPTD_RAW_JSON || !!global.__exceptdJsonStdoutOnly;
   const stderrIsTty = process.stderr.isTTY === true;
   let s;
   if (wantJson || !stderrIsTty) {

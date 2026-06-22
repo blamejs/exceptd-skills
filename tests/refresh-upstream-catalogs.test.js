@@ -894,3 +894,27 @@ test("#45 writeCatalog is atomic (temp+rename) — no truncated file is left", (
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+test("refreshD3fend normalizes a trailing-period upstream id to the catalog KEY (no duplicate re-add)", async () => {
+  // Regression: a few upstream D3FEND ids carry a spurious terminal dot
+  // ("D3A-C4."). The committed catalog keys are normalized ("D3A-C4"). The
+  // refresh loop must normalize the upstream id the SAME way before the
+  // existing.has() / local[id] lookup, or it treats the normalized row as new
+  // and re-adds a period-keyed duplicate on every run.
+  const tech = {
+    "@id": "d3f:TestArtifact",
+    "d3f:d3fend-id": "D3A-C4.",
+    "rdfs:label": "Test Artifact",
+    "d3f:definition": "A test definition.",
+  };
+  const _deps = {
+    fetchUrl: async () => JSON.stringify({ "@graph": [tech] }),
+    loadCatalog: () => ({
+      _meta: { last_updated: "2026-01-01" },
+      "D3A-C4": { id: "D3A-C4", name: "Test Artifact", description: "x" },
+    }),
+    writeCatalog: () => { throw new Error("dry run must not write"); },
+  };
+  const r = await MOD.refreshD3fend({ dry: true, _deps });
+  assert.equal(r.added, 0, "the period-suffixed upstream id maps to the existing normalized key, so nothing is added");
+});
