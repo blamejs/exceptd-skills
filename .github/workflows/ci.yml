@@ -122,6 +122,13 @@ jobs:
         # the new surface is tracked.
         run: node scripts/check-manifest-snapshot.js
 
+      - name: Test-subject coverage (every test maps to a subject; every subject has a test)
+        # Bidirectional naming gate: every tests/<x>.test.js is named after a
+        # real subject (module / CLI verb / CVE id / playbook / data primitive
+        # / repo artifact) and every such subject has a test. Mirrors the
+        # predeploy gate; subjects are derived from the source tree.
+        run: node scripts/check-test-subjects.js
+
       - name: Pre-computed indexes freshness (data/_indexes/ vs. live sources)
         # validate-indexes re-hashes every source file recorded in
         # data/_indexes/_meta.json and fails on drift. Pin matches the

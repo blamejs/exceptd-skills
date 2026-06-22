@@ -464,3 +464,21 @@ test('#22 a test( mentioned inside a string is NOT counted', () => {
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+require("node:test").describe("check-test-count.listTestFiles", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs"), os = require("node:os"), path = require("node:path");
+  const { listTestFiles } = require("../scripts/check-test-count.js");
+  test("listTestFiles recursively collects only .test.js files", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ltf-"));
+    try {
+      fs.writeFileSync(path.join(dir, "a.test.js"), "");
+      fs.writeFileSync(path.join(dir, "b.js"), "");
+      fs.mkdirSync(path.join(dir, "sub"));
+      fs.writeFileSync(path.join(dir, "sub", "c.test.js"), "");
+      const got = listTestFiles(dir).map((p) => path.basename(p)).sort();
+      assert.deepEqual(got, ["a.test.js", "c.test.js"]);
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  });
+});

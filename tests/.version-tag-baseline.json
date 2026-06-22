@@ -71,7 +71,6 @@
     "tests/check-test-count.test.js": 1,
     "tests/check-test-coverage.test.js": 3,
     "tests/check-version-bump.test.js": 20,
-    "tests/check-version-tags.test.js": 9,
     "tests/ci.test.js": 7,
     "tests/cicd-pipeline-compromise.test.js": 6,
     "tests/cli.test.js": 5,

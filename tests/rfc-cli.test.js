@@ -381,3 +381,16 @@ test('#50 rfc CLI: canonical order (number then --check) still resolves the numb
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+require("node:test").describe("rfc-cli exported helpers", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const { normTitle, main } = require("../lib/rfc-cli.js");
+  test("normTitle lowercases, collapses non-alphanumerics to single spaces, and trims", () => {
+    assert.equal(normTitle("  RFC 9110: HTTP/1.1!! "), "rfc 9110 http 1 1");
+    assert.equal(normTitle("DTLS"), "dtls");
+  });
+  test("main is the exported CLI entry (driven end-to-end by the rfc-cli subprocess tests)", () => {
+    assert.equal(typeof main, "function");
+  });
+});

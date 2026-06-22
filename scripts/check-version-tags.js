@@ -91,10 +91,12 @@ const COMMENT_EXEMPT = new Set([
   "scripts/check-version-bump.js",
   "tests/version-bump-cadence.test.js",
   // The version-tag gate's own regression test asserts the trailing-period /
-  // IPv4 / longer-run boundaries, so it MUST embed literal stamps like
-  // `0.18.9.` and `0.18.99` as the inputs under test — load-bearing data for
-  // the VERSION_TAG_RE boundary cases, not sprinkled release tags.
-  "tests/hunt-fix-E-gates.test.js",
+  // IPv4 / longer-run boundaries and the PHASE_RESIDUE_RES / FILENAME_VERSION_RE
+  // / countLineViolations exports, so it MUST embed literal stamps like
+  // `0.18.9.`, `0.18.99`, `Pre-0.13.22`, and `foo-v0_13_2.test.js` as the inputs
+  // under test — load-bearing data for the detector's boundary cases, not
+  // sprinkled release tags.
+  "tests/check-version-tags.test.js",
 ]);
 
 // Git-ignored files (a contributor's local-only working docs, scratch) are

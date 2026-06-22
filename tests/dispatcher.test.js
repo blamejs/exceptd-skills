@@ -373,3 +373,19 @@ test('#39 fingerprint is key-order-independent (folds reordered-but-equal conten
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+require("node:test").describe("dispatcher.findingFingerprint", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const { findingFingerprint } = require("../orchestrator/dispatcher.js");
+  test("findingFingerprint returns the cve_id verbatim when present", () => {
+    assert.equal(findingFingerprint({ cve_id: "CVE-2026-31431", skill: "kernel" }), "CVE-2026-31431");
+  });
+  test("findingFingerprint falls back to an order-independent sha1 when no cve_id", () => {
+    const a = findingFingerprint({ a: 1, b: 2 });
+    const b = findingFingerprint({ b: 2, a: 1 });
+    assert.equal(a, b, "key order must not change the fingerprint");
+    assert.match(a, /^[0-9a-f]{40}$/);
+    assert.notEqual(a, findingFingerprint({ a: 1, b: 3 }));
+  });
+});

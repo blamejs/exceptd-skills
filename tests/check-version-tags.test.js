@@ -288,3 +288,30 @@ test('#26 VERSION_TAG_RE rejects an IPv4 address and a longer dotted-numeric run
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+require("node:test").describe("check-version-tags scan exports", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const { PHASE_RESIDUE_RES, FILENAME_VERSION_RE, countLineViolations, scanCurrent } = require("../scripts/check-version-tags.js");
+  test("FILENAME_VERSION_RE matches a version-stamped test filename only", () => {
+    assert.match("foo-v0_13_2.test.js", FILENAME_VERSION_RE);
+    assert.doesNotMatch("foo.test.js", FILENAME_VERSION_RE);
+  });
+  test("PHASE_RESIDUE_RES flags cycle / dotted-phase / Pre-version residue", () => {
+    assert.ok(Array.isArray(PHASE_RESIDUE_RES) && PHASE_RESIDUE_RES.length === 3);
+    const hit = (s) => PHASE_RESIDUE_RES.some((re) => re.test(s));
+    assert.ok(hit("cycle 13"));
+    assert.ok(hit("phase 9.11"));
+    assert.ok(hit("Pre-0.13.22"));
+    assert.ok(!hit("a normal sentence with no residue"));
+  });
+  test("countLineViolations skips non-scanned extensions and counts tags in scanned files", () => {
+    assert.equal(countLineViolations("data/cve-catalog.json"), 0);
+    assert.ok(countLineViolations("README.md") >= 1);
+  });
+  test("scanCurrent returns the { byFile, filenameViolations } shape", () => {
+    const r = scanCurrent();
+    assert.equal(typeof r.byFile, "object");
+    assert.ok(Array.isArray(r.filenameViolations));
+  });
+});

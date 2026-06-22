@@ -402,3 +402,21 @@ test('no internal `node lib/…` / `node orchestrator/…` paths in operator-fac
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+require("node:test").describe("check-codebase-patterns brace + regex helpers", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const { countCodeBraces, newBraceState, isStaticRegexFirstChar } = require("../scripts/check-codebase-patterns.js");
+  test("newBraceState starts outside every string/template/comment context", () => {
+    assert.deepEqual(newBraceState(), { inSingle: false, inDouble: false, inTemplate: false, inBlock: false, templateExpr: [] });
+  });
+  test("countCodeBraces nets code braces and ignores braces inside strings", () => {
+    assert.equal(countCodeBraces("a { b {", newBraceState()), 2);
+    assert.equal(countCodeBraces("if (x) { y(); }", newBraceState()), 0);
+    assert.equal(countCodeBraces('const s = "a { b";', newBraceState()), 0);
+  });
+  test("isStaticRegexFirstChar is true only for a quote or slash literal start", () => {
+    for (const c of ['"', "'", "/"]) assert.equal(isStaticRegexFirstChar(c), true, c);
+    for (const c of ["a", "$", "(", "x"]) assert.equal(isStaticRegexFirstChar(c), false, c);
+  });
+});
