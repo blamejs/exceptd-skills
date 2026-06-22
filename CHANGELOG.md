@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.18.16 — 2026-06-22
+
+A correctness pass on the evidence-output and attestation surfaces.
+
+SARIF finding results always carry a location now. A result with no `locations` is silently dropped by GitHub Code Scanning; previously only playbooks whose look-artifact sources happened to be bare file paths got one, so most playbooks' (prose/glob/command sources) findings were emitted location-less and disappeared from the alerts list. Each finding without a concrete file now carries a rule-scoped logical location, keeping it visible and attributable; a physical file location is still used whenever the agent supplied one.
+
+`attest diff` no longer reports identical evidence as changed. The artifact diff was keyed by the operator-chosen observation key rather than the indicator the observation targeted, so two attestations with the same finding under different observation keys (a different collector run, the array vs object evidence shape, reordered observations) showed every artifact as added-and-removed with zero unchanged. The diff is now keyed by the stable indicator id, so identical evidence compares as unchanged.
+
+Risk-acceptance exception language now reports its unresolved placeholders. The auditor-ready exception text is filled from operator-supplied values that a standard run does not pre-stage, so it could ship literal `<MISSING:…>` tokens; the exception now carries a `missing_interpolation_vars` list (and surfaces a runtime error) naming exactly which values still need filling, matching the notification-draft behavior.
+
+CSAF advisories bind their per-version affected products. The product tree's per-version product entries were defined but never referenced from any vulnerability, so a dashboard correlating affected products to the tree saw only the generic synthetic product; each CVE's version entries are now bound into its `product_status`.
+
 ## 0.18.15 — 2026-06-22
 
 Indicator-gated escalations and playbook chains now fire when their indicators are detected. An escalation or `feeds_into` written as `<indicator-id> == true` (the catalog's standard form) resolved only when that id was also passed as a raw signal; the normal scan path delivers detections separately, so on a real `exceptd collect <playbook>` these escalations and downstream chains stayed silent even when the indicator was found. Fired indicators are now bound into the escalation, chain, and remediation-precondition contexts, so a detection drives the condition that gates on it. An operator can still override a specific indicator, and engine-computed values still take precedence.

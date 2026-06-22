@@ -3483,6 +3483,57 @@ describe('round-3: dead-condition rewrites, validate engine-ctx, evidence-hash, 
   });
 });
 
+describe('round-5: output/binding resolution (interpolation, SARIF locations, CSAF product binding)', () => {
+  let runner;
+  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+  const PRE = { forceStale: true, operator_consent: { explicit: true }, precondition_checks: { 'linux-platform': true, 'uname-available': true } };
+
+  it('exception render tracks unresolved ${placeholder} tokens as missing_interpolation_vars + a runtime_error', () => {
+    const out = runner.run('kernel', 'all-catalogued-kernel-cves', { signals: { remediation_blocked: true } }, PRE);
+    const ex = out.phases.close.exception;
+    assert.ok(ex, 'exception should be generated when the trigger fires');
+    assert.ok(Array.isArray(ex.missing_interpolation_vars), 'exception must carry missing_interpolation_vars');
+    assert.ok(ex.missing_interpolation_vars.length >= 1, 'operator-fill template vars are unresolved on a bare run');
+    // The auditor language carries the <MISSING:..> literals AND the gap is observable.
+    assert.match(ex.auditor_ready_language, /<MISSING:/);
+    const re = (out.phases.analyze.runtime_errors || []).find(e => e.kind === 'exception_unresolved_placeholders');
+    assert.ok(re, 'an exception_unresolved_placeholders runtime_error must surface the gap');
+  });
+
+  it('SARIF finding-class results always carry a location (logicalLocations fallback for prose-source playbooks)', () => {
+    // secrets describes its look-artifact sources in prose/globs, so the physical
+    // location heuristic returns null; the result must still be located so GitHub
+    // Code Scanning does not drop it.
+    const out = runner.run('secrets', 'full-repo-secret-scan',
+      { signals: { _bundle_formats: ['sarif'] }, signal_overrides: { 'aws-access-key-id': 'hit' } },
+      { operator_consent: { explicit: true }, precondition_checks: { 'linux-platform': true, 'uname-available': true } });
+    const sarif = out.phases.close.evidence_package.bundles_by_format.sarif;
+    const findings = sarif.runs[0].results.filter(r => r.properties && (r.properties.kind === 'indicator_hit' || r.properties.kind === 'cve_match'));
+    assert.ok(findings.length >= 1, 'secrets should emit at least one finding-class result');
+    for (const r of findings) {
+      assert.ok(Array.isArray(r.locations) && r.locations.length >= 1, `result ${r.ruleId} must carry a location`);
+      const loc = r.locations[0];
+      assert.ok(loc.physicalLocation || (Array.isArray(loc.logicalLocations) && loc.logicalLocations.length), 'physical or logical location');
+    }
+  });
+
+  it('CSAF per-CVE CSAFPID branch leaves are bound into product_status.known_affected', () => {
+    const out = runner.run('kernel', 'all-catalogued-kernel-cves',
+      { signals: { _bundle_formats: ['csaf-2.0'], 'CVE-2026-31431': true, 'CVE-2026-43284': true } },
+      { ...PRE, operator: 'https://x.example', publisherNamespace: 'https://x.example' });
+    const csaf = out.phases.close.evidence_package.bundles_by_format['csaf-2.0'];
+    const leafPids = new Set();
+    (function walk(b) { for (const x of (b || [])) { if (x.product && x.product.product_id) leafPids.add(x.product.product_id); if (x.branches) walk(x.branches); } })(csaf.product_tree.branches);
+    assert.ok(leafPids.size >= 1, 'kernel CVEs carry affected_versions → CSAFPID leaves exist');
+    const referenced = new Set();
+    for (const v of (csaf.vulnerabilities || [])) {
+      const ps = v.product_status || {};
+      [...(ps.known_affected || []), ...(ps.fixed || [])].forEach(p => { if (/^CSAFPID-/.test(p)) referenced.add(p); });
+    }
+    for (const pid of leafPids) assert.ok(referenced.has(pid), `branch leaf ${pid} must be referenced from a vulnerability product_status`);
+  });
+});
+
 test.describe("reconciliation-fixes", () => {
   test('worstActiveExploitation ranks `theoretical` between none and unknown (worst-of holds)', () => {
     // P1: the rank table omitted `theoretical`, so `?? -1` lost to the -1 start —
@@ -4350,9 +4401,19 @@ describe('CSAF 2.0 — B5 (product_tree mandatory for security_advisory)', () =>
 
   it('every vulnerability references product_tree via product_status', () => {
     assert.ok(bundle.vulnerabilities.length > 0);
+    // A product_id is defined in the product_tree via EITHER full_product_names[]
+    // OR a branches[] leaf's product.product_id (both are valid CSAF definition
+    // sites). The per-version CSAFPID-N leaves bound into product_status live in
+    // branches, so collect product ids from both.
     const knownProductIds = new Set(
       bundle.product_tree.full_product_names.map(p => p.product_id)
     );
+    (function walk(branches) {
+      for (const b of (branches || [])) {
+        if (b.product && b.product.product_id) knownProductIds.add(b.product.product_id);
+        if (b.branches) walk(b.branches);
+      }
+    })(bundle.product_tree.branches);
     for (const v of bundle.vulnerabilities) {
       assert.ok(v.product_status, `vulnerability missing product_status: ${JSON.stringify(v).slice(0, 80)}`);
       const refIds = [

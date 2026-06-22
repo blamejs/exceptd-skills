@@ -6554,6 +6554,30 @@ function submissionHasData(submission) {
     || nonEmpty(submission.signal_overrides)
     || nonEmpty(submission.observations);
 }
+// attest diff compares artifacts by map key. normalizeSubmission keys
+// flat-shape artifacts by the operator-chosen OBSERVATION key (obs-kver, x1, an
+// array index, …), NOT by the stable indicator id the observation targeted — so
+// two attestations with identical (indicator, value) evidence under different
+// observation keys diffed as all-added/all-removed (unchanged_count 0), while the
+// correctly-keyed signal_override_diff on the same comparison showed the true
+// unchanged result. Re-key the artifact map by the stable indicator id (recovered
+// from normalizeSubmission's _signal_origins, which maps indicator -> obs-key)
+// before diffing, falling back to the original key when an observation carries no
+// indicator binding. Diff-only — does NOT touch normalizeSubmission's map or the
+// evidence_hash.
+function rekeyArtifactsByStableId(artifacts, signalOrigins) {
+  if (!artifacts || !signalOrigins || typeof signalOrigins !== "object") return artifacts || {};
+  const obsKeyToIndicator = {};
+  for (const [indicatorId, obsKey] of Object.entries(signalOrigins)) {
+    if (typeof obsKey === "string") obsKeyToIndicator[obsKey] = indicatorId;
+  }
+  const out = {};
+  for (const [k, v] of Object.entries(artifacts)) {
+    const stable = Object.prototype.hasOwnProperty.call(obsKeyToIndicator, k) ? obsKeyToIndicator[k] : k;
+    out[stable] = v;
+  }
+  return out;
+}
 function normalizedArtifacts(submission, runner, playbookId, applyEmptyFallback = true) {
   if (!submission || typeof submission !== "object") {
     return applyEmptyFallback ? (_playbookArtifactCatalog(runner, playbookId) || {}) : {};
@@ -6568,7 +6592,9 @@ function normalizedArtifacts(submission, runner, playbookId, applyEmptyFallback 
         const pb = runner.loadPlaybook ? runner.loadPlaybook(playbookId) : null;
         if (pb) {
           const norm = runner.normalizeSubmission({ observations: submission.observations }, pb);
-          if (norm && norm.artifacts && Object.keys(norm.artifacts).length > 0) return norm.artifacts;
+          if (norm && norm.artifacts && Object.keys(norm.artifacts).length > 0) {
+            return rekeyArtifactsByStableId(norm.artifacts, norm._signal_origins);
+          }
         }
       } catch { /* fall through */ }
     }
