@@ -847,7 +847,7 @@
           "action": "page_on_call"
         },
         {
-          "condition": "mcp-typosquat-candidate == true AND no benign_match",
+          "condition": "mcp-typosquat-candidate == true",
           "action": "raise_severity"
         },
         {
