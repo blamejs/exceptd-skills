@@ -1127,3 +1127,21 @@ test("the RWEP active_exploitation ladder defines 'theoretical' explicitly", () 
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+require("node:test").describe("scoring: active-exploitation-only Shape A bag (codex P2 round-2)", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const s = require("../lib/scoring.js");
+  test("deriveRwepFromFactors routes an active_exploitation-only raw bag to scoreCustom, not the Shape-B sum that drops the ladder", () => {
+    // hasPostWeightInt is false (no boolean-named integer >=5), so this is Shape A
+    // and must score via scoreCustom (active_exploitation 'confirmed' = +20). The
+    // Shape-B sum would skip the string and under-score it.
+    const ae = s.deriveRwepFromFactors({ active_exploitation: "confirmed", blast_radius: 10 });
+    assert.equal(ae, 30, `active_exploitation 'confirmed' (+20) + blast_radius 10 must score 30, not ~10; got ${ae}`);
+  });
+  test("a Shape-B post-weight block with a string active_exploitation still sums its weighted factors (F4 preserved)", () => {
+    const withAi = s.deriveRwepFromFactors({ cisa_kev: 25, ai_factor: 15, active_exploitation: "confirmed", blast_radius: 0 });
+    const noAi = s.deriveRwepFromFactors({ cisa_kev: 25, active_exploitation: "confirmed", blast_radius: 0 });
+    assert.equal(withAi - noAi, 15, "the post-weight ai_factor must be summed, not dropped");
+  });
+});

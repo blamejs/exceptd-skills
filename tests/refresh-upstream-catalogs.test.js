@@ -1070,3 +1070,22 @@ test("refreshD3fend normalizes a trailing-period upstream id to the catalog KEY 
   const r = await MOD.refreshD3fend({ dry: true, _deps });
   assert.equal(r.added, 0, "the period-suffixed upstream id maps to the existing normalized key, so nothing is added");
 });
+
+require("node:test").describe("refresh-upstream backfillAtlas single-tactic string (codex P2 round-2)", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const m = require("../scripts/refresh-upstream-catalogs.js");
+  test("backfillAtlas hydrates a single-tactic STRING tactic into a row that has none", () => {
+    const cur = { name: "x" };
+    m.backfillAtlas(cur, { tactic: "reconnaissance" });
+    assert.equal(cur.tactic, "reconnaissance");
+  });
+  test("backfillAtlas preserves an existing string tactic against an array, but fills an empty row from an array", () => {
+    const keep = { tactic: "recon" };
+    m.backfillAtlas(keep, { tactic: ["a", "b"] });
+    assert.equal(keep.tactic, "recon");
+    const fill = { name: "y" };
+    m.backfillAtlas(fill, { tactic: ["a", "b"] });
+    assert.deepEqual(fill.tactic, ["a", "b"]);
+  });
+});

@@ -663,12 +663,11 @@ function backfillAtlas(cur, fresh) {
   // backfill set. Existing curated ATLAS rows often carry only {name} and need
   // the short description + tactic too, not just description_full/platforms/etc.
   fillIfEmpty("description", fresh.description);
-  // tactic: arrays only (existing rows may have a string tactic; do not
-  // overwrite a stringified tactic with an array form).
-  if ((!cur.tactic || (Array.isArray(cur.tactic) && cur.tactic.length === 0)) && Array.isArray(fresh.tactic) && fresh.tactic.length) {
-    cur.tactic = fresh.tactic;
-    touched = true;
-  }
+  // tactic: atlasEntryFromStix() emits a STRING for a single-tactic technique
+  // and an array for multi-tactic, so backfill both forms. fillIfEmpty only
+  // writes when cur is empty, so an existing (string OR array) tactic is never
+  // overwritten — the common single-tactic case is no longer left unhydrated.
+  fillIfEmpty("tactic", fresh.tactic);
   fillIfEmpty("description_full", fresh.description_full);
   fillIfEmpty("platforms", fresh.platforms);
   fillIfEmpty("detection", fresh.detection);
