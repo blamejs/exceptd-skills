@@ -1367,7 +1367,7 @@
           "id": "policy-exception",
           "description": "Where a matched CVE cannot be remediated within compliance window (vendor pending, blocker dependency, architectural impossibility): generate auditor-ready policy exception via policy-exception-gen.",
           "preconditions": [
-            "remediation_paths[1..7] blocked for at least one matched CVE",
+            "prior_remediations_blocked == true",
             "ciso_acceptance_obtainable == true"
           ],
           "priority": 8,

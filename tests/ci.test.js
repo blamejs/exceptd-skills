@@ -36,6 +36,27 @@ test.describe('cli-coverage', () => {
       'summary.verdict must be a string (PASS/FAIL)');
   });
 
+  test('ci --format sarif emits a non-empty array of conformant SARIF documents', () => {
+    // Regression: ci only built each playbook's declared PRIMARY bundle_format,
+    // so `--format sarif` (when no playbook's primary was sarif) aggregated an
+    // empty array. cmdCi now threads signals._bundle_formats into each run.
+    const r = cli(['ci', '--scope', 'code', '--format', 'sarif']);
+    const arr = tryJson(r.stdout);
+    assert.ok(Array.isArray(arr) && arr.length > 0,
+      `ci --format sarif must emit a non-empty array; got: ${String(r.stdout).slice(0, 120)}`);
+    assert.ok(arr.every((d) => d && Array.isArray(d.runs)),
+      'each element must be a conformant SARIF document (.runs[])');
+  });
+
+  test('ci --format openvex emits a non-empty array of conformant OpenVEX documents', () => {
+    const r = cli(['ci', '--scope', 'code', '--format', 'openvex']);
+    const arr = tryJson(r.stdout);
+    assert.ok(Array.isArray(arr) && arr.length > 0,
+      `ci --format openvex must emit a non-empty array; got: ${String(r.stdout).slice(0, 120)}`);
+    assert.ok(arr.every((d) => d && d['@context']),
+      'each element must carry an OpenVEX @context');
+  });
+
   test('ci --block-on-jurisdiction-clock fails when a clock fires (F18: exit 5 = CLOCK_STARTED)', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cidir-'));
     fs.mkdirSync(tmp, { recursive: true });

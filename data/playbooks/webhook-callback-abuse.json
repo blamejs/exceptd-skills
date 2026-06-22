@@ -694,7 +694,7 @@
           "id": "policy-exception",
           "description": "Generate an auditor-ready policy exception when faster paths are blocked (legacy receiver cannot be patched within window, provider does not offer state-parameter enforcement, etc.) with compensating controls and time-bound risk acceptance.",
           "preconditions": [
-            "remediation_paths[1..3] all blocked",
+            "prior_remediations_blocked == true",
             "ciso_acceptance_obtainable == true"
           ],
           "priority": 4,

@@ -429,11 +429,11 @@
       ],
       "escalation_criteria": [
         {
-          "condition": "An internet-facing ingest accepts attacker input and a single crafted payload exhausts the instance",
+          "condition": "archive-decompression-unbounded == true OR length-field-unbounded-allocation == true OR nested-archive-bomb-uncapped == true OR xml-entity-expansion-enabled == true OR redos-catastrophic-backtracking == true OR recursive-parse-no-depth-limit == true",
           "action": "raise_severity"
         },
         {
-          "condition": "Archive extraction is vulnerable to Zip Slip on a writable path",
+          "condition": "zip-slip-path-traversal == true",
           "action": "trigger_playbook"
         }
       ]
@@ -444,7 +444,7 @@
           "id": "cap-decompression",
           "description": "Enforce a total decompressed-output size ceiling AND a per-entry compression-ratio guard, plus a cumulative cap and recursion limit for nested archives; fail closed when exceeded.",
           "preconditions": [
-            "operator controls the decompression path"
+            "operator_controls_decompression_path == true"
           ],
           "priority": 1,
           "for_signals": [

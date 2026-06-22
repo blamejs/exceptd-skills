@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.18.14 — 2026-06-22
+
+Severity escalations, downstream-playbook chaining, and remediation-path preconditions now fire as authored across the playbook catalog. A number of these conditions had been written as free-text English or in a shorthand the engine does not evaluate, so they returned false for every input and silently never triggered — a raise-severity rule, a `feeds_into` chain into a deeper playbook, or a remediation precondition that looked active but never fired. Every such condition is now expressed in the engine's condition language and verified to evaluate against the indicators it gates on.
+
+The playbook validator now runs each escalation, `feeds_into`, and remediation precondition through the real evaluator and rejects any condition it cannot parse, so one that would be dead at runtime fails validation instead of shipping.
+
+`ci --format sarif` and `ci --format openvex` now emit the requested bundle for every scanned playbook. Previously only a playbook whose declared primary format already matched the request contributed a document, so the aggregated output was frequently an empty array.
+
+`evidence_hash` is no longer perturbed by the chosen output format, so attesting and reattesting the same evidence with a different `--format` yields the same hash; a supplied VEX disposition still changes the hash, because it changes which CVEs are in scope.
+
+Remediation-path preconditions can now reference the engine-computed finding — RWEP, severity, matched CVEs, blast-radius score, and compliance-theater verdict — so a precondition gated on one of those is evaluated rather than treated as unmet. The containers playbook chains into the SBOM playbook when container image layers are present.
+
 ## 0.18.13 — 2026-06-22
 
 A correctness + robustness pass across the upstream data parsers, the validators, and the prefetch/feed paths.

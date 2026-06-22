@@ -818,7 +818,7 @@
           "id": "fix-credentials-perms",
           "description": "chmod 0600 on all credential files; chmod 0700 on ~/.config/gcloud/, ~/.aws/, ~/.ssh/.",
           "preconditions": [
-            "file_owner_is_current_user"
+            "file_owner_is_current_user == true"
           ],
           "priority": 2,
           "for_signals": [

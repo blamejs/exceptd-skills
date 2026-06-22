@@ -161,6 +161,63 @@ test("validator detects dangling _meta.feeds_into playbook_id (warning, not erro
   }
 });
 
+test("parse-gate rejects an unparseable escalation / feeds_into / precondition condition (hard error)", () => {
+  // Each of the three locations the runner threads through evalCondition must
+  // reject a condition the evaluator cannot parse — prose / bare-token /
+  // unimplemented-syntax conditions return false for every input and silently
+  // disable the escalation / chain / precondition they gate. Before the gate,
+  // these passed validation (the validator never ran the real evaluator).
+  const ctx = loadContext();
+  const playbooks = loadPlaybooks();
+  const playbookIds = new Set(
+    playbooks.filter((p) => p.data).map((p) => p.data._meta.id),
+  );
+  const good = JSON.parse(
+    JSON.stringify(playbooks.find((p) => p.data._meta.id === "kernel").data),
+  );
+  good.phases.analyze.escalation_criteria.push({
+    condition: "A single compromised identity can rewrite the system-of-record trail",
+    action: "raise_severity",
+  });
+  good._meta.feeds_into.push({ playbook_id: "sbom", condition: "when the package is bad and stuff" });
+  good.phases.validate.remediation_paths[0].preconditions.push("operator controls the subsystem");
+
+  const findings = checkCrossRefs(good, ctx, playbookIds);
+  const parseErrs = findings.filter(
+    (f) => f.severity === "error" && /not parseable by the runner's evalCondition/.test(f.message),
+  );
+  assert.equal(
+    parseErrs.length,
+    3,
+    `expected 3 parse-gate errors (escalation + feeds_into + precondition); got ${parseErrs.length}:\n` +
+      findings.map((f) => `  ${f.severity}: ${f.message}`).join("\n"),
+  );
+});
+
+test("parse-gate accepts the rewritten mini-language conditions (kernel passes clean)", () => {
+  // The shipped kernel playbook (and its rewritten conditions) must produce
+  // zero parse-gate errors — a guard that the gate is not over-firing on valid
+  // mini-language (paren groups, any/all quantifiers, matches, IN, hyphenated
+  // indicator tokens).
+  const ctx = loadContext();
+  const playbooks = loadPlaybooks();
+  const playbookIds = new Set(
+    playbooks.filter((p) => p.data).map((p) => p.data._meta.id),
+  );
+  for (const pb of playbooks.filter((p) => p.data)) {
+    const findings = checkCrossRefs(pb.data, ctx, playbookIds);
+    const parseErrs = findings.filter(
+      (f) => f.severity === "error" && /not parseable by the runner's evalCondition/.test(f.message),
+    );
+    assert.deepEqual(
+      parseErrs,
+      [],
+      `${pb.data._meta.id}: a shipped condition must not trip the parse-gate:\n` +
+        parseErrs.map((f) => `  ${f.message}`).join("\n"),
+    );
+  }
+});
+
 test("validator detects rwep_threshold ordering violation (hard error)", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "validate-playbooks-rwep-"));
   try {

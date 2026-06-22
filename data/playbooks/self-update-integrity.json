@@ -444,11 +444,11 @@
       ],
       "escalation_criteria": [
         {
-          "condition": "A widely-distributed self-updating client applies updates with no signature-before-apply or in-band key trust",
+          "condition": "self-update-no-signature-verification == true OR self-update-key-not-pinned == true",
           "action": "raise_severity"
         },
         {
-          "condition": "The apply step proceeds on verifier failure/timeout",
+          "condition": "update-applied-without-verifier-gate == true",
           "action": "trigger_playbook"
         }
       ]
@@ -459,7 +459,7 @@
           "id": "verify-signature-before-apply",
           "description": "Verify an artifact signature against an out-of-band-pinned root key BEFORE swapping the update in, and fail closed on any verification error — never trust a server-provided hash alone.",
           "preconditions": [
-            "operator controls the update client"
+            "operator_controls_update_client == true"
           ],
           "priority": 1,
           "for_signals": [

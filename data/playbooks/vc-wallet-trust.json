@@ -528,11 +528,11 @@
       ],
       "escalation_criteria": [
         {
-          "condition": "An internet-facing verifier accepts an unanchored issuer key OR a replayable presentation gating a high-value entitlement",
+          "condition": "issuer-key-not-pinned-to-trust-anchor == true OR presentation-no-nonce-audience-binding == true",
           "action": "raise_severity"
         },
         {
-          "condition": "Revocation is unenforced on a credential type used for ongoing authorization",
+          "condition": "credential-revocation-status-not-checked == true",
           "action": "trigger_playbook"
         }
       ]
@@ -543,7 +543,7 @@
           "id": "pin-issuer-trust-anchors",
           "description": "Replace open issuerKeyResolver acceptance with an issuer allowlist / x5c-or-federation chain validated to a configured trust anchor; reject issuer keys that do not chain to it.",
           "preconditions": [
-            "verifier owns or can configure the set of trusted issuers"
+            "verifier_controls_trusted_issuers == true"
           ],
           "priority": 1,
           "for_signals": [
@@ -557,7 +557,7 @@
           "id": "enforce-revocation-on-accept",
           "description": "Resolve the status_list on the accept path and reject on a set status bit; treat a status fetch failure as fail-closed (not \"valid\").",
           "preconditions": [
-            "credentials carry a status mechanism"
+            "credentials_carry_status_mechanism == true"
           ],
           "priority": 1,
           "for_signals": [
@@ -568,7 +568,7 @@
           "id": "bind-presentations-to-nonce-audience",
           "description": "Issue a fresh per-request nonce, require a Key-Binding JWT echoing that nonce + the verifier audience, and verify device-auth for mdoc; reject unbound presentations.",
           "preconditions": [
-            "verifier controls the request/challenge"
+            "verifier_controls_request_challenge == true"
           ],
           "priority": 1,
           "for_signals": [

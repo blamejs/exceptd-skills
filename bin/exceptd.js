@@ -9166,6 +9166,22 @@ function cmdCi(runner, args, runOpts, pretty) {
   let clockStartedFail = false;
   let clockStartedReasons = [];
 
+  // Thread the requested bundle output format into each per-playbook run so
+  // close() actually BUILDS it. `ci --format sarif|openvex|csaf` reads each
+  // result's evidence_package.bundles_by_format[fmt] below; the runner only
+  // builds the playbook's declared PRIMARY bundle_format unless the operator
+  // seeds signals._bundle_formats. Without this, any playbook whose primary
+  // format differs from the request emitted no bundle for that format and the
+  // aggregated `ci --format sarif/openvex` array dropped it (.filter(Boolean)),
+  // so the output was a silent empty array. Mapping mirrors the read at the
+  // emit site: csaf → csaf-2.0; sarif/openvex pass through. (_bundle_formats is
+  // a `_`-prefixed render directive, so it is excluded from evidence_hash and
+  // does not perturb attest/reattest.)
+  let ciFormatRaw = args.format;
+  if (Array.isArray(ciFormatRaw)) ciFormatRaw = ciFormatRaw[0];
+  const ciBundleFormat = (ciFormatRaw === 'csaf' || ciFormatRaw === 'csaf-2.0') ? 'csaf-2.0'
+    : (ciFormatRaw === 'sarif' || ciFormatRaw === 'openvex') ? ciFormatRaw : null;
+
   for (const id of ids) {
     // defense-in-depth — validate id even though the catalog-iter
     // upstream is trusted. A corrupt catalog returning a malformed id would
@@ -9186,6 +9202,16 @@ function cmdCi(runner, args, runOpts, pretty) {
       continue;
     }
     const submission = bundle[id] || {};
+    if (ciBundleFormat) {
+      // Clone signals before injecting so the shared evidence bundle is not
+      // mutated; merge with any operator-supplied _bundle_formats.
+      const existing = Array.isArray(submission.signals && submission.signals._bundle_formats)
+        ? submission.signals._bundle_formats : [];
+      submission.signals = {
+        ...(submission.signals || {}),
+        _bundle_formats: existing.includes(ciBundleFormat) ? existing : [...existing, ciBundleFormat],
+      };
+    }
     const perOpts = { ...runOpts, session_id: sessionId };
     if (submission.precondition_checks) perOpts.precondition_checks = submission.precondition_checks;
     let result;

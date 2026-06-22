@@ -1389,7 +1389,7 @@
           "id": "policy-exception",
           "description": "Where a publisher-posture gap cannot be remediated within the compliance window — typical case: API stability promise prevents removing a deprecated transitive dep before next major version; OR registry doesn't yet support Trusted Publisher; OR a Class II conformity assessment is in progress — generate an auditor-ready policy exception via policy-exception-gen with compensating controls and time-bound sunset date.",
           "preconditions": [
-            "remediation_paths[1..9] blocked for at least one finding",
+            "prior_remediations_blocked == true",
             "ciso_or_product_owner_acceptance_obtainable == true"
           ],
           "priority": 10,

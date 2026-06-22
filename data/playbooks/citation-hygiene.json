@@ -542,7 +542,7 @@
           "target_playbook": "framework"
         },
         {
-          "condition": "rejected-or-disputed-cve fires for an identifier whose catalog active_exploitation == 'confirmed'",
+          "condition": "rejected-or-disputed-cve == true AND cited-cve-active-exploitation-confirmed == true",
           "action": "raise_severity"
         }
       ]
@@ -609,7 +609,7 @@
           "id": "policy-exception",
           "description": "If a citation cannot be resolved within the review window (e.g. an embargoed advisory not yet public, an RFC pending publication): generate an auditor-ready policy exception recording the pending citation, the verification deadline, and the interim caveat added to the documentation.",
           "preconditions": [
-            "remediation_paths[1..4] blocked for this specific citation due to external_dependency == true"
+            "prior_remediations_blocked == true AND external_dependency == true"
           ],
           "priority": 5,
           "compensating_controls": [
