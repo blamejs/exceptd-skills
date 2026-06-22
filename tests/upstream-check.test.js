@@ -22,6 +22,7 @@ const { spawnSync } = require('node:child_process');
 
 const ROOT = path.join(__dirname, '..');
 const UPSTREAM_CLI = path.join(ROOT, 'lib', 'upstream-check-cli.js');
+const { fetchLatestPublished, buildFreshnessReport } = require(path.join(ROOT, 'lib', 'upstream-check.js'));
 
 function tryJson(s) {
   try { return JSON.parse(s); } catch { return null; }
@@ -59,4 +60,93 @@ test('#49 upstream-check-cli emits a parseable ok:false envelope on an unexpecte
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+});
+
+// ===================================================================
+// fetchLatestPublished fixture branch: missing version must refuse
+// (symmetric with the network branch's `if (!version)` hard gate).
+// ===================================================================
+
+test('fetchLatestPublished fixture branch returns ok:false (not ok:true/version:undefined) when the fixture lacks dist-tags.latest AND version', async () => {
+  const dir = makeIsolatedDir('k-fixnover-');
+  const prev = process.env.EXCEPTD_REGISTRY_FIXTURE;
+  try {
+    // Fixture with a `time` block but NO dist-tags.latest and NO top-level
+    // version. Pre-fix: ok:true with version:undefined leaked through.
+    const fixture = path.join(dir, 'fixture.json');
+    fs.writeFileSync(fixture, JSON.stringify({ time: { modified: '2026-01-01T00:00:00.000Z' } }));
+    process.env.EXCEPTD_REGISTRY_FIXTURE = fixture;
+    const r = await fetchLatestPublished();
+    assert.equal(r.ok, false, 'a versionless fixture must degrade to ok:false, not ok:true');
+    assert.equal(typeof r.error, 'string');
+    assert.equal(r.error, 'fixture missing dist-tags.latest / version');
+    assert.equal(r.source, 'offline');
+    assert.equal('version' in r ? r.version : undefined, undefined,
+      'no version field should be emitted on the refusal envelope');
+  } finally {
+    if (prev === undefined) delete process.env.EXCEPTD_REGISTRY_FIXTURE;
+    else process.env.EXCEPTD_REGISTRY_FIXTURE = prev;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('fetchLatestPublished fixture branch still returns ok:true with the version when dist-tags.latest is present', async () => {
+  const dir = makeIsolatedDir('k-fixok-');
+  const prev = process.env.EXCEPTD_REGISTRY_FIXTURE;
+  try {
+    const fixture = path.join(dir, 'fixture.json');
+    fs.writeFileSync(fixture, JSON.stringify({
+      'dist-tags': { latest: '0.18.10' },
+      time: { '0.18.10': '2026-06-20T00:00:00.000Z' },
+    }));
+    process.env.EXCEPTD_REGISTRY_FIXTURE = fixture;
+    const r = await fetchLatestPublished();
+    assert.equal(r.ok, true);
+    assert.equal(r.version, '0.18.10');
+    assert.equal(r.published_at, '2026-06-20T00:00:00.000Z');
+    assert.equal(r.source, 'fixture');
+  } finally {
+    if (prev === undefined) delete process.env.EXCEPTD_REGISTRY_FIXTURE;
+    else process.env.EXCEPTD_REGISTRY_FIXTURE = prev;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// ===================================================================
+// buildFreshnessReport: an unparseable published_at degrades
+// days_since_latest_publish to null, never NaN.
+// ===================================================================
+
+test('buildFreshnessReport sets days_since_latest_publish to null (not NaN) for an unparseable published_at', () => {
+  const report = buildFreshnessReport({
+    localVersion: '0.18.0',
+    registry: { ok: true, source: 'npm-registry', version: '0.18.10', published_at: 'not-a-real-date' },
+    localManifest: null,
+  });
+  assert.equal(report.ok, true);
+  assert.equal(report.days_since_latest_publish, null,
+    'an unparseable date must degrade to the explicit null branch');
+  assert.equal(Number.isNaN(report.days_since_latest_publish), false,
+    'days_since_latest_publish must never be NaN');
+});
+
+test('buildFreshnessReport still computes a finite days_since_latest_publish for a valid published_at', () => {
+  const published = new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString();
+  const report = buildFreshnessReport({
+    localVersion: '0.18.0',
+    registry: { ok: true, source: 'npm-registry', version: '0.18.10', published_at: published },
+    localManifest: null,
+  });
+  assert.equal(typeof report.days_since_latest_publish, 'number');
+  assert.equal(Number.isFinite(report.days_since_latest_publish), true);
+  assert.equal(report.days_since_latest_publish, 3);
+});
+
+test('buildFreshnessReport keeps days_since_latest_publish null when published_at is absent', () => {
+  const report = buildFreshnessReport({
+    localVersion: '0.18.0',
+    registry: { ok: true, source: 'npm-registry', version: '0.18.10', published_at: null },
+    localManifest: null,
+  });
+  assert.equal(report.days_since_latest_publish, null);
 });

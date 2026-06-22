@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.18.13 — 2026-06-22
+
+A correctness + robustness pass across the upstream data parsers, the validators, and the prefetch/feed paths.
+
+The OSV advisory importer keeps the HIGHEST CVSS vector and score when a record carries multiple same-version severity entries (e.g. an NVD base score alongside a CNA/vendor score), instead of whichever appeared first in the array — a 9.8 critical no longer imports as a 5.3 medium purely because of upstream array order, which previously also flipped the derived KEV-pending / active-exploitation / severity-word fields. The RSS/Atom feed tokenizer strips HTML in a single linear pass, so a malformed or hostile feed body with many unclosed `<` can no longer stall the refresh worker (the previous regex was quadratic on attacker-controlled text). An Atom `<link>` carrying element text is now selected by its `rel` the same way the attribute form is, so a non-`alternate` link cannot override the canonical `alternate`. `refresh --advisory <ghsa-id>` validates the full `GHSA-xxxx-xxxx-xxxx` token shape and URL-encodes it before building the request path.
+
+The playbook validator range-checks a partial `phase_overrides.direct.rwep_threshold` override and rejects an impossible calendar date (`2026-02-30`); the CVE-catalog validator reports an absent reference catalog as unvalidatable for ALL five reference families instead of flagging every `atlas_ref`/`cwe_ref` as unresolved; the RFC validator skips non-IETF references (CSAF, ISO) rather than reporting them as permanent drift; the version-pin validator no longer probes the two upstreams that publish no GitHub releases (reported as tracked elsewhere); the vendor inventory cross-check covers `.cjs`/`.mjs`/`.json`, not only `.js`; the package size-budget gate fails closed when `npm pack` omits the size field; and the disputed-CVE check reports the real local status. The skill linter flags a wrong-typed enum value and rejects an impossible `last_threat_review`, and the `d3fend_refs` frontmatter pattern accepts the `D3A-`/`D3F-` id families. `upstream-check` reports a clear error rather than `ok:true` with an undefined version when a fixture lacks dist-tags, and a non-parseable publish date yields a clear value instead of `NaN`. The prefetch index no longer resurrects entries a concurrent run pruned, `ttp-mapper` ignores inherited object keys, and the EPSS lookup returns not-found for an absent CVE instead of the first row.
+
 ## 0.18.12 — 2026-06-22
 
 A correctness pass across the CLI, the engine, scoring, the collectors, framework-gap reporting, signature verification, and the CWE-chain index.

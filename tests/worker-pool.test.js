@@ -85,3 +85,19 @@ test('WorkerPool: rejects a non-absolute scriptPath', () => {
 test('WorkerPool: DEFAULT_SIZE is clamped to a reasonable range', () => {
   assert.ok(DEFAULT_SIZE >= 1 && DEFAULT_SIZE <= 8);
 });
+
+require("node:test").describe("worker-pool drain settles after a respawn (round-2)", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs"), path = require("node:path");
+  const SRC = fs.readFileSync(path.join(__dirname, "..", "vendor", "blamejs", "worker-pool.js"), "utf8");
+  test("_onWorkerExit settles pending drain() waiters on BOTH the respawn and no-respawn branches", () => {
+    const i = SRC.indexOf("function _onWorkerExit");
+    assert.ok(i > -1);
+    const body = SRC.slice(i, SRC.indexOf("function _onTaskTimeout", i));
+    const calls = (body.match(/_maybeResolveDrain\(\)/g) || []).length;
+    assert.ok(calls >= 2, `both exit branches must call _maybeResolveDrain (drain() must not hang); found ${calls}`);
+    const respawn = body.slice(body.indexOf("_spawnWorker"));
+    assert.match(respawn, /_maybeResolveDrain\(\)/, "the respawn branch must settle drain after _drainQueue");
+  });
+});

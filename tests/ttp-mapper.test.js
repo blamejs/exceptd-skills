@@ -208,6 +208,48 @@ test('#34 unknown TTP still returns found:false cleanly (guard runs first, no th
   assert.equal(r.ttp_id, 'AML.NOPE');
 });
 
+// ---------------------------------------------------------------------------
+// map()/coverage() must not treat inherited Object.prototype keys as real
+// catalog entries — found:true is reserved for OWN catalog members. A bare
+// gapCatalog[controlId] / atlasCatalog[ttpId] deref resolves '__proto__',
+// 'toString', 'constructor', etc. to the prototype chain and falsely reports
+// found:true. The hasOwnProperty guard fails them closed.
+// ---------------------------------------------------------------------------
+
+test('map() treats inherited prototype keys as not-found (found:false)', () => {
+  for (const k of ['__proto__', 'toString', 'constructor', 'hasOwnProperty', 'valueOf']) {
+    const r = mapper.map(k, {});
+    assert.equal(r.found, false, `map(${k}) must be found:false, not an inherited prototype hit`);
+    assert.equal(r.control_id, k);
+    assert.match(r.message, /not in gap catalog/i);
+  }
+});
+
+test('map() still resolves an own catalog control id (guard does not break real lookups)', () => {
+  const stub = { 'REAL-CTRL-1': { framework: 'X', control_name: 'real', misses: ['m'], status: 'open', evidence_cves: [] } };
+  const r = mapper.map('REAL-CTRL-1', stub);
+  assert.equal(r.found, true);
+  assert.equal(r.control_id, 'REAL-CTRL-1');
+  assert.equal(r.framework, 'X');
+});
+
+test('coverage() treats inherited prototype TTP keys as not-found (found:false)', () => {
+  for (const k of ['__proto__', 'toString', 'constructor', 'hasOwnProperty', 'valueOf']) {
+    const r = mapper.coverage('NIST-800-53', k, {}, {});
+    assert.equal(r.found, false, `coverage(NIST-800-53, ${k}) must be found:false, not an inherited prototype hit`);
+    assert.equal(r.ttp_id, k);
+    // ttp_name (sourced from the would-be inherited member) must NOT leak.
+    assert.equal(r.ttp_name, undefined);
+  }
+});
+
+test('coverage() still resolves an own ATLAS technique (guard does not break real lookups)', () => {
+  const r = mapper.coverage('NIST-800-53', 'AML.TEST', {}, atlasStub);
+  assert.equal(r.found, undefined); // present technique returns no `found` key
+  assert.equal(r.ttp_id, 'AML.TEST');
+  assert.equal(r.partially_covered_by, 'NIST-800-53-X');
+});
+
 
 // ---- routed from hunt-fix-G-parsers ----
 require("node:test").describe("hunt-fix-G-parsers", () => {

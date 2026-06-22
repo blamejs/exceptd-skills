@@ -519,3 +519,36 @@ test('#33 Atom <link href> with NO rel populates the link (defaults to alternate
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+require("node:test").describe("xml-tokenizer stripHtml is linear (round-2 ReDoS)", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const { stripHtml } = require("../lib/xml-tokenizer.js");
+  test("preserves the exact strip contract (tags->space, stray < and <> literal)", () => {
+    assert.equal(stripHtml("<p>hello <b>bold</b>   world</p>"), "hello bold world");
+    assert.equal(stripHtml("CVE affects versions < 5.0"), "CVE affects versions < 5.0");
+    assert.equal(stripHtml("a<>b"), "a<>b");
+    assert.equal(stripHtml("x <a href=y>link</a> z"), "x link z");
+  });
+  test("does not blow up (O(n^2)) on attacker-controlled bare-< feed text", () => {
+    const big = "<".repeat(200000) + "payload";
+    const t = Date.now();
+    const out = stripHtml(big);
+    assert.ok(Date.now() - t < 2000, "stripHtml must be linear, not quadratic");
+    assert.match(out, /payload$/);
+  });
+});
+
+require("node:test").describe("xml-tokenizer Atom <link> element-text is rel-ranked (round-2)", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const { parseFeed } = require("../lib/xml-tokenizer.js");
+  test("a non-alternate (rel=self) link with element text does NOT clobber a captured rel=alternate", () => {
+    const atom = '<feed><entry><title>T</title><link rel="alternate" href="http://good/"/><link rel="self">http://bad/self</link></entry></feed>';
+    assert.equal(parseFeed(atom)[0].link, "http://good/");
+  });
+  test("an RSS <link>text</link> (no rel) is still authoritative", () => {
+    const rss = '<rss><channel><item><title>T</title><link>http://rss/</link></item></channel></rss>';
+    assert.equal(parseFeed(rss)[0].link, "http://rss/");
+  });
+});

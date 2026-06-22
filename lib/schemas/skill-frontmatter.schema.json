@@ -87,9 +87,9 @@
       "type": "array",
       "items": {
         "type": "string",
-        "pattern": "^D3-[A-Z]+$"
+        "pattern": "^D3[AF]?-[A-Z0-9]+(?:-[A-Z0-9]+)*$"
       },
-      "description": "Optional. MITRE D3FEND defensive technique IDs the skill maps to. Each must resolve in data/d3fend-catalog.json."
+      "description": "Optional. MITRE D3FEND defensive technique IDs the skill maps to, across the D3-, D3A- (analysis), and D3F- (offensive/forensic) namespaces. Each must resolve in data/d3fend-catalog.json."
     },
     "dlp_refs": {
       "type": "array",
