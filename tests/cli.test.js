@@ -78,6 +78,25 @@ test('#36 readEvidenceDir reads a normal <pb>.json regular file (positive path)'
   }
 });
 
+test('#36 readEvidenceDir accepts a <pb>.json under a SYMLINKED ancestor dir (macOS /var -> /private/var; symlinked mounts/homes)', { skip: process.platform === 'win32' ? 'symlink creation needs privilege on Windows' : false }, () => {
+  // Reproduces the macOS os.tmpdir() case on any POSIX host: the evidence dir
+  // is reached through a symlink, so its realpath differs from its path. The
+  // containment gate must resolve the BASE before comparing, or it refuses
+  // every legitimate entry ("resolves outside the directory").
+  const real = mkTmp();
+  const link = path.join(path.dirname(real), path.basename(real) + '-lnk');
+  try {
+    fs.writeFileSync(path.join(real, 'sbom.json'), JSON.stringify({ signals: { x: 1 } }), 'utf8');
+    fs.symlinkSync(real, link, 'dir');
+    const r = hcli._readEvidenceDir(link, 'run');
+    assert.equal(r.ok, true, r.error || 'expected the entry to be read, not refused');
+    assert.deepEqual(r.bundle.sbom, { signals: { x: 1 } });
+  } finally {
+    try { fs.rmSync(link, { recursive: true, force: true }); } catch {}
+    fs.rmSync(real, { recursive: true, force: true });
+  }
+});
+
 test('#36 readEvidenceDir refuses a non-regular-file entry (dir named <pb>.json)', () => {
   const dir = mkTmp();
   try {

@@ -4226,6 +4226,18 @@ function buildJurisdictionClockRollup(results) {
 function readEvidenceDir(dir, verb) {
   const bundle = {};
   const resolvedDir = path.resolve(dir);
+  // Resolve the directory's realpath ONCE so the per-entry containment gate
+  // below compares like-for-like. On macOS the tmpdir — and many operator
+  // directories anywhere — live under a symlinked ancestor (e.g. /var ->
+  // /private/var, or a symlinked mount/home). Without resolving the base, a
+  // legitimate <pb-id>.json whose realpath is /private/var/.../f fails a
+  // `startsWith(resolvedDir)` test against /var/.../ and every evidence file is
+  // wrongly refused. Resolving the base keeps the junction/symlink-escape
+  // defense (an entry whose target leaves the resolved dir still fails) while
+  // accepting files that merely sit under a symlinked parent.
+  let realResolvedDir;
+  try { realResolvedDir = fs.realpathSync(resolvedDir); }
+  catch { realResolvedDir = resolvedDir; }
   // Only `<playbook-id>.json` entries are honored. Reject anything where the
   // filename strip leaves traversal segments — npm refuses to write such
   // filenames so the realistic risk is an operator symlink/junction inside the
@@ -4315,7 +4327,7 @@ function readEvidenceDir(dir, verb) {
       catch (e) {
         return { ok: false, error: `${verb}: --evidence-dir entry ${f}: realpath failed: ${e.message}`, extra: null };
       }
-      if (realEntry !== entryPath && !realEntry.startsWith(resolvedDir + path.sep)) {
+      if (!realEntry.startsWith(realResolvedDir + path.sep)) {
         return {
           ok: false,
           error: `${verb}: --evidence-dir entry ${f} resolves outside the directory (junction / reparse-point / symlink target). Refusing.`,
