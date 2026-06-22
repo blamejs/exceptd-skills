@@ -128,3 +128,15 @@ test('#13 byCwe/byTtp/bySkill exclude _auto_imported drafts but keep curated CVE
       `${key}: _auto_imported draft must NOT leak into the correlation`);
   }
 });
+
+test.describe("ask-routing-and-recipe-cleanup", () => {
+  const xrefMod = require("../lib/cross-ref-api.js");
+
+  test("byCve() no longer emits the dead (always-empty) recipes field", () => {
+    const r = xrefMod.byCve("CVE-2025-53773");
+    assert.ok(r, "byCve must return a result");
+    assert.ok(!("recipes" in r), "the always-empty recipes field must be removed");
+    // Other cross-reference fields remain intact (the removal was scoped to recipes).
+    assert.ok("skills" in r && "framework_gaps" in r && "theater_tests" in r, "other xref fields must remain");
+  });
+});

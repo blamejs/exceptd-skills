@@ -195,3 +195,133 @@ test('prefetch exits cleanly with no libuv assertion (Win + Node 25 regression)'
   assert.doesNotMatch(r.stderr || '', /UV_HANDLE_CLOSING/,
     `stderr must not contain UV_HANDLE_CLOSING — got ${JSON.stringify(r.stderr)}`);
 });
+
+// ===========================================================================
+// Source: cli-flag-and-envelope-hardening.test.js — prefetch unknown-flag
+// rejection (F3). Offline via --no-network; the rejection fires before any
+// fetch. Uses the shared cli() harness against bin/exceptd.js.
+// ===========================================================================
+{
+  const { makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+  const pfCli = makeCli(makeSuiteHome('exceptd-flag-envelope-'));
+
+  test('F3: prefetch --badflag -> ok:false exit 2', () => {
+    const r = pfCli(['prefetch', '--badflag', '--no-network'], { timeout: 20000 });
+    assert.equal(r.status, 2);
+    const body = tryJson(r.stderr.trim());
+    assert.ok(body, 'must emit a parseable JSON envelope on stderr');
+    assert.equal(body.ok, false);
+    assert.equal(body.verb, 'prefetch');
+    assert.deepEqual(body.unknown_flags, ['--badflag']);
+    assert.ok(Array.isArray(body.known_flags) && body.known_flags.includes('--source'));
+  });
+
+  test('F3: prefetch --no-network --source kev still runs (dry-run), exit 0', () => {
+    const r = pfCli(['prefetch', '--no-network', '--source', 'kev'], { timeout: 20000 });
+    assert.equal(r.status, 0);
+    assert.match(r.stdout, /prefetch summary:/);
+  });
+}
+
+// ---- routed from cli-flag-and-envelope-hardening ----
+;(() => {
+/**
+ * Regression coverage for a CLI flag-handling + envelope-shape pass.
+ *
+ * Findings closed here:
+ *
+ *   1. validate-rfcs / validate-cves rejected unknown flags BEFORE any
+ *      network work (a typo'd flag previously fell through to the default
+ *      live-network path and hung). --offline / --air-gap still produce the
+ *      offline view.
+ *   2. cve / rfc derive `ok` from the resolved status: a non-zero (exit 2)
+ *      failure carries ok:false; a published / matching resolution stays
+ *      ok:true exit 0. Previously ok:true was hardcoded alongside exit 2.
+ *   3. refresh / prefetch reject unknown flags (exit 2) instead of silently
+ *      swallowing them (exit 0).
+ *   4. orchestrator passthrough verbs (scan / dispatch / currency / watchlist)
+ *      reject unknown flags AND carry top-level ok:true on --json success.
+ *   5. framework-gap / skill missing-arg paths honor --json (emit ok:false
+ *      JSON, exit 1); skill no longer treats --json as the skill name.
+ *
+ * Every assertion checks the EXACT exit code and the EXACT ok value + field
+ * shape — never `notEqual(0)` / bare `assert.ok(field)`.
+ *
+ * Offline-only: --air-gap / --offline guarantee no real network egress. The
+ * finding-1 unknown-flag tests rely on the rejection firing BEFORE the fetch,
+ * so they neither reach nor depend on the network.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+
+const { makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+
+const SUITE_HOME = makeSuiteHome('exceptd-flag-envelope-');
+const cli = makeCli(SUITE_HOME);
+
+// ---------------------------------------------------------------------------
+// Finding 1 — validate-rfcs / validate-cves unknown-flag rejection (fast,
+// pre-network). Bounded timeout proves no hang on a live fetch.
+// ---------------------------------------------------------------------------
+
+
+
+
+
+
+// ---------------------------------------------------------------------------
+// Finding 2 — cve / rfc envelope ok derived from status (not inverted).
+// ---------------------------------------------------------------------------
+
+
+
+
+
+// ---------------------------------------------------------------------------
+// Finding 3 — refresh / prefetch unknown-flag rejection.
+// ---------------------------------------------------------------------------
+
+
+
+
+
+// ---------------------------------------------------------------------------
+// Finding 4 — orchestrator passthrough verbs: unknown-flag rejection +
+// top-level ok:true on --json success. (currency emits a scheduler log line
+// before the envelope; the JSON envelope is the LAST stdout line.)
+// ---------------------------------------------------------------------------
+
+function lastJsonLine(stdout) {
+  const lines = stdout.trim().split('\n').filter(Boolean);
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const parsed = tryJson(lines[i]);
+    if (parsed) return parsed;
+  }
+  return null;
+}
+
+
+
+
+
+
+
+
+
+// ---------------------------------------------------------------------------
+// Finding 5 — framework-gap / skill missing-arg paths honor --json; skill
+// no longer treats --json as args[0].
+// ---------------------------------------------------------------------------
+
+test('F3: prefetch --badflag → ok:false exit 2', () => {
+  const r = cli(['prefetch', '--badflag', '--no-network'], { timeout: 20000 });
+  assert.equal(r.status, 2);
+  const body = tryJson(r.stderr.trim());
+  assert.ok(body, 'must emit a parseable JSON envelope on stderr');
+  assert.equal(body.ok, false);
+  assert.equal(body.verb, 'prefetch');
+  assert.deepEqual(body.unknown_flags, ['--badflag']);
+  assert.ok(Array.isArray(body.known_flags) && body.known_flags.includes('--source'));
+});
+})();

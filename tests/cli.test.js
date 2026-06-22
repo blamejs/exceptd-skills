@@ -16,6 +16,7 @@
  */
 
 const test = require('node:test');
+const { describe } = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -3218,4 +3219,208 @@ test('refresh --curate refuses to curate a human-curated entry', () => {
   const data = tryJson(r.stdout);
   assert.equal(data.ok, false);
   assert.match(data.error, /human-curated/);
+});
+
+// ===================================================================
+// Source: bin-dispatcher.test.js — bin/exceptd.js dispatcher surface
+// (unknown-command + orchestrator-passthrough). The help / version /
+// alias / path / build-indexes / package.json cases route to their own
+// subject files. Local run() spawns bin/exceptd.js with cwd=ROOT.
+// ===================================================================
+describe('bin-dispatcher.test.js', () => {
+  const bdROOT = path.join(__dirname, '..');
+  const bdBIN = path.join(bdROOT, 'bin', 'exceptd.js');
+  function bdRun(args) {
+    return spawnSync(process.execPath, [bdBIN, ...args], { encoding: 'utf8', cwd: bdROOT });
+  }
+
+  test('bin/exceptd.js: unknown command exits with EXIT_CODES.UNKNOWN_COMMAND (10) + helpful stderr', () => {
+    // Cycle 9 B1 (v0.12.29): unknown-command was previously code 2 which
+    // collided with EXIT_CODES.DETECTED_ESCALATE. The split moves dispatcher
+    // refusals to code 10 so operators wiring `case 2)` only see escalations.
+    const r = bdRun(['totally-not-real']);
+    assert.equal(r.status, 10);
+    assert.match(r.stderr, /unknown command/);
+    assert.match(r.stderr, /exceptd help/);
+  });
+
+  test('bin/exceptd.js: orchestrator passthrough preserves the subcommand', () => {
+    // `currency` is one of the orchestrator passthroughs. Run it and check it
+    // produces the orchestrator's currency-report header.
+    const r = bdRun(['currency']);
+    assert.equal(r.status, 0, `stderr: ${r.stderr}`);
+    assert.match(r.stdout, /Skill currency check/);
+  });
+});
+
+// ===================================================================
+// Source: cli-error-envelopes.test.js — the bin/exceptd.js `collect`
+// failure envelope. The cve / rfc / cve-curation resolver-envelope cases
+// route to cve.test.js, rfc.test.js, cve-curation.test.js.
+// ===================================================================
+describe('cli-error-envelopes.test.js', () => {
+  const ceROOT = path.join(__dirname, '..');
+  const ceCLI = path.join(ceROOT, 'bin', 'exceptd.js');
+  function ceRun(script, args, env) {
+    return spawnSync(process.execPath, [script, ...args], {
+      encoding: 'utf8',
+      env: { ...process.env, EXCEPTD_DEPRECATION_SHOWN: '1', EXCEPTD_UNSIGNED_WARNED: '1', EXCEPTD_RAW_JSON: '1', ...env },
+    });
+  }
+
+  test('collect failure body does not advertise an exit_code that disagrees with the real process exit', () => {
+    // An unknown collector is the one cmdCollect failure path that ships a body;
+    // its advertised exit_code must equal the real process exit.
+    const r = ceRun(ceCLI, ['collect', 'this-collector-does-not-exist'], {});
+    assert.equal(r.status, 1);
+    const err = tryJson(r.stderr.trim());
+    assert.ok(err, `stderr must be parseable JSON; got ${r.stderr.slice(0, 200)}`);
+    assert.equal(err.ok, false);
+    if (err.exit_code !== undefined) {
+      assert.equal(err.exit_code, r.status, 'advertised exit_code must equal the real process exit');
+    }
+  });
+});
+
+// ===================================================================
+// Source: cli-exit-codes.test.js — the bin/exceptd.js dispatcher-level
+// closures (R-F3 stdin-detection helper routing, R-F8 unknown-command
+// stderr JSON, R-F11 jurisdiction-clock-rollup helper). The attest-* and
+// run-* R-F cases route to attest.test.js / run.test.js.
+// ===================================================================
+describe('cli-exit-codes.test.js', () => {
+  const exRoot = path.join(__dirname, '..');
+  const exHome = makeSuiteHome('exceptd-audit-r-');
+  const exCli = makeCli(exHome);
+
+  test('R-F3: cmdRun + cmdIngest + cmdAiRun route stdin detection through hasReadableStdin (no inline strict checks at dispatcher sites)', () => {
+    const src = fs.readFileSync(path.join(exRoot, 'bin', 'exceptd.js'), 'utf8');
+    const helperMatch = src.match(/function hasReadableStdin\(\)\s*\{[\s\S]*?\n\}/);
+    assert.ok(helperMatch, 'bin/exceptd.js must define a top-level hasReadableStdin function');
+    const srcOutsideHelper = src.replace(helperMatch[0], '');
+    const strictHits = srcOutsideHelper.match(/process\.stdin\.isTTY === false/g) || [];
+    assert.equal(strictHits.length, 0,
+      `process.stdin.isTTY === false must not appear in dispatcher sites of bin/exceptd.js — wrapped MSYS-bash streams expose isTTY=undefined and would silently skip stdin. The check is permitted only inside hasReadableStdin's Windows fallback. Found ${strictHits.length} dispatcher-side occurrences.`);
+    const helperCalls = src.match(/\bhasReadableStdin\s*\(\s*\)/g) || [];
+    assert.ok(helperCalls.length >= 3,
+      `hasReadableStdin() must be called at cmdRun, cmdIngest, and cmdAiRun stdin-detection sites (>= 3). Found ${helperCalls.length}.`);
+  });
+
+  test('R-F8: unknown-command stderr JSON is parseable AND exit code is EXIT_CODES.UNKNOWN_COMMAND (10)', () => {
+    const r = exCli(['definitely-not-a-real-verb-xyz']);
+    assert.equal(r.status, 10,
+      'unknown-command must exit 10 (UNKNOWN_COMMAND). status=' + r.status);
+    const err = tryJson(r.stderr.trim());
+    assert.ok(err, 'stderr must be parseable JSON post-fix (process.exitCode + return drains buffered writes).');
+    assert.equal(err.ok, false);
+    assert.match(err.error, /unknown command/);
+    assert.match(err.hint || '', /exceptd help/);
+  });
+
+  test('R-F11: buildJurisdictionClockRollup output carries both `obligation` and `obligation_ref`', () => {
+    const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
+    const r = exCli(['run', '--scope', 'cross-cutting', '--evidence', '-', '--json'], { input: sub });
+    const body = tryJson(r.stdout) || tryJson(r.stderr) || {};
+    const rollup = body.jurisdiction_clock_rollup;
+    if (Array.isArray(rollup) && rollup.length > 0) {
+      const sample = rollup[0];
+      assert.ok('obligation' in sample,
+        `rollup entry must carry an 'obligation' field. Got keys: ${Object.keys(sample).join(',')}`);
+      assert.ok('obligation_ref' in sample,
+        `rollup entry must continue to carry 'obligation_ref' alias. Got keys: ${Object.keys(sample).join(',')}`);
+      assert.equal(sample.obligation, sample.obligation_ref,
+        'obligation and obligation_ref must be the same value (alias).');
+    }
+    const binSrc = fs.readFileSync(path.join(exRoot, 'bin', 'exceptd.js'), 'utf8');
+    const helperMatch = binSrc.match(/function buildJurisdictionClockRollup[\s\S]*?\n\}\n/);
+    assert.ok(helperMatch, 'buildJurisdictionClockRollup helper must exist');
+    const helperBody = helperMatch[0];
+    assert.match(helperBody, /\bobligation\b\s*[,:]/,
+      'buildJurisdictionClockRollup must include an `obligation` key in rollup entries');
+    assert.match(helperBody, /\bobligation_ref\b\s*:/,
+      'buildJurisdictionClockRollup must continue to set `obligation_ref` as a kept-name alias');
+  });
+});
+
+// ===================================================================
+// Source: cli-flag-validation.test.js — the bin/exceptd.js source-shape
+// guards (GG P1-1 audit-leak removal, EE P1-7 hasReadableStdin presence).
+// The --vex / --operator / --evidence / --ack runtime cases route to
+// run.test.js and brief.test.js.
+// ===================================================================
+describe('cli-flag-validation.test.js', () => {
+  const fvRoot = path.join(__dirname, '..');
+  const fvHome = makeSuiteHome('exceptd-audit-ee-gg-');
+  const fvCli = makeCli(fvHome);
+
+  test('GG P1-1: ai-run --help text contains "Stdin acceptance contract:" without parenthetical', () => {
+    const r = fvCli(['ai-run', '--help']);
+    assert.equal(r.status, 0, 'help should exit 0; got ' + r.status);
+    assert.match(r.stdout, /Stdin acceptance contract:/,
+      'help must include the contract section heading');
+    assert.doesNotMatch(r.stdout, /Stdin acceptance contract \(Audit L F22\)/,
+      'help must NOT include the internal `(Audit L F22)` parenthetical');
+    assert.doesNotMatch(r.stdout, /Audit L F22/,
+      'help must not surface internal audit identifiers anywhere');
+  });
+
+  test('GG P1-1: source no longer contains the audit-leak string', () => {
+    const src = fs.readFileSync(path.join(fvRoot, 'bin', 'exceptd.js'), 'utf8');
+    assert.equal(src.indexOf('Stdin acceptance contract (Audit L F22)'), -1,
+      'source must not contain the leaking parenthetical');
+    assert.ok(src.indexOf('Stdin acceptance contract:') >= 0,
+      'source must contain the clean heading');
+  });
+
+  test('EE P1-7: hasReadableStdin helper is defined in bin/exceptd.js', () => {
+    const src = fs.readFileSync(path.join(fvRoot, 'bin', 'exceptd.js'), 'utf8');
+    assert.match(src, /function hasReadableStdin\(\)/,
+      'bin/exceptd.js must define a hasReadableStdin() helper');
+    assert.match(src, /fs\.fstatSync\(0\)/,
+      'hasReadableStdin must probe via fs.fstatSync(0) to avoid blocking');
+  });
+});
+
+// ===================================================================
+// Source: cli-subverb-dispatch.test.js — the bin/exceptd.js source-shape
+// guard for BUNDLE_FLAG_RELEVANT_VERBS. The brief / discover / run / ci
+// runtime cases route to brief.test.js / run.test.js / ci.test.js.
+// ===================================================================
+describe('cli-subverb-dispatch.test.js', () => {
+  const svRoot = path.join(__dirname, '..');
+
+  test('NN P1-5: source defines BUNDLE_FLAG_RELEVANT_VERBS with exactly the 4-verb set', () => {
+    const src = fs.readFileSync(path.join(svRoot, 'bin', 'exceptd.js'), 'utf8');
+    assert.match(src, /BUNDLE_FLAG_RELEVANT_VERBS\s*=\s*new Set\(\[/,
+      'bin/exceptd.js must declare BUNDLE_FLAG_RELEVANT_VERBS as a Set literal');
+    const m = src.match(/BUNDLE_FLAG_RELEVANT_VERBS\s*=\s*new Set\(\[\s*([^\]]+)\]/);
+    assert.ok(m, 'must locate BUNDLE_FLAG_RELEVANT_VERBS set literal');
+    const setBody = m[1];
+    for (const verb of ['run', 'ci', 'run-all', 'ai-run']) {
+      assert.match(setBody, new RegExp('"' + verb + '"'),
+        'BUNDLE_FLAG_RELEVANT_VERBS must include "' + verb + '"; got body: ' + setBody);
+    }
+  });
+});
+
+// ===================================================================
+// Source: cli-flag-and-envelope-hardening.test.js — the framework-gap CLI
+// missing-arg envelope (F5). The validate-* / cve / rfc / refresh /
+// prefetch / scan / dispatch / currency / watchlist / skill cases route to
+// their own subject files.
+// ===================================================================
+describe('cli-flag-and-envelope-hardening.test.js', () => {
+  const feHome = makeSuiteHome('exceptd-flag-envelope-');
+  const feCli = makeCli(feHome);
+
+  test('F5: framework-gap --json missing-arg -> ok:false JSON exit 1', () => {
+    const r = feCli(['framework-gap', '--json'], { timeout: 20000 });
+    assert.equal(r.status, 1);
+    const body = tryJson(r.stdout.trim());
+    assert.ok(body, 'must emit a parseable JSON envelope on stdout');
+    assert.equal(body.ok, false);
+    assert.equal(body.verb, 'framework-gap');
+    assert.equal(typeof body.error, 'string');
+    assert.ok(body.error.length > 0);
+  });
 });
