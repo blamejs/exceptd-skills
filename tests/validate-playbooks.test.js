@@ -194,6 +194,43 @@ test("parse-gate rejects an unparseable escalation / feeds_into / precondition c
   );
 });
 
+test("parse-gate catches a dead sub-clause hidden behind a short-circuiting AND/OR", () => {
+  // evalCondition evaluates AND via .every / OR via .some, which SHORT-CIRCUIT:
+  // a dead (unparseable) second clause behind a leading clause that resolves
+  // false (AND) or true (OR) in the empty validation context is never reached,
+  // so checking the whole condition once would miss it. The gate must atomize
+  // and parse-check each leaf. Leading clause is false with no signals
+  // (blast_radius_score is null), so the dead prose atom only surfaces if each
+  // atom is checked independently.
+  const ctx = loadContext();
+  const playbooks = loadPlaybooks();
+  const playbookIds = new Set(
+    playbooks.filter((p) => p.data).map((p) => p.data._meta.id),
+  );
+  const good = JSON.parse(
+    JSON.stringify(playbooks.find((p) => p.data._meta.id === "kernel").data),
+  );
+  good.phases.analyze.escalation_criteria.push({
+    condition: "blast_radius_score >= 3 AND any deterministic indicator fires",
+    action: "raise_severity",
+  });
+  // An OR whose FIRST atom is always-true would short-circuit the dead second.
+  good.phases.analyze.escalation_criteria.push({
+    condition: "rwep >= 0 OR a citation looks wrong",
+    action: "raise_severity",
+  });
+  const findings = checkCrossRefs(good, ctx, playbookIds);
+  const parseErrs = findings.filter(
+    (f) => f.severity === "error" && /not parseable by the runner's evalCondition/.test(f.message),
+  );
+  assert.equal(
+    parseErrs.length,
+    2,
+    `both short-circuit-hidden dead sub-clauses must be caught; got ${parseErrs.length}:\n` +
+      findings.map((f) => `  ${f.severity}: ${f.message}`).join("\n"),
+  );
+});
+
 test("parse-gate accepts the rewritten mini-language conditions (kernel passes clean)", () => {
   // The shipped kernel playbook (and its rewritten conditions) must produce
   // zero parse-gate errors — a guard that the gate is not over-firing on valid

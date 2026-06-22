@@ -877,7 +877,7 @@
       ],
       "escalation_criteria": [
         {
-          "condition": "rwep >= 90 AND any deterministic indicator fires",
+          "condition": "rwep >= 90 AND anomalous-federated-trust-addition == true",
           "action": "page_on_call"
         },
         {

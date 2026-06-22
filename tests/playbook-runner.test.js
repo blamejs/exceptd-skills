@@ -3301,10 +3301,29 @@ describe('round-3: dead-condition rewrites, validate engine-ctx, evidence-hash, 
       'OR-chain escalation must fire on a single fired indicator');
   });
 
-  it('every shipped escalation/feeds_into/precondition condition parses (no condition_unparsed)', () => {
-    // Class guard mirroring the validate-playbooks parse-gate: exercising the
-    // REAL evaluator over every shipped condition proves none is dead prose.
+  it('every shipped escalation/feeds_into/precondition condition parses (no condition_unparsed) — atom-level', () => {
+    // Class guard mirroring the validate-playbooks parse-gate. Atomize each
+    // condition (split top-level OR then AND, strip parens) and parse-check each
+    // LEAF — checking the whole condition once would miss a dead sub-clause
+    // hidden behind a short-circuiting AND/OR (evalCondition's .every/.some stop
+    // at the first false/true). A coincidence-passing whole-condition check is
+    // worse than none.
     const { _evalCondition } = runner;
+    const splitTop = (expr, sep) => {
+      const parts = []; const needle = ' ' + sep + ' '; let depth = 0, buf = '', i = 0, q = null;
+      while (i < expr.length) {
+        const ch = expr[i];
+        if (q) { if (ch === '\\' && i + 1 < expr.length) { buf += ch + expr[i + 1]; i += 2; continue; } if (ch === q) q = null; buf += ch; i++; continue; }
+        if (ch === "'" || ch === '"') { q = ch; buf += ch; i++; continue; }
+        if (ch === '(') { depth++; buf += ch; i++; continue; }
+        if (ch === ')') { depth--; buf += ch; i++; continue; }
+        if (depth === 0 && expr.startsWith(needle, i)) { parts.push(buf.trim()); buf = ''; i += needle.length; continue; }
+        buf += ch; i++;
+      }
+      parts.push(buf.trim()); return parts;
+    };
+    const strip = (e) => { e = e.trim(); while (e.startsWith('(') && e.endsWith(')')) { let d = 0, ok = true; for (let i = 0; i < e.length; i++) { if (e[i] === '(') d++; else if (e[i] === ')') { d--; if (d === 0 && i < e.length - 1) { ok = false; break; } } } if (ok) e = e.slice(1, -1).trim(); else break; } return e; };
+    const atomize = (cond) => { const out = []; (function rec(e) { e = strip(e); const o = splitTop(e, 'OR'); if (o.length > 1) { o.forEach(rec); return; } const a = splitTop(e, 'AND'); if (a.length > 1) { a.forEach(rec); return; } out.push(e); })(cond); return out; };
     const pbDir = REAL_PLAYBOOK_DIR;
     const dead = [];
     for (const f of fs.readdirSync(pbDir).filter(x => x.endsWith('.json'))) {
@@ -3314,12 +3333,14 @@ describe('round-3: dead-condition rewrites, validate engine-ctx, evidence-hash, 
       for (const fi of (pb._meta.feeds_into || [])) if (fi && typeof fi.condition === 'string') conds.push(fi.condition);
       for (const rp of (pb.phases.validate.remediation_paths || [])) for (const pc of (rp.preconditions || [])) if (typeof pc === 'string') conds.push(pc);
       for (const c of conds) {
-        const re = [];
-        _evalCondition(c, { _runErrors: re }, { _runErrors: re });
-        if (re.some(e => e && e.kind === 'condition_unparsed')) dead.push(`${f}: ${c}`);
+        for (const atom of atomize(c)) {
+          const re = [];
+          _evalCondition(atom, { _runErrors: re }, { _runErrors: re });
+          if (re.some(e => e && e.kind === 'condition_unparsed')) dead.push(`${f}: atom "${atom}"  in:  ${c}`);
+        }
       }
     }
-    assert.deepEqual(dead, [], `unparseable (dead) conditions found:\n${dead.join('\n')}`);
+    assert.deepEqual(dead, [], `unparseable (dead) condition atoms found:\n${dead.join('\n')}`);
   });
 
   // --- #45d/#7: validate() precondition context exposes engine-computed roots ---

@@ -533,11 +533,11 @@
       ],
       "escalation_criteria": [
         {
-          "condition": "blast_radius_score >= 3 AND any deterministic indicator fires",
+          "condition": "blast_radius_score >= 3 AND fabricated-cve-id == true",
           "action": "raise_severity"
         },
         {
-          "condition": "compliance_theater_check.verdict == 'theater' AND citation appears in published disclosure surface",
+          "condition": "compliance_theater_check.verdict == 'theater' AND citation-in-published-disclosure-surface == true",
           "action": "trigger_playbook",
           "target_playbook": "framework"
         },

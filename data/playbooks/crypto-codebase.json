@@ -930,11 +930,11 @@
       ],
       "escalation_criteria": [
         {
-          "condition": "blast_radius_score >= 4 AND any deterministic indicator fires",
+          "condition": "blast_radius_score >= 4 AND (weak-hash-import == true OR weak-cipher-mode == true OR rsa-1024-anywhere == true OR math-random-in-security-path == true OR pbkdf2-under-iterated == true OR bcrypt-cost-low == true OR no-ml-kem-implementation == true OR fips-claim-without-runtime-activation == true OR hardcoded-key-material == true OR tls-old-protocol == true)",
           "action": "raise_severity"
         },
         {
-          "condition": "rwep >= 75 AND library is published_to_registry == true",
+          "condition": "rwep >= 75 AND library_published_to_registry == true",
           "action": "page_on_call"
         },
         {
