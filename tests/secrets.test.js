@@ -1,25 +1,167 @@
 "use strict";
 
 
-// ---- routed from secrets-depth-cap-visibility ----
-require("node:test").describe("secrets-depth-cap-visibility", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+// ---- routed from collectors ----
+require("node:test").describe("collectors", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * tests/secrets-depth-cap-visibility.test.js
+ * tests/collectors.test.js
  *
- * The secrets collector caps its tree walk at depth 6. A secret living in a
- * subtree deeper than the cap is never emitted and never scanned. Before this
- * fix that was a silent false negative: the unscanned deep file produced
- * `aws-access-key-id=miss` with `collector_errors=[]`, indistinguishable from
- * "scanned the whole tree and found nothing". Unlike the per-file size cap —
- * which records `file_too_large_skipped` so the operator knows a file went
- * unscanned — depth truncation recorded nothing.
+ * Pins the collector interface contract + reference implementations:
+ *   - exceptd collect <unknown> -> structured error + exit 1 + lists
+ *     the available collectors so an operator can discover them.
+ *   - exceptd collect <known> -> submission JSON with the required
+ *     top-level keys (precondition_checks, artifacts,
+ *     signal_overrides, collector_meta, collector_errors).
+ *   - exceptd collect <known> | exceptd run <known> --evidence -
+ *     round-trips: the runner accepts the collector's output without
+ *     schema errors.
+ *   - exceptd collect <known> --cwd <nonexistent> -> structured error.
+ *   - secrets collector finds expected file types on a synthetic
+ *     repo with a fake .env + fake .npmrc.
+ */
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const os = require("node:os");
+const { spawnSync } = require("node:child_process");
+
+const ROOT = path.join(__dirname, "..");
+const CLI = path.join(ROOT, "bin", "exceptd.js");
+
+function cli(args, opts = {}) {
+  return spawnSync(process.execPath, [CLI, ...args], {
+    encoding: "utf8",
+    cwd: opts.cwd || ROOT,
+    env: { ...process.env, EXCEPTD_DEPRECATION_SHOWN: "1", EXCEPTD_UNSIGNED_WARNED: "1", ...(opts.env || {}) },
+    input: opts.input,
+  });
+}
+
+function tryJson(s) { try { return JSON.parse(s); } catch { return null; } }
+
+// Direct module imports so the diff-coverage gate sees the exports
+// are exercised by unit-level tests, not just via subprocess
+// invocation through the CLI.
+const secretsCollector = require(path.join(ROOT, "lib", "collectors", "secrets.js"));
+const kernelCollector = require(path.join(ROOT, "lib", "collectors", "kernel.js"));
+const sbomCollector = require(path.join(ROOT, "lib", "collectors", "sbom.js"));
+const containersCollector = require(path.join(ROOT, "lib", "collectors", "containers.js"));
+const libraryAuthorCollector = require(path.join(ROOT, "lib", "collectors", "library-author.js"));
+const cryptoCodebaseCollector = require(path.join(ROOT, "lib", "collectors", "crypto-codebase.js"));
+const credStoresCollector = require(path.join(ROOT, "lib", "collectors", "cred-stores.js"));
+const hardeningCollector = require(path.join(ROOT, "lib", "collectors", "hardening.js"));
+const runtimeCollector = require(path.join(ROOT, "lib", "collectors", "runtime.js"));
+const aiApiCollector = require(path.join(ROOT, "lib", "collectors", "ai-api.js"));
+const mcpCollector = require(path.join(ROOT, "lib", "collectors", "mcp.js"));
+
+
+
+const ENVELOPE_KEYS = [
+  "precondition_checks", "artifacts", "signal_overrides",
+  "collector_meta", "collector_errors",
+];
+
+test("secrets collector permission predicates match the playbook indicator spec", { skip: process.platform === "win32" }, () => {
+  // The secrets playbook defines:
+  //   world-writable-env-file: env-files only, mode 0666 or 0664 (group/world writable)
+  //   ssh-key-bad-perms: ssh-private-keys only, mode != 0600
+  // Verify the collector implements those predicates, not loose proxies.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-perm-"));
+  try {
+    // env-file with group-write bit (mode 0664) → world-writable-env-file MUST hit.
+    const envPath = path.join(tmp, ".env");
+    fs.writeFileSync(envPath, "FOO=bar\n");
+    fs.chmodSync(envPath, 0o664);
+    // ssh-private-key with mode 0640 (group-read only) → ssh-key-bad-perms MUST hit because mode != 0600.
+    const sshPath = path.join(tmp, "id_rsa");
+    fs.writeFileSync(sshPath, "-----BEGIN OPENSSH PRIVATE KEY-----\nfake\n-----END OPENSSH PRIVATE KEY-----\n");
+    fs.chmodSync(sshPath, 0o640);
+
+    const r = secretsCollector.collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["world-writable-env-file"], "hit",
+      "0664 .env must hit world-writable-env-file (group-writable bit set)");
+    assert.equal(r.signal_overrides["ssh-key-bad-perms"], "hit",
+      "0640 ssh private key must hit ssh-key-bad-perms (mode != 0600)");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("secrets collector world-writable-env-file does NOT fire on non-env carrier", { skip: process.platform === "win32" }, () => {
+  // The playbook scopes world-writable-env-file to env-files only.
+  // A world-writable .npmrc must NOT trigger that indicator — it
+  // belongs under the broader auth-config-files scope instead.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-perm-scope-"));
+  try {
+    const npmrcPath = path.join(tmp, ".npmrc");
+    fs.writeFileSync(npmrcPath, "registry=https://registry.npmjs.org/\n");
+    fs.chmodSync(npmrcPath, 0o666);
+    const r = secretsCollector.collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["world-writable-env-file"], "miss",
+      "world-writable .npmrc is OUT of scope for world-writable-env-file (env-files only)");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("collect secrets pipes through to run --evidence - without schema errors", () => {
+  // Use a synthetic tempdir as the collect target so the test is
+  // deterministic + bounded.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-pipe-"));
+  try {
+    fs.writeFileSync(path.join(tmp, ".env"), "AWS_KEY=AKIA1234567890ABCDEF\nOTHER=value\n");
+    fs.writeFileSync(path.join(tmp, "README.md"), "no secrets here\n");
+    const collectR = cli(["collect", "secrets", "--cwd", tmp, "--json"]);
+    assert.equal(collectR.status, 0);
+    const submission = tryJson(collectR.stdout);
+    assert.ok(submission, "collector stdout must be parseable JSON");
+    assert.equal(submission.signal_overrides["aws-access-key-id"], "hit",
+      "secrets collector must flip aws-access-key-id to hit when a real AKIA literal is present");
+    // Pipe collector output into run.
+    const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "collect-run-"));
+    const runR = cli(["run", "secrets", "--evidence", "-"],
+      { input: JSON.stringify(submission), env: { EXCEPTD_HOME: tmpHome } });
+    assert.equal(runR.status, 0, `run must accept the collector's submission; stderr: ${runR.stderr.slice(0, 200)}`);
+    // The run human output must show the indicator firing.
+    assert.match(runR.stdout, /\[!! DETECTED\]|aws-access-key-id/,
+      "the runner must recognise the collector-supplied signal_overrides");
+    try { fs.rmSync(tmpHome, { recursive: true, force: true }); } catch {}
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from collectors-fp-fixes ----
+require("node:test").describe("collectors-fp-fixes", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * tests/collectors-fp-fixes.test.js
  *
- * The collector now records a `depth_capped` collector_errors entry naming the
- * pruned subtree(s), so absence-of-scan is observable rather than reported as
- * absence-of-secret.
+ * Regression tests for a batch of collector false-positive / completeness
+ * fixes:
+ *   1. sbom: lockfile-no-integrity must NOT fire on a clean npm 7+ lockfile
+ *      whose `""` root entry carries name+version but no integrity. It must
+ *      still fire when a REMOTE-tarball entry (one with `resolved`) is missing
+ *      integrity.
+ *   2. secrets: a text file over the 1 MB scan limit is no longer silently
+ *      dropped — the skip is recorded in collector_errors.
+ *   3. secrets: the AWS-published example access-key id AKIAIOSFODNN7EXAMPLE
+ *      does not flip aws-access-key-id.
+ *   4. cicd-pipeline-compromise: an OIDC trust JSON under a build-output dir
+ *      (dist/) is excluded from the scan via the shared code-exclude set.
+ *   5. content-regex collectors (secrets / crypto-codebase / citation-hygiene)
+ *      attach a 1-based startLine to their evidence_locations.
  */
 
 const test = require("node:test");
@@ -29,356 +171,122 @@ const path = require("node:path");
 const os = require("node:os");
 
 const ROOT = path.join(__dirname, "..");
-const secrets = require(path.join(ROOT, "lib", "collectors", "secrets.js"));
-const { walkTree } = require(path.join(ROOT, "lib", "collectors", "scan-excludes.js"));
+
+const sbomCollector = require(path.join(ROOT, "lib", "collectors", "sbom.js"));
+const secretsCollector = require(path.join(ROOT, "lib", "collectors", "secrets.js"));
+const cryptoCollector = require(path.join(ROOT, "lib", "collectors", "crypto-codebase.js"));
+const citationCollector = require(path.join(ROOT, "lib", "collectors", "citation-hygiene.js"));
+const cicdCollector = require(path.join(ROOT, "lib", "collectors", "cicd-pipeline-compromise.js"));
+const { lineFromOffset } = require(path.join(ROOT, "lib", "collectors", "scan-excludes.js"));
 
 function mkTmp(prefix) {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
 }
 
-// A valid AWS access-key-id: AKIA followed by exactly 16 [0-9A-Z].
-const DEEP_KEY = "AKIAQ7DEEPSECRET0001";
+// ---------------------------------------------------------------------------
+// Finding 1 — sbom lockfile-no-integrity
+// ---------------------------------------------------------------------------
 
-test("secrets: a subtree pruned at the depth cap records a depth_capped collector_errors entry", () => {
-  const tmp = mkTmp("sec-depthcap-");
+
+
+// ---------------------------------------------------------------------------
+// Finding 2 — secrets >1 MB skip is recorded
+// ---------------------------------------------------------------------------
+
+
+// ---------------------------------------------------------------------------
+// Finding 3 — AWS doc example key demotion
+// ---------------------------------------------------------------------------
+
+
+
+// ---------------------------------------------------------------------------
+// Finding 4 — cicd OIDC scan honors code-exclude set (dist/)
+// ---------------------------------------------------------------------------
+
+const WILDCARD_OIDC = JSON.stringify({
+  Statement: [{
+    Effect: "Allow",
+    Principal: { Federated: "token.actions.githubusercontent.com" },
+    Condition: {
+      StringLike: {
+        "token.actions.githubusercontent.com:sub": "repo:acme/*:*",
+      },
+    },
+  }],
+}, null, 2);
+
+
+
+// ---------------------------------------------------------------------------
+// Finding 5 — evidence_locations carry startLine
+// ---------------------------------------------------------------------------
+
+test("secrets: text file over 1 MB is recorded as file_too_large_skipped (not silent)", () => {
+  const tmp = mkTmp("fp-secrets-big-");
   try {
-    // root/a/b/c/d/e/f/g/h/.env is at depth 8 — beyond the depth-6 cap.
-    const deepDir = path.join(tmp, "a", "b", "c", "d", "e", "f", "g", "h");
-    fs.mkdirSync(deepDir, { recursive: true });
-    fs.writeFileSync(path.join(deepDir, ".env"), "aws_access_key_id=" + DEEP_KEY + "\n");
+    // 1 MB limit is exclusive (> MAX). Build a >1 MB .txt file.
+    const big = "A".repeat(1024 * 1024 + 64) + "\n";
+    fs.writeFileSync(path.join(tmp, "huge.txt"), big);
+    const r = secretsCollector.collect({ cwd: tmp });
+    const skip = r.collector_errors.find(e => e.kind === "file_too_large_skipped");
+    assert.ok(skip, "a >1 MB text file must produce a file_too_large_skipped collector error");
+    assert.equal(skip.artifact_id, "secret-regex-scan-text-files");
+    assert.match(skip.reason, /huge\.txt/);
+    assert.match(skip.reason, /not scanned/);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
 
-    const r = secrets.collect({ cwd: tmp });
-
-    // The deep file is genuinely beyond reach of the default walk.
+test("secrets: AWS doc example key AKIAIOSFODNN7EXAMPLE does NOT flip aws-access-key-id", () => {
+  const tmp = mkTmp("fp-secrets-awsexample-");
+  try {
+    fs.writeFileSync(path.join(tmp, "README.md"),
+      "# Example\n\nUse your AWS key, e.g. `AKIAIOSFODNN7EXAMPLE`, from the AWS docs.\n");
+    const r = secretsCollector.collect({ cwd: tmp });
     assert.equal(r.signal_overrides["aws-access-key-id"], "miss",
-      "the depth-8 secret is not scanned at the depth-6 cap (this is the gap)");
-
-    // ...but the unscanned subtree is now OBSERVABLE, not silent.
-    const depthCapped = r.collector_errors.filter((e) => e.kind === "depth_capped");
-    assert.equal(depthCapped.length, 1,
-      "exactly one depth_capped entry records the pruned subtree");
-    assert.equal(typeof depthCapped[0].reason, "string");
-    assert.ok(depthCapped[0].truncated_count >= 1,
-      "truncated_count reports at least the one pruned subtree");
-    assert.ok(Array.isArray(depthCapped[0].truncated_paths)
-      && depthCapped[0].truncated_paths.length >= 1,
-      "truncated_paths names the pruned subtree path(s)");
+      "the published AWS example key must be demoted");
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
 
-test("secrets: a fully shallow tree records NO depth_capped entry", () => {
-  const tmp = mkTmp("sec-depthcap-shallow-");
+test("secrets: a non-example AKIA key DOES flip aws-access-key-id", () => {
+  const tmp = mkTmp("fp-secrets-awsreal-");
   try {
-    // Deepest file is at depth 6 (root/a/b/c/d/e/f/<file>) — within the cap.
-    const d6 = path.join(tmp, "a", "b", "c", "d", "e", "f");
-    fs.mkdirSync(d6, { recursive: true });
-    fs.writeFileSync(path.join(d6, "config.env"), "aws_access_key_id=" + DEEP_KEY + "\n");
-
-    const r = secrets.collect({ cwd: tmp });
+    // 16 trailing uppercase/digit chars, not the example value.
+    fs.writeFileSync(path.join(tmp, "config.txt"),
+      "aws_access_key_id = AKIA1234567890ABCDEF\n");
+    const r = secretsCollector.collect({ cwd: tmp });
     assert.equal(r.signal_overrides["aws-access-key-id"], "hit",
-      "the depth-6 secret IS scanned and fires");
-    assert.equal(r.collector_errors.filter((e) => e.kind === "depth_capped").length, 0,
-      "no subtree was pruned, so no depth_capped notice");
+      "a real-shaped AKIA key must still fire");
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
 
-test("walkTree: opts.truncations is appended with the pruned dir but the return value is unchanged", () => {
-  const tmp = mkTmp("sec-walk-trunc-");
+test("secrets: evidence_locations carry a startLine pointing at the secret's line", () => {
+  const tmp = mkTmp("fp-secrets-line-");
   try {
-    const d7 = path.join(tmp, "a", "b", "c", "d", "e", "f", "g");
-    fs.mkdirSync(d7, { recursive: true });
-    fs.writeFileSync(path.join(d7, "deep.txt"), "x\n");
-    fs.writeFileSync(path.join(tmp, "shallow.txt"), "y\n");
-
-    const truncations = [];
-    const files = walkTree(tmp, { maxDepth: 6, truncations });
-
-    // Return value: only the in-cap file (shallow.txt at depth 0). deep.txt
-    // at depth 7 is pruned.
-    assert.ok(Array.isArray(files), "walkTree still returns a file array");
-    assert.equal(files.some((f) => f.name === "deep.txt"), false,
-      "the depth-7 file is not emitted");
-    assert.equal(files.some((f) => f.name === "shallow.txt"), true,
-      "the depth-0 file is emitted");
-
-    // The pruned directory (a/b/c/d/e/f/g, the depth-7 dir whose contents are
-    // dropped) is recorded.
-    assert.ok(truncations.length >= 1, "the pruned directory is recorded in truncations");
-    assert.equal(typeof truncations[0].rel, "string");
-    assert.equal(truncations[0].rel, "a/b/c/d/e/f/g",
-      "the recorded path is the forward-slash rel path of the pruned dir");
-    assert.equal(truncations[0].depth, 7, "the recorded depth is the would-be descent depth");
-
-    // Backward-compat: not passing truncations still works and never throws.
-    const files2 = walkTree(tmp, { maxDepth: 6 });
-    assert.ok(Array.isArray(files2));
+    // Real GitHub PAT shape on line 3 (1-based).
+    const ghp = "ghp_" + "A".repeat(36);
+    fs.writeFileSync(path.join(tmp, "leak.env"),
+      `# comment line 1\nFOO=bar\nTOKEN=${ghp}\n`);
+    const r = secretsCollector.collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["github-personal-access-token"], "hit");
+    const locs = r.evidence_locations["github-personal-access-token"];
+    assert.ok(Array.isArray(locs) && locs.length === 1, "exactly one location expected");
+    assert.equal(locs[0].uri, "leak.env");
+    assert.equal(locs[0].startLine, 3, "startLine must point at the line carrying the token");
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
-});
-
-
-// ---- routed from secrets-openai-anthropic-disambiguation ----
-require("node:test").describe("secrets-openai-anthropic-disambiguation", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
-/**
- * tests/secrets-openai-anthropic-disambiguation.test.js
- *
- * Regression test for the secrets-collector openai-api-key pattern swallowing
- * Anthropic keys. The pattern carried a trailing empty alternative
- * (`(?:proj-|svcacct-|admin-|)`) that made the OpenAI prefix optional, so the
- * pattern reduced to `sk-<20+ chars>` and an Anthropic `sk-ant-api03-*` key
- * matched BOTH indicators — one credential double-firing as two, inflating the
- * hit count and mislabeling the vendor in signal_overrides.
- *
- * A `(?!ant-)` negative lookahead now keeps Anthropic keys out of the OpenAI
- * indicator while still admitting every real OpenAI shape (proj/svcacct/admin
- * prefixes and the bare legacy `sk-` key).
- */
-
-const test = require("node:test");
-const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const path = require("node:path");
-const os = require("node:os");
-
-const ROOT = path.join(__dirname, "..");
-const secrets = require(path.join(ROOT, "lib", "collectors", "secrets.js"));
-
-function mkTmp(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
-
-test("secrets: a single sk-ant-api03 key fires only anthropic, never openai", () => {
-  const tmp = mkTmp("sec-vendor-");
-  try {
-    const k = "sk-ant-api03-" + "A".repeat(80);
-    fs.writeFileSync(path.join(tmp, "config.js"), `const ANTHROPIC_KEY = "${k}";\n`);
-    const r = secrets.collect({ cwd: tmp });
-    const so = r.signal_overrides;
-    assert.equal(so["anthropic-api-key"], "hit",
-      "the Anthropic key must fire the anthropic indicator");
-    assert.equal(so["openai-api-key"], "miss",
-      "the Anthropic key must NOT also fire the openai indicator");
-    assert.equal(so["openai-api-key__fp_checks"], undefined,
-      "no openai __fp_checks attestation when openai did not fire");
-    assert.equal(r.collector_meta.hits_total, 1,
-      "one credential must yield exactly one hit, not two");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("secrets: a real sk-proj OpenAI key still fires only openai", () => {
-  const tmp = mkTmp("sec-vendor-");
-  try {
-    const k = "sk-proj-" + "B".repeat(80);
-    fs.writeFileSync(path.join(tmp, "config.js"), `const OPENAI_KEY = "${k}";\n`);
-    const r = secrets.collect({ cwd: tmp });
-    const so = r.signal_overrides;
-    assert.equal(so["openai-api-key"], "hit",
-      "a real OpenAI project key must still fire the openai indicator");
-    assert.equal(so["anthropic-api-key"], "miss",
-      "an OpenAI key must NOT fire the anthropic indicator");
-    assert.equal(r.collector_meta.hits_total, 1,
-      "one credential must yield exactly one hit");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("secrets: a bare legacy sk- OpenAI key still fires openai", () => {
-  const tmp = mkTmp("sec-vendor-");
-  try {
-    const k = "sk-" + "C".repeat(48);
-    fs.writeFileSync(path.join(tmp, "config.js"), `const OPENAI_KEY = "${k}";\n`);
-    const r = secrets.collect({ cwd: tmp });
-    const so = r.signal_overrides;
-    assert.equal(so["openai-api-key"], "hit",
-      "a bare legacy sk- OpenAI key must still fire the openai indicator");
-    assert.equal(so["anthropic-api-key"], "miss",
-      "a bare sk- key must NOT fire the anthropic indicator");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-});
-
-
-// ---- routed from secrets-private-key-cert-fp ----
-require("node:test").describe("secrets-private-key-cert-fp", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
-/**
- * tests/secrets-private-key-cert-fp.test.js
- *
- * Regression tests for two secrets-collector false positives in the
- * `ssh-private-key-block` signal, surfaced by scanning repositories that
- * ship public keys and use redaction libraries:
- *
- *   1. Content scan: a bare `BEGIN ... PRIVATE KEY` header with no body —
- *      a redaction/DLP library's regex literal, or a doc placeholder — is a
- *      detection pattern, not embedded key material. A complete block
- *      (header + base64 body + closing marker) is now required.
- *
- *   2. File classification: a `.pem` certificate chain (`fullchain.pem`) or
- *      a public trust anchor (`bimi-trust-anchors.pem`) is conventionally
- *      `.pem` but carries no private key. It must not classify as an SSH
- *      private-key file. A `.pem` / `.key` is treated as a private key only
- *      when its content actually contains a `PRIVATE KEY` block.
- */
-
-const test = require("node:test");
-const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const path = require("node:path");
-const os = require("node:os");
-
-const ROOT = path.join(__dirname, "..");
-const secrets = require(path.join(ROOT, "lib", "collectors", "secrets.js"));
-
-function mkTmp(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-}
-
-const PRIV_BODY =
-  "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDexampleexample\n" +
-  "exampleexampleexampleexampleexampleexampleexampleexampleexampleAA==";
-const FULL_PRIV = "-----BEGIN PRIVATE KEY-----\n" + PRIV_BODY + "\n-----END PRIVATE KEY-----\n";
-const CERT_PEM =
-  "-----BEGIN CERTIFICATE-----\n" +
-  "MIIBkTCB+wIJAKexample0123456789abcdefghijklmnopqrstuvwxyzABCDEFGH\n" +
-  "-----END CERTIFICATE-----\n";
-
-// ---------------------------------------------------------------------------
-// Content-scan detection patterns
-// ---------------------------------------------------------------------------
-
-test("ssh-private-key-block: a BEGIN-marker regex literal in source is a MISS", () => {
-  const tmp = mkTmp("sec-detector-");
-  try {
-    fs.writeFileSync(path.join(tmp, "redact.js"),
-      'const RULE = (v) => /-----BEGIN OPENSSH PRIVATE KEY-----/.test(v);\nmodule.exports = { RULE };\n');
-    const r = secrets.collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["ssh-private-key-block"], "miss",
-      "a bare key-header regex literal is a detector, not embedded key material");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("ssh-private-key-block: a full private-key block embedded in source still HITS", () => {
-  const tmp = mkTmp("sec-embedded-");
-  try {
-    fs.writeFileSync(path.join(tmp, "config.js"), "const KEY = `" + FULL_PRIV + "`;\nmodule.exports = { KEY };\n");
-    const r = secrets.collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["ssh-private-key-block"], "hit",
-      "a complete private-key block pasted into source must still fire");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-// ---------------------------------------------------------------------------
-// File classification — public .pem vs private .pem/.key
-// ---------------------------------------------------------------------------
-
-test("ssh-private-key-block: a .pem certificate chain is a MISS", () => {
-  const tmp = mkTmp("sec-cert-");
-  try {
-    fs.writeFileSync(path.join(tmp, "fullchain.pem"), CERT_PEM + CERT_PEM);
-    const r = secrets.collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["ssh-private-key-block"], "miss",
-      "a certificate chain carries no private key and must not classify as one");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("ssh-private-key-block: a public trust-anchor .pem is a MISS", () => {
-  const tmp = mkTmp("sec-anchor-");
-  try {
-    fs.writeFileSync(path.join(tmp, "bimi-trust-anchors.pem"), CERT_PEM);
-    const r = secrets.collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["ssh-private-key-block"], "miss",
-      "a published trust anchor must not classify as a private key");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("ssh-private-key-block: a .pem that actually carries a private key still HITS", () => {
-  const tmp = mkTmp("sec-privpem-");
-  try {
-    fs.writeFileSync(path.join(tmp, "privkey.pem"), FULL_PRIV);
-    const r = secrets.collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["ssh-private-key-block"], "hit",
-      "a .pem holding a real private key must still fire");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("ssh-private-key-block: a .key holding a real private key still HITS", () => {
-  const tmp = mkTmp("sec-privkey-");
-  try {
-    fs.writeFileSync(path.join(tmp, "server.key"), FULL_PRIV);
-    const r = secrets.collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["ssh-private-key-block"], "hit",
-      "a .key holding a real private key must still fire");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-// ---------------------------------------------------------------------------
-// Short-read robustness — carriesPrivateKey must read the whole file, not just
-// whatever the first read() returns. A partial read on a network / FUSE /
-// interrupted descriptor can return fewer bytes than requested; if the BEGIN
-// marker sits past that boundary (a .pem with a leading `Bag Attributes` /
-// subject= header — the default OpenSSL pkcs12→PEM layout), classifying off a
-// truncated buffer would mis-label a real private key as "no key" and silently
-// drop the leak from the findings.
-// ---------------------------------------------------------------------------
-
-test("ssh-private-key-block: a .pem with the BEGIN marker past a short-read boundary still HITS", () => {
-  const tmp = mkTmp("sec-shortread-");
-  // Leading header block (OpenSSL pkcs12→PEM default) pushes BEGIN well past a
-  // plausible short-read length, so a single truncated read() would miss it.
-  const HEADER =
-    "Bag Attributes\n" +
-    "    localKeyID: 01 00 00 00\n" +
-    "    friendlyName: deploy-svc-account\n" +
-    "subject=/CN=deploy.internal\n" +
-    "issuer=/CN=Internal CA\n";
-  const realReadSync = fs.readSync;
-  try {
-    fs.writeFileSync(path.join(tmp, "deploy.pem"), HEADER + FULL_PRIV);
-    const beginOffset = (HEADER + FULL_PRIV).indexOf("-----BEGIN");
-    assert.ok(beginOffset > 64,
-      "test fixture must place BEGIN past the simulated short-read boundary");
-    // Force every readSync to return at most 64 bytes — a short read that stops
-    // before the BEGIN marker. The fix reads to EOF, so this must not matter.
-    fs.readSync = function (fd, buf, off, len, pos) {
-      return realReadSync(fd, buf, off, Math.min(64, len), pos);
-    };
-    const r = secrets.collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["ssh-private-key-block"], "hit",
-      "a real private key whose BEGIN marker falls past a short read must still fire");
-    assert.ok(
-      /deploy\.pem/.test(r.artifacts["ssh-private-keys"].value),
-      "the leaked key file must appear in the ssh-private-keys artifact");
-  } finally {
-    fs.readSync = realReadSync;
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
 });

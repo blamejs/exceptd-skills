@@ -336,3 +336,195 @@ test('source-ghsa.normalizeAdvisory produces draft shape with editorial nulls', 
   assert.equal(entry.cisa_kev_pending, true, 'critical-severity drafts mark cisa_kev_pending');
   assert.equal(entry._source_ghsa_id, 'GHSA-tnsk-tnsk-tnsk');
 });
+
+
+// ---- routed from operator-bugs ----
+require("node:test").describe("operator-bugs", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Operator-reported bug regression suite.
+ *
+ * Every operator-reported bug that has been fixed lands here as a named test
+ * case so re-introductions surface at `npm test`, not at user re-report.
+ * Numbering matches the operator report sequence (items #1 through #N as
+ * reported across the v0.9.5 → v0.11.x arc).
+ *
+ * Pattern for new items:
+ *   describe('#N short label', () => { it('precise behavior', ...); });
+ *
+ * Avoid coupling tests to file paths / playbook IDs that may change. Prefer
+ * direct runner exercises over CLI shell-outs where possible — CLI tests
+ * stay narrow (smoke-level) because they spawn subprocesses and slow the
+ * suite down.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const { spawnSync } = require('node:child_process');
+
+const { ROOT, CLI, makeSuiteHome, makeCli, tryJson, secureTmpFile } = require('./_helpers/cli');
+const runner = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
+
+const SUITE_HOME = makeSuiteHome('exceptd-operator-bugs-');
+const cli = makeCli(SUITE_HOME);
+
+// ===================================================================
+
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+// ===================================================================
+
+// ===================================================================
+
+
+
+// ===================================================================
+
+
+
+// ===================================================================
+
+
+
+
+// ===================================================================
+
+
+// ===================================================================
+
+// ===================================================================
+// CSAF framework gaps emit as `document.notes[]` with `category: details`,
+// not as `vulnerabilities[]` entries with `ids: [{system_name:
+// 'exceptd-framework-gap'}]`. The `system_name` slot is reserved for
+// recognised vulnerability tracking authorities (CVE, GHSA, etc.); the
+// custom string is rejected by NVD / ENISA / Red Hat dashboards. Notes
+// are the right home for advisory context, not pseudo-CVEs. The test
+// asserts the notes-based shape and anti-asserts the pseudo-vulnerability
+// shape.
+
+
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===================================================================
+// v0.11.14 freshness additions — opt-in registry check + upstream-check
+// + refresh --network. Tests use EXCEPTD_REGISTRY_FIXTURE so they're
+// fully offline-deterministic.
+// ===================================================================
+
+function withFixture(version, daysAgo) {
+  const file = secureTmpFile('npm-fixture.json', 'npm-fixture-');
+  const publishedAt = new Date(Date.now() - daysAgo * 24 * 3600 * 1000).toISOString();
+  fs.writeFileSync(file, JSON.stringify({
+    "dist-tags": { latest: version },
+    version,
+    time: { [version]: publishedAt, modified: publishedAt },
+  }));
+  return file;
+}
+
+
+
+
+
+
+
+
+// ===================================================================
+// v0.12.0 — GHSA source + refresh --advisory + refresh --curate
+// ===================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===================================================================
+
+test('v0.12 source-ghsa.fetchAdvisoryById finds CVE in fixture', async () => {
+  const ghsa = require(path.join(ROOT, 'lib', 'source-ghsa.js'));
+  process.env.EXCEPTD_GHSA_FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'ghsa-cve-2026-45321.json');
+  try {
+    const r = await ghsa.fetchAdvisoryById('CVE-2026-45321');
+    assert.equal(r.ok, true);
+    assert.equal(r.source, 'fixture');
+    assert.equal(r.advisories[0].cve_id, 'CVE-2026-45321');
+    assert.equal(r.advisories[0].severity, 'critical');
+  } finally { delete process.env.EXCEPTD_GHSA_FIXTURE; }
+});
+
+test('v0.12 source-ghsa.normalizeAdvisory produces draft shape with editorial nulls', () => {
+  const ghsa = require(path.join(ROOT, 'lib', 'source-ghsa.js'));
+  const fixture = JSON.parse(fs.readFileSync(path.join(ROOT, 'tests', 'fixtures', 'ghsa-cve-2026-45321.json'), 'utf8'));
+  const out = ghsa.normalizeAdvisory(fixture[0]);
+  assert.ok(out);
+  const entry = out['CVE-2026-45321'];
+  assert.equal(entry._auto_imported, true);
+  assert.equal(entry._draft, true);
+  assert.equal(entry.framework_control_gaps, null, 'framework_control_gaps must be null on a draft');
+  assert.equal(entry.atlas_refs.length, 0, 'editorial atlas_refs starts empty');
+  assert.equal(entry.cvss_score, 9.6);
+  assert.equal(entry.cisa_kev_pending, true, 'critical-severity drafts mark cisa_kev_pending');
+  assert.equal(entry._source_ghsa_id, 'GHSA-tnsk-tnsk-tnsk');
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});

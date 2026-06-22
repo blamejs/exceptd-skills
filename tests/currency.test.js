@@ -49,103 +49,132 @@ describe('cli-flag-and-envelope-hardening.test.js', () => {
   });
 });
 
-// ---- routed from cli-flag-and-envelope-hardening ----
-;(() => {
+
+// ---- routed from H-currency-json-gate-contract ----
+require("node:test").describe("H-currency-json-gate-contract", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * Regression coverage for a CLI flag-handling + envelope-shape pass.
+ * Contract test for the ATLAS-currency workflow's stale-skill gate.
  *
- * Findings closed here:
+ * .github/workflows/atlas-currency.yml decides whether to open a
+ * "Skills past review window" issue by reading the `action_required`
+ * field from `node orchestrator/index.js currency --json`. That gate is
+ * only correct if `action_required` is a value-derived boolean — true iff
+ * at least one skill scores below the critical currency threshold — rather
+ * than a flag bound to some human-readable prose string the workflow used
+ * to grep for.
  *
- *   1. validate-rfcs / validate-cves rejected unknown flags BEFORE any
- *      network work (a typo'd flag previously fell through to the default
- *      live-network path and hung). --offline / --air-gap still produce the
- *      offline view.
- *   2. cve / rfc derive `ok` from the resolved status: a non-zero (exit 2)
- *      failure carries ok:false; a published / matching resolution stays
- *      ok:true exit 0. Previously ok:true was hardcoded alongside exit 2.
- *   3. refresh / prefetch reject unknown flags (exit 2) instead of silently
- *      swallowing them (exit 0).
- *   4. orchestrator passthrough verbs (scan / dispatch / currency / watchlist)
- *      reject unknown flags AND carry top-level ok:true on --json success.
- *   5. framework-gap / skill missing-arg paths honor --json (emit ok:false
- *      JSON, exit 1); skill no longer treats --json as the skill name.
- *
- * Every assertion checks the EXACT exit code and the EXACT ok value + field
- * shape — never `notEqual(0)` / bare `assert.ok(field)`.
- *
- * Offline-only: --air-gap / --offline guarantee no real network egress. The
- * finding-1 unknown-flag tests rely on the rejection firing BEFORE the fetch,
- * so they neither reach nor depend on the network.
+ * This locks that contract: the JSON output must carry a boolean
+ * `action_required`, a non-empty `currency_report` with a numeric
+ * `currency_score` per skill, and `action_required` must equal the
+ * value-derived "any skill below the action threshold" predicate. If a
+ * future change renames the field or decouples it from the scores, the
+ * workflow gate silently breaks and this test catches it first.
  */
 
-const test = require('node:test');
-const assert = require('node:assert/strict');
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const path = require("node:path");
+const { spawnSync } = require("node:child_process");
 
-const { makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+const ROOT = path.join(__dirname, "..");
+const ORCH = path.join(ROOT, "orchestrator", "index.js");
+const pipeline = require("../orchestrator/pipeline");
 
-const SUITE_HOME = makeSuiteHome('exceptd-flag-envelope-');
-const cli = makeCli(SUITE_HOME);
+// Two distinct thresholds drive the JSON gate fields (orchestrator/pipeline.js):
+//   - action_required: true iff ANY skill's currency_score < 70 (the warn
+//     tier — "past review window", which is what the workflow issues on)
+//   - critical_count: the COUNT of skills with currency_score < 50
+const ACTION_THRESHOLD = 70;
+const CRITICAL_THRESHOLD = 50;
 
-// ---------------------------------------------------------------------------
-// Finding 1 — validate-rfcs / validate-cves unknown-flag rejection (fast,
-// pre-network). Bounded timeout proves no hang on a live fetch.
-// ---------------------------------------------------------------------------
-
-
-
-
-
-
-// ---------------------------------------------------------------------------
-// Finding 2 — cve / rfc envelope ok derived from status (not inverted).
-// ---------------------------------------------------------------------------
-
-
-
-
-
-// ---------------------------------------------------------------------------
-// Finding 3 — refresh / prefetch unknown-flag rejection.
-// ---------------------------------------------------------------------------
-
-
-
-
-
-// ---------------------------------------------------------------------------
-// Finding 4 — orchestrator passthrough verbs: unknown-flag rejection +
-// top-level ok:true on --json success. (currency emits a scheduler log line
-// before the envelope; the JSON envelope is the LAST stdout line.)
-// ---------------------------------------------------------------------------
-
-function lastJsonLine(stdout) {
-  const lines = stdout.trim().split('\n').filter(Boolean);
-  for (let i = lines.length - 1; i >= 0; i--) {
-    const parsed = tryJson(lines[i]);
-    if (parsed) return parsed;
-  }
-  return null;
+// Run the exact command the workflow runs and extract the JSON object.
+// runCurrencyNow() may print a non-JSON scheduler line to stdout before
+// the JSON document, so take the last line that parses as an object —
+// the same robustness the workflow's gate applies.
+function currencyJson() {
+  const r = spawnSync(process.execPath, [ORCH, "currency", "--json"], {
+    encoding: "utf8",
+    maxBuffer: 16 * 1024 * 1024,
+    timeout: 30000,
+  });
+  assert.equal(r.status, 0, `currency --json exited ${r.status}: ${r.stderr}`);
+  const jsonLine = r.stdout
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.startsWith("{"))
+    .pop();
+  assert.ok(jsonLine, `no JSON object line in currency --json stdout: ${r.stdout}`);
+  return JSON.parse(jsonLine);
 }
 
 
 
+// The two assertions above pass vacuously while every shipped skill scores at
+// or above the action threshold — they never exercise the TRUE branch the
+// workflow gate depends on. This hermetic case proves the schedule can actually
+// reach the warn (< 70) and critical (< 50) tiers: a -30-max schedule floored
+// the score at 70, so the gate (and its issue) could never fire.
 
+test("currency --json exposes a value-derived action_required boolean", () => {
+  const j = currencyJson();
 
+  assert.equal(j.ok, true);
+  assert.equal(
+    typeof j.action_required,
+    "boolean",
+    "action_required must be a boolean the workflow gate can read directly"
+  );
+  assert.equal(typeof j.critical_count, "number");
 
-
-
-
-// ---------------------------------------------------------------------------
-// Finding 5 — framework-gap / skill missing-arg paths honor --json; skill
-// no longer treats --json as args[0].
-// ---------------------------------------------------------------------------
-
-test('F4: currency --badflag → ok:false exit 1', () => {
-  const r = cli(['currency', '--badflag'], { timeout: 20000 });
-  assert.equal(r.status, 1);
-  const body = lastJsonLine(r.stdout);
-  assert.ok(body);
-  assert.equal(body.ok, false);
-  assert.equal(body.verb, 'currency');
+  assert.ok(Array.isArray(j.currency_report), "currency_report must be an array");
+  assert.ok(j.currency_report.length > 0, "currency_report must not be empty");
+  for (const s of j.currency_report) {
+    assert.equal(
+      typeof s.currency_score,
+      "number",
+      `every report entry must carry a numeric currency_score (${s.skill})`
+    );
+  }
 });
-})();
+
+test("action_required equals the value-derived below-threshold predicate", () => {
+  const j = currencyJson();
+
+  // Recompute both gate decisions straight from the per-skill scores. This
+  // is what the workflow's gate must reduce to — independent of any prose.
+  const belowAction = j.currency_report.filter(
+    (s) => s.currency_score < ACTION_THRESHOLD
+  );
+  const belowCritical = j.currency_report.filter(
+    (s) => s.currency_score < CRITICAL_THRESHOLD
+  );
+
+  assert.equal(
+    j.action_required,
+    belowAction.length > 0,
+    `action_required (${j.action_required}) must match the value-derived ` +
+      `"any skill below ${ACTION_THRESHOLD}%" predicate; ` +
+      `${belowAction.length} skill(s) below the action threshold`
+  );
+  assert.equal(
+    j.critical_count,
+    belowCritical.length,
+    `critical_count must equal the count of skills below ${CRITICAL_THRESHOLD}%`
+  );
+  // Per-entry action_required mirrors the same warn-tier predicate.
+  for (const s of j.currency_report) {
+    assert.equal(
+      s.action_required,
+      s.currency_score < ACTION_THRESHOLD,
+      `per-skill action_required must derive from the score (${s.skill})`
+    );
+  }
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});

@@ -1,22 +1,26 @@
 "use strict";
 
 
-// ---- routed from context-inventory ----
-;(() => {
+// ---- routed from standards-version-canonical ----
+require("node:test").describe("standards-version-canonical", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * tests/context-inventory.test.js
+ * tests/standards-version-canonical.test.js
  *
- * CONTEXT.md ships in the npm tarball and carries an "Authoritative catalog
- * inventory" table that hand-states an entry count per data/*.json catalog.
- * Hand-maintained counts drift as the catalogs grow; this gate pins every
- * row of the table to the live entry count so an operator reading the table
- * never sees a stale number.
+ * D3FEND and CWE join ATLAS and ATT&CK as pinned external standards whose
+ * single source of truth lives in the catalog `_meta`:
+ *   - data/d3fend-catalog.json._meta.d3fend_version
+ *   - data/cwe-catalog.json._meta.cwe_version
  *
- * Each assertion compares the EXACT documented count against the live count
- * (no "is non-empty" coincidence passes). Catalogs are ID-keyed objects with
- * `_`-prefixed metadata keys; the counted population is every non-metadata
- * top-level key. The playbooks row counts the .json files under
- * data/playbooks/.
+ * Every operator-facing mention of a D3FEND or CWE version — docs, skill
+ * bodies, the catalog-summary builder, and its derived index — must equal the
+ * pinned value. Before this guard existed the pins drifted badly: the catalog
+ * stayed on D3FEND v1.0.0 / CWE 4.16 for over a year while the real releases
+ * reached v1.3.0 / 4.20, and the docs even disagreed with the catalog (README
+ * said CWE v4.17 while _meta said 4.16; one skill still cited D3FEND v0.10).
+ *
+ * Exact-match (not stale-only): these are point-in-time pins with no
+ * forward-watch convention, so any deviation — older or newer — is drift.
  */
 
 const test = require('node:test');
@@ -25,81 +29,56 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
-const CONTEXT = fs.readFileSync(path.join(ROOT, 'CONTEXT.md'), 'utf8');
+const D3FEND = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'd3fend-catalog.json'), 'utf8'))._meta.d3fend_version;
+const CWE = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'cwe-catalog.json'), 'utf8'))._meta.cwe_version;
 
-function liveCatalogCount(file) {
-  const obj = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', file), 'utf8'));
-  return Object.keys(obj).filter((k) => !k.startsWith('_')).length;
-}
-
-function livePlaybookCount() {
-  return fs
-    .readdirSync(path.join(ROOT, 'data', 'playbooks'))
-    .filter((f) => f.endsWith('.json')).length;
-}
-
-// Pull the integer count from the inventory table row whose first cell is the
-// backtick-wrapped name. The Entries cell may carry a trailing word (e.g.
-// "35 jurisdictions"); capture only the leading integer.
-function tableCount(name) {
-  const re = new RegExp(
-    '^\\|\\s*`' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '`\\s*\\|\\s*(\\d+)',
-    'm'
-  );
-  const m = CONTEXT.match(re);
-  assert.ok(m, `CONTEXT.md inventory table is missing a row for \`${name}\``);
-  return Number(m[1]);
-}
-
-// Catalog file -> the table row name that documents its entry count.
-const CATALOG_ROWS = [
-  'cve-catalog.json',
-  'atlas-ttps.json',
-  'attack-techniques.json',
-  'framework-control-gaps.json',
-  'exploit-availability.json',
-  'global-frameworks.json',
-  'zeroday-lessons.json',
-  'cwe-catalog.json',
-  'd3fend-catalog.json',
-  'rfc-references.json',
-  'dlp-controls.json',
+const DOC_FILES = [
+  'README.md',
+  'ARCHITECTURE.md',
+  'CONTEXT.md',
+  'AGENTS.md',
+  '.cursorrules',
+  'scripts/builders/catalog-summaries.js',
+  'data/_indexes/catalog-summaries.json',
 ];
 
-for (const file of CATALOG_ROWS) {
-  test(`CONTEXT.md inventory pins ${file} to the live entry count`, () => {
-    const documented = tableCount(file);
-    const live = liveCatalogCount(file);
-    assert.equal(
-      documented,
-      live,
-      `CONTEXT.md says ${file} has ${documented} entries; data/${file} has ${live}`
-    );
-  });
+function skillBodies() {
+  const dir = path.join(ROOT, 'skills');
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir)
+    .map((n) => path.join('skills', n, 'skill.md'))
+    .filter((rel) => fs.existsSync(path.join(ROOT, rel)));
 }
 
-test('CONTEXT.md inventory pins playbooks/ to the live file count', () => {
-  const documented = tableCount('playbooks/');
-  const live = livePlaybookCount();
-  assert.equal(
-    documented,
-    live,
-    `CONTEXT.md says playbooks/ has ${documented} entries; data/playbooks/ has ${live} .json files`
-  );
-});
+// "D3FEND v1.3.0" / "D3FEND 1.3.0" — version must follow the framework name.
+const D3FEND_RE = /D3FEND\s+v?(\d+\.\d+(?:\.\d+)?)/g;
+// "CWE v4.20" / "CWE 4.20" — the `4.` prefix avoids matching "CWE-79" IDs.
+const CWE_RE = /CWE\s+v?(4\.\d+)/g;
 
-// ARCHITECTURE.md and CONTEXT.md must agree on the CWE entry count so the two
-// shipped docs cannot disagree about the same catalog.
-test('ARCHITECTURE.md CWE count matches the live cwe-catalog.json count', () => {
-  const arch = fs.readFileSync(path.join(ROOT, 'ARCHITECTURE.md'), 'utf8');
-  const m = arch.match(/(\d+)\s+CWE entries pinned to/);
-  assert.ok(m, 'ARCHITECTURE.md is missing the "<N> CWE entries pinned to" line');
-  const documented = Number(m[1]);
-  const live = liveCatalogCount('cwe-catalog.json');
-  assert.equal(
-    documented,
-    live,
-    `ARCHITECTURE.md says ${documented} CWE entries; data/cwe-catalog.json has ${live}`
-  );
+function scan(rel, re, canonical) {
+  const abs = path.join(ROOT, rel);
+  if (!fs.existsSync(abs)) return [];
+  const text = fs.readFileSync(abs, 'utf8');
+  const drift = [];
+  for (const m of text.matchAll(re)) {
+    if (m[1] !== canonical) {
+      const lineNo = text.slice(0, m.index).split('\n').length;
+      drift.push(`${rel}:${lineNo} — found ${m[1]}, canonical is ${canonical}`);
+    }
+  }
+  return drift;
+}
+
+test('every CWE version mention equals the catalog pin', () => {
+  const drift = [];
+  for (const rel of [...DOC_FILES, ...skillBodies()]) drift.push(...scan(rel, CWE_RE, CWE));
+  assert.equal(drift.length, 0,
+    `CWE version drift (canonical v${CWE}):\n  ${drift.join('\n  ')}`);
 });
-})();
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});

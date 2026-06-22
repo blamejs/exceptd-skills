@@ -1,179 +1,272 @@
 "use strict";
 
 
-// ---- routed from verify-shipped-tarball-missing-sig ----
-require("node:test").describe("verify-shipped-tarball-missing-sig", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+// ---- routed from predeploy-gates ----
+require("node:test").describe("predeploy-gates", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * tests/verify-shipped-tarball-missing-sig.test.js
+ * tests/predeploy-gates.test.js
  *
- * The shipped-tarball verify gate iterates every manifest skill entry and
- * verifies its Ed25519 signature. A skill entry MAY legally omit the
- * `signature` field — it is not in the manifest schema's skillEntry.required
- * set (lib/schemas/manifest.schema.json). A freshly-added skill, or one
- * skipped during a partial sign-all (lib/verify.js signAll() `continue`s a
- * skill whose .md file is absent), leaves the entry with no `signature`,
- * while the manifest envelope is still validly re-signed over that
- * field-absent state — so the manifest_signature gate passes.
+ * Meta-tests for the predeploy gate runners. The pre-existing
+ * tests/predeploy.test.js asserts the GATES list maps to ci.yml job
+ * names — it does not exercise the gates themselves. This file fills
+ * that gap: for each gate that ships a script under lib/ or scripts/,
+ * stage a known-bad state in a per-test tempdir and assert the gate
+ * actually fires (non-zero exit OR an error-shape return).
  *
- * Before the guard, the per-skill loop fed `Buffer.from(s.signature,
- * 'base64')` with `s.signature === undefined`, throwing
- * `TypeError: The first argument must be of type string ... Received
- * undefined`. That TypeError is not the ABORT sentinel, so the body's
- * `catch (e) { if (e !== ABORT) throw e; }` re-throws it as an uncaught
- * exception + stack trace — turning a should-be-structured "missing
- * signature" FAIL into a crash, AND (because process.exitCode was never set
- * before the throw) the finally{} block deletes the temp dir it intends to
- * PRESERVE on failure. The gate still failed closed (exit 1 from the
- * uncaught throw) so it was not a verification bypass, but the diagnostic
- * was a raw stack instead of `'{skill}: no Ed25519 signature in manifest'`.
+ * Why these specific gates: tests/predeploy.test.js only checks the
+ * mapping. Other tests cover the data the gates consume but not the
+ * gate runners themselves. This file is the regression-prevention layer
+ * for the gate runners — when a gate's "bad state" detection regresses
+ * (the false-negative class that shipped invisible signature drift in
+ * v0.11.x — v0.12.2), one of these tests fires.
  *
- * verifySkillSignatureOutcome() now mirrors lib/verify.js verifySkill()'s
- * missing_sig branch. These tests assert the EXACT structured outcomes
- * (status strings), and specifically that a missing/empty/null signature
- * does NOT throw.
+ * Isolation model:
+ *
+ *   - Every test mkdtempSync's its own working tree under os.tmpdir().
+ *   - Every test copies the script-under-test (and its strict
+ *     dependencies) into <tempdir>/lib/ or <tempdir>/scripts/ so the
+ *     script's __dirname anchor resolves to <tempdir>/lib (or
+ *     <tempdir>/scripts), and __dirname/.. resolves to <tempdir>.
+ *   - No test mutates the real repo ROOT. ROOT is read-only; tempdirs
+ *     are the only writable surface.
+ *   - Tempdirs are removed in a try/finally even when assertions fail
+ *     so a CI run that ends with N failing tests still leaves /tmp clean.
+ *
+ * No --dir / --root flag was added to any existing script as part of
+ * this work — every gate is testable via the cwd + __dirname anchor
+ * pattern, except scripts/check-sbom-currency.js which already accepted
+ * --root (it was extracted out of an inline `node -e` block in
+ * scripts/predeploy.js during this same change; the extracted script
+ * is the gate-10 runner going forward).
  */
 
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const crypto = require('node:crypto');
-const path = require('node:path');
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const os = require("node:os");
+const crypto = require("node:crypto");
+const { spawnSync } = require("node:child_process");
 
-const {
-  verifySkillSignatureOutcome,
-  normalizeSkillBytes,
-} = require(path.join(__dirname, '..', 'scripts', 'verify-shipped-tarball.js'));
+const ROOT = path.join(__dirname, "..");
 
-const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519');
-const body = normalizeSkillBytes(Buffer.from('# skill\nbody content\n'));
-const validSig = crypto
-  .sign(null, body, { key: privateKey, dsaEncoding: 'ieee-p1363' })
-  .toString('base64');
+// ---------- tempdir helpers ----------
 
-test('missing signature field yields a structured miss, not a TypeError', () => {
-  let outcome;
-  assert.doesNotThrow(() => {
-    outcome = verifySkillSignatureOutcome({ name: 'kernel-lpe' }, body, publicKey);
-  }, 'a skill entry with no signature field must not throw Buffer.from(undefined,base64)');
-  assert.deepEqual(outcome, { status: 'missing' });
-});
+function mktmp(label) {
+  return fs.mkdtempSync(path.join(os.tmpdir(), "predeploy-gate-" + label + "-"));
+}
 
-test('null signature yields a structured miss, not a TypeError', () => {
-  let outcome;
-  assert.doesNotThrow(() => {
-    outcome = verifySkillSignatureOutcome({ name: 'x', signature: null }, body, publicKey);
-  });
-  assert.equal(outcome.status, 'missing');
-});
-
-test('empty-string signature yields a structured miss', () => {
-  const outcome = verifySkillSignatureOutcome({ name: 'x', signature: '' }, body, publicKey);
-  assert.equal(outcome.status, 'missing');
-});
-
-test('valid signature over matching content yields pass', () => {
-  const outcome = verifySkillSignatureOutcome({ name: 'x', signature: validSig }, body, publicKey);
-  assert.equal(outcome.status, 'pass');
-});
-
-test('valid signature over tampered content yields fail', () => {
-  const tampered = normalizeSkillBytes(Buffer.from('# skill\nTAMPERED\n'));
-  const outcome = verifySkillSignatureOutcome({ name: 'x', signature: validSig }, tampered, publicKey);
-  assert.equal(outcome.status, 'fail');
-});
-
-test('a manifest with one signature-absent skill counts as miss in the loop math', () => {
-  // Simulate the gate's per-skill accounting (lines around the loop) to
-  // assert the field-absent entry increments miss, not crash, and the
-  // overall result is a structured FAIL (pass !== total).
-  const skills = [
-    { name: 'signed', signature: validSig },
-    { name: 'unsigned' }, // schema-valid: no signature
-  ];
-  let pass = 0, miss = 0, fail_count = 0;
-  const failures = [];
-  for (const s of skills) {
-    const outcome = verifySkillSignatureOutcome(s, body, publicKey);
-    if (outcome.status === 'missing') {
-      miss++;
-      failures.push(`${s.name}: no Ed25519 signature in manifest`);
-      continue;
-    }
-    if (outcome.status === 'pass') pass++;
-    else fail_count++;
+function rmrf(dir) {
+  try {
+    fs.rmSync(dir, { recursive: true, force: true });
+  } catch (_) {
+    /* best effort — Windows file locks may keep a handle briefly */
   }
-  assert.equal(pass, 1);
-  assert.equal(miss, 1);
-  assert.equal(fail_count, 0);
-  assert.ok(
-    failures.some((f) => f.includes('unsigned: no Ed25519 signature in manifest')),
-    'the missing-signature skill must produce the structured failure string',
-  );
-  // The gate's PASS condition is fail_count===0 && miss===0 && pass===total.
-  // A single miss must therefore drive the FAIL branch (exit 1), structured.
-  assert.ok(!(fail_count === 0 && miss === 0 && pass === skills.length));
-});
-});
+}
 
+function writeFile(dir, rel, content) {
+  const abs = path.join(dir, rel);
+  fs.mkdirSync(path.dirname(abs), { recursive: true });
+  fs.writeFileSync(abs, content);
+}
 
-// ---- routed from verify-shipped-tarball-wrapper ----
-require("node:test").describe("verify-shipped-tarball-wrapper", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
-/**
- * tests/verify-shipped-tarball-wrapper.test.js
- *
- * Run scripts/verify-shipped-tarball.js inside `npm test` rather than
- * only inside the predeploy gate. A contributor running `npm test`
- * locally would otherwise miss the class of regression that broke 5
- * releases of signatures (v0.11.x through v0.12.2) — verifying the
- * source-tree signatures says nothing about whether `npm pack`'s
- * extracted output verifies.
- *
- * The script is invoked via a child process so the contract is the
- * same as the predeploy gate: exit 0 = pass, non-zero = fail. Skipped
- * when .keys/private.pem is absent (sign-all couldn't run, so the
- * gate is meaningless) — same skip-condition pattern as
- * tests/attest-verify-* tests use.
- */
+function copyFile(srcAbs, dstAbs) {
+  fs.mkdirSync(path.dirname(dstAbs), { recursive: true });
+  fs.copyFileSync(srcAbs, dstAbs);
+}
 
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+// Every staged lib validator now requires lib/exit-codes.js (for safeExit);
+// stage it alongside so the mirrored script doesn't crash on require (which
+// would yield empty stdout and a confusing content-assertion failure).
+function copyExitCodes(tmp) {
+  copyFile(path.join(ROOT, "lib", "exit-codes.js"), path.join(tmp, "lib", "exit-codes.js"));
+}
 
-const ROOT = path.join(__dirname, '..');
-const PRIVATE_KEY = path.join(ROOT, '.keys', 'private.pem');
-const SCRIPT = path.join(ROOT, 'scripts', 'verify-shipped-tarball.js');
-const HAS_PRIV = fs.existsSync(PRIVATE_KEY);
-
-test('shipped tarball verifies against its embedded public key', { skip: !HAS_PRIV && '.keys/private.pem absent — sign-all cannot run, so verify-shipped-tarball is meaningless' }, () => {
-  const leaked = () => fs.readdirSync(os.tmpdir()).filter(n => n.startsWith('verify-shipped-'));
-  const before = leaked();
-  const r = spawnSync(process.execPath, [SCRIPT], {
-    cwd: ROOT,
-    encoding: 'utf8',
-    timeout: 120000,
+// Generate an Ed25519 keypair in PEM form, matching lib/verify.js conventions.
+function genKeypair() {
+  return crypto.generateKeyPairSync("ed25519", {
+    privateKeyEncoding: { type: "pkcs8", format: "pem" },
+    publicKeyEncoding: { type: "spki", format: "pem" },
   });
-  // Pin exact exit code (0 = pass). Pre-anti-coincidence-rule "coincidence-passing"
-  // rule a notEqual(0) would have silently absorbed an exit 2 from the
-  // npm-pack step.
-  assert.equal(r.status, 0,
-    `verify-shipped-tarball must exit 0 (signature verify against extracted tarball). Got status=${r.status}.\nstdout:\n${(r.stdout || '').slice(0, 800)}\nstderr:\n${(r.stderr || '').slice(0, 800)}`);
-  // The cleanup finally{} must run on success — it must not sit behind a
-  // process.exit(), which preempts it and leaks the npm-pack temp dir (tarball
-  // + extraction tree) on every predeploy and `npm test` run. Assert no net new
-  // verify-shipped-* dir, and that the dir the script announced is gone.
-  const after = leaked();
-  assert.equal(after.length, before.length,
-    `verify-shipped-tarball leaked a temp dir (before=${before.length} after=${after.length}); cleanup finally{} must run on success.`);
-  const m = (r.stdout || '').match(/packing into (\S+)/);
-  assert.ok(m, 'expected the script to announce its temp dir on stdout');
-  assert.equal(fs.existsSync(m[1]), false, `announced temp dir ${m[1]} should be removed on success`);
+}
+
+function signContent(content, privateKeyPem) {
+  return crypto
+    .sign(null, Buffer.from(content, "utf8"), {
+      key: privateKeyPem,
+      dsaEncoding: "ieee-p1363",
+    })
+    .toString("base64");
+}
+
+// ---------- Gate 1: Verify skill signatures (Ed25519) ----------
+
+
+// ---------- Gate 7: Lint skill files ----------
+
+
+// ---------- Gate 9: validate-catalog-meta ----------
+
+
+// ---------- Audit G F2: SBOM gate catches renamed skill ----------
+
+
+
+// ---------- Audit G F1: validate-indexes rejects empty source_hashes ----------
+
+
+// ---------- Gate 10: SBOM currency ----------
+
+
+// ---------- Gate 11: validate-indexes ----------
+
+
+// ---------- Gate 12: validate-vendor ----------
+
+
+
+
+
+
+
+// ---------- Gate 13: validate-package ----------
+
+
+// ---------- Gate 14: verify-shipped-tarball ----------
+//
+// This is the gate that closed v0.12.4's signature regression. The bug
+// class: lib/verify.js against the SOURCE tree passes 38/38, but a fresh
+// `npm install` against the SHIPPED tarball produces 0/38. The cause is
+// keys/public.pem being swapped between sign and pack (the test that
+// did it lived in `tests/operator-bugs.test.js` and synchronously
+// regenerated keys mid-suite — see the common-pitfalls list).
+//
+// The simulated regression here: sign the skill against PRIVATE_KEY_A
+// (the original ceremony), then post-sign tamper the skill body but
+// leave the signature unchanged. After `npm pack`, the extracted tarball
+// will have the tampered body + the original signature, and the gate
+// must fail.
+
+test("gate 14: verify-shipped-tarball.js fires when a skill body is tampered post-signing", () => {
+  const tmp = mktmp("shipped");
+  try {
+    // Generate a real Ed25519 keypair for this tempdir.
+    const { privateKey, publicKey } = genKeypair();
+    writeFile(tmp, "keys/public.pem", publicKey);
+
+    // Original, signed skill body.
+    const originalBody = "---\nname: t\n---\n# original\n";
+    writeFile(tmp, "skills/t/skill.md", originalBody);
+    const sig = signContent(originalBody, privateKey);
+
+    const manifestObj = {
+      skills: [
+        {
+          name: "t",
+          path: "skills/t/skill.md",
+          signature: sig,
+          signed_at: "2026-01-01T00:00:00.000Z",
+        },
+      ],
+    };
+    // Sign the manifest envelope so the gate progresses past the
+    // envelope-signature check and reaches the per-skill verify loop
+    // where the body-tamper detection actually fires. Without this, the
+    // gate trips on the envelope check first (still a correct refusal)
+    // but doesn't exercise the body-tamper regression class this fixture
+    // was designed to reproduce.
+    const canonical = (function () {
+      function canonicalize(value) {
+        if (Array.isArray(value)) return value.map(canonicalize);
+        if (value && typeof value === "object") {
+          const out = {};
+          for (const k of Object.keys(value).sort()) out[k] = canonicalize(value[k]);
+          return out;
+        }
+        return value;
+      }
+      const json = JSON.stringify(canonicalize(manifestObj), null, 2);
+      let s = json;
+      if (s.length > 0 && s.charCodeAt(0) === 0xFEFF) s = s.slice(1);
+      s = s.replace(/\r\n/g, "\n");
+      return Buffer.from(s, "utf8");
+    })();
+    const manifestSig = crypto
+      .sign(null, canonical, { key: privateKey, dsaEncoding: "ieee-p1363" })
+      .toString("base64");
+    manifestObj.manifest_signature = {
+      algorithm: "Ed25519",
+      signature_base64: manifestSig,
+    };
+    writeFile(tmp, "manifest.json", JSON.stringify(manifestObj, null, 2));
+
+    // Now tamper the body AFTER signing. signature stays valid for the
+    // ORIGINAL bytes but not for the tampered ones. This reproduces the
+    // v0.12.4 signature-regression class: the tarball ships bytes whose
+    // signature in manifest.json doesn't verify against keys/public.pem.
+    writeFile(tmp, "skills/t/skill.md", "---\nname: t\n---\n# TAMPERED\n");
+
+    // Stage a publishable package.json so `npm pack` succeeds. We only
+    // include the bare minimum needed: manifest, keys, skills, lib.
+    const pkg = {
+      name: "predeploy-gate-14-fixture",
+      version: "0.0.0",
+      description: "tempdir publish fixture for verify-shipped-tarball meta-test",
+      license: "Apache-2.0",
+      files: ["manifest.json", "keys/public.pem", "skills/", "lib/"],
+    };
+    writeFile(tmp, "package.json", JSON.stringify(pkg, null, 2));
+
+    // verify-shipped-tarball.js requires lib/refresh-network.js (for
+    // parseTar) AND lib/verify.js (only for path existence; actual
+    // verify logic is inlined). Copy both into tempdir/lib/.
+    copyFile(
+      path.join(ROOT, "lib", "refresh-network.js"),
+      path.join(tmp, "lib", "refresh-network.js")
+    );
+    copyFile(
+      path.join(ROOT, "lib", "verify.js"),
+      path.join(tmp, "lib", "verify.js")
+    );
+    copyFile(
+      path.join(ROOT, "scripts", "verify-shipped-tarball.js"),
+      path.join(tmp, "scripts", "verify-shipped-tarball.js")
+    );
+
+    const r = spawnSync(
+      process.execPath,
+      [path.join(tmp, "scripts", "verify-shipped-tarball.js")],
+      { cwd: tmp, encoding: "utf8" }
+    );
+    // Exit-1 path: line 149 ("process.exit(1)") after the
+    // "FAIL — shipped tarball would be broken on every fresh install."
+    // message. The verification loop at line 122 detects that
+    // crypto.verify(...) returns false for the tampered content.
+    assert.equal(
+      r.status,
+      1,
+      `verify-shipped-tarball.js must exit 1 when shipped bytes differ from what was signed.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+    );
+    // The gate ALSO refuses tarballs whose top-level manifest_signature
+    // is missing or invalid (envelope-tamper defence added in v0.12.19).
+    // The fixture in this test doesn't sign the envelope, so the gate
+    // trips earlier on "manifest_signature missing" before reaching the
+    // per-skill-body verify loop. Both failure messages are correct
+    // refusals from the gate's perspective — accept either.
+    assert.match(
+      r.stdout + r.stderr,
+      /signature did not verify|FAIL — shipped tarball|manifest_signature (missing|invalid)/,
+      `verify-shipped-tarball.js should report the signature-mismatch OR envelope-missing failure class. stdout: ${r.stdout} stderr: ${r.stderr}`
+    );
+  } finally {
+    rmrf(tmp);
+  }
 });
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
 });

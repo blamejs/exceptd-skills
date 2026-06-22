@@ -124,128 +124,197 @@ test.describe('reconciliation-deep-fixes', () => {
 });
 
 
-// ---- routed from discover-collector-surface ----
-require("node:test").describe("discover-collector-surface", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+// ---- routed from audit-usability-fixes ----
+require("node:test").describe("audit-usability-fixes", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * tests/discover-collector-surface.test.js
+ * CLI usability regression suite.
  *
- * Pins the discover envelope: every entry in recommended_playbooks
- * carries collector_available + collect_cmd, both derived from
- * on-disk presence of lib/collectors/<id>.js. Human renderer prints
- * a [collector] tag + a pipe-pointer line for entries where the
- * collector exists.
+ * Pins the behavior of a set of CLI ergonomics fixes so they cannot silently
+ * regress at the next refactor. Each test exercises the real CLI through the
+ * shared cli() harness (subprocess spawn of bin/exceptd.js) and asserts the
+ * EXACT exit code and field shapes per the project anti-coincidence rule:
+ * never `notEqual(0)`, never `assert.ok(field)` without a paired value/type
+ * assertion.
+ *
+ * Areas covered:
+ *   1. Unknown-flag hard-fail across all verbs (+ typo suggestion + the
+ *      tailored cross-verb "irrelevant flag" message that must NOT collapse
+ *      into a generic unknown-flag refusal).
+ *   2. `--format json` returns the full run result, not a stub.
+ *   3. Multiple --format values emit a one-format-wins note to stderr.
+ *   4. Standardized bundles (sarif / csaf-2.0 / openvex) carry no top-level
+ *      `ok` key and present their spec marker.
+ *   5. `skill` / `framework-gap` honor --help; `refresh` keeps its own help.
+ *   6. `collect` emits JSON when piped (non-TTY) so the documented pipe works.
+ *   7. `refresh --check-advisories` arg parsing (report-only, no network).
+ *   8. `attest list --limit` envelope + bad-value rejection.
  */
 
-const test = require("node:test");
-const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const path = require("node:path");
-const { spawnSync } = require("node:child_process");
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const os = require('node:os');
 
-const ROOT = path.resolve(__dirname, "..");
-const CLI = path.join(ROOT, "bin", "exceptd.js");
+const { ROOT, makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
 
-function runCli(args, opts = {}) {
-  return spawnSync(process.execPath, [CLI, ...args], {
-    encoding: "utf8",
-    cwd: opts.cwd || ROOT,
-    timeout: 30000,
-    ...opts,
-  });
+const SUITE_HOME = makeSuiteHome('exceptd-audit-usability-');
+const cli = makeCli(SUITE_HOME);
+
+// ===================================================================
+// 1. Unknown-flag hard-fail (all verbs, not just doctor)
+// ===================================================================
+
+
+
+
+
+
+
+
+
+// ===================================================================
+// 2. `--format json` returns the FULL run result (not a stub)
+// ===================================================================
+
+
+// ===================================================================
+// 3. MULTI-FORMAT note to stderr
+// ===================================================================
+
+
+// ===================================================================
+// 4. STANDARDIZED BUNDLES carry NO top-level `ok` key
+// ===================================================================
+
+
+
+
+// ===================================================================
+// 5. `skill --help` / `framework-gap --help` honor --help;
+//    refresh keeps its OWN detailed help
+// ===================================================================
+
+
+
+
+// ===================================================================
+// 6. `collect` emits JSON when piped (non-TTY) so the documented pipe works
+// ===================================================================
+
+
+// ===================================================================
+// 7. `refresh --check-advisories` parsing (no network — parseArgs directly)
+// ===================================================================
+
+
+// ===================================================================
+// 8. `attest list --limit`
+// ===================================================================
+
+test('unknown flag on discover hard-fails with structured envelope', () => {
+  const r = cli(['discover', '--bogusflag']);
+  assert.equal(r.status, 1, `expected exit 1; got ${r.status} (stderr: ${r.stderr.slice(0, 200)})`);
+  const body = tryJson(r.stderr.trim()) || tryJson(r.stdout.trim());
+  assert.ok(body, `stderr should be parseable JSON; got: ${r.stderr.slice(0, 200)}`);
+  assert.equal(body.ok, false);
+  assert.match(body.error, /unknown flag/);
+  assert.ok(Array.isArray(body.unknown_flags), 'unknown_flags must be an array');
+  assert.ok(body.unknown_flags.length > 0, 'unknown_flags must be non-empty');
+  assert.ok(Array.isArray(body.known_flags), 'known_flags must be an array');
+  assert.ok(body.known_flags.length > 0, 'known_flags must be non-empty');
+});
+
+test('unknown flag typo gets a did_you_mean suggestion', () => {
+  const r = cli(['discover', '--scop', 'code']);
+  assert.equal(r.status, 1, `expected exit 1; got ${r.status}`);
+  const body = tryJson(r.stderr.trim()) || tryJson(r.stdout.trim());
+  assert.ok(body, 'response should be parseable JSON');
+  assert.equal(body.ok, false);
+  assert.ok(Array.isArray(body.unknown_flags) && body.unknown_flags.length > 0,
+    'unknown_flags must be a non-empty array');
+  assert.ok(Array.isArray(body.unknown_flags[0].did_you_mean),
+    'did_you_mean must be an array');
+  assert.ok(body.unknown_flags[0].did_you_mean.includes('--scope'),
+    `did_you_mean must suggest --scope; got ${JSON.stringify(body.unknown_flags[0].did_you_mean)}`);
+});
+
+test('known flags still work: discover --scope code (exit 0)', () => {
+  const r = cli(['discover', '--scope', 'code']);
+  assert.equal(r.status, 0, `expected exit 0; got ${r.status} (stderr: ${r.stderr.slice(0, 200)})`);
+});
+
+test('known flags still work: discover --json (exit 0, parseable stdout)', () => {
+  const r = cli(['discover', '--json']);
+  assert.equal(r.status, 0, `expected exit 0; got ${r.status}`);
+  const body = tryJson(r.stdout.trim());
+  assert.ok(body, `discover --json stdout must parse; got: ${r.stdout.slice(0, 200)}`);
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
-
-test("discover JSON envelope: every recommendation carries collector_available + collect_cmd, matching on-disk truth", () => {
-  const r = runCli(["discover", "--json"]);
-  assert.equal(r.status, 0, `discover exit non-zero; stderr=${r.stderr.slice(0, 400)}`);
-  const body = JSON.parse(r.stdout);
-  assert.ok(Array.isArray(body.recommended_playbooks), "recommended_playbooks missing or non-array");
-  assert.ok(body.recommended_playbooks.length > 0, "expected at least one recommendation from project root");
-
-  for (const rec of body.recommended_playbooks) {
-    assert.equal(typeof rec.id, "string", `rec missing id: ${JSON.stringify(rec)}`);
-    assert.equal(typeof rec.collector_available, "boolean", `rec ${rec.id} missing collector_available`);
-    const onDisk = fs.existsSync(path.join(ROOT, "lib", "collectors", rec.id + ".js"));
-    assert.equal(rec.collector_available, onDisk,
-      `rec ${rec.id}: collector_available=${rec.collector_available} but file presence=${onDisk}`);
-    if (rec.collector_available) {
-      assert.equal(rec.collect_cmd, `exceptd collect ${rec.id}`);
-    } else {
-      assert.equal(rec.collect_cmd, null);
-    }
-  }
 });
 
-test("discover recommends cicd-pipeline-compromise when .github/workflows/ exists at cwd", () => {
-  // The exceptd repo itself has .github/workflows/ — running discover
-  // here MUST surface cicd-pipeline-compromise in the recommendation
-  // list. (Stream-1 finding F1.1: before this fix, the 4 collectors
-  // cicd / mcp / ai-api / crypto were never surfaced by discover.)
-  const r = runCli(["discover", "--json"]);
-  const body = JSON.parse(r.stdout);
-  const ids = body.recommended_playbooks.map(p => p.id);
-  assert.ok(ids.includes("cicd-pipeline-compromise"),
-    `cicd-pipeline-compromise must be recommended (cwd has .github/workflows/); got: ${ids.join(", ")}`);
-  // Its reason text should mention the trigger artifact.
-  const rec = body.recommended_playbooks.find(p => p.id === "cicd-pipeline-compromise");
-  assert.match(rec.reason, /\.github\/workflows\//);
-});
 
-test("discover reason text uses 'project' (not 'lockfile') so package.json-only repos aren't misrepresented", () => {
-  // The exceptd repo has package-lock.json, but the heuristic now
-  // labels the reason as 'node project' rather than 'node lockfile'
-  // so repos with only package.json (e.g. expressjs/express) don't
-  // claim a lockfile that doesn't exist. F1.2.
-  const r = runCli(["discover", "--json"]);
-  const body = JSON.parse(r.stdout);
-  const sec = body.recommended_playbooks.find(p => p.id === "secrets");
-  assert.ok(sec, "secrets must be recommended on the exceptd repo");
-  assert.match(sec.reason, /project/, `reason text should say 'project' not 'lockfile'; got: ${sec.reason}`);
-  assert.doesNotMatch(sec.reason, /lockfile/, "reason text must not claim 'lockfile' for the broad node-detection trigger");
-});
+// ---- routed from blamejs-scan-fixes ----
+require("node:test").describe("blamejs-scan-fixes", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * tests/blamejs-scan-fixes.test.js
+ *
+ * Pins the fixes a scan of the sibling blamejs repo surfaced:
+ *  - playbooks that declare bundle_format "json" (secrets / cred-stores /
+ *    runtime / citation-hygiene) now build a real structured-JSON evidence
+ *    bundle instead of falling through to the "Unknown format" placeholder;
+ *  - the crypto-codebase collector attests the playbook's own
+ *    `repo-has-source-tree` gate (it previously emitted a `repo-context` key
+ *    the playbook never references, so a source repo got a spurious
+ *    precondition_unverified warning).
+ * Exact-value pins, with content paired to presence per the project's
+ * field-present-vs-field-populated rule.
+ */
 
-test("discover human renderer omits `--scope code` next-step when no code playbooks were recommended", () => {
-  // Run discover from a fresh tempdir with no .git / no manifest /
-  // no Dockerfile → recommendations should be empty-of-code-scope,
-  // and the next-step list must NOT include `--scope code`. F2.3.
-  const os = require("node:os");
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "discover-empty-"));
-  try {
-    const r = runCli(["discover"], { cwd: tmp });
-    assert.equal(r.status, 0);
-    assert.doesNotMatch(r.stdout, /exceptd run --scope code/,
-      "next-step `--scope code` must NOT appear when no code-scope playbooks were recommended");
-    assert.doesNotMatch(r.stdout, /exceptd ci --scope code/,
-      "next-step `ci --scope code` must NOT appear when no code-scope playbooks were recommended");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 
-test("help section header omits any pinned-version text", () => {
-  // Help should not lead with a version tag in the section header.
-  // The header IS the surface; the version belongs in CHANGELOG /
-  // git tags, not in operator-facing help prose.
-  const r = runCli(["help"]);
-  assert.equal(r.status, 0);
-  assert.doesNotMatch(r.stdout, /v\d+\.\d+\.\d+ canonical surface/,
-    "help text section header must not pin a version tag");
-});
+const runner = require('../lib/playbook-runner.js');
+const cryptoCodebase = require('../lib/collectors/crypto-codebase.js');
+const containersCollector = require('../lib/collectors/containers.js');
+const { makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
 
-test("discover human renderer: [collector] tag + pipe-pointer line render when collector_available is true", () => {
-  const r = runCli(["discover"]);
-  assert.equal(r.status, 0);
-  // The project root carries a .git + a node lockfile → at least
-  // secrets / sbom / library-author / crypto-codebase recommendations
-  // fire, and all four have collectors.
-  assert.match(r.stdout, /\[collector\]/, "expected at least one [collector] tag in human output");
-  assert.match(r.stdout, /exceptd collect \S+ \| exceptd run \S+ --evidence -/,
-    "expected pipe-pointer line in human output");
-  // framework recommendation always fires + has no collector — must
-  // appear WITHOUT a [collector] tag.
-  assert.match(r.stdout, /-\s+framework\s+(?!\[collector\])/,
-    "framework recommendation must not be tagged [collector]");
+const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-dogfix2-'));
+process.on('exit', () => { try { fs.rmSync(TMP, { recursive: true, force: true }); } catch { /* non-fatal */ } });
+let _n = 0;
+function mkfx() { const d = path.join(TMP, 'fx-' + _n++); fs.mkdirSync(d, { recursive: true }); return d; }
+
+test('discover recommends containers for a subdir Dockerfile / compose variant (not just a root exact-name file)', () => {
+  const cli = makeCli(makeSuiteHome());
+  // A subdir Dockerfile + a compose variant — neither is a root-level
+  // exact-name Dockerfile/docker-compose.yml, so the old root-only probes
+  // missed them and discover never recommended the containers playbook.
+  const fx = mkfx();
+  fs.mkdirSync(path.join(fx, 'examples', 'wiki'), { recursive: true });
+  fs.writeFileSync(path.join(fx, 'examples', 'wiki', 'Dockerfile'), 'FROM node:latest\n');
+  fs.writeFileSync(path.join(fx, 'docker-compose.test.yml'), 'services:\n  app:\n    image: x\n');
+  const ids = ((tryJson(cli(['discover', '--cwd', fx, '--json']).stdout) || {}).recommended_playbooks || []).map((r) => r.playbook || r.id || r);
+  assert.ok(ids.includes('containers'), 'discover recommends containers for a subdir Dockerfile + compose variant');
+  // A tree with no container config must NOT recommend containers.
+  const empty = mkfx();
+  fs.writeFileSync(path.join(empty, 'README.md'), '# nothing container-ish here\n');
+  const ids2 = ((tryJson(cli(['discover', '--cwd', empty, '--json']).stdout) || {}).recommended_playbooks || []).map((r) => r.playbook || r.id || r);
+  assert.equal(ids2.includes('containers'), false, 'no container config means no containers recommendation');
 });
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
 });

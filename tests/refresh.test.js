@@ -374,82 +374,240 @@ test_describe('cli-flag-and-envelope-hardening.test.js', () => {
   });
 });
 
-// ---- routed from cli-flag-and-envelope-hardening ----
-;(() => {
+
+// ---- routed from audit-usability-fixes ----
+require("node:test").describe("audit-usability-fixes", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * Regression coverage for a CLI flag-handling + envelope-shape pass.
+ * CLI usability regression suite.
  *
- * Findings closed here:
+ * Pins the behavior of a set of CLI ergonomics fixes so they cannot silently
+ * regress at the next refactor. Each test exercises the real CLI through the
+ * shared cli() harness (subprocess spawn of bin/exceptd.js) and asserts the
+ * EXACT exit code and field shapes per the project anti-coincidence rule:
+ * never `notEqual(0)`, never `assert.ok(field)` without a paired value/type
+ * assertion.
  *
- *   1. validate-rfcs / validate-cves rejected unknown flags BEFORE any
- *      network work (a typo'd flag previously fell through to the default
- *      live-network path and hung). --offline / --air-gap still produce the
- *      offline view.
- *   2. cve / rfc derive `ok` from the resolved status: a non-zero (exit 2)
- *      failure carries ok:false; a published / matching resolution stays
- *      ok:true exit 0. Previously ok:true was hardcoded alongside exit 2.
- *   3. refresh / prefetch reject unknown flags (exit 2) instead of silently
- *      swallowing them (exit 0).
- *   4. orchestrator passthrough verbs (scan / dispatch / currency / watchlist)
- *      reject unknown flags AND carry top-level ok:true on --json success.
- *   5. framework-gap / skill missing-arg paths honor --json (emit ok:false
- *      JSON, exit 1); skill no longer treats --json as the skill name.
- *
- * Every assertion checks the EXACT exit code and the EXACT ok value + field
- * shape — never `notEqual(0)` / bare `assert.ok(field)`.
- *
- * Offline-only: --air-gap / --offline guarantee no real network egress. The
- * finding-1 unknown-flag tests rely on the rejection firing BEFORE the fetch,
- * so they neither reach nor depend on the network.
+ * Areas covered:
+ *   1. Unknown-flag hard-fail across all verbs (+ typo suggestion + the
+ *      tailored cross-verb "irrelevant flag" message that must NOT collapse
+ *      into a generic unknown-flag refusal).
+ *   2. `--format json` returns the full run result, not a stub.
+ *   3. Multiple --format values emit a one-format-wins note to stderr.
+ *   4. Standardized bundles (sarif / csaf-2.0 / openvex) carry no top-level
+ *      `ok` key and present their spec marker.
+ *   5. `skill` / `framework-gap` honor --help; `refresh` keeps its own help.
+ *   6. `collect` emits JSON when piped (non-TTY) so the documented pipe works.
+ *   7. `refresh --check-advisories` arg parsing (report-only, no network).
+ *   8. `attest list --limit` envelope + bad-value rejection.
  */
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const os = require('node:os');
 
-const { makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+const { ROOT, makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
 
-const SUITE_HOME = makeSuiteHome('exceptd-flag-envelope-');
+const SUITE_HOME = makeSuiteHome('exceptd-audit-usability-');
 const cli = makeCli(SUITE_HOME);
 
-// ---------------------------------------------------------------------------
-// Finding 1 — validate-rfcs / validate-cves unknown-flag rejection (fast,
-// pre-network). Bounded timeout proves no hang on a live fetch.
-// ---------------------------------------------------------------------------
+// ===================================================================
+// 1. Unknown-flag hard-fail (all verbs, not just doctor)
+// ===================================================================
 
 
 
 
 
 
-// ---------------------------------------------------------------------------
-// Finding 2 — cve / rfc envelope ok derived from status (not inverted).
-// ---------------------------------------------------------------------------
+
+
+
+// ===================================================================
+// 2. `--format json` returns the FULL run result (not a stub)
+// ===================================================================
+
+
+// ===================================================================
+// 3. MULTI-FORMAT note to stderr
+// ===================================================================
+
+
+// ===================================================================
+// 4. STANDARDIZED BUNDLES carry NO top-level `ok` key
+// ===================================================================
+
+
+
+
+// ===================================================================
+// 5. `skill --help` / `framework-gap --help` honor --help;
+//    refresh keeps its OWN detailed help
+// ===================================================================
+
+
+
+
+// ===================================================================
+// 6. `collect` emits JSON when piped (non-TTY) so the documented pipe works
+// ===================================================================
+
+
+// ===================================================================
+// 7. `refresh --check-advisories` parsing (no network — parseArgs directly)
+// ===================================================================
+
+
+// ===================================================================
+// 8. `attest list --limit`
+// ===================================================================
+
+test('refresh --help keeps its own detailed help (not swallowed by --help interception)', () => {
+  const r = cli(['refresh', '--help']);
+  assert.equal(r.status, 0, `expected exit 0; got ${r.status} (stderr: ${r.stderr.slice(0, 200)})`);
+  assert.match(r.stdout, /check-advisories/);
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from operator-bugs ----
+require("node:test").describe("operator-bugs", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Operator-reported bug regression suite.
+ *
+ * Every operator-reported bug that has been fixed lands here as a named test
+ * case so re-introductions surface at `npm test`, not at user re-report.
+ * Numbering matches the operator report sequence (items #1 through #N as
+ * reported across the v0.9.5 → v0.11.x arc).
+ *
+ * Pattern for new items:
+ *   describe('#N short label', () => { it('precise behavior', ...); });
+ *
+ * Avoid coupling tests to file paths / playbook IDs that may change. Prefer
+ * direct runner exercises over CLI shell-outs where possible — CLI tests
+ * stay narrow (smoke-level) because they spawn subprocesses and slow the
+ * suite down.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const { spawnSync } = require('node:child_process');
+
+const { ROOT, CLI, makeSuiteHome, makeCli, tryJson, secureTmpFile } = require('./_helpers/cli');
+const runner = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
+
+const SUITE_HOME = makeSuiteHome('exceptd-operator-bugs-');
+const cli = makeCli(SUITE_HOME);
+
+// ===================================================================
 
 
 
 
 
-// ---------------------------------------------------------------------------
-// Finding 3 — refresh / prefetch unknown-flag rejection.
-// ---------------------------------------------------------------------------
+
+
+
+// ===================================================================
 
 
 
 
 
-// ---------------------------------------------------------------------------
-// Finding 4 — orchestrator passthrough verbs: unknown-flag rejection +
-// top-level ok:true on --json success. (currency emits a scheduler log line
-// before the envelope; the JSON envelope is the LAST stdout line.)
-// ---------------------------------------------------------------------------
+// ===================================================================
 
-function lastJsonLine(stdout) {
-  const lines = stdout.trim().split('\n').filter(Boolean);
-  for (let i = lines.length - 1; i >= 0; i--) {
-    const parsed = tryJson(lines[i]);
-    if (parsed) return parsed;
-  }
-  return null;
+// ===================================================================
+
+
+
+// ===================================================================
+
+
+
+// ===================================================================
+
+
+
+
+// ===================================================================
+
+
+// ===================================================================
+
+// ===================================================================
+// CSAF framework gaps emit as `document.notes[]` with `category: details`,
+// not as `vulnerabilities[]` entries with `ids: [{system_name:
+// 'exceptd-framework-gap'}]`. The `system_name` slot is reserved for
+// recognised vulnerability tracking authorities (CVE, GHSA, etc.); the
+// custom string is rejected by NVD / ENISA / Red Hat dashboards. Notes
+// are the right home for advisory context, not pseudo-CVEs. The test
+// asserts the notes-based shape and anti-asserts the pseudo-vulnerability
+// shape.
+
+
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===================================================================
+// v0.11.14 freshness additions — opt-in registry check + upstream-check
+// + refresh --network. Tests use EXCEPTD_REGISTRY_FIXTURE so they're
+// fully offline-deterministic.
+// ===================================================================
+
+function withFixture(version, daysAgo) {
+  const file = secureTmpFile('npm-fixture.json', 'npm-fixture-');
+  const publishedAt = new Date(Date.now() - daysAgo * 24 * 3600 * 1000).toISOString();
+  fs.writeFileSync(file, JSON.stringify({
+    "dist-tags": { latest: version },
+    version,
+    time: { [version]: publishedAt, modified: publishedAt },
+  }));
+  return file;
 }
 
 
@@ -459,20 +617,261 @@ function lastJsonLine(stdout) {
 
 
 
+// ===================================================================
+// v0.12.0 — GHSA source + refresh --advisory + refresh --curate
+// ===================================================================
 
-// ---------------------------------------------------------------------------
-// Finding 5 — framework-gap / skill missing-arg paths honor --json; skill
-// no longer treats --json as args[0].
-// ---------------------------------------------------------------------------
 
-test('F3: refresh --badflag → ok:false exit 2 (not silently swallowed)', () => {
-  const r = cli(['refresh', '--badflag', '--air-gap'], { timeout: 20000 });
-  assert.equal(r.status, 2, 'refresh usage error exits 2 per its own scheme');
-  const body = tryJson(r.stderr.trim());
-  assert.ok(body, 'must emit a parseable JSON envelope on stderr');
-  assert.equal(body.ok, false);
-  assert.equal(body.verb, 'refresh');
-  assert.deepEqual(body.unknown_flags, ['--badflag']);
-  assert.ok(Array.isArray(body.known_flags) && body.known_flags.includes('--source'));
+
+
+
+
+
+
+
+
+
+
+
+// ===================================================================
+
+test('#65 refresh --no-network routes to prefetch', () => {
+  const r = cli(['refresh', '--no-network', '--quiet']);
+  // The behavior #65 tests: the refresh dispatcher routes --no-network
+  // through to prefetch.js, which then emits the "prefetch summary:"
+  // one-line. The exit code is prefetch.js's own contract (0 when all
+  // sources fresh / dry-run completed, 1 when any source errored, 2 on
+  // fatal). The Node-25-on-Windows libuv UV_HANDLE_CLOSING teardown
+  // assertion that previously fired here is fixed by switching
+  // prefetch.js's main() from process.exit(N) to process.exitCode = N;
+  // return — letting the event loop drain naturally so undici / abort
+  // signal teardown completes before the process exits. So exit code
+  // is now meaningful again at this layer.
+  //
+  // Strengthening that respects the test's intent: parse the summary
+  // line and confirm it contains the numeric breakdown — that's what
+  // operators look for, and what a regression would silently break.
+  // Pre-strengthening matched only "prefetch summary:" anywhere in
+  // stdout, which would have accepted a regression where the dispatcher
+  // mis-routed to a verb that happens to print that string in a
+  // different format.
+  assert.match(r.stdout, /prefetch summary:/,
+    'refresh --no-network must route to prefetch.js and emit its summary');
+  // v0.12.16: dry-run summary differs — prefetch emits "N fetched, M fresh,
+  // K would-fetch (dry-run)" when --no-network is supplied (versus
+  // "N fetched, M fresh, K error(s)" on a real fetch run). Both shapes
+  // prove prefetch.js produced the line. Accept either.
+  const summaryMatch = r.stdout.match(/prefetch summary: (\d+) fetched, (\d+) fresh, (\d+) (?:error\(s\)|would-fetch)/);
+  assert.ok(summaryMatch,
+    `summary line must be in the exact "N fetched, M fresh, K error(s)" OR "N fetched, M fresh, K would-fetch (dry-run)" format — proves prefetch.js produced it, not a misrouted verb. Got stdout=${JSON.stringify(r.stdout.slice(0,300))}`);
+  // The 2 prior 404 sources (mitre/cwe + d3fend/d3fend-data — neither
+  // upstream project publishes via GitHub Releases) were removed from
+  // the pins registry. The error counter SHOULD be 0 on a fresh cache,
+  // but CI runs hit live upstream sources without auth and can see
+  // transient GitHub-API rate-limit 403/404s on the remaining pin
+  // sources. Assert errors <= a small ceiling so a real regression
+  // (re-adding a permanently-broken URL) still fires but transient
+  // upstream flakes don't fail CI on every PR.
+  //
+  // v0.12.16: the 3rd capture group means different things in the two
+  // summary shapes — "N error(s)" vs "N would-fetch (dry-run)". The
+  // ceiling check only applies to the error shape; the dry-run shape's
+  // would-fetch count is the entire pin registry (47 today) and is
+  // expected to be high.
+  const isDryRun = /would-fetch/.test(summaryMatch[0]);
+  if (!isDryRun) {
+    const errorCount = parseInt(summaryMatch[3], 10);
+    const ERROR_CEILING = 10; // remaining pin sources (8) + small headroom
+    assert.ok(errorCount <= ERROR_CEILING,
+      `prefetch error count ${errorCount} exceeds ceiling ${ERROR_CEILING} — implies a pin source URL is permanently broken (not transient upstream flakiness). Got: ${summaryMatch[0]}`);
+  }
+  // The libuv assertion fix: stderr must not contain the teardown
+  // assertion line. Coupled with the exit-status path below, this
+  // proves the crash is gone, not just masked by a pipe-buffered
+  // swallow. Exit code: 0 (clean) on Linux/macOS; 1 (some pin source
+  // errored) acceptable when upstream sources transient-fail under CI
+  // network conditions; the Windows libuv quirk code is also accepted
+  // (post-flush teardown anomaly, not a regression).
+  const acceptableExits = new Set([0, 1, 3221226505]);
+  assert.ok(acceptableExits.has(r.status),
+    `prefetch exit must be 0 (clean), 1 (some source errored under transient network), or 3221226505 (Windows libuv post-flush teardown). Got status=${r.status}, stderr=${JSON.stringify((r.stderr || '').slice(-300))}`);
+  assert.doesNotMatch(r.stderr || '', /UV_HANDLE_CLOSING|Assertion failed/,
+    `stderr must not contain the libuv teardown assertion — got ${JSON.stringify(r.stderr)}`);
 });
-})();
+
+test('#129 refresh --from-cache <missing> emits structured hint, not stack trace', () => {
+  const r = cli(['refresh', '--from-cache', '/totally/does/not/exist']);
+  // The missing-cache branch in lib/refresh-external.js throws a hint
+  // error without _exceptd_exit_code, so the top-level handler defaults
+  // to exit 2 (lib/refresh-external.js:1442). Signature-validation
+  // refusals from the same file set _exceptd_exit_code = 4, so notEqual(0)
+  // would silently accept either — pin the exact missing-cache code.
+  assert.equal(r.status, 2, 'missing cache dir must exit 2 (refresh-external hint refusal default)');
+  const combined = (r.stdout || '') + (r.stderr || '');
+  assert.doesNotMatch(combined, /at Object\.<anonymous>|^\s*at .*\.js:\d+/m,
+    'no raw Node stack trace — should be a hinted error');
+  assert.match(combined, /exceptd refresh --(prefetch|no-network)/,
+    'error must tell operator the exact command to populate the cache');
+});
+
+test('#129 refresh --prefetch is an alias for --no-network', () => {
+  // Pre-strengthening: ran `refresh --prefetch --help` and asserted only
+  // status!==127 — which would silently accept ANY exit (0..126) including
+  // the regression where --prefetch becomes unrecognized and the dispatcher
+  // falls through to a different verb's help. Replace with the actual
+  // behavioral contract: --prefetch routes through to prefetch.js which
+  // emits "prefetch summary:" on stdout. Pin that exact string.
+  const r = cli(['refresh', '--prefetch', '--no-network', '--quiet']);
+  assert.match(r.stdout, /prefetch summary:/,
+    'refresh --prefetch must route to prefetch.js and emit its one-line summary — proves the alias works, not just that the dispatcher didn\'t crash');
+});
+
+test('refresh --network shows clear hint when registry is unreachable', () => {
+  // Force "unreachable" by pointing the fixture at a missing file.
+  const fakePath = path.join(require('os').tmpdir(), 'does-not-exist-' + Date.now() + '.json');
+  const r = cli(['refresh', '--network', '--json', '--timeout', '500'], {
+    env: { EXCEPTD_REGISTRY_FIXTURE: fakePath }
+  });
+  // lib/refresh-network.js:294 pins exitCode = 2 for the unreachable
+  // branch. Pinning the code keeps this from masking a regression to
+  // exit 1 (would conflate unreachable with generic validation refusal).
+  assert.equal(r.status, 2, 'unreachable registry must exit 2 (refresh-network unreachable branch)');
+  // Pre-strengthening only checked the exit code. The contract that
+  // actually matters to operators is "I get a hint telling me what to
+  // do" — without it, refresh --network is the silent-no-op class of
+  // bug. Parse stdout (refresh-network emits structured JSON there even
+  // on the error path) and verify the body carries ok:false + a string
+  // error mentioning the failure mode (unreachable/registry).
+  const data = tryJson(r.stdout) || tryJson(r.stderr.trim());
+  assert.ok(data, 'refresh --network must emit structured JSON on the error path, not a raw stack trace');
+  assert.equal(data.ok, false, 'unreachable registry must carry ok:false');
+  assert.equal(typeof data.error, 'string', 'error must be a string operators can read');
+  assert.match(data.error, /unreachable|registry/i,
+    'error must name the failure class so operators see "unreachable" / "registry" — not a generic ENOENT bubble-up');
+});
+
+test('refresh --network --dry-run reports verification result without modifying files', () => {
+  // Smoke contract: --dry-run + --json + --timeout exits with a structured
+  // body in either branch (online or offline). Pre-strengthening, "data
+  // parses as JSON" was the only check — a regression that emits {} (empty
+  // object, no contract fields) would have passed. Pin the contract: the
+  // body must carry one of the specific fields the dry-run path emits.
+  // refresh-network's dry-run/skip path emits `verified` (verification
+  // result), `ok` (success flag), or `skipped`/`message` (when already-
+  // at-latest). At least one must be present.
+  const r = cli(['refresh', '--network', '--dry-run', '--json', '--timeout', '1000']);
+  const data = tryJson(r.stdout) || tryJson(r.stderr.trim());
+  assert.ok(data, 'must emit structured JSON in either online or offline branch');
+  assert.ok('verified' in data || 'ok' in data,
+    `refresh --network --dry-run body must carry at least one of {verified, ok}; got keys=${JSON.stringify(Object.keys(data))}. An empty object is the field-missing regression.`);
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from v0_13_3-fixes ----
+require("node:test").describe("v0_13_3-fixes", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * tests/v0_13_3-fixes.test.js
+ *
+ * Pin tests for the v0.13.3 patch.
+ *
+ * Coverage:
+ *   A — refresh.yml split into refresh-data (no creds) + open-pr
+ *       (contents:write + pull-requests:write scoped to PR creation only).
+ *   B — Hard Rule #1 body-scan flipped from warning to hard error.
+ *   E — doctor --ai-config produces a structured check matching the shape
+ *       documented under NEW-CTRL-050.
+ *   F — watchlist --org-scan refuses without --org / GITHUB_ORG; surfaces
+ *       error envelope shape.
+ *   G — ADVISORIES_SOURCE FEEDS grew from 4 to 8 (added kernel-org,
+ *       oss-security, jfrog, cisa-current).
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
+
+const ROOT = path.join(__dirname, '..');
+const CLI = path.join(ROOT, 'bin', 'exceptd.js');
+
+function cli(args, opts = {}) {
+  return spawnSync(process.execPath, [CLI, ...args], {
+    encoding: 'utf8',
+    cwd: ROOT,
+    env: { ...process.env, EXCEPTD_DEPRECATION_SHOWN: '1', ...(opts.env || {}) },
+    ...opts,
+  });
+}
+
+function tryJson(s) { try { return JSON.parse(s); } catch { return null; } }
+
+function extractJobBlock(yml, jobName) {
+  const lines = yml.split('\n');
+  let startIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i] === `  ${jobName}:`) { startIdx = i; break; }
+  }
+  if (startIdx === -1) return null;
+  let endIdx = lines.length;
+  for (let i = startIdx + 1; i < lines.length; i++) {
+    if (/^  [a-z][a-z0-9_-]*:\s*$/.test(lines[i])) { endIdx = i; break; }
+  }
+  return lines.slice(startIdx, endIdx).join('\n');
+}
+
+const PERM_DECL = (key, value) =>
+  new RegExp(`^\\s+${key}:\\s+${value}\\s*$`, 'm');
+
+// ---------- A. refresh.yml split-checkout ----------
+
+
+
+
+// ---------- B. lint Hard Rule #1 body-scan is now hard error ----------
+
+test('A: refresh.yml has refresh-data job with NO write credentials', () => {
+  const yml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'refresh.yml'), 'utf8');
+  const block = extractJobBlock(yml, 'refresh-data');
+  assert.ok(block, 'refresh-data job must exist');
+  assert.match(block, PERM_DECL('contents', 'read'));
+  assert.ok(!PERM_DECL('contents', 'write').test(block),
+    'refresh-data must NOT carry contents:write');
+  assert.ok(!PERM_DECL('pull-requests', 'write').test(block),
+    'refresh-data must NOT carry pull-requests:write');
+  assert.ok(!PERM_DECL('issues', 'write').test(block),
+    'refresh-data must NOT carry issues:write');
+  // The checkout must persist-credentials: false in the no-creds job.
+  assert.match(block, /persist-credentials:\s*false/);
+});
+
+test('A: refresh.yml has open-pr job with write credentials scoped here only', () => {
+  const yml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'refresh.yml'), 'utf8');
+  const block = extractJobBlock(yml, 'open-pr');
+  assert.ok(block, 'open-pr job must exist');
+  assert.match(block, PERM_DECL('contents', 'write'));
+  assert.match(block, PERM_DECL('pull-requests', 'write'));
+  assert.match(block, /needs:\s*refresh-data/,
+    'open-pr must depend on refresh-data');
+});
+
+test('A: pre-v0.13.3 monolithic refresh job is gone', () => {
+  const yml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'refresh.yml'), 'utf8');
+  assert.ok(!/^  refresh:\s*$/m.test(yml),
+    'pre-v0.13.3 monolithic refresh job must be removed');
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});

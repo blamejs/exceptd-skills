@@ -92,3 +92,166 @@ test('scheduleEvery: handler errors are caught and do not break the timer', asyn
     off();
   }
 });
+
+
+// ---- routed from playbook-schema-validation ----
+require("node:test").describe("playbook-schema-validation", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Regression tests for the v0.12.20 audit S+T+U+Z P1 fixes.
+ *
+ *   S P1-A — Array attestation must NOT bypass the FP-check gate.
+ *   S P1-B — `signals.detection_classification: 'detected'` override must be
+ *            refused when ANY indicator was downgraded due to unattested FP
+ *            checks; a runtime_error documents the refusal.
+ *   U REG-1 — `signal_overrides_invalid` errors pushed by normalizeSubmission
+ *            must reach analyze.runtime_errors[] (F20 contract).
+ *   T P1-1 — withCatalogLock / withIndexLock must reclaim a lockfile whose
+ *            PID is dead (ESRCH) without waiting STALE_LOCK_MS.
+ *   T P1-2 — persistAttestation --force-overwrite must serialize concurrent
+ *            writers so the prior_evidence_hash chain does not lose
+ *            intermediate writers.
+ *   T P1-3 — prefetch must NOT leave a payload on disk with no index entry
+ *            when withIndexLock fails.
+ *   T P1-4 — scheduleEvery must throw RangeError on 0 / negative / NaN /
+ *            Infinity intervals.
+ *
+ * Concurrency tests use real subprocess invocation + race contention.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+const crypto = require('node:crypto');
+const { spawnSync, fork } = require('node:child_process');
+
+const ROOT = path.join(__dirname, '..');
+const RUNNER_PATH = path.resolve(ROOT, 'lib', 'playbook-runner.js');
+
+// --- helpers --------------------------------------------------------------
+
+function freshRunner(playbookDir) {
+  if (playbookDir) process.env.EXCEPTD_PLAYBOOK_DIR = playbookDir;
+  else delete process.env.EXCEPTD_PLAYBOOK_DIR;
+  delete require.cache[RUNNER_PATH];
+  return require(RUNNER_PATH);
+}
+
+function tmpDir(label) {
+  return fs.mkdtempSync(path.join(os.tmpdir(), `exceptd-stuz-${label}-`));
+}
+
+function writePlaybook(dir, id, body) {
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, `${id}.json`), JSON.stringify(body, null, 2));
+}
+
+function synthPlaybook(overrides = {}) {
+  const base = {
+    _meta: {
+      id: 'synth',
+      version: '0.1.0',
+      last_threat_review: '2026-05-14',
+      threat_currency_score: 95,
+      changelog: [{ version: '0.1.0', date: '2026-05-14', summary: 'synthetic test playbook' }],
+      owner: '@blamejs/test',
+      air_gap_mode: false,
+      preconditions: [],
+      mutex: [],
+      feeds_into: [],
+    },
+    domain: {
+      name: 'synth domain', attack_class: 'kernel-lpe',
+      atlas_refs: [], attack_refs: [], cve_refs: [], cwe_refs: [], d3fend_refs: [],
+      frameworks_in_scope: ['nist-800-53'],
+    },
+    phases: {
+      govern: { jurisdiction_obligations: [], theater_fingerprints: [], framework_context: {}, skill_preload: [] },
+      direct: { threat_context: 'x', rwep_threshold: { escalate: 90, monitor: 70, close: 30 }, framework_lag_declaration: 'x', skill_chain: [], token_budget: {} },
+      look: { artifacts: [], collection_scope: {}, environment_assumptions: [], fallback_if_unavailable: [] },
+      detect: { indicators: [], false_positive_profile: [], minimum_signal: { detected: 'x', inconclusive: 'x', not_detected: 'x' } },
+      analyze: { rwep_inputs: [], blast_radius_model: { scope_question: '?', scoring_rubric: [] }, compliance_theater_check: null, framework_gap_mapping: [], escalation_criteria: [] },
+      validate: { remediation_paths: [], validation_tests: [], residual_risk_statement: null, evidence_requirements: [], regression_trigger: [] },
+      close: { evidence_package: null, learning_loop: { enabled: false }, notification_actions: [], exception_generation: null, regression_schedule: null },
+    },
+    directives: [{ id: 'default', title: 'default directive', applies_to: { always: true } }],
+  };
+  return deepMerge(base, overrides);
+}
+
+function deepMerge(a, b) {
+  if (b === null || b === undefined) return a;
+  if (Array.isArray(b)) return b;
+  if (typeof b !== 'object') return b;
+  const out = { ...a };
+  for (const k of Object.keys(b)) {
+    if (k in out && out[k] && typeof out[k] === 'object' && !Array.isArray(out[k]) && b[k] && typeof b[k] === 'object' && !Array.isArray(b[k])) {
+      out[k] = deepMerge(out[k], b[k]);
+    } else {
+      out[k] = b[k];
+    }
+  }
+  return out;
+}
+
+// =========================================================================
+// S P1-A — Array attestation bypasses FP-check gate
+// =========================================================================
+
+
+// =========================================================================
+// S P1-B — `detection_classification: 'detected'` override cannot bypass FP downgrade
+// =========================================================================
+
+
+
+// =========================================================================
+// U REG-1 — signal_overrides_invalid must reach analyze.runtime_errors[]
+// =========================================================================
+
+
+// =========================================================================
+// T P1-1 — PID-liveness check on stale lockfiles
+// =========================================================================
+
+
+// =========================================================================
+// T P1-2 — persistAttestation force-overwrite serializes concurrent writers
+// =========================================================================
+
+
+// =========================================================================
+// T P1-3 — prefetch must NOT orphan a payload on lock failure
+// =========================================================================
+
+
+// =========================================================================
+// T P1-4 — scheduleEvery lower-bound guard
+// =========================================================================
+
+test('T P1-4: scheduleEvery rejects 0 / negative / NaN / Infinity intervals', () => {
+  // Re-require with cache drop so the new guard is in effect.
+  delete require.cache[require.resolve('../orchestrator/scheduler.js')];
+  const { scheduleEvery } = require('../orchestrator/scheduler.js');
+
+  for (const bad of [0, -1, -100, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+    assert.throws(
+      () => scheduleEvery(bad, () => {}),
+      (err) => err instanceof RangeError && /positive finite number/.test(err.message),
+      `scheduleEvery(${bad}) must throw RangeError`
+    );
+  }
+  // Sanity: a valid interval still returns an unscheduler.
+  const off = scheduleEvery(10_000, () => {});
+  assert.equal(typeof off, 'function');
+  off();
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});

@@ -61,34 +61,128 @@ test.describe('usability-fixes', () => {
 });
 
 
-// ---- routed from cycle20-ux-fixes ----
-;(() => {
+// ---- routed from audit-usability-fixes ----
+require("node:test").describe("audit-usability-fixes", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * tests/cycle20-ux-fixes.test.js
+ * CLI usability regression suite.
  *
- * Cycle 20 A fixes (v0.12.40):
+ * Pins the behavior of a set of CLI ergonomics fixes so they cannot silently
+ * regress at the next refactor. Each test exercises the real CLI through the
+ * shared cli() harness (subprocess spawn of bin/exceptd.js) and asserts the
+ * EXACT exit code and field shapes per the project anti-coincidence rule:
+ * never `notEqual(0)`, never `assert.ok(field)` without a paired value/type
+ * assertion.
  *
- *   P1 — `exceptd framework-gap` "0 theater-risk controls" summary
- *        footer contradicted the "⚠ THEATER RISK" badge on every
- *        entry. The counting predicate filtered on the legacy
- *        `theater_pattern` field while the v0.12.29 backfill added
- *        a structured `theater_test` block on all 118 entries. Fix:
- *        count entries with EITHER `theater_test` OR `theater_pattern`.
+ * Areas covered:
+ *   1. Unknown-flag hard-fail across all verbs (+ typo suggestion + the
+ *      tailored cross-verb "irrelevant flag" message that must NOT collapse
+ *      into a generic unknown-flag refusal).
+ *   2. `--format json` returns the full run result, not a stub.
+ *   3. Multiple --format values emit a one-format-wins note to stderr.
+ *   4. Standardized bundles (sarif / csaf-2.0 / openvex) carry no top-level
+ *      `ok` key and present their spec marker.
+ *   5. `skill` / `framework-gap` honor --help; `refresh` keeps its own help.
+ *   6. `collect` emits JSON when piped (non-TTY) so the documented pipe works.
+ *   7. `refresh --check-advisories` arg parsing (report-only, no network).
+ *   8. `attest list --limit` envelope + bad-value rejection.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const os = require('node:os');
+
+const { ROOT, makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+
+const SUITE_HOME = makeSuiteHome('exceptd-audit-usability-');
+const cli = makeCli(SUITE_HOME);
+
+// ===================================================================
+// 1. Unknown-flag hard-fail (all verbs, not just doctor)
+// ===================================================================
+
+
+
+
+
+
+
+
+
+// ===================================================================
+// 2. `--format json` returns the FULL run result (not a stub)
+// ===================================================================
+
+
+// ===================================================================
+// 3. MULTI-FORMAT note to stderr
+// ===================================================================
+
+
+// ===================================================================
+// 4. STANDARDIZED BUNDLES carry NO top-level `ok` key
+// ===================================================================
+
+
+
+
+// ===================================================================
+// 5. `skill --help` / `framework-gap --help` honor --help;
+//    refresh keeps its OWN detailed help
+// ===================================================================
+
+
+
+
+// ===================================================================
+// 6. `collect` emits JSON when piped (non-TTY) so the documented pipe works
+// ===================================================================
+
+
+// ===================================================================
+// 7. `refresh --check-advisories` parsing (no network — parseArgs directly)
+// ===================================================================
+
+
+// ===================================================================
+// 8. `attest list --limit`
+// ===================================================================
+
+test('skill --help shows usage, not "Skill not found"', () => {
+  const r = cli(['skill', '--help']);
+  assert.equal(r.status, 0, `expected exit 0; got ${r.status} (stderr: ${r.stderr.slice(0, 200)})`);
+  assert.match(r.stdout, /exceptd skill <name>/);
+  assert.doesNotMatch(r.stdout, /Skill not found/);
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from operator-bugs ----
+require("node:test").describe("operator-bugs", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Operator-reported bug regression suite.
  *
- *   P2 — `exceptd skill` (no arg) printed
- *        "Usage: node orchestrator/index.js skill <skill-name>"
- *        — an internal narrative leak (the operator-facing global rule).
- *        Operator-facing surface must reference the canonical
- *        `exceptd skill <name>` form.
+ * Every operator-reported bug that has been fixed lands here as a named test
+ * case so re-introductions surface at `npm test`, not at user re-report.
+ * Numbering matches the operator report sequence (items #1 through #N as
+ * reported across the v0.9.5 → v0.11.x arc).
  *
- *   P2 — Unsigned-attestation warning referenced
- *        `node lib/sign.js generate-keypair` (a node-internal script
- *        path that isn't on PATH after `npm install -g`). Now hints
- *        at `exceptd doctor --fix` first, with the lib script as a
- *        fallback for contributor checkouts.
+ * Pattern for new items:
+ *   describe('#N short label', () => { it('precise behavior', ...); });
  *
- * Per the anti-coincidence rule, every assertion checks an EXACT
- * substring match or count.
+ * Avoid coupling tests to file paths / playbook IDs that may change. Prefer
+ * direct runner exercises over CLI shell-outs where possible — CLI tests
+ * stay narrow (smoke-level) because they spawn subprocesses and slow the
+ * suite down.
  */
 
 const test = require('node:test');
@@ -97,79 +191,153 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { spawnSync } = require('node:child_process');
 
-const ROOT = path.join(__dirname, '..');
-const CLI = path.join(ROOT, 'bin', 'exceptd.js');
+const { ROOT, CLI, makeSuiteHome, makeCli, tryJson, secureTmpFile } = require('./_helpers/cli');
+const runner = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
 
-function cli(args, opts = {}) {
-  return spawnSync(process.execPath, [CLI, ...args], {
-    encoding: 'utf8',
-    cwd: opts.cwd || ROOT,
-    env: { ...process.env, EXCEPTD_DEPRECATION_SHOWN: '1', ...(opts.env || {}) },
-    input: opts.input,
-  });
+const SUITE_HOME = makeSuiteHome('exceptd-operator-bugs-');
+const cli = makeCli(SUITE_HOME);
+
+// ===================================================================
+
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+// ===================================================================
+
+// ===================================================================
+
+
+
+// ===================================================================
+
+
+
+// ===================================================================
+
+
+
+
+// ===================================================================
+
+
+// ===================================================================
+
+// ===================================================================
+// CSAF framework gaps emit as `document.notes[]` with `category: details`,
+// not as `vulnerabilities[]` entries with `ids: [{system_name:
+// 'exceptd-framework-gap'}]`. The `system_name` slot is reserved for
+// recognised vulnerability tracking authorities (CVE, GHSA, etc.); the
+// custom string is rejected by NVD / ENISA / Red Hat dashboards. Notes
+// are the right home for advisory context, not pseudo-CVEs. The test
+// asserts the notes-based shape and anti-asserts the pseudo-vulnerability
+// shape.
+
+
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===================================================================
+// v0.11.14 freshness additions — opt-in registry check + upstream-check
+// + refresh --network. Tests use EXCEPTD_REGISTRY_FIXTURE so they're
+// fully offline-deterministic.
+// ===================================================================
+
+function withFixture(version, daysAgo) {
+  const file = secureTmpFile('npm-fixture.json', 'npm-fixture-');
+  const publishedAt = new Date(Date.now() - daysAgo * 24 * 3600 * 1000).toISOString();
+  fs.writeFileSync(file, JSON.stringify({
+    "dist-tags": { latest: version },
+    version,
+    time: { [version]: publishedAt, modified: publishedAt },
+  }));
+  return file;
 }
 
-// P1 — framework-gap theater-risk counter --------------------------------
 
-test('P1: framework-gap theater_risks counts entries with theater_test (not just legacy theater_pattern)', () => {
-  // Direct library probe avoids the orchestrator-dispatch surface;
-  // exercise the function used by the CLI verb.
-  const { gapReport } = require(path.join(ROOT, 'lib', 'framework-gap.js'));
-  const controlGaps = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'framework-control-gaps.json'), 'utf8'));
-  const cveCatalog = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'cve-catalog.json'), 'utf8'));
-  // CVE-2026-31431 is the canonical kernel-LPE catalog entry that
-  // spans many framework gaps. Use it as the scenario.
-  const report = gapReport(['nist-800-53'], 'CVE-2026-31431', controlGaps, cveCatalog);
-  // Pre-fix `theater_risks` was empty even though every per-framework
-  // result showed `theater_exposure: true`. Now it must be > 0 because
-  // the v0.12.29 backfill added theater_test to every relevant gap.
-  assert.equal(Array.isArray(report.theater_risks), true);
-  assert.equal(report.theater_risks.length > 0, true,
-    `framework-gap theater_risks must be non-empty when entries carry theater_test; got: ${JSON.stringify(report.summary)}`);
-  // Sub-shape: each theater-risk entry must carry the canonical fields.
-  for (const r of report.theater_risks) {
-    assert.equal(typeof r.control, 'string');
-    assert.equal(typeof r.framework, 'string');
-    // theater_test_present is the v0.12.40 addition; pin it.
-    assert.equal(typeof r.theater_test_present, 'boolean');
-  }
-  // Footer count must match the array length.
-  assert.equal(report.summary.theater_risk_controls, report.theater_risks.length);
+
+
+
+
+
+
+// ===================================================================
+// v0.12.0 — GHSA source + refresh --advisory + refresh --curate
+// ===================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===================================================================
+
+test('#18 skill not found returns JSON error on stdout', () => {
+  // v0.13.0 envelope harmonization: ok:false bodies land on stdout
+  // alongside successful responses so a single consumer parses one
+  // stream. Pre-v0.13 the orchestrator wrote ok:false bodies to stderr.
+  const r = cli(['skill', 'nonexistent-skill']);
+  assert.equal(r.status, 1, `expected exit 1 (GENERIC_FAILURE); got ${r.status}`);
+  const err = tryJson(r.stdout.trim()) || tryJson(r.stderr.trim());
+  assert.ok(err, 'response should be parseable JSON');
+  assert.equal(err.ok, false);
+  assert.equal(err.verb, 'skill');
+  assert.match(err.error, /Skill not found/);
 });
-
-// P2 — exceptd skill (no arg) does not leak orchestrator path --------------
-
-test('P2: exceptd skill (no arg) prints `exceptd skill <name>` usage, NOT the orchestrator path', () => {
-  const r = cli(['skill']);
-  assert.equal(r.status, 1, `bare exceptd skill must exit 1; got ${r.status}`);
-  // Pre-fix: "Usage: node orchestrator/index.js skill <skill-name>"
-  // Post-fix: "Usage: exceptd skill <skill-name>"
-  assert.match(r.stderr, /Usage: exceptd skill/,
-    `usage hint must reference the operator-facing verb; got: ${r.stderr.slice(0, 300)}`);
-  assert.equal(/node orchestrator\/index\.js skill/.test(r.stderr), false,
-    'usage hint must NOT reference the orchestrator path (internal narrative leak)');
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
 });
-
-// P2 — Unsigned-attestation warning text -----------------------------------
-
-test('P2: unsigned-attestation warning text references `exceptd doctor --fix` first', () => {
-  // Grep the source for the warning string; it's emitted from
-  // bin/exceptd.js around line 3866 (cycle 20 site).
-  const src = fs.readFileSync(CLI, 'utf8');
-  // Pre-fix referenced `node lib/sign.js generate-keypair` only.
-  // Post-fix: `exceptd doctor --fix` comes first, with the lib path
-  // wrapped in `$(exceptd path)` as the contributor-checkout fallback.
-  // Find the warning block.
-  const warningMatch = src.match(/Operators reading the attestation later[\s\S]{0,400}Suppress this notice: export EXCEPTD_UNSIGNED_WARNED/);
-  assert.ok(warningMatch, 'unsigned-attestation warning block must be present in bin/exceptd.js');
-  const warningText = warningMatch[0];
-  assert.match(warningText, /exceptd doctor --fix/,
-    'warning must lead with `exceptd doctor --fix`');
-  // The lib path must still be cited (for contributor checkouts) but
-  // only via `$(exceptd path)/lib/sign.js` — never the raw
-  // `node lib/sign.js` form that requires the user to know exceptd's
-  // install root.
-  assert.equal(/Enable Ed25519 signing: `node lib\/sign\.js/.test(warningText), false,
-    'warning must NOT lead with the bare `node lib/sign.js` form');
-});
-})();

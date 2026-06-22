@@ -1,662 +1,379 @@
 "use strict";
 
 
-// ---- routed from sbom-capability-signals ----
-require("node:test").describe("sbom-capability-signals", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+// ---- routed from collectors ----
+require("node:test").describe("collectors", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * tests/sbom-capability-signals.test.js
+ * tests/collectors.test.js
  *
- * Pins the package-capability signals added to the supply-chain (sbom)
- * playbook: the package-capability-surface evidence artifact, the
- * across-version-bump capability-creep detector, and the absolute
- * capability-surface screen. Each assertion checks CONTENT (the capability
- * vocabulary, the false-positive checks, the TTP ref), not bare presence —
- * a presence-only test would pass even if the detector's guardrails were
- * deleted.
+ * Pins the collector interface contract + reference implementations:
+ *   - exceptd collect <unknown> -> structured error + exit 1 + lists
+ *     the available collectors so an operator can discover them.
+ *   - exceptd collect <known> -> submission JSON with the required
+ *     top-level keys (precondition_checks, artifacts,
+ *     signal_overrides, collector_meta, collector_errors).
+ *   - exceptd collect <known> | exceptd run <known> --evidence -
+ *     round-trips: the runner accepts the collector's output without
+ *     schema errors.
+ *   - exceptd collect <known> --cwd <nonexistent> -> structured error.
+ *   - secrets collector finds expected file types on a synthetic
+ *     repo with a fake .env + fake .npmrc.
  */
 
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const path = require('node:path');
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const os = require("node:os");
+const { spawnSync } = require("node:child_process");
 
-const PB = require(path.join(__dirname, '..', 'data', 'playbooks', 'sbom.json'));
-const ARTIFACTS = PB.phases.look.artifacts;
-const INDICATORS = PB.phases.detect.indicators;
-const FP_PROFILE = PB.phases.detect.false_positive_profile;
+const ROOT = path.join(__dirname, "..");
+const CLI = path.join(ROOT, "bin", "exceptd.js");
 
-const CAPABILITY_TAGS = ['network', 'filesystem', 'shell', 'env', 'eval', 'install-script', 'telemetry', 'native-binary'];
-
-function byId(arr, id) { return arr.find((x) => x.id === id); }
-
-test('package-capability-surface look artifact exists and carries the 8-tag capability vocabulary', () => {
-  const a = byId(ARTIFACTS, 'package-capability-surface');
-  assert.ok(a, 'package-capability-surface artifact must be present');
-  assert.equal(a.type, 'config_file', 'capability-surface is a manifest read (config_file)');
-  assert.equal(a.required, false, 'optional sweep artifact — absence must not halt the run');
-  for (const tag of CAPABILITY_TAGS) {
-    assert.ok((a.source + ' ' + a.description).includes(tag),
-      `capability vocabulary must name "${tag}" so the AI classifies against the full taxonomy`);
-  }
-  // air-gap conditional: a config_file artifact with no network-call substring needs no air_gap_alternative.
-  assert.ok(!/https?:\/\/|gh api|curl /.test(a.source), 'capability-surface source must not issue network calls');
-});
-
-test('capability-creep across-version-bump indicator fires on a capability GAIN, gated by FP checks', () => {
-  const i = byId(INDICATORS, 'dependency-capability-creep-across-version-bump');
-  assert.ok(i, 'across-version-bump capability-creep indicator must be present');
-  assert.equal(i.type, 'behavioral_signal');
-  assert.equal(i.deterministic, false, 'capability creep is probabilistic — must not auto-verdict');
-  assert.equal(i.attack_ref, 'T1195.001');
-  assert.equal(i.atlas_ref, 'AML.T0010');
-  assert.ok(Array.isArray(i.false_positive_checks_required) && i.false_positive_checks_required.length >= 4,
-    'load-bearing FP checks keep the high-recall heuristic from over-firing on build tooling');
-  assert.ok(/version bump/i.test(i.value), 'value must describe the version-delta semantics');
-});
-
-test('package-capability-creep absolute-surface screen flags install-script + high-trust capability, no CVE needed', () => {
-  const i = byId(INDICATORS, 'package-capability-creep');
-  assert.ok(i, 'absolute capability-surface indicator must be present');
-  assert.equal(i.type, 'config_value');
-  assert.equal(i.deterministic, false);
-  assert.equal(i.attack_ref, 'T1195.002');
-  assert.ok(!('cve_ref' in i), 'capability-surface is CVE-independent — must not pin a cve_ref');
-  assert.ok(Array.isArray(i.false_positive_checks_required) && i.false_positive_checks_required.length >= 4,
-    'FP checks must cover the build-tooling/native-addon benign class');
-  assert.ok(/install-script/.test(i.value) && /credential-harvesting|delivery/.test(i.value),
-    'value must name the install-script + high-trust-capability delivery shape');
-});
-
-test('both capability indicators carry a paired false_positive_profile entry', () => {
-  for (const id of ['dependency-capability-creep-across-version-bump', 'package-capability-creep']) {
-    const fp = FP_PROFILE.find((x) => x.indicator_id === id);
-    assert.ok(fp, `${id} must have a false_positive_profile entry`);
-    assert.ok(typeof fp.distinguishing_test === 'string' && fp.distinguishing_test.length > 40,
-      `${id} FP profile must carry a real distinguishing test`);
-  }
-});
-
-test('sbom playbook carries the 1.3.0 capability-taxonomy changelog rung (version only advances)', () => {
-  assert.ok(Array.isArray(PB._meta.changelog), 'playbook must carry a changelog');
-  assert.ok(PB._meta.changelog.some((c) => c.version === '1.3.0'),
-    'the 1.3.0 changelog rung must document the capability taxonomy');
-  // Version monotonically advances past 1.3.0 as later passes add detectors —
-  // assert >= 1.3.0 by numeric tuple, never pin the exact live version.
-  const [maj, min, pat] = String(PB._meta.version).split('.').map(Number);
-  assert.ok(maj > 1 || (maj === 1 && (min > 3 || (min === 3 && pat >= 0))),
-    `playbook _meta.version (${PB._meta.version}) must be >= 1.3.0`);
-});
-});
-
-
-// ---- routed from sbom-detection-depth ----
-require("node:test").describe("sbom-detection-depth", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
-/**
- * tests/sbom-detection-depth.test.js
- *
- * Pins the supply-chain detection-depth indicators: typosquat/homoglyph
- * name detection, the static content red-flag screen, and the dependency-
- * confusion resolution-source check. Asserts the load-bearing content (the
- * TTP refs, the codepoint-class reuse, the MOIKA correlation, the FP checks)
- * rather than bare presence.
- */
-
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const path = require('node:path');
-
-const PB = require(path.join(__dirname, '..', 'data', 'playbooks', 'sbom.json'));
-const IND = PB.phases.detect.indicators;
-const ART = PB.phases.look.artifacts;
-const FPP = PB.phases.detect.false_positive_profile;
-const byId = (arr, id) => arr.find((x) => x.id === id);
-
-test('typosquat/homoglyph detector reuses the vendored codepoint-class + maps T1195.002', () => {
-  const i = byId(IND, 'dependency-name-typosquat');
-  assert.ok(i, 'dependency-name-typosquat indicator must be present');
-  assert.equal(i.attack_ref, 'T1195.002');
-  assert.equal(i.atlas_ref, 'AML.T0010');
-  assert.equal(i.deterministic, false);
-  assert.ok(/codepoint-class/.test(i.value), 'must route names through the vendored confusable detection (no re-invention)');
-  assert.ok(/edit-distance|Levenshtein/i.test(i.value), 'must describe the edit-distance typosquat check');
-  assert.ok(i.false_positive_checks_required.length >= 4, 'FP checks gate the high-recall name heuristic');
-  assert.ok(byId(ART, 'package-name-similarity-surface'), 'paired name-similarity look artifact must exist');
-  assert.ok(FPP.find((x) => x.indicator_id === 'dependency-name-typosquat'), 'paired FP profile must exist');
-});
-
-test('content-obfuscation screen maps T1027 and is distinct from the capability screens', () => {
-  const i = byId(IND, 'package-content-obfuscation-screen');
-  assert.ok(i, 'package-content-obfuscation-screen indicator must be present');
-  assert.equal(i.attack_ref, 'T1027', 'obfuscation maps to T1027 (Obfuscated Files or Information)');
-  assert.equal(i.deterministic, false);
-  assert.ok(/minified|entropy|trivial|eval/.test(i.value), 'must name the content red-flags');
-  assert.ok(i.false_positive_checks_required.length >= 4, 'FP checks must cover minified-dist / WASM / trivial-inert / framework-eval');
-  assert.ok(byId(ART, 'package-source-content-surface'), 'paired source-content look artifact must exist');
-  assert.ok(FPP.find((x) => x.indicator_id === 'package-content-obfuscation-screen'));
-});
-
-test('dependency-confusion resolution check correlates to MOIKA and gates on resolution-source', () => {
-  const i = byId(IND, 'dependency-confusion-internal-scope-public-resolution');
-  assert.ok(i, 'dep-confusion resolution indicator must be present');
-  assert.equal(i.cve_ref, 'MAL-2026-MOIKA-DEPCONFUSION', 'must correlate to the catalogued MOIKA campaign');
-  assert.equal(i.attack_ref, 'T1195.001');
-  assert.ok(/resolution-source|public registry|internal/i.test(i.value), 'must describe resolution-source confusion');
-  assert.ok(i.false_positive_checks_required.length >= 5, 'five AND-conditions gate the resolution check');
-  const art = byId(ART, 'dep-confusion-resolution-config');
-  assert.ok(art && art.required === false, 'paired resolution-config artifact must exist and be optional');
-  assert.ok(FPP.find((x) => x.indicator_id === 'dependency-confusion-internal-scope-public-resolution'));
-});
-
-test('all three new indicators are distinct ids and the playbook carries the 1.3.1 detection-depth rung', () => {
-  const ids = ['dependency-name-typosquat', 'package-content-obfuscation-screen', 'dependency-confusion-internal-scope-public-resolution'];
-  assert.equal(new Set(ids).size, 3, 'three distinct new indicator ids');
-  // Version only advances past 1.3.1 as later passes add detectors — assert the
-  // 1.3.1 rung exists + version >= 1.3.1 by tuple, never pin the exact live version.
-  assert.ok(PB._meta.changelog.some((c) => c.version === '1.3.1'), 'a 1.3.1 changelog rung must document the detection-depth pass');
-  const [maj, min, pat] = String(PB._meta.version).split('.').map(Number);
-  assert.ok(maj > 1 || (maj === 1 && (min > 3 || (min === 3 && pat >= 1))), `playbook _meta.version (${PB._meta.version}) must be >= 1.3.1`);
-  // cve_ref on the dep-confusion indicator must resolve to a real catalog entry.
-  const cat = require(path.join(__dirname, '..', 'data', 'cve-catalog.json'));
-  assert.ok(cat['MAL-2026-MOIKA-DEPCONFUSION'], 'the dep-confusion cve_ref must resolve to a real catalog entry');
-});
-});
-
-
-// ---- routed from sbom-feeds-into-attack-class ----
-require("node:test").describe("sbom-feeds-into-attack-class", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
-/**
- * sbom -> deep-dive feeds_into, exercised against a REAL run (not a synthetic
- * eval context).
- *
- * sbom.json ships:
- *   { playbook_id: 'kernel',  condition: "any matched_cve.attack_class == 'kernel-lpe'" }
- *   { playbook_id: 'mcp',     condition: "any matched_cve.attack_class == 'mcp-supply-chain'" }
- *   { playbook_id: 'ai-api',  condition: "any matched_cve.attack_class IN ['ai-c2', 'prompt-injection']" }
- *
- * Two defects made these chains dead even though the quantifier PARSER handled
- * the syntax:
- *   1. close()'s feedsCtx exposed the matched CVEs only under
- *      `analyze.matched_cves`, never as a top-level `matched_cve` array, so the
- *      quantifier head resolved null.
- *   2. the per-CVE analyze shape carried no `attack_class` field at all, so even
- *      once the array was exposed the `.attack_class` leaf was undefined.
- *
- * Now: close() exposes `matched_cve`, the analyze shape carries `attack_class`
- * sourced from the catalog, and the chainable CVEs are classified. These assert
- * the chain against the actual run output, so a regression in either the context
- * wiring or the catalog classification fails here — the synthetic-context parser
- * tests cannot catch that.
- */
-
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const runner = require('../lib/playbook-runner.js');
-
-const DIR = 'all-installed-packages-and-lockfiles';
-
-function runWithMatchedCve(cveId) {
-  // A direct CVE signal correlates that catalog CVE into matched_cves (path (b)
-  // in analyze: agentSignals[cve_id] === 'hit'). The CVE must be in the sbom
-  // playbook's coverage for it to land in matched_cves.
-  return runner.run('sbom', DIR, { artifacts: {}, signal_overrides: {}, signals: { [cveId]: 'hit' } });
-}
-
-test('sbom matched-CVE carries attack_class from the catalog', () => {
-  const r = runWithMatchedCve('CVE-2026-30615'); // Windsurf MCP RCE — mcp-supply-chain
-  assert.equal(r.ok, true);
-  const m = r.phases.analyze.matched_cves.find(c => c.cve_id === 'CVE-2026-30615');
-  assert.ok(m, 'the MCP CVE must correlate into matched_cves');
-  assert.equal(m.attack_class, 'mcp-supply-chain',
-    'matched_cves entries must surface the catalog attack_class so feeds_into quantifiers can route on it');
-});
-
-test('sbom -> mcp fires when a matched CVE is attack_class mcp-supply-chain', () => {
-  const r = runWithMatchedCve('CVE-2026-30615');
-  assert.ok(r.phases.close.feeds_into.includes('mcp'),
-    `sbom must chain into mcp when a matched CVE is mcp-supply-chain; got ${JSON.stringify(r.phases.close.feeds_into)}`);
-});
-
-test('sbom -> ai-api fires when a matched CVE is attack_class prompt-injection (IN quantifier)', () => {
-  const r = runWithMatchedCve('CVE-2025-53773'); // Copilot YOLO-mode prompt-injection RCE
-  assert.ok(r.phases.close.feeds_into.includes('ai-api'),
-    `sbom must chain into ai-api when a matched CVE is in ['ai-c2','prompt-injection']; got ${JSON.stringify(r.phases.close.feeds_into)}`);
-});
-
-test('an unclassified matched CVE does NOT manufacture a deep-dive chain', () => {
-  // CVE-2026-31431 is in sbom coverage but carries no attack_class. The chain
-  // must stay quiet rather than misroute — null attack_class is a correct "no
-  // chain", not a parser failure. (This is the exact CVE the original report
-  // observed an empty feeds_into for; here the empty result is the right answer.)
-  const r = runWithMatchedCve('CVE-2026-31431');
-  const f = r.phases.close.feeds_into;
-  for (const deepDive of ['kernel', 'mcp', 'ai-api']) {
-    assert.ok(!f.includes(deepDive),
-      `an attack_class-less matched CVE must not chain into ${deepDive}; got ${JSON.stringify(f)}`);
-  }
-});
-
-test('the matched-CVE quantifier also works in the analyze-phase escalation context', () => {
-  // close() and analyze() build separate eval contexts; both must expose
-  // matched_cve. Assert the analyze escalation context resolves the array by
-  // confirming a classified matched CVE is present with its attack_class — the
-  // same field the analyze escalation_criteria quantifiers read.
-  const r = runWithMatchedCve('CVE-2026-30615');
-  const m = r.phases.analyze.matched_cves.find(c => c.cve_id === 'CVE-2026-30615');
-  assert.equal(m.attack_class, 'mcp-supply-chain');
-});
-});
-
-
-// ---- routed from sbom-matched-cves ----
-require("node:test").describe("sbom-matched-cves", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
-/**
- * Analyze-phase CVE classification: matched_cves (evidence-correlated) vs
- * catalog_baseline_cves (scan-coverage enumeration).
- *
- * Pre-fix, analyze.matched_cves enumerated every CVE in domain.cve_refs
- * regardless of evidence. Operators running `exceptd run sbom --evidence -`
- * with EMPTY artifacts saw 6 catalog CVEs in matched_cves and incorrectly
- * read it as "I am affected by these." Post-fix, matched_cves requires a
- * correlation path — indicator hit with shared attack_ref/atlas_ref, or
- * an agent signal explicitly referencing the CVE — and the unaffiliated
- * catalog enumeration moved to catalog_baseline_cves with correlated_via=null.
- */
-
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const path = require('node:path');
-
-const { ROOT } = require('./_helpers/cli');
-const runner = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
-
-// ---------------------------------------------------------------------------
-// Empty-evidence case: no indicator hits, no CVE signals → matched_cves empty.
-
-test('sbom with empty artifacts: matched_cves is empty, catalog_baseline_cves enumerates the playbook coverage', () => {
-  const submission = { artifacts: {}, signal_overrides: {}, signals: {} };
-  const result = runner.run('sbom', 'all-installed-packages-and-lockfiles', submission);
-  assert.equal(result.ok, true, 'run must succeed even with empty evidence');
-
-  const matched = result.phases.analyze.matched_cves;
-  const baseline = result.phases.analyze.catalog_baseline_cves;
-
-  assert.ok(Array.isArray(matched), 'matched_cves is an array');
-  assert.equal(matched.length, 0,
-    'matched_cves must be empty when no evidence correlates — pre-fix this enumerated catalog CVEs as if the operator were affected');
-
-  assert.ok(Array.isArray(baseline), 'catalog_baseline_cves is an array');
-  assert.ok(baseline.length >= 1,
-    'catalog_baseline_cves must enumerate the playbook\'s scan coverage; sbom has at least one cve_ref');
-
-  // Baseline entries carry full per-CVE shape (CVE id + RWEP + KEV + ...)
-  // identical to matched_cves but with correlated_via:null and a note that
-  // makes the "this is scan coverage, not affected-status" semantic explicit.
-  for (const entry of baseline) {
-    assert.equal(entry.correlated_via, null,
-      `catalog_baseline_cves entry ${entry.cve_id} must carry correlated_via=null`);
-    assert.equal(typeof entry.note, 'string',
-      `catalog_baseline_cves entry ${entry.cve_id} must carry a note clarifying the field is scan-coverage metadata`);
-    assert.equal(typeof entry.cve_id, 'string');
-    assert.equal(typeof entry.rwep, 'number');
-  }
-
-  // RWEP base falls to 0 when no evidence correlates — pre-fix it inflated
-  // to the maximum catalog rwep_score, inheriting the catalog ceiling for
-  // every empty-evidence run.
-  assert.equal(result.phases.analyze.rwep.base, 0,
-    'RWEP base must be 0 when no CVE correlates to operator evidence');
-});
-
-// ---------------------------------------------------------------------------
-// Correlated-evidence case: a single indicator fires that shares an
-// attack_ref with a catalog CVE → matched_cves contains that CVE.
-
-test('sbom with indicator hit: matched_cves contains the correlated CVE with non-null correlated_via', () => {
-  // tanstack-worm-payload-files (attack_ref T1195.002) is one of the sbom
-  // indicators. CVE-2026-45321 (the TanStack worm CVE) carries T1195.002 in
-  // its attack_refs in the catalog, so this submission must correlate.
-  const submission = {
-    artifacts: {},
-    signal_overrides: { 'tanstack-worm-payload-files': 'hit' },
-    signals: {},
-  };
-  const result = runner.run('sbom', 'all-installed-packages-and-lockfiles', submission);
-  assert.equal(result.ok, true);
-
-  const matched = result.phases.analyze.matched_cves;
-  assert.ok(matched.length >= 1,
-    `matched_cves must contain at least one evidence-correlated CVE when a relevant indicator fires; got ${matched.length}`);
-
-  // Every entry in matched_cves MUST have a non-empty correlated_via array.
-  // Coincidence-passing regression: a runner that accidentally enumerates
-  // catalog CVEs without setting correlated_via would surface as `length >= 1`
-  // but every entry having correlated_via=null — explicit shape check pins
-  // the correlation provenance.
-  for (const entry of matched) {
-    assert.ok(Array.isArray(entry.correlated_via) && entry.correlated_via.length > 0,
-      `matched_cves entry ${entry.cve_id} must carry a non-empty correlated_via array — empty/null is the catalog-baseline regression class this test guards`);
-    assert.ok(entry.correlated_via.every(r => typeof r === 'string' && r.length > 0),
-      `correlated_via entries for ${entry.cve_id} must be non-empty strings (e.g. "indicator_hit:<id>" or "signal:<cve_id>")`);
-  }
-
-  // At least one correlation must reference the indicator we fired.
-  const allReasons = matched.flatMap(c => c.correlated_via);
-  assert.ok(allReasons.some(r => r === 'indicator_hit:tanstack-worm-payload-files'),
-    `at least one matched_cves entry must reference the fired indicator (indicator_hit:tanstack-worm-payload-files); reasons seen: ${JSON.stringify(allReasons)}`);
-});
-
-// ---------------------------------------------------------------------------
-// Correlated-evidence case: an agent signal explicitly references a CVE id.
-
-test('sbom with direct CVE signal: matched_cves contains the CVE with signal correlation reason', () => {
-  // signals['CVE-id'] === true is the explicit "operator declares affected" path.
-  const submission = {
-    artifacts: {},
-    signal_overrides: {},
-    signals: { 'CVE-2026-45321': true },
-  };
-  const result = runner.run('sbom', 'all-installed-packages-and-lockfiles', submission);
-  assert.equal(result.ok, true);
-
-  const matched = result.phases.analyze.matched_cves;
-  const entry = matched.find(c => c.cve_id === 'CVE-2026-45321');
-  assert.ok(entry, 'CVE-2026-45321 must appear in matched_cves when the operator signals it directly');
-  assert.ok(Array.isArray(entry.correlated_via) && entry.correlated_via.includes('signal:CVE-2026-45321'),
-    `correlation reason must include "signal:CVE-2026-45321"; got ${JSON.stringify(entry.correlated_via)}`);
-});
-
-// ---------------------------------------------------------------------------
-// Catalog baseline is independent of evidence: always populated for playbooks
-// with non-empty cve_refs.
-
-test('sbom catalog_baseline_cves is populated identically across empty-evidence and correlated-evidence runs', () => {
-  const empty = runner.run('sbom', 'all-installed-packages-and-lockfiles', { artifacts: {}, signal_overrides: {}, signals: {} });
-  const hit = runner.run('sbom', 'all-installed-packages-and-lockfiles', {
-    artifacts: {},
-    signal_overrides: { 'tanstack-worm-payload-files': 'hit' },
-    signals: {},
+function cli(args, opts = {}) {
+  return spawnSync(process.execPath, [CLI, ...args], {
+    encoding: "utf8",
+    cwd: opts.cwd || ROOT,
+    env: { ...process.env, EXCEPTD_DEPRECATION_SHOWN: "1", EXCEPTD_UNSIGNED_WARNED: "1", ...(opts.env || {}) },
+    input: opts.input,
   });
-  const emptyBaseline = empty.phases.analyze.catalog_baseline_cves.map(c => c.cve_id).sort();
-  const hitBaseline = hit.phases.analyze.catalog_baseline_cves.map(c => c.cve_id).sort();
-  assert.deepEqual(hitBaseline, emptyBaseline,
-    'catalog_baseline_cves enumeration must be stable across runs — it is scan coverage, not affected-status');
-});
-});
+}
+
+function tryJson(s) { try { return JSON.parse(s); } catch { return null; } }
+
+// Direct module imports so the diff-coverage gate sees the exports
+// are exercised by unit-level tests, not just via subprocess
+// invocation through the CLI.
+const secretsCollector = require(path.join(ROOT, "lib", "collectors", "secrets.js"));
+const kernelCollector = require(path.join(ROOT, "lib", "collectors", "kernel.js"));
+const sbomCollector = require(path.join(ROOT, "lib", "collectors", "sbom.js"));
+const containersCollector = require(path.join(ROOT, "lib", "collectors", "containers.js"));
+const libraryAuthorCollector = require(path.join(ROOT, "lib", "collectors", "library-author.js"));
+const cryptoCodebaseCollector = require(path.join(ROOT, "lib", "collectors", "crypto-codebase.js"));
+const credStoresCollector = require(path.join(ROOT, "lib", "collectors", "cred-stores.js"));
+const hardeningCollector = require(path.join(ROOT, "lib", "collectors", "hardening.js"));
+const runtimeCollector = require(path.join(ROOT, "lib", "collectors", "runtime.js"));
+const aiApiCollector = require(path.join(ROOT, "lib", "collectors", "ai-api.js"));
+const mcpCollector = require(path.join(ROOT, "lib", "collectors", "mcp.js"));
 
 
-// ---- routed from sbom-per-file-hash ----
-require("node:test").describe("sbom-per-file-hash", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
-/**
- * tests/sbom-per-file-hash.test.js
- *
- * Cycle 9 audit fix — SBOM must carry:
- *   - metadata.component.hashes[]   bundle digest, SHA-256
- *   - components[].type === 'file'  one per shipped file with SHA-256
- *   - metadata.tools[0].name        not the legacy "hand-written" placeholder
- *
- * Per the anti-coincidence rule, every assertion checks the EXACT
- * value the fix produces (set-equality on the file allowlist, exact alg
- * string, exact tool name) — never `assert.ok(field)` or
- * `assert.notEqual(0)`.
- */
 
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-const crypto = require('node:crypto');
-const { spawnSync } = require('node:child_process');
+const ENVELOPE_KEYS = [
+  "precondition_checks", "artifacts", "signal_overrides",
+  "collector_meta", "collector_errors",
+];
 
-const ROOT = path.join(__dirname, '..');
-const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
-
-// This test verifies the *SBOM-generation contract*: regenerate the SBOM
-// in-process against the current working tree, then verify the freshly-
-// computed bundle. We cannot read the shipped sbom.cdx.json directly and
-// compare against on-disk files because other tests in the suite mutate
-// files like data/_indexes/*.json + manifest.json signatures mid-run.
-// The verify-shipped-tarball predeploy gate is the authoritative check
-// for the ship-time SBOM-vs-tarball match.
-//
-// Snapshot sbom.cdx.json before regenerating so a Ctrl-C / test crash
-// mid-test does not leave the repo's sbom.cdx.json polluted with the
-// test's regenerated content. Identical shape to the snapshot-restore
-// pattern build-incremental.test.js uses for mutating-state safety.
-const SBOM_PATH = path.join(ROOT, 'sbom.cdx.json');
-const sbomBytesBeforeTest = fs.existsSync(SBOM_PATH) ? fs.readFileSync(SBOM_PATH) : null;
-const restoreSbom = () => {
+test("collect sbom emits only signal_overrides that exist in the playbook indicator set", () => {
+  // The sbom playbook's indicator set is owned by data/playbooks/sbom.json.
+  // The collector must NOT emit invented keys (those would be silently
+  // ignored by the runner). It MAY flip `lockfile-no-integrity` when it
+  // can decide deterministically from the lockfile contents.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-sbom-"));
   try {
-    if (sbomBytesBeforeTest === null) {
-      if (fs.existsSync(SBOM_PATH)) fs.unlinkSync(SBOM_PATH);
-    } else {
-      fs.writeFileSync(SBOM_PATH, sbomBytesBeforeTest);
+    // Lockfile with one integrity entry and one resolved-but-no-integrity entry.
+    fs.writeFileSync(path.join(tmp, "package-lock.json"), JSON.stringify({
+      lockfileVersion: 3,
+      packages: {
+        "": {},
+        "node_modules/foo": { version: "1.0.0", resolved: "https://r/foo-1.0.0.tgz", integrity: "sha512-abc" },
+        "node_modules/bar": { version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz" },
+      },
+    }));
+    const r = cli(["collect", "sbom", "--cwd", tmp, "--json"]);
+    assert.equal(r.status, 0);
+    const body = tryJson(r.stdout);
+    assert.ok(body);
+    // The artifact carrying the lockfile inventory must be visible.
+    assert.match(body.artifacts["lockfile-inventory"].value, /npm:package-lock\.json/);
+    // signal_overrides must NOT contain the previously-invented keys.
+    assert.equal(body.signal_overrides["sbom-document-absent"], undefined,
+      "collector must not emit invented indicator keys — they're silently ignored by the runner");
+    assert.equal(body.signal_overrides["lockfile-absent"], undefined,
+      "ditto for lockfile-absent");
+    // lockfile-no-integrity IS in the playbook indicator set and the
+    // collector can decide it deterministically.
+    assert.equal(body.signal_overrides["lockfile-no-integrity"], "hit",
+      "collector must flip lockfile-no-integrity when an entry resolves without integrity");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("collect sbom does not flip lockfile-no-integrity when every entry carries integrity", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-sbom-clean-"));
+  try {
+    // Realistic npm 7+ root entry: the `""` package legitimately carries
+    // name + version and NO integrity (it's the project itself, not a remote
+    // tarball). A clean lockfile like this must report "miss" — counting the
+    // root entry as missing-integrity false-positived on every real repo.
+    fs.writeFileSync(path.join(tmp, "package-lock.json"), JSON.stringify({
+      lockfileVersion: 3,
+      packages: {
+        "": { name: "my-project", version: "1.0.0" },
+        "node_modules/foo": { version: "1.0.0", resolved: "https://r/foo.tgz", integrity: "sha512-abc" },
+      },
+    }));
+    const r = cli(["collect", "sbom", "--cwd", tmp, "--json"]);
+    assert.equal(r.status, 0);
+    const body = tryJson(r.stdout);
+    assert.equal(body.signal_overrides["lockfile-no-integrity"], "miss");
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("sbom collector recognises pyproject.toml as a Python dependency manifest", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sbom-pyproject-"));
+  try {
+    fs.writeFileSync(path.join(tmp, "pyproject.toml"), [
+      "[project]",
+      'name = "x"',
+      "dependencies = [",
+      '  "requests>=2.0",',
+      '  "urllib3>=1.26",',
+      "]",
+      "",
+    ].join("\n"));
+    const { collect } = require("../lib/collectors/sbom.js");
+    const r = collect({ cwd: tmp });
+    assert.ok(r.collector_meta.ecosystems_detected.includes("python"),
+      `expected python in ecosystems; got: ${JSON.stringify(r.collector_meta.ecosystems_detected)}`);
+    assert.match(r.artifacts["lockfile-inventory"].value, /pyproject\.toml/);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("sbom collector recognises requirements-VARIANT.txt glob (not just the canonical name)", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sbom-reqglob-"));
+  try {
+    fs.writeFileSync(path.join(tmp, "requirements-dev.txt"), "pytest\nblack\n");
+    fs.writeFileSync(path.join(tmp, "dev-requirements.txt"), "ruff\n");
+    const { collect } = require("../lib/collectors/sbom.js");
+    const r = collect({ cwd: tmp });
+    const inv = r.artifacts["lockfile-inventory"].value;
+    assert.match(inv, /requirements-dev\.txt/);
+    assert.match(inv, /dev-requirements\.txt/);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("sbom collector probes one level into docs/ + packages/ subdirs", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sbom-subdir-"));
+  try {
+    // docs/requirements.txt (sphinx-style)
+    fs.mkdirSync(path.join(tmp, "docs"));
+    fs.writeFileSync(path.join(tmp, "docs", "requirements.txt"), "sphinx\nfuro\n");
+    // packages/foo/package.json (monorepo workspace)
+    fs.mkdirSync(path.join(tmp, "packages", "foo"), { recursive: true });
+    fs.writeFileSync(path.join(tmp, "packages", "foo", "package-lock.json"), JSON.stringify({
+      lockfileVersion: 3,
+      packages: { "": {}, "node_modules/bar": { version: "1.0.0", integrity: "sha512-x" } },
+    }));
+    const { collect } = require("../lib/collectors/sbom.js");
+    const r = collect({ cwd: tmp });
+    const inv = r.artifacts["lockfile-inventory"].value;
+    assert.match(inv, /docs\/requirements\.txt/);
+    assert.match(inv, /packages\/foo\/package-lock\.json/);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("sbom collector counts CycloneDX components correctly under a short read (does not fall back to null)", () => {
+  // A single fs.readSync(fd, buf, 0, stat.size, 0) is not guaranteed to fill
+  // the buffer — a network/FUSE mount (or a signal) can return a short read,
+  // leaving the tail NUL-padded and truncating valid JSON. JSON.parse then
+  // throws, swallowed by the inner catch, and component_count silently becomes
+  // null on a present, parseable SBOM. readFileSync(fd) loops to EOF instead
+  // and never touches the JS-level fs.readSync wrapper.
+  //
+  // The stub below makes the FIRST large fs.readSync return only a partial
+  // chunk. Production code that reads via a single readSync(stat.size) gets a
+  // truncated buffer and reports component_count: null; production code that
+  // reads via readFileSync(fd) never calls the wrapper, reads the whole file,
+  // and reports the true count. So this test fails on the buggy form and
+  // passes on the fixed form.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sbom-shortread-"));
+  const realReadSync = fs.readSync;
+  try {
+    const sbom = { bomFormat: "CycloneDX", specVersion: "1.6", components: [] };
+    for (let i = 0; i < 50; i++) {
+      sbom.components.push({ type: "library", name: `pkg-${i}`, version: "1.0.0", purl: `pkg:npm/pkg-${i}@1.0.0` });
     }
-  } catch { /* best-effort restoration */ }
-};
-const sbomSigHandler = () => { restoreSbom(); process.exit(130); };
-process.once('SIGINT', sbomSigHandler);
-process.once('SIGTERM', sbomSigHandler);
-process.once('exit', restoreSbom);
+    fs.writeFileSync(path.join(tmp, "sbom.cdx.json"), JSON.stringify(sbom, null, 2), "utf8");
 
-const refresh = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'refresh-sbom.js')], {
-  cwd: ROOT,
-  encoding: 'utf8',
+    fs.readSync = function (fd, buffer, offset, length, position) {
+      // Truncate the first large read — emulate a partial-read mount.
+      if (typeof length === "number" && length > 4096) {
+        return realReadSync.call(fs, fd, buffer, offset, 4096, position);
+      }
+      return realReadSync.call(fs, fd, buffer, offset, length, position);
+    };
+
+    const { collect } = require("../lib/collectors/sbom.js");
+    const r = collect({ cwd: tmp });
+
+    // The count must be the TRUE component count (50), not null.
+    assert.match(
+      r.artifacts["sbom-document"].value,
+      /sbom\.cdx\.json \(\d+ bytes, 50 components\)/,
+      `expected '50 components', got: ${r.artifacts["sbom-document"].value}`,
+    );
+  } finally {
+    fs.readSync = realReadSync;
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 });
-if (refresh.status !== 0) {
-  restoreSbom();
-  throw new Error('scripts/refresh-sbom.js failed: ' + (refresh.stderr || refresh.stdout));
+
+test("sbom collector does not double-count requirements.txt when both root-LOCKFILES match and glob match are eligible", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sbom-no-dup-"));
+  try {
+    // Only the canonical name at root — must be captured exactly once.
+    fs.writeFileSync(path.join(tmp, "requirements.txt"), "requests\nurllib3\n");
+    const { collect } = require("../lib/collectors/sbom.js");
+    const r = collect({ cwd: tmp });
+    assert.equal(r.collector_meta.lockfiles_found, 1);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
-const sbom = JSON.parse(fs.readFileSync(SBOM_PATH, 'utf8'));
-
-function walkFiles(absDir) {
-  const out = [];
-  const entries = fs.readdirSync(absDir, { withFileTypes: true });
-  for (const entry of entries) {
-    const abs = path.join(absDir, entry.name);
-    if (entry.isDirectory()) out.push(...walkFiles(abs));
-    else if (entry.isFile()) out.push(abs);
-  }
-  return out;
-}
-
-function expandAllowlist(allowlist) {
-  const abs = [];
-  for (const entry of allowlist) {
-    const full = path.join(ROOT, entry);
-    if (!fs.existsSync(full)) continue;
-    const stat = fs.statSync(full);
-    if (stat.isDirectory()) abs.push(...walkFiles(full));
-    else if (stat.isFile()) abs.push(full);
-  }
-  // Mirror the script's self-reference + derivable-cache exclusions.
-  // sbom.cdx.json cannot hash itself stably; data/_indexes/ is the
-  // regenerable cache mutated by build-incremental.test.js etc. If the
-  // script's exclusion list grows, this set must follow.
-  const SELF_EXCLUDED = new Set(['sbom.cdx.json']);
-  const DERIVABLE_PREFIXES = ['data/_indexes/'];
-  const isDerivable = (rel) =>
-    DERIVABLE_PREFIXES.some((p) => rel === p.replace(/\/$/, '') || rel.startsWith(p));
-  return Array.from(
-    new Set(abs.map((a) => path.relative(ROOT, a).split(path.sep).join('/'))),
-  )
-    .filter((r) => !SELF_EXCLUDED.has(r))
-    .filter((r) => !isDerivable(r))
-    .sort();
-}
-
-test('metadata.component.hashes[] present and SHA-256', () => {
-  const hashes = sbom.metadata.component.hashes;
-  assert.ok(Array.isArray(hashes), 'hashes must be an array');
-  assert.equal(hashes.length, 1, 'exactly one bundle digest expected');
-  assert.equal(hashes[0].alg, 'SHA-256');
-  assert.equal(typeof hashes[0].content, 'string');
-  assert.equal(hashes[0].content.length, 64, 'SHA-256 hex digest is 64 chars');
-  assert.match(hashes[0].content, /^[0-9a-f]{64}$/);
-});
-
-test('metadata.tools[0].name is not the literal "hand-written" placeholder', () => {
-  const tool0 = sbom.metadata.tools[0];
-  assert.notEqual(tool0.name, 'hand-written');
-  // Positive shape assertion — the new value MUST point at the script.
-  assert.equal(tool0.name, 'scripts/refresh-sbom.js');
-  assert.equal(tool0.vendor, 'blamejs');
-  assert.equal(tool0.version, pkg.version);
-});
-
-test('every file in package.json.files (recursively expanded) has a matching components[] entry with a SHA-256 hash', () => {
-  const expected = expandAllowlist(pkg.files);
-  const fileComps = sbom.components.filter((c) => c.type === 'file');
-  const fileNames = fileComps.map((c) => c.name).sort();
-
-  // Set-equality: every shipped file is present, no extras.
-  assert.deepEqual(fileNames, expected,
-    'components[type=file] names must equal the expanded files allowlist exactly');
-
-  // Per-file: SHA-256 + SHA3-512 both present and matching the on-disk content.
-  // v0.13.12: emission expanded to dual-hash (SHA-256 universal-tool
-  // contract + SHA3-512 PQ-aware hedge). The test now requires both.
-  for (const comp of fileComps) {
-    assert.equal(comp['bom-ref'], `file:${comp.name}`);
-    assert.equal(Array.isArray(comp.hashes), true);
-    assert.equal(comp.hashes.length, 2,
-      `file component "${comp.name}" must carry exactly 2 hash entries (SHA-256 + SHA3-512)`);
-    const sha256Entry = comp.hashes.find((h) => h.alg === 'SHA-256');
-    const sha3Entry = comp.hashes.find((h) => h.alg === 'SHA3-512');
-    assert.ok(sha256Entry, `file component "${comp.name}" must include a SHA-256 hash`);
-    assert.ok(sha3Entry, `file component "${comp.name}" must include a SHA3-512 hash`);
-    const bytes = fs.readFileSync(path.join(ROOT, comp.name));
-    const liveSha256 = crypto.createHash('sha256').update(bytes).digest('hex');
-    const liveSha3 = crypto.createHash('sha3-512').update(bytes).digest('hex');
-    assert.equal(sha256Entry.content, liveSha256,
-      `file component "${comp.name}" SHA-256 must match on-disk bytes`);
-    assert.equal(sha3Entry.content, liveSha3,
-      `file component "${comp.name}" SHA3-512 must match on-disk bytes`);
-  }
-});
-
-test('bundle digest is reproducible from the per-file components[] entries', () => {
-  const fileComps = sbom.components
-    .filter((c) => c.type === 'file')
-    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
-  const hash = crypto.createHash('sha256');
-  for (const c of fileComps) {
-    // v0.13.12: components now carry SHA-256 + SHA3-512. Bundle digest
-    // is reproducible from the SHA-256 column to preserve the existing
-    // contract; pick by alg rather than positional index in case future
-    // emission re-orders the hashes array.
-    const sha256Hash = (c.hashes || []).find((h) => h.alg === 'SHA-256');
-    assert.ok(sha256Hash, `component "${c.name}" must have a SHA-256 entry for bundle digest`);
-    hash.update(sha256Hash.content);
-    hash.update('\t');
-    hash.update(c.name);
-    hash.update('\n');
-  }
-  const recomputed = hash.digest('hex');
-  assert.equal(recomputed, sbom.metadata.component.hashes[0].content,
-    'bundle digest must equal SHA-256 over deterministic per-file digest stream');
-});
 });
 
 
-// ---- routed from sbom-reachability-publisher-theater ----
-require("node:test").describe("sbom-reachability-publisher-theater", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+// ---- routed from collectors-fp-fixes ----
+require("node:test").describe("collectors-fp-fixes", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * tests/sbom-reachability-publisher-theater.test.js
+ * tests/collectors-fp-fixes.test.js
  *
- * Pins the final socket.dev adoptions in the supply-chain playbook: the CVE-
- * reachability demoter, the publisher-identity-change detector, and the two
- * new compliance-theater fingerprints. Asserts the load-bearing content +
- * the reachability indicator's confidence/deterministic contract (which is
- * what keeps it out of the 'detected' classification branch — it can never
- * mute a real CVE match). Exact-value pins per the anti-coincidence rule.
+ * Regression tests for a batch of collector false-positive / completeness
+ * fixes:
+ *   1. sbom: lockfile-no-integrity must NOT fire on a clean npm 7+ lockfile
+ *      whose `""` root entry carries name+version but no integrity. It must
+ *      still fire when a REMOTE-tarball entry (one with `resolved`) is missing
+ *      integrity.
+ *   2. secrets: a text file over the 1 MB scan limit is no longer silently
+ *      dropped — the skip is recorded in collector_errors.
+ *   3. secrets: the AWS-published example access-key id AKIAIOSFODNN7EXAMPLE
+ *      does not flip aws-access-key-id.
+ *   4. cicd-pipeline-compromise: an OIDC trust JSON under a build-output dir
+ *      (dist/) is excluded from the scan via the shared code-exclude set.
+ *   5. content-regex collectors (secrets / crypto-codebase / citation-hygiene)
+ *      attach a 1-based startLine to their evidence_locations.
  */
 
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const path = require('node:path');
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const os = require("node:os");
 
-const PB = require(path.join(__dirname, '..', 'data', 'playbooks', 'sbom.json'));
-const IND = PB.phases.detect.indicators;
-const ART = PB.phases.look.artifacts;
-const FPP = PB.phases.detect.false_positive_profile;
-const TF = PB.phases.govern.theater_fingerprints;
-const byId = (arr, id) => arr.find((x) => x.id === id);
-const byPat = (arr, pid) => arr.find((x) => x.pattern_id === pid);
+const ROOT = path.join(__dirname, "..");
 
-test('dependency-cve-unreachable is a low-confidence non-deterministic demoter that cannot reach detected', () => {
-  const i = byId(IND, 'dependency-cve-unreachable');
-  assert.ok(i, 'reachability demoter must be present');
-  // The load-bearing contract: confidence low + deterministic false means a
-  // firing hit satisfies neither hasDeterministicHit nor hasHighConfHit, so it
-  // never drives classification 'detected' and can never mute a real match.
-  assert.equal(i.confidence, 'low');
-  assert.equal(i.deterministic, false);
-  assert.equal(i.attack_ref, 'T1195.002');
-  assert.equal(i.atlas_ref, 'AML.T0010');
-  assert.ok(!('cve_ref' in i), 'reachability is a cross-cutting annotation, not bound to one CVE');
-  assert.ok(i.false_positive_checks_required.length >= 4, 'FP checks gate it to demote-only-with-attestation');
-  assert.ok(/over-approximate/i.test(i.false_positive_checks_required[0]),
-    'the over-approximate-uncertain-to-reachable check must be first (makes it demote-only, never mute-by-default)');
-  assert.ok(byId(ART, 'cve-reachability-surface'), 'paired reachability look artifact must exist');
-  assert.ok(FPP.find((x) => x.indicator_id === 'dependency-cve-unreachable'), 'paired FP profile must exist');
-  // The matcher it annotates must be left untouched (no FP-checks => still fires high).
-  const matcher = byId(IND, 'package-matches-catalogued-cve');
-  assert.equal(matcher.confidence, 'high', 'the core matcher stays high-confidence');
-  assert.ok(!('false_positive_checks_required' in matcher), 'the core matcher must NOT gain FP-checks (would change its firing)');
+const sbomCollector = require(path.join(ROOT, "lib", "collectors", "sbom.js"));
+const secretsCollector = require(path.join(ROOT, "lib", "collectors", "secrets.js"));
+const cryptoCollector = require(path.join(ROOT, "lib", "collectors", "crypto-codebase.js"));
+const citationCollector = require(path.join(ROOT, "lib", "collectors", "citation-hygiene.js"));
+const cicdCollector = require(path.join(ROOT, "lib", "collectors", "cicd-pipeline-compromise.js"));
+const { lineFromOffset } = require(path.join(ROOT, "lib", "collectors", "scan-excludes.js"));
+
+function mkTmp(prefix) {
+  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+}
+
+// ---------------------------------------------------------------------------
+// Finding 1 — sbom lockfile-no-integrity
+// ---------------------------------------------------------------------------
+
+
+
+// ---------------------------------------------------------------------------
+// Finding 2 — secrets >1 MB skip is recorded
+// ---------------------------------------------------------------------------
+
+
+// ---------------------------------------------------------------------------
+// Finding 3 — AWS doc example key demotion
+// ---------------------------------------------------------------------------
+
+
+
+// ---------------------------------------------------------------------------
+// Finding 4 — cicd OIDC scan honors code-exclude set (dist/)
+// ---------------------------------------------------------------------------
+
+const WILDCARD_OIDC = JSON.stringify({
+  Statement: [{
+    Effect: "Allow",
+    Principal: { Federated: "token.actions.githubusercontent.com" },
+    Condition: {
+      StringLike: {
+        "token.actions.githubusercontent.com:sub": "repo:acme/*:*",
+      },
+    },
+  }],
+}, null, 2);
+
+
+
+// ---------------------------------------------------------------------------
+// Finding 5 — evidence_locations carry startLine
+// ---------------------------------------------------------------------------
+
+test("sbom: clean npm 7+ lockfile (root entry has name+version, no integrity) is a MISS", () => {
+  const tmp = mkTmp("fp-sbom-clean-");
+  try {
+    fs.writeFileSync(path.join(tmp, "package-lock.json"), JSON.stringify({
+      name: "my-project",
+      version: "1.0.0",
+      lockfileVersion: 3,
+      packages: {
+        "": { name: "my-project", version: "1.0.0" },
+        "node_modules/foo": { version: "1.2.3", resolved: "https://registry.npmjs.org/foo/-/foo-1.2.3.tgz", integrity: "sha512-deadbeef" },
+      },
+    }, null, 2));
+    const r = sbomCollector.collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["lockfile-no-integrity"], "miss",
+      "root entry without integrity must not trip the indicator");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 });
 
-test('publisher-identity-change detector fires on identity discontinuity absent a capability change', () => {
-  const i = byId(IND, 'dependency-publisher-identity-change-without-capability-change');
-  assert.ok(i, 'publisher-identity-change indicator must be present');
-  assert.equal(i.attack_ref, 'T1195.001');
-  assert.equal(i.atlas_ref, 'AML.T0010');
-  assert.equal(i.deterministic, false);
-  assert.ok(/capability surface is UNCHANGED|absent a behavior delta|without requiring any capability/i.test(i.value),
-    'must require capability UNCHANGED (the gap capability-creep cannot see)');
-  assert.ok(i.false_positive_checks_required.length >= 5, 'FP checks gate the identity-change heuristic');
-  assert.ok(FPP.find((x) => x.indicator_id === 'dependency-publisher-identity-change-without-capability-change'));
+test("sbom: remote-tarball entry missing integrity is still a HIT", () => {
+  const tmp = mkTmp("fp-sbom-bad-");
+  try {
+    fs.writeFileSync(path.join(tmp, "package-lock.json"), JSON.stringify({
+      name: "my-project",
+      version: "1.0.0",
+      lockfileVersion: 3,
+      packages: {
+        "": { name: "my-project", version: "1.0.0" },
+        "node_modules/good": { version: "1.0.0", resolved: "https://registry.npmjs.org/good/-/good-1.0.0.tgz", integrity: "sha512-abc" },
+        // resolved to a remote tarball but no integrity hash -> the real bug
+        "node_modules/evil": { version: "2.0.0", resolved: "https://evil.example/evil-2.0.0.tgz" },
+      },
+    }, null, 2));
+    const r = sbomCollector.collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["lockfile-no-integrity"], "hit",
+      "a resolved remote entry without integrity must fire the indicator");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 });
-
-test('two new govern theater-fingerprints (license + publisher-trust) with mapped controls', () => {
-  const lic = byPat(TF, 'license-policy-attested-but-not-enforced');
-  assert.ok(lic, 'license theater fingerprint must be present');
-  assert.ok(lic.implicated_controls.includes('eu-cra-art13'), 'license fingerprint maps to a real framework control');
-  assert.ok(/blocking gate|fails the build|BLOCK/.test(lic.fast_detection_test), 'must test enforcement, not attestation');
-  const pub = byPat(TF, 'publisher-trust-attested-but-not-enforced');
-  assert.ok(pub, 'publisher-trust theater fingerprint must be present');
-  assert.ok(pub.implicated_controls.length >= 1 && pub.fast_detection_test.length > 60);
-  // No attack_ref/atlas_ref on fingerprints — they map to implicated_controls, not TTPs (no orphaned-control obligation).
-  assert.ok(!('attack_ref' in lic) && !('attack_ref' in pub), 'theater fingerprints carry no TTP ref');
-});
-
-test('theater-fingerprint count is 8 and the hardcoded skill-chain count was updated', () => {
-  assert.equal(TF.length, 8, 'six original + license + publisher-trust = eight');
-  const sc = PB.phases.direct.skill_chain.find((s) => s.purpose && /theater fingerprints in govern/.test(s.purpose));
-  assert.ok(sc, 'the theater-fingerprint skill-chain step must exist');
-  assert.ok(/eight theater fingerprints/.test(sc.purpose), 'the hardcoded count must read "eight", not "six"');
-  assert.ok(!/the six theater fingerprints/.test(sc.purpose), 'the stale "six" count must be gone');
-});
-
-test('sbom playbook advanced to 1.4.0 with a matching changelog rung (version only advances)', () => {
-  assert.ok(PB._meta.changelog.some((c) => c.version === '1.4.0'), 'a 1.4.0 changelog rung must document the additions');
-  const [maj, min] = String(PB._meta.version).split('.').map(Number);
-  assert.ok(maj > 1 || (maj === 1 && min >= 4), `playbook _meta.version (${PB._meta.version}) must be >= 1.4.0`);
-});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
 });

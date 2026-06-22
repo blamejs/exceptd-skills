@@ -390,366 +390,358 @@ test('framework-control-gaps.json: theater_test.test strings are not literal dup
 });
 
 
-// ---- routed from framework-gap-completeness ----
-require("node:test").describe("framework-gap-completeness", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+// ---- routed from audit-correctness-cluster ----
+require("node:test").describe("audit-correctness-cluster", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * Tests for the v0.12.17 audit fixes:
- *   - Audit I P1-3: Windows ACL hardening on .keys/private.pem (restrictWindowsAcl)
- *   - Audit I P1-4: top-level manifest_signature on manifest.json
- *   - Audit L F11:  --diff-from-latest human-renderer output shape
- *   - Audit L F22:  ai-run --help documents the first-evidence-wins stdin contract
- *   - Audit M P3-O: KEV diff severity nuance (critical for ransomware / near-due)
+ * Regression suite for a correctness cluster found auditing the run/ci/ai-run
+ * verbs and the close/framework-gap surfaces for silent-wrong-answer bugs:
+ *
+ *   H1 — `ci <playbook> --evidence -` given a FLAT submission (the same shape
+ *        `run` accepts) silently produced a PASS: the runner keyed the bundle
+ *        by playbook id, found nothing, and evaluated an empty submission.
+ *        ci must now treat a single-positional flat submission as belonging to
+ *        that playbook, matching `run`'s verdict.
+ *
+ *   H2 — `ai-run <pb> --no-stream --evidence -` bypassed the evidence-shape
+ *        guard `run` enforces, so `null` / `[]` / a scalar ran as if empty.
+ *        It must be rejected at the read boundary with an actionable message.
+ *
+ *   H3 — the ci framework_gap_rollup read a nonexistent `why_insufficient`
+ *        key, so every rollup entry's explanation was null. The data lives in
+ *        `actual_gap`; the rollup must surface it.
+ *
+ *   M1 — the regulatory clock only started when the AGENT submitted
+ *        detection_classification:'detected'. An engine-confirmed detection
+ *        (indicators fired, engine classified 'detected') with --ack never
+ *        started the clock, so notification deadlines silently stalled.
+ *
+ *   M2 — `framework-gap <bogus> <scenario>` produced a zero-gap report
+ *        indistinguishable from a real "no gaps" result, so a typo read as
+ *        proof the framework covered the scenario. An unknown framework must
+ *        be refused; documented short forms ("NIST-800-53") must still resolve.
+ *
+ * Discipline: exact exit codes; presence assertions paired with value/type.
+ */
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const { makeSuiteHome, makeCli, tryJson } = require("./_helpers/cli");
+
+const cli = makeCli(makeSuiteHome("exceptd-auditcorrect-"));
+
+// A flat secrets submission whose overrides fire real indicators.
+const FLAT_SECRETS = JSON.stringify({
+  signal_overrides: { "aws-secret-access-key": "hit", "github-personal-access-token": "hit" },
+});
+
+
+
+
+
+// The bug codex flagged: the guard above only fires on `--evidence`, but
+// --no-stream ALSO auto-reads stdin. Whether a spawnSync pipe triggers the
+// auto-stdin path is platform-divergent (POSIX FIFOs report readable; win32
+// spawnSync pipes do not), so probe reachability first and only assert the
+// rejection where the path is actually live — never coincidence-pass.
+function autoStdinReachable() {
+  const probe = cli(["ai-run", "secrets", "--no-stream", "--json"], {
+    input: JSON.stringify({ signal_overrides: { "aws-secret-access-key": "hit", "github-personal-access-token": "hit" } }),
+  });
+  const pj = tryJson(probe.stdout);
+  return !!(pj && pj.phases?.analyze?._detect_classification === "detected");
+}
+
+
+
+
+const AI_API_FIRES = JSON.stringify({
+  signal_overrides: {
+    "cleartext-api-key-in-dotfile": "hit",
+    "ai-api-beaconing-cadence": "hit",
+    "long-lived-aws-keys": "hit",
+  },
+});
+
+test("M2: framework-gap refuses an unknown framework", () => {
+  const r = cli(["framework-gap", "ZZZ-NOT-A-FRAMEWORK", "CVE-2025-53773", "--json"]);
+  assert.equal(r.status, 1);
+  const body = tryJson(r.stdout) || tryJson(r.stderr);
+  assert.ok(body && body.ok === false, "must emit a structured refusal");
+  assert.match(body.error, /unknown framework/, "must name the failure");
+  assert.ok(Array.isArray(body.known_frameworks) && body.known_frameworks.length > 0, "must list known frameworks");
+});
+
+test("M2: documented short forms (NIST-800-53, PCI-DSS-4.0) still resolve", () => {
+  for (const fw of ["NIST-800-53", "nist-800-53", "PCI-DSS-4.0"]) {
+    const r = cli(["framework-gap", fw, "prompt injection", "--json"]);
+    const body = tryJson(r.stdout);
+    assert.ok(body, `framework-gap ${fw} must emit JSON`);
+    assert.notEqual(body.ok, false, `documented short form ${fw} must not be rejected`); // allow-notEqual: short forms must resolve, not refuse
+    assert.ok(body.frameworks && Object.keys(body.frameworks).length >= 1, `${fw} must match at least one catalog framework`);
+  }
+});
+
+test("M2: 'all' is unaffected by framework validation", () => {
+  const r = cli(["framework-gap", "all", "prompt injection", "--json"]);
+  const body = tryJson(r.stdout);
+  assert.ok(body && body.ok !== false, "'all' must still run");
+  assert.ok(body.frameworks && Object.keys(body.frameworks).length > 1, "'all' must expand to many frameworks");
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from audit-usability-fixes ----
+require("node:test").describe("audit-usability-fixes", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * CLI usability regression suite.
+ *
+ * Pins the behavior of a set of CLI ergonomics fixes so they cannot silently
+ * regress at the next refactor. Each test exercises the real CLI through the
+ * shared cli() harness (subprocess spawn of bin/exceptd.js) and asserts the
+ * EXACT exit code and field shapes per the project anti-coincidence rule:
+ * never `notEqual(0)`, never `assert.ok(field)` without a paired value/type
+ * assertion.
+ *
+ * Areas covered:
+ *   1. Unknown-flag hard-fail across all verbs (+ typo suggestion + the
+ *      tailored cross-verb "irrelevant flag" message that must NOT collapse
+ *      into a generic unknown-flag refusal).
+ *   2. `--format json` returns the full run result, not a stub.
+ *   3. Multiple --format values emit a one-format-wins note to stderr.
+ *   4. Standardized bundles (sarif / csaf-2.0 / openvex) carry no top-level
+ *      `ok` key and present their spec marker.
+ *   5. `skill` / `framework-gap` honor --help; `refresh` keeps its own help.
+ *   6. `collect` emits JSON when piped (non-TTY) so the documented pipe works.
+ *   7. `refresh --check-advisories` arg parsing (report-only, no network).
+ *   8. `attest list --limit` envelope + bad-value rejection.
  */
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const crypto = require('node:crypto');
-const fs = require('node:fs');
 const path = require('node:path');
+const fs = require('node:fs');
 const os = require('node:os');
-const { spawnSync } = require('node:child_process');
+
+const { ROOT, makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+
+const SUITE_HOME = makeSuiteHome('exceptd-audit-usability-');
+const cli = makeCli(SUITE_HOME);
+
+// ===================================================================
+// 1. Unknown-flag hard-fail (all verbs, not just doctor)
+// ===================================================================
+
+
+
+
+
+
+
+
+
+// ===================================================================
+// 2. `--format json` returns the FULL run result (not a stub)
+// ===================================================================
+
+
+// ===================================================================
+// 3. MULTI-FORMAT note to stderr
+// ===================================================================
+
+
+// ===================================================================
+// 4. STANDARDIZED BUNDLES carry NO top-level `ok` key
+// ===================================================================
+
+
+
+
+// ===================================================================
+// 5. `skill --help` / `framework-gap --help` honor --help;
+//    refresh keeps its OWN detailed help
+// ===================================================================
+
+
+
+
+// ===================================================================
+// 6. `collect` emits JSON when piped (non-TTY) so the documented pipe works
+// ===================================================================
+
+
+// ===================================================================
+// 7. `refresh --check-advisories` parsing (no network — parseArgs directly)
+// ===================================================================
+
+
+// ===================================================================
+// 8. `attest list --limit`
+// ===================================================================
+
+test('framework-gap --help shows usage', () => {
+  const r = cli(['framework-gap', '--help']);
+  assert.equal(r.status, 0, `expected exit 0; got ${r.status} (stderr: ${r.stderr.slice(0, 200)})`);
+  assert.match(r.stdout, /framework-gap </);
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from hunt-fix-C-correlations ----
+require("node:test").describe("hunt-fix-C-correlations", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Regression coverage for the C-correlations cluster:
+ *
+ *   #9  byTtp() returned found:false / entry:null for every ATT&CK
+ *       technique — only the ATLAS catalog was consulted for the entry,
+ *       while skills + related_cves correctly unioned both id spaces.
+ *   #10 byTtp() d3fend correlation read the always-empty `counters` field
+ *       instead of the populated `counters_attack_techniques`.
+ *   #11 framework-gap lagScore() reported framework_specific_gaps:0 for
+ *       every framework whose global-frameworks short key is not a literal
+ *       substring of its catalog display string.
+ *   #12 containers collector tracked USER globally, so a multi-stage build
+ *       with a non-root USER in an early stage masked a root final stage.
+ *   #13 byCwe/byTtp/bySkill leaked _auto_imported draft CVEs into the
+ *       related_cves/cve_refs correlations (byCve excluded them; these
+ *       transitive paths did not).
+ *   #14 gap-detectors REFERENCE_TOKEN_RE could not match D3A-* / D3F-*
+ *       D3FEND ids, mis-flagging referenced entries as unused orphans.
+ *
+ * Real-catalog assertions read the shipped data/ tree (default DATA_DIR).
+ * The draft-leak case (#13) needs a synthetic catalog, which cross-ref-api
+ * binds at require-time from EXCEPTD_DATA_DIR — so it runs in a child
+ * process with that env var pointed at an isolated tempdir.
+ *
+ * Run under --test-concurrency=1 (the cross-ref cache + shared data dir are
+ * process-global).
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const cp = require('node:child_process');
+
+const xref = require('../lib/cross-ref-api.js');
+const fg = require('../lib/framework-gap.js');
+const gd = require('../lib/gap-detectors.js');
+const containers = require('../lib/collectors/containers.js');
 
 const ROOT = path.join(__dirname, '..');
-const signMod = require('../lib/sign.js');
-const verifyMod = require('../lib/verify.js');
-const autoDiscovery = require('../lib/auto-discovery.js');
+const DATA_DIR = path.join(ROOT, 'data');
 
-// --- P1-3: Windows ACL helper ---
-
-test('P1-3: restrictWindowsAcl is exported and is a function', () => {
-  assert.equal(typeof signMod.restrictWindowsAcl, 'function');
-});
-
-test('P1-3: restrictWindowsAcl is a no-op on non-Windows platforms', () => {
-  // The function should return without throwing on POSIX. We test by
-  // calling it against a path that does not exist — on win32 icacls would
-  // fail (which we'd handle via warn) but on POSIX it should never invoke
-  // icacls at all, so no exception is thrown.
-  if (process.platform === 'win32') {
-    // On win32 we cannot easily assert no-op behavior; just confirm the
-    // function executes and does not throw on a real temp file.
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-acl-'));
-    const target = path.join(tmpDir, 'priv.pem');
-    fs.writeFileSync(target, 'test', 'utf8');
-    try {
-      assert.doesNotThrow(() => signMod.restrictWindowsAcl(target));
-    } finally {
-      fs.rmSync(tmpDir, { recursive: true, force: true });
-    }
-  } else {
-    assert.doesNotThrow(() => signMod.restrictWindowsAcl('/nonexistent/path/private.pem'));
-  }
-});
-
-// SVM-07: a failed Windows ACL hardening must be detectable by automation,
-// not buried under a 0 exit. Before the fix, generate-keypair returned
-// { aclHardened:false } but the CLI dispatch discarded it — the key was
-// written group/other-readable while the process exited 0 and the success
-// banner printed, so bootstrap.js / doctor --fix (which gate on the exit
-// code) treated an unhardened key as a clean generation.
-//
-// We build a throwaway sandbox so the real repo .keys/keys are never touched,
-// then spawn `generate-keypair` with a preload that forces win32 and makes
-// icacls throw (reproducible on any host, including CI Linux). Exit code is
-// asserted EXACTLY, never just `!== 0`.
-function buildSignSandbox() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-svm07-'));
-  fs.mkdirSync(path.join(dir, 'lib', 'schemas'), { recursive: true });
-  fs.mkdirSync(path.join(dir, 'keys'), { recursive: true });
-  fs.mkdirSync(path.join(dir, '.keys'), { recursive: true });
-  for (const rel of ['lib/sign.js', 'lib/verify.js', 'lib/exit-codes.js',
-                     'lib/schemas/manifest.schema.json', 'manifest.json']) {
-    fs.copyFileSync(path.join(ROOT, rel), path.join(dir, rel));
-  }
-  const preload = path.join(dir, 'preload-force.js');
-  fs.writeFileSync(preload,
-    "'use strict';\n" +
-    "Object.defineProperty(process,'platform',{value:'win32',configurable:true});\n" +
-    "process.env.USERNAME = process.env.USERNAME || 'svm07user';\n" +
-    "const cp=require('child_process');const real=cp.execFileSync;\n" +
-    "cp.execFileSync=function(c,a,o){if(c==='icacls'){const e=new Error('icacls forced-fail (test)');e.code='ENOENT';throw e;}return real(c,a,o);};\n",
-    'utf8');
-  return { dir, preload };
+function loadJson(p) {
+  return JSON.parse(fs.readFileSync(p, 'utf8'));
 }
 
-test('SVM-07: generate-keypair exits non-zero when Windows ACL hardening fails (no opt-out)', () => {
-  const { dir, preload } = buildSignSandbox();
-  try {
-    const r = spawnSync(process.execPath,
-      ['--require', preload, path.join(dir, 'lib', 'sign.js'), 'generate-keypair'],
-      { cwd: dir, encoding: 'utf8', env: { ...process.env, EXCEPTD_ALLOW_WEAK_KEY_ACL: '' } });
-    assert.equal(r.status, 1,
-      `unhardened-key generation must exit 1; got ${r.status}\nSTDOUT:\n${r.stdout}\nSTDERR:\n${r.stderr}`);
-    // The key write itself still succeeds (exit signals "present-but-unhardened").
-    assert.equal(fs.existsSync(path.join(dir, '.keys', 'private.pem')), true,
-      'the private key must still be written even when ACL hardening fails');
-    // The failure must be loud on stderr so automation/operators see WHY.
-    assert.match(r.stderr, /ACL hardening FAILED/,
-      'stderr must carry the explicit ACL-hardening-failed error');
-    // The success banner must still drain (exitCode idiom, not process.exit
-    // truncating buffered stdout).
-    assert.match(r.stdout, /Ed25519 keypair generated/,
-      'success banner must still flush to stdout despite the non-zero exit');
-  } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
-  }
+// ---------------------------------------------------------------------------
+// Finding #9 — byTtp resolves the ATT&CK technique record, not only ATLAS.
+// ---------------------------------------------------------------------------
+
+
+
+
+// ---------------------------------------------------------------------------
+// Finding #10 — byTtp d3fend correlation reads counters_attack_techniques.
+// ---------------------------------------------------------------------------
+
+
+
+// ---------------------------------------------------------------------------
+// Finding #11 — lagScore counts framework-specific gaps by normalized match.
+// ---------------------------------------------------------------------------
+
+const controlGaps = loadJson(path.join(DATA_DIR, 'framework-control-gaps.json'));
+const globalFrameworks = loadJson(path.join(DATA_DIR, 'global-frameworks.json'));
+
+
+
+
+
+// ---------------------------------------------------------------------------
+// Finding #12 — containers collector resets USER state per build stage.
+// ---------------------------------------------------------------------------
+
+function dockerfileTempdir(content) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'hunt-c12-'));
+  fs.writeFileSync(path.join(d, 'Dockerfile'), content, 'utf8');
+  return d;
+}
+
+
+
+
+
+
+
+// ---------------------------------------------------------------------------
+// Finding #13 — draft CVEs never leak into transitive correlations.
+//
+// cross-ref-api binds DATA_DIR at require-time from EXCEPTD_DATA_DIR, so the
+// synthetic catalog must be exercised in a child process.
+// ---------------------------------------------------------------------------
+
+
+// ---------------------------------------------------------------------------
+// Finding #14 — REFERENCE_TOKEN_RE recognizes D3A-* / D3F-* D3FEND ids.
+// ---------------------------------------------------------------------------
+
+function fullTokenMatch(s) {
+  const re = gd.REFERENCE_TOKEN_RE;
+  re.lastIndex = 0;
+  const m = s.match(re);
+  return !!(m && m.includes(s));
+}
+
+test('#11 lagScore counts framework-specific gaps for a key that is NOT a substring of its catalog string', () => {
+  // EU_AI_ACT's catalog strings read "EU Artificial Intelligence Act ..."
+  // and "EU AI Act ..."; the short key "EU_AI_ACT" is not a literal
+  // substring of either, so the pre-fix `.includes(frameworkId)` returned 0.
+  const r = fg.lagScore('EU_AI_ACT', controlGaps, globalFrameworks);
+  assert.equal(typeof r.breakdown.framework_specific_gaps, 'number');
+  assert.equal(r.breakdown.framework_specific_gaps, 7,
+    'EU_AI_ACT must surface all 7 open AI-Act gaps');
 });
 
-test('SVM-07: EXCEPTD_ALLOW_WEAK_KEY_ACL=1 lets generate-keypair exit 0 on a single-user host', () => {
-  const { dir, preload } = buildSignSandbox();
-  try {
-    const r = spawnSync(process.execPath,
-      ['--require', preload, path.join(dir, 'lib', 'sign.js'), 'generate-keypair'],
-      { cwd: dir, encoding: 'utf8', env: { ...process.env, EXCEPTD_ALLOW_WEAK_KEY_ACL: '1' } });
-    assert.equal(r.status, 0,
-      `opt-out must restore a 0 exit; got ${r.status}\nSTDERR:\n${r.stderr}`);
-    assert.match(r.stderr, /EXCEPTD_ALLOW_WEAK_KEY_ACL=1/,
-      'the opt-out path must still warn that the ACL was not hardened');
-  } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
-  }
+test('#11 lagScore resolves another display-name-only framework (NCSC_CAF)', () => {
+  const r = fg.lagScore('NCSC_CAF', controlGaps, globalFrameworks);
+  assert.equal(r.breakdown.framework_specific_gaps, 7);
 });
 
-// --- P1-4: manifest signature ---
-
-test('P1-4: canonicalManifestBytes is deterministic regardless of stale signature field', () => {
-  const m1 = { name: 'x', version: '1.2.3', skills: [] };
-  const m2 = {
-    name: 'x', version: '1.2.3', skills: [],
-    manifest_signature: { algorithm: 'Ed25519', signature_base64: 'stale==', signed_at: '2020-01-01' },
-  };
-  const b1 = signMod.canonicalManifestBytes(m1).toString('hex');
-  const b2 = signMod.canonicalManifestBytes(m2).toString('hex');
-  assert.equal(b1, b2, 'canonical bytes must ignore stale manifest_signature');
+test('#11 lagScore leaves substring-matching frameworks unchanged', () => {
+  // DORA / GDPR / NIS2 keys ARE substrings of their catalog strings, so the
+  // fix must not change their counts (guards against over-matching).
+  assert.equal(fg.lagScore('DORA', controlGaps, globalFrameworks).breakdown.framework_specific_gaps, 9);
+  assert.equal(fg.lagScore('GDPR', controlGaps, globalFrameworks).breakdown.framework_specific_gaps, 2);
+  assert.equal(fg.lagScore('NIS2', controlGaps, globalFrameworks).breakdown.framework_specific_gaps, 11);
 });
 
-test('P1-4: canonicalManifestBytes is deterministic regardless of top-level key order', () => {
-  const m1 = { name: 'x', version: '1.2.3', skills: [] };
-  const m2 = { skills: [], version: '1.2.3', name: 'x' };
-  assert.equal(
-    signMod.canonicalManifestBytes(m1).toString('hex'),
-    signMod.canonicalManifestBytes(m2).toString('hex'),
-    'key order at top level must not affect canonical bytes',
-  );
+test('#11 lagScore does not over-match a short key against another framework', () => {
+  // EU_CRA resolves to exactly its own catalog string (1 open gap), not to
+  // the broader EU_AI_ACT set — a regression that broadened matching too far
+  // would inflate this.
+  assert.equal(fg.lagScore('EU_CRA', controlGaps, globalFrameworks).breakdown.framework_specific_gaps, 1);
 });
-
-test('P1-4: sign + verify round-trip on canonical manifest bytes succeeds', () => {
-  const { privateKey, publicKey } = crypto.generateKeyPairSync('ed25519', {
-    privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
-    publicKeyEncoding: { type: 'spki', format: 'pem' },
-  });
-  const manifest = {
-    name: 'test', version: '0.0.1', skills: [{ name: 'a', path: 'skills/a/skill.md' }],
-  };
-  const sigObj = signMod.signCanonicalManifest(manifest, privateKey);
-  assert.equal(sigObj.algorithm, 'Ed25519');
-  assert.equal(typeof sigObj.signature_base64, 'string');
-  assert.ok(sigObj.signature_base64.length > 0);
-  // Manually verify.
-  const bytes = signMod.canonicalManifestBytes(manifest);
-  const ok = crypto.verify(null, bytes, { key: publicKey, dsaEncoding: 'ieee-p1363' },
-                            Buffer.from(sigObj.signature_base64, 'base64'));
-  assert.equal(ok, true);
-});
-
-test('P1-4: live manifest.json carries a valid manifest_signature', () => {
-  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
-  assert.ok(manifest.manifest_signature, 'live manifest.json must have manifest_signature');
-  assert.equal(manifest.manifest_signature.algorithm, 'Ed25519');
-  assert.equal(typeof manifest.manifest_signature.signature_base64, 'string');
-  assert.ok(manifest.manifest_signature.signature_base64.length > 0);
-
-  // Verify against keys/public.pem.
-  const result = verifyMod.verifyManifestSignature(manifest);
-  assert.equal(result.status, 'valid', `live manifest_signature must verify; got ${JSON.stringify(result)}`);
-});
-
-test('P1-4: verifyManifestSignature returns invalid when signature is tampered', () => {
-  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
-  // Flip one base64 char to break verification.
-  const tampered = JSON.parse(JSON.stringify(manifest));
-  const orig = tampered.manifest_signature.signature_base64;
-  // Replace the first non-A character with 'A' (or 'B' if it's 'A') to
-  // guarantee a different signature value.
-  const idx = [...orig].findIndex(c => c !== 'A');
-  const replacement = orig.charAt(idx) === 'A' ? 'B' : 'A';
-  tampered.manifest_signature.signature_base64 = orig.slice(0, idx) + replacement + orig.slice(idx + 1);
-  const result = verifyMod.verifyManifestSignature(tampered);
-  assert.equal(result.status, 'invalid');
-  assert.match(result.reason, /Ed25519 manifest signature did not verify/);
-});
-
-test('P1-4: verifyManifestSignature returns invalid when a skill path is swapped', () => {
-  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
-  const tampered = JSON.parse(JSON.stringify(manifest));
-  // Tamper a skill entry — the signature was computed over the original.
-  tampered.skills[0].description = 'TAMPERED — attacker rewrote this field';
-  const result = verifyMod.verifyManifestSignature(tampered);
-  assert.equal(result.status, 'invalid');
-});
-
-test('P1-4: verifyManifestSignature returns missing when field absent (backward-compat)', () => {
-  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
-  const legacy = JSON.parse(JSON.stringify(manifest));
-  delete legacy.manifest_signature;
-  const result = verifyMod.verifyManifestSignature(legacy);
-  assert.equal(result.status, 'missing');
-});
-
-test('P1-4: loadManifestValidated throws on tampered signature, blocks all skill verify', () => {
-  // Round-trip via a temp manifest path is not exposed by the module API;
-  // instead exercise the canonical helpers and the schema/path guards
-  // together with the signature verifier (the same code loadManifestValidated
-  // composes).
-  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
-  const tampered = JSON.parse(JSON.stringify(manifest));
-  tampered.manifest_signature.signature_base64 = 'AAAA' + tampered.manifest_signature.signature_base64.slice(4);
-  const result = verifyMod.verifyManifestSignature(tampered);
-  assert.equal(result.status, 'invalid');
-});
-
-test('P1-4: signing tooling regenerates a valid manifest_signature (smoke against on-disk state)', () => {
-  // The on-disk manifest must currently verify. If this fails, an earlier
-  // test mutated state or sign-all was not run after the recent change.
-  const r = spawnSync(process.execPath, [path.join(ROOT, 'lib', 'verify.js')], {
-    cwd: ROOT, encoding: 'utf8',
-  });
-  assert.equal(r.status, 0, `verify.js exit: ${r.status}\nSTDOUT:\n${r.stdout}\nSTDERR:\n${r.stderr}`);
-});
-
-// --- L F11: --diff-from-latest renderer ---
-
-test('F11: diff_from_latest renderer formats all three status branches with prior session id', () => {
-  // Exercise the renderer indirectly via the bin file source — assert that
-  // the spec copy strings are present.
-  const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
-  assert.match(src, /unchanged \(same evidence_hash as session \$\{dfl\.prior_session_id\}\)/);
-  assert.match(src, /DRIFTED — evidence_hash differs from session \$\{dfl\.prior_session_id\}/);
-  // The no_prior_attestation_for_playbook branch now emits an explicit
-  // line (previously it intentionally produced no line, which left
-  // operators wondering whether --diff-from-latest took effect when
-  // run against a fresh attestation directory).
-  const rendererIdx = src.indexOf('// F11: surface --diff-from-latest verdict in the human renderer');
-  assert.ok(rendererIdx > 0, 'F11 renderer marker comment must be present');
-  const block = src.slice(rendererIdx, rendererIdx + 1500);
-  assert.match(block, /dfl\.status === "no_prior_attestation_for_playbook"/,
-    'renderer must branch on the no_prior status');
-  assert.match(block, /no prior attestation found for/,
-    'renderer must emit the no-prior baseline line so the flag is not silently a no-op');
-});
-
-test('F11: renderer block lists exactly the unchanged + drifted statuses', () => {
-  // Live exec the renderer logic by importing bin/exceptd.js?
-  // The bin file is not a normal CommonJS module — it runs main() under
-  // require.main === module. We test by string-extracting the renderer block
-  // (already done above) and confirming both branches reference prior_session_id.
-  const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
-  const rendererStart = src.indexOf('if (obj.diff_from_latest)');
-  const rendererBlock = src.slice(rendererStart, rendererStart + 800);
-  assert.match(rendererBlock, /dfl\.status === "unchanged"/);
-  assert.match(rendererBlock, /dfl\.status === "drifted"/);
-});
-
-// --- L F22: ai-run --help streaming contract documentation ---
-
-test('F22: ai-run --help text documents the first-evidence-wins stdin contract', () => {
-  const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
-  // Help text registered under "ai-run" should include the Audit L F22 wording.
-  // The helps map registers entries via `"ai-run": \`ai-run <playbook>...`;
-  // search for that backtick form specifically to skip the case-statement
-  // and any incidental references.
-  const helpEntry = src.indexOf('"ai-run": `ai-run');
-  assert.ok(helpEntry > 0, 'ai-run help entry must be registered');
-  const helpBlock = src.slice(helpEntry, helpEntry + 3600);
-  assert.match(helpBlock, /Stdin acceptance contract/);
-  assert.match(helpBlock, /FIRST/);
-  assert.match(helpBlock, /handled/);
-});
-
-// --- M P3-O: KEV severity nuance ---
-
-test('P3-O: deriveKevSeverity returns critical for ransomware campaigns', () => {
-  const severity = autoDiscovery.deriveKevSeverity({
-    knownRansomwareCampaignUse: 'Known',
-    dueDate: '2099-12-31',
-  });
-  assert.equal(severity, 'critical');
-});
-
-test('P3-O: deriveKevSeverity returns critical when due date is within 7 days', () => {
-  const soon = new Date(Date.now() + 3 * 86_400_000).toISOString().slice(0, 10);
-  const severity = autoDiscovery.deriveKevSeverity({
-    knownRansomwareCampaignUse: 'Unknown',
-    dueDate: soon,
-  });
-  assert.equal(severity, 'critical');
-});
-
-test('P3-O: deriveKevSeverity returns critical for past-due entries', () => {
-  const severity = autoDiscovery.deriveKevSeverity({
-    knownRansomwareCampaignUse: 'Unknown',
-    dueDate: '2020-01-01',
-  });
-  assert.equal(severity, 'critical');
-});
-
-test('P3-O: deriveKevSeverity returns high when due date is more than a week out and no ransomware', () => {
-  const far = new Date(Date.now() + 60 * 86_400_000).toISOString().slice(0, 10);
-  const severity = autoDiscovery.deriveKevSeverity({
-    knownRansomwareCampaignUse: 'Unknown',
-    dueDate: far,
-  });
-  assert.equal(severity, 'high');
-});
-
-test('P3-O: deriveKevSeverity returns high when no dueDate present and no ransomware', () => {
-  const severity = autoDiscovery.deriveKevSeverity({
-    knownRansomwareCampaignUse: '',
-  });
-  assert.equal(severity, 'high');
-});
-
-test('P3-O: discoverNewKev propagates per-entry severity from deriveKevSeverity', () => {
-  // Build a synthetic ctx + cached KEV feed in a tempdir so we drive
-  // discoverNewKev without touching network or the live cache.
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-kev-'));
-  try {
-    const kevDir = path.join(tmpDir, 'kev');
-    fs.mkdirSync(kevDir, { recursive: true });
-    const soon = new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 10);
-    const feed = {
-      vulnerabilities: [
-        // Ransomware-known → critical
-        { cveID: 'CVE-2026-99001', dateAdded: '2026-05-10',
-          knownRansomwareCampaignUse: 'Known', dueDate: '2099-12-31',
-          vulnerabilityName: 'A', shortDescription: '', vendorProject: 'V', product: 'P' },
-        // Due soon → critical
-        { cveID: 'CVE-2026-99002', dateAdded: '2026-05-09',
-          knownRansomwareCampaignUse: 'Unknown', dueDate: soon,
-          vulnerabilityName: 'B', shortDescription: '', vendorProject: 'V', product: 'P' },
-        // Plain KEV → high
-        { cveID: 'CVE-2026-99003', dateAdded: '2026-05-08',
-          knownRansomwareCampaignUse: 'Unknown', dueDate: '2099-01-01',
-          vulnerabilityName: 'C', shortDescription: '', vendorProject: 'V', product: 'P' },
-      ],
-    };
-    fs.writeFileSync(
-      path.join(kevDir, 'known_exploited_vulnerabilities.json'),
-      JSON.stringify(feed),
-    );
-    const ctx = { cacheDir: tmpDir, cveCatalog: {} };
-    const result = autoDiscovery.discoverNewKev(ctx, 10);
-    assert.equal(result.errors, 0);
-    assert.equal(result.diffs.length, 3);
-    const byId = Object.fromEntries(result.diffs.map(d => [d.id, d.severity]));
-    assert.equal(byId['CVE-2026-99001'], 'critical', 'ransomware → critical');
-    assert.equal(byId['CVE-2026-99002'], 'critical', 'near-due → critical');
-    assert.equal(byId['CVE-2026-99003'], 'high', 'baseline KEV → high');
-  } finally {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
-  }
-});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
 });

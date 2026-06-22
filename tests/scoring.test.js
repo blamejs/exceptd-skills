@@ -965,694 +965,558 @@ test('scoreCustom honors the reboot alias identically — the property scoring.v
 });
 
 
-// ---- routed from scoring-contract-edges ----
-require("node:test").describe("scoring-contract-edges", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+// ---- routed from dispatch-collector-scoring-fixes ----
+require("node:test").describe("dispatch-collector-scoring-fixes", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * tests/scoring-contract-edges.test.js
- *
- * Locks three RWEP-scoring contract edges where the scorer previously
- * diverged from its own validator or emitted a NaN/false verdict:
- *
- *   1. compare() with an absent cvss_score key must report "not comparable"
- *      with a finite (non-NaN) delta, never a false "broadly aligned" verdict.
- *   2. scoreCustom() must REJECT a non-number blast_radius (boolean, array,
- *      object) — contributing 0 — exactly as validateFactors rejects it,
- *      while still accepting a finite number and a trimmed numeric string.
- *   3. validate()'s Shape-B per-factor coherence must catch a contradictory
- *      reboot weight stored under EITHER the canonical `reboot_required` key
- *      OR the accepted catalog alias `patch_required_reboot`.
+ * Routing / collector / scoring correctness from the adjacent-area hunt:
+ *  - dispatcher must preserve distinct findings that route to the same skill
+ *    (de-dupe by skill+finding, not skill alone) so per-CVE evidence survives;
+ *  - scanner's mcp_config_parse_error finding carries a skill_hint so it routes
+ *    directly, not only via the brittle domain table;
+ *  - library-author's action-ref scan flags a floating ref even with a trailing
+ *    YAML comment (the `$`-anchored pattern silently missed those);
+ *  - scoring.validate() honors the reboot_required alias when recomputing the
+ *    expected RWEP, so a top-level reboot_required does not create false drift.
  */
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+
+const ROOT = path.join(__dirname, '..');
+
+test('scoreCustom honors the reboot alias identically — the property scoring.validate() now mirrors', () => {
+  const { scoreCustom } = require('../lib/scoring.js');
+  // A base where the reboot factor is observable (not clamped at 0 or 100).
+  const base = {
+    cisa_kev: true, poc_available: true, ai_assisted_weapon: false, ai_discovered: false,
+    active_exploitation: 'none', blast_radius: 3, patch_available: false, live_patch_available: false,
+  };
+  const viaReboot = scoreCustom({ ...base, reboot_required: true });
+  const viaPatchReboot = scoreCustom({ ...base, patch_required_reboot: true });
+  const noReboot = scoreCustom({ ...base });
+  assert.equal(viaReboot, viaPatchReboot, 'reboot_required and patch_required_reboot must score identically (the alias)');
+  assert.notEqual(viaReboot, noReboot, 'the reboot factor must be non-zero, else the alias is moot'); // allow-notEqual: proves the alias is meaningful, not vacuous
+
+  // validate() previously passed only `entry.patch_required_reboot` to its
+  // recompute, dropping a top-level reboot_required and computing a divergent
+  // expected RWEP. It now passes `reboot_required || patch_required_reboot`,
+  // mirroring the equivalence asserted above.
+  const fs = require('node:fs'); const path = require('node:path');
+  const SRC = fs.readFileSync(path.join(__dirname, '..', 'lib', 'scoring.js'), 'utf8');
+  assert.match(SRC, /reboot_required:\s*entry\.reboot_required\s*\|\|\s*entry\.patch_required_reboot/,
+    'validate() must recompute with the reboot alias, not patch_required_reboot alone');
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from builders-docs ----
+require("node:test").describe("builders-docs", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Coverage for the derived-index builders and the operator-facing report
+ * surfaces they feed.
+ *
+ * - section-offsets: h3_count must skip "### " lines that live inside fenced
+ *   code blocks, the same way the H2 section detector does. Output templates
+ *   embedded in ```...``` are not real sub-sections.
+ * - cwe-chains: the emitted chain must carry every dimension the module's
+ *   own docstring promises, including dlp_refs.
+ * - token-budget: the output shape must match the documented contract —
+ *   corpus totals live under _meta, with no top-level by_recipe block.
+ * - zero-day-response template: the blast-radius point range must match the
+ *   live RWEP weight ceiling so a filled-in report does not undercount.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+
+const ROOT = path.join(__dirname, '..');
+const { buildSectionOffsets } = require(path.join(ROOT, 'scripts', 'builders', 'section-offsets.js'));
+const { buildCweChains } = require(path.join(ROOT, 'scripts', 'builders', 'cwe-chains.js'));
+const { buildTokenBudget } = require(path.join(ROOT, 'scripts', 'builders', 'token-budget.js'));
+
+test('zero-day-response template: blast-radius range matches the live RWEP weight ceiling', () => {
+  const tmplPath = path.join(ROOT, 'reports', 'templates', 'zero-day-response.md');
+  const text = fs.readFileSync(tmplPath, 'utf8');
+  const { RWEP_WEIGHTS } = require(path.join(ROOT, 'lib', 'scoring.js'));
+  const ceiling = RWEP_WEIGHTS.blast_radius;
+  assert.equal(ceiling, 30, 'guard: this test assumes the blast_radius weight is 30');
+  assert.ok(
+    text.includes(`| Blast Radius | [description] | [0-${ceiling}] |`),
+    `template must document blast radius as [0-${ceiling}]`,
+  );
+  assert.ok(!/Blast Radius \| \[description\] \| \[0-15\]/.test(text), 'stale [0-15] range must be gone');
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from hunt-fix-B-scoring ----
+require("node:test").describe("hunt-fix-B-scoring", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+// Regression tests for two confirmed scoring.js bugs:
+//
+//   #6  compare() fabricated a "Low / next scheduled maintenance"
+//       cvss_framework_sla when the CVE has no CVSS (the coercion of an absent
+//       cvss to 0 for safe delta arithmetic leaked into the operator-facing SLA
+//       field). The field was present but its content was derived from a
+//       nonexistent input — the field-present != field-populated class.
+//
+//   #8  deriveRwepFromFactors' Shape-B (catalog post-weight) summation added ANY
+//       numeric key, so a typo'd / unknown key silently inflated the derived
+//       score with no diagnostic — disagreeing with scoreCustom/validateFactors,
+//       which drop+warn on unknown keys.
+
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+
 const {
   compare,
-  scoreCustom,
-  validate,
-  validateFactors,
   deriveRwepFromFactors,
-  resolveActiveExploitation,
-  activeExploitationMultiplier,
-} = require('../lib/scoring.js');
+  timeline,
+  RECOGNISED_POST_WEIGHT_KEYS,
+  RECOGNISED_FACTOR_KEYS,
+} = require('../lib/scoring');
 
-// ---------- 1. compare(): absent cvss_score ----------
+// --------------------------------------------------------------------------
+// #6 — cvss_framework_sla must not be fabricated when CVSS is absent.
+// --------------------------------------------------------------------------
 
-test('compare() with absent cvss_score key emits a finite delta, never NaN', () => {
-  const cid = 'CVE-TEST-NO-CVSS';
-  const catalog = {
-    [cid]: {
-      rwep_score: 60,
-      active_exploitation: 'none',
-      rwep_factors: { blast_radius: 10 },
-      // cvss_score key intentionally absent
+test('#6 compare() does not fabricate a cvss_framework_sla when CVSS is absent', () => {
+  const r = compare('C', {
+    C: {
+      rwep_score: 95,
+      active_exploitation: 'confirmed',
+      rwep_factors: { blast_radius: 30 },
     },
-  };
-  const r = compare(cid, catalog, {});
+  });
 
-  // delta must be a real value (null is the explicit "not comparable"
-  // sentinel), never NaN — NaN would serialize to null and silently corrupt
-  // any downstream consumer expecting a number.
-  assert.equal(Number.isNaN(r.delta), false, 'delta must not be NaN');
-  assert.equal(r.delta, null, 'absent cvss => delta is null (not comparable)');
-  assert.equal(r.cvss, null, 'absent cvss => emitted cvss is null, not undefined/NaN');
+  // CVSS genuinely absent.
+  assert.equal(r.cvss, null);
 
-  // The verdict must NOT claim alignment.
-  assert.equal(
-    /broadly aligned/i.test(r.explanation),
-    false,
-    'absent cvss must not produce a false alignment claim',
-  );
-  assert.match(
-    r.explanation,
-    /CVSS absent/i,
-    'absent cvss must surface the missing-CVSS message',
-  );
+  // Presence AND content: the SLA object exists, its hours are null, and its
+  // label states CVSS is unavailable — NOT the timeline(0) "Low / next
+  // scheduled maintenance" bucket the pre-fix code emitted.
+  assert.equal(typeof r.cvss_framework_sla, 'object');
+  assert.notEqual(r.cvss_framework_sla, null);
+  assert.equal(r.cvss_framework_sla.hours, null);
+  assert.match(r.cvss_framework_sla.label, /CVSS unavailable/i);
+  assert.equal(/next scheduled maintenance/i.test(r.cvss_framework_sla.label), false);
 
-  // JSON round-trip: a NaN delta would serialize to null-from-NaN; an explicit
-  // null must round-trip as null with the verdict intact.
-  const round = JSON.parse(JSON.stringify(r));
-  assert.equal(round.delta, null);
-  assert.match(round.explanation, /CVSS absent/i);
-});
+  // The RWEP-side SLA still resolves to the real bucket for rwep_score 95.
+  assert.equal(r.rwep_actual_sla.hours, 4);
+  assert.match(r.rwep_actual_sla.label, /Immediate/i);
 
-test('compare() with explicit null cvss_score is handled the same as absent', () => {
-  const cid = 'CVE-TEST-NULL-CVSS';
-  const catalog = {
-    [cid]: {
-      rwep_score: 55,
-      cvss_score: null,
-      active_exploitation: 'none',
-      rwep_factors: { blast_radius: 10 },
-    },
-  };
-  const r = compare(cid, catalog, {});
-  assert.equal(Number.isNaN(r.delta), false);
+  // delta is null (not-comparable) when there is no CVSS — unchanged behavior.
   assert.equal(r.delta, null);
-  assert.equal(/broadly aligned/i.test(r.explanation), false);
-  assert.match(r.explanation, /CVSS absent/i);
 });
 
-test('compare() with a real numeric cvss_score still computes a numeric delta', () => {
-  // Regression guard: the absent-cvss arm must not perturb the normal path.
-  const cid = 'CVE-TEST-NUMERIC-CVSS';
-  const catalog = {
-    [cid]: {
-      rwep_score: 60,
-      cvss_score: 5.0, // equivalent 50; delta = 60 - 50 = 10 => "broadly aligned"
-      active_exploitation: 'none',
-      rwep_factors: { blast_radius: 10 },
+test('#6 a real cvss_score: 0 still maps to the genuine Low bucket (fix gates only on absence)', () => {
+  const r = compare('C', {
+    C: {
+      cvss_score: 0,
+      rwep_score: 95,
+      active_exploitation: 'confirmed',
+      rwep_factors: { blast_radius: 30 },
     },
-  };
-  const r = compare(cid, catalog, {});
-  assert.equal(r.delta, 10);
-  assert.equal(r.cvss, 5.0);
-  assert.match(r.explanation, /broadly aligned/i);
-});
-
-// ---------- 2. scoreCustom(): non-number blast_radius rejection ----------
-//
-// All non-blast factors default to false/none, so blast_radius is the only
-// contributor — the returned score IS the accepted blast contribution.
-
-test('scoreCustom() rejects a boolean blast_radius (matches validateFactors)', () => {
-  assert.equal(scoreCustom({ blast_radius: true }), 0);
-  assert.equal(scoreCustom({ blast_radius: false }), 0);
-});
-
-test('scoreCustom() rejects an array blast_radius (matches validateFactors)', () => {
-  assert.equal(scoreCustom({ blast_radius: [7] }), 0);
-  assert.equal(scoreCustom({ blast_radius: [3] }), 0);
-  assert.equal(scoreCustom({ blast_radius: [] }), 0);
-});
-
-test('scoreCustom() rejects an object blast_radius', () => {
-  assert.equal(scoreCustom({ blast_radius: {} }), 0);
-});
-
-test('scoreCustom() still accepts the valid blast_radius forms', () => {
-  assert.equal(scoreCustom({ blast_radius: 5 }), 5);
-  assert.equal(scoreCustom({ blast_radius: '5' }), 5);
-  assert.equal(scoreCustom({ blast_radius: '  5  ' }), 5);
-  assert.equal(scoreCustom({ blast_radius: '  ' }), 0);
-  assert.equal(scoreCustom({ blast_radius: NaN }), 0);
-  assert.equal(scoreCustom({ blast_radius: Infinity }), 0);
-});
-
-test('scoreCustom() and validateFactors agree: a rejected-type blast_radius scores 0', () => {
-  // Wire the two surfaces together so they cannot drift again. For every value
-  // validateFactors flags with "expected number, got <type>" (NOT the soft
-  // numeric-string note), scoreCustom must contribute 0 blast.
-  const rejectedTypeValues = [true, false, [7], [], {}, null];
-  for (const v of rejectedTypeValues) {
-    const warns = validateFactors({ blast_radius: v });
-    const flaggedAsWrongType = warns.some((w) =>
-      /blast_radius:.*(expected number, got|missing)/.test(w),
-    );
-    assert.equal(
-      flaggedAsWrongType,
-      true,
-      `validateFactors should flag blast_radius=${JSON.stringify(v)} as a non-number`,
-    );
-    assert.equal(
-      scoreCustom({ blast_radius: v }),
-      0,
-      `scoreCustom must contribute 0 for the validator-rejected blast_radius=${JSON.stringify(v)}`,
-    );
-  }
-});
-
-// ---------- 3. validate(): Shape-B reboot alias coherence ----------
-
-// A minimally-complete Shape-B entry the catalog validator's coherence loop
-// accepts, parameterized so each test injects exactly one reboot contradiction.
-function shapeBEntry(rwepFactors, overrides = {}) {
-  return {
-    cve_id: 'CVE-TEST-REBOOT',
-    name: 'reboot-alias-coherence-fixture',
-    rwep_score: 45,
-    cvss_score: 7.0,
-    active_exploitation: 'confirmed',
-    cisa_kev: true,
-    poc_available: false,
-    ai_discovered: false,
-    ai_assisted_weaponization: false,
-    patch_available: false,
-    live_patch_available: false,
-    patch_required_reboot: false,
-    rwep_factors: rwepFactors,
-    ...overrides,
-  };
-}
-
-function rebootErrors(catalog) {
-  return validate(catalog).filter((e) => /reboot/.test(e));
-}
-
-test('validate() flags a contradictory reboot weight under the canonical key', () => {
-  // Control: the canonical spelling was already covered — confirm it still is.
-  const entry = shapeBEntry({
-    cisa_kev: 25,
-    active_exploitation: 20,
-    blast_radius: 0,
-    reboot_required: 5, // flag is false => implied 0 => contradiction
   });
-  const errs = rebootErrors({ 'CVE-TEST-REBOOT': entry });
-  assert.equal(errs.length, 1, 'exactly one reboot coherence error');
-  assert.equal(
-    errs[0],
-    "CVE-TEST-REBOOT: rwep_factors.reboot_required is 5 but the entry's source fields imply 0",
-  );
+
+  // A real 0.0 CVSS is present, not absent.
+  assert.equal(r.cvss, 0);
+
+  // It must resolve to the genuine timeline(0) Low bucket — the fix must NOT
+  // touch the present-cvss path, only the absent one.
+  const low = timeline(0);
+  assert.equal(r.cvss_framework_sla.hours, low.hours);
+  assert.equal(r.cvss_framework_sla.label, low.label);
+  assert.equal(/CVSS unavailable/i.test(r.cvss_framework_sla.label), false);
 });
 
-test('validate() flags a contradictory reboot weight under the patch_required_reboot alias', () => {
-  // The previously-bypassed case: the contradiction lives under the alias key.
-  const entry = shapeBEntry({
-    cisa_kev: 25,
-    active_exploitation: 20,
-    blast_radius: 0,
-    patch_required_reboot: 5, // flag is false => implied 0 => contradiction
+test('#6 a real high cvss_score still maps to its real bucket (no regression)', () => {
+  const r = compare('C', {
+    C: {
+      cvss_score: 9.8, // -> cvssEquivalent 98 -> timeline(98) Immediate (4h)
+      rwep_score: 95,
+      active_exploitation: 'confirmed',
+      rwep_factors: { blast_radius: 30 },
+    },
   });
-  const errs = rebootErrors({ 'CVE-TEST-REBOOT': entry });
-  assert.equal(errs.length, 1, 'exactly one reboot coherence error for the alias spelling');
+  assert.equal(r.cvss, 9.8);
+  assert.equal(r.cvss_framework_sla.hours, 4);
+  assert.match(r.cvss_framework_sla.label, /Immediate/i);
+  // delta is now a real number, not null.
+  assert.equal(typeof r.delta, 'number');
+});
+
+// --------------------------------------------------------------------------
+// #8 — deriveRwepFromFactors Shape-B must ignore unrecognised keys.
+// --------------------------------------------------------------------------
+
+test('#8 deriveRwepFromFactors Shape-B sums only recognised keys', () => {
+  // Baseline: a clean recognised bag.
+  assert.equal(deriveRwepFromFactors({ cisa_kev: 25, blast_radius: 10 }), 35);
+});
+
+test('#8 a typo key is excluded from the derived sum, not added', () => {
+  // Pre-fix: cisa_kevv:25 was blindly summed -> 60. Post-fix: dropped -> 35.
   assert.equal(
-    errs[0],
-    "CVE-TEST-REBOOT: rwep_factors.patch_required_reboot is 5 but the entry's source fields imply 0",
+    deriveRwepFromFactors({ cisa_kev: 25, cisa_kevv: 25, blast_radius: 10 }),
+    35,
+    'a typo key must not be summed',
   );
 });
 
-test('validate() accepts a coherent reboot weight under the alias (no false positive)', () => {
-  // patch_required_reboot flag true => implied 5; the alias factor stores 5.
-  const entry = shapeBEntry(
-    {
-      cisa_kev: 25,
-      active_exploitation: 20,
-      blast_radius: 0,
-      patch_required_reboot: 5,
-    },
-    { patch_required_reboot: true, rwep_score: 50 },
-  );
-  const errs = rebootErrors({ 'CVE-TEST-REBOOT': entry });
-  assert.deepEqual(errs, [], 'a coherent alias reboot weight must not error');
-});
-
-test('validate() flags the symmetric case: reboot earned but alias factor stores 0', () => {
-  // patch_required_reboot flag true => implied 5; the alias factor stores 0.
-  const entry = shapeBEntry(
-    {
-      cisa_kev: 25,
-      active_exploitation: 20,
-      blast_radius: 0,
-      patch_required_reboot: 0,
-    },
-    { patch_required_reboot: true, rwep_score: 45 },
-  );
-  const errs = rebootErrors({ 'CVE-TEST-REBOOT': entry });
-  assert.equal(errs.length, 1);
+test('#8 verifier-hint case: typo excluded, ai_factor preserved', () => {
+  // cisa_kev 25 + ai_factor 15 + blast_radius 10 = 50; reboot_requiredd 5 is a
+  // typo and must be excluded. This is the exact case from the refined fix.
   assert.equal(
-    errs[0],
-    "CVE-TEST-REBOOT: rwep_factors.patch_required_reboot is 0 but the entry's source fields imply 5",
+    deriveRwepFromFactors({
+      cisa_kev: 25,
+      ai_factor: 15,
+      blast_radius: 10,
+      reboot_requiredd: 5,
+    }),
+    50,
   );
 });
 
-// ---------- 4. scoreCustom(): out-of-vocab active_exploitation ----------
-//
-// An active_exploitation string not in the ladder previously resolved to
-// `?? 0` and silently dropped up to 20 active-exploitation points with no
-// diagnostic — while validateFactors() flagged the same string. The scorer
-// must (a) keep contributing 0 for a genuinely-unknown value, (b) surface
-// that zeroing observably (the bare-number path emits a process warning;
-// the collectWarnings path carries the structured warning), and (c)
-// case-normalise so a stray-cased canonical value scores correctly instead
-// of zeroing.
+test('#8 ai_factor (the catalog post-weight AI key) is NOT silently dropped', () => {
+  // ai_factor is ABSENT from RECOGNISED_FACTOR_KEYS but present in
+  // RECOGNISED_POST_WEIGHT_KEYS. A naive RECOGNISED_FACTOR_KEYS-only filter
+  // would drop the +15 AI weight from every Shape-B derivation. Prove it
+  // contributes its full 15.
+  assert.equal(RECOGNISED_FACTOR_KEYS.has('ai_factor'), false);
+  assert.equal(RECOGNISED_POST_WEIGHT_KEYS.has('ai_factor'), true);
 
-test('scoreCustom() and validateFactors agree: an out-of-vocab active_exploitation is flagged', () => {
-  // Wire the two surfaces together: every AE string validateFactors flags as
-  // non-enum, scoreCustom must contribute 0 AE weight for (cisa_kev is the
-  // only other signal, so the score is 25 + AE-contribution).
-  const outOfVocab = ['exploited', 'in-the-wild', 'active', 'KEV'];
-  for (const ae of outOfVocab) {
-    const warns = validateFactors({ active_exploitation: ae });
-    const flagged = warns.some((w) => /^active_exploitation: expected one of/.test(w));
-    assert.equal(flagged, true, `validateFactors should flag active_exploitation=${JSON.stringify(ae)}`);
-    // 25 (cisa_kev) + 0 (unrecognised AE) — the AE 20-pt contribution is dropped.
-    assert.equal(
-      scoreCustom({ active_exploitation: ae, cisa_kev: true }),
-      25,
-      `scoreCustom must contribute 0 AE weight for the validator-flagged active_exploitation=${JSON.stringify(ae)}`,
-    );
-  }
+  const withAi = deriveRwepFromFactors({ cisa_kev: 25, ai_factor: 15, blast_radius: 10 });
+  const withoutAi = deriveRwepFromFactors({ cisa_kev: 25, blast_radius: 10 });
+  assert.equal(withAi, 50);
+  assert.equal(withoutAi, 35);
+  assert.equal(withAi - withoutAi, 15, 'ai_factor must contribute its full +15');
 });
 
-test('scoreCustom() emits an observable warning when active_exploitation is out-of-vocab (no longer silent)', () => {
+test('#8 the unrecognised key emits an observable RWEP_FACTOR_UNRECOGNISED warning', async () => {
+  // Node dispatches process warnings on the 'warning' event one tick after
+  // emitWarning, and dedupes identical warnings process-wide. Use a key name
+  // unique to this test so a duplicate emission from another case cannot have
+  // been already-deduped before this listener attaches.
+  const uniqueKey = `bogus_warn_probe_${process.pid}_${Date.now()}`;
   const seen = [];
-  const handler = (w) => { if (w && w.code === 'RWEP_AE_UNRECOGNISED') seen.push(w); };
+  const handler = (w) => { seen.push(w); };
   process.on('warning', handler);
   try {
-    // resolveActiveExploitation is the synchronous source of truth for the
-    // recognised flag; assert it directly so the test does not race the async
-    // process-warning emission.
-    const r = resolveActiveExploitation('exploited');
-    assert.equal(r.recognised, false, 'out-of-vocab AE must be recognised:false');
-    assert.equal(r.multiplier, 0, 'out-of-vocab AE must contribute multiplier 0');
-    // the canonical theoretical/none entries score 0 but are RECOGNISED — they
-    // must not be conflated with the unrecognised case.
-    assert.equal(resolveActiveExploitation('theoretical').recognised, true);
-    assert.equal(resolveActiveExploitation('none').recognised, true);
-    assert.equal(resolveActiveExploitation(undefined).recognised, true);
-    assert.equal(resolveActiveExploitation(null).recognised, true);
+    deriveRwepFromFactors({ cisa_kev: 25, [uniqueKey]: 99, blast_radius: 10 });
+    // Yield a macrotask so the queued 'warning' event is delivered before we assert.
+    await new Promise((resolve) => setImmediate(resolve));
+    const match = seen.find(
+      (w) => w && w.code === 'RWEP_FACTOR_UNRECOGNISED' && w.message.includes(uniqueKey),
+    );
+    assert.ok(match, 'expected an RWEP_FACTOR_UNRECOGNISED warning naming the bogus key');
+    assert.equal(match.name, 'RwepFactorUnrecognised');
   } finally {
     process.removeListener('warning', handler);
   }
 });
 
-test('scoreCustom() case-normalises a stray-cased canonical active_exploitation instead of zeroing it', () => {
-  // 'Confirmed' / '  CONFIRMED  ' must resolve to the same contribution as the
-  // canonical 'confirmed' — pre-fix they fell through `?? 0` to 25.
-  const canonical = scoreCustom({ active_exploitation: 'confirmed', cisa_kev: true });
-  assert.equal(canonical, 45, 'confirmed + cisa_kev = 25 + 20 = 45');
-  assert.equal(scoreCustom({ active_exploitation: 'Confirmed', cisa_kev: true }), 45);
-  assert.equal(scoreCustom({ active_exploitation: '  CONFIRMED  ', cisa_kev: true }), 45);
-  assert.equal(scoreCustom({ active_exploitation: 'SUSPECTED' }), 10);
-  // resolveActiveExploitation reports these as recognised (no spurious warning).
-  assert.equal(resolveActiveExploitation('Confirmed').recognised, true);
-  assert.equal(resolveActiveExploitation('  CONFIRMED  ').normalised, 'confirmed');
+test('#8 curation-apply parity: a typo post-weight key does not inflate the derived rwep_score', () => {
+  // cve-curation.js derives entry.rwep_score via
+  // deriveRwepFromFactors(entry.rwep_factors) when rwep_factors is supplied
+  // without an explicit rwep_score. A typo'd key in that bag must NOT inflate
+  // the derived score — it lands excluded, exactly as scoreCustom/validateFactors
+  // treat an unknown key. This is the root-cause behavior the curation path relies on.
+  const factorsWithTypo = {
+    cisa_kev: 25,
+    poc_available: 20,
+    ai_factor: 15,
+    blast_radius: 20,
+    patch_avilable: -15, // typo for patch_available — must be excluded
+  };
+  const factorsClean = {
+    cisa_kev: 25,
+    poc_available: 20,
+    ai_factor: 15,
+    blast_radius: 20,
+  };
+  // The typo must not be applied: the derived score equals the clean-bag score,
+  // NOT clean - 15 (the value the typo would have contributed had it been summed).
+  assert.equal(deriveRwepFromFactors(factorsWithTypo), deriveRwepFromFactors(factorsClean));
+  assert.equal(deriveRwepFromFactors(factorsWithTypo), 80);
 });
 
-test('deriveRwepFromFactors() inherits the AE fix on the Shape-A route', () => {
-  // Shape A (a boolean present routes through scoreCustom): an out-of-vocab AE
-  // inside the factor bag must drop only the AE weight, not poison the score.
-  const inVocab = deriveRwepFromFactors({ cisa_kev: true, active_exploitation: 'confirmed', blast_radius: 10 });
-  assert.equal(inVocab, 55, '25 + 20 + 10 = 55');
-  const outOfVocab = deriveRwepFromFactors({ cisa_kev: true, active_exploitation: 'exploited', blast_radius: 10 });
-  assert.equal(outOfVocab, 35, '25 + 0 (AE dropped) + 10 = 35 — observable via process warning');
+test('#8 recognised aliases (patch_required_reboot, ai_assisted_weaponization) still sum', () => {
+  // These catalog field names ARE recognised post-weight keys; a clean bag
+  // using them must not be dropped by the new filter.
+  // reboot_required +5 (no patch_required_reboot present to dedupe against).
+  assert.equal(deriveRwepFromFactors({ cisa_kev: 25, reboot_required: 5 }), 30);
+  // patch_required_reboot alone (the catalog alias) +5.
+  assert.equal(deriveRwepFromFactors({ cisa_kev: 25, patch_required_reboot: 5 }), 30);
+  // Both present: the reboot weight counts once (alias dedupe preserved).
+  assert.equal(
+    deriveRwepFromFactors({ cisa_kev: 25, reboot_required: 5, patch_required_reboot: 5 }),
+    30,
+  );
 });
 
-// ---------- 4. activeExploitationMultiplier(): bare-number call path ----------
-// resolveActiveExploitation returns the structured {multiplier, recognised,
-// normalised}; activeExploitationMultiplier is the bare-number wrapper the
-// production scoreCustom path calls. Both are exported and tested directly so
-// the no-match -> observable-warning contract is pinned at the unit level, not
-// only through scoreCustom integration.
-
-test('activeExploitationMultiplier maps canonical + stray-cased values to the ladder, unknowns to 0', () => {
-  // Canonical and case/whitespace variants resolve to the same non-zero weight.
-  const confirmed = activeExploitationMultiplier('confirmed');
-  assert.equal(typeof confirmed, 'number');
-  assert.ok(confirmed > 0, 'a recognised active_exploitation must contribute a non-zero multiplier');
-  assert.equal(activeExploitationMultiplier(' CONFIRMED '), confirmed,
-    'a stray-cased / padded canonical value must normalise to the same multiplier, not zero');
-
-  // null/undefined are the documented "treated as none" default (recognised, 0).
-  const none = resolveActiveExploitation(null);
-  assert.equal(none.recognised, true);
-  assert.equal(none.normalised, 'none');
-
-  // An out-of-vocabulary value is UNRECOGNISED and contributes 0.
-  const r = resolveActiveExploitation('in-the-wild');
-  assert.equal(r.recognised, false, 'an out-of-vocab active_exploitation must be flagged unrecognised');
-  assert.equal(r.multiplier, 0);
-  assert.equal(activeExploitationMultiplier('in-the-wild'), 0,
-    'the bare-number path returns 0 for an unrecognised value (and emits a process warning)');
+test('#8 blast_radius per-factor clamp is preserved alongside the unknown-key filter', () => {
+  // An out-of-range blast_radius (unit error) is still clamped to the weight
+  // ceiling (30), and an unknown key alongside it is still excluded.
+  assert.equal(
+    deriveRwepFromFactors({ blast_radius: 300, bogus: 7 }),
+    30,
+    'blast_radius clamp + unknown-key exclusion both apply',
+  );
 });
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
 });
 
 
-// ---- routed from scoring-vectors ----
-require("node:test").describe("scoring-vectors", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+// ---- routed from j-blast-radius-doc-weight ----
+require("node:test").describe("j-blast-radius-doc-weight", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * tests/scoring-vectors.test.js
+ * tests/j-blast-radius-doc-weight.test.js
  *
- * Regression vector table for lib/scoring.js scoreCustom().
- * Each row asserts the computed score AND that the score is a finite
- * number — i.e. NaN / Infinity never escape the formula, including for
- * malformed inputs (NaN blast_radius, string blast_radius, etc.).
- *
- * Vector coverage (audit J output):
- *   - max-everything           — every positive factor on, score clamps at 100
- *   - copy-fail                — real catalog entry CVE-2026-31431 reproduced
- *   - copilot-pi               — real catalog entry CVE-2025-53773 reproduced
- *   - only-mitigations         — purely negative weights, clamps to 0
- *   - blast-overflow           — blast_radius=999 caps at 30
- *   - blast-NaN                — NaN blast_radius coerces to 0
- *   - blast-string             — '15' string coerces to 15
- *   - blast-Infinity           — Infinity coerces to 0
- *   - blast-negative           — negative blast_radius coerces to 0
- *   - unknown-exploit          — active_exploitation='unknown' → +5 (J F4)
- *   - suspected-only           — active_exploitation='suspected' → +10
- *   - confirmed-only           — active_exploitation='confirmed' → +20
- *   - both-ai-flags            — both AI flags on; ai_factor still single-counted
- *   - empty                    — {} returns 0
- *   - null                     — null factors returns 0
- *   - undefined                — undefined factors returns 0
- *   - unknown-key              — unknown key surfaced via validateFactors
- *   - float-blast              — fractional blast_radius preserved through clamp
- *   - collectWarnings-roundtrip — collectWarnings returns same score + raw
- *   - all-flags-no-blast       — every boolean on but blast=0
+ * The blast_radius RWEP factor weight is documented on three operator-facing
+ * surfaces (README, ARCHITECTURE, the exploit-scoring skill). These pin each
+ * documented ceiling to the live RWEP_WEIGHTS.blast_radius so the docs cannot
+ * drift to half the real weight again. The scoring engine is the source of
+ * truth; the docs must follow it.
  */
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {
-  scoreCustom,
-  validateFactors,
-  deriveRwepFromFactors,
-  ACTIVE_EXPLOITATION_LADDER,
-  RECOGNISED_FACTOR_KEYS,
-} = require('../lib/scoring.js');
-const { _activeExploitationLadder: RUNNER_EXPLOITATION_LADDER } = require('../lib/playbook-runner.js');
+const fs = require('node:fs');
+const path = require('node:path');
 
-const VECTORS = [
-  {
-    name: 'max-everything',
-    factors: {
-      cisa_kev: true, poc_available: true, ai_discovered: true,
-      ai_assisted_weapon: true, active_exploitation: 'confirmed',
-      blast_radius: 30, patch_available: false, live_patch_available: false,
-      reboot_required: true,
-    },
-    // 25 + 20 + 15 + 20 + 30 + 0 + 0 + 5 = 115 → clamp to 100
-    expected: 100,
-  },
-  {
-    name: 'copy-fail (CVE-2026-31431)',
-    factors: {
-      cisa_kev: true, poc_available: true, ai_discovered: true,
-      active_exploitation: 'confirmed', blast_radius: 30,
-      patch_available: true, live_patch_available: true, reboot_required: true,
-    },
-    // 25 + 20 + 15 + 20 + 30 - 15 - 10 + 5 = 90
-    expected: 90,
-  },
-  {
-    name: 'copilot-pi (CVE-2025-53773)',
-    factors: {
-      cisa_kev: false, poc_available: true, ai_assisted_weapon: true,
-      active_exploitation: 'suspected', blast_radius: 10,
-      patch_available: true, live_patch_available: true, reboot_required: false,
-    },
-    // 0 + 20 + 15 + 10 + 10 - 15 - 10 + 0 = 30
-    expected: 30,
-  },
-  {
-    name: 'only-mitigations',
-    factors: {
-      cisa_kev: false, poc_available: false, ai_discovered: false,
-      active_exploitation: 'none', blast_radius: 0,
-      patch_available: true, live_patch_available: true, reboot_required: false,
-    },
-    // -15 - 10 = -25 → clamp to 0
-    expected: 0,
-  },
-  {
-    name: 'blast-overflow',
-    factors: { blast_radius: 999 },
-    // only blast contributes; caps at 30
-    expected: 30,
-  },
-  {
-    name: 'blast-NaN',
-    factors: { blast_radius: NaN },
-    // NaN coerces to 0, no other contributions
-    expected: 0,
-  },
-  {
-    name: 'blast-string',
-    factors: { blast_radius: '15' },
-    // string coerces via Number('15') = 15
-    expected: 15,
-  },
-  {
-    name: 'blast-Infinity',
-    factors: { blast_radius: Infinity },
-    expected: 0,
-  },
-  {
-    name: 'blast-negative',
-    factors: { blast_radius: -10 },
-    // Math.max(0, ...) → 0
-    expected: 0,
-  },
-  {
-    name: 'unknown-exploit (audit J F4)',
-    factors: { active_exploitation: 'unknown' },
-    // unknown multiplier 0.25 × weight 20 = 5
-    expected: 5,
-  },
-  {
-    name: 'suspected-only',
-    factors: { active_exploitation: 'suspected' },
-    expected: 10,
-  },
-  {
-    name: 'confirmed-only',
-    factors: { active_exploitation: 'confirmed' },
-    expected: 20,
-  },
-  {
-    name: 'both-ai-flags',
-    factors: { ai_discovered: true, ai_assisted_weapon: true },
-    // ai_factor fires once even when both flags are true
-    expected: 15,
-  },
-  {
-    name: 'empty',
-    factors: {},
-    expected: 0,
-  },
-  {
-    name: 'null',
-    factors: null,
-    expected: 0,
-  },
-  {
-    name: 'undefined',
-    factors: undefined,
-    expected: 0,
-  },
-  {
-    name: 'unknown-key',
-    // typo'd key — should be ignored by scoreCustom but flagged by validateFactors
-    factors: { cisa_kev: true, cisa_kev_typo: true },
-    expected: 25,
-  },
-  {
-    name: 'float-blast',
-    factors: { blast_radius: 12.5 },
-    // float preserved; total = 12.5 (clamp doesn't truncate)
-    expected: 12.5,
-  },
-  {
-    name: 'all-flags-no-blast',
-    factors: {
-      cisa_kev: true, poc_available: true, ai_discovered: true,
-      active_exploitation: 'confirmed', blast_radius: 0,
-      patch_available: false, live_patch_available: false, reboot_required: true,
-    },
-    // 25 + 20 + 15 + 20 + 0 + 0 + 0 + 5 = 85
-    expected: 85,
-  },
-];
+const ROOT = path.join(__dirname, '..');
+const { RWEP_WEIGHTS } = require('../lib/scoring.js');
+const WEIGHT = RWEP_WEIGHTS.blast_radius;
 
-for (const vec of VECTORS) {
-  test(`scoreCustom vector: ${vec.name}`, () => {
-    const out = scoreCustom(vec.factors);
-    assert.equal(out, vec.expected, `vector ${vec.name}: expected ${vec.expected}, got ${out}`);
-    assert.ok(
-      Number.isFinite(out),
-      `vector ${vec.name}: score must be a finite number (NaN/Infinity must never escape)`,
-    );
-  });
+test('the live blast_radius weight is a positive integer', () => {
+  assert.ok(Number.isInteger(WEIGHT) && WEIGHT > 0);
+});
+
+test('README documents the blast radius weight as the live RWEP weight', () => {
+  const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
+  // The factor list renders the weight as a 0.NN fraction (weight / 100).
+  const fraction = '0.' + String(WEIGHT).padStart(2, '0');
+  assert.match(
+    readme,
+    new RegExp('blast radius \\(' + fraction.replace('.', '\\.') + '\\)'),
+    `README must list "blast radius (${fraction})"`
+  );
+});
+
+test('ARCHITECTURE documents the blast_radius weight and scale as the live RWEP weight', () => {
+  const arch = fs.readFileSync(path.join(ROOT, 'ARCHITECTURE.md'), 'utf8');
+  const m = arch.match(/blast_radius\s+\+(\d+)\s+\(0[–-](\d+) scaled\)/);
+  assert.ok(m, 'ARCHITECTURE.md is missing the blast_radius weight line');
+  assert.equal(Number(m[1]), WEIGHT);
+  assert.equal(Number(m[2]), WEIGHT);
+});
+
+test('exploit-scoring skill formula and scale use the live blast_radius ceiling', () => {
+  const skill = fs.readFileSync(
+    path.join(ROOT, 'skills', 'exploit-scoring', 'skill.md'),
+    'utf8'
+  );
+  // Formula term: (blast_radius × <weight>)
+  assert.match(
+    skill,
+    new RegExp('blast_radius\\s+×\\s+' + WEIGHT + '\\b'),
+    `skill formula must read "(blast_radius × ${WEIGHT})"`
+  );
+  // Scale wording: "scaled to 0–<weight>"
+  assert.match(
+    skill,
+    new RegExp('scaled to 0[–-]' + WEIGHT + '\\b'),
+    `skill scale must read "scaled to 0–${WEIGHT}"`
+  );
+  // Output template row ceiling: [0-<weight>]
+  assert.match(
+    skill,
+    new RegExp('\\[0-' + WEIGHT + '\\]'),
+    `skill output row must read "[0-${WEIGHT}]"`
+  );
+  // No stale half-weight ceiling should remain in the formula/scale wording.
+  const halfFraction = '0–15';
+  assert.ok(
+    !new RegExp('blast_radius\\s+×\\s+15\\b').test(skill),
+    'skill formula still multiplies blast_radius by the stale half-weight 15'
+  );
+  assert.ok(
+    !skill.includes('scaled to ' + halfFraction),
+    'skill scale still references the stale half-weight range 0–15'
+  );
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
-
-// audit J F10: collectWarnings round-trip — score must match the bare call,
-// _rwep_raw_unclamped must be the pre-clamp value, _scoring_warnings must
-// be an array.
-test('scoreCustom vector: collectWarnings-roundtrip', () => {
-  const factors = {
-    cisa_kev: false, poc_available: false, ai_discovered: false,
-    active_exploitation: 'none', blast_radius: 0,
-    patch_available: true, live_patch_available: true, reboot_required: false,
-  };
-  const bare = scoreCustom(factors);
-  const wrapped = scoreCustom(factors, { collectWarnings: true });
-  assert.equal(wrapped.score, bare);
-  assert.equal(wrapped.score, 0);
-  // pre-clamp shows the deduction magnitude (-25): the entry has -15 - 10
-  // worth of mitigating factors, which the clamp would have hidden.
-  assert.equal(wrapped._rwep_raw_unclamped, -25);
-  assert.ok(Array.isArray(wrapped._scoring_warnings));
 });
 
-// audit J F8: unknown factor keys surface via validateFactors.
-test('validateFactors flags unknown keys (audit J F8)', () => {
-  const warnings = validateFactors({ cisa_kev: true, cisa_kev_typo: true });
-  assert.ok(
-    warnings.some((w) => /unknown factor: cisa_kev_typo/.test(w)),
-    `expected an unknown-factor warning; got: ${warnings.join(' | ')}`,
-  );
+
+// ---- routed from new-exports-smoke ----
+require("node:test").describe("new-exports-smoke", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Smoke tests for the new module exports added in v0.12.24. These tests
+ * are intentionally narrow: they verify the export exists, has the expected
+ * shape, and handles a representative happy-path input. Behavior-coverage
+ * for each function lives in the dedicated test files (csaf-bundle-
+ * correctness, openvex-emission, prefetch, lint-skills).
+ *
+ * The diff-coverage gate (scripts/check-test-coverage.js) treats any
+ * exported symbol that has no string reference in tests/ as an uncovered
+ * surface change. This file is the canonical "I added an export and a
+ * dedicated behavior test will follow" stop-gap that keeps the gate green.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+
+const ROOT = path.resolve(__dirname, '..');
+
+// ---------------------------------------------------------------------------
+// lib/lint-skills.js — air-gap completeness lint
+// ---------------------------------------------------------------------------
+
+
+
+// ---------------------------------------------------------------------------
+// lib/prefetch.js — _index.json Ed25519 signing
+// ---------------------------------------------------------------------------
+
+
+
+
+// ---------------------------------------------------------------------------
+// lib/scoring.js — strict CVSS 3.0/3.1 vector parse
+// ---------------------------------------------------------------------------
+
+
+
+// ---------------------------------------------------------------------------
+// scripts/check-test-coverage.js — coincidence-assert ban
+// ---------------------------------------------------------------------------
+
+test('lib/scoring exposes parseCvss31Vector', () => {
+  const scoring = require(path.join(ROOT, 'lib', 'scoring.js'));
+  assert.equal(typeof scoring.parseCvss31Vector, 'function',
+    'parseCvss31Vector must be exported');
+  // Happy path: a canonical 3.1 base vector.
+  const r = scoring.parseCvss31Vector('CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H');
+  assert.equal(r.ok, true);
+  assert.equal(r.version, '3.1');
 });
 
-// audit J F6: NaN diagnostic uses Number.isFinite + a dedicated message
-// rather than the misleading "expected number, got number (null)".
-test('validateFactors emits a specific message for NaN blast_radius (audit J F6)', () => {
-  const warnings = validateFactors({ blast_radius: NaN });
-  assert.ok(
-    warnings.some((w) => /NaN is not a valid numeric value/.test(w)),
-    `expected NaN-specific warning; got: ${warnings.join(' | ')}`,
-  );
+test('parseCvss31Vector accepts both 3.0 and 3.1 (CSAF cvss_v3-permitted versions)', () => {
+  const scoring = require(path.join(ROOT, 'lib', 'scoring.js'));
+  const v30 = scoring.parseCvss31Vector('CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N');
+  assert.equal(v30.ok, true);
+  assert.equal(v30.version, '3.0');
+  const v40 = scoring.parseCvss31Vector('CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H');
+  assert.equal(v40.ok, false, 'CVSS 4.0 must be refused (CSAF cvss_v3 only accepts 3.0/3.1)');
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
 });
 
-test('validateFactors emits a specific message for Infinity blast_radius', () => {
-  const warnings = validateFactors({ blast_radius: Infinity });
-  assert.ok(
-    warnings.some((w) => /not a finite numeric value/.test(w)),
-    `expected Infinity-specific warning; got: ${warnings.join(' | ')}`,
-  );
+
+// ---- routed from rwep-alias-and-explanation-edges ----
+require("node:test").describe("rwep-alias-and-explanation-edges", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * RWEP scorer alias + explanation consistency (adjacent-hunt E1-E4).
+ *
+ * The three scoring surfaces — scoreCustom/deriveRwepFromFactors (the numbers),
+ * validateFactors (the linter), and compare() (the human explanation) — must
+ * agree on the same aliases and normalization, or a CVE is scored one way and
+ * described/validated another.
+ *
+ *   E4 (critical): deriveRwepFromFactors must count reboot_required and its
+ *     alias patch_required_reboot ONCE, not sum both (double-counts +5).
+ *   E2: validateFactors must accept a stray-cased active_exploitation the
+ *     scorer accepts (resolveActiveExploitation normalizes), not flag it.
+ *   E3: validateFactors must treat patch_required_reboot as satisfying
+ *     reboot_required (not warn "missing").
+ *   E1: compare()'s driving-factors explanation must list the AI factor when
+ *     ai_assisted_weaponization drives the delta (not only ai_discovered).
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const { deriveRwepFromFactors, validateFactors, compare } = require('../lib/scoring.js');
+
+test('E4: deriveRwepFromFactors counts the reboot alias once (no double-count)', () => {
+  const one = deriveRwepFromFactors({ cisa_kev: 25, reboot_required: 5, blast_radius: 0 });
+  const both = deriveRwepFromFactors({ cisa_kev: 25, reboot_required: 5, patch_required_reboot: 5, blast_radius: 0 });
+  assert.equal(one, 30, 'single reboot key => 30');
+  assert.equal(both, 30, 'both reboot keys must still be 30 (alias counted once), not 35');
 });
 
-// The catalog scorer (lib/scoring.js) and the runtime evaluator
-// (lib/playbook-runner.js) each consume an active-exploitation ladder; they
-// must agree value-for-value or the same finding scores differently in the
-// two paths. Compare the two ladders directly so a change to one without the
-// other fails here.
-test('ACTIVE_EXPLOITATION_LADDER matches the playbook-runner ladder', () => {
-  // Pin the canonical scoring-side values, including the explicitly-mapped
-  // theoretical: 0 (deliberately not a ?? 0 fall-through, so a regression
-  // dropping the key is caught).
-  assert.equal(ACTIVE_EXPLOITATION_LADDER.confirmed, 1.0);
-  assert.equal(ACTIVE_EXPLOITATION_LADDER.suspected, 0.5);
-  assert.equal(ACTIVE_EXPLOITATION_LADDER.unknown, 0.25);
-  assert.equal(ACTIVE_EXPLOITATION_LADDER.theoretical, 0);
-  assert.equal(ACTIVE_EXPLOITATION_LADDER.none, 0);
-
-  // The runtime ladder must be present and identical to the scoring ladder.
-  assert.ok(
-    RUNNER_EXPLOITATION_LADDER && typeof RUNNER_EXPLOITATION_LADDER === 'object',
-    'playbook-runner must export _activeExploitationLadder for cross-checking',
-  );
-  assert.deepEqual(
-    RUNNER_EXPLOITATION_LADDER,
-    ACTIVE_EXPLOITATION_LADDER,
-    'the playbook-runner ladder must match lib/scoring.js value-for-value (including theoretical)',
-  );
-  // theoretical must be explicitly carried on both sides.
-  assert.equal(RUNNER_EXPLOITATION_LADDER.theoretical, 0,
-    'the runtime ladder must map theoretical to 0 explicitly');
-});
-
-// deriveRwepFromFactors detects shape correctly.
-test('deriveRwepFromFactors handles Shape A (boolean inputs) via scoreCustom', () => {
-  const factors = {
-    cisa_kev: true, poc_available: true, ai_discovered: false,
-    active_exploitation: 'suspected', blast_radius: 15,
-    patch_available: false, live_patch_available: false, reboot_required: true,
-  };
-  // 25 + 20 + 0 + 10 + 15 + 0 + 0 + 5 = 75
-  assert.equal(deriveRwepFromFactors(factors), 75);
-});
-
-test('deriveRwepFromFactors handles Shape B (catalog post-weight) via sum + clamp', () => {
-  const factors = {
-    cisa_kev: 0, poc_available: 20, ai_factor: 15, active_exploitation: 10,
-    blast_radius: 10, patch_available: -15, live_patch_available: -10,
-    reboot_required: 0,
-  };
-  // sum = 30
-  assert.equal(deriveRwepFromFactors(factors), 30);
-});
-
-test('deriveRwepFromFactors clamps Shape B sums to [0, 100]', () => {
-  // Shape B: post-weight values. Use RECOGNISED factor keys — unknown keys are
-  // now excluded from the derived sum (with an RWEP_FACTOR_UNRECOGNISED warning)
-  // rather than silently inflating the score, so the clamp must be exercised
-  // with real keys whose summed weights exceed/undershoot the [0,100] range.
-  assert.equal(deriveRwepFromFactors({ poc_available: 60, ai_factor: 60 }), 100); // 120 -> 100
-  assert.equal(deriveRwepFromFactors({ patch_available: -50, live_patch_available: -30 }), 0); // -80 -> 0
-});
-
-test('deriveRwepFromFactors returns 0 for empty / null / undefined', () => {
-  assert.equal(deriveRwepFromFactors({}), 0);
-  assert.equal(deriveRwepFromFactors(null), 0);
-  assert.equal(deriveRwepFromFactors(undefined), 0);
-});
-
-// Shape B clamps blast_radius to its [0, 30] per-factor ceiling before summing,
-// matching scoreCustom — so an out-of-range stored blast (a unit error) cannot
-// silently saturate or zero the score by being absorbed only by the final
-// aggregate clamp, and the two scorers agree on the same logical factors.
-test('deriveRwepFromFactors Shape B clamps blast_radius to [0, 30] before summing', () => {
-  // 300 must be treated as 30 (the weight ceiling), not summed raw.
-  // cisa_kev 25 + blast clamped 30 = 55, NOT a saturated 100.
-  assert.equal(deriveRwepFromFactors({ cisa_kev: 25, blast_radius: 300 }), 55);
-  // A negative blast is floored at 0, not subtracted: 25 + 20 + 0 = 45.
-  assert.equal(deriveRwepFromFactors({ cisa_kev: 25, poc_available: 20, blast_radius: -300 }), 45);
-  // The Shape B sum and scoreCustom must now produce the SAME score for the
-  // same logical factors when blast is out of range.
-  const factorsB = { cisa_kev: 25, poc_available: 20, blast_radius: 300 };
-  assert.equal(
-    deriveRwepFromFactors(factorsB),
-    scoreCustom({ cisa_kev: true, poc_available: true, blast_radius: 300 }),
-  );
-  assert.equal(deriveRwepFromFactors(factorsB), 75);
-  // An in-range blast is unaffected (no behavior change for valid data).
-  assert.equal(deriveRwepFromFactors({ cisa_kev: 25, blast_radius: 20 }), 45);
-});
-
-// audit J F8: RECOGNISED_FACTOR_KEYS is the authoritative set.
-test('RECOGNISED_FACTOR_KEYS contains every key scoreCustom destructures', () => {
-  const required = [
-    'cisa_kev', 'poc_available', 'ai_assisted_weapon', 'ai_discovered',
-    'active_exploitation', 'blast_radius', 'patch_available',
-    'live_patch_available', 'reboot_required', 'patch_required_reboot',
-  ];
-  for (const k of required) {
-    assert.ok(RECOGNISED_FACTOR_KEYS.has(k), `${k} must be in RECOGNISED_FACTOR_KEYS`);
+test('E2: validateFactors accepts a stray-cased active_exploitation the scorer accepts', () => {
+  for (const v of ['Confirmed', ' confirmed ', 'CONFIRMED']) {
+    const warns = validateFactors({ active_exploitation: v });
+    assert.ok(!warns.some(w => w.includes('active_exploitation: expected')),
+      `validateFactors must not flag normalized ${JSON.stringify(v)} that scoreCustom consumes`);
   }
+  // A genuinely out-of-vocab value is still flagged.
+  assert.ok(validateFactors({ active_exploitation: 'in-the-wild' }).some(w => w.includes('active_exploitation: expected')),
+    'an out-of-vocab value must still be flagged');
 });
+
+test('E3: validateFactors treats patch_required_reboot as satisfying reboot_required', () => {
+  const warns = validateFactors({ patch_required_reboot: true });
+  assert.ok(!warns.some(w => w.startsWith('reboot_required: missing')),
+    'the patch_required_reboot alias must satisfy reboot_required, not warn missing');
+});
+
+test('E1: compare() explanation lists the AI factor for ai_assisted_weaponization (not only ai_discovered)', () => {
+  const e = {
+    cve_id: 'X', rwep_score: 90, cvss_score: 6, active_exploitation: 'none',
+    cisa_kev: false, poc_available: false, ai_discovered: false, ai_assisted_weaponization: true,
+    patch_available: false, live_patch_available: false, patch_required_reboot: false,
+    rwep_factors: { blast_radius: 30 },
+  };
+  const r = compare('X', { X: e });
+  assert.match(r.explanation, /AI-discovered/,
+    'an ai_assisted_weaponization-driven delta must surface the AI factor in the explanation');
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
 });

@@ -3424,3 +3424,226 @@ describe('cli-flag-and-envelope-hardening.test.js', () => {
     assert.ok(body.error.length > 0);
   });
 });
+
+
+// ---- routed from help ----
+require("node:test").describe("help", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Subject coverage for the `help` CLI verb (bin/exceptd.js): the top-level
+ * help listing and the --help / -h aliases.
+ *
+ * Each contributing source file's tests are wrapped in a describe() block named
+ * for that source so the per-source requires/consts/helpers stay isolated.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+
+// ===========================================================================
+test.describe('bin-dispatcher', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const { spawnSync } = require('child_process');
+
+  const ROOT = path.join(__dirname, '..');
+  const BIN = path.join(ROOT, 'bin', 'exceptd.js');
+
+  function run(args) {
+    return spawnSync(process.execPath, [BIN, ...args], { encoding: 'utf8', cwd: ROOT });
+  }
+
+  test('bin/exceptd.js: help exits 0 and lists the documented subcommands', () => {
+    const r = run(['help']);
+    assert.equal(r.status, 0);
+    assert.match(r.stdout, /exceptd —/);
+    for (const cmd of ['path', 'prefetch', 'refresh', 'build-indexes', 'scan', 'currency', 'validate-cves', 'validate-rfcs', 'verify']) {
+      assert.match(r.stdout, new RegExp('\\b' + cmd + '\\b'), `help is missing "${cmd}"`);
+    }
+  });
+
+  test('bin/exceptd.js: --help and -h aliases work', () => {
+    for (const flag of ['--help', '-h']) {
+      const r = run([flag]);
+      assert.equal(r.status, 0, `${flag} should exit 0`);
+      assert.match(r.stdout, /exceptd —/);
+    }
+  });
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from package ----
+require("node:test").describe("package", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Subject suite for the package.json manifest — the npm publish-readiness
+ * invariants and the bin.exceptd entry point. These guard the shape the
+ * registry pulls at pack time (files allowlist, scoped public access,
+ * provenance) and that the declared bin actually points at bin/exceptd.js.
+ */
+
+const test = require('node:test');
+const { describe } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+// ===================================================================
+// Source: bin-dispatcher.test.js
+// ===================================================================
+describe('bin-dispatcher.test.js', () => {
+  const ROOT = path.join(__dirname, '..');
+  const BIN = path.join(ROOT, 'bin', 'exceptd.js');
+
+  test('bin/exceptd.js: package.json bin.exceptd points at this file', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+    assert.ok(pkg.bin && pkg.bin.exceptd, 'package.json must declare bin.exceptd');
+    const expected = path.normalize(BIN);
+    const actual = path.normalize(path.join(ROOT, pkg.bin.exceptd));
+    assert.equal(actual, expected);
+  });
+
+  test('package.json: publish-readiness invariants', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+    assert.notEqual(pkg.private, true, '"private": true blocks npm publish');
+    assert.equal(pkg.name, '@blamejs/exceptd-skills');
+    assert.ok(Array.isArray(pkg.files) && pkg.files.length > 0, 'files[] whitelist required for clean publish');
+    assert.ok(pkg.publishConfig, 'publishConfig required for scoped public publish');
+    assert.equal(pkg.publishConfig.access, 'public');
+    assert.equal(pkg.publishConfig.provenance, true, 'provenance must be true for OIDC attestation');
+  });
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from path ----
+require("node:test").describe("path", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Subject suite for the `exceptd path` CLI verb — prints the absolute,
+ * readable install directory that contains the shipped AGENTS.md.
+ */
+
+const test = require('node:test');
+const { describe } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
+
+// ===================================================================
+// Source: bin-dispatcher.test.js
+// ===================================================================
+describe('bin-dispatcher.test.js', () => {
+  const ROOT = path.join(__dirname, '..');
+  const BIN = path.join(ROOT, 'bin', 'exceptd.js');
+  function run(args) {
+    return spawnSync(process.execPath, [BIN, ...args], { encoding: 'utf8', cwd: ROOT });
+  }
+
+  test('bin/exceptd.js: path prints an absolute, readable directory', () => {
+    const r = run(['path']);
+    assert.equal(r.status, 0);
+    const printed = r.stdout.trim();
+    assert.ok(path.isAbsolute(printed), `expected absolute path, got "${printed}"`);
+    assert.ok(fs.existsSync(path.join(printed, 'AGENTS.md')), 'path output should contain AGENTS.md');
+  });
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from version ----
+require("node:test").describe("version", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Subject coverage for the `version` CLI verb (bin/exceptd.js): the bare-semver
+ * stdout contract and the --version / -v aliases.
+ *
+ * Each contributing source file's tests are wrapped in a describe() block named
+ * for that source so the per-source requires/consts/helpers stay isolated.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+
+// ===========================================================================
+test.describe('bin-dispatcher', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const { spawnSync } = require('child_process');
+
+  const ROOT = path.join(__dirname, '..');
+  const BIN = path.join(ROOT, 'bin', 'exceptd.js');
+
+  function run(args) {
+    return spawnSync(process.execPath, [BIN, ...args], { encoding: 'utf8', cwd: ROOT });
+  }
+
+  test('bin/exceptd.js: version prints the package.json version', () => {
+    const r = run(['version']);
+    assert.equal(r.status, 0);
+    const pkgVersion = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version;
+    assert.equal(r.stdout.trim(), pkgVersion);
+  });
+
+  test('bin/exceptd.js: --version and -v aliases work', () => {
+    for (const flag of ['--version', '-v']) {
+      const r = run([flag]);
+      assert.equal(r.status, 0, `${flag} should exit 0`);
+      const v = r.stdout.trim();
+      assert.match(v, /^\d+\.\d+\.\d+/, `${flag} should print a semver, got "${v}"`);
+    }
+  });
+});
+
+// ===========================================================================
+test.describe('cli-output-envelope-shape', () => {
+  const path = require('node:path');
+  const { spawnSync } = require('node:child_process');
+
+  const ROOT = path.join(__dirname, '..');
+  const CLI = path.join(ROOT, 'bin', 'exceptd.js');
+
+  function cli(args, opts = {}) {
+    return spawnSync(process.execPath, [CLI, ...args], {
+      encoding: 'utf8',
+      cwd: opts.cwd || ROOT,
+      env: { ...process.env, ...(opts.env || {}), EXCEPTD_DEPRECATION_SHOWN: '1' },
+    });
+  }
+
+  test('exceptd version: trivial scalar contract (proves harness)', () => {
+    const r = cli(['version']);
+    assert.equal(r.status, 0);
+    // Stdout is a bare semver newline, NOT JSON. The contract is that
+    // `version` always returns ONE token on stdout that semver-parses.
+    const v = r.stdout.trim();
+    assert.match(v, /^\d+\.\d+\.\d+$/, `version must be a bare semver; got: ${JSON.stringify(v)}`);
+  });
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});

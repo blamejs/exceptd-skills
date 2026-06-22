@@ -1,27 +1,105 @@
 "use strict";
 
 
-// ---- routed from crypto-codebase-pubkey-provenance-fp ----
-require("node:test").describe("crypto-codebase-pubkey-provenance-fp", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+// ---- routed from blamejs-scan-fixes ----
+require("node:test").describe("blamejs-scan-fixes", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * tests/crypto-codebase-pubkey-provenance-fp.test.js
+ * tests/blamejs-scan-fixes.test.js
  *
- * Regression tests for two crypto-codebase collector false positives that
- * surfaced when scanning repos doing crypto correctly:
+ * Pins the fixes a scan of the sibling blamejs repo surfaced:
+ *  - playbooks that declare bundle_format "json" (secrets / cred-stores /
+ *    runtime / citation-hygiene) now build a real structured-JSON evidence
+ *    bundle instead of falling through to the "Unknown format" placeholder;
+ *  - the crypto-codebase collector attests the playbook's own
+ *    `repo-has-source-tree` gate (it previously emitted a `repo-context` key
+ *    the playbook never references, so a source repo got a spurious
+ *    precondition_unverified warning).
+ * Exact-value pins, with content paired to presence per the project's
+ * field-present-vs-field-populated rule.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+
+const runner = require('../lib/playbook-runner.js');
+const cryptoCodebase = require('../lib/collectors/crypto-codebase.js');
+const containersCollector = require('../lib/collectors/containers.js');
+const { makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+
+const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-dogfix2-'));
+process.on('exit', () => { try { fs.rmSync(TMP, { recursive: true, force: true }); } catch { /* non-fatal */ } });
+let _n = 0;
+function mkfx() { const d = path.join(TMP, 'fx-' + _n++); fs.mkdirSync(d, { recursive: true }); return d; }
+
+test("crypto-codebase collector attests repo-has-source-tree from the gate's own markers (not just source-file extensions)", () => {
+  // A manifest marker -> true.
+  const withManifest = mkfx();
+  fs.writeFileSync(path.join(withManifest, 'package.json'), '{"name":"x","version":"1.0.0"}');
+  const m = cryptoCodebase.collect({ cwd: withManifest }).precondition_checks;
+  assert.equal(m['repo-has-source-tree'], true, 'a package manifest marker attests the gate true');
+  assert.equal('repo-context' in m, false, 'the playbook-unknown repo-context key must not be emitted');
+
+  // An src/ directory marker (no manifest, no extension-matched files yet) -> true.
+  const withSrcDir = mkfx();
+  fs.mkdirSync(path.join(withSrcDir, 'src'), { recursive: true });
+  assert.equal(
+    cryptoCodebase.collect({ cwd: withSrcDir }).precondition_checks['repo-has-source-tree'],
+    true,
+    'an src/ directory marker attests the gate true even before any source file exists'
+  );
+
+  // Source files by extension but NONE of the gate's markers -> false: the
+  // attestation mirrors the gate's exists_any(markers) predicate, not the
+  // collector's SOURCE_EXTS file count.
+  const looseSourceOnly = mkfx();
+  fs.writeFileSync(path.join(looseSourceOnly, 'script.py'), 'import hashlib\n');
+  assert.equal(
+    cryptoCodebase.collect({ cwd: looseSourceOnly }).precondition_checks['repo-has-source-tree'],
+    false,
+    'a loose source file with no source-tree marker attests false, matching the gate'
+  );
+
+  // No markers at all -> false.
+  const empty = mkfx();
+  assert.equal(
+    cryptoCodebase.collect({ cwd: empty }).precondition_checks['repo-has-source-tree'],
+    false,
+    'an empty tree attests the gate false'
+  );
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from collectors-fp-fixes ----
+require("node:test").describe("collectors-fp-fixes", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * tests/collectors-fp-fixes.test.js
  *
- *   1. `hardcoded-key-material` is a secret-leak signal. It must fire on
- *      PRIVATE key blocks only. Public keys and certificates are published
- *      by design (BIMI trust anchors, release-signing public keys,
- *      autoupdate pubkeys); flagging them inflated RWEP on well-behaved
- *      repos that simply ship a public key.
- *
- *   2. `vendored-pqc-no-provenance` must recognize `vendor/MANIFEST.json`
- *      as a provenance record. A vendored PQC tree whose upstream version,
- *      source, and license live in a MANIFEST.json is documented; it must
- *      not be flagged as provenance-less.
+ * Regression tests for a batch of collector false-positive / completeness
+ * fixes:
+ *   1. sbom: lockfile-no-integrity must NOT fire on a clean npm 7+ lockfile
+ *      whose `""` root entry carries name+version but no integrity. It must
+ *      still fire when a REMOTE-tarball entry (one with `resolved`) is missing
+ *      integrity.
+ *   2. secrets: a text file over the 1 MB scan limit is no longer silently
+ *      dropped — the skip is recorded in collector_errors.
+ *   3. secrets: the AWS-published example access-key id AKIAIOSFODNN7EXAMPLE
+ *      does not flip aws-access-key-id.
+ *   4. cicd-pipeline-compromise: an OIDC trust JSON under a build-output dir
+ *      (dist/) is excluded from the scan via the shared code-exclude set.
+ *   5. content-regex collectors (secrets / crypto-codebase / citation-hygiene)
+ *      attach a 1-based startLine to their evidence_locations.
  */
 
 const test = require("node:test");
@@ -31,141 +109,83 @@ const path = require("node:path");
 const os = require("node:os");
 
 const ROOT = path.join(__dirname, "..");
+
+const sbomCollector = require(path.join(ROOT, "lib", "collectors", "sbom.js"));
+const secretsCollector = require(path.join(ROOT, "lib", "collectors", "secrets.js"));
 const cryptoCollector = require(path.join(ROOT, "lib", "collectors", "crypto-codebase.js"));
+const citationCollector = require(path.join(ROOT, "lib", "collectors", "citation-hygiene.js"));
+const cicdCollector = require(path.join(ROOT, "lib", "collectors", "cicd-pipeline-compromise.js"));
+const { lineFromOffset } = require(path.join(ROOT, "lib", "collectors", "scan-excludes.js"));
 
 function mkTmp(prefix) {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
 }
 
-const PUBKEY_BLOCK =
-  "-----BEGIN PUBLIC KEY-----\n" +
-  "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEexampleexampleexampleexampleex\n" +
-  "ampleexampleexampleexampleexampleexampleexampleexampleexampleAA==\n" +
-  "-----END PUBLIC KEY-----\n";
-
-const CERT_BLOCK =
-  "-----BEGIN CERTIFICATE-----\n" +
-  "MIIBkTCB+wIJAKexample0123456789abcdefghijklmnopqrstuvwxyzABCDEFGH\n" +
-  "-----END CERTIFICATE-----\n";
-
-const PRIVKEY_BLOCK =
-  "-----BEGIN OPENSSH PRIVATE KEY-----\n" +
-  "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtz\n" +
-  "-----END OPENSSH PRIVATE KEY-----\n";
-
 // ---------------------------------------------------------------------------
-// Fix 1 — hardcoded-key-material fires on private blocks only
+// Finding 1 — sbom lockfile-no-integrity
 // ---------------------------------------------------------------------------
 
-// The signal scans source code (SOURCE_EXTS), so the realistic shape of
-// this FP is a PEM block embedded as a string constant in a .js/.py — a
-// published public key pinned in source is normal, a private key pasted in
-// source is the leak. Embed in a .js so the file is actually scanned.
-test("hardcoded-key-material: a BEGIN PUBLIC KEY embedded in source is a MISS", () => {
-  const tmp = mkTmp("crypto-pub-");
-  try {
-    fs.writeFileSync(path.join(tmp, "pubkey.js"),
-      "const AUTOUPDATE_PUBKEY = `" + PUBKEY_BLOCK + "`;\nmodule.exports = { AUTOUPDATE_PUBKEY };\n");
-    const r = cryptoCollector.collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["hardcoded-key-material"], "miss",
-      "a public key pinned in source must not flip the secret-leak signal");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
 
-test("hardcoded-key-material: a BEGIN CERTIFICATE embedded in source is a MISS", () => {
-  const tmp = mkTmp("crypto-cert-");
-  try {
-    fs.writeFileSync(path.join(tmp, "anchor.js"),
-      "const BIMI_ANCHOR = `" + CERT_BLOCK + "`;\nmodule.exports = { BIMI_ANCHOR };\n");
-    const r = cryptoCollector.collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["hardcoded-key-material"], "miss",
-      "a certificate (public by design) must not flip the secret-leak signal");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("hardcoded-key-material: a BEGIN PRIVATE KEY embedded in source still HITS", () => {
-  const tmp = mkTmp("crypto-priv-");
-  try {
-    fs.writeFileSync(path.join(tmp, "leaked.js"),
-      "const KEY = `" + PRIVKEY_BLOCK + "`;\nmodule.exports = { KEY };\n");
-    const r = cryptoCollector.collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["hardcoded-key-material"], "hit",
-      "an embedded private key must still fire the secret-leak signal");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("hardcoded-key-material: a BEGIN-marker regex literal (key DETECTOR) is a MISS", () => {
-  const tmp = mkTmp("crypto-detector-");
-  try {
-    // A redaction / DLP library tests strings against a private-key marker.
-    // The marker is a detection pattern, not embedded key material.
-    fs.writeFileSync(path.join(tmp, "redact.js"),
-      'const RULES = [\n' +
-      '  { test: (v) => typeof v === "string" && /-----BEGIN OPENSSH PRIVATE KEY-----/.test(v) },\n' +
-      '  { test: (v) => typeof v === "string" && /-----BEGIN RSA PRIVATE KEY-----/.test(v) },\n' +
-      '];\nmodule.exports = { RULES };\n');
-    const r = cryptoCollector.collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["hardcoded-key-material"], "miss",
-      "a BEGIN-marker regex literal with no body or END is a detector, not a leak");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("hardcoded-key-material: a JSDoc placeholder marker is a MISS", () => {
-  const tmp = mkTmp("crypto-jsdoc-");
-  try {
-    fs.writeFileSync(path.join(tmp, "mail.js"),
-      '/**\n' +
-      ' * @param {object} opts\n' +
-      ' *   privateKeyPem:  "-----BEGIN PRIVATE KEY----- ..."\n' +
-      ' */\nfunction sign(opts) { return opts; }\nmodule.exports = { sign };\n');
-    const r = cryptoCollector.collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["hardcoded-key-material"], "miss",
-      "an elided doc placeholder marker is not embedded key material");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
 
 // ---------------------------------------------------------------------------
-// Fix 2 — vendored-pqc-no-provenance recognizes vendor/MANIFEST.json
+// Finding 2 — secrets >1 MB skip is recorded
 // ---------------------------------------------------------------------------
 
-test("vendored-pqc-no-provenance: a vendor MANIFEST.json counts as provenance (MISS)", () => {
-  const tmp = mkTmp("crypto-vendor-prov-");
-  try {
-    const vendor = path.join(tmp, "vendor");
-    fs.mkdirSync(vendor, { recursive: true });
-    fs.writeFileSync(path.join(vendor, "MANIFEST.json"), JSON.stringify({
-      name: "kyber-ref", version: "1.0.0", source: "https://example/kyber", license: "MIT",
-    }, null, 2));
-    fs.writeFileSync(path.join(vendor, "kyber.js"), "// ml-kem reference impl\nmodule.exports = {};\n");
-    const r = cryptoCollector.collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["vendored-pqc-no-provenance"], "miss",
-      "a vendored PQC tree with a MANIFEST.json is documented");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
 
-test("vendored-pqc-no-provenance: a vendored PQC file with NO provenance still HITS", () => {
-  const tmp = mkTmp("crypto-vendor-noprov-");
+// ---------------------------------------------------------------------------
+// Finding 3 — AWS doc example key demotion
+// ---------------------------------------------------------------------------
+
+
+
+// ---------------------------------------------------------------------------
+// Finding 4 — cicd OIDC scan honors code-exclude set (dist/)
+// ---------------------------------------------------------------------------
+
+const WILDCARD_OIDC = JSON.stringify({
+  Statement: [{
+    Effect: "Allow",
+    Principal: { Federated: "token.actions.githubusercontent.com" },
+    Condition: {
+      StringLike: {
+        "token.actions.githubusercontent.com:sub": "repo:acme/*:*",
+      },
+    },
+  }],
+}, null, 2);
+
+
+
+// ---------------------------------------------------------------------------
+// Finding 5 — evidence_locations carry startLine
+// ---------------------------------------------------------------------------
+
+test("crypto-codebase: evidence_locations for bcrypt-cost-low carry a startLine", () => {
+  const tmp = mkTmp("fp-crypto-line-");
   try {
-    const vendor = path.join(tmp, "vendor");
-    fs.mkdirSync(vendor, { recursive: true });
-    fs.writeFileSync(path.join(vendor, "kyber.js"), "// ml-kem reference impl\nmodule.exports = {};\n");
+    // bcrypt call with cost 4 (<12) on line 3.
+    const src = [
+      "const bcrypt = require('bcrypt');",
+      "async function hash(pw) {",
+      "  return bcrypt.hash(pw, 4);",
+      "}",
+      "",
+    ].join("\n");
+    fs.writeFileSync(path.join(tmp, "auth.js"), src);
     const r = cryptoCollector.collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["vendored-pqc-no-provenance"], "hit",
-      "a vendored PQC tree with no provenance marker must still fire");
+    assert.equal(r.signal_overrides["bcrypt-cost-low"], "hit");
+    const locs = r.evidence_locations["bcrypt-cost-low"];
+    assert.ok(Array.isArray(locs) && locs.length >= 1);
+    assert.equal(locs[0].uri, "auth.js");
+    assert.equal(locs[0].startLine, 3, "startLine must point at the bcrypt call");
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
 });

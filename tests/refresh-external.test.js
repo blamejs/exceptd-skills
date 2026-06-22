@@ -1101,3 +1101,706 @@ test_describe('refresh-prefetch-populate-hint', () => {
     }
   });
 });
+
+
+// ---- routed from audit-usability-fixes ----
+require("node:test").describe("audit-usability-fixes", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * CLI usability regression suite.
+ *
+ * Pins the behavior of a set of CLI ergonomics fixes so they cannot silently
+ * regress at the next refactor. Each test exercises the real CLI through the
+ * shared cli() harness (subprocess spawn of bin/exceptd.js) and asserts the
+ * EXACT exit code and field shapes per the project anti-coincidence rule:
+ * never `notEqual(0)`, never `assert.ok(field)` without a paired value/type
+ * assertion.
+ *
+ * Areas covered:
+ *   1. Unknown-flag hard-fail across all verbs (+ typo suggestion + the
+ *      tailored cross-verb "irrelevant flag" message that must NOT collapse
+ *      into a generic unknown-flag refusal).
+ *   2. `--format json` returns the full run result, not a stub.
+ *   3. Multiple --format values emit a one-format-wins note to stderr.
+ *   4. Standardized bundles (sarif / csaf-2.0 / openvex) carry no top-level
+ *      `ok` key and present their spec marker.
+ *   5. `skill` / `framework-gap` honor --help; `refresh` keeps its own help.
+ *   6. `collect` emits JSON when piped (non-TTY) so the documented pipe works.
+ *   7. `refresh --check-advisories` arg parsing (report-only, no network).
+ *   8. `attest list --limit` envelope + bad-value rejection.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const os = require('node:os');
+
+const { ROOT, makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+
+const SUITE_HOME = makeSuiteHome('exceptd-audit-usability-');
+const cli = makeCli(SUITE_HOME);
+
+// ===================================================================
+// 1. Unknown-flag hard-fail (all verbs, not just doctor)
+// ===================================================================
+
+
+
+
+
+
+
+
+
+// ===================================================================
+// 2. `--format json` returns the FULL run result (not a stub)
+// ===================================================================
+
+
+// ===================================================================
+// 3. MULTI-FORMAT note to stderr
+// ===================================================================
+
+
+// ===================================================================
+// 4. STANDARDIZED BUNDLES carry NO top-level `ok` key
+// ===================================================================
+
+
+
+
+// ===================================================================
+// 5. `skill --help` / `framework-gap --help` honor --help;
+//    refresh keeps its OWN detailed help
+// ===================================================================
+
+
+
+
+// ===================================================================
+// 6. `collect` emits JSON when piped (non-TTY) so the documented pipe works
+// ===================================================================
+
+
+// ===================================================================
+// 7. `refresh --check-advisories` parsing (no network — parseArgs directly)
+// ===================================================================
+
+
+// ===================================================================
+// 8. `attest list --limit`
+// ===================================================================
+
+test('refresh parseArgs: --check-advisories is report-only and source-scoped', () => {
+  const { parseArgs } = require(path.join(ROOT, 'lib', 'refresh-external.js'));
+  const a = parseArgs(['node', 'x', '--check-advisories']);
+  assert.equal(a.source, 'advisories');
+  assert.equal(a.apply, false);
+  assert.equal(a.checkAdvisories, true);
+  // --apply must NOT flip a check-advisories run to write mode, regardless of order.
+  const b = parseArgs(['node', 'x', '--check-advisories', '--apply']);
+  assert.equal(b.apply, false);
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from operator-bugs ----
+require("node:test").describe("operator-bugs", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Operator-reported bug regression suite.
+ *
+ * Every operator-reported bug that has been fixed lands here as a named test
+ * case so re-introductions surface at `npm test`, not at user re-report.
+ * Numbering matches the operator report sequence (items #1 through #N as
+ * reported across the v0.9.5 → v0.11.x arc).
+ *
+ * Pattern for new items:
+ *   describe('#N short label', () => { it('precise behavior', ...); });
+ *
+ * Avoid coupling tests to file paths / playbook IDs that may change. Prefer
+ * direct runner exercises over CLI shell-outs where possible — CLI tests
+ * stay narrow (smoke-level) because they spawn subprocesses and slow the
+ * suite down.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const { spawnSync } = require('node:child_process');
+
+const { ROOT, CLI, makeSuiteHome, makeCli, tryJson, secureTmpFile } = require('./_helpers/cli');
+const runner = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
+
+const SUITE_HOME = makeSuiteHome('exceptd-operator-bugs-');
+const cli = makeCli(SUITE_HOME);
+
+// ===================================================================
+
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+// ===================================================================
+
+// ===================================================================
+
+
+
+// ===================================================================
+
+
+
+// ===================================================================
+
+
+
+
+// ===================================================================
+
+
+// ===================================================================
+
+// ===================================================================
+// CSAF framework gaps emit as `document.notes[]` with `category: details`,
+// not as `vulnerabilities[]` entries with `ids: [{system_name:
+// 'exceptd-framework-gap'}]`. The `system_name` slot is reserved for
+// recognised vulnerability tracking authorities (CVE, GHSA, etc.); the
+// custom string is rejected by NVD / ENISA / Red Hat dashboards. Notes
+// are the right home for advisory context, not pseudo-CVEs. The test
+// asserts the notes-based shape and anti-asserts the pseudo-vulnerability
+// shape.
+
+
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===================================================================
+// v0.11.14 freshness additions — opt-in registry check + upstream-check
+// + refresh --network. Tests use EXCEPTD_REGISTRY_FIXTURE so they're
+// fully offline-deterministic.
+// ===================================================================
+
+function withFixture(version, daysAgo) {
+  const file = secureTmpFile('npm-fixture.json', 'npm-fixture-');
+  const publishedAt = new Date(Date.now() - daysAgo * 24 * 3600 * 1000).toISOString();
+  fs.writeFileSync(file, JSON.stringify({
+    "dist-tags": { latest: version },
+    version,
+    time: { [version]: publishedAt, modified: publishedAt },
+  }));
+  return file;
+}
+
+
+
+
+
+
+
+
+// ===================================================================
+// v0.12.0 — GHSA source + refresh --advisory + refresh --curate
+// ===================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===================================================================
+
+test('v0.12 refresh --advisory <CVE> dry-run emits draft + exits 3', () => {
+  const fix = path.join(ROOT, 'tests', 'fixtures', 'ghsa-cve-2026-45321.json');
+  const r = spawnSync(process.execPath, [path.join(ROOT, 'lib', 'refresh-external.js'), '--advisory', 'CVE-9999-99999', '--json'], {
+    encoding: 'utf8',
+    env: { ...process.env, EXCEPTD_GHSA_FIXTURE: fix, EXCEPTD_DEPRECATION_SHOWN: '1', EXCEPTD_UNSIGNED_WARNED: '1' },
+  });
+  assert.equal(r.status, 3, '--advisory dry-run must exit 3 ("draft prepared, not applied")');
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'JSON output must parse');
+  assert.equal(data.mode, 'advisory-seed-dry-run');
+  assert.equal(data.cve_id, 'CVE-9999-99999');
+  assert.equal(data.draft._auto_imported, true);
+});
+
+test('v0.12 refresh --advisory --apply writes draft to a copy of the catalog', () => {
+  const fix = path.join(ROOT, 'tests', 'fixtures', 'ghsa-cve-2026-45321.json');
+  // Never write to ROOT/data/cve-catalog.json from a test. A mutate-and-
+  // restore-in-`finally{}` pattern would leak a synthetic CVE-9999-*
+  // draft into the live catalog if a Ctrl-C / OOM / power-loss landed
+  // between mutation and restore. refresh-external supports
+  // `--catalog <path>`; point it at the tempdir copy.
+  const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'cve-cat-'));
+  const tmpCatalog = path.join(tmpDir, 'cve-catalog.json');
+  fs.copyFileSync(path.join(ROOT, 'data', 'cve-catalog.json'), tmpCatalog);
+  try {
+    const r = spawnSync(process.execPath, [path.join(ROOT, 'lib', 'refresh-external.js'), '--advisory', 'CVE-9999-99999', '--apply', '--catalog', tmpCatalog, '--json'], {
+      encoding: 'utf8',
+      env: { ...process.env, EXCEPTD_GHSA_FIXTURE: fix, EXCEPTD_DEPRECATION_SHOWN: '1' },
+    });
+    assert.equal(r.status, 3, '--advisory --apply exits 3 (applied, editorial-review pending)');
+    const data = tryJson(r.stdout);
+    assert.ok(data?.ok);
+    assert.equal(data.mode, 'advisory-seed-applied');
+    const catAfter = JSON.parse(fs.readFileSync(tmpCatalog, 'utf8'));
+    assert.ok(catAfter['CVE-9999-99999'], 'draft entry must be written');
+    assert.equal(catAfter['CVE-9999-99999']._auto_imported, true);
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from hunt-fix-F-refresh-net ----
+require("node:test").describe("hunt-fix-F-refresh-net", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * tests/hunt-fix-F-refresh-net.test.js
+ *
+ * Regression pins for the F-refresh-net cluster:
+ *   #15 — cve-regression-watcher (NEW-CTRL-074) was dead in production: the
+ *         refresh orchestrator never threaded the advisories source's
+ *         observations onto ctx, so the watcher always saw empty input and
+ *         evaluated zero observations. Now main()'s source loop threads
+ *         ctx.advisoriesObservations (preferred) + ctx.advisoriesDiffs
+ *         between advisories and the watcher (sequential AND --swarm).
+ *   #16 — `refresh --network --air-gap` was silently bypassed when
+ *         EXCEPTD_REGISTRY_FIXTURE was set; the air-gap refusal is now
+ *         unconditional w.r.t. the fixture env var.
+ *   #48 — content-only regression candidates were not deduplicated across
+ *         feeds (unlike CVE-id-bearing candidates); now grouped by a stable
+ *         key with merged surfaced_by.
+ *   #51 — isAllowedTarballHost validated u.hostname but the connect reused
+ *         u.host (port-inclusive); the guard now rejects a non-default port.
+ *
+ * Each case fails on the pre-fix behavior and passes after.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
+
+const ROOT = path.join(__dirname, '..');
+const REFRESH_EXTERNAL = path.join(ROOT, 'lib', 'refresh-external.js');
+const REFRESH_NETWORK = path.join(ROOT, 'lib', 'refresh-network.js');
+const ADV_FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'refresh', 'advisories.json');
+
+const WATCHER = require(path.join(ROOT, 'lib', 'cve-regression-watcher.js'));
+const { isAllowedTarballHost } = require(REFRESH_NETWORK);
+
+// ---------------------------------------------------------------------------
+// Helper: build an isolated fixture dir with the advisories feed bodies (which
+// reference the historical CVE-2020-17103 inline) and a custom CVE catalog
+// where CVE-2020-17103 is a DIRECT key with no *-REREGRESSION-<year> entry, so
+// the watcher's verdict is the unambiguous `annotate`.
+// ---------------------------------------------------------------------------
+function buildChainFixture() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hunt-F-chain-'));
+  fs.copyFileSync(ADV_FIXTURE, path.join(dir, 'advisories.json'));
+  const catalogPath = path.join(dir, 'cve-catalog.json');
+  fs.writeFileSync(catalogPath, JSON.stringify({
+    _meta: { schema_version: '1.0.0' },
+    'CVE-2020-17103': { aliases: [] },
+  }));
+  return { dir, catalogPath };
+}
+
+function runChain(extraArgs) {
+  const { dir, catalogPath } = buildChainFixture();
+  const reportPath = path.join(dir, 'report.json');
+  const args = [
+    REFRESH_EXTERNAL,
+    '--from-fixture', dir,
+    '--catalog', catalogPath,
+    '--source', 'advisories,cve-regression-watcher',
+    '--report-out', reportPath,
+    '--quiet',
+    ...(extraArgs || []),
+  ];
+  const r = spawnSync(process.execPath, args, {
+    env: { ...process.env, EXCEPTD_TEST_HARNESS: '1' },
+    encoding: 'utf8',
+    maxBuffer: 32 * 1024 * 1024,
+  });
+  const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+  return { r, report };
+}
+
+// ===========================================================================
+// #15 — the chaining is wired end-to-end through the real CLI source loop.
+//       These spawn the orchestrator so they exercise the EXACT broken wiring
+//       (the prior unit tests passed through fetchDiff(ctx) directly and
+//       bypassed it).
+// ===========================================================================
+
+
+
+
+// ===========================================================================
+// #16 — air-gap refusal is unconditional w.r.t. EXCEPTD_REGISTRY_FIXTURE.
+// ===========================================================================
+
+
+// ===========================================================================
+// #48 — content-only candidate dedup / source-merge across feeds.
+// ===========================================================================
+
+
+
+
+// ===========================================================================
+// #51 — host-allowlist port hole.
+// ===========================================================================
+
+test('#15 sequential: advisories observations are threaded into the watcher', () => {
+  const { r, report } = runChain([]);
+  assert.equal(r.status, 0, `expected exit 0; got ${r.status} (stderr: ${r.stderr.slice(0, 400)})`);
+
+  const watcher = report.sources['cve-regression-watcher'];
+  assert.equal(typeof watcher, 'object', 'watcher source must be present in the report');
+
+  // Pre-fix: input was empty -> evaluated 0, diff_count 0. Assert the EXACT
+  // non-zero evaluated count (>= 1) that distinguishes fixed from broken.
+  assert.equal(watcher.diff_count, 1, 'exactly one candidate must surface from the threaded observations');
+  assert.match(watcher.summary, /evaluated [1-9]\d* poller observations/,
+    'summary must report a NON-ZERO evaluated-observations count');
+  assert.doesNotMatch(watcher.summary, /evaluated 0 /,
+    'a fixed pipeline must never report "evaluated 0" here');
+
+  // The chaining selected the preferred observations field, not the fallback.
+  assert.equal(watcher._meta.input_field_used, 'advisoriesObservations',
+    'watcher must consume the threaded advisoriesObservations, not the diffs fallback');
+
+  // Content-shape, not just field-presence: the candidate is the in-catalog
+  // historical CVE routed to annotate, surfaced by both press feeds.
+  const cand = watcher.diffs.find((d) => d.historical_cve === 'CVE-2020-17103');
+  assert.equal(typeof cand, 'object', 'the historical CVE candidate must be present');
+  assert.equal(cand.action, 'annotate',
+    'the in-catalog historical CVE (no REREGRESSION entry) must route to annotate');
+  assert.deepEqual(cand.surfaced_by.slice().sort(),
+    ['bleepingcomputer-security', 'thehackernews'],
+    'surfaced_by must list both press feeds that referenced CVE-2020-17103');
+
+  // The orchestrator persists the advisories observations into the report so
+  // the chaining is observable.
+  const adv = report.sources['advisories'];
+  assert.ok(Array.isArray(adv.observations), 'advisories source must persist observations[]');
+  assert.equal(adv.observations.length, 1, 'one deduplicated CVE observation');
+  assert.equal(adv.observations[0].id, 'CVE-2020-17103');
+});
+
+test('#15 --swarm: the watcher runs in a second pass and still sees the observations', () => {
+  const { r, report } = runChain(['--swarm']);
+  assert.equal(r.status, 0, `expected exit 0; got ${r.status} (stderr: ${r.stderr.slice(0, 400)})`);
+
+  const watcher = report.sources['cve-regression-watcher'];
+  assert.equal(watcher.diff_count, 1, 'swarm second-pass must still surface the candidate');
+  assert.equal(watcher._meta.input_field_used, 'advisoriesObservations',
+    'swarm second-pass must read the resolved advisories observations');
+  assert.match(watcher.summary, /evaluated [1-9]/, 'swarm: non-zero evaluated count');
+
+  // Declared --source order (advisories, cve-regression-watcher) must be
+  // preserved in the report even though the watcher ran in a later pass.
+  const keys = Object.keys(report.sources);
+  assert.deepEqual(
+    keys.filter((k) => k === 'advisories' || k === 'cve-regression-watcher'),
+    ['advisories', 'cve-regression-watcher'],
+    'report must preserve the operator-declared source order',
+  );
+});
+
+test('#15 --swarm: watcher selected WITHOUT advisories does not crash (empty-input contract)', () => {
+  const { dir, catalogPath } = buildChainFixture();
+  const reportPath = path.join(dir, 'report.json');
+  const r = spawnSync(process.execPath, [
+    REFRESH_EXTERNAL,
+    '--from-fixture', dir,
+    '--catalog', catalogPath,
+    '--source', 'cve-regression-watcher',
+    '--report-out', reportPath,
+    '--quiet', '--swarm',
+  ], { env: { ...process.env, EXCEPTD_TEST_HARNESS: '1' }, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
+  assert.equal(r.status, 0, `watcher-alone swarm must not crash; got ${r.status} (${r.stderr.slice(0, 300)})`);
+  const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+  assert.equal(report.sources['cve-regression-watcher'].diff_count, 0,
+    'no advisories selected -> watcher legitimately evaluates an empty input');
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from kev-applydiff-rwep ----
+require("node:test").describe("kev-applydiff-rwep", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * KEV applyDiff must keep RWEP coherent with the cisa_kev flag.
+ *
+ * The first scheduled refresh to apply a real KEV listing wrote
+ * cisa_kev: true onto an entry without touching rwep_factors or
+ * rwep_score, leaving the catalog failing scoring.validate()'s sum
+ * invariant (stored 45 vs computed 70 — the delta is exactly the
+ * RWEP_WEIGHTS.cisa_kev contribution). The fix recomputes the factor and
+ * the stored score inside the same apply, honouring whichever factor
+ * shape the entry stores (Shape A boolean / Shape B post-weight).
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+
+const ROOT = path.join(__dirname, '..');
+const { ALL_SOURCES } = require(path.join(ROOT, 'lib', 'refresh-external.js'));
+const scoring = require(path.join(ROOT, 'lib', 'scoring.js'));
+
+function makeCatalog(entry) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-kev-rwep-'));
+  const p = path.join(dir, 'cve-catalog.json');
+  fs.writeFileSync(p, JSON.stringify({ 'CVE-2099-0001': entry }, null, 2));
+  return p;
+}
+
+function readCatalog(p) {
+  return JSON.parse(fs.readFileSync(p, 'utf8'));
+}
+
+test('cisa_kev false→true adds the KEV factor and recomputes rwep_score (Shape B)', async () => {
+  const p = makeCatalog({
+    cisa_kev: false,
+    rwep_factors: { cisa_kev: 0, poc_available: 20, active_exploitation: 20, blast_radius: 5 },
+    rwep_score: 45,
+  });
+  const r = await ALL_SOURCES.kev.applyDiff({ cvePath: p }, [
+    { id: 'CVE-2099-0001', field: 'cisa_kev', before: false, after: true },
+  ]);
+  assert.equal(r.updated, 1, 'one entry updated');
+  const e = readCatalog(p)['CVE-2099-0001'];
+  assert.equal(e.cisa_kev, true, 'flag flipped');
+  assert.equal(e.rwep_factors.cisa_kev, scoring.RWEP_WEIGHTS.cisa_kev,
+    'Shape-B factor must store the post-weight KEV contribution');
+  assert.equal(e.rwep_score, 45 + scoring.RWEP_WEIGHTS.cisa_kev,
+    'rwep_score must gain exactly the KEV weight — the sum invariant scoring.validate() enforces');
+});
+
+test('cisa_kev true→false removes the KEV factor and recomputes rwep_score (Shape B)', async () => {
+  const p = makeCatalog({
+    cisa_kev: true,
+    rwep_factors: { cisa_kev: scoring.RWEP_WEIGHTS.cisa_kev, poc_available: 20, active_exploitation: 20, blast_radius: 5 },
+    rwep_score: 45 + scoring.RWEP_WEIGHTS.cisa_kev,
+  });
+  await ALL_SOURCES.kev.applyDiff({ cvePath: p }, [
+    { id: 'CVE-2099-0001', field: 'cisa_kev', before: true, after: false },
+  ]);
+  const e = readCatalog(p)['CVE-2099-0001'];
+  assert.equal(e.cisa_kev, false, 'flag flipped back');
+  assert.equal(e.rwep_factors.cisa_kev, 0, 'Shape-B factor must zero out');
+  assert.equal(e.rwep_score, 45, 'rwep_score must drop by exactly the KEV weight');
+});
+
+test('Shape-A boolean factors keep their shape and re-derive through the canonical formula', async () => {
+  const factorsAfter = { cisa_kev: true, poc_available: true, active_exploitation: 'confirmed', blast_radius: 2 };
+  const p = makeCatalog({
+    cisa_kev: false,
+    rwep_factors: { cisa_kev: false, poc_available: true, active_exploitation: 'confirmed', blast_radius: 2 },
+    rwep_score: scoring.deriveRwepFromFactors({ cisa_kev: false, poc_available: true, active_exploitation: 'confirmed', blast_radius: 2 }),
+  });
+  await ALL_SOURCES.kev.applyDiff({ cvePath: p }, [
+    { id: 'CVE-2099-0001', field: 'cisa_kev', before: false, after: true },
+  ]);
+  const e = readCatalog(p)['CVE-2099-0001'];
+  assert.equal(typeof e.rwep_factors.cisa_kev, 'boolean', 'Shape-A factor must stay boolean');
+  assert.equal(e.rwep_factors.cisa_kev, true, 'Shape-A factor follows the flag');
+  assert.equal(e.rwep_score, scoring.deriveRwepFromFactors(factorsAfter),
+    'rwep_score must match the canonical derivation of the post-flip factors');
+});
+
+test('a cisa_kev_date diff does not touch rwep_factors or rwep_score', async () => {
+  const p = makeCatalog({
+    cisa_kev: true,
+    cisa_kev_date: '2026-01-01',
+    rwep_factors: { cisa_kev: scoring.RWEP_WEIGHTS.cisa_kev, blast_radius: 10 },
+    rwep_score: scoring.RWEP_WEIGHTS.cisa_kev + 10,
+  });
+  await ALL_SOURCES.kev.applyDiff({ cvePath: p }, [
+    { id: 'CVE-2099-0001', field: 'cisa_kev_date', before: '2026-01-01', after: '2026-06-01' },
+  ]);
+  const e = readCatalog(p)['CVE-2099-0001'];
+  assert.equal(e.cisa_kev_date, '2026-06-01', 'date applied');
+  assert.equal(e.rwep_factors.cisa_kev, scoring.RWEP_WEIGHTS.cisa_kev, 'factor untouched');
+  assert.equal(e.rwep_score, scoring.RWEP_WEIGHTS.cisa_kev + 10, 'score untouched');
+});
+
+test('a first KEV listing emits the flag AND the listing date for a null-date entry', async () => {
+  // The diff producer once required a truthy local cisa_kev_date before it
+  // would emit a date diff — so a first listing (local date null) flipped the
+  // flag alone, and the applied tree failed strict validation (KEV-listed
+  // entries must carry their listing date).
+  const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-kev-cache-'));
+  fs.mkdirSync(path.join(cacheDir, 'kev'), { recursive: true });
+  fs.writeFileSync(
+    path.join(cacheDir, 'kev', 'known_exploited_vulnerabilities.json'),
+    JSON.stringify({ vulnerabilities: [{ cveID: 'CVE-2099-0001', dateAdded: '2026-06-01' }] })
+  );
+  const ctx = {
+    cacheDir,
+    forceStale: true,
+    cveCatalog: { 'CVE-2099-0001': { cisa_kev: false, cisa_kev_date: null } },
+  };
+  const r = await ALL_SOURCES.kev.fetchDiff(ctx);
+  const flag = r.diffs.find((d) => d.id === 'CVE-2099-0001' && d.field === 'cisa_kev');
+  const date = r.diffs.find((d) => d.id === 'CVE-2099-0001' && d.field === 'cisa_kev_date');
+  assert.ok(flag, 'flag diff emitted');
+  assert.equal(flag.after, true, 'flag diff lists the CVE');
+  assert.ok(date, 'date diff emitted despite null local date — first-listing case');
+  assert.equal(date.before, null, 'before is the null local date');
+  assert.equal(date.after, '2026-06-01', 'after is the upstream listing date');
+});
+
+test('an entry without rwep_factors gets the flag but no synthesized factors', async () => {
+  const p = makeCatalog({ cisa_kev: false });
+  await ALL_SOURCES.kev.applyDiff({ cvePath: p }, [
+    { id: 'CVE-2099-0001', field: 'cisa_kev', before: false, after: true },
+  ]);
+  const e = readCatalog(p)['CVE-2099-0001'];
+  assert.equal(e.cisa_kev, true, 'flag flipped');
+  assert.equal('rwep_factors' in e, false, 'must not fabricate a factors object the curator never wrote');
+  assert.equal('rwep_score' in e, false, 'must not fabricate a score');
+});
+
+test('a KEV de-listing (true→false) clears the now-orphaned cisa_kev_date', async () => {
+  // After a CVE leaves KEV, its listing date is stale intel. The upstream
+  // diff producer only emits a date diff when upstream HAS a date — a
+  // de-listed CVE no longer does — so the applyDiff branch must clear the
+  // date itself, or the entry ships cisa_kev:false alongside a stale date.
+  const p = makeCatalog({
+    cisa_kev: true,
+    cisa_kev_date: '2026-01-01',
+    cisa_kev_due_date: '2026-01-22',
+    rwep_factors: { cisa_kev: scoring.RWEP_WEIGHTS.cisa_kev, blast_radius: 10 },
+    rwep_score: scoring.RWEP_WEIGHTS.cisa_kev + 10,
+  });
+  await ALL_SOURCES.kev.applyDiff({ cvePath: p }, [
+    { id: 'CVE-2099-0001', field: 'cisa_kev', before: true, after: false },
+  ]);
+  const e = readCatalog(p)['CVE-2099-0001'];
+  assert.equal(e.cisa_kev, false, 'flag flipped to de-listed');
+  assert.equal(e.cisa_kev_date, null, 'orphaned listing date cleared');
+  assert.equal(e.cisa_kev_due_date, null, 'orphaned due date cleared');
+  assert.equal(e.rwep_factors.cisa_kev, 0, 'KEV factor zeroed');
+  assert.equal(e.rwep_score, 10, 'rwep_score drops by exactly the KEV weight');
+});
+
+test('a KEV listing (false→true) does not null a date the diff will set separately', async () => {
+  // The date-clear must only fire on de-listing. A fresh listing keeps any
+  // existing date untouched here; the paired cisa_kev_date diff sets it.
+  const p = makeCatalog({
+    cisa_kev: false,
+    cisa_kev_date: null,
+    rwep_factors: { cisa_kev: 0, blast_radius: 10 },
+    rwep_score: 10,
+  });
+  await ALL_SOURCES.kev.applyDiff({ cvePath: p }, [
+    { id: 'CVE-2099-0001', field: 'cisa_kev', before: false, after: true },
+  ]);
+  const e = readCatalog(p)['CVE-2099-0001'];
+  assert.equal(e.cisa_kev, true, 'flag flipped to listed');
+  assert.equal(e.cisa_kev_date, null, 'listing-direction flip leaves the date for its own diff');
+  assert.equal(e.rwep_factors.cisa_kev, scoring.RWEP_WEIGHTS.cisa_kev, 'KEV factor added');
+});
+
+test('de-listing an entry that never carried a date leaves no spurious key', async () => {
+  const p = makeCatalog({
+    cisa_kev: true,
+    rwep_factors: { cisa_kev: scoring.RWEP_WEIGHTS.cisa_kev, blast_radius: 5 },
+    rwep_score: scoring.RWEP_WEIGHTS.cisa_kev + 5,
+  });
+  await ALL_SOURCES.kev.applyDiff({ cvePath: p }, [
+    { id: 'CVE-2099-0001', field: 'cisa_kev', before: true, after: false },
+  ]);
+  const e = readCatalog(p)['CVE-2099-0001'];
+  assert.equal(e.cisa_kev, false, 'flag flipped');
+  assert.equal('cisa_kev_date' in e, false, 'must not introduce a date key that was never present');
+  assert.equal('cisa_kev_due_date' in e, false, 'must not introduce a due-date key that was never present');
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});

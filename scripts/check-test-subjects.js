@@ -71,6 +71,21 @@ function deriveSubjects() {
   for (const e of ls("data/playbooks")) if (e.isFile() && e.name.endsWith(".json")) { const b = e.name.replace(/\.json$/, ""); add(b, "playbook-primitive"); add("playbook-" + b, "playbook-primitive"); }
   // workflows
   for (const e of ls(".github/workflows")) if (/\.ya?ml$/.test(e.name)) { const b = e.name.replace(/\.ya?ml$/, ""); add(b, "workflow"); add(b + "-workflow", "workflow"); }
+
+  // Repo-artifact subjects: shipped root config/doc files, the docker build
+  // context, the agents/ directory, and aggregate catalog directories. A test
+  // that pins one of these artifacts (its content, counts, or cross-references)
+  // is named after a durable subject, not a release — so these are valid test
+  // targets. Kind is not module/cve/playbook, so they are NOT reverse-required
+  // (we don't force a dedicated test per doc file).
+  for (const f of ["package.json", "manifest.json", "manifest-snapshot.json", "README.md", "AGENTS.md", "SECURITY.md", "ARCHITECTURE.md", "CONTEXT.md", "CHANGELOG.md", "CONTRIBUTING.md", "CODE_OF_CONDUCT.md", "LICENSE", "NOTICE"]) {
+    add(f.replace(/\.[^.]*$/, "").toLowerCase().replace(/_/g, "-"), "repo:" + f);
+  }
+  add("agents-md", "repo:AGENTS.md");
+  add("docker", "repo:docker/test.Dockerfile");
+  add("agents", "repo:agents/");
+  add("playbooks", "aggregate:data/playbooks");
+  add("workflows", "aggregate:.github/workflows");
   return subjects;
 }
 

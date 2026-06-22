@@ -754,208 +754,500 @@ test('A: validate-playbooks no longer emits any "unexpected property fed_by" war
 });
 
 
-// ---- routed from exports-surface ----
-;(() => {
-// Exports-surface coverage for the v0.12.12 additive helpers / constants.
-// The diff-coverage gate (Hard Rule #15) requires every new lib export to
-// have a corresponding test reference. These tests assert the shape and
-// basic semantics of each export so a future rename, type-change, or
-// silent removal is caught.
+// ---- routed from hunt-fix-D-validators ----
+require("node:test").describe("hunt-fix-D-validators", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * tests/hunt-fix-D-validators.test.js
+ *
+ * Regression locks for five confirmed validator bugs (cluster D-validators):
+ *
+ *   #17 validate-catalog-meta: validateMeta returned a bare string[] on the
+ *       missing-_meta early path while the includeWarnings caller read
+ *       result.errors — main() crashed with an uncaught TypeError on the first
+ *       no-_meta file, aborting the whole gate. Now the early return honors the
+ *       caller's requested shape and the loop continues to later files.
+ *
+ *   #18 validate-cve-catalog: additionalChecks dereferenced entry.poc_available
+ *       before any null guard — a null catalog entry crashed main(). Guarded at
+ *       the top; the malformed-entry FAIL still originates in validate().
+ *
+ *   #19 validate-catalog-meta: the freshness gate silently SKIPPED when
+ *       last_updated was unparseable (fail-open). A malformed/impossible date
+ *       is now an error under --strict / warning by default; a valid-but-old
+ *       date still reports stale.
+ *
+ *   #20 validate-playbooks: checkCrossRefs read playbook._meta before any null
+ *       guard — a literal-null playbook file crashed main(). Guarded at the top.
+ *
+ *   #21 validate-playbooks: the air-gap network-source detector missed
+ *       API-verb-phrased sources ("GET /... via Graph", "Entra ID", "Okta",
+ *       "Microsoft Graph"); broadened so such a source under air_gap_mode with
+ *       no air_gap_alternative is flagged at error severity — without
+ *       over-firing on the shipped corpus.
+ *
+ * Each case fails on the pre-fix behavior and passes after. CLI-level cases use
+ * a copied-into-tempdir mini-repo (validator + exit-codes + schemas + the data
+ * it reads) so the real on-disk catalogs are never mutated.
+ */
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+const { spawnSync } = require('node:child_process');
 
-const lintSkills = require('../lib/lint-skills');
-const validateCveCatalog = require('../lib/validate-cve-catalog');
-const prefetch = require('../lib/prefetch');
-const scheduler = require('../orchestrator/scheduler');
-const crossRefApi = require('../lib/cross-ref-api');
-const sourceGhsa = require('../lib/source-ghsa');
-const sourceOsv = require('../lib/source-osv');
+const ROOT = path.join(__dirname, '..');
 
-test('lib/lint-skills exports REQUIRED_SECTIONS as a non-empty array of strings', () => {
-  assert.ok(Array.isArray(lintSkills.REQUIRED_SECTIONS));
-  assert.ok(lintSkills.REQUIRED_SECTIONS.length >= 1);
-  for (const s of lintSkills.REQUIRED_SECTIONS) assert.equal(typeof s, 'string');
-});
+const catalogMeta = require(path.join(ROOT, 'lib', 'validate-catalog-meta.js'));
+const cveCatalog = require(path.join(ROOT, 'lib', 'validate-cve-catalog.js'));
+const playbooksMod = require(path.join(ROOT, 'lib', 'validate-playbooks.js'));
 
-test('lib/lint-skills exports COUNTERMEASURE_SECTION as a string section name', () => {
-  assert.equal(typeof lintSkills.COUNTERMEASURE_SECTION, 'string');
-  assert.ok(lintSkills.COUNTERMEASURE_SECTION.length > 0);
-});
+const { validateMeta, parseIsoDateStrict } = catalogMeta;
+const { additionalChecks } = cveCatalog;
+const { checkCrossRefs, loadContext, loadPlaybooks } = playbooksMod;
 
-test('lib/lint-skills exports COUNTERMEASURE_CUTOFF as an ISO-date string', () => {
-  assert.equal(typeof lintSkills.COUNTERMEASURE_CUTOFF, 'string');
-  assert.match(lintSkills.COUNTERMEASURE_CUTOFF, /^\d{4}-\d{2}-\d{2}$/);
-});
+// --- tempdir mini-repo helpers ---------------------------------------------
 
-test('lib/lint-skills exports MIN_SECTION_BODY_WORDS as a positive integer', () => {
-  assert.equal(typeof lintSkills.MIN_SECTION_BODY_WORDS, 'number');
-  assert.ok(Number.isInteger(lintSkills.MIN_SECTION_BODY_WORDS));
-  assert.ok(lintSkills.MIN_SECTION_BODY_WORDS > 0);
-});
+function mkTmp(prefix) {
+  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+}
 
-test('lib/validate-cve-catalog exports looksLikePublicExploitSource as a function', () => {
-  assert.equal(typeof validateCveCatalog.looksLikePublicExploitSource, 'function');
-  // Smoke: a known public-exploit URL pattern matches; a non-exploit URL doesn't.
-  assert.equal(validateCveCatalog.looksLikePublicExploitSource('https://github.com/some/exploit-poc'), true);
-  assert.equal(validateCveCatalog.looksLikePublicExploitSource('https://example.com/about'), false);
-});
+function writeJson(p, obj) {
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  // String content for the literal-null case is passed through verbatim.
+  fs.writeFileSync(p, typeof obj === 'string' ? obj : JSON.stringify(obj));
+}
 
-test('lib/validate-cve-catalog exports isUsableDate as a function returning {ok, reason?}', () => {
-  assert.equal(typeof validateCveCatalog.isUsableDate, 'function');
-  assert.equal(validateCveCatalog.isUsableDate('2026-05-13').ok, true);
-  assert.equal(validateCveCatalog.isUsableDate('1899-01-01').ok, false);
-  assert.equal(validateCveCatalog.isUsableDate('2200-01-01').ok, false);
-  assert.equal(validateCveCatalog.isUsableDate('not-a-date').ok, false);
-  assert.equal(validateCveCatalog.isUsableDate(null).ok, false);
-});
+function copyInto(dst, relPath) {
+  const target = path.join(dst, relPath);
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.copyFileSync(path.join(ROOT, relPath), target);
+}
 
-test('lib/validate-cve-catalog exports additionalChecks as a callable function', () => {
-  assert.equal(typeof validateCveCatalog.additionalChecks, 'function');
-  // Smoke-call the helper — exact return shape is internal; assert it doesn't throw.
-  validateCveCatalog.additionalChecks('CVE-1999-0001', { name: 'x' }, { _meta: {} });
-});
+function runNode(scriptPath, args) {
+  return spawnSync(process.execPath, [scriptPath, ...args], { encoding: 'utf8' });
+}
 
-test('lib/validate-cve-catalog exports PUBLIC_EXPLOIT_URL_PATTERNS as an iterable of patterns', () => {
-  assert.ok(Array.isArray(validateCveCatalog.PUBLIC_EXPLOIT_URL_PATTERNS));
-  assert.ok(validateCveCatalog.PUBLIC_EXPLOIT_URL_PATTERNS.length >= 1);
-});
+// ===========================================================================
+// #17 — validate-catalog-meta missing-_meta early return honors both contracts
+// ===========================================================================
 
-test('lib/validate-cve-catalog exports STRICT_CVSS_PATTERN as a RegExp matching canonical versions', () => {
-  assert.ok(validateCveCatalog.STRICT_CVSS_PATTERN instanceof RegExp);
-  assert.ok(validateCveCatalog.STRICT_CVSS_PATTERN.test('CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H'));
-  assert.equal(validateCveCatalog.STRICT_CVSS_PATTERN.test('CVSS:99.9/AV:N'), false);
-});
 
-test('lib/prefetch exports writeFileAtomic as a function writing files atomically', () => {
-  const fs = require('fs');
-  const os = require('os');
-  const path = require('path');
-  assert.equal(typeof prefetch._internal.writeFileAtomic, 'function');
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'pf-export-'));
+
+
+// ===========================================================================
+// #19 — freshness gate fails closed on a malformed last_updated
+// ===========================================================================
+
+function freshMeta(lastUpdated) {
+  return {
+    _meta: {
+      tlp: 'CLEAR',
+      source_confidence: { scheme: 'Admiralty', default: 'B2', note: 'curated catalog' },
+      freshness_policy: {
+        default_review_cadence_days: 30,
+        stale_after_days: 90,
+        rebuild_after_days: 180,
+        note: 'review cadence for this catalog',
+        ...(lastUpdated !== undefined ? {} : {}),
+      },
+      last_updated: lastUpdated,
+    },
+  };
+}
+
+function validateMetaObj(metaObj, opts) {
+  // validateMeta reads from disk; stage a one-off file so we exercise the real
+  // code path (including the JSON parse) without touching the repo tree.
+  const tmp = mkTmp('hfd19-');
   try {
-    const dest = path.join(tmp, 'sample.txt');
-    prefetch._internal.writeFileAtomic(dest, 'hello atomic');
-    assert.equal(fs.readFileSync(dest, 'utf8'), 'hello atomic');
+    const p = path.join(tmp, 'catalog.json');
+    writeJson(p, metaObj);
+    return validateMeta(p, opts);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+for (const bad of ['2026-13-99', '2026-04-31', 'unknown', 'soon', '2026/01/01', 123]) {
+  test(`#19 malformed last_updated ${JSON.stringify(bad)} is an ERROR under --strict (was silently skipped)`, () => {
+    const r = validateMetaObj(freshMeta(bad), { includeWarnings: true, strict: true });
+    const hit = r.errors.filter((e) => /last_updated.*not a valid ISO date/.test(e));
+    assert.equal(hit.length, 1, `expected exactly one date-validity error, got: ${JSON.stringify(r.errors)}`);
+    // It must NOT have also produced a staleness finding for the same field.
+    assert.equal(r.errors.filter((e) => /freshness:.*days old/.test(e)).length, 0);
+  });
+
+  test(`#19 malformed last_updated ${JSON.stringify(bad)} is a WARNING in default mode (observable, not silent)`, () => {
+    const r = validateMetaObj(freshMeta(bad), { includeWarnings: true });
+    assert.equal(r.errors.length, 0, `default mode must not error: ${JSON.stringify(r.errors)}`);
+    const hit = r.warnings.filter((w) => /last_updated.*not a valid ISO date/.test(w));
+    assert.equal(hit.length, 1, `expected exactly one date-validity warning, got: ${JSON.stringify(r.warnings)}`);
+  });
+}
+
+
+
+
+// ===========================================================================
+// #18 — validate-cve-catalog additionalChecks null-entry guard
+// ===========================================================================
+
+
+
+
+// ===========================================================================
+// #20 — validate-playbooks checkCrossRefs null-playbook guard
+// ===========================================================================
+
+
+
+// ===========================================================================
+// #21 — air-gap network-source detector flags API-verb-phrased sources
+// ===========================================================================
+
+function minimalAirGapPlaybook(source, withAlt) {
+  // Smallest playbook shape that exercises the air-gap completeness check in
+  // checkCrossRefs. It needs a TTP mapping (atlas_refs) to avoid the unrelated
+  // TTP-floor error muddying the assertion; we use the live atlas key set.
+  const atlasKey = '__will_be_filled__';
+  const art = { source };
+  if (withAlt) art.air_gap_alternative = 'Local file already staged in cwd; read it directly.';
+  return {
+    _meta: { id: 'synthetic-airgap', air_gap_mode: true, scope: 'cross-cutting' },
+    domain: {},
+    phases: { look: { artifacts: [art] } },
+    __atlasKey: atlasKey,
+  };
+}
+
+function airGapFindings(source, withAlt) {
+  const ctx = loadContext();
+  const ids = new Set(['synthetic-airgap']);
+  const pb = minimalAirGapPlaybook(source, withAlt);
+  delete pb.__atlasKey;
+  return checkCrossRefs(pb, ctx, ids).filter((f) => /air_gap_mode is true and source/.test(f.message));
+}
+
+test('#20 checkCrossRefs does not throw on a null playbook and returns []', () => {
+  const ctx = loadContext();
+  const ids = new Set(loadPlaybooks().filter((p) => p.data).map((p) => p.data._meta.id));
+  assert.doesNotThrow(() => checkCrossRefs(null, ctx, ids));
+  assert.deepEqual(checkCrossRefs(null, ctx, ids), []);
+  // Array / primitive playbooks are also no-ops.
+  assert.deepEqual(checkCrossRefs([], ctx, ids), []);
+  assert.deepEqual(checkCrossRefs('nope', ctx, ids), []);
+});
+
+test('#20 CLI: a literal-null playbook file FAILs with the type error and does not crash', () => {
+  const tmp = mkTmp('hfd20-cli-');
+  try {
+    copyInto(tmp, path.join('lib', 'validate-playbooks.js'));
+    copyInto(tmp, path.join('lib', 'exit-codes.js'));
+    copyInto(tmp, path.join('lib', 'schemas', 'playbook.schema.json'));
+    copyInto(tmp, 'manifest.json');
+    for (const f of ['atlas-ttps.json', 'cve-catalog.json', 'cwe-catalog.json', 'd3fend-catalog.json', 'attack-techniques.json']) {
+      copyInto(tmp, path.join('data', f));
+    }
+    // The crashing input: a playbook file whose JSON content is literally null.
+    writeJson(path.join(tmp, 'data', 'playbooks', 'synthetic.json'), 'null');
+
+    const r = runNode(path.join(tmp, 'lib', 'validate-playbooks.js'), []);
+    assert.equal(r.status, 1);
+    assert.match(r.stdout, /expected type "object", got null/);
+    assert.doesNotMatch(r.stdout, /TypeError|Cannot read properties of null/);
+    assert.doesNotMatch(r.stderr, /TypeError|Cannot read properties of null/);
+    // The summary line printed (process did not abort before the tail).
+    assert.match(r.stdout, /playbooks validated/);
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
 
-test('orchestrator/scheduler exports TICK_MS as a positive integer not exceeding INT32 max', () => {
-  assert.equal(typeof scheduler.TICK_MS, 'number');
-  assert.ok(Number.isInteger(scheduler.TICK_MS));
-  assert.ok(scheduler.TICK_MS > 0);
-  assert.ok(scheduler.TICK_MS <= scheduler.SAFE_MAX_MS);
+test('#21 an API-verb-phrased source under air_gap_mode with no alternative is flagged at error severity', () => {
+  const findings = airGapFindings('Entra ID: GET /directoryRoles via Graph', false);
+  assert.equal(findings.length, 1, `expected exactly one air-gap finding, got: ${JSON.stringify(findings)}`);
+  assert.equal(findings[0].severity, 'error');
+  assert.match(findings[0].message, /air_gap_mode is true and source .* makes a network call/);
 });
 
-// v0.12.14 surface additions.
-
-test('lib/cross-ref-api exports getLoadErrors as a function returning an array', () => {
-  assert.equal(typeof crossRefApi.getLoadErrors, 'function');
-  const errs = crossRefApi.getLoadErrors();
-  assert.ok(Array.isArray(errs),
-    'getLoadErrors must return an array (empty when no catalog/index parse errors)');
+test('#21 the same API-verb source WITH an air_gap_alternative is silent', () => {
+  const findings = airGapFindings('Entra ID: GET /directoryRoles via Graph', true);
+  assert.deepEqual(findings, []);
 });
 
-test('lib/source-ghsa exports FIELD_DROPPED_WATCH as a frozen array of field names', () => {
-  assert.ok(Array.isArray(sourceGhsa.FIELD_DROPPED_WATCH));
-  assert.ok(sourceGhsa.FIELD_DROPPED_WATCH.length >= 1);
-  for (const f of sourceGhsa.FIELD_DROPPED_WATCH) assert.equal(typeof f, 'string');
-  // Frozen so downstream consumers can't accidentally mutate the shared
-  // watch list and silently change refresh-source behaviour.
-  assert.ok(Object.isFrozen(sourceGhsa.FIELD_DROPPED_WATCH));
+test('#21 a purely-local source under air_gap_mode is silent (no over-firing)', () => {
+  assert.deepEqual(airGapFindings('~/.ssh/config', false), []);
+  assert.deepEqual(airGapFindings('Walk cwd for *.env files', false), []);
+  // "api/v\\d" deliberately NOT a token: a local artifact referencing an API
+  // path must not be misclassified as a network call.
+  assert.deepEqual(airGapFindings('Code-scan: grep for /api/v2 callback handlers', false), []);
 });
 
-test('lib/source-osv exports FIELD_DROPPED_WATCH as a frozen array of field names', () => {
-  assert.ok(Array.isArray(sourceOsv.FIELD_DROPPED_WATCH));
-  assert.ok(sourceOsv.FIELD_DROPPED_WATCH.length >= 1);
-  for (const f of sourceOsv.FIELD_DROPPED_WATCH) assert.equal(typeof f, 'string');
-  assert.ok(Object.isFrozen(sourceOsv.FIELD_DROPPED_WATCH));
+test('#21 the full shipped corpus still produces zero air-gap findings under the broadened regex', () => {
+  const ctx = loadContext();
+  const playbooks = loadPlaybooks();
+  const ids = new Set(playbooks.filter((p) => p.data).map((p) => p.data._meta.id));
+  const airGapHits = [];
+  for (const pb of playbooks) {
+    if (!pb.data) continue;
+    const hits = checkCrossRefs(pb.data, ctx, ids).filter((f) =>
+      /air_gap_mode is true and source/.test(f.message),
+    );
+    for (const h of hits) airGapHits.push(`${pb.file}: ${h.message}`);
+  }
+  assert.deepEqual(airGapHits, [], `broadened regex must not over-fire on the shipped corpus:\n${airGapHits.join('\n')}`);
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
 });
 
-// v0.12.14 verify.js fingerprint-pin surface.
 
-const verifyMod = require('../lib/verify');
+// ---- routed from playbook-directive-validation ----
+require("node:test").describe("playbook-directive-validation", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * tests/playbook-directive-validation.test.js
+ *
+ * Locks two directive-level validation gaps that previously let bad content
+ * ship past the predeploy gate, even though the identical content is a hard
+ * error at playbook level:
+ *
+ *   A. directives[].applies_to.{cve,atlas_ttp,attack_technique} are now
+ *      cross-referenced to their catalogs (warning; error under --strict).
+ *   B. directives[].phase_overrides re-validates its govern.clock_starts and
+ *      direct.rwep_threshold copies — the runner deep-merges these into the
+ *      base phase at run time, so a bogus override must be rejected pre-ship.
+ *
+ * Pattern: load the live context, deep-clone a shipped playbook, mutate
+ * exactly one directive field, and assert the exact severity + message.
+ */
 
-test('lib/verify exports publicKeyFingerprint + checkExpectedFingerprint + EXPECTED_FINGERPRINT_PATH', () => {
-  assert.equal(typeof verifyMod.publicKeyFingerprint, 'function');
-  assert.equal(typeof verifyMod.checkExpectedFingerprint, 'function');
-  assert.equal(typeof verifyMod.EXPECTED_FINGERPRINT_PATH, 'string');
-  assert.ok(verifyMod.EXPECTED_FINGERPRINT_PATH.endsWith('EXPECTED_FINGERPRINT'));
-});
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+const { spawnSync } = require('node:child_process');
 
-// v0.12.14 orchestrator/event-bus.js + scheduler.js + pipeline.js additions.
+const ROOT = path.join(__dirname, '..');
+const VALIDATOR = path.join(ROOT, 'lib', 'validate-playbooks.js');
+const { checkCrossRefs, loadContext, loadPlaybooks } = require(VALIDATOR);
 
-const eventBus = require('../orchestrator/event-bus');
-const pipelineMod = require('../orchestrator/pipeline');
+function ctxAndIds() {
+  const ctx = loadContext();
+  const playbooks = loadPlaybooks();
+  const ids = new Set(playbooks.filter((p) => p.data).map((p) => p.data._meta.id));
+  return { ctx, ids };
+}
 
-test('orchestrator/event-bus exports DEFAULT_EVENT_LOG_MAX_SIZE as a positive integer', () => {
-  assert.equal(typeof eventBus.DEFAULT_EVENT_LOG_MAX_SIZE, 'number');
-  assert.ok(Number.isInteger(eventBus.DEFAULT_EVENT_LOG_MAX_SIZE));
-  assert.ok(eventBus.DEFAULT_EVENT_LOG_MAX_SIZE > 0);
-});
-
-test('orchestrator/scheduler exports _lastFiredStorePath + _markFired internals', () => {
-  assert.equal(typeof scheduler._lastFiredStorePath, 'function');
-  assert.equal(typeof scheduler._markFired, 'function');
-});
-
-test('orchestrator/pipeline exports MANIFEST_CACHE_TTL_MS + _resetManifestCache', () => {
-  assert.equal(typeof pipelineMod.MANIFEST_CACHE_TTL_MS, 'number');
-  assert.ok(pipelineMod.MANIFEST_CACHE_TTL_MS > 0);
-  assert.equal(typeof pipelineMod._resetManifestCache, 'function');
-  // Smoke: resetManifestCache must not throw on a fresh process.
-  pipelineMod._resetManifestCache();
-});
-
-// v0.12.14 scripts/validate-vendor-online.js exports.
-
-const validateVendorOnline = require('../scripts/validate-vendor-online');
-
-// v0.12.16 surface additions.
-
-test('lib/validate-playbooks exports checkMutexReciprocity as a function', () => {
-  const validatePlaybooks = require('../lib/validate-playbooks');
-  assert.equal(typeof validatePlaybooks.checkMutexReciprocity, 'function');
-  // Returns a Map keyed by playbook id; values are arrays of warning
-  // messages for asymmetric mutex declarations.
-  const empty = validatePlaybooks.checkMutexReciprocity([]);
-  assert.ok(empty instanceof Map);
-  // Reciprocal: a↔b — no asymmetric edges.
-  const reciprocal = validatePlaybooks.checkMutexReciprocity([
-    { data: { _meta: { id: 'a', mutex: ['b'] } } },
-    { data: { _meta: { id: 'b', mutex: ['a'] } } },
-  ]);
-  assert.ok(reciprocal instanceof Map);
-  // Asymmetric: a declares mutex with b but b doesn't reciprocate.
-  const asym = validatePlaybooks.checkMutexReciprocity([
-    { data: { _meta: { id: 'a', mutex: ['b'] } } },
-    { data: { _meta: { id: 'b', mutex: [] } } },
-  ]);
-  assert.ok(asym instanceof Map);
-  // At least one finding registered (against either 'a' or 'b').
-  const totalFindings = [...asym.values()].reduce((n, v) => n + (Array.isArray(v) ? v.length : 0), 0);
-  assert.ok(totalFindings >= 1, 'asymmetric mutex should produce at least one finding');
-});
-
-test('bin/exceptd registers --force-replay flag for cmdReattest', () => {
-  // The flag was added in v0.12.16 audit L F10 — operator override to
-  // proceed with reattest replay even when the prior attestation .sig
-  // sidecar fails to verify. Confirm the flag is in the bool-args list.
-  const fs = require('fs');
-  const src = fs.readFileSync(require('path').join(__dirname, '..', 'bin', 'exceptd.js'), 'utf8');
-  assert.match(src, /"force-replay"/, '--force-replay must be registered as a parseArgs bool flag');
-});
-
-test('scripts/validate-vendor-online exports rawUrlForPin + fetchBuffer', () => {
-  assert.equal(typeof validateVendorOnline.rawUrlForPin, 'function');
-  assert.equal(typeof validateVendorOnline.fetchBuffer, 'function');
-  // Smoke: rawUrlForPin produces a github raw URL string for a known shape.
-  const url = validateVendorOnline.rawUrlForPin(
-    'https://github.com/blamejs/blamejs.git', '1442f17758a4', 'lib/x.js'
+function goodKernel() {
+  return JSON.parse(
+    fs.readFileSync(path.join(ROOT, 'data', 'playbooks', 'kernel.json'), 'utf8'),
   );
-  assert.ok(typeof url === 'string' && url.includes('1442f17758a4'));
+}
+
+function severities(findings, sev) {
+  return findings.filter((f) => f.severity === sev);
+}
+
+// ---------- control ----------
+
+test('shipped kernel directives produce zero directive-coverage findings', () => {
+  const { ctx, ids } = ctxAndIds();
+  const findings = checkCrossRefs(goodKernel(), ctx, ids).filter((f) =>
+    /directives\[/.test(f.message),
+  );
+  assert.deepEqual(
+    findings,
+    [],
+    'unmutated shipped directives must produce no directive-coverage findings; got:\n' +
+      findings.map((f) => `  [${f.severity}] ${f.message}`).join('\n'),
+  );
 });
-})();
+
+// ---------- A. applies_to cross-reference ----------
+
+test('directive applies_to.cve unresolved → warning naming the directive path', () => {
+  const { ctx, ids } = ctxAndIds();
+  const pb = goodKernel();
+  pb.directives[0].applies_to = { cve: 'CVE-0000-00000' };
+  const findings = checkCrossRefs(pb, ctx, ids);
+  const matched = findings.filter((f) =>
+    /directives\[0\].*applies_to\.cve: unresolved "CVE-0000-00000"/.test(f.message),
+  );
+  assert.equal(matched.length, 1, 'exactly one applies_to.cve finding');
+  assert.equal(matched[0].severity, 'warning');
+
+  // Good form: a resolvable cve is silent.
+  const good = goodKernel();
+  good.directives[0].applies_to = { cve: 'CVE-2024-3094' };
+  const clean = checkCrossRefs(good, ctx, ids).filter((f) =>
+    /applies_to\.cve/.test(f.message),
+  );
+  assert.deepEqual(clean, [], 'resolvable applies_to.cve must be silent');
+});
+
+test('directive applies_to.atlas_ttp unresolved → warning', () => {
+  const { ctx, ids } = ctxAndIds();
+  const pb = goodKernel();
+  pb.directives[0].applies_to = { atlas_ttp: 'AML.T9999' };
+  const findings = checkCrossRefs(pb, ctx, ids);
+  const matched = findings.filter((f) =>
+    /directives\[0\].*applies_to\.atlas_ttp: unresolved "AML\.T9999"/.test(f.message),
+  );
+  assert.equal(matched.length, 1);
+  assert.equal(matched[0].severity, 'warning');
+});
+
+test('directive applies_to.attack_technique unresolved → warning', () => {
+  const { ctx, ids } = ctxAndIds();
+  const pb = goodKernel();
+  pb.directives[0].applies_to = { attack_technique: 'T9999999' };
+  const findings = checkCrossRefs(pb, ctx, ids);
+  const matched = findings.filter((f) =>
+    /directives\[0\].*applies_to\.attack_technique: unresolved "T9999999"/.test(f.message),
+  );
+  assert.equal(matched.length, 1);
+  assert.equal(matched[0].severity, 'warning');
+});
+
+test('directive applies_to.attack_technique with a null attack catalog → no finding', () => {
+  // Mirror domain.attack_refs: when the ATT&CK catalog is absent (null), the
+  // check must not fire (it cannot resolve anything).
+  const { ctx, ids } = ctxAndIds();
+  ctx.attackKeys = null;
+  const pb = goodKernel();
+  pb.directives[0].applies_to = { attack_technique: 'T9999999' };
+  const findings = checkCrossRefs(pb, ctx, ids).filter((f) =>
+    /applies_to\.attack_technique/.test(f.message),
+  );
+  assert.deepEqual(findings, [], 'null attack catalog must suppress the attack_technique check');
+});
+
+// ---------- B. phase_overrides re-validation ----------
+
+test('phase_overrides.govern bogus clock_starts → error naming the override path', () => {
+  const { ctx, ids } = ctxAndIds();
+  const pb = goodKernel();
+  pb.directives[0].phase_overrides = {
+    govern: {
+      jurisdiction_obligations: [
+        { jurisdiction: 'EU', regulation: 'NIS2', window_hours: 24, clock_starts: 'TOTALLY_BOGUS' },
+      ],
+    },
+  };
+  const findings = checkCrossRefs(pb, ctx, ids);
+  const matched = findings.filter((f) =>
+    /directives\[0\].*phase_overrides\.govern\.jurisdiction_obligations\[0\]\.clock_starts: invalid value "TOTALLY_BOGUS"/.test(
+      f.message,
+    ),
+  );
+  assert.equal(matched.length, 1, 'exactly one override clock_starts error');
+  assert.equal(matched[0].severity, 'error', 'override clock_starts is an error, like the base phase');
+});
+
+test('phase_overrides.direct rwep_threshold ordering violation → error naming the override path', () => {
+  const { ctx, ids } = ctxAndIds();
+  const pb = goodKernel();
+  pb.directives[0].phase_overrides = {
+    direct: { rwep_threshold: { close: 90, monitor: 50, escalate: 10 } },
+  };
+  const findings = checkCrossRefs(pb, ctx, ids);
+  const matched = findings.filter((f) =>
+    /directives\[0\].*phase_overrides\.direct\.rwep_threshold: ordering violation/.test(f.message),
+  );
+  assert.equal(matched.length, 1, 'exactly one override rwep ordering error');
+  assert.equal(matched[0].severity, 'error');
+});
+
+test('phase_overrides.direct rwep_threshold out-of-range → error naming the override path', () => {
+  const { ctx, ids } = ctxAndIds();
+  const pb = goodKernel();
+  pb.directives[0].phase_overrides = {
+    direct: { rwep_threshold: { close: 10, monitor: 50, escalate: 999 } },
+  };
+  const findings = checkCrossRefs(pb, ctx, ids);
+  const matched = findings.filter((f) =>
+    /directives\[0\].*phase_overrides\.direct\.rwep_threshold\.escalate: 999 outside 0\.\.100/.test(
+      f.message,
+    ),
+  );
+  assert.equal(matched.length, 1);
+  assert.equal(matched[0].severity, 'error');
+});
+
+test('a VALID phase_overrides still passes (no false positive)', () => {
+  const { ctx, ids } = ctxAndIds();
+  const pb = goodKernel();
+  pb.directives[0].phase_overrides = {
+    govern: {
+      jurisdiction_obligations: [
+        { jurisdiction: 'EU', regulation: 'NIS2', window_hours: 24, clock_starts: 'detect_confirmed' },
+      ],
+    },
+    direct: { rwep_threshold: { close: 25, monitor: 45, escalate: 75 } },
+  };
+  const findings = checkCrossRefs(pb, ctx, ids).filter((f) =>
+    /phase_overrides/.test(f.message),
+  );
+  assert.deepEqual(findings, [], 'a valid override must produce no override findings');
+  assert.equal(severities(findings, 'error').length, 0);
+});
+
+// ---------- end-to-end: predeploy --strict fails on a tampered override ----------
+
+function stageMirror(tmp) {
+  // Mirror just enough of the tree for the validator to load context + the
+  // single synthetic playbook. lib/, data catalogs, manifest, schema.
+  fs.mkdirSync(path.join(tmp, 'lib', 'schemas'), { recursive: true });
+  fs.mkdirSync(path.join(tmp, 'data', 'playbooks'), { recursive: true });
+  const copy = (rel) => fs.copyFileSync(path.join(ROOT, rel), path.join(tmp, rel));
+  copy('lib/validate-playbooks.js');
+  copy('lib/exit-codes.js');
+  copy('lib/schemas/playbook.schema.json');
+  copy('manifest.json');
+  for (const f of ['atlas-ttps.json', 'cve-catalog.json', 'cwe-catalog.json', 'd3fend-catalog.json', 'attack-techniques.json']) {
+    fs.copyFileSync(path.join(ROOT, 'data', f), path.join(tmp, 'data', f));
+  }
+}
+
+test('--strict fails the predeploy gate on a tampered directive override', () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-directive-override-'));
+  try {
+    stageMirror(tmp);
+    const pb = goodKernel();
+    pb.directives[0].phase_overrides = {
+      govern: {
+        jurisdiction_obligations: [
+          { jurisdiction: 'EU', regulation: 'NIS2', window_hours: 24, clock_starts: 'TOTALLY_BOGUS' },
+        ],
+      },
+    };
+    fs.writeFileSync(
+      path.join(tmp, 'data', 'playbooks', 'synthetic.json'),
+      JSON.stringify(pb, null, 2),
+    );
+    const r = spawnSync(process.execPath, [path.join(tmp, 'lib', 'validate-playbooks.js'), '--strict'], {
+      cwd: tmp,
+      encoding: 'utf8',
+    });
+    assert.equal(r.status, 1, `expected exit 1 for the tampered override; got ${r.status}\n${r.stdout}\n${r.stderr}`);
+    assert.match(r.stdout, /phase_overrides\.govern\.jurisdiction_obligations\[0\]\.clock_starts/);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});

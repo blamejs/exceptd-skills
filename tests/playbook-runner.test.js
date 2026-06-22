@@ -3235,37 +3235,512 @@ test.describe("reconciliation-fixes", () => {
 });
 
 
-// ---- routed from playbook-runner-error-paths ----
-require("node:test").describe("playbook-runner-error-paths", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+// ---- routed from blamejs-scan-fixes ----
+require("node:test").describe("blamejs-scan-fixes", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * tests/playbook-runner-error-paths.test.js
+ * tests/blamejs-scan-fixes.test.js
  *
- * Regression coverage for the FF / DD / HH audit batch landing in v0.12.21:
+ * Pins the fixes a scan of the sibling blamejs repo surfaced:
+ *  - playbooks that declare bundle_format "json" (secrets / cred-stores /
+ *    runtime / citation-hygiene) now build a real structured-JSON evidence
+ *    bundle instead of falling through to the "Unknown format" placeholder;
+ *  - the crypto-codebase collector attests the playbook's own
+ *    `repo-has-source-tree` gate (it previously emitted a `repo-context` key
+ *    the playbook never references, so a source repo got a spurious
+ *    precondition_unverified warning).
+ * Exact-value pins, with content paired to presence per the project's
+ * field-present-vs-field-populated rule.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+
+const runner = require('../lib/playbook-runner.js');
+const cryptoCodebase = require('../lib/collectors/crypto-codebase.js');
+const containersCollector = require('../lib/collectors/containers.js');
+const { makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+
+const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-dogfix2-'));
+process.on('exit', () => { try { fs.rmSync(TMP, { recursive: true, force: true }); } catch { /* non-fatal */ } });
+let _n = 0;
+function mkfx() { const d = path.join(TMP, 'fx-' + _n++); fs.mkdirSync(d, { recursive: true }); return d; }
+
+test('a playbook declaring bundle_format "json" builds a populated json bundle, not the Unknown-format placeholder', () => {
+  const res = runner.run(
+    'secrets',
+    'full-repo-secret-scan',
+    { precondition_checks: { 'repo-context': true }, signal_overrides: {} },
+    { force_replay: true, mode: 'test' }
+  );
+  assert.equal(res.ok, true, 'a clean secrets run must succeed');
+  const ep = res.phases && res.phases.close && res.phases.close.evidence_package;
+  assert.ok(ep, 'close phase must carry an evidence_package');
+  const body = ep.bundle_body;
+  assert.ok(body, 'evidence_package must carry a bundle_body');
+  // Presence: the declared format is honored.
+  assert.equal(body.format, 'json', 'bundle_body.format must be the declared json, not a fallback');
+  assert.equal('note' in body, false, 'a real json bundle must NOT carry the Unknown-format note');
+  // Content: the bundle is populated, not an empty shell.
+  assert.equal(body.playbook, 'secrets', 'bundle records its playbook id');
+  assert.equal(typeof body.session_id, 'string', 'bundle records the session id');
+  assert.equal(typeof body.verdict, 'string', 'bundle carries a string verdict');
+  assert.ok(Array.isArray(body.matched_cves), 'bundle carries a matched_cves array');
+  assert.equal(typeof body.rwep_adjusted, 'number', 'bundle carries a numeric adjusted rwep');
+  // The primary format is keyed under json and is the same record.
+  assert.ok(ep.bundles_by_format && ep.bundles_by_format.json, 'bundles_by_format keys the json primary');
+  assert.equal(ep.bundles_by_format.json.format, 'json', 'bundles_by_format.json is the json bundle');
+});
+
+test('top_finding names the dominant fired indicator (not the verdict string), and summary_line states the verdict once', () => {
+  const res = runner.run(
+    'library-author',
+    'published-artifact-audit',
+    { signal_overrides: { 'release-workflow-non-frozen-install': 'hit' } },
+    { force_replay: true, mode: 'test' }
+  );
+  assert.equal(res.verdict, 'detected', 'a forced indicator hit drives a detected verdict');
+  // top_finding must name the indicator that fired, not echo the verdict word.
+  assert.equal(res.top_finding, 'release-workflow-non-frozen-install', 'top_finding is the dominant fired indicator id');
+  // The verdict word appears exactly once in the summary line — no
+  // "detected (rwep=…, detected, …)" duplication.
+  assert.equal((res.summary_line.match(/detected/g) || []).length, 1, 'summary_line states the verdict once, not duplicated');
+
+  // Gate: a non-detection verdict must NOT advertise a top_finding (the
+  // indicator branch is gated on a real detection classification, so a stray
+  // hit on an inconclusive / not-detected run cannot leak a finding).
+  const miss = runner.run(
+    'library-author',
+    'published-artifact-audit',
+    { signal_overrides: { 'release-workflow-non-frozen-install': 'miss' } },
+    { force_replay: true, mode: 'test' }
+  );
+  assert.equal(miss.verdict, 'not_detected', 'all-miss drives a not_detected verdict');
+  assert.equal(miss.top_finding, null, 'a non-detection verdict carries no top_finding');
+});
+
+test('top_finding prefers the indicator that drove the RWEP score (and falls back to the dominant hit when none is weighted)', () => {
+  // Both a weighted rwep-input (sbom-absent-or-unsigned, weight 10) and a
+  // higher-confidence-but-unweighted hit fire: top_finding must name the
+  // weighted driver so the headline explains the rwep number beside it.
+  const driven = runner.run(
+    'library-author',
+    'published-artifact-audit',
+    { signal_overrides: { 'sbom-absent-or-unsigned': 'hit', 'release-workflow-non-frozen-install': 'hit' } },
+    { force_replay: true, mode: 'test' }
+  );
+  assert.equal(driven.verdict, 'detected');
+  assert.equal(driven.rwep_score, 10, 'the weighted signal sets rwep=10');
+  assert.equal(driven.top_finding, 'sbom-absent-or-unsigned', 'top_finding names the rwep driver, not the higher-confidence unweighted hit');
+  // When only a non-weighted hit fires (rwep=0), fall back to that indicator.
+  const fallback = runner.run(
+    'library-author',
+    'published-artifact-audit',
+    { signal_overrides: { 'release-workflow-non-frozen-install': 'hit' } },
+    { force_replay: true, mode: 'test' }
+  );
+  assert.equal(fallback.rwep_score, 0, 'the unweighted hit leaves rwep at 0');
+  assert.equal(fallback.top_finding, 'release-workflow-non-frozen-install', 'with no weighted driver, top_finding falls back to the dominant hit');
+});
+
+test('run() surfaces collector_errors as an advisory collector_warnings field (and omits it when there are none)', () => {
+  const warned = runner.run(
+    'secrets',
+    'full-repo-secret-scan',
+    {
+      precondition_checks: { 'repo-context': true },
+      signal_overrides: {},
+      collector_errors: [{ kind: 'file_too_large_skipped', reason: 'big.json: exceeds limit' }],
+    },
+    { force_replay: true, mode: 'test' }
+  );
+  assert.ok(Array.isArray(warned.collector_warnings), 'collector_warnings is present when the collector skipped something');
+  assert.equal(warned.collector_warnings.length, 1);
+  assert.equal(warned.collector_warnings[0].kind, 'file_too_large_skipped', 'the skip reason is carried through verbatim');
+  // Advisory only — the run still completes and the verdict is unaffected.
+  assert.equal(warned.ok, true);
+  // No collector_errors submitted -> no collector_warnings key (not an empty array).
+  const clean = runner.run(
+    'secrets',
+    'full-repo-secret-scan',
+    { precondition_checks: { 'repo-context': true }, signal_overrides: {} },
+    { force_replay: true, mode: 'test' }
+  );
+  assert.equal('collector_warnings' in clean, false, 'collector_warnings is omitted when the collector reported nothing');
+});
+
+test('regression_event_triggers carry the condition string (not null) from a playbook keyed on `condition`', () => {
+  const res = runner.run(
+    'ai-api',
+    'all-ai-api-and-credential-exposure',
+    { signal_overrides: {} },
+    { force_replay: true, mode: 'test' }
+  );
+  const triggers = res.phases.validate.regression_event_triggers || [];
+  assert.ok(triggers.length >= 1, 'the playbook declares on_event regression triggers');
+  assert.ok(triggers.every((t) => typeof t.trigger === 'string' && t.trigger.length > 0), 'every on_event trigger carries its condition string, not null');
+  assert.equal(triggers[0].trigger, 'new_ai_vendor_added_to_allowlist', 'the first trigger is the playbook condition verbatim');
+});
+
+test('selected_remediation prefers the path that addresses a fired signal (and falls back to priority-1 when none is linked)', () => {
+  // Only the FIPS-claim indicator fired: the recommendation must be the
+  // remediation that addresses it (for_signals linkage), NOT the unrelated
+  // priority-1 PQC migration.
+  const fips = runner.run(
+    'crypto-codebase',
+    'weak-primitive-inventory',
+    { signal_overrides: { 'fips-claim-without-runtime-activation': 'hit' } },
+    { force_replay: true, mode: 'test' }
+  );
+  const sel = fips.phases.validate.selected_remediation;
+  assert.equal(sel.id, 'activate-fips-provider-or-retract-claim', 'the fired-signal-linked remediation is selected, not priority-1');
+  const fipsPath = fips.phases.validate.remediation_options_considered.find((c) => c.id === 'activate-fips-provider-or-retract-claim');
+  assert.equal(fipsPath.addresses_fired_signal, true, 'the considered trace flags the path as addressing a fired signal');
+  // Backward-compat: with no fired signal (no for_signals match), the
+  // priority-1 path is the fallback — unchanged from prior behavior.
+  const none = runner.run(
+    'crypto-codebase',
+    'weak-primitive-inventory',
+    { signal_overrides: {} },
+    { force_replay: true, mode: 'test' }
+  );
+  assert.equal(none.phases.validate.selected_remediation.id, 'rotate-to-pqc-hybrid-kem', 'no fired signal falls back to priority-1');
+
+  // A fired-signal-relevant path must win over a satisfied-but-UNRELATED path:
+  // here rotate-to-pqc-hybrid-kem's preconditions are satisfied, but the FIPS
+  // finding is what fired, so activate-fips (which addresses it) is selected
+  // rather than the ready-but-irrelevant priority-1 path.
+  const satisfiedUnrelated = runner.run(
+    'crypto-codebase',
+    'weak-primitive-inventory',
+    {
+      signal_overrides: { 'fips-claim-without-runtime-activation': 'hit' },
+      signals: { ml_kem_implementation_available_for_language: true, api_stability_promise_permits_default_change: true },
+    },
+    { force_replay: true, mode: 'test' }
+  );
+  assert.equal(satisfiedUnrelated.phases.validate.selected_remediation.id, 'activate-fips-provider-or-retract-claim', 'relevance outranks a satisfied-but-unrelated path');
+});
+
+test('a blocked-preflight summary_line truncates on a word boundary with an ellipsis, not mid-token', () => {
+  const res = runner.run(
+    'cicd-pipeline-compromise',
+    'all-pipelines-and-runners',
+    { precondition_checks: { 'operator-owns-ci-fleet': false } },
+    { force_replay: true, mode: 'test' }
+  );
+  const sl = res.summary_line;
+  assert.ok(sl.length <= 240, 'summary stays within the 240-char cap');
+  assert.equal(sl.endsWith('…'), true, 'a truncated summary is marked with an ellipsis');
+  assert.equal(/[A-Za-z0-9]$/.test(sl), false, 'the cut does not split a word mid-token');
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from operator-bugs ----
+require("node:test").describe("operator-bugs", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Operator-reported bug regression suite.
  *
- *   FF P1-1  scoring.validate() skips _auto_imported:true entries.
- *   FF P1-3  lib/refresh-external.js --air-gap flag reaches ctx.airGap.
- *   FF P1-4  cross-ref-api.byCve() excludes auto-imported drafts by default
- *            and re-includes them on { include_drafts: true }.
- *   DD P1-1  cross-ref-api cache invalidates when the source file mtime
- *            changes (long-running watcher visibility).
- *   DD P1-2  persistAttestation lock spin is bounded — exercised indirectly
- *            via the MAX_RETRIES = 10 invariant declared in source. The
- *            persistAttestation function is sync and used inside the CLI
- *            dispatcher; a runtime-contention test would require child
- *            processes racing on the same attestation slot, which is
- *            covered by the existing concurrent-attestation-writer helper.
- *            Here we assert the bound declared in source has not crept back
- *            up to 50 (the regression we fixed).
- *   DD P1-3  acquireLock reclaims a lockfile whose recorded PID is dead and
- *            returns null when the holder PID is alive.
- *   HH P1-1  release.yml declares a top-level permissions: block.
- *   HH P1-2  refresh.yml declares a top-level permissions: block.
+ * Every operator-reported bug that has been fixed lands here as a named test
+ * case so re-introductions surface at `npm test`, not at user re-report.
+ * Numbering matches the operator report sequence (items #1 through #N as
+ * reported across the v0.9.5 → v0.11.x arc).
  *
- * Per the anti-coincidence rule: each assertion checks the EXACT condition the fix produces.
- * No assert.notEqual(0) / assert.ok(field) coincidence-passers.
+ * Pattern for new items:
+ *   describe('#N short label', () => { it('precise behavior', ...); });
+ *
+ * Avoid coupling tests to file paths / playbook IDs that may change. Prefer
+ * direct runner exercises over CLI shell-outs where possible — CLI tests
+ * stay narrow (smoke-level) because they spawn subprocesses and slow the
+ * suite down.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const { spawnSync } = require('node:child_process');
+
+const { ROOT, CLI, makeSuiteHome, makeCli, tryJson, secureTmpFile } = require('./_helpers/cli');
+const runner = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
+
+const SUITE_HOME = makeSuiteHome('exceptd-operator-bugs-');
+const cli = makeCli(SUITE_HOME);
+
+// ===================================================================
+
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+// ===================================================================
+
+// ===================================================================
+
+
+
+// ===================================================================
+
+
+
+// ===================================================================
+
+
+
+
+// ===================================================================
+
+
+// ===================================================================
+
+// ===================================================================
+// CSAF framework gaps emit as `document.notes[]` with `category: details`,
+// not as `vulnerabilities[]` entries with `ids: [{system_name:
+// 'exceptd-framework-gap'}]`. The `system_name` slot is reserved for
+// recognised vulnerability tracking authorities (CVE, GHSA, etc.); the
+// custom string is rejected by NVD / ENISA / Red Hat dashboards. Notes
+// are the right home for advisory context, not pseudo-CVEs. The test
+// asserts the notes-based shape and anti-asserts the pseudo-vulnerability
+// shape.
+
+
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===================================================================
+// v0.11.14 freshness additions — opt-in registry check + upstream-check
+// + refresh --network. Tests use EXCEPTD_REGISTRY_FIXTURE so they're
+// fully offline-deterministic.
+// ===================================================================
+
+function withFixture(version, daysAgo) {
+  const file = secureTmpFile('npm-fixture.json', 'npm-fixture-');
+  const publishedAt = new Date(Date.now() - daysAgo * 24 * 3600 * 1000).toISOString();
+  fs.writeFileSync(file, JSON.stringify({
+    "dist-tags": { latest: version },
+    version,
+    time: { [version]: publishedAt, modified: publishedAt },
+  }));
+  return file;
+}
+
+
+
+
+
+
+
+
+// ===================================================================
+// v0.12.0 — GHSA source + refresh --advisory + refresh --curate
+// ===================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===================================================================
+
+test('#71 detect canonicalizes no_hit to miss (flat-shape submission)', () => {
+  const sub = {
+    observations: {
+      w: { captured: true, value: 'x', indicator: 'publish-workflow-uses-static-token', result: 'no_hit' }
+    },
+    verdict: {}
+  };
+  const result = runner.run('library-author', 'published-artifact-audit', sub, {});
+  const target = result.phases.detect.indicators.find(i => i.id === 'publish-workflow-uses-static-token');
+  assert.ok(target, 'indicator must be present in detect output');
+  assert.equal(target.verdict, 'miss', 'no_hit must canonicalize to miss');
+});
+
+test('#71 normalizer accepts every documented synonym', () => {
+  const cases = [
+    ['hit', 'hit'], ['detected', 'hit'], ['positive', 'hit'], [true, 'hit'],
+    ['miss', 'miss'], ['no_hit', 'miss'], ['no-hit', 'miss'], ['clean', 'miss'],
+    ['clear', 'miss'], ['not_hit', 'miss'], ['ok', 'miss'], ['pass', 'miss'],
+    ['negative', 'miss'], [false, 'miss'],
+    ['inconclusive', 'inconclusive'], ['unknown', 'inconclusive'], ['unverified', 'inconclusive'],
+  ];
+  for (const [input, expected] of cases) {
+    const sub = {
+      observations: { w: { captured: true, indicator: 'publish-workflow-uses-static-token', result: input } },
+      verdict: {}
+    };
+    const result = runner.run('library-author', 'published-artifact-audit', sub, {});
+    const target = result.phases.detect.indicators.find(i => i.id === 'publish-workflow-uses-static-token');
+    assert.equal(target?.verdict, expected, `result=${JSON.stringify(input)} should canonicalize to ${expected}`);
+  }
+});
+
+test('#71 detect surfaces observations_received + signals_received', () => {
+  const sub = {
+    observations: { w: { captured: true, indicator: 'publish-workflow-uses-static-token', result: 'no_hit' } },
+    verdict: {}
+  };
+  const result = runner.run('library-author', 'published-artifact-audit', sub, {});
+  assert.ok(Array.isArray(result.phases.detect.observations_received),
+    'observations_received must be an array');
+  assert.ok(Array.isArray(result.phases.detect.signals_received),
+    'signals_received must be an array');
+  // Content-shape check: pre-strengthening, "array is present" was true even
+  // when the array was empty. The v0.11.10 field-present-but-empty bug class
+  // would have passed silently. The submission supplied observation key "w";
+  // it MUST appear in observations_received, and its declared indicator MUST
+  // appear in signals_received.
+  assert.ok(result.phases.detect.observations_received.includes('w'),
+    `observations_received must include the submitted observation key "w"; got ${JSON.stringify(result.phases.detect.observations_received)}`);
+  assert.ok(result.phases.detect.signals_received.includes('publish-workflow-uses-static-token'),
+    'signals_received must include the indicator declared on observation "w"');
+});
+
+test('#73 indicators_evaluated is an array', () => {
+  const sub = { observations: {}, verdict: {} };
+  const result = runner.run('library-author', 'published-artifact-audit', sub, {});
+  assert.ok(Array.isArray(result.phases.detect.indicators_evaluated),
+    'indicators_evaluated must be an array (v0.10.x compat)');
+  assert.equal(typeof result.phases.detect.indicators_evaluated_count, 'number',
+    'indicators_evaluated_count must be an integer peer field');
+  // library-author declares many indicators; even with an empty submission
+  // the runner emits one indicators_evaluated entry per declared indicator
+  // (with outcome='inconclusive'). Asserting length > 0 UNCONDITIONALLY is
+  // the strengthening: the pre-existing `if (length > 0)` shape check would
+  // have silently passed if a regression made the array empty (the exact
+  // bug operators complained about in #73).
+  assert.ok(result.phases.detect.indicators_evaluated.length > 0,
+    `indicators_evaluated must contain one entry per declared indicator; got length=${result.phases.detect.indicators_evaluated.length}`);
+  assert.equal(result.phases.detect.indicators_evaluated.length,
+    result.phases.detect.indicators_evaluated_count,
+    'count peer must match array length');
+  const first = result.phases.detect.indicators_evaluated[0];
+  assert.ok('signal_id' in first, 'entry must have signal_id');
+  assert.ok('outcome' in first, 'entry must have outcome');
+  assert.ok('confidence' in first, 'entry must have confidence');
+  assert.equal(typeof first.signal_id, 'string', 'signal_id must be a string');
+  assert.ok(first.signal_id.length > 0, 'signal_id must not be empty');
+});
+
+test('#82 SARIF includes results from indicators that fired', () => {
+  // Fire one indicator so SARIF has at least one result to emit.
+  const sub = {
+    observations: { w: { captured: true, indicator: 'publish-workflow-uses-static-token', result: 'hit' } },
+    verdict: {}
+  };
+  const result = runner.run('library-author', 'published-artifact-audit', sub, {
+    // Request SARIF as a side bundle.
+  });
+  // Note: --format is set on the CLI side via signals._bundle_formats.
+  // For this direct-runner test we manually invoke close() with that signal.
+  // Simpler: use the CLI smoke test below.
+});
+
+test('#85 from_observation populated when observation drove the indicator', () => {
+  const sub = {
+    observations: { 'my-obs-key': { captured: true, indicator: 'publish-workflow-uses-static-token', result: 'miss' } },
+    verdict: {}
+  };
+  const result = runner.run('library-author', 'published-artifact-audit', sub, {});
+  const evaluated = result.phases.detect.indicators_evaluated.find(
+    e => e.signal_id === 'publish-workflow-uses-static-token'
+  );
+  assert.ok(evaluated, 'indicator must appear in indicators_evaluated');
+  assert.equal(evaluated.from_observation, 'my-obs-key',
+    'from_observation must reference the observation key that produced the outcome');
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from playbook-schema-validation ----
+require("node:test").describe("playbook-schema-validation", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Regression tests for the v0.12.20 audit S+T+U+Z P1 fixes.
+ *
+ *   S P1-A — Array attestation must NOT bypass the FP-check gate.
+ *   S P1-B — `signals.detection_classification: 'detected'` override must be
+ *            refused when ANY indicator was downgraded due to unattested FP
+ *            checks; a runtime_error documents the refusal.
+ *   U REG-1 — `signal_overrides_invalid` errors pushed by normalizeSubmission
+ *            must reach analyze.runtime_errors[] (F20 contract).
+ *   T P1-1 — withCatalogLock / withIndexLock must reclaim a lockfile whose
+ *            PID is dead (ESRCH) without waiting STALE_LOCK_MS.
+ *   T P1-2 — persistAttestation --force-overwrite must serialize concurrent
+ *            writers so the prior_evidence_hash chain does not lose
+ *            intermediate writers.
+ *   T P1-3 — prefetch must NOT leave a payload on disk with no index entry
+ *            when withIndexLock fails.
+ *   T P1-4 — scheduleEvery must throw RangeError on 0 / negative / NaN /
+ *            Infinity intervals.
+ *
+ * Concurrency tests use real subprocess invocation + race contention.
  */
 
 const test = require('node:test');
@@ -3273,446 +3748,13 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
+const crypto = require('node:crypto');
+const { spawnSync, fork } = require('node:child_process');
 
 const ROOT = path.join(__dirname, '..');
+const RUNNER_PATH = path.resolve(ROOT, 'lib', 'playbook-runner.js');
 
-// ============================================================================
-// FF P1-1 — scoring.validate() skip _auto_imported drafts
-// ============================================================================
-
-test('FF P1-1: scoring.validate() skips entries flagged _auto_imported: true', () => {
-  const { validate } = require(path.join(ROOT, 'lib', 'scoring.js'));
-  // Shape that previously triggered the divergence error: poc_available:null
-  // on the entry but rwep_factors stored as if poc=true. The stored rwep_score
-  // (computed from defaults) would diverge from validate()'s recompute by ~20.
-  const draftCatalog = {
-    'CVE-9999-00001': {
-      type: 'TBD',
-      cvss_score: null,
-      cvss_vector: null,
-      cisa_kev: true,
-      poc_available: null,            // <-- the divergence trigger
-      ai_discovered: null,
-      active_exploitation: 'suspected',
-      affected: 'whatever',
-      patch_available: null,
-      patch_required_reboot: null,
-      live_patch_available: null,
-      live_patch_tools: [],
-      rwep_score: 70,                  // computed as if poc=true, reboot=true
-      rwep_factors: {
-        cisa_kev: 25, poc_available: 20, ai_factor: 0, active_exploitation: 10,
-        blast_radius: 15, patch_available: 0, live_patch_available: 0,
-        reboot_required: 5,
-      },
-      atlas_refs: [], attack_refs: [],
-      source_verified: '2026-05-14', last_updated: '2026-05-14',
-      verification_sources: ['https://example/'],
-      _auto_imported: true,
-    },
-  };
-  const errors = validate(draftCatalog);
-  // The exact bug was a divergence-error string mentioning the CVE id.
-  for (const e of errors) {
-    assert.equal(
-      e.includes('CVE-9999-00001') && e.includes('rwep_score'),
-      false,
-      `auto-imported draft should not trigger rwep divergence error, got: ${e}`,
-    );
-  }
-});
-
-test('FF P1-1: scoring.validate() flags divergence on a NON-_auto_imported entry (regression)', () => {
-  const { validate } = require(path.join(ROOT, 'lib', 'scoring.js'));
-  const curatedCatalog = {
-    'CVE-9999-00002': {
-      type: 'RCE',
-      cvss_score: 9.8, cvss_vector: 'AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H',
-      cisa_kev: true,
-      poc_available: true, poc_description: 'public exploit on github',
-      ai_discovered: false,
-      active_exploitation: 'confirmed',
-      affected: 'vendor product 1.2.3', affected_versions: ['1.2.3'],
-      patch_available: true, patch_required_reboot: false,
-      live_patch_available: false, live_patch_tools: [],
-      // Stored rwep_score wildly diverges from recomputed value (>5).
-      // Real computed = 25+20+0+20+15+(-15)+0+0 = 65. Stored = 10.
-      rwep_score: 10,
-      rwep_factors: {
-        cisa_kev: 25, poc_available: 20, ai_factor: 0, active_exploitation: 20,
-        blast_radius: 15, patch_available: -15, live_patch_available: 0,
-        reboot_required: 0,
-      },
-      atlas_refs: [], attack_refs: [],
-      source_verified: '2026-05-14', last_updated: '2026-05-14',
-      verification_sources: ['https://nvd.nist.gov/'],
-      // NOT _auto_imported — full validation must fire.
-    },
-  };
-  const errors = validate(curatedCatalog);
-  const divergence = errors.find((e) => e.includes('CVE-9999-00002') && e.includes('rwep_score'));
-  assert.equal(typeof divergence, 'string', 'curated entry must still trigger divergence error');
-  assert.equal(divergence.includes('diverges from calculated'), true);
-});
-
-// ============================================================================
-// FF P1-3 — refresh-external --air-gap flag wiring
-// ============================================================================
-
-test('FF P1-3: refresh-external parseArgs recognises --air-gap', () => {
-  const { parseArgs } = require(path.join(ROOT, 'lib', 'refresh-external.js'));
-  const args = parseArgs(['node', 'refresh-external.js', '--air-gap']);
-  assert.equal(args.airGap, true);
-});
-
-test('FF P1-3: refresh-external parseArgs default has airGap unset (falsy)', () => {
-  const { parseArgs } = require(path.join(ROOT, 'lib', 'refresh-external.js'));
-  const args = parseArgs(['node', 'refresh-external.js']);
-  assert.equal(!!args.airGap, false);
-});
-
-test('FF P1-3: loadCtx threads --air-gap into ctx.airGap (true case)', () => {
-  const { loadCtx } = require(path.join(ROOT, 'lib', 'refresh-external.js'));
-  // Save & restore env so test ordering doesn't leak.
-  const priorEnv = process.env.EXCEPTD_AIR_GAP;
-  delete process.env.EXCEPTD_AIR_GAP;
-  try {
-    const ctx = loadCtx({ airGap: true });
-    assert.equal(ctx.airGap, true);
-  } finally {
-    if (priorEnv !== undefined) process.env.EXCEPTD_AIR_GAP = priorEnv;
-  }
-});
-
-test('FF P1-3: loadCtx threads EXCEPTD_AIR_GAP=1 into ctx.airGap (env fallback)', () => {
-  const { loadCtx } = require(path.join(ROOT, 'lib', 'refresh-external.js'));
-  const priorEnv = process.env.EXCEPTD_AIR_GAP;
-  process.env.EXCEPTD_AIR_GAP = '1';
-  try {
-    const ctx = loadCtx({});
-    assert.equal(ctx.airGap, true);
-  } finally {
-    if (priorEnv === undefined) delete process.env.EXCEPTD_AIR_GAP;
-    else process.env.EXCEPTD_AIR_GAP = priorEnv;
-  }
-});
-
-test('FF P1-3: loadCtx ctx.airGap defaults to false when neither flag nor env set', () => {
-  const { loadCtx } = require(path.join(ROOT, 'lib', 'refresh-external.js'));
-  const priorEnv = process.env.EXCEPTD_AIR_GAP;
-  delete process.env.EXCEPTD_AIR_GAP;
-  try {
-    const ctx = loadCtx({});
-    assert.equal(ctx.airGap, false);
-  } finally {
-    if (priorEnv !== undefined) process.env.EXCEPTD_AIR_GAP = priorEnv;
-  }
-});
-
-// ============================================================================
-// FF P1-4 — cross-ref-api.byCve() excludes drafts by default
-// ============================================================================
-
-// Each test allocates a fresh DATA_DIR + clears the cross-ref-api module cache
-// so the cache+mtime tests can mutate disk freely.
-function makeDataDir() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'xref-api-'));
-  fs.mkdirSync(path.join(dir, '_indexes'));
-  // Minimal index files so loadIndex() doesn't error out.
-  for (const f of ['xref.json', 'recipes.json', 'theater-fingerprints.json', 'summary-cards.json']) {
-    fs.writeFileSync(path.join(dir, '_indexes', f), '{}', 'utf8');
-  }
-  for (const f of ['cwe-catalog.json', 'atlas-ttps.json', 'd3fend-catalog.json',
-                   'framework-control-gaps.json', 'global-frameworks.json',
-                   'zeroday-lessons.json', 'rfc-references.json']) {
-    fs.writeFileSync(path.join(dir, f), '{}', 'utf8');
-  }
-  return dir;
-}
-
-function loadFreshXrefApi(dataDir) {
-  // Reset the module cache so EXCEPTD_DATA_DIR is honoured by a fresh require().
-  delete require.cache[require.resolve(path.join(ROOT, 'lib', 'cross-ref-api.js'))];
-  process.env.EXCEPTD_DATA_DIR = dataDir;
-  return require(path.join(ROOT, 'lib', 'cross-ref-api.js'));
-}
-
-test('FF P1-4: byCve(id) excludes _auto_imported:true drafts by default', () => {
-  const dataDir = makeDataDir();
-  fs.writeFileSync(path.join(dataDir, 'cve-catalog.json'), JSON.stringify({
-    'CVE-2030-00001': { type: 'TBD', rwep_score: 70, _auto_imported: true },
-  }), 'utf8');
-  const xref = loadFreshXrefApi(dataDir);
-  const res = xref.byCve('CVE-2030-00001');
-  assert.equal(res.found, false);
-  assert.equal(res._draft_excluded, true);
-  assert.equal(res.cve_id, 'CVE-2030-00001');
-});
-
-test('FF P1-4: byCve(id, { include_drafts: true }) returns the draft', () => {
-  const dataDir = makeDataDir();
-  fs.writeFileSync(path.join(dataDir, 'cve-catalog.json'), JSON.stringify({
-    'CVE-2030-00002': { type: 'TBD', rwep_score: 70, _auto_imported: true,
-                        atlas_refs: [], attack_refs: [] },
-  }), 'utf8');
-  const xref = loadFreshXrefApi(dataDir);
-  const res = xref.byCve('CVE-2030-00002', { include_drafts: true });
-  assert.equal(res.found, true);
-  assert.equal(res.cve_id, 'CVE-2030-00002');
-  assert.equal(res.rwep_score, 70);
-});
-
-test('FF P1-4: byCve(id) on a curated (non-draft) entry returns it normally', () => {
-  const dataDir = makeDataDir();
-  fs.writeFileSync(path.join(dataDir, 'cve-catalog.json'), JSON.stringify({
-    'CVE-2030-00003': {
-      type: 'RCE', rwep_score: 85, cisa_kev: true,
-      atlas_refs: ['AML.T0051'], attack_refs: ['T1190'],
-      active_exploitation: 'confirmed', ai_discovered: false,
-    },
-  }), 'utf8');
-  const xref = loadFreshXrefApi(dataDir);
-  const res = xref.byCve('CVE-2030-00003');
-  assert.equal(res.found, true);
-  assert.equal(res.rwep_score, 85);
-  assert.equal(res.cisa_kev, true);
-});
-
-// ============================================================================
-// DD P1-1 — cross-ref-api cache invalidates on mtime change
-// ============================================================================
-
-test('DD P1-1: cross-ref-api cache invalidates when source file mtime changes', async () => {
-  const dataDir = makeDataDir();
-  const cvePath = path.join(dataDir, 'cve-catalog.json');
-  fs.writeFileSync(cvePath, JSON.stringify({
-    'CVE-2030-10001': { type: 'RCE', rwep_score: 50,
-                        atlas_refs: [], attack_refs: [],
-                        active_exploitation: 'suspected', ai_discovered: false },
-  }), 'utf8');
-  // Backdate mtime so the subsequent mutation produces a measurably-different
-  // mtimeMs on filesystems with coarse timestamp granularity (HFS+, FAT, some
-  // network mounts).
-  const past = Date.now() - 10_000;
-  fs.utimesSync(cvePath, past / 1000, past / 1000);
-
-  const xref = loadFreshXrefApi(dataDir);
-  const first = xref.byCve('CVE-2030-10001');
-  assert.equal(first.found, true);
-  assert.equal(first.rwep_score, 50);
-
-  // Mutate the catalog file directly without going through the API.
-  fs.writeFileSync(cvePath, JSON.stringify({
-    'CVE-2030-10001': { type: 'RCE', rwep_score: 95,
-                        atlas_refs: [], attack_refs: [],
-                        active_exploitation: 'confirmed', ai_discovered: false },
-  }), 'utf8');
-  // Force a future mtime to defeat coarse-granularity filesystems.
-  const future = Date.now() + 5_000;
-  fs.utimesSync(cvePath, future / 1000, future / 1000);
-
-  const second = xref.byCve('CVE-2030-10001');
-  assert.equal(second.found, true);
-  assert.equal(second.rwep_score, 95,
-    'cache must re-read after mtime change (was process-lifetime cached)');
-});
-
-// ============================================================================
-// DD P1-2 — persistAttestation lock spin bounded to MAX_RETRIES = 10
-// ============================================================================
-
-test('persistAttestation lock MAX_RETRIES is bounded to 10 (was 50)', () => {
-  // The lock body uses `const MAX_RETRIES = 10;` inside the persistAttestation
-  // function. Anchor on the function name itself rather than a slot-token
-  // comment ("DD P1-2") — those comments are operator-noise per the operator-facing rule
-  // and may be cleaned up by future rewrites, while the function name is
-  // a stable structural landmark.
-  const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
-  // Find the persistAttestation function and grab the next MAX_RETRIES
-  // assignment inside its body. Using a function-name-anchored regex makes
-  // the test resilient to any cosmetic comment churn around the bound.
-  const persistIdx = src.indexOf('function persistAttestation(');
-  assert.notEqual(persistIdx, -1, 'persistAttestation function must exist in bin/exceptd.js'); // allow-notEqual: refusal-pin (indexOf returns -1 for missing; structural existence check)
-  // Search within ~9000 chars of the function body — widened after the
-  // atomic-write refactor grew the writeAttestation closure (which precedes
-  // the force-overwrite lock block). Still tight enough to refuse a stray
-  // match from a sibling function.
-  const window = src.slice(persistIdx, persistIdx + 9000);
-  const match = window.match(/const MAX_RETRIES = (\d+);/);
-  assert.ok(match, 'persistAttestation body must declare a MAX_RETRIES bound');
-  assert.equal(Number(match[1]), 10,
-    'persistAttestation MAX_RETRIES must be bounded to 10 (was 50 pre-DD-P1-2); raising it back unblocks the unbounded-spin class');
-});
-
-test('DD P1-2: persistAttestation surfaces lock_contention:true sentinel', () => {
-  // Sanity check that the source still returns lock_contention:true on
-  // exhausted retries. We assert on the shape of the literal return object.
-  const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
-  assert.equal(
-    /lock_contention:\s*true/.test(src),
-    true,
-    'persistAttestation must signal lock_contention sentinel for callers',
-  );
-  assert.equal(
-    /LOCK_CONTENTION:/.test(src),
-    true,
-    'persistAttestation must prefix the error string with LOCK_CONTENTION: for grep-ability',
-  );
-});
-
-// ============================================================================
-// DD P1-3 — acquireLock PID-liveness reclaim
-// ============================================================================
-
-const playbookRunner = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
-
-// Capture the pre-suite EXCEPTD_LOCK_DIR ONCE, then restore on every test
-// exit. Pre-strengthening: makeLockDir() set process.env.EXCEPTD_LOCK_DIR
-// without ever restoring it, so the first DD P1-3 test in the file leaked
-// the value into every downstream test in the same node process. This
-// caused real-world flake on suite re-runs in watch mode and confused the
-// playbook-runner's lock-dir resolution in unrelated tests.
-const ORIGINAL_LOCK_DIR_ENV = process.env.EXCEPTD_LOCK_DIR;
-function restoreLockDirEnv() {
-  if (ORIGINAL_LOCK_DIR_ENV === undefined) delete process.env.EXCEPTD_LOCK_DIR;
-  else process.env.EXCEPTD_LOCK_DIR = ORIGINAL_LOCK_DIR_ENV;
-}
-function makeLockDir() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pb-locks-'));
-  process.env.EXCEPTD_LOCK_DIR = dir;
-  return dir;
-}
-
-test('DD P1-3: acquireLock reclaims a lockfile whose recorded PID is dead', () => {
-  try {
-    const dir = makeLockDir();
-    const playbookId = 'pb-stale-pid-' + process.pid;
-    // Pick a PID that almost certainly does not exist. PIDs above the usual
-    // pid_max are a safe choice on Linux/macOS; on Windows process.kill(pid, 0)
-    // returns ESRCH for non-existent PIDs as well.
-    const deadPid = 999999;
-    const lockFile = path.join(dir, `${playbookId}.lock`);
-    fs.writeFileSync(lockFile, JSON.stringify({ pid: deadPid, started_at: '2026-01-01T00:00:00Z', playbook: playbookId }, null, 2));
-
-    const result = playbookRunner._acquireLock(playbookId);
-    assert.equal(result, lockFile,
-      'acquireLock must reclaim the lockfile when the recorded PID is not alive');
-
-    // Lockfile should now be ours.
-    const reread = JSON.parse(fs.readFileSync(lockFile, 'utf8'));
-    assert.equal(reread.pid, process.pid);
-    playbookRunner._releaseLock(result);
-  } finally {
-    restoreLockDirEnv();
-  }
-});
-
-test('DD P1-3: acquireLock returns null when lockfile is held by a live PID', () => {
-  try {
-    const dir = makeLockDir();
-    const playbookId = 'pb-live-pid-' + process.pid;
-    const lockFile = path.join(dir, `${playbookId}.lock`);
-    // Record OUR pid as the holder — guaranteed to be alive.
-    fs.writeFileSync(lockFile, JSON.stringify({ pid: process.pid, started_at: '2026-01-01T00:00:00Z', playbook: playbookId }, null, 2));
-    // pidAlive checks pid !== process.pid, so use a sibling helper to fake a
-    // different live pid. process.ppid is alive (the test runner's parent) and
-    // is !== process.pid.
-    const livePid = process.ppid && process.ppid !== process.pid ? process.ppid : process.pid + 1;
-    fs.writeFileSync(lockFile, JSON.stringify({ pid: livePid, started_at: '2026-01-01T00:00:00Z', playbook: playbookId }, null, 2));
-
-    let isAlive = false;
-    try { process.kill(livePid, 0); isAlive = true; } catch {}
-    if (!isAlive) {
-      // Skip: couldn't find a reliably-live distinct PID in this environment.
-      return;
-    }
-    const result = playbookRunner._acquireLock(playbookId);
-    assert.equal(result, null,
-      'acquireLock must return null when the recorded PID is alive and not the caller');
-    // Lockfile contents unchanged (still the live holder).
-    const reread = JSON.parse(fs.readFileSync(lockFile, 'utf8'));
-    assert.equal(reread.pid, livePid);
-  } finally {
-    restoreLockDirEnv();
-  }
-});
-
-test('DD P1-3: acquireLockDiagnostic distinguishes held vs reclaimed', () => {
-  try {
-    const dir = makeLockDir();
-    const playbookId = 'pb-diag-' + process.pid;
-    const lockFile = path.join(dir, `${playbookId}.lock`);
-    fs.writeFileSync(lockFile, JSON.stringify({ pid: 999998, started_at: '2026-01-01T00:00:00Z', playbook: playbookId }, null, 2));
-
-    const diag = playbookRunner._acquireLockDiagnostic(playbookId);
-    assert.equal(diag.ok, true);
-    assert.equal(diag.path, lockFile);
-    assert.equal(diag.reclaimed_from_pid, 999998);
-    playbookRunner._releaseLock(diag.path);
-  } finally {
-    restoreLockDirEnv();
-  }
-});
-
-// ============================================================================
-// HH P1-1 / HH P1-2 — workflow top-level permissions blocks
-// ============================================================================
-
-// Minimal YAML key probe — workflows are well-formed by construction; we just
-// need to assert the top-level `permissions:` key exists. We do not require a
-// full YAML parser; the workflow files are line-oriented enough that an
-// anchored regex is reliable. The workflows-security.test.js suite already
-// asserts every action ref is SHA-pinned, etc., so this is a focused check.
-function topLevelPermissionsDeclared(yamlText) {
-  // A top-level key is anchored at column 0. The block can be either a
-  // mapping (multiline) or an inline mapping. Both forms satisfy
-  // Scorecard's TokenPermissionsID.
-  return /^permissions:\s*(?:#.*)?(?:\n[ \t]+\S|\s*\{[^}]*\}\s*$)/m.test(yamlText);
-}
-
-test('HH P1-1: release.yml declares a top-level permissions: block', () => {
-  const yamlText = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'release.yml'), 'utf8');
-  assert.equal(topLevelPermissionsDeclared(yamlText), true,
-    'release.yml must declare workflow-level permissions:');
-  // Specifically the minimum-scope default we shipped (contents: read).
-  assert.equal(/^permissions:\s*\n\s*contents:\s*read/m.test(yamlText), true,
-    'release.yml top-level permissions: must default to contents: read');
-});
-
-test('HH P1-2: refresh.yml declares a top-level permissions: block', () => {
-  const yamlText = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'refresh.yml'), 'utf8');
-  assert.equal(topLevelPermissionsDeclared(yamlText), true,
-    'refresh.yml must declare workflow-level permissions:');
-  assert.equal(/^permissions:\s*\n\s*contents:\s*read/m.test(yamlText), true,
-    'refresh.yml top-level permissions: must default to contents: read');
-});
-});
-
-
-// ---- routed from playbook-runner-v014 ----
-require("node:test").describe("playbook-runner-v014", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
-/**
- * Tests for the v0.12.14 audit-driven fixes to lib/playbook-runner.js.
- *
- * Each top-level describe maps to one finding id (F1..F30). Tests assert the
- * post-fix behavior; every assertion would FAIL against the v0.12.13 codebase
- * — that's the contract for AGENTS.md Hard Rule #15 (diff coverage).
- *
- * Runs under: node --test --test-concurrency=1 tests/
- */
-
-const test = require('node:test');
-const { describe, it, before } = test;
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-const os = require('node:os');
-
-const RUNNER_PATH = path.resolve(__dirname, '..', 'lib', 'playbook-runner.js');
-const REAL_PLAYBOOK_DIR = path.resolve(__dirname, '..', 'data', 'playbooks');
+// --- helpers --------------------------------------------------------------
 
 function freshRunner(playbookDir) {
   if (playbookDir) process.env.EXCEPTD_PLAYBOOK_DIR = playbookDir;
@@ -3722,7 +3764,7 @@ function freshRunner(playbookDir) {
 }
 
 function tmpDir(label) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), `exceptd-pb-v014-${label}-`));
+  return fs.mkdtempSync(path.join(os.tmpdir(), `exceptd-stuz-${label}-`));
 }
 
 function writePlaybook(dir, id, body) {
@@ -3733,26 +3775,21 @@ function writePlaybook(dir, id, body) {
 function synthPlaybook(overrides = {}) {
   const base = {
     _meta: {
-      id: 'synth-v014',
+      id: 'synth',
       version: '0.1.0',
-      last_threat_review: '2026-05-13',
+      last_threat_review: '2026-05-14',
       threat_currency_score: 95,
-      changelog: [{ version: '0.1.0', date: '2026-05-13', summary: 'v014 fixtures' }],
+      changelog: [{ version: '0.1.0', date: '2026-05-14', summary: 'synthetic test playbook' }],
       owner: '@blamejs/test',
       air_gap_mode: false,
       preconditions: [],
       mutex: [],
-      feeds_into: []
+      feeds_into: [],
     },
     domain: {
-      name: 'synth v014',
-      attack_class: 'kernel-lpe',
-      atlas_refs: [],
-      attack_refs: [],
-      cve_refs: [],
-      cwe_refs: [],
-      d3fend_refs: [],
-      frameworks_in_scope: ['nist-800-53']
+      name: 'synth domain', attack_class: 'kernel-lpe',
+      atlas_refs: [], attack_refs: [], cve_refs: [], cwe_refs: [], d3fend_refs: [],
+      frameworks_in_scope: ['nist-800-53'],
     },
     phases: {
       govern: { jurisdiction_obligations: [], theater_fingerprints: [], framework_context: {}, skill_preload: [] },
@@ -3761,11 +3798,9 @@ function synthPlaybook(overrides = {}) {
       detect: { indicators: [], false_positive_profile: [], minimum_signal: { detected: 'x', inconclusive: 'x', not_detected: 'x' } },
       analyze: { rwep_inputs: [], blast_radius_model: { scope_question: '?', scoring_rubric: [] }, compliance_theater_check: null, framework_gap_mapping: [], escalation_criteria: [] },
       validate: { remediation_paths: [], validation_tests: [], residual_risk_statement: null, evidence_requirements: [], regression_trigger: [] },
-      close: { evidence_package: null, learning_loop: { enabled: false }, notification_actions: [], exception_generation: null, regression_schedule: null }
+      close: { evidence_package: null, learning_loop: { enabled: false }, notification_actions: [], exception_generation: null, regression_schedule: null },
     },
-    directives: [
-      { id: 'default', title: 'default directive', applies_to: { always: true } }
-    ]
+    directives: [{ id: 'default', title: 'default directive', applies_to: { always: true } }],
   };
   return deepMerge(base, overrides);
 }
@@ -3775,853 +3810,2478 @@ function deepMerge(a, b) {
   if (Array.isArray(b)) return b;
   if (typeof b !== 'object') return b;
   const out = { ...a };
-  for (const [k, v] of Object.entries(b)) {
-    out[k] = (k in out) ? deepMerge(out[k], v) : v;
+  for (const k of Object.keys(b)) {
+    if (k in out && out[k] && typeof out[k] === 'object' && !Array.isArray(out[k]) && b[k] && typeof b[k] === 'object' && !Array.isArray(b[k])) {
+      out[k] = deepMerge(out[k], b[k]);
+    } else {
+      out[k] = b[k];
+    }
   }
   return out;
 }
 
-const KERNEL_PREFLIGHT = { precondition_checks: { 'linux-platform': true, 'uname-available': true } };
+// =========================================================================
+// S P1-A — Array attestation bypasses FP-check gate
+// =========================================================================
 
-// ===========================================================================
-// F1 — evidence_hash includes submission digest
-// ===========================================================================
 
-describe('F1: evidence_hash binds the operator submission', () => {
-  let runner;
-  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+// =========================================================================
+// S P1-B — `detection_classification: 'detected'` override cannot bypass FP downgrade
+// =========================================================================
 
-  it('two submissions producing the same classification produce DIFFERENT evidence_hashes', () => {
-    const subA = {
-      artifacts: { 'kernel-release': { value: '5.15.0-1058-generic', captured: true } },
-      signal_overrides: { 'kver-in-affected-range': 'hit' },
-      signals: { patch_available: false, blast_radius_score: 3, detection_classification: 'detected' }
-    };
-    const subB = {
-      artifacts: { 'kernel-release': { value: '6.1.0-different-version', captured: true } },
-      signal_overrides: { 'kver-in-affected-range': 'hit' },
-      signals: { patch_available: false, blast_radius_score: 3, detection_classification: 'detected' }
-    };
-    const a = runner.run('kernel', 'all-catalogued-kernel-cves', subA, KERNEL_PREFLIGHT);
-    const b = runner.run('kernel', 'all-catalogued-kernel-cves', subB, KERNEL_PREFLIGHT);
-    assert.equal(a.ok, true);
-    assert.equal(b.ok, true);
-    assert.equal(a.phases.detect.classification, b.phases.detect.classification);
-    assert.notEqual(a.evidence_hash, b.evidence_hash);
-    assert.notEqual(a.submission_digest, b.submission_digest);
-  });
 
-  it('identical submissions produce IDENTICAL evidence_hashes (reattest contract)', () => {
-    const submission = {
-      artifacts: { 'kernel-release': { value: '5.15.0', captured: true } },
-      signal_overrides: { 'kver-in-affected-range': 'hit' },
-      signals: { detection_classification: 'detected' }
-    };
-    const a = runner.run('kernel', 'all-catalogued-kernel-cves', submission, KERNEL_PREFLIGHT);
-    const b = runner.run('kernel', 'all-catalogued-kernel-cves', submission, KERNEL_PREFLIGHT);
-    assert.equal(a.evidence_hash, b.evidence_hash);
-    assert.equal(a.submission_digest, b.submission_digest);
-  });
 
-  it('submission_digest is exposed as a top-level field for reattest correlation', () => {
-    const submission = { signal_overrides: { 'kver-in-affected-range': 'miss' } };
-    const r = runner.run('kernel', 'all-catalogued-kernel-cves', submission, KERNEL_PREFLIGHT);
-    assert.match(r.submission_digest, /^[0-9a-f]{64}$/);
-  });
-});
+// =========================================================================
+// U REG-1 — signal_overrides_invalid must reach analyze.runtime_errors[]
+// =========================================================================
 
-// ===========================================================================
-// F2 + F9 — session_id is threaded; CSAF + OpenVEX bake the same id
-// ===========================================================================
 
-describe('F2/F9: one session_id threaded through CSAF + OpenVEX + close()', () => {
-  let runner;
-  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+// =========================================================================
+// T P1-1 — PID-liveness check on stale lockfiles
+// =========================================================================
 
-  it('run().session_id matches CSAF tracking.id and OpenVEX @id', () => {
-    const result = runner.run('kernel', 'all-catalogued-kernel-cves', {
-      artifacts: { 'kernel-release': { value: '5.15.0', captured: true } },
-      signal_overrides: { 'kver-in-affected-range': 'hit' },
-      signals: {
-        livepatch_available_for_cve: true,
-        host_supports_livepatch: true,
-        detection_classification: 'detected',
-        _bundle_formats: ['openvex-0.2.0']
-      }
-    }, KERNEL_PREFLIGHT);
-    assert.equal(result.ok, true);
-    const sessionId = result.session_id;
-    assert.ok(sessionId, 'session_id present');
-    // CSAF tracking.id includes the session id, not a timestamp.
-    const csaf = result.phases.close.evidence_package.bundle_body;
-    assert.ok(csaf.document.tracking.id.includes(sessionId),
-      `CSAF tracking.id should include session_id (${sessionId}); got ${csaf.document.tracking.id}`);
-    // OpenVEX @id baked the session id.
-    const openvex = result.phases.close.evidence_package.bundles_by_format['openvex-0.2.0'];
-    assert.ok(openvex['@id'].includes(sessionId),
-      `OpenVEX @id should include session_id (${sessionId}); got ${openvex['@id']}`);
-  });
-});
 
-// ===========================================================================
-// F3 — indicator cve_ref surfaces in matched_cves
-// ===========================================================================
+// =========================================================================
+// T P1-2 — persistAttestation force-overwrite serializes concurrent writers
+// =========================================================================
 
-describe('F3: indicator-level cve_ref correlates into matched_cves', () => {
-  let runner;
-  let dir;
 
-  before(() => {
-    dir = tmpDir('f3');
+// =========================================================================
+// T P1-3 — prefetch must NOT orphan a payload on lock failure
+// =========================================================================
+
+
+// =========================================================================
+// T P1-4 — scheduleEvery lower-bound guard
+// =========================================================================
+
+test('S P1-A: array attestation does NOT satisfy any FP check (every required check unsatisfied)', () => {
+  const dir = tmpDir('s-p1a');
+  try {
     writePlaybook(dir, 'p', synthPlaybook({
-      domain: { cve_refs: [] }, // empty — F3 path must add it anyway
       phases: {
         detect: {
           indicators: [{
-            id: 'kern-ind', type: 'process', confidence: 'high', deterministic: true,
-            atlas_ref: null, attack_ref: null,
-            cve_ref: 'CVE-2026-31431',
-            false_positive_checks_required: []
-          }]
-        }
-      }
-    }));
-    runner = freshRunner(dir);
-  });
-
-  it('indicator fires with cve_ref → matched_cves includes the CVE; correlated_via names the indicator', () => {
-    const det = runner.detect('p', 'default', { signal_overrides: { 'kern-ind': 'hit' } });
-    const an = runner.analyze('p', 'default', det);
-    const m = an.matched_cves.find(c => c.cve_id === 'CVE-2026-31431');
-    assert.ok(m, 'CVE pulled in via indicator cve_ref');
-    assert.ok(m.correlated_via.some(s => s.startsWith('indicator_cve_ref:kern-ind')));
-  });
-
-  it('dedupes — same CVE appearing in domain.cve_refs AND indicator.cve_ref shows once', () => {
-    fs.rmSync(dir, { recursive: true, force: true });
-    dir = tmpDir('f3-dup');
-    writePlaybook(dir, 'p', synthPlaybook({
-      domain: { cve_refs: ['CVE-2026-31431'] },
-      phases: {
-        detect: {
-          indicators: [{
-            id: 'kern-ind', type: 'process', confidence: 'high', deterministic: true,
-            atlas_ref: null, attack_ref: null,
-            cve_ref: 'CVE-2026-31431',
-            false_positive_checks_required: []
-          }]
-        }
-      }
-    }));
-    runner = freshRunner(dir);
-    const det = runner.detect('p', 'default', { signal_overrides: { 'kern-ind': 'hit' } });
-    const an = runner.analyze('p', 'default', det);
-    const occurrences = an.matched_cves.filter(c => c.cve_id === 'CVE-2026-31431');
-    assert.equal(occurrences.length, 1);
-  });
-});
-
-// ===========================================================================
-// F4 — finding.severity emitted
-// ===========================================================================
-
-describe('F4: finding shape carries severity derived from rwep_adjusted', () => {
-  let runner;
-  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
-
-  it('rwep >= 80 → critical', () => {
-    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {
-      signal_overrides: { 'kver-in-affected-range': 'hit' }
-    });
-    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det, { blast_radius_score: 4 });
-    // run analyzeFindingShape via close()'s feedsCtx — the shape is exposed
-    // via the feeds_into chain context; assert through a roundtrip:
-    const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an);
-    const c = runner.close('kernel', 'all-catalogued-kernel-cves', an, v);
-    // close uses finding shape internally — re-derive it deterministically:
-    // Severity is also surfaced into ${severity} interpolation context. Use
-    // module export _interpolate via a probe template that taps `severity`.
-    const probe = runner._interpolate('${severity}', { ...{},
-      // recreate analyzeFindingShape output via small re-impl test —
-      // we instead assert end-to-end: high RWEP → critical severity.
-    });
-    // Direct path: severity is computed by an unexported helper. Reach it
-    // through the public surface: analyzeFindingShape feeds notification
-    // drafts. Add a minimal synthetic playbook that interpolates ${severity}
-    // and assert via close.notification_actions.draft_notification.
-    assert.ok(an.rwep.adjusted >= 80);
-    void probe;
-    void c;
-  });
-
-  it('synthetic notification template referencing ${severity} renders the derived value', () => {
-    const dir = tmpDir('f4');
-    writePlaybook(dir, 'p', synthPlaybook({
-      _meta: { feeds_into: [] },
-      phases: {
-        govern: { jurisdiction_obligations: [{ jurisdiction: 'TEST', regulation: 'X', obligation: 'test', window_hours: 24, clock_starts: 'detect_confirmed', evidence_required: [] }] },
-        close: {
-          notification_actions: [{
-            obligation_ref: 'TEST/X 24h',
-            recipient: 'regulator@test',
-            draft_notification: 'severity=${severity} rwep=${rwep_adjusted}',
-            evidence_attached: []
-          }]
-        }
-      }
-    }));
-    const local = freshRunner(dir);
-    const an = { matched_cves: [], rwep: { adjusted: 95, base: 80 }, framework_gap_mapping: [], blast_radius_score: 3 };
-    const v = local.validate('p', 'default', an);
-    const c = local.close('p', 'default', an, v);
-    const draft = c.notification_actions[0].draft_notification;
-    assert.match(draft, /severity=critical/);
-    assert.match(draft, /rwep=95/);
-    fs.rmSync(dir, { recursive: true, force: true });
-  });
-});
-
-// ===========================================================================
-// F5 — rwep_factor semantics (factor scaling)
-// ===========================================================================
-
-describe('F5: rwep_factor scales weight by matched CVE attribute', () => {
-  let runner;
-  let dir;
-  before(() => {
-    dir = tmpDir('f5');
-    writePlaybook(dir, 'p', synthPlaybook({
-      domain: { cve_refs: ['CVE-2026-31431'] },
-      phases: {
-        detect: {
-          indicators: [{
-            id: 'kern-ind', type: 'kernel', confidence: 'high', deterministic: true,
-            atlas_ref: null, attack_ref: 'T1068',
-            false_positive_checks_required: []
-          }]
+            id: 'sig',
+            type: 'log_pattern',
+            value: 'x',
+            description: 'd',
+            confidence: 'high',
+            deterministic: false,
+            false_positive_checks_required: ['check-A', 'check-B'],
+          }],
         },
-        analyze: {
-          rwep_inputs: [
-            { signal_id: 'kern-ind', rwep_factor: 'cisa_kev', weight: 20 },
-            { signal_id: 'kern-ind', rwep_factor: 'active_exploitation', weight: 25 },
-            { signal_id: 'kern-ind', rwep_factor: 'public_poc', weight: 15 }
-          ]
-        }
-      }
+      },
     }));
-    runner = freshRunner(dir);
-  });
-
-  it('weights scale by CVE attribute; breakdown surfaces factor_scale', () => {
+    const runner = freshRunner(dir);
+    // Hostile submission shape: an array masquerading as the attestation
+    // map. Pre-fix the index-fallback (`att['0']` / `att['1']`) matched the
+    // array's truthy positions, satisfying every required check silently.
     const det = runner.detect('p', 'default', {
-      signal_overrides: { 'kern-ind': 'hit' },
-      signals: { 'CVE-2026-31431': true } // force correlation
+      signal_overrides: { sig: 'hit', sig__fp_checks: [true, true] },
     });
-    const an = runner.analyze('p', 'default', det, { 'CVE-2026-31431': true });
-    const cisaEntry = an.rwep.breakdown.find(b => b.rwep_factor === 'cisa_kev');
-    assert.equal(cisaEntry.fired, true);
-    assert.equal(cisaEntry.factor_scale, 1, 'CVE-2026-31431 is KEV-listed → full weight');
-    assert.equal(cisaEntry.weight_applied, 20);
-  });
-
-  it('active_exploitation ladder: confirmed=1.0', () => {
-    const det = runner.detect('p', 'default', { signal_overrides: { 'kern-ind': 'hit' } });
-    const an = runner.analyze('p', 'default', det, { 'CVE-2026-31431': true });
-    const ae = an.rwep.breakdown.find(b => b.rwep_factor === 'active_exploitation');
-    assert.equal(ae.factor_scale, 1.0);
-  });
+    const ind = det.indicators.find(i => i.id === 'sig');
+    assert.equal(ind.verdict, 'inconclusive',
+      'array attestation must be refused — verdict must downgrade to inconclusive');
+    assert.ok(Array.isArray(ind.fp_checks_unsatisfied),
+      'fp_checks_unsatisfied must surface on the result');
+    assert.equal(ind.fp_checks_unsatisfied.length, 2,
+      'both required FP checks must be listed as unsatisfied');
+    assert.equal(det.classification, 'inconclusive',
+      'when any indicator is FP-downgraded, overall classification must pin to inconclusive (v0.12.19 contract).');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
-// ===========================================================================
-// F6 — blast_radius_score validation
-// ===========================================================================
-
-describe('F6: blast_radius_score validation + signal annotation', () => {
-  let runner;
-  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
-
-  it('no signal → null + blast_radius_signal=default', () => {
-    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
-    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det);
-    assert.equal(an.blast_radius_score, null);
-    assert.equal(an.blast_radius_signal, 'default');
-  });
-
-  it('in-range value → supplied', () => {
-    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
-    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det, { blast_radius_score: 3 });
-    assert.equal(an.blast_radius_score, 3);
-    assert.equal(an.blast_radius_signal, 'supplied');
-  });
-
-  it('out-of-range value → null + signal=rejected + runtime_error', () => {
-    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
-    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det, { blast_radius_score: 99 });
-    assert.equal(an.blast_radius_score, null);
-    assert.equal(an.blast_radius_signal, 'rejected');
-    assert.ok(an.runtime_errors.some(e => e.kind === 'blast_radius_invalid'));
-  });
+test("S P1-B: 'detected' override is refused when any indicator was FP-downgraded", () => {
+  const dir = tmpDir('s-p1b');
+  try {
+    writePlaybook(dir, 'p', synthPlaybook({
+      phases: {
+        detect: {
+          indicators: [{
+            id: 'sig',
+            type: 'log_pattern',
+            value: 'x',
+            description: 'd',
+            confidence: 'high',
+            deterministic: false,
+            false_positive_checks_required: ['check-A', 'check-B'],
+          }],
+        },
+      },
+    }));
+    const runner = freshRunner(dir);
+    const runErrors = [];
+    const det = runner.detect('p', 'default', {
+      signal_overrides: { sig: 'hit' }, // no fp_checks attestation
+      signals: { detection_classification: 'detected' },
+    }, { _runErrors: runErrors });
+    assert.equal(det.classification, 'inconclusive',
+      'classification must be substituted to inconclusive when any indicator was FP-downgraded');
+    const blocked = runErrors.find(e => e.kind === 'classification_override_blocked');
+    assert.ok(blocked, 'runtime_errors must include a classification_override_blocked record');
+    assert.equal(blocked.attempted, 'detected');
+    assert.equal(blocked.substituted, 'inconclusive');
+    assert.ok(Array.isArray(blocked.indicators_with_unsatisfied_fp_checks));
+    assert.ok(blocked.indicators_with_unsatisfied_fp_checks.length >= 1);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
-// ===========================================================================
-// F7 — corrupt cve-catalog.json degraded path
-// ===========================================================================
+test("S P1-B: 'detected' override is honored when no FP downgrade occurred", () => {
+  const dir = tmpDir('s-p1b-ok');
+  try {
+    writePlaybook(dir, 'p', synthPlaybook({
+      phases: {
+        detect: {
+          indicators: [{
+            id: 'sig',
+            type: 'log_pattern',
+            value: 'x',
+            description: 'd',
+            confidence: 'high',
+            deterministic: false,
+            false_positive_checks_required: ['check-A'],
+          }],
+        },
+      },
+    }));
+    const runner = freshRunner(dir);
+    const det = runner.detect('p', 'default', {
+      signal_overrides: { sig: 'hit', sig__fp_checks: { 'check-A': true } },
+      signals: { detection_classification: 'detected' },
+    });
+    assert.equal(det.classification, 'detected',
+      'when every FP check is attested, the override survives');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
 
-describe('F7: corrupt catalog yields structured blocked_by, not crash', () => {
-  it('module-load catalog corruption surfaces as blocked_by:catalog_corrupt at run()', () => {
-    // The shipped catalog is fine; we exercise the degraded path by simulating
-    // the module-level _xrefLoadError via env-driven indirection. The cleanest
-    // path: load the runner against a synthetic DATA_DIR pointing at a
-    // tempdir containing a broken cve-catalog.json.
-    const tmp = tmpDir('f7');
-    const dataDir = path.join(tmp, 'data');
-    fs.mkdirSync(dataDir, { recursive: true });
-    fs.writeFileSync(path.join(dataDir, 'cve-catalog.json'), '{ not valid json');
-    fs.mkdirSync(path.join(dataDir, 'playbooks'));
-    writePlaybook(path.join(dataDir, 'playbooks'), 'p', synthPlaybook({}));
-    const prevData = process.env.EXCEPTD_DATA_DIR;
-    const prevPb = process.env.EXCEPTD_PLAYBOOK_DIR;
-    process.env.EXCEPTD_DATA_DIR = dataDir;
-    process.env.EXCEPTD_PLAYBOOK_DIR = path.join(dataDir, 'playbooks');
-    // Clear both runner + cross-ref-api caches so the new DATA_DIR takes.
-    delete require.cache[RUNNER_PATH];
-    delete require.cache[path.resolve(__dirname, '..', 'lib', 'cross-ref-api.js')];
-    try {
-      const local = require(RUNNER_PATH);
-      const r = local.run('p', 'default', {});
-      assert.equal(r.ok, false);
-      assert.equal(r.blocked_by, 'catalog_corrupt');
-      // Pair the field-presence assertion with a type + non-empty check
-      // (field-present-not-populated regression class).
-      assert.equal(typeof r.error, 'string');
-      assert.ok(r.error.length > 0, 'error string must be non-empty');
-    } finally {
-      if (prevData === undefined) delete process.env.EXCEPTD_DATA_DIR;
-      else process.env.EXCEPTD_DATA_DIR = prevData;
-      if (prevPb === undefined) delete process.env.EXCEPTD_PLAYBOOK_DIR;
-      else process.env.EXCEPTD_PLAYBOOK_DIR = prevPb;
-      delete require.cache[RUNNER_PATH];
-      delete require.cache[path.resolve(__dirname, '..', 'lib', 'cross-ref-api.js')];
-      fs.rmSync(tmp, { recursive: true, force: true });
+test('U REG-1: signal_overrides=array surfaces as analyze.runtime_errors[]', () => {
+  const dir = tmpDir('u-reg1');
+  try {
+    writePlaybook(dir, 'p', synthPlaybook({
+      phases: {
+        detect: {
+          indicators: [{
+            id: 'sig',
+            type: 'log_pattern',
+            value: 'x',
+            description: 'd',
+            confidence: 'high',
+            deterministic: false,
+          }],
+        },
+      },
+    }));
+    const runner = freshRunner(dir);
+    const result = runner.run('p', 'default', {
+      // Hostile shape: array, not object. normalizeSubmission must push a
+      // signal_overrides_invalid runtime_error onto submission._runErrors,
+      // and run() must harvest it into the run-level accumulator so
+      // analyze.runtime_errors[] surfaces it.
+      signal_overrides: ['bad-value-1', 'bad-value-2'],
+    }, { airGap: true });
+    assert.ok(result.phases, `run() must produce phases; got ${JSON.stringify(result).slice(0, 200)}`);
+    const rtErrors = (result.phases.analyze && result.phases.analyze.runtime_errors) || [];
+    const invalid = rtErrors.find(e => e.kind === 'signal_overrides_invalid');
+    assert.ok(invalid,
+      `analyze.runtime_errors[] must contain signal_overrides_invalid; got: ${JSON.stringify(rtErrors)}`);
+    assert.equal(invalid.supplied_type, 'array',
+      'the error record must report the invalid input type');
+    // Field-present AND populated.
+    assert.equal(typeof invalid.reason, 'string');
+    assert.ok(invalid.reason.length > 0);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from bundle-correctness ----
+require("node:test").describe("bundle-correctness", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Bundle-emit correctness checks against the canonical schemas of:
+ *   - CSAF 2.0 (csaf_security_advisory category)
+ *   - SARIF 2.1.0
+ *   - OpenVEX 0.2.0
+ *
+ * v0.12.12 (B1-B7 audit): the bundle emitters were structurally
+ * non-conformant against each of the three downstream specs. These tests
+ * pin the conformant shape so regressions surface on every test run.
+ *
+ * Run under: node --test --test-concurrency=1 tests/
+ * (concurrency=1 matters — the runner is module-scope and reads
+ * EXCEPTD_PLAYBOOK_DIR once per process.)
+ */
+
+const test = require('node:test');
+const { describe, it, before } = test;
+const assert = require('node:assert/strict');
+const path = require('node:path');
+
+const RUNNER_PATH = path.resolve(__dirname, '..', 'lib', 'playbook-runner.js');
+const REAL_PLAYBOOK_DIR = path.resolve(__dirname, '..', 'data', 'playbooks');
+
+function loadRunner() {
+  delete require.cache[RUNNER_PATH];
+  process.env.EXCEPTD_PLAYBOOK_DIR = REAL_PLAYBOOK_DIR;
+  return require(RUNNER_PATH);
+}
+
+// Detect → analyze → validate → close against kernel playbook with one
+// indicator forced to hit, producing CVE matches + indicator hit + framework
+// gap mapping in a single bundle build.
+function emitBundles() {
+  const runner = loadRunner();
+  const detRes = runner.detect('kernel', 'all-catalogued-kernel-cves', {
+    signal_overrides: { 'kver-in-affected-range': 'hit' }
+  });
+  const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', detRes, {
+    patch_available: false, blast_radius_score: 3
+  });
+  const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {});
+  const c = runner.close('kernel', 'all-catalogued-kernel-cves', an, v, {
+    _bundle_formats: ['csaf-2.0', 'sarif-2.1.0', 'openvex-0.2.0']
+  }, { session_id: 'bundlecorrectnesstest' });
+  return c.evidence_package.bundles_by_format;
+}
+
+describe('CSAF 2.0 — B5 (product_tree mandatory for security_advisory)', () => {
+  let bundle;
+  before(() => { bundle = emitBundles()['csaf-2.0']; });
+
+  it('document.category is csaf_security_advisory', () => {
+    assert.equal(bundle.document.category, 'csaf_security_advisory');
+    assert.equal(bundle.document.csaf_version, '2.0');
+  });
+
+  it('product_tree.full_product_names is non-empty', () => {
+    assert.ok(bundle.product_tree, 'product_tree must exist');
+    assert.ok(Array.isArray(bundle.product_tree.full_product_names));
+    assert.ok(bundle.product_tree.full_product_names.length >= 1);
+    const fp = bundle.product_tree.full_product_names[0];
+    assert.equal(typeof fp.product_id, 'string');
+    assert.ok(fp.product_id.startsWith('exceptd-target-'));
+    assert.equal(typeof fp.name, 'string');
+    assert.ok(fp.product_identification_helper?.purl);
+  });
+
+  it('every vulnerability references product_tree via product_status', () => {
+    assert.ok(bundle.vulnerabilities.length > 0);
+    const knownProductIds = new Set(
+      bundle.product_tree.full_product_names.map(p => p.product_id)
+    );
+    for (const v of bundle.vulnerabilities) {
+      assert.ok(v.product_status, `vulnerability missing product_status: ${JSON.stringify(v).slice(0, 80)}`);
+      const refIds = [
+        ...(v.product_status.known_affected || []),
+        ...(v.product_status.fixed || []),
+        ...(v.product_status.under_investigation || []),
+        ...(v.product_status.not_affected || [])
+      ];
+      assert.ok(refIds.length >= 1, 'product_status must reference at least one product');
+      for (const id of refIds) {
+        assert.ok(knownProductIds.has(id), `unknown product_id ${id} referenced by vulnerability`);
+      }
     }
   });
 });
 
-// ===========================================================================
-// F8 — unknown directive_id structured error
-// ===========================================================================
+describe('SARIF 2.1.0 — B6 (locations) + B7 (null property bag)', () => {
+  let bundle;
+  before(() => { bundle = emitBundles()['sarif-2.1.0']; });
 
-describe('F8: unknown directive_id returns structured error', () => {
-  let runner;
-  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
-
-  it('returns ok:false + blocked_by:directive_not_found + valid_directives list', () => {
-    const r = runner.run('kernel', 'does-not-exist-directive', {}, KERNEL_PREFLIGHT);
-    assert.equal(r.ok, false);
-    assert.equal(r.blocked_by, 'directive_not_found');
-    assert.ok(Array.isArray(r.valid_directives));
-    assert.ok(r.valid_directives.length > 0);
+  it('$schema + version pinned', () => {
+    assert.equal(bundle.version, '2.1.0');
+    assert.match(bundle.$schema, /sarif-schema-2\.1\.0\.json$/);
   });
-});
 
-// ===========================================================================
-// F10 — extended regression interval parsing
-// ===========================================================================
+  it('indicator-hit results include locations when artifact paths exist', () => {
+    const results = bundle.runs[0].results;
+    const indicatorResults = results.filter(r => r.properties?.kind === 'indicator_hit');
+    assert.ok(indicatorResults.length >= 1, 'kernel playbook should emit at least one indicator hit');
+    for (const r of indicatorResults) {
+      // kernel playbook has look-phase artifacts → locations MUST be present.
+      assert.ok(Array.isArray(r.locations), `indicator result ${r.ruleId} missing locations`);
+      assert.ok(r.locations[0].physicalLocation?.artifactLocation?.uri, 'physicalLocation.artifactLocation.uri must be populated');
+    }
+  });
 
-describe('F10: regression interval parser honors wk/mo/yr/on_event', () => {
-  let runner;
-  let dir;
-  before(() => {
-    dir = tmpDir('f10');
-    writePlaybook(dir, 'p', synthPlaybook({
-      phases: {
-        validate: {
-          regression_trigger: [
-            { interval: '7d', trigger: 'weekly' },
-            { interval: '2wk', trigger: 'biweekly' },
-            { interval: '1mo', trigger: 'monthly' },
-            { interval: '1yr', trigger: 'annual' },
-            { interval: 'on_event', trigger: 'release' },
-            { interval: '42xyz', trigger: 'bogus' }
-          ]
-        }
+  it('property bags omit null keys (B7)', () => {
+    const results = bundle.runs[0].results;
+    for (const r of results) {
+      for (const [k, v] of Object.entries(r.properties || {})) {
+        assert.notEqual(v, null, `result ${r.ruleId} has null property ${k}`);
       }
-    }));
-    runner = freshRunner(dir);
+    }
   });
 
-  it('next_run picks the soonest calendar trigger (7d beats 2wk/1mo/1yr)', () => {
-    const v = runner.validate('p', 'default', { matched_cves: [], rwep: { adjusted: 0 } });
-    assert.ok(v.regression_next_run, 'next_run resolved');
-    const next = new Date(v.regression_next_run);
-    const sevenDays = Date.now() + 7 * 24 * 3600 * 1000;
-    assert.ok(Math.abs(next.getTime() - sevenDays) < 5 * 60 * 1000, 'next_run ~7 days away');
-  });
-
-  it('event triggers surface in regression_event_triggers', () => {
-    const v = runner.validate('p', 'default', { matched_cves: [], rwep: { adjusted: 0 } });
-    assert.ok(Array.isArray(v.regression_event_triggers));
-    assert.ok(v.regression_event_triggers.some(t => t.interval === 'on_event'));
-  });
-
-  it('unparseable intervals surface in regression_unparseable_triggers', () => {
-    const v = runner.validate('p', 'default', { matched_cves: [], rwep: { adjusted: 0 } });
-    assert.ok(Array.isArray(v.regression_unparseable_triggers));
-    assert.ok(v.regression_unparseable_triggers.some(t => t.interval === '42xyz'));
+  it('framework-gap results carry kind: informational (B3 SARIF analogue)', () => {
+    // ruleIds are playbook-prefixed (e.g. `kernel/framework-gap-0`), so
+    // match on the suffix rather than the bare prefix.
+    const gapResults = bundle.runs[0].results.filter(r => /(?:^|\/)framework-gap-\d+/.test(String(r.ruleId)));
+    if (gapResults.length === 0) return; // playbook has none — skip
+    for (const r of gapResults) {
+      assert.equal(r.kind, 'informational', 'framework-gap results must declare kind: informational');
+    }
   });
 });
 
-// ===========================================================================
-// F12 — jurisdiction_obligations sorted by window_hours
-// ===========================================================================
+describe('OpenVEX 0.2.0 — B1 (products) + B2 (status) + B3 (no framework gaps) + B4 (URN IRI)', () => {
+  let bundle;
+  before(() => { bundle = emitBundles()['openvex-0.2.0']; });
 
-describe('F12: jurisdiction_obligations sorted ascending by window_hours', () => {
-  let runner;
-  let dir;
-  before(() => {
-    dir = tmpDir('f12');
-    writePlaybook(dir, 'p', synthPlaybook({
-      phases: {
-        govern: {
-          jurisdiction_obligations: [
-            { jurisdiction: 'EU', regulation: 'GDPR', window_hours: 72, clock_starts: 'detect_confirmed' },
-            { jurisdiction: 'EU', regulation: 'DORA', window_hours: 4, clock_starts: 'detect_confirmed' },
-            { jurisdiction: 'EU', regulation: 'NIS2', window_hours: 24, clock_starts: 'detect_confirmed' }
-          ]
-        }
+  it('@context + version pinned', () => {
+    assert.equal(bundle['@context'], 'https://openvex.dev/ns/v0.2.0');
+    assert.equal(bundle.version, 1);
+  });
+
+  it('every statement has products (B1)', () => {
+    assert.ok(Array.isArray(bundle.statements));
+    assert.ok(bundle.statements.length > 0);
+    for (const s of bundle.statements) {
+      assert.ok(Array.isArray(s.products), `statement missing products: ${JSON.stringify(s.vulnerability)}`);
+      assert.ok(s.products.length >= 1);
+      assert.ok(s.products[0]['@id'], 'product entry missing @id');
+      assert.ok(s.products[0]['@id'].startsWith('pkg:exceptd/'), 'product @id should be a pkg:exceptd/ purl');
+    }
+  });
+
+  it('indicator-hit statements emit status:affected with action_statement (B2)', () => {
+    const indicatorStatements = bundle.statements.filter(s =>
+      String(s.vulnerability['@id']).startsWith('urn:exceptd:indicator:')
+    );
+    assert.ok(indicatorStatements.length >= 1, 'must contain at least one indicator statement');
+    const hits = indicatorStatements.filter(s => s.status === 'affected');
+    assert.ok(hits.length >= 1, 'forced indicator hit must produce status: affected');
+    for (const s of hits) {
+      assert.equal(typeof s.action_statement, 'string', 'affected statements must carry action_statement');
+      assert.ok(s.action_statement.length > 0);
+    }
+  });
+
+  it('no framework-gap statements pollute the VEX feed (B3)', () => {
+    for (const s of bundle.statements) {
+      const id = String(s.vulnerability['@id']);
+      assert.ok(!id.includes('framework-gap'), `framework-gap statement leaked into OpenVEX: ${id}`);
+    }
+  });
+
+  it('every @id is a valid URN (B4)', () => {
+    // CVE statements: urn:cve:<id>
+    // Indicator statements: urn:exceptd:indicator:<playbook>:<indicator-id>
+    // NID (first segment) is conventionally lowercase; the NSS is case-sensitive
+    // per RFC 8141 and carries the canonical identifier case (e.g. CVE-2026-43284).
+    const urnRe = /^urn:[a-z][a-z0-9-]*:[A-Za-z0-9_-]+(?::[A-Za-z0-9_-]+)*$/;
+    for (const s of bundle.statements) {
+      const id = String(s.vulnerability['@id']);
+      assert.match(id, urnRe, `vulnerability @id is not a valid URN: ${id}`);
+      // No literal spaces, no unregistered exceptd: prefix
+      assert.ok(!id.includes(' '), `@id has literal space: ${id}`);
+      assert.ok(!id.startsWith('exceptd:'), `@id uses unregistered exceptd: scheme: ${id}`);
+    }
+  });
+
+  it('valid OpenVEX status values only', () => {
+    const validStatuses = new Set(['not_affected', 'affected', 'fixed', 'under_investigation']);
+    for (const s of bundle.statements) {
+      assert.ok(validStatuses.has(s.status), `invalid OpenVEX status: ${s.status}`);
+      if (s.status === 'not_affected') {
+        assert.ok(s.justification, 'not_affected status requires justification');
       }
-    }));
-    runner = freshRunner(dir);
-  });
-
-  it('govern() returns obligations sorted by window_hours ASC', () => {
-    const g = runner.govern('p', 'default');
-    const windows = g.jurisdiction_obligations.map(o => o.window_hours);
-    assert.deepEqual(windows, [4, 24, 72]);
-  });
-});
-
-// ===========================================================================
-// F15 — signal_overrides type validation
-// ===========================================================================
-
-describe('F15: non-object signal_overrides rejected (not character-spread)', () => {
-  let runner;
-  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
-
-  it('string signal_overrides is rejected and runtime_error surfaced', () => {
-    const r = runner.run('kernel', 'all-catalogued-kernel-cves', {
-      signal_overrides: 'foo'
-    }, KERNEL_PREFLIGHT);
-    assert.equal(r.ok, true);
-    // The character-spread bug would create {0:'f', 1:'o', 2:'o'} which leaks
-    // into detect's signals_received. Post-fix it's empty.
-    assert.deepEqual(r.phases.detect.signals_received.filter(k => /^\d+$/.test(k)), []);
+      if (s.status === 'affected') {
+        assert.ok(s.action_statement, 'affected status requires action_statement');
+      }
+      if (s.status === 'under_investigation') {
+        assert.equal(s.action_statement, undefined, 'under_investigation must not include action_statement');
+      }
+    }
   });
 });
 
-// ===========================================================================
-// F16 — unknown bundle format does not leak analyze + validate
-// ===========================================================================
+// ----- audit W (v0.12.20) regression coverage -----
 
-describe('F16: unknown bundle format returns shape-only fallback', () => {
-  let runner;
-  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+function emitBundlesWith(opts = {}) {
+  const runner = loadRunner();
+  const detRes = runner.detect('kernel', 'all-catalogued-kernel-cves', {
+    signal_overrides: { 'kver-in-affected-range': 'hit' }
+  });
+  const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', detRes, {
+    patch_available: false, blast_radius_score: 3,
+    ...(opts.vex_fixed ? { vex_fixed: opts.vex_fixed } : {}),
+  });
+  const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {});
+  const c = runner.close('kernel', 'all-catalogued-kernel-cves', an, v, {
+    _bundle_formats: ['csaf-2.0', 'sarif-2.1.0', 'openvex-0.2.0']
+  }, { session_id: 'bundlecorrectnesstest' });
+  return { bundles: c.evidence_package.bundles_by_format, body: c.evidence_package.bundle_body, analyze: an };
+}
 
-  it('unknown format → {format, note, supported_formats[]} without analyze/validate', () => {
-    const result = runner.run('kernel', 'all-catalogued-kernel-cves', {
-      signal_overrides: { 'kver-in-affected-range': 'miss' },
-      signals: { _bundle_formats: ['totally-unknown-format'] }
-    }, KERNEL_PREFLIGHT);
-    assert.equal(result.ok, true);
-    const fallback = result.phases.close.evidence_package.bundles_by_format['totally-unknown-format'];
-    assert.equal(fallback.note, 'Unknown format');
-    assert.ok(Array.isArray(fallback.supported_formats));
-    assert.equal(fallback.analyze, undefined, 'analyze NOT leaked');
-    assert.equal(fallback.validate, undefined, 'validate NOT leaked');
+describe('audit W P1-A — fixed status gated on vex_status, not live_patch_available', () => {
+  it('CSAF: live-patchable CVE without operator VEX disposition stays known_affected', () => {
+    const { bundles, analyze } = emitBundlesWith();
+    // The kernel playbook surfaces Copy Fail (live_patch_available=true) but
+    // no operator-supplied VEX disposition is present in this run.
+    const livePatchableMatched = analyze.matched_cves.filter(c => c.live_patch_available === true);
+    assert.ok(livePatchableMatched.length >= 1, 'fixture: at least one matched CVE must be live-patchable');
+    for (const matched of livePatchableMatched) {
+      const vuln = bundles['csaf-2.0'].vulnerabilities.find(v => v.cve === matched.cve_id);
+      assert.ok(vuln, `csaf vuln missing for ${matched.cve_id}`);
+      assert.ok(vuln.product_status.known_affected, `${matched.cve_id} must remain known_affected absent vex_status:fixed`);
+      assert.ok(!vuln.product_status.fixed, `${matched.cve_id} must NOT be reported as fixed based on live_patch_available alone`);
+    }
+  });
+
+  it('CSAF: operator vex_status=fixed promotes to product_status.fixed', () => {
+    // Pick the first live-patchable CVE the kernel playbook surfaces and
+    // mark it as fixed via the vex_fixed set.
+    const baseline = emitBundlesWith();
+    const target = baseline.analyze.matched_cves.find(c => c.live_patch_available === true);
+    assert.ok(target, 'fixture: need a live-patchable matched CVE to test promotion');
+    const { bundles } = emitBundlesWith({ vex_fixed: new Set([target.cve_id]) });
+    const vuln = bundles['csaf-2.0'].vulnerabilities.find(v => v.cve === target.cve_id);
+    assert.ok(vuln.product_status.fixed, 'operator vex_status:fixed must drive product_status.fixed');
+    assert.ok(!vuln.product_status.known_affected);
+  });
+
+  it('OpenVEX: live-patchable without vex_status:fixed stays affected', () => {
+    const { bundles, analyze } = emitBundlesWith();
+    const livePatchableMatched = analyze.matched_cves.filter(c => c.live_patch_available === true);
+    for (const matched of livePatchableMatched) {
+      const stmt = bundles['openvex-0.2.0'].statements.find(s => s.vulnerability.name === matched.cve_id);
+      assert.ok(stmt, `openvex stmt missing for ${matched.cve_id}`);
+      assert.equal(stmt.status, 'affected', `${matched.cve_id} must NOT be reported fixed based on live_patch_available alone`);
+      assert.ok(stmt.action_statement, 'affected statement requires action_statement');
+    }
+  });
+
+  it('OpenVEX: operator vex_status=fixed produces status:fixed', () => {
+    const baseline = emitBundlesWith();
+    const target = baseline.analyze.matched_cves.find(c => c.live_patch_available === true);
+    const { bundles } = emitBundlesWith({ vex_fixed: new Set([target.cve_id]) });
+    const stmt = bundles['openvex-0.2.0'].statements.find(s => s.vulnerability.name === target.cve_id);
+    assert.equal(stmt.status, 'fixed');
+    assert.equal(stmt.action_statement, undefined, 'fixed statement must not carry action_statement');
   });
 });
 
-// ===========================================================================
-// F17 — VEX fixed vs not_affected split
-// ===========================================================================
+describe('audit W P2-A — SARIF artifactLocation rejects shell commands', () => {
+  it('locations[].physicalLocation.artifactLocation.uri is path-shaped', () => {
+    const { bundles } = emitBundlesWith();
+    const sarif = bundles['sarif-2.1.0'];
+    const withLocs = sarif.runs[0].results.filter(r => Array.isArray(r.locations));
+    assert.ok(withLocs.length >= 1, 'fixture: at least one result must carry locations');
+    for (const r of withLocs) {
+      const uri = r.locations[0].physicalLocation.artifactLocation.uri;
+      // Must not contain whitespace (commands like `uname -r`).
+      assert.ok(!/\s/.test(uri), `artifactLocation.uri has whitespace: ${uri}`);
+      // Must not contain shell-pipe / sentence punctuation.
+      assert.ok(!/[|;&]/.test(uri), `artifactLocation.uri has shell metacharacters: ${uri}`);
+      // Must look like a path or file URI.
+      assert.match(uri, /^(?:[/~]|[A-Za-z]:[/\\]|\.\.?[/\\]|file:|[A-Za-z0-9_.+-]+[/\\][^\s]+)/,
+        `artifactLocation.uri not path-shaped: ${uri}`);
+    }
+  });
+});
 
-describe('F17: vexFilterFromDoc splits fixed vs not_affected', () => {
-  let runner;
-  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+describe('audit W P2-B — bundle_body and bundles_by_format share timestamps', () => {
+  it('CSAF tracking dates align between bundle_body and bundles_by_format[primary]', () => {
+    const { bundles, body } = emitBundlesWith();
+    // bundle_body for kernel playbook (default csaf-2.0 primary) must
+    // share identity with bundles_by_format['csaf-2.0'] (same object).
+    assert.equal(body, bundles['csaf-2.0'], 'bundle_body must be the same object reference as bundles_by_format[primary]');
+  });
 
-  it('OpenVEX fixed → goes into .fixed set; not_affected → into the main set', () => {
-    const doc = {
-      statements: [
-        { vulnerability: { name: 'CVE-2026-00001' }, status: 'not_affected' },
-        { vulnerability: { name: 'CVE-2026-00002' }, status: 'fixed' }
-      ]
+  it('multi-format emit produces a single issuedAt across all formats', () => {
+    const { bundles } = emitBundlesWith();
+    const csafIssued = bundles['csaf-2.0'].document.tracking.initial_release_date;
+    const vexIssued = bundles['openvex-0.2.0'].timestamp;
+    assert.equal(csafIssued, vexIssued, 'CSAF initial_release_date and OpenVEX timestamp must use the same issuedAt');
+    // Also: current_release_date and revision_history[0].date must match.
+    assert.equal(bundles['csaf-2.0'].document.tracking.current_release_date, csafIssued);
+    assert.equal(bundles['csaf-2.0'].document.tracking.revision_history[0].date, csafIssued);
+  });
+});
+
+describe('audit W P2-D — CSAF framework gaps move from vulnerabilities[] to document.notes[]', () => {
+  it('vulnerabilities[] contains no exceptd-framework-gap ids', () => {
+    const { bundles } = emitBundlesWith();
+    const csaf = bundles['csaf-2.0'];
+    for (const v of csaf.vulnerabilities) {
+      const ids = v.ids || [];
+      for (const idEntry of ids) {
+        assert.notEqual(idEntry.system_name, 'exceptd-framework-gap',
+          'framework gaps must not ride in vulnerabilities[]; they belong in document.notes[]');
+      }
+    }
+  });
+
+  it('document.notes[] surfaces framework gaps when analyze produced any', () => {
+    const { bundles, analyze } = emitBundlesWith();
+    const csaf = bundles['csaf-2.0'];
+    const gapCount = (analyze.framework_gap_mapping || []).length;
+    const allNotes = csaf.document.notes || [];
+    // When neither --publisher-namespace nor a URL-shaped --operator is
+    // supplied, an explanatory note is emitted alongside the
+    // framework-gap notes. Filter to the framework-gap subset before the
+    // count assertion.
+    const gapNotes = allNotes.filter(n => n.category === 'details');
+    assert.equal(gapNotes.length, gapCount, 'document.notes[] (category=details) count must match framework_gap_mapping.length');
+    for (const n of gapNotes) {
+      assert.equal(n.category, 'details', 'framework-gap notes use category: details');
+      assert.ok(typeof n.text === 'string' && n.text.length > 0);
+    }
+  });
+});
+
+describe('audit W P3-A — SARIF invocations.properties strips null values', () => {
+  it('invocations[0].properties has no null-valued keys', () => {
+    const { bundles } = emitBundlesWith();
+    const props = bundles['sarif-2.1.0'].runs[0].invocations[0].properties;
+    for (const [k, v] of Object.entries(props)) {
+      assert.notEqual(v, null, `invocations.properties.${k} must be omitted when null`);
+    }
+  });
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from bundle-determinism ----
+require("node:test").describe("bundle-determinism", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * v0.12.27: opt-in deterministic bundle emit. When
+ * runOpts.bundleDeterministic === true, CSAF / OpenVEX / close-envelope
+ * timestamps freeze to a single epoch, the auto-generated session_id
+ * derives from sha256(playbook + submission_digest + engine_version), and
+ * vulnerabilities[] / OpenVEX statements[] sort ascending by primary id.
+ *
+ * Default mode (no flag) MUST remain byte-identical to pre-v0.12.27
+ * output — these tests pin both directions.
+ *
+ * Run under: node --test --test-concurrency=1 tests/
+ */
+
+const test = require('node:test');
+const { describe, it, before } = test;
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
+
+const RUNNER_PATH = path.resolve(__dirname, '..', 'lib', 'playbook-runner.js');
+const REAL_PLAYBOOK_DIR = path.resolve(__dirname, '..', 'data', 'playbooks');
+const CLI_PATH = path.resolve(__dirname, '..', 'bin', 'exceptd.js');
+
+function loadRunner() {
+  delete require.cache[RUNNER_PATH];
+  process.env.EXCEPTD_PLAYBOOK_DIR = REAL_PLAYBOOK_DIR;
+  return require(RUNNER_PATH);
+}
+
+// Shared submission (kernel playbook, one indicator forced to hit so the
+// run produces a real CSAF / OpenVEX body with vulnerabilities and
+// statements to inspect).
+function baselineSubmission() {
+  return {
+    signal_overrides: { 'kver-in-affected-range': 'hit' },
+    signals: {
+      _bundle_formats: ['csaf-2.0', 'sarif-2.1.0', 'openvex-0.2.0'],
+      patch_available: false,
+      blast_radius_score: 3,
+    },
+  };
+}
+
+// kernel playbook gates on linux-platform; tests run on any host so the
+// precondition is pre-stamped via runOpts.precondition_checks (engine
+// supports the override + records it as `runOpts` provenance).
+const KERNEL_PC_OVERRIDES = {
+  'linux-platform': true,
+  'uname-available': true,
+};
+
+function runOnce(runOpts) {
+  const runner = loadRunner();
+  const merged = Object.assign({}, runOpts || {}, {
+    precondition_checks: Object.assign(
+      {}, KERNEL_PC_OVERRIDES, (runOpts && runOpts.precondition_checks) || {}
+    ),
+  });
+  return runner.run('kernel', 'all-catalogued-kernel-cves', baselineSubmission(), merged);
+}
+
+describe('v0.12.27 deterministic bundle emit', () => {
+  it('Test 1: two deterministic runs with the same epoch produce byte-identical bundles', () => {
+    const opts = { bundleDeterministic: true, bundleEpoch: '2026-01-01T00:00:00Z' };
+    const r1 = runOnce(opts);
+    const r2 = runOnce(opts);
+    assert.equal(r1.ok, true);
+    assert.equal(r2.ok, true);
+    // Sanity: session_ids are the same too (deterministic derivation).
+    assert.equal(r1.session_id, r2.session_id);
+    const csaf1 = r1.phases.close.evidence_package.bundles_by_format['csaf-2.0'];
+    const csaf2 = r2.phases.close.evidence_package.bundles_by_format['csaf-2.0'];
+    assert.equal(JSON.stringify(csaf1), JSON.stringify(csaf2));
+    const vex1 = r1.phases.close.evidence_package.bundles_by_format['openvex-0.2.0'];
+    const vex2 = r2.phases.close.evidence_package.bundles_by_format['openvex-0.2.0'];
+    assert.equal(JSON.stringify(vex1), JSON.stringify(vex2));
+    // CSAF tracking timestamps frozen to the supplied epoch.
+    assert.equal(csaf1.document.tracking.initial_release_date, '2026-01-01T00:00:00.000Z');
+    assert.equal(csaf1.document.tracking.current_release_date, '2026-01-01T00:00:00.000Z');
+    assert.equal(csaf1.document.tracking.generator.date, '2026-01-01T00:00:00.000Z');
+    assert.equal(csaf1.document.tracking.revision_history[0].date, '2026-01-01T00:00:00.000Z');
+    // OpenVEX timestamps frozen.
+    assert.equal(vex1.timestamp, '2026-01-01T00:00:00.000Z');
+    for (const stmt of vex1.statements) {
+      assert.equal(stmt.timestamp, '2026-01-01T00:00:00.000Z');
+    }
+  });
+
+  it('Test 2: different --bundle-epoch values produce different bundle bytes', () => {
+    const r1 = runOnce({ bundleDeterministic: true, bundleEpoch: '2026-01-01T00:00:00Z' });
+    const r2 = runOnce({ bundleDeterministic: true, bundleEpoch: '2026-06-01T00:00:00Z' });
+    const csaf1 = r1.phases.close.evidence_package.bundles_by_format['csaf-2.0'];
+    const csaf2 = r2.phases.close.evidence_package.bundles_by_format['csaf-2.0'];
+    assert.equal(csaf1.document.tracking.initial_release_date, '2026-01-01T00:00:00.000Z');
+    assert.equal(csaf2.document.tracking.initial_release_date, '2026-06-01T00:00:00.000Z');
+    assert.equal(csaf1.document.tracking.current_release_date, '2026-01-01T00:00:00.000Z');
+    assert.equal(csaf2.document.tracking.current_release_date, '2026-06-01T00:00:00.000Z');
+    // Vulnerabilities[] content is identical (same evidence).
+    assert.equal(
+      JSON.stringify(csaf1.vulnerabilities),
+      JSON.stringify(csaf2.vulnerabilities)
+    );
+  });
+
+  it('Test 3: deterministic + different evidence keeps timestamps frozen but vulnerability set differs', () => {
+    const opts = {
+      bundleDeterministic: true,
+      bundleEpoch: '2026-01-01T00:00:00Z',
+      precondition_checks: KERNEL_PC_OVERRIDES,
     };
-    const set = runner.vexFilterFromDoc(doc);
-    assert.ok(set.has('CVE-2026-00001'), 'not_affected → drop set');
-    assert.ok(!set.has('CVE-2026-00002'), 'fixed NOT in drop set');
-    assert.ok(set.fixed.has('CVE-2026-00002'), 'fixed → .fixed sidecar');
+    // Baseline: one indicator hit, no synthetic CVE filter.
+    const runner = loadRunner();
+    const subA = baselineSubmission();
+    const subB = baselineSubmission();
+    // Force a different signal verdict to change matched_cves count.
+    subB.signal_overrides['kver-in-affected-range'] = 'miss';
+    const rA = runner.run('kernel', 'all-catalogued-kernel-cves', subA, opts);
+    const rB = runner.run('kernel', 'all-catalogued-kernel-cves', subB, opts);
+    const csafA = rA.phases.close.evidence_package.bundles_by_format['csaf-2.0'];
+    const csafB = rB.phases.close.evidence_package.bundles_by_format['csaf-2.0'];
+    // Timestamps still frozen across runs.
+    assert.equal(csafA.document.tracking.initial_release_date, '2026-01-01T00:00:00.000Z');
+    assert.equal(csafB.document.tracking.initial_release_date, '2026-01-01T00:00:00.000Z');
+    // Different evidence → different content (typically different vuln
+    // counts when an indicator flips hit→miss).
+    assert.notEqual(
+      JSON.stringify(csafA.vulnerabilities),
+      JSON.stringify(csafB.vulnerabilities)
+    );
   });
 
-  it('CycloneDX resolved → fixed sidecar; not_affected/false_positive → drop', () => {
-    const doc = {
-      vulnerabilities: [
-        { id: 'CVE-2026-00003', analysis: { state: 'not_affected' } },
-        { id: 'CVE-2026-00004', analysis: { state: 'false_positive' } },
-        { id: 'CVE-2026-00005', analysis: { state: 'resolved' } }
-      ]
-    };
-    const set = runner.vexFilterFromDoc(doc);
-    assert.ok(set.has('CVE-2026-00003'));
-    assert.ok(set.has('CVE-2026-00004'));
-    assert.ok(!set.has('CVE-2026-00005'));
-    assert.ok(set.fixed.has('CVE-2026-00005'));
-  });
-});
-
-// ===========================================================================
-// F18 — _rwep_base_strategy emitted
-// ===========================================================================
-
-describe('F18: rwep base strategy is observable', () => {
-  let runner;
-  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
-
-  it("rwep object includes _rwep_base_strategy: 'max'", () => {
-    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
-    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det);
-    assert.equal(an.rwep._rwep_base_strategy, 'max');
-  });
-});
-
-// ===========================================================================
-// F19 — matched_cve_ids_array sibling
-// ===========================================================================
-
-describe('F19: matched_cve_ids has an array sibling', () => {
-  let runner;
-  let dir;
-  before(() => {
-    // Use a synthetic playbook that interpolates the array shape into a
-    // notification draft via the finding context.
-    dir = tmpDir('f19');
-    writePlaybook(dir, 'p', synthPlaybook({
-      phases: {
-        govern: { jurisdiction_obligations: [{ jurisdiction: 'X', regulation: 'Y', obligation: 't', window_hours: 24, clock_starts: 'detect_confirmed' }] },
-        close: { notification_actions: [{ obligation_ref: 'X/Y 24h', recipient: 'a@b', draft_notification: 'ids=${matched_cve_ids} count=${matched_cve_count}', evidence_attached: [] }] }
-      }
-    }));
-    runner = freshRunner(dir);
+  it('Test 4: default mode (no flag) keeps timestamps wall-clock-driven', () => {
+    const r1 = runOnce({});
+    // A 5ms gap before the second run guarantees `Date.now()` advances
+    // even on Windows' coarse-ish clock (15ms granularity is the worst
+    // case; the runner builds three full phases between runs so the
+    // sub-15ms collision is improbable). Re-loading the runner module is
+    // synchronous + cheap, so the wait is the only delay needed.
+    const start = Date.now();
+    while (Date.now() - start < 5) { /* spin */ }
+    const r2 = runOnce({});
+    const csaf1 = r1.phases.close.evidence_package.bundles_by_format['csaf-2.0'];
+    const csaf2 = r2.phases.close.evidence_package.bundles_by_format['csaf-2.0'];
+    // The deterministic path is opt-in; without the flag, two runs must
+    // diverge on tracking.initial_release_date.
+    assert.notEqual(
+      csaf1.document.tracking.initial_release_date,
+      csaf2.document.tracking.initial_release_date
+    );
   });
 
-  it('notification interpolation has both joined string and array sibling available', () => {
-    const an = { matched_cves: [{ cve_id: 'CVE-2026-31431' }, { cve_id: 'CVE-2026-43284' }], rwep: { adjusted: 50 }, framework_gap_mapping: [], blast_radius_score: 0 };
-    const v = runner.validate('p', 'default', an);
-    const c = runner.close('p', 'default', an, v);
-    const draft = c.notification_actions[0].draft_notification;
-    assert.match(draft, /ids=CVE-2026-31431, CVE-2026-43284/);
-    assert.match(draft, /count=2/);
-  });
-});
-
-// ===========================================================================
-// F20 — runtime_errors includes catalog_read kinds
-// ===========================================================================
-
-describe('F20: runtime_errors collects diverse error kinds', () => {
-  let runner;
-  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
-
-  it('runtime_errors is an array on every analyze result (may be empty)', () => {
-    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
-    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det);
-    assert.ok(Array.isArray(an.runtime_errors));
+  it('Test 5: --bundle-epoch invalid ISO refuses at the CLI with structured error', () => {
+    const r = spawnSync(process.execPath, [
+      CLI_PATH, 'run', 'kernel',
+      '--bundle-deterministic', '--bundle-epoch', 'not-a-real-date',
+      '--json',
+    ], { encoding: 'utf8' });
+    assert.equal(r.status, 1);
+    // stderr carries the structured ok:false body (emitError pattern).
+    const body = JSON.parse(r.stderr.trim().split('\n').filter(Boolean).pop());
+    assert.equal(body.ok, false);
+    assert.match(body.error, /bundle-epoch.*ISO/);
+    assert.equal(body.verb, 'run');
+    assert.equal(body.flag, 'bundle-epoch');
   });
 
-  it('blast_radius_invalid runtime_error surfaces with kind annotation', () => {
-    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
-    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det, { blast_radius_score: -5 });
-    assert.ok(an.runtime_errors.some(e => e.kind === 'blast_radius_invalid'));
-  });
-});
-
-// ===========================================================================
-// F21 — feeds_into auto_chained false
-// ===========================================================================
-
-describe('F21: feeds_into_auto_chained is observable + false', () => {
-  let runner;
-  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
-
-  it('close().feeds_into_auto_chained === false', () => {
-    const result = runner.run('kernel', 'all-catalogued-kernel-cves', {}, KERNEL_PREFLIGHT);
-    assert.equal(result.phases.close.feeds_into_auto_chained, false);
-  });
-});
-
-// ===========================================================================
-// F22 — precondition_check_source annotation
-// ===========================================================================
-
-describe('F22: precondition_check_source surfaces merge provenance', () => {
-  let runner;
-  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
-
-  it('a pc value supplied only via runOpts is tagged runOpts', () => {
-    const r = runner.run('kernel', 'all-catalogued-kernel-cves', {}, KERNEL_PREFLIGHT);
+  it('Test 6: --bundle-deterministic without --bundle-epoch falls back to playbook last_threat_review', () => {
+    const runner = loadRunner();
+    const pb = runner.loadPlaybook('kernel');
+    const ltr = pb._meta.last_threat_review;
+    assert.ok(typeof ltr === 'string' && ltr.length > 0,
+      'kernel playbook must declare last_threat_review for this test to be meaningful');
+    const r = runOnce({ bundleDeterministic: true });
     assert.equal(r.ok, true);
-    assert.equal(r.precondition_check_source['linux-platform'], 'runOpts');
+    const csaf = r.phases.close.evidence_package.bundles_by_format['csaf-2.0'];
+    const expected = new Date(ltr).toISOString();
+    assert.equal(csaf.document.tracking.initial_release_date, expected);
+    assert.equal(csaf.document.tracking.current_release_date, expected);
   });
 
-  it('a pc value supplied via both submission and runOpts is tagged merged', () => {
-    const r = runner.run('kernel', 'all-catalogued-kernel-cves', {
-      precondition_checks: { 'linux-platform': true }
-    }, KERNEL_PREFLIGHT);
-    assert.equal(r.precondition_check_source['linux-platform'], 'merged');
-  });
-});
-
-// ===========================================================================
-// F24 — theater_verdict allowlist
-// ===========================================================================
-
-describe('F24: theater_verdict validated against allowlist', () => {
-  let runner;
-  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
-
-  it('arbitrary string is rejected; runtime_error surfaced; verdict falls back', () => {
-    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
-    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det, { theater_verdict: 'NOT_A_REAL_VERDICT' });
-    assert.notEqual(an.compliance_theater_check.verdict, 'NOT_A_REAL_VERDICT');
-    assert.ok(an.runtime_errors.some(e => e.kind === 'theater_verdict_invalid'));
-  });
-
-  it("'present' is accepted as a valid verdict", () => {
-    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
-    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det, { theater_verdict: 'present' });
-    assert.equal(an.compliance_theater_check.verdict, 'present');
+  it('Test 7: deterministic mode sorts vulnerabilities[] ascending by primary id', () => {
+    // kernel playbook surfaces every catalogued kernel CVE when
+    // `kver-in-affected-range` fires hit. With deterministic mode on,
+    // the resulting CSAF vulnerabilities[] array must be sorted ascending
+    // by cve_id / ids[0].text regardless of catalog enumeration order.
+    const r = runOnce({ bundleDeterministic: true, bundleEpoch: '2026-01-01T00:00:00Z' });
+    assert.equal(r.ok, true);
+    const csaf = r.phases.close.evidence_package.bundles_by_format['csaf-2.0'];
+    const ids = csaf.vulnerabilities.map(v =>
+      (typeof v.cve === 'string' && v.cve) ||
+      (Array.isArray(v.ids) && v.ids[0] && v.ids[0].text) || ''
+    );
+    // ≥ 2 entries is the smallest set where the sort assertion can bite.
+    assert.ok(ids.length >= 2,
+      `kernel run must surface ≥ 2 vulnerabilities for the sort assertion to bite (got ${ids.length})`);
+    const sorted = ids.slice().sort((a, b) => a.localeCompare(b));
+    assert.deepEqual(ids, sorted);
   });
 });
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
 
-// ===========================================================================
-// F25 — verdict_text renders for 'present' too
-// ===========================================================================
 
-describe('F25: verdict_text renders for theater AND present verdicts', () => {
-  let runner;
-  let dir;
-  before(() => {
-    dir = tmpDir('f25');
-    writePlaybook(dir, 'p', synthPlaybook({
-      phases: {
-        analyze: {
-          compliance_theater_check: {
-            claim: 'compliance claim',
-            audit_evidence: 'evidence',
-            reality_test: 'test',
-            theater_verdict_if_gap: 'gap-language'
-          }
-        }
+// ---- routed from condition-evaluator-fixes ----
+require("node:test").describe("condition-evaluator-fixes", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Regression for the condition mini-language (lib/playbook-runner.js
+ * evalCondition). Conditions gate escalation_criteria, feeds_into chains, and
+ * remediation preconditions across the catalog; a silently-false condition
+ * disables its rule.
+ *
+ *   - hyphenated signal/indicator ids (the catalog naming convention) must
+ *     parse, not fall through to false
+ *   - severity comparison is by the low<medium<high<critical ladder, not
+ *     lexicographic string order (so 'critical' >= 'high' is true)
+ *   - `contains` is a synonym for `includes`
+ *   - an operator-submitted signal cannot override an engine-computed value
+ *   - an unparseable condition surfaces a condition_unparsed runtime error
+ *   - a contains/IN clause whose LHS path is absent surfaces a
+ *     condition_path_unresolved runtime error (a parsed-but-dead clause), while a
+ *     present-but-empty collection stays a silent legitimate false
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+
+const runner = require(path.resolve(__dirname, '..', 'lib', 'playbook-runner.js'));
+const evalCondition = runner._evalCondition;
+
+test('hyphenated LHS evaluates against the matching ctx key (not silently false)', () => {
+  assert.equal(evalCondition('no-security-md == true', { 'no-security-md': true }), true);
+  assert.equal(evalCondition('no-security-md == true', { 'no-security-md': false }), false);
+  assert.equal(evalCondition('kver-in-affected-range == true AND kaslr-disabled == true',
+    { 'kver-in-affected-range': true, 'kaslr-disabled': true }), true);
+});
+
+test('severity comparison uses the ordinal ladder, not lexicographic order', () => {
+  assert.equal(evalCondition("finding.severity >= high", { finding: { severity: 'critical' } }), true);
+  assert.equal(evalCondition("finding.severity >= high", { finding: { severity: 'high' } }), true);
+  assert.equal(evalCondition("finding.severity >= high", { finding: { severity: 'medium' } }), false);
+  assert.equal(evalCondition("finding.severity >= high", { finding: { severity: 'low' } }), false);
+  // numeric comparison still works (regression guard)
+  assert.equal(evalCondition('rwep >= 90', { rwep: 100 }), true);
+  assert.equal(evalCondition('rwep >= 90', { rwep: 50 }), false);
+});
+
+test('`contains` is accepted as a synonym for `includes`', () => {
+  assert.equal(evalCondition('scope.targets contains named-remote', { scope: { targets: ['named-remote'] } }), true);
+  assert.equal(evalCondition('scope.targets includes named-remote', { scope: { targets: ['named-remote'] } }), true);
+  assert.equal(evalCondition('scope.targets contains named-remote', { scope: { targets: ['local'] } }), false);
+});
+
+test('`matches` accepts both the slash and the quote delimiter (mcp feeds_into uses the quoted form)', () => {
+  // The catalog authors both forms; mcp.json's feeds_into matches the CI-platform
+  // OR-branch with the quoted form. A delimiter-specific parser silently disabled
+  // it (returned false + a condition_unparsed runtime error) for every input.
+  const slashErrs = [];
+  assert.equal(evalCondition("finding.x matches /(a|b)/", { finding: { x: 'a' }, _runErrors: slashErrs }), true);
+  assert.equal(slashErrs.length, 0, 'slash form parses, no condition_unparsed');
+
+  const quoteErrs = [];
+  assert.equal(evalCondition("finding.x matches '(a|b)'", { finding: { x: 'a' }, _runErrors: quoteErrs }), true);
+  assert.equal(quoteErrs.length, 0, 'single-quote form parses, no condition_unparsed');
+
+  // double-quote form also parses
+  assert.equal(evalCondition('finding.x matches "(a|b)"', { finding: { x: 'b' } }), true);
+
+  // a non-match is false (not a parse failure)
+  assert.equal(evalCondition("finding.x matches '(a|b)'", { finding: { x: 'c' } }), false);
+
+  // the exact mcp.json feeds_into condition fires via the regex OR-branch alone,
+  // with the other two OR-branches false (pre-fix the whole OR collapsed to false)
+  const mcpCond = "finding.mcp_server_location matches '(github_actions|gitlab_runner|jenkins|buildkite|circleci)'"
+    + " OR finding.tool_invoked_from == 'ci_pipeline'"
+    + " OR analyze.blast_radius_score >= 4 AND finding.pipeline_credentials_in_scope == true";
+  assert.equal(evalCondition(mcpCond, {
+    finding: { mcp_server_location: 'buildkite', tool_invoked_from: 'manual', pipeline_credentials_in_scope: false },
+    analyze: { blast_radius_score: 0 },
+  }), true);
+});
+
+test('an unparseable (prose) condition pushes a condition_unparsed runtime error (not a silent false)', () => {
+  const errs = [];
+  // A genuine prose sentence the mini-language can't evaluate. (The `any … ==`
+  // quantifier form below is now PARSED — see the quantifier test — so a prose
+  // clause is what should still surface the diagnostic.)
+  const r = evalCondition('a single compromised identity can rewrite the trail', { _runErrors: errs });
+  assert.equal(r, false, 'unparseable still returns false');
+  assert.equal(errs.length, 1, 'a runtime error is recorded');
+  assert.equal(errs[0].kind, 'condition_unparsed');
+});
+
+test('`any`/`all` quantifier prefix parses and fires (not condition_unparsed)', () => {
+  // Scalar LHS — the quantifier is prose emphasis; the scalar comparison is the
+  // test. framework.json's feeds_into to sbom is exactly this shape. Pre-fix the
+  // `any ` leaf fell through to condition_unparsed → false, disabling BOTH paths
+  // by which framework chains into sbom.
+  const cond = "any compliance_theater_check.verdict == 'theater' AND blast_radius_score >= 4";
+  const errs = [];
+  assert.equal(
+    evalCondition(cond, { compliance_theater_check: { verdict: 'theater' }, blast_radius_score: 5, _runErrors: errs }),
+    true,
+    'theater verdict + blast_radius 5 fires the framework→sbom chain'
+  );
+  assert.equal(errs.filter((e) => e.kind === 'condition_unparsed').length, 0,
+    'the any-prefixed leaf parses — no condition_unparsed');
+  // Negatives: each conjunct gates independently.
+  assert.equal(evalCondition(cond, { compliance_theater_check: { verdict: 'clear' }, blast_radius_score: 5 }), false,
+    'non-theater verdict does not chain');
+  assert.equal(evalCondition(cond, { compliance_theater_check: { verdict: 'theater' }, blast_radius_score: 2 }), false,
+    'blast_radius below 4 does not chain');
+
+  // Array LHS — existential / universal over members. sbom.json's feeds_into
+  // uses `any matched_cve.attack_class == 'kernel-lpe'`.
+  const hit = { matched_cve: [{ attack_class: 'mcp-supply-chain' }, { attack_class: 'kernel-lpe' }] };
+  const miss = { matched_cve: [{ attack_class: 'mcp-supply-chain' }] };
+  assert.equal(evalCondition("any matched_cve.attack_class == 'kernel-lpe'", hit), true,
+    'any matches when one array element satisfies the predicate');
+  assert.equal(evalCondition("any matched_cve.attack_class == 'kernel-lpe'", miss), false,
+    'any is false when no element satisfies the predicate');
+  assert.equal(evalCondition("all matched_cve.attack_class == 'kernel-lpe'", hit), false,
+    'all is false when only some elements satisfy the predicate');
+  assert.equal(evalCondition("all matched_cve.attack_class == 'kernel-lpe'",
+    { matched_cve: [{ attack_class: 'kernel-lpe' }, { attack_class: 'kernel-lpe' }] }), true,
+    'all is true when every element satisfies the predicate');
+});
+
+test('`any`/`all` quantifier re-roots EVERY operator over an array element, not just comparisons (IN/contains/matches)', () => {
+  // sbom.json's feeds_into into ai-api is `any matched_cve.attack_class IN
+  // ['ai-c2', 'prompt-injection']`. `IN` is not a comparison operator, so the
+  // quantifier branch used to skip the per-element re-root and evaluate the
+  // clause against the whole ctx — where `matched_cve.attack_class` resolves to
+  // undefined on the array — leaving the sbom→ai-api chain permanently dead while
+  // the `== 'kernel-lpe'` / `== 'mcp-supply-chain'` siblings fired.
+  const cves = [{ attack_class: 'supply-chain' }, { attack_class: 'ai-c2' }];
+  assert.equal(
+    evalCondition("any matched_cve.attack_class IN ['ai-c2', 'prompt-injection']", { matched_cve: cves }),
+    true,
+    'any … IN [...] fires when one array element is in the list');
+  assert.equal(
+    evalCondition("any matched_cve.attack_class IN ['kernel-lpe']", { matched_cve: cves }),
+    false,
+    'any … IN [...] is false when no element is in the list');
+  assert.equal(
+    evalCondition("all matched_cve.attack_class IN ['supply-chain', 'ai-c2']", { matched_cve: cves }),
+    true,
+    'all … IN [...] is true when every element is in the list');
+  assert.equal(
+    evalCondition("all matched_cve.attack_class IN ['supply-chain']", { matched_cve: cves }),
+    false,
+    'all … IN [...] is false when one element is outside the list');
+  // `all` over an empty array is false (vacuous-truth guard preserved).
+  assert.equal(
+    evalCondition("all matched_cve.attack_class IN ['ai-c2']", { matched_cve: [] }),
+    false,
+    'all … over an empty array is false, not vacuously true');
+
+  // contains under a quantifier (array element holds its own array field).
+  assert.equal(
+    evalCondition("any finding.tags contains 'eu'", { finding: [{ tags: ['us'] }, { tags: ['eu', 'jp'] }] }),
+    true,
+    'any … contains fires existentially across array elements');
+
+  // matches under a quantifier (slash + quote delimiters, the only forms the
+  // leaf parser accepts).
+  assert.equal(
+    evalCondition('any matched_cve.vector matches /userns/', { matched_cve: [{ vector: 'remote' }, { vector: 'local-userns-bpf' }] }),
+    true,
+    'any … matches /re/ fires existentially across array elements');
+  assert.equal(
+    evalCondition("any matched_cve.vector matches 'kptr'", { matched_cve: [{ vector: 'remote' }, { vector: 'local-userns-bpf' }] }),
+    false,
+    "any … matches 're' is false when no element matches");
+
+  // The scalar-object head (framework theater prose-quantifier) is unaffected —
+  // a non-array head still routes to the bare inner comparison.
+  assert.equal(
+    evalCondition("any compliance_theater_check.verdict == 'theater'", { compliance_theater_check: { verdict: 'theater' } }),
+    true,
+    'a scalar-object head still evaluates the inner comparison directly');
+});
+
+test('bare `any <path>` / `all <path>` is a non-emptiness test, not condition_unparsed', () => {
+  // `any X` with no comparison operator means "at least one X exists" — a
+  // non-emptiness / existence test. Pre-fix the operator-less inner token had no
+  // comparison branch to parse it and fell through to condition_unparsed → false,
+  // so it returned false even for a populated array. sbom.json's EU CRA Art.14
+  // (24h) notify_legal escalation `any actively_exploited_match AND …` was dead.
+  let errs = [];
+  assert.equal(evalCondition('any actively_exploited_match',
+    { actively_exploited_match: [{ id: 'x' }], _runErrors: errs }), true,
+    'any over a non-empty array is true');
+  assert.equal(errs.filter((e) => e.kind === 'condition_unparsed').length, 0,
+    'no condition_unparsed for the bare non-emptiness form');
+
+  errs = [];
+  assert.equal(evalCondition('any actively_exploited_match',
+    { actively_exploited_match: [], _runErrors: errs }), false,
+    'any over an empty array is false');
+  assert.equal(errs.filter((e) => e.kind === 'condition_unparsed').length, 0,
+    'empty-array path is parsed, not unparsed');
+
+  // missing path / falsy scalar → false; truthy scalar → true.
+  assert.equal(evalCondition('any nonexistent', {}), false, 'missing path is false');
+  assert.equal(evalCondition('any kev_listed', { kev_listed: true }), true, 'truthy scalar is true');
+  assert.equal(evalCondition('any kev_listed', { kev_listed: false }), false, 'falsy scalar is false');
+
+  // `all <path>`: non-empty AND every element truthy.
+  assert.equal(evalCondition('all flags', { flags: [true, true] }), true, 'all-truthy non-empty array');
+  assert.equal(evalCondition('all flags', { flags: [true, false] }), false, 'a falsy element fails all');
+  assert.equal(evalCondition('all flags', { flags: [] }), false, 'empty array fails all');
+
+  // The exact sbom.json:1250 condition fires when both conjuncts hold, with zero
+  // condition_unparsed runtime errors.
+  errs = [];
+  const sbomCond = "any actively_exploited_match AND jurisdiction_obligations contains 'EU/EU CRA Art.14 24h'";
+  assert.equal(evalCondition(sbomCond, {
+    actively_exploited_match: [{ id: 'CVE-x' }],
+    jurisdiction_obligations: ['EU/EU CRA Art.14 24h'],
+    _runErrors: errs,
+  }), true, 'the EU CRA Art.14 notify_legal escalation fires when both conjuncts hold');
+  assert.equal(errs.filter((e) => e.kind === 'condition_unparsed').length, 0,
+    'the full sbom:1250 condition is fully parsed');
+  // First conjunct gates: an empty actively_exploited_match array keeps it false.
+  assert.equal(evalCondition(sbomCond, {
+    actively_exploited_match: [],
+    jurisdiction_obligations: ['EU/EU CRA Art.14 24h'],
+  }), false, 'no active-exploitation matches → escalation does not fire');
+
+  // A genuinely malformed inner clause (operator-like garbage) must still surface
+  // condition_unparsed — the bare-path handler must not swallow it.
+  errs = [];
+  assert.equal(evalCondition('any foo ~~ bar', { foo: [1], _runErrors: errs }), false,
+    'malformed inner clause stays false');
+  assert.equal(errs.filter((e) => e.kind === 'condition_unparsed').length, 1,
+    'malformed inner clause is still observable as condition_unparsed');
+});
+
+test('`IN [...]` member parsing is quote-aware — a comma inside a quoted member stays one member', () => {
+  // A naive `.split(',')` is quote-unaware, so a quoted member that itself
+  // contains a comma (`'EU, US'`) was torn into two members (`EU`, `US`),
+  // neither equal to the author's whole member. The clause then evaluated false
+  // with no diagnostic — the regex still matched the bracket, so condition_unparsed
+  // never fired. The list is now split tracking quote state.
+  assert.equal(evalCondition("x IN ['EU, US', 'AU']", { x: 'EU, US' }), true,
+    "a comma inside a quoted member does not split the member");
+  assert.equal(evalCondition("x IN ['a,b']", { x: 'a,b' }), true,
+    "a single quoted member containing a comma matches the whole member");
+  // The sibling member is still independently selectable.
+  assert.equal(evalCondition("x IN ['EU, US', 'AU']", { x: 'AU' }), true,
+    "the second member after a comma-bearing first member is still a member");
+  // A value equal to only a comma-split FRAGMENT must NOT match (proves the
+  // member is whole, not the broken 'EU' / 'US' fragments).
+  assert.equal(evalCondition("x IN ['EU, US', 'AU']", { x: 'EU' }), false,
+    "a fragment of a comma-bearing quoted member is not itself a member");
+  assert.equal(evalCondition("x IN ['EU, US', 'AU']", { x: 'US' }), false,
+    "the trailing fragment of a comma-bearing quoted member is not a member");
+  // Double-quoted members behave identically.
+  assert.equal(evalCondition('x IN ["EU, US", "AU"]', { x: 'EU, US' }), true,
+    "double-quoted comma-bearing member stays whole");
+
+  // No condition_unparsed is recorded — this was a parsed-but-wrong path, and
+  // the fix must keep it parsed (not regress into the unparsed diagnostic).
+  const errs = [];
+  evalCondition("x IN ['EU, US', 'AU']", { x: 'EU, US', _runErrors: errs });
+  assert.equal(errs.filter((e) => e.kind === 'condition_unparsed').length, 0,
+    'a quoted comma member is parsed, not surfaced as condition_unparsed');
+
+  // Regression guards: the catalog's actual `IN` forms still evaluate correctly.
+  // sbom.json:101 — the quoted multi-member form with hyphenated members.
+  assert.equal(
+    evalCondition("matched_cve.attack_class IN ['ai-c2', 'prompt-injection']",
+      { matched_cve: { attack_class: 'ai-c2' } }), true,
+    'the shipped quoted multi-member IN list still matches');
+  assert.equal(
+    evalCondition("matched_cve.attack_class IN ['ai-c2', 'prompt-injection']",
+      { matched_cve: { attack_class: 'kernel-lpe' } }), false,
+    'a non-member still returns false');
+  // Bare (unquoted) members still parse.
+  assert.equal(evalCondition('x IN [ai-c2, prompt-injection]', { x: 'prompt-injection' }), true,
+    'bare unquoted members still parse');
+  // Array LHS intersection still works.
+  assert.equal(
+    evalCondition("x IN ['EU, US', 'AU']", { x: ['JP', 'EU, US'] }), true,
+    'array LHS intersects the comma-bearing member list');
+  // Quantifier-prefixed IN still re-roots over array elements.
+  assert.equal(evalCondition("any tags IN ['EU, US', 'AU']", { tags: ['EU, US'] }), true,
+    'any … IN [...] with a comma-bearing member fires existentially');
+});
+
+test('`IN [...]` closing bracket is quote-aware — a `]` inside a quoted member does not terminate the list', () => {
+  // A `[^\]]*]$` capture stops at the FIRST `]`, so a quoted member that itself
+  // contains a literal `]` (`'a]b'`) truncated the bracket early and left trailing
+  // text (`, 'c']`) the `$` anchor couldn't match — the WHOLE clause then fell
+  // through to condition_unparsed and returned false for every input, including a
+  // value that IS in the list. The closing bracket is now located at quote-depth 0.
+  assert.equal(evalCondition("x IN ['a]b', 'c']", { x: 'a]b' }), true,
+    "a quoted member containing a literal ']' matches its whole value");
+  assert.equal(evalCondition("x IN ['a]b', 'c']", { x: 'c' }), true,
+    "the sibling member after a ']'-bearing member is still selectable");
+  assert.equal(evalCondition("x IN ['a]b', 'c']", { x: 'a' }), false,
+    "a fragment of the ']'-bearing member is not itself a member");
+  // Double-quoted members behave identically.
+  assert.equal(evalCondition('x IN ["a]b", "c"]', { x: 'a]b' }), true,
+    "double-quoted ']'-bearing member stays whole");
+  // Array LHS intersection over a ']'-bearing list.
+  assert.equal(evalCondition("x IN ['a]b', 'rce']", { x: ['z', 'a]b'] }), true,
+    "array LHS intersects a ']'-bearing member list");
+  // Quantifier-prefixed form (the catalog's `any … IN [...]` shape) re-roots too.
+  assert.equal(
+    evalCondition("any matched_cve.attack_class IN ['a]b', 'rce']",
+      { matched_cve: [{ attack_class: 'a]b' }, { attack_class: 'x' }] }), true,
+    "any … IN ['a]b', …] fires when one array element equals the ']'-bearing member");
+
+  // This was a parsed-as-unparsed path (the regex never matched), so the fix must
+  // NOT surface condition_unparsed for the now-valid clause.
+  const errs = [];
+  evalCondition("x IN ['a]b', 'c']", { x: 'c', _runErrors: errs });
+  assert.equal(errs.filter((e) => e.kind === 'condition_unparsed').length, 0,
+    "a quoted ']'-bearing member is parsed, not surfaced as condition_unparsed");
+
+  // Genuinely malformed lists stay observable: an unterminated bracket and
+  // trailing text after the closing bracket both surface condition_unparsed
+  // (the fix must not start silently accepting these).
+  const badErrs = [];
+  assert.equal(evalCondition("x IN ['a', 'b'", { x: 'a', _runErrors: badErrs }), false,
+    'an unterminated IN list does not match');
+  assert.equal(badErrs.filter((e) => e.kind === 'condition_unparsed').length, 1,
+    'an unterminated IN list is observable as condition_unparsed');
+  const junkErrs = [];
+  assert.equal(evalCondition("x IN ['a', 'b'] extra", { x: 'a', _runErrors: junkErrs }), false,
+    'trailing text after the closing bracket does not match');
+  assert.equal(junkErrs.filter((e) => e.kind === 'condition_unparsed').length, 1,
+    'trailing text after the closing bracket is observable as condition_unparsed');
+});
+
+test('AND/OR splitting and outer-paren stripping are quote-aware — a quoted member is not torn at an inner AND/OR or an unbalanced paren', () => {
+  // splitAtTopLevel counted `(`/`)` and split on ` AND `/` OR ` at depth 0 with
+  // no awareness of quotes; stripOuterParens scanned parens the same way. Two
+  // failure modes followed:
+  //   (a) an UNBALANCED paren inside a quoted member (a regex literal like
+  //       `matches 'foo('`) left depth=1, so the real top-level OR/AND never
+  //       split — silently disabling the surrounding disjunct/conjunct;
+  //   (b) a quoted member containing ` AND `/` OR ` (e.g. `contains 'EU AND US'`)
+  //       was torn at the inner keyword as if it were a boolean operator, leaving
+  //       two unparseable atoms that both evaluated false.
+  // Both are now scanned tracking single/double quote state.
+
+  // (a) The unbalanced `(` inside the quote must NOT swallow the top-level OR.
+  // The first disjunct is false (a !== 'foo(' here) but the second (b == 1) is
+  // true, so the OR must be true. Pre-fix this returned false.
+  assert.equal(evalCondition("a matches 'foo(' OR b == 1", { a: 'fooX', b: 1 }), true,
+    'an unbalanced ( inside a quoted regex member does not disable the top-level OR');
+  // …and the OR is genuinely short-circuiting, not coincidentally true: with
+  // b != 1 and a not matching, the whole thing is false.
+  assert.equal(evalCondition("a matches 'foo(' OR b == 1", { a: 'fooX', b: 2 }), false,
+    'both disjuncts false → false (the OR is really evaluating each side)');
+  // A trailing unbalanced `)` inside a quote is handled symmetrically.
+  assert.equal(evalCondition("a matches 'bar)' OR b == 1", { a: 'whatever', b: 1 }), true,
+    'an unbalanced ) inside a quoted member does not disable the top-level OR');
+
+  // (b) ` AND `/` OR ` inside a quoted member is literal text, not an operator.
+  // `o contains 'EU AND US'` must match an array member equal to the whole
+  // string. Pre-fix it split into `o contains 'EU` AND `US'` (both unparseable
+  // → false).
+  assert.equal(evalCondition("o contains 'EU AND US'", { o: ['EU AND US'] }), true,
+    'an inner AND inside a quoted contains-member is not split as a conjunction');
+  assert.equal(evalCondition("o contains 'x OR y'", { o: ['x OR y'] }), true,
+    'an inner OR inside a quoted contains-member is not split as a disjunction');
+  // And it is genuinely the whole member, not a coincidental fragment match.
+  assert.equal(evalCondition("o contains 'EU AND US'", { o: ['EU'] }), false,
+    'a fragment of the quoted member does not satisfy the whole-member contains');
+
+  // No condition_unparsed is recorded for any of the above — these are
+  // parsed-correctly paths now, not the unparsed diagnostic.
+  const errs = [];
+  evalCondition("a matches 'foo(' OR b == 1", { a: 'fooX', b: 1, _runErrors: errs });
+  evalCondition("o contains 'EU AND US'", { o: ['EU AND US'], _runErrors: errs });
+  assert.equal(errs.filter((e) => e.kind === 'condition_unparsed').length, 0,
+    'a quote-aware split leaves no condition_unparsed residue');
+
+  // Regression guards: real (depth-0, outside-quote) boolean structure still
+  // splits, and outer parens still strip.
+  assert.equal(evalCondition('a == 1 OR b == 2', { a: 0, b: 2 }), true, 'plain OR still splits');
+  assert.equal(evalCondition('a == 1 AND b == 2', { a: 1, b: 2 }), true, 'plain AND still splits');
+  assert.equal(evalCondition('(a == 1 OR b == 2)', { a: 0, b: 2 }), true, 'outer parens still strip');
+  assert.equal(evalCondition('a == 1 OR (b == 2 AND c == 3)', { a: 0, b: 2, c: 3 }), true,
+    'a depth-0 OR with a parenthesised AND group still parses');
+  assert.equal(evalCondition('a == 1 OR (b == 2 AND c == 3)', { a: 0, b: 2, c: 0 }), false,
+    'the parenthesised AND group gates the OR correctly');
+
+  // The exact mcp.json condition (balanced-paren regex member + a real top-level
+  // OR/AND) keeps firing — the one paren-bearing machine-evaluated condition in
+  // the shipped catalog. Fires via the regex OR-branch alone.
+  const mcpCond = "finding.mcp_server_location matches '(github_actions|gitlab_runner|jenkins|buildkite|circleci)'"
+    + " OR finding.tool_invoked_from == 'ci_pipeline'"
+    + " OR analyze.blast_radius_score >= 4 AND finding.pipeline_credentials_in_scope == true";
+  assert.equal(evalCondition(mcpCond, {
+    finding: { mcp_server_location: 'buildkite', tool_invoked_from: 'manual', pipeline_credentials_in_scope: false },
+    analyze: { blast_radius_score: 0 },
+  }), true, 'the shipped mcp.json balanced-paren-regex condition still fires via its OR-branch');
+  assert.equal(evalCondition(mcpCond, {
+    finding: { mcp_server_location: 'desktop', tool_invoked_from: 'manual', pipeline_credentials_in_scope: false },
+    analyze: { blast_radius_score: 0 },
+  }), false, 'no branch satisfied → the mcp condition is false');
+});
+
+test('a submitted signal cannot override an engine-computed value in an escalation condition', () => {
+  // ai-api declares escalations gated on engine values. Run it with detection
+  // confirmed so the engine computes a high rwep, then try to suppress the
+  // escalation by submitting signals.rwep:0 — the engine value must win.
+  const base = runner.run('ai-api', 'all-ai-api-and-credential-exposure',
+    { signals: { detection_classification: 'detected' }, artifacts: {} },
+    { operator_consent: { explicit: true } });
+  const poisoned = runner.run('ai-api', 'all-ai-api-and-credential-exposure',
+    { signals: { detection_classification: 'detected', rwep: 0, finding: { severity: 'low' } }, artifacts: {} },
+    { operator_consent: { explicit: true } });
+  const esc = (res) => JSON.stringify((res.phases.analyze.escalations || []).map((e) => e.action).sort());
+  assert.equal(esc(poisoned), esc(base),
+    'submitted signals.rwep / finding must not change which escalations fire');
+});
+
+test('framework chains into sbom when the theater verdict + blast radius gate is met', () => {
+  // framework.json declares the same chain on TWO paths: a feeds_into entry and
+  // a trigger_playbook escalation, both targeting sbom. Both previously used an
+  // `any `-prefixed, bare-path condition that resolved to false for every input,
+  // so neither chain could ever fire. Run the playbook with a theater verdict +
+  // a blast radius above the gate and assert both surfaces name sbom.
+  const out = runner.run('framework', 'correlate-all-upstream-findings',
+    { signals: { theater_verdict: 'theater', blast_radius_score: 5 }, artifacts: {} },
+    { operator_consent: { explicit: true } });
+
+  assert.deepEqual(out.phases.close.feeds_into, ['sbom'],
+    'feeds_into chains framework → sbom on a theater verdict + blast_radius >= 4');
+
+  const escTargets = (out.phases.analyze.escalations || [])
+    .filter((e) => e.action === 'trigger_playbook')
+    .map((e) => e.target_playbook);
+  assert.ok(escTargets.includes('sbom'),
+    'the trigger_playbook escalation fires framework → sbom on a theater verdict + blast_radius >= 3');
+
+  // Neither chain's condition is left dead (the bug signature was a silent
+  // condition_unparsed on the framework→sbom clauses specifically).
+  const allErrs = (out.phases.analyze.runtime_errors || []).concat(out.phases.close.runtime_errors || []);
+  const deadFrameworkSbom = allErrs.filter((e) =>
+    e.kind === 'condition_unparsed' && /compliance_theater_check\.verdict/.test(e.condition || ''));
+  assert.equal(deadFrameworkSbom.length, 0,
+    'the framework→sbom theater conditions parse — no condition_unparsed on them');
+});
+
+test('a non-theater framework run does NOT chain into sbom', () => {
+  const out = runner.run('framework', 'correlate-all-upstream-findings',
+    { signals: { theater_verdict: 'clear', blast_radius_score: 5 }, artifacts: {} },
+    { operator_consent: { explicit: true } });
+  assert.deepEqual(out.phases.close.feeds_into, [],
+    'a clear verdict does not chain framework → sbom');
+});
+
+test('contains matches an obligation jurisdiction field via a quoted member; IN list membership works; string-array contains is unaffected', () => {
+  const obligations = [
+    { jurisdiction: 'EU', regulation: 'NIS2 Art.21', window_hours: 720 },
+    { jurisdiction: 'US', regulation: 'SEC', window_hours: 96 },
+  ];
+  const ctx = { compliance_theater_check: { verdict: 'theater' }, jurisdiction_obligations: obligations };
+  // Previously-dead theater + EU-jurisdiction escalation/feeds_into atom now resolves.
+  assert.equal(evalCondition("compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'", ctx, {}), true);
+  assert.equal(evalCondition("jurisdiction_obligations contains 'EU'", ctx, {}), true);
+  assert.equal(evalCondition("jurisdiction_obligations contains 'JP'", ctx, {}), false);
+  // .length on the same array still works.
+  assert.equal(evalCondition('jurisdiction_obligations.length == 0', { jurisdiction_obligations: [] }, {}), true);
+  // IN [...] membership (matched_cve.attack_class IN [...]).
+  assert.equal(evalCondition("x.attack_class IN ['kernel-lpe', 'rce']", { x: { attack_class: 'rce' } }, {}), true);
+  assert.equal(evalCondition("x.attack_class IN ['kernel-lpe']", { x: { attack_class: 'rce' } }, {}), false);
+  // The pre-existing string-array contains shape is unaffected.
+  assert.equal(evalCondition('scope.targets contains named-remote', { scope: { targets: ['named-remote', 'local'] } }, {}), true);
+});
+
+test('object-array contains is field-targeted: a non-jurisdiction field equal to the member does NOT match', () => {
+  // `jurisdiction_obligations contains 'EU'` means "the obligation is for
+  // jurisdiction EU" — NOT "some field of the obligation equals 'EU'". An
+  // unscoped Object.values().includes() over-matched: a non-jurisdiction field
+  // (a tag, the obligation name, clock_starts) that happened to equal the member
+  // forced the predicate true, which could fire a notify_legal escalation via a
+  // non-jurisdiction field, and made the match order-insensitive across fields.
+
+  // Over-match via an unrelated tag field: jurisdiction is US, only some_tag == 'EU'.
+  assert.equal(
+    evalCondition("jurisdiction_obligations contains 'EU'",
+      { jurisdiction_obligations: [{ jurisdiction: 'US', some_tag: 'EU' }] }, {}),
+    false,
+    "a non-jurisdiction field equal to 'EU' must NOT satisfy contains 'EU'");
+
+  // Over-match via clock_starts: 'detect_confirmed' is a real shipped field value
+  // on EU obligations; matching it via contains is a field-agnostic accident.
+  assert.equal(
+    evalCondition("jurisdiction_obligations contains 'detect_confirmed'",
+      { jurisdiction_obligations: [{ jurisdiction: 'EU', clock_starts: 'detect_confirmed' }] }, {}),
+    false,
+    "the clock_starts field value must NOT satisfy a jurisdiction-membership test");
+
+  // Over-match via the obligation name field.
+  assert.equal(
+    evalCondition("jurisdiction_obligations contains 'notify_regulator'",
+      { jurisdiction_obligations: [{ jurisdiction: 'EU', obligation: 'notify_regulator' }] }, {}),
+    false,
+    "the obligation name field must NOT satisfy a jurisdiction-membership test");
+
+  // The legitimate jurisdiction match still fires (positive path preserved).
+  assert.equal(
+    evalCondition("jurisdiction_obligations contains 'EU'",
+      { jurisdiction_obligations: [{ jurisdiction: 'EU', regulation: 'NIS2 Art.21', clock_starts: 'detect_confirmed' }] }, {}),
+    true,
+    "an obligation whose jurisdiction IS 'EU' still matches");
+
+  // The full catalog escalation atom: theater verdict + EU jurisdiction. The
+  // EU conjunct must come from the jurisdiction field, not a field collision.
+  assert.equal(
+    evalCondition("compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'",
+      { compliance_theater_check: { verdict: 'theater' },
+        jurisdiction_obligations: [{ jurisdiction: 'US', obligation: 'EU' }] }, {}),
+    false,
+    "the notify_legal escalation must NOT fire when only a non-jurisdiction field equals 'EU'");
+
+  // String-array membership is still matched by element value (no object scoping).
+  assert.equal(
+    evalCondition("jurisdiction_obligations contains 'EU/EU CRA Art.14 24h'",
+      { jurisdiction_obligations: ['EU/EU CRA Art.14 24h'] }, {}),
+    true,
+    "a plain string-array element still matches by value");
+});
+
+test('contains/IN against an absent LHS path surfaces condition_path_unresolved (not an invisible false)', () => {
+  // A contains/IN clause PARSES, then resolves its LHS to a collection. When the
+  // LHS path is absent (an authoring typo in the token, or a ctx that never
+  // populated the collection) the branch returns a silent false that disables
+  // the escalation/feeds_into it gates — with no signal, because the clause
+  // parsed, so condition_unparsed never fires. A distinct condition_path_unresolved
+  // diagnostic makes the dead clause observable. A present-but-empty array (or a
+  // present scalar simply not in the list) is a LEGITIMATE false and pushes nothing.
+
+  // contains: absent LHS → diagnostic, still false.
+  const absent = [];
+  assert.equal(evalCondition("jurisdiction_obligations contains 'EU'", { _runErrors: absent }, {}), false,
+    'absent LHS contains is still false');
+  assert.equal(absent.length, 1, 'exactly one runtime error recorded');
+  assert.equal(absent[0].kind, 'condition_path_unresolved', 'it is the path-unresolved diagnostic, not condition_unparsed');
+  assert.equal(absent[0].condition, "jurisdiction_obligations contains 'EU'", 'the dead condition string is captured');
+
+  // The finding's typo example: a misspelled LHS path is now observable.
+  const typo = [];
+  assert.equal(
+    evalCondition("juristiction_obligations contains 'EU'",
+      { jurisdiction_obligations: [{ jurisdiction: 'EU' }], _runErrors: typo }, {}),
+    false, 'typo LHS contains is false');
+  assert.equal(typo.length, 1, 'the LHS-token typo surfaces a diagnostic');
+  assert.equal(typo[0].kind, 'condition_path_unresolved');
+
+  // Present-but-empty array → legitimate false, NO diagnostic.
+  const empty = [];
+  assert.equal(evalCondition("jo contains 'EU'", { jo: [], _runErrors: empty }, {}), false,
+    'empty-array contains is false');
+  assert.equal(empty.length, 0, 'present-but-empty array pushes no diagnostic');
+
+  // The engine-supplied escalation context always passes jurisdiction_obligations
+  // as at least [] (never null), so a real notify_legal eval does NOT spuriously
+  // fire this diagnostic — guard the regression at the catalog default.
+  const engineDefault = [];
+  assert.equal(
+    evalCondition("compliance_theater_check.verdict == 'theater' AND jurisdiction_obligations contains 'EU'",
+      { compliance_theater_check: { verdict: 'theater' }, jurisdiction_obligations: [], _runErrors: engineDefault }, {}),
+    false, 'non-EU run is false');
+  assert.equal(engineDefault.length, 0, 'the engine-default [] obligations array fires no path-unresolved diagnostic');
+
+  // IN: absent LHS → diagnostic, still false.
+  const inAbsent = [];
+  assert.equal(evalCondition("matched_cve.attack_class IN ['kernel-lpe']", { _runErrors: inAbsent }, {}), false,
+    'absent LHS IN is still false');
+  assert.equal(inAbsent.length, 1, 'IN absent LHS surfaces a diagnostic');
+  assert.equal(inAbsent[0].kind, 'condition_path_unresolved');
+
+  // IN: present scalar simply not in the list → legitimate false, NO diagnostic.
+  const inMiss = [];
+  assert.equal(evalCondition("x IN ['kernel-lpe']", { x: 'rce', _runErrors: inMiss }, {}), false,
+    'present scalar not in list is false');
+  assert.equal(inMiss.length, 0, 'a present-but-non-matching scalar pushes no diagnostic');
+
+  // A correct, resolving condition fires true with no diagnostic.
+  const ok = [];
+  assert.equal(
+    evalCondition("jurisdiction_obligations contains 'EU'",
+      { jurisdiction_obligations: [{ jurisdiction: 'EU' }], _runErrors: ok }, {}),
+    true, 'correct contains fires true');
+  assert.equal(ok.length, 0, 'a resolving condition records no diagnostic');
+
+  // Dedupe: the same dead condition evaluated repeatedly records ONE diagnostic.
+  const dup = [];
+  evalCondition("missing_path contains 'EU'", { _runErrors: dup }, {});
+  evalCondition("missing_path contains 'EU'", { _runErrors: dup }, {});
+  assert.equal(dup.length, 1, 'the path-unresolved diagnostic dedupes on the condition string');
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from csaf-sarif-identifiers ----
+require("node:test").describe("csaf-sarif-identifiers", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Tests for the close-phase evidence-bundle identifier handling in
+ * lib/playbook-runner.js.
+ *
+ * Runs under: node --test --test-concurrency=1
+ *
+ * Two behaviors are covered:
+ *
+ *   1. CSAF product_tree product_name comes from the package, never from a
+ *      version-range operator. The catalog's dominant affected_versions shape
+ *      is `package OP version` (e.g. a package name, an operator such as '>=',
+ *      then a bound); naively splitting on whitespace named the product after
+ *      the operator ('>=', '<', '==') instead of the package.
+ *
+ *   2. SARIF rule helpUri routes by issuing authority. CVE ids keep the NVD
+ *      detail URL; non-CVE matched ids (MAL-/GHSA-/OSV-/RUSTSEC-/SNYK-) get the
+ *      correct authority URL or no helpUri at all — never a nvd.nist.gov link
+ *      that 404s and mislabels the id as an NVD CVE.
+ */
+
+const test = require('node:test');
+const { describe, it } = test;
+const assert = require('node:assert/strict');
+const path = require('node:path');
+
+const runner = require(path.resolve(__dirname, '..', 'lib', 'playbook-runner.js'));
+
+const OPERATOR_ONLY = /^(<|<=|>|>=|==|=|!=|~|\^|~>)$/;
+
+describe('CSAF product_tree — package name, never the range operator', () => {
+  const shapes = [
+    { affected: 'linux-kernel >= 4.14', pkg: 'linux-kernel' },
+    { affected: 'runc <= 1.1.11', pkg: 'runc' },
+    { affected: 'litellm < 1.83.7', pkg: 'litellm' },
+    { affected: 'elementary-data == 2.23.3', pkg: 'elementary-data' },
+  ];
+
+  it('names the product after the package for each range-operator shape', () => {
+    const cves = shapes.map((s, i) => ({ cve_id: `CVE-2026-100${i}`, affected_versions: [s.affected] }));
+    const { branches } = runner._buildCsafBranches(cves, { _runErrors: [] });
+    const byPkg = new Map();
+    for (const v of branches) {
+      for (const p of v.branches) {
+        byPkg.set(p.name, p);
+        assert.ok(!OPERATOR_ONLY.test(p.name), `product_name is a bare operator: ${p.name}`);
       }
-    }));
-    runner = freshRunner(dir);
-  });
-
-  it("verdict='present' renders verdict_text", () => {
-    const det = runner.detect('p', 'default', {});
-    const an = runner.analyze('p', 'default', det, { theater_verdict: 'present' });
-    assert.equal(an.compliance_theater_check.verdict_text, 'gap-language');
-  });
-
-  it("verdict='theater' renders verdict_text (regression check)", () => {
-    const det = runner.detect('p', 'default', {});
-    const an = runner.analyze('p', 'default', det, { theater_verdict: 'theater' });
-    assert.equal(an.compliance_theater_check.verdict_text, 'gap-language');
-  });
-
-  it("verdict='clear' does NOT render verdict_text", () => {
-    const det = runner.detect('p', 'default', {});
-    const an = runner.analyze('p', 'default', det, { theater_verdict: 'clear' });
-    assert.equal(an.compliance_theater_check.verdict_text, null);
-  });
-});
-
-// ===========================================================================
-// F28 — lockDir uses stable global path
-// ===========================================================================
-
-describe('F28: lockDir lives in a stable global path (not process.cwd)', () => {
-  it('EXCEPTD_LOCK_DIR override is honored', () => {
-    const tmp = tmpDir('f28-lockdir');
-    const prev = process.env.EXCEPTD_LOCK_DIR;
-    process.env.EXCEPTD_LOCK_DIR = tmp;
-    // Use a synthetic playbook so preflight gates don't depend on host OS.
-    const pbDir = tmpDir('f28-pb');
-    writePlaybook(pbDir, 'p', synthPlaybook({}));
-    process.env.EXCEPTD_PLAYBOOK_DIR = pbDir;
-    delete require.cache[RUNNER_PATH];
-    const local = require(RUNNER_PATH);
-    try {
-      const r = local.run('p', 'default', {});
-      assert.equal(r.ok, true);
-      // After the run completes the lock file is unlinked but the dir
-      // remains. Existence proves lockDir() resolved to our override path
-      // (not process.cwd() + .exceptd/locks).
-      assert.ok(fs.existsSync(tmp), 'lock dir touched');
-    } finally {
-      if (prev === undefined) delete process.env.EXCEPTD_LOCK_DIR;
-      else process.env.EXCEPTD_LOCK_DIR = prev;
-      delete process.env.EXCEPTD_PLAYBOOK_DIR;
-      delete require.cache[RUNNER_PATH];
-      fs.rmSync(tmp, { recursive: true, force: true });
-      fs.rmSync(pbDir, { recursive: true, force: true });
+    }
+    for (const s of shapes) {
+      const p = byPkg.get(s.pkg);
+      assert.ok(p, `product_name "${s.pkg}" present in product_tree`);
+      // The operator is carried into the version qualifier, not lost and not
+      // promoted to the product name.
+      const versionName = p.branches[0].name;
+      assert.match(versionName, new RegExp(`^(<|<=|>|>=|==|=)\\s`), `version qualifier keeps the operator: ${versionName}`);
+      // Leaf product.name is package/package@<version-range>, never operator-named.
+      assert.ok(!/\/(<|<=|>|>=|==|=)@/.test(p.branches[0].product.name),
+        `leaf product name embeds an operator: ${p.branches[0].product.name}`);
     }
   });
-});
 
-// ===========================================================================
-// lockDir prefers the per-user home over the shared OS tempdir
-// ===========================================================================
-//
-// The mutex lockfiles previously rooted at os.tmpdir()/exceptd-locks-<plat>.
-// A per-user dir (EXCEPTD_HOME || ~/.exceptd) is both safer (not the
-// world-writable shared tempdir a preplant/symlink attack targets) and a
-// better fit for lockDir's cross-cwd stable-lock goal — and it stops tripping
-// the os-temp-file scanner on the 'wx' write sites. EXCEPTD_LOCK_DIR still
-// wins outright; a non-writable home falls back to os.tmpdir() so locks never
-// silently no-op.
-
-describe('lockDir: per-user home preference with tmpdir fallback', () => {
-  function withEnv(overrides, fn) {
-    const keys = ['EXCEPTD_LOCK_DIR', 'EXCEPTD_HOME'];
-    const prev = {};
-    for (const k of keys) prev[k] = process.env[k];
-    for (const k of keys) delete process.env[k];
-    for (const [k, v] of Object.entries(overrides)) process.env[k] = v;
-    try { return fn(); }
-    finally {
-      for (const k of keys) {
-        if (prev[k] === undefined) delete process.env[k];
-        else process.env[k] = prev[k];
+  it('end-to-end close() emits a CSAF product_tree free of operator-named products', () => {
+    const pb = runner.loadPlaybook('sbom');
+    const directiveId = pb.directives[0].id;
+    const analyzeResult = {
+      matched_cves: [
+        { cve_id: 'CVE-2026-9999', rwep: 95, cisa_kev: true, active_exploitation: 'confirmed', cvss_score: null, cvss_vector: null, affected_versions: ['linux-kernel >= 4.14'] },
+      ],
+      rwep: { adjusted: 95 }, blast_radius_score: 4, framework_gap_mapping: [],
+      _detect_indicators: [], _detect_classification: 'detected',
+      compliance_theater_check: { verdict: 'present' },
+    };
+    const out = runner.close('sbom', directiveId, analyzeResult, { regression_next_run: null, selected_remediation: { id: 'rem-1', description: 'patch' } },
+      { _bundle_formats: ['csaf-2.0'] }, { session_id: 'abcdef0123456789' });
+    const csaf = out.evidence_package.bundles_by_format['csaf-2.0'];
+    const branches = (csaf.product_tree && csaf.product_tree.branches) || [];
+    let count = 0;
+    for (const v of branches) {
+      for (const p of (v.branches || [])) {
+        count++;
+        assert.ok(!OPERATOR_ONLY.test(p.name), `product_name is a bare operator in close() output: ${p.name}`);
       }
     }
+    assert.ok(count > 0, 'product_tree contains at least one product branch');
+    const linux = branches.find(v => v.name === 'linux-kernel');
+    assert.ok(linux, 'linux-kernel vendor branch present');
+    assert.equal(linux.branches[0].name, 'linux-kernel');
+  });
+});
+
+describe('SARIF rule helpUri — authority routing, not a hardcoded NVD link', () => {
+  function sarifRulesFor(matched) {
+    const pb = runner.loadPlaybook('sbom');
+    const directiveId = pb.directives[0].id;
+    const analyzeResult = {
+      matched_cves: matched,
+      rwep: { adjusted: 95 }, blast_radius_score: 4, framework_gap_mapping: [],
+      _detect_indicators: [], _detect_classification: 'detected',
+      compliance_theater_check: { verdict: 'present' },
+    };
+    const out = runner.close('sbom', directiveId, analyzeResult, { regression_next_run: null, selected_remediation: { id: 'rem-1', description: 'patch' } },
+      { _bundle_formats: ['sarif'] }, { session_id: 'abcdef0123456789' });
+    const sarif = out.evidence_package.bundles_by_format['sarif'];
+    return sarif.runs[0].tool.driver.rules;
   }
 
-  it('default (no EXCEPTD_LOCK_DIR) roots the lockfile under EXCEPTD_HOME/locks, NOT os.tmpdir()', () => {
-    const home = tmpDir('lockdir-home');
-    try {
-      const p = withEnv({ EXCEPTD_HOME: home }, () => {
-        const runner = freshRunner();
-        return runner._lockFilePath('kernel');
-      });
-      assert.equal(typeof p, 'string');
-      assert.equal(p.startsWith(path.join(home, 'locks')), true,
-        'lockfile must be rooted under EXCEPTD_HOME/locks');
-      // It must NOT be under the bare shared OS tempdir (the os-temp-file
-      // scanner source). Guard against false coincidence when tmpDir itself
-      // lives under os.tmpdir(): assert the lockfile is under home, which is
-      // the authoritative check.
-      assert.equal(p.startsWith(path.join(os.tmpdir(), 'exceptd-locks-')), false,
-        'lockfile must not be rooted at the shared os.tmpdir()/exceptd-locks dir');
-    } finally {
-      fs.rmSync(home, { recursive: true, force: true });
-      delete require.cache[RUNNER_PATH];
-    }
+  it('a CVE rule keeps the NVD detail helpUri and a bare CVE short description', () => {
+    const rules = sarifRulesFor([
+      { cve_id: 'CVE-2026-43284', rwep: 90, cisa_kev: false, active_exploitation: 'none', cvss_score: null, cvss_vector: null, affected_versions: [] },
+    ]);
+    const cveRule = rules.find(r => r.id.endsWith('CVE-2026-43284'));
+    assert.ok(cveRule, 'CVE rule present');
+    assert.equal(cveRule.helpUri, 'https://nvd.nist.gov/vuln/detail/CVE-2026-43284');
+    assert.equal(cveRule.shortDescription.text, 'CVE-2026-43284');
   });
 
-  it('EXCEPTD_LOCK_DIR override still wins over the per-user home', () => {
-    const override = tmpDir('lockdir-override');
-    const home = tmpDir('lockdir-home2');
-    try {
-      const p = withEnv({ EXCEPTD_LOCK_DIR: override, EXCEPTD_HOME: home }, () => {
-        const runner = freshRunner();
-        return runner._lockFilePath('kernel');
-      });
-      assert.equal(p, path.join(override, 'kernel.lock'));
-    } finally {
-      fs.rmSync(override, { recursive: true, force: true });
-      fs.rmSync(home, { recursive: true, force: true });
-      delete require.cache[RUNNER_PATH];
-    }
+  it('a MAL- rule carries no nvd.nist.gov helpUri and labels its authority', () => {
+    const rules = sarifRulesFor([
+      { cve_id: 'CVE-2026-43284', rwep: 90, cisa_kev: false, active_exploitation: 'none', cvss_score: null, cvss_vector: null, affected_versions: [] },
+      { cve_id: 'MAL-2026-MOIKA-DEPCONFUSION', rwep: 88, cisa_kev: false, active_exploitation: 'none', cvss_score: null, cvss_vector: null, affected_versions: [] },
+    ]);
+    const malRule = rules.find(r => r.id.endsWith('MAL-2026-MOIKA-DEPCONFUSION'));
+    assert.ok(malRule, 'MAL rule present');
+    // Malicious-Package ids have no canonical per-id advisory page: helpUri is
+    // omitted entirely rather than pointing at NVD.
+    assert.equal(malRule.helpUri, undefined);
+    // The short description must not present the MAL id as a bare NVD CVE.
+    assert.equal(malRule.shortDescription.text, 'MAL-2026-MOIKA-DEPCONFUSION (Malicious-Package)');
   });
 
-  it('non-writable EXCEPTD_HOME falls back to os.tmpdir() and the lock still acquires', () => {
-    // Point EXCEPTD_HOME at a path *under a regular file* so mkdirSync fails
-    // on every platform (can't create a directory beneath a file).
-    const blockerDir = tmpDir('lockdir-blocker');
-    const blockerFile = path.join(blockerDir, 'blocker.txt');
-    fs.writeFileSync(blockerFile, 'x');
-    const badHome = path.join(blockerFile, 'cannot-mkdir-under-a-file');
-    try {
-      const { p, lock } = withEnv({ EXCEPTD_HOME: badHome }, () => {
-        const runner = freshRunner();
-        const pp = runner._lockFilePath('kernel');
-        const ll = runner._acquireLock('kernel');
-        if (ll) runner._releaseLock(ll);
-        return { p: pp, lock: ll };
-      });
-      assert.equal(p.startsWith(path.join(os.tmpdir(), 'exceptd-locks-')), true,
-        'a non-writable home must fall back to os.tmpdir()/exceptd-locks');
-      assert.equal(typeof lock, 'string',
-        'the lock must still acquire via the tmpdir fallback (locks never silently no-op)');
-    } finally {
-      fs.rmSync(blockerDir, { recursive: true, force: true });
-      delete require.cache[RUNNER_PATH];
+  it('advisoryAuthorityFor routes each registry prefix to its own authority', () => {
+    const a = runner._advisoryAuthorityFor;
+    assert.deepEqual(a('CVE-2026-43284'), { system_name: 'NVD', helpUri: 'https://nvd.nist.gov/vuln/detail/CVE-2026-43284' });
+    assert.deepEqual(a('GHSA-abcd-1234-wxyz'), { system_name: 'GHSA', helpUri: 'https://github.com/advisories/GHSA-abcd-1234-wxyz' });
+    assert.deepEqual(a('OSV-2026-1'), { system_name: 'OSV', helpUri: 'https://osv.dev/vulnerability/OSV-2026-1' });
+    assert.deepEqual(a('RUSTSEC-2026-0001'), { system_name: 'RUSTSEC', helpUri: 'https://rustsec.org/advisories/RUSTSEC-2026-0001.html' });
+    assert.deepEqual(a('SNYK-JS-FOO-1'), { system_name: 'Snyk', helpUri: 'https://security.snyk.io/vuln/SNYK-JS-FOO-1' });
+    assert.deepEqual(a('MAL-2026-X'), { system_name: 'Malicious-Package', helpUri: null });
+    // A genuinely-unknown prefix gets no fabricated link.
+    assert.deepEqual(a('WEIRD-1'), { system_name: 'exceptd-unknown', helpUri: null });
+  });
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from deepmerge-prototype-pollution ----
+require("node:test").describe("deepmerge-prototype-pollution", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Regression for the exported deepMerge utility (lib/playbook-runner.js
+ * _deepMerge). deepMerge powers phase-override resolution; its `override`
+ * comes from the Ed25519-signed catalog today, but the function is exported
+ * and is the classic prototype-pollution-utility shape — a `__proto__` /
+ * `constructor` / `prototype` key in the merged object must be skipped, never
+ * assigned (an `out['__proto__'] = …` would invoke the prototype-rebinding
+ * setter). These tests pin the guard so a future refactor can't drop it.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+
+const runner = require(path.resolve(__dirname, '..', 'lib', 'playbook-runner.js'));
+const deepMerge = runner._deepMerge;
+
+test('deepMerge does not pollute Object.prototype through a __proto__ key', () => {
+  // JSON.parse keeps __proto__ as an OWN enumerable data property, so it
+  // reaches Object.entries() — exactly the operator-input shape to defend.
+  const malicious = JSON.parse('{"__proto__": {"polluted": true}}');
+  const out = deepMerge({ a: 1 }, malicious);
+  assert.equal({}.polluted, undefined, 'Object.prototype must not be polluted');
+  assert.equal(Object.prototype.polluted, undefined);
+  assert.equal(out.a, 1, 'unrelated keys still merge');
+  assert.equal(Object.prototype.hasOwnProperty.call(out, '__proto__'), false,
+    '__proto__ is skipped, not copied as an own property either');
+});
+
+test('deepMerge skips constructor and prototype keys', () => {
+  const out = deepMerge({}, JSON.parse('{"constructor": {"x": 1}, "prototype": {"y": 2}}'));
+  assert.equal(typeof out.constructor, 'function',
+    'constructor resolves to the Object constructor, not an overwritten object');
+  assert.equal(Object.prototype.hasOwnProperty.call(out, 'prototype'), false);
+});
+
+test('deepMerge still deep-merges ordinary nested keys', () => {
+  const out = deepMerge({ a: { b: 1 }, c: 3 }, { a: { d: 2 } });
+  assert.deepEqual(out, { a: { b: 1, d: 2 }, c: 3 });
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from hunt-fix-A-playbook-runner ----
+require("node:test").describe("hunt-fix-A-playbook-runner", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Regression coverage for the playbook-runner engine fixes (cluster
+ * A-playbook-runner). Each case fails on the pre-fix behavior and passes after.
+ *
+ *   #1 finding.includes_X, finding.cve_class, finding.tool_surface are
+ *      host-AI-asserted and must survive into the escalation + feeds_into eval
+ *      contexts, while engine-owned finding keys (severity, …) win on collision.
+ *   #3 the analyze result exposes a non-underscore `classification` alias so
+ *      catalog `analyze.classification == 'detected'` conditions resolve.
+ *   #4 a dotted-LHS comparison whose path is absent surfaces a
+ *      condition_path_unresolved diagnostic (observability only); a bare
+ *      single-segment flag absent, or present-but-null, stays a silent
+ *      legitimate false.
+ *   #5 the feeds_into theater_score scores an allowlisted 'present' verdict 100
+ *      (gap detected = worse), not 0.
+ *   #7 the runner's active_exploitation RWEP factor routes through scoring's
+ *      shared resolver, so a stray-cased value normalises and an out-of-vocab
+ *      value is observable rather than a silent zero.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const RUNNER_PATH = path.resolve(__dirname, '..', 'lib', 'playbook-runner.js');
+const runner = require(RUNNER_PATH);
+const evalCondition = runner._evalCondition;
+const { run, close, loadPlaybook } = runner;
+const scoring = require(path.resolve(__dirname, '..', 'lib', 'scoring.js'));
+
+const OPTS = { forceStale: true, operator_consent: { explicit: true } };
+// _meta.preconditions[].id keys (preflight matches on pc.id, not the check expr).
+const SSO_PCS = {
+  'idp-audit-api-reachable': true,
+  'read-only-admin-rbac': true,
+  'tenant-ownership': true,
+};
+
+// --- #1: agent-asserted finding.includes_* survives into the eval contexts,
+//         engine-owned finding.severity wins over a poisoning signal. ---
+
+test('#1 escalation + feeds_into fire on agent-supplied finding.includes_cloud_role_assumption', () => {
+  const res = run('identity-sso-compromise', 'all-idp-control-plane-signals', {
+    precondition_checks: SSO_PCS,
+    signals: {
+      blast_radius_score: 4,
+      detection_classification: 'detected',
+      finding: { includes_cloud_role_assumption: true },
+    },
+  }, OPTS);
+  // Did not block at preflight.
+  assert.notEqual(res.ok, false, `run blocked: ${res.blocked_by} ${res.reason}`);
+
+  // Escalation: `blast_radius_score >= 3 AND finding.includes_cloud_role_assumption == true`
+  //   → action trigger_playbook, target cloud-iam-incident.
+  const escTargets = res.phases.analyze.escalations.map((e) => e.target_playbook);
+  assert.equal(escTargets.includes('cloud-iam-incident'), true);
+  const cloudEsc = res.phases.analyze.escalations.find((e) => e.target_playbook === 'cloud-iam-incident');
+  assert.equal(typeof cloudEsc, 'object');
+  assert.equal(cloudEsc.action, 'trigger_playbook');
+
+  // feeds_into: `finding.includes_cloud_role_assumption == true` → cloud-iam-incident.
+  assert.equal(Array.isArray(res.phases.close.feeds_into), true);
+  assert.equal(res.phases.close.feeds_into.includes('cloud-iam-incident'), true);
+});
+
+test('#1 absent finding.includes_* leaves the cloud-iam-incident chain dead (the present case is not coincidental)', () => {
+  const res = run('identity-sso-compromise', 'all-idp-control-plane-signals', {
+    precondition_checks: SSO_PCS,
+    signals: { blast_radius_score: 4, detection_classification: 'detected' },
+  }, OPTS);
+  assert.notEqual(res.ok, false, `run blocked: ${res.blocked_by} ${res.reason}`);
+  const escTargets = res.phases.analyze.escalations.map((e) => e.target_playbook);
+  assert.equal(escTargets.includes('cloud-iam-incident'), false);
+  assert.equal(res.phases.close.feeds_into.includes('cloud-iam-incident'), false);
+});
+
+test('#1 engine-computed finding.severity wins over a poisoning signals.finding.severity', () => {
+  // secrets.json feeds_into cred-stores on `finding.severity >= 'high'`.
+  // No matched CVEs → engine rwep 0 → engine severity 'low'. A poisoning
+  // signals.finding.severity='critical' must NOT flip the feeds_into.
+  const res = run('secrets', 'full-repo-secret-scan', {
+    precondition_checks: { 'repo-context': true },
+    signals: { finding: { severity: 'critical' } },
+  }, OPTS);
+  assert.notEqual(res.ok, false, `run blocked: ${res.blocked_by} ${res.reason}`);
+  assert.equal(res.phases.analyze.rwep.adjusted, 0);
+  assert.equal(res.phases.close.feeds_into.includes('cred-stores'), false);
+});
+
+test('#1 a non-object / array signals.finding is ignored (no numeric-index injection)', () => {
+  // signals.finding = [] must not inject array indices into the finding ctx.
+  const res = run('identity-sso-compromise', 'all-idp-control-plane-signals', {
+    precondition_checks: SSO_PCS,
+    signals: { blast_radius_score: 4, detection_classification: 'detected', finding: [1, 2, 3] },
+  }, OPTS);
+  assert.notEqual(res.ok, false, `run blocked: ${res.blocked_by} ${res.reason}`);
+  // includes_cloud_role_assumption was not asserted → chain stays dead.
+  const escTargets = res.phases.analyze.escalations.map((e) => e.target_playbook);
+  assert.equal(escTargets.includes('cloud-iam-incident'), false);
+});
+
+// --- #3: analyze.classification alias resolves the catalog's natural path. ---
+
+test('#3 analyze.classification alias resolves equal to _detect_classification', () => {
+  const res = run('identity-sso-compromise', 'all-idp-control-plane-signals', {
+    precondition_checks: SSO_PCS,
+    signals: { blast_radius_score: 4, detection_classification: 'detected' },
+  }, OPTS);
+  assert.notEqual(res.ok, false, `run blocked: ${res.blocked_by} ${res.reason}`);
+  assert.equal(typeof res.phases.analyze.classification, 'string');
+  assert.equal(res.phases.analyze.classification, res.phases.analyze._detect_classification);
+  assert.equal(res.phases.analyze.classification, 'detected');
+});
+
+test('#3 analyze.classification == "detected" condition resolves true through the alias', () => {
+  assert.equal(evalCondition("analyze.classification == 'detected'", { analyze: { classification: 'detected' } }), true);
+  assert.equal(evalCondition("analyze.classification == 'detected'", { analyze: { classification: 'not_detected' } }), false);
+});
+
+// --- #4: dotted-LHS absent path surfaces a condition_path_unresolved diagnostic. ---
+
+test('#4 dotted-LHS comparison with an absent LEAF emits condition_path_unresolved', () => {
+  const errs = [];
+  const result = evalCondition('finding.includes_cloud_role_assumption == true', { finding: { severity: 'high' }, _runErrors: errs });
+  assert.equal(result, false);
+  assert.equal(errs.length, 1);
+  assert.equal(errs[0].kind, 'condition_path_unresolved');
+  assert.equal(errs[0].condition, 'finding.includes_cloud_role_assumption == true');
+});
+
+test('#4 dotted-LHS comparison with an absent INTERMEDIATE also emits the diagnostic (the strict-undefined gate would miss this)', () => {
+  const errs = [];
+  const result = evalCondition("analyze.classification == 'detected'", { _runErrors: errs });
+  assert.equal(result, false);
+  assert.equal(errs.length, 1);
+  assert.equal(errs[0].kind, 'condition_path_unresolved');
+});
+
+test('#4 a bare single-segment flag absent does NOT emit a diagnostic (legitimate false)', () => {
+  const errs = [];
+  const result = evalCondition('agent_has_filesystem_read == true', { _runErrors: errs });
+  assert.equal(result, false);
+  assert.equal(errs.length, 0);
+});
+
+test('#4 a present-but-null single-segment flag does NOT emit a diagnostic', () => {
+  const errs = [];
+  const result = evalCondition('patch_available == true', { patch_available: null, _runErrors: errs });
+  assert.equal(result, false);
+  assert.equal(errs.length, 0);
+});
+
+test('#4 a present-and-matching dotted comparison emits nothing', () => {
+  const errs = [];
+  const result = evalCondition("analyze.classification == 'detected'", { analyze: { classification: 'detected' }, _runErrors: errs });
+  assert.equal(result, true);
+  assert.equal(errs.length, 0);
+});
+
+// --- #5: theater_score scores an allowlisted 'present' verdict 100, not 0. ---
+
+function feedsForVerdict(verdict) {
+  const pb = JSON.parse(JSON.stringify(loadPlaybook('framework')));
+  pb._meta = pb._meta || {};
+  // Inject a theater_score-gated feeds_into into the cached playbook so the
+  // real close() path computes feedsCtx.theater_score (line 2060) and evaluates
+  // it. No shipped condition consumes theater_score today (latent), so this is
+  // the canonical way to exercise the computed value end-to-end.
+  pb._meta.feeds_into = [{ playbook_id: 'sbom', condition: 'theater_score >= 50' }];
+  const analyzeResult = {
+    phase: 'analyze',
+    playbook_id: 'framework',
+    directive_id: 'baseline-framework-gap-inventory',
+    matched_cves: [],
+    catalog_baseline_cves: [],
+    rwep: { base: 0, adjusted: 0, breakdown: [] },
+    blast_radius_score: null,
+    compliance_theater_check: { verdict },
+    framework_gap_mapping: [],
+    _detect_indicators: [],
+    _detect_classification: 'not_detected',
+    classification: 'not_detected',
+    escalations: [],
+  };
+  const validateResult = { phase: 'validate', remediation_paths_considered: [], selected_remediation_path: null };
+  const res = close('framework', 'baseline-framework-gap-inventory', analyzeResult, validateResult, {}, { _playbookCache: pb, session_id: 'hunt-fix-A' });
+  return res.feeds_into;
+}
+
+test('#5 theater_score scores a "present" verdict 100 → fires the theater_score >= 50 feeds_into', () => {
+  assert.deepEqual(feedsForVerdict('present'), ['sbom']);
+});
+
+test('#5 theater_score scores a "theater" verdict 100 (unchanged)', () => {
+  assert.deepEqual(feedsForVerdict('theater'), ['sbom']);
+});
+
+test('#5 theater_score scores a "clear" verdict 0 → no fire', () => {
+  assert.deepEqual(feedsForVerdict('clear'), []);
+});
+
+// --- #7: runner active_exploitation factor routes through scoring's resolver. ---
+
+test('#7 scoring.activeExploitationMultiplier returns the canonical ladder multipliers (parity with the prior inline lookup)', () => {
+  assert.equal(scoring.activeExploitationMultiplier('confirmed'), 1);
+  assert.equal(scoring.activeExploitationMultiplier('suspected'), 0.5);
+  assert.equal(scoring.activeExploitationMultiplier('unknown'), 0.25);
+  assert.equal(scoring.activeExploitationMultiplier('theoretical'), 0);
+  assert.equal(scoring.activeExploitationMultiplier('none'), 0);
+  assert.equal(scoring.activeExploitationMultiplier(undefined), 0);
+});
+
+test('#7 a stray-cased active_exploitation value normalises instead of zeroing', () => {
+  assert.equal(scoring.activeExploitationMultiplier('Confirmed'), 1);
+  assert.equal(scoring.activeExploitationMultiplier(' SUSPECTED '), 0.5);
+});
+
+test('#7 an out-of-vocab active_exploitation value is observable (RWEP_AE_UNRECOGNISED), not a silent zero', async () => {
+  // process.emitWarning delivers the 'warning' event on the next tick, so await it.
+  const warned = new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      process.removeListener('warning', onWarn);
+      reject(new Error('RWEP_AE_UNRECOGNISED warning was not emitted for an out-of-vocab value'));
+    }, 1000);
+    function onWarn(w) {
+      if (w && w.code === 'RWEP_AE_UNRECOGNISED') {
+        clearTimeout(timer);
+        process.removeListener('warning', onWarn);
+        resolve(w);
+      }
     }
+    process.on('warning', onWarn);
+  });
+  // Use a value that no other test in this file has warned on (warnings with a
+  // `code` are emitted once per process for a given code only when --no-warnings
+  // is off; a fresh value guarantees the event fires here).
+  const mult = scoring.activeExploitationMultiplier('in-the-wild-hunt-fix-A');
+  assert.equal(mult, 0);
+  const w = await warned;
+  assert.equal(w.code, 'RWEP_AE_UNRECOGNISED');
+});
+
+test('#7 the runner active_exploitation factor branch routes through scoring.activeExploitationMultiplier (no inline ?? 0 ladder)', () => {
+  // Structural guard: _factorScale is a local closure (not exported), so assert
+  // on the source that the active_exploitation case delegates to the shared
+  // observable resolver and the dead inline-ladder alias is gone. This catches a
+  // silent regression back to `_activeExploitationLadder[v] ?? 0`.
+  const src = fs.readFileSync(RUNNER_PATH, 'utf8');
+  const branch = src.slice(src.indexOf("case 'active_exploitation':"));
+  const branchHead = branch.slice(0, branch.indexOf('case ', 1));
+  assert.equal(/scoring\.activeExploitationMultiplier\(/.test(branchHead), true);
+  assert.equal(/_activeExploitationLadder\s*\[/.test(branchHead), false);
+  // The local `const _activeExploitationLadder = scoring.ACTIVE_EXPLOITATION_LADDER;`
+  // alias inside analyze() is removed (the module re-export at the bottom is a
+  // separate, intentional surface and is allowed to keep referencing scoring).
+  assert.equal(/const _activeExploitationLadder\b/.test(src), false);
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from jurisdiction-clock-validation ----
+require("node:test").describe("jurisdiction-clock-validation", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Tests for the jurisdictional-clock input handling in lib/playbook-runner.js.
+ *
+ * Runs under: node --test --test-concurrency=1
+ *
+ * Three behaviors are covered:
+ *
+ *   1. A malformed operator-supplied clock_started_at_<event> ISO string must
+ *      NOT crash close()/run(). It degrades to the pending-clock branch
+ *      (deadline 'pending_clock_start_event', clock_started_at null) and
+ *      surfaces an invalid_clock_value runtime error naming the offending key.
+ *
+ *   2. A zone-less timestamp ('2026-06-12T10:00:00' or its space-separated
+ *      form) is interpreted as UTC deterministically, regardless of the host
+ *      timezone, so a statutory deadline does not shift by the host's UTC
+ *      offset. An explicit-Z value is unchanged.
+ *
+ *   3. analyze_complete / validate_complete clocks auto-start under operator
+ *      acknowledgement (--ack) once their engine phase has run, and report
+ *      clock_pending_ack without it.
+ */
+
+const test = require('node:test');
+const { describe, it } = test;
+const assert = require('node:assert/strict');
+const path = require('node:path');
+
+const runner = require(path.resolve(__dirname, '..', 'lib', 'playbook-runner.js'));
+
+// mcp declares EU/DORA Art.19 (4h) and EU/NIS2 Art.23 (24h), both
+// clock_starts:'detect_confirmed'. ai-api additionally declares
+// analyze_complete and validate_complete obligations.
+const MCP = 'mcp';
+const MCP_DIR = 'all-mcp-servers-trust-audit';
+const AIAPI = 'ai-api';
+const AIAPI_DIR = 'all-ai-api-and-credential-exposure';
+
+function findRunErrors(result) {
+  // The shared runtime-error accumulator is snapshotted onto the analyze
+  // phase's runtime_errors after every phase (including close) has run.
+  return (result && result.phases && result.phases.analyze && result.phases.analyze.runtime_errors) || [];
+}
+
+describe('jurisdictional clock — malformed operator timestamp', () => {
+  it('run() does not throw on an unparseable clock value and degrades to pending', () => {
+    let result;
+    assert.doesNotThrow(() => {
+      result = runner.run(MCP, MCP_DIR, {
+        signals: { clock_started_at_detect_confirmed: 'not-a-date', detection_classification: 'detected' },
+        artifacts: {},
+      }, { operator_consent: { explicit: true } });
+    });
+    assert.equal(result.ok, true);
+    const nis2 = result.phases.close.jurisdiction_notifications.find(
+      n => /NIS2/.test(n.obligation_ref) && n.clock_start_event === 'detect_confirmed');
+    assert.ok(nis2, 'NIS2 detect_confirmed notification present');
+    assert.equal(nis2.deadline, 'pending_clock_start_event');
+    assert.equal(nis2.clock_started_at, null);
   });
 
-  it('cross-process mutex refusal still fires under the per-user dir (reentrancy held)', () => {
-    const home = tmpDir('lockdir-home3');
-    try {
-      const result = withEnv({ EXCEPTD_HOME: home }, () => {
-        const runner = freshRunner();
-        const first = runner._acquireLock('kernel');
-        // A fresh same-process lockfile is legitimate reentrancy: a second
-        // acquire must be refused (null) while the first hold is live.
-        const second = runner._acquireLock('kernel');
-        const diag = runner._acquireLockDiagnostic('kernel');
-        if (first) runner._releaseLock(first);
-        return { first, second, diag };
-      });
-      assert.equal(typeof result.first, 'string', 'first acquire succeeds');
-      assert.equal(result.second, null, 'second acquire is refused while held');
-      assert.equal(result.diag.ok, false);
-      assert.equal(result.diag.reason, 'held_by_self');
-    } finally {
-      fs.rmSync(home, { recursive: true, force: true });
-      delete require.cache[RUNNER_PATH];
-    }
+  it('surfaces an invalid_clock_value runtime error naming the offending key', () => {
+    const result = runner.run(MCP, MCP_DIR, {
+      signals: { clock_started_at_detect_confirmed: 'not-a-date', detection_classification: 'detected' },
+      artifacts: {},
+    }, { operator_consent: { explicit: true } });
+    const errs = findRunErrors(result);
+    const bad = errs.find(e => e.kind === 'invalid_clock_value');
+    assert.ok(bad, 'invalid_clock_value runtime error present');
+    assert.equal(bad.key, 'clock_started_at_detect_confirmed');
+    assert.equal(bad.clock_event, 'detect_confirmed');
+  });
+
+  it('close() does not throw on a month-13 garbage value (analyze_complete path)', () => {
+    const errs = [];
+    // computeClockStart returns null for an unparseable value, never an
+    // Invalid Date, so the downstream deadline math cannot reach toISOString().
+    const d = runner._computeClockStart('analyze_complete',
+      { clock_started_at_analyze_complete: '2026-13-99' }, { _runErrors: errs });
+    assert.equal(d, null);
+    assert.equal(errs.filter(e => e.kind === 'invalid_clock_value').length, 1);
+
+    const d2 = runner._computeClockStart('validate_complete',
+      { clock_started_at_validate_complete: '2026-13-99' }, { _runErrors: errs });
+    assert.equal(d2, null);
   });
 });
 
-// ===========================================================================
-// F30 — regression_next_run_reason annotation
-// ===========================================================================
-
-describe('F30: regression_next_run_reason annotates why null', () => {
-  let runner;
-  let dir;
-  before(() => {
-    dir = tmpDir('f30');
-    writePlaybook(dir, 'no-trig', synthPlaybook({
-      phases: { validate: { regression_trigger: [] } }
-    }));
-    writePlaybook(dir, 'event-only', synthPlaybook({
-      phases: { validate: { regression_trigger: [{ interval: 'on_event', trigger: 'release' }] } }
-    }));
-    runner = freshRunner(dir);
+describe('jurisdictional clock — timezone determinism', () => {
+  it('a zone-less timestamp is read as UTC, not the host timezone', () => {
+    const saved = process.env.TZ;
+    process.env.TZ = 'America/Los_Angeles';
+    try {
+      const out = runner.close(MCP, MCP_DIR,
+        { matched_cves: [], rwep: { adjusted: 0 }, blast_radius_score: null, framework_gap_mapping: [], _detect_indicators: [], _detect_classification: 'detected', compliance_theater_check: { verdict: 'present' } },
+        { regression_next_run: null },
+        { clock_started_at_detect_confirmed: '2026-06-12T10:00:00', detection_classification: 'detected' },
+        { session_id: 'abcdef0123456789', operator_consent: { explicit: true } });
+      const dora = out.jurisdiction_notifications.find(n => /DORA/.test(n.obligation_ref));
+      assert.ok(dora, 'DORA 4h obligation present');
+      // 10:00 UTC, not the host-shifted 17:00Z that new Date() would produce.
+      assert.equal(dora.clock_started_at, '2026-06-12T10:00:00.000Z');
+      // DORA's 4h window lands at 14:00 UTC, not 21:00 UTC.
+      assert.equal(dora.deadline, '2026-06-12T14:00:00.000Z');
+    } finally {
+      if (saved === undefined) delete process.env.TZ; else process.env.TZ = saved;
+    }
   });
 
-  it("empty triggers → reason='no_regression_triggers_declared'", () => {
-    const v = runner.validate('no-trig', 'default', { matched_cves: [], rwep: { adjusted: 0 } });
-    assert.equal(v.regression_next_run, null);
-    assert.equal(v.regression_next_run_reason, 'no_regression_triggers_declared');
+  it('the space-separated form normalizes identically to the T-separated UTC value', () => {
+    const saved = process.env.TZ;
+    process.env.TZ = 'America/Los_Angeles';
+    try {
+      // Drive through the exported computeClockStart for an exact-instant check.
+      const d = runner._computeClockStart('detect_confirmed',
+        { clock_started_at_detect_confirmed: '2026-06-12 10:00:00' }, { _runErrors: [] });
+      assert.ok(d instanceof Date);
+      assert.equal(d.toISOString(), '2026-06-12T10:00:00.000Z');
+    } finally {
+      if (saved === undefined) delete process.env.TZ; else process.env.TZ = saved;
+    }
   });
 
-  it("all event-driven triggers → reason='all_triggers_event_driven'", () => {
-    const v = runner.validate('event-only', 'default', { matched_cves: [], rwep: { adjusted: 0 } });
-    assert.equal(v.regression_next_run, null);
-    assert.equal(v.regression_next_run_reason, 'all_triggers_event_driven');
+  it('an explicit-Z timestamp is unchanged and emits no assumed-UTC warning', () => {
+    const saved = process.env.TZ;
+    process.env.TZ = 'America/Los_Angeles';
+    try {
+      const errs = [];
+      const d = runner._computeClockStart('detect_confirmed',
+        { clock_started_at_detect_confirmed: '2026-06-12T10:00:00Z' }, { _runErrors: errs });
+      assert.equal(d.toISOString(), '2026-06-12T10:00:00.000Z');
+      assert.equal(errs.filter(e => e.kind === 'clock_timezone_assumed_utc').length, 0);
+    } finally {
+      if (saved === undefined) delete process.env.TZ; else process.env.TZ = saved;
+    }
+  });
+
+  it('a zone-less value surfaces a clock_timezone_assumed_utc runtime error', () => {
+    const errs = [];
+    runner._computeClockStart('detect_confirmed',
+      { clock_started_at_detect_confirmed: '2026-06-12T10:00:00' }, { _runErrors: errs });
+    const warn = errs.find(e => e.kind === 'clock_timezone_assumed_utc');
+    assert.ok(warn, 'clock_timezone_assumed_utc runtime error present');
+    assert.equal(warn.key, 'clock_started_at_detect_confirmed');
   });
 });
+
+describe('jurisdictional clock — analyze_complete / validate_complete auto-start', () => {
+  it('auto-starts analyze_complete and validate_complete clocks under --ack once their phase ran', () => {
+    const result = runner.run(AIAPI, AIAPI_DIR, {
+      signals: { detection_classification: 'detected' }, artifacts: {},
+    }, { operator_consent: { explicit: true } });
+    const notifs = result.phases.close.jurisdiction_notifications;
+
+    const ac = notifs.find(n => n.clock_start_event === 'analyze_complete');
+    assert.ok(ac, 'analyze_complete obligation present');
+    assert.equal(typeof ac.clock_started_at, 'string');
+    assert.notEqual(ac.deadline, 'pending_clock_start_event');
+    // deadline === clock_started_at + window_hours.
+    const expectedAc = new Date(new Date(ac.clock_started_at).getTime() + ac.window_hours * 3600 * 1000).toISOString();
+    assert.equal(ac.deadline, expectedAc);
+
+    const vc = notifs.find(n => n.clock_start_event === 'validate_complete');
+    assert.ok(vc, 'validate_complete obligation present');
+    assert.equal(typeof vc.clock_started_at, 'string');
+    const expectedVc = new Date(new Date(vc.clock_started_at).getTime() + vc.window_hours * 3600 * 1000).toISOString();
+    assert.equal(vc.deadline, expectedVc);
+  });
+
+  it('analyze_complete / validate_complete auto-start clocks root in the frozen epoch under deterministic mode', () => {
+    const EPOCH = '2021-06-01T00:00:00.000Z';
+    const runOpts = { operator_consent: { explicit: true }, bundleDeterministic: true, bundleEpoch: EPOCH };
+    const run = () => runner.run(AIAPI, AIAPI_DIR, {
+      signals: { detection_classification: 'detected' }, artifacts: {},
+    }, runOpts);
+
+    const a = run();
+    const acA = a.phases.close.jurisdiction_notifications.find(n => n.clock_start_event === 'analyze_complete');
+    const vcA = a.phases.close.jurisdiction_notifications.find(n => n.clock_start_event === 'validate_complete');
+    assert.equal(acA.clock_started_at, EPOCH, 'analyze_complete clock must be the frozen epoch, not wall-clock now');
+    assert.equal(vcA.clock_started_at, EPOCH, 'validate_complete clock must be the frozen epoch, not wall-clock now');
+
+    // Reproducibility: a second deterministic run over the same evidence emits
+    // identical clock_started_at and deadline values.
+    const b = run();
+    const acB = b.phases.close.jurisdiction_notifications.find(n => n.clock_start_event === 'analyze_complete');
+    assert.equal(acB.clock_started_at, acA.clock_started_at, 'two deterministic runs must agree on clock_started_at');
+    assert.equal(acB.deadline, acA.deadline, 'two deterministic runs must agree on the deadline');
+  });
+
+  it('without --ack the analyze_complete clock reports pending + clock_pending_ack', () => {
+    const result = runner.run(AIAPI, AIAPI_DIR, {
+      signals: { detection_classification: 'detected' }, artifacts: {},
+    }, {});
+    const ac = result.phases.close.jurisdiction_notifications.find(n => n.clock_start_event === 'analyze_complete');
+    assert.ok(ac, 'analyze_complete obligation present');
+    assert.equal(ac.deadline, 'pending_clock_start_event');
+    assert.equal(ac.clock_started_at, null);
+    assert.equal(ac.clock_pending_ack, true);
+  });
+
+  it('manual clocks never auto-start even under --ack', () => {
+    const d = runner._computeClockStart('manual', {},
+      { operator_consent: { explicit: true }, _runErrors: [] }, 'detected',
+      { analyze_complete: true, validate_complete: true });
+    assert.equal(d, null);
+  });
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from jurisdiction-malformed-obligation ----
+require("node:test").describe("jurisdiction-malformed-obligation", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Close-phase resilience to malformed jurisdiction obligations (runtime
+ * validation of a playbook is not enforced, so close() must not crash or emit
+ * bogus records on a hand-crafted / corrupt playbook):
+ *
+ *  - A matched obligation with a non-number window_hours must NOT crash the
+ *    deadline arithmetic (new Date(getTime() + NaN).toISOString()); the deadline
+ *    falls back to the pending sentinel.
+ *  - A notification_action whose obligation_ref resolves to no obligation is
+ *    dropped (already surfaced as a runtime_error) instead of emitting a record
+ *    with null jurisdiction/regulation.
+ *  - A notify obligation with a non-number window_hours is not synthesized into a
+ *    "…/… undefinedh" record; it is surfaced as a runtime_error and skipped.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+
+const RUNNER_PATH = path.resolve(__dirname, '..', 'lib', 'playbook-runner.js');
+
+function freshRunner(playbookDir) {
+  process.env.EXCEPTD_PLAYBOOK_DIR = playbookDir;
+  delete require.cache[RUNNER_PATH];
+  return require(RUNNER_PATH);
+}
+function tmpDir(label) { return fs.mkdtempSync(path.join(os.tmpdir(), `exceptd-jur-${label}-`)); }
+function writePlaybook(dir, id, body) {
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, `${id}.json`), JSON.stringify(body, null, 2));
+}
+function synthPlaybook(govObligations, notificationActions) {
+  return {
+    _meta: {
+      id: 'jur-malformed', last_threat_review: '2026-05-11',
+      threat_currency_score: 95,
+      owner: '@blamejs/test', air_gap_mode: false, preconditions: [], mutex: [], feeds_into: [],
+    },
+    domain: {
+      name: 'synth', attack_class: 'kernel-lpe', atlas_refs: [], attack_refs: [],
+      cve_refs: [], cwe_refs: [], d3fend_refs: [], frameworks_in_scope: ['nist-800-53'],
+    },
+    phases: {
+      govern: { jurisdiction_obligations: govObligations, theater_fingerprints: [], framework_context: {}, skill_preload: [] },
+      direct: { threat_context: 'x', rwep_threshold: { escalate: 90, monitor: 70, close: 30 }, framework_lag_declaration: 'x', skill_chain: [], token_budget: {} },
+      look: { artifacts: [], collection_scope: {}, environment_assumptions: [], fallback_if_unavailable: [] },
+      detect: { indicators: [{ id: 'sig', type: 'log_pattern', value: 'x', description: 'd', confidence: 'high', deterministic: false, attack_ref: 'T1068' }], false_positive_profile: [], minimum_signal: { detected: 'x', inconclusive: 'x', not_detected: 'x' } },
+      analyze: { rwep_inputs: [], blast_radius_model: { scope_question: '?', scoring_rubric: [] }, compliance_theater_check: null, framework_gap_mapping: [], escalation_criteria: [] },
+      validate: { remediation_paths: [], validation_tests: [], residual_risk_statement: null, evidence_requirements: [], regression_trigger: [] },
+      close: { evidence_package: null, learning_loop: { enabled: false }, notification_actions: notificationActions, exception_generation: null, regression_schedule: null },
+    },
+    directives: [{ id: 'default', title: 'default', applies_to: { always: true } }],
+  };
+}
+
+function drive(dir, agentSignals, runOpts) {
+  const r = freshRunner(dir);
+  const det = r.detect('p', 'default', { signal_overrides: { sig: 'hit' } });
+  const an = r.analyze('p', 'default', det);
+  const v = r.validate('p', 'default', an, {});
+  // close(playbookId, directiveId, analyzeResult, validateResult, agentSignals, runOpts)
+  return r.close('p', 'default', an, v, agentSignals, runOpts);
+}
+
+test('a matched obligation with a missing window_hours does not crash close(); deadline falls back to the sentinel', () => {
+  const dir = tmpDir('nan');
+  try {
+    // obligation: 'report' (not 'notify') so synthesis ignores it; the explicit
+    // notification_action references it by the "EU/TEST undefinedh" ref the same
+    // formula produces, so the obligation IS matched and the deadline path runs.
+    writePlaybook(dir, 'p', synthPlaybook(
+      [{ jurisdiction: 'EU', regulation: 'TEST', clock_starts: 'detect_confirmed', evidence_required: [], obligation: 'report' }],
+      [{ obligation_ref: 'EU/TEST undefinedh', recipient: 'r@e', draft_notification: 'x', evidence_attached: [] }],
+    ));
+    let close;
+    assert.doesNotThrow(() => {
+      // Fire the clock so clockValid is true — this is the exact condition under
+      // which the unguarded arithmetic computed new Date(NaN) and threw.
+      close = drive(dir, { clock_started_at_detect_confirmed: '2026-05-11T10:00:00Z' }, { _runErrors: [] });
+    }, 'close() must not throw on an obligation missing window_hours');
+    const n = close.notification_actions.find(x => x.obligation_ref === 'EU/TEST undefinedh');
+    assert.ok(n, 'the matched notification record is present');
+    assert.equal(n.deadline, 'pending_clock_start_event', 'a non-number window_hours yields the pending sentinel, not a crash');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('a notification_action with an unresolved obligation_ref is dropped and surfaced as a runtime_error', () => {
+  const dir = tmpDir('unresolved');
+  try {
+    writePlaybook(dir, 'p', synthPlaybook(
+      [{ jurisdiction: 'EU', regulation: 'REAL', window_hours: 24, clock_starts: 'detect_confirmed', evidence_required: [], obligation: 'report' }],
+      [{ obligation_ref: 'ZZ/NONEXISTENT 99h', recipient: 'r@e', draft_notification: 'x', evidence_attached: [] }],
+    ));
+    const runErrors = [];
+    const close = drive(dir, {}, { _runErrors: runErrors });
+    const orphan = close.notification_actions.find(x => x.obligation_ref === 'ZZ/NONEXISTENT 99h');
+    assert.equal(orphan, undefined, 'the unresolved-ref record must be dropped, not emitted with null jurisdiction');
+    assert.ok(
+      runErrors.some(e => e.kind === 'unresolved_obligation_ref' && e.obligation_ref === 'ZZ/NONEXISTENT 99h'),
+      `the unmatched ref must surface a runtime_error; got ${JSON.stringify(runErrors)}`,
+    );
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('a notify obligation with a non-number window_hours is not synthesized as "undefinedh"; it surfaces a runtime_error', () => {
+  const dir = tmpDir('synth');
+  try {
+    writePlaybook(dir, 'p', synthPlaybook(
+      [{ jurisdiction: 'ZZ', regulation: 'BADWIN', clock_starts: 'detect_confirmed', evidence_required: [], obligation: 'notify' }],
+      [],
+    ));
+    const runErrors = [];
+    const close = drive(dir, {}, { _runErrors: runErrors });
+    const bogus = close.notification_actions.find(x => String(x.obligation_ref).includes('undefinedh'));
+    assert.equal(bogus, undefined, 'a malformed notify obligation must not synthesize an "undefinedh" record');
+    assert.ok(
+      runErrors.some(e => e.kind === 'malformed_obligation_window_hours'),
+      `a malformed window_hours must surface a runtime_error; got ${JSON.stringify(runErrors)}`,
+    );
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from openvex-urn-routing ----
+require("node:test").describe("openvex-urn-routing", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * OpenVEX vulnerability identifiers route to the correct URN namespace.
+ *
+ * Cycle 6 P1 gap: lib/playbook-runner.js vulnIdToUrn() (line ~1797) maps:
+ *   CVE-*      → urn:cve:*
+ *   GHSA-*     → urn:ghsa:*
+ *   RUSTSEC-*  → urn:rustsec:*
+ *   MAL-*      → urn:malicious-package:*
+ *   <other>    → urn:exceptd:advisory:* (private namespace, RFC 8141)
+ *
+ * The OpenVEX 0.2.0 spec mandates that `vulnerability.@id` is an IRI; a
+ * naive `urn:cve:GHSA-xxx` would falsely claim GHSA-* is part of the CVE
+ * registry, misrouting downstream consumers' lookups. This test pins each
+ * advisory prefix to its required namespace AND asserts non-CVE ids never
+ * leak into the cve namespace.
+ *
+ * Tests vulnIdToUrn directly rather than spinning a full OpenVEX bundle —
+ * the function is the canonical routing primitive, and a unit test pins
+ * the boundary without depending on the full close-phase bundle build.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+
+const { ROOT } = require('./_helpers/cli');
+const runner = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
+
+// The function is internal to the runner module, exported under the `_`-prefix
+// convention the module uses for test-only helpers. Pin its presence so this
+// non-CVE-leak boundary can never go dark again (it previously skipped
+// permanently because the export was missing).
+const vulnIdToUrn = runner._vulnIdToUrn;
+assert.equal(typeof vulnIdToUrn, 'function', 'runner must export _vulnIdToUrn');
+
+test('vulnIdToUrn routes each advisory prefix to its registered URN namespace',
+  () => {
+    const cases = [
+      { id: 'GHSA-1111-2222-3333', expectedPrefix: 'urn:ghsa:' },
+      { id: 'RUSTSEC-2024-0001',   expectedPrefix: 'urn:rustsec:' },
+      { id: 'MAL-2026-3083',       expectedPrefix: 'urn:malicious-package:' },
+      { id: 'CVE-2026-46300',      expectedPrefix: 'urn:cve:' },
+    ];
+    for (const c of cases) {
+      const urn = vulnIdToUrn(c.id);
+      assert.equal(typeof urn, 'string', `vulnIdToUrn(${c.id}) must return a string`);
+      assert.ok(urn.startsWith(c.expectedPrefix),
+        `vulnIdToUrn(${c.id}) must start with ${c.expectedPrefix}; got ${urn}`);
+    }
+
+    // Cross-check: non-CVE ids MUST NOT be routed into the cve namespace.
+    // A regression that collapsed every advisory to urn:cve:* would silently
+    // pass single-prefix assertions; this assertion catches that class.
+    const nonCveCases = ['GHSA-1111-2222-3333', 'RUSTSEC-2024-0001', 'MAL-2026-3083'];
+    for (const id of nonCveCases) {
+      const urn = vulnIdToUrn(id);
+      assert.ok(!urn.startsWith('urn:cve:'),
+        `non-CVE id ${id} must NEVER route into urn:cve: (would misclaim CVE-registry membership); got ${urn}`);
+    }
+  });
+
+test('vulnIdToUrn falls back to private namespace for unknown prefixes',
+  () => {
+    const urn = vulnIdToUrn('UNKNOWN-2026-0001');
+    assert.equal(typeof urn, 'string');
+    assert.ok(urn.startsWith('urn:exceptd:advisory:'),
+      `unknown prefix must route to private urn:exceptd:advisory: namespace; got ${urn}`);
+  });
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from rwep-vex-fixed-no-scaling ----
+require("node:test").describe("rwep-vex-fixed-no-scaling", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Regression: a VEX-fixed (vendor-patched) CVE must not drive RWEP factor
+ * scaling. baseRwep already excluded vex-fixed entries, but the factor-scaling
+ * source was `matchedCves[0]` — so a patched CVE that sorted first still scaled
+ * the adjusted score (and its exploitation status fed notification drafts).
+ * factorCve now prefers the first RWEP-eligible (non-vex-fixed) CVE, and the
+ * finding-shape's worst active_exploitation excludes vex-fixed entries.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+
+const runner = require('../lib/playbook-runner');
+const kernel = require('../data/playbooks/kernel.json');
+
+const DIR = kernel.directives[0].id;
+const TOP = kernel.domain.cve_refs[0]; // highest-rwep, CISA-KEV, confirmed-exploitation kernel CVE
+const DET = {
+  indicators: [{ id: 'kver-in-affected-range', verdict: 'hit', deterministic: true, confidence: 'high' }],
+  classification: 'detected',
+};
+
+test('a VEX-fixed top CVE does not drive RWEP factor scaling or inflate adjusted RWEP', () => {
+  const unfixed = runner.analyze('kernel', DIR, DET, { [TOP]: true, 'kver-in-affected-range': true }, {});
+  const fixed = runner.analyze('kernel', DIR, DET, { [TOP]: true, vex_fixed: [TOP], 'kver-in-affected-range': true }, {});
+
+  // The vex-fixed CVE is the highest-rwep matched entry; still surfaced for the
+  // audit trail, but flagged.
+  const top = (fixed.matched_cves || []).find(c => c.cve_id === TOP);
+  assert.equal(top?.vex_status, 'fixed');
+
+  // Base excludes it (pre-existing) and adjusted is strictly lower.
+  assert.ok(fixed.rwep.base < unfixed.rwep.base,
+    `vex-fixed base (${fixed.rwep.base}) must be below un-fixed (${unfixed.rwep.base})`);
+  assert.ok(fixed.rwep.adjusted < unfixed.rwep.adjusted,
+    `vex-fixed adjusted (${fixed.rwep.adjusted}) must be below un-fixed (${unfixed.rwep.adjusted})`);
+
+  // Discriminating (catches the factorCve fix specifically, not just the base
+  // exclusion): the vex-fixed top CVE is 'confirmed' exploitation (scale 1.0).
+  // With scaling sourced from the eligible (lower-exploitation) CVE, the fired
+  // active_exploitation factor scales strictly below the confirmed level. Pre-
+  // fix it scaled by the vex-fixed CVE → factor_scale 1.0.
+  const unfixedAe = (unfixed.rwep.breakdown || []).find(b => b.rwep_factor === 'active_exploitation' && b.fired);
+  const fixedAe = (fixed.rwep.breakdown || []).find(b => b.rwep_factor === 'active_exploitation' && b.fired);
+  assert.equal(unfixedAe?.factor_scale, 1.0, 'un-fixed run scales active_exploitation by the confirmed top CVE (1.0)');
+  assert.ok(fixedAe && fixedAe.factor_scale < 1.0,
+    `vex-fixed run active_exploitation factor_scale (${fixedAe?.factor_scale}) must reflect the eligible CVE, not the vex-fixed confirmed one`);
+});
+
+test('when EVERY matched CVE is VEX-fixed, factor scaling is suppressed (adjusted RWEP stays 0)', () => {
+  // codex P2: with rwepEligible empty, factorCve must not fall back to a fixed
+  // matchedCves[0]; base is 0, and a vendor-fixed CVE's KEV/exploitation/PoC
+  // factors must not lift the adjusted score above 0 (the finding is remediated).
+  const cves = kernel.domain.cve_refs;
+  const sig = { 'kver-in-affected-range': true };
+  for (const c of cves) sig[c] = true;
+  const allFixed = runner.analyze('kernel', DIR, DET, { ...sig, vex_fixed: cves }, {});
+
+  assert.ok((allFixed.matched_cves || []).length > 0, 'expected matched CVEs in this scenario');
+  assert.equal((allFixed.matched_cves || []).filter((c) => c.vex_status !== 'fixed').length, 0,
+    'every matched CVE must be VEX-fixed in this scenario');
+  assert.equal(allFixed.rwep.base, 0, 'base must be 0 when all matched CVEs are fixed');
+  assert.equal(allFixed.rwep.adjusted, 0,
+    `adjusted must not be lifted above 0 by a vendor-fixed CVE; got ${allFixed.rwep.adjusted}`);
+  for (const b of (allFixed.rwep.breakdown || []).filter((x) => x.fired)) {
+    assert.equal(b.factor_scale, 0,
+      `fired factor ${b.rwep_factor} must scale by 0 when all matched CVEs are fixed`);
+  }
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from vex-disposition-note ----
+require("node:test").describe("vex-disposition-note", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Tests for the VEX disposition prose in analyze() (lib/playbook-runner.js).
+ *
+ * Runs under: node --test --test-concurrency=1
+ *
+ * The drop-note explains WHY a CVE was removed from analyze. It is keyed on the
+ * drop set only — CycloneDX not_affected / false_positive and OpenVEX
+ * not_affected. A vendor-fixed disposition (CycloneDX state:'resolved' /
+ * OpenVEX status:'fixed') is a KEEP disposition: the CVE stays in matched_cves
+ * annotated vex_status:'fixed'. The note must therefore NOT cite that keep
+ * disposition as a drop reason, and the kept-fixed set must be surfaced so the
+ * two dispositions are distinguishable.
+ */
+
+const test = require('node:test');
+const { describe, it } = test;
+const assert = require('node:assert/strict');
+const path = require('node:path');
+
+const runner = require(path.resolve(__dirname, '..', 'lib', 'playbook-runner.js'));
+
+// ai-api enumerates these two CVEs in domain.cve_refs.
+const AIAPI = 'ai-api';
+const AIAPI_DIR = 'all-ai-api-and-credential-exposure';
+const DROP_CVE = 'CVE-2026-30615';   // marked not_affected → drop
+const FIXED_CVE = 'CVE-2026-42208';  // marked resolved/fixed → keep
+
+function analyzeWithVex(sets) {
+  return runner.analyze(AIAPI, AIAPI_DIR,
+    { indicators: [], classification: 'detected' },
+    { vex_filter: sets, vex_fixed: sets.fixed }, {});
+}
+
+describe('VEX drop-note (CycloneDX)', () => {
+  const doc = {
+    vulnerabilities: [
+      { id: DROP_CVE, analysis: { state: 'not_affected' } },
+      { id: FIXED_CVE, analysis: { state: 'resolved' } },
+    ],
+  };
+
+  it('routes not_affected → drop and resolved → fixed', () => {
+    const sets = runner.vexFilterFromDoc(doc);
+    assert.deepEqual([...sets], [DROP_CVE]);
+    assert.deepEqual([...sets.fixed], [FIXED_CVE]);
+  });
+
+  it('drops only the not_affected CVE; the resolved CVE is kept', () => {
+    const sets = runner.vexFilterFromDoc(doc);
+    const out = analyzeWithVex(sets);
+    assert.equal(out.vex.dropped_cve_count, 1);
+    assert.deepEqual(out.vex.dropped_cves, [DROP_CVE]);
+    // The vendor-fixed CVE never enters the drop set.
+    assert.ok(!out.vex.dropped_cves.includes(FIXED_CVE));
+  });
+
+  it('surfaces the kept-fixed set distinctly from the drop set', () => {
+    const sets = runner.vexFilterFromDoc(doc);
+    const out = analyzeWithVex(sets);
+    assert.equal(out.vex.fixed_cve_count, 1);
+    assert.deepEqual(out.vex.fixed_cves, [FIXED_CVE]);
+  });
+
+  it('the drop note does NOT cite a keep disposition as a drop reason', () => {
+    const sets = runner.vexFilterFromDoc(doc);
+    const out = analyzeWithVex(sets);
+    // "resolved" (CycloneDX) is a KEEP disposition and must not appear as a
+    // drop reason in the note.
+    assert.ok(!/resolved/.test(out.vex.note), `drop note still lists a keep disposition: ${out.vex.note}`);
+    // The note still names the actual drop dispositions.
+    assert.match(out.vex.note, /not_affected/);
+    assert.match(out.vex.note, /false_positive/);
+  });
+});
+
+describe('VEX drop-note (OpenVEX)', () => {
+  const doc = {
+    statements: [
+      { vulnerability: { name: DROP_CVE }, status: 'not_affected' },
+      { vulnerability: { name: FIXED_CVE }, status: 'fixed' },
+    ],
+  };
+
+  it('mirrors the CycloneDX split: not_affected drops, fixed is kept', () => {
+    const sets = runner.vexFilterFromDoc(doc);
+    assert.deepEqual([...sets], [DROP_CVE]);
+    assert.deepEqual([...sets.fixed], [FIXED_CVE]);
+    const out = analyzeWithVex(sets);
+    assert.equal(out.vex.dropped_cve_count, 1);
+    assert.deepEqual(out.vex.dropped_cves, [DROP_CVE]);
+    assert.deepEqual(out.vex.fixed_cves, [FIXED_CVE]);
+    assert.ok(!/resolved/.test(out.vex.note));
+  });
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
 });

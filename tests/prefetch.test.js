@@ -224,331 +224,494 @@ test('prefetch exits cleanly with no libuv assertion (Win + Node 25 regression)'
 }
 
 
-// ---- routed from prefetch-index-fingerprint-pin ----
-require("node:test").describe("prefetch-index-fingerprint-pin", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+// ---- routed from operator-bugs ----
+require("node:test").describe("operator-bugs", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * The --from-cache trust gate verifies _index.json.sig with verifyIndexSignature.
- * Every other signature-verifying ingest site cross-checks the live public key
- * against keys/EXPECTED_FINGERPRINT before crypto.verify, so a host-local
- * keys/public.pem swap paired with an attacker-signed _index.json.sig cannot
- * authenticate against the attacker's own key. verifyIndexSignature must apply
- * the same pin.
+ * Operator-reported bug regression suite.
  *
- * The happy path is asserted end-to-end (sign with the real key, verify against
- * the real pin -> valid). The mismatch path is asserted against the exact
- * building blocks verifyIndexSignature now consumes — checkExpectedFingerprint
- * over publicKeyFingerprint, with an attacker key and a pin file the attacker
- * cannot satisfy — proving the gate refuses a swapped key.
+ * Every operator-reported bug that has been fixed lands here as a named test
+ * case so re-introductions surface at `npm test`, not at user re-report.
+ * Numbering matches the operator report sequence (items #1 through #N as
+ * reported across the v0.9.5 → v0.11.x arc).
+ *
+ * Pattern for new items:
+ *   describe('#N short label', () => { it('precise behavior', ...); });
+ *
+ * Avoid coupling tests to file paths / playbook IDs that may change. Prefer
+ * direct runner exercises over CLI shell-outs where possible — CLI tests
+ * stay narrow (smoke-level) because they spawn subprocesses and slow the
+ * suite down.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const { spawnSync } = require('node:child_process');
+
+const { ROOT, CLI, makeSuiteHome, makeCli, tryJson, secureTmpFile } = require('./_helpers/cli');
+const runner = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
+
+const SUITE_HOME = makeSuiteHome('exceptd-operator-bugs-');
+const cli = makeCli(SUITE_HOME);
+
+// ===================================================================
+
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+// ===================================================================
+
+// ===================================================================
+
+
+
+// ===================================================================
+
+
+
+// ===================================================================
+
+
+
+
+// ===================================================================
+
+
+// ===================================================================
+
+// ===================================================================
+// CSAF framework gaps emit as `document.notes[]` with `category: details`,
+// not as `vulnerabilities[]` entries with `ids: [{system_name:
+// 'exceptd-framework-gap'}]`. The `system_name` slot is reserved for
+// recognised vulnerability tracking authorities (CVE, GHSA, etc.); the
+// custom string is rejected by NVD / ENISA / Red Hat dashboards. Notes
+// are the right home for advisory context, not pseudo-CVEs. The test
+// asserts the notes-based shape and anti-asserts the pseudo-vulnerability
+// shape.
+
+
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===================================================================
+// v0.11.14 freshness additions — opt-in registry check + upstream-check
+// + refresh --network. Tests use EXCEPTD_REGISTRY_FIXTURE so they're
+// fully offline-deterministic.
+// ===================================================================
+
+function withFixture(version, daysAgo) {
+  const file = secureTmpFile('npm-fixture.json', 'npm-fixture-');
+  const publishedAt = new Date(Date.now() - daysAgo * 24 * 3600 * 1000).toISOString();
+  fs.writeFileSync(file, JSON.stringify({
+    "dist-tags": { latest: version },
+    version,
+    time: { [version]: publishedAt, modified: publishedAt },
+  }));
+  return file;
+}
+
+
+
+
+
+
+
+
+// ===================================================================
+// v0.12.0 — GHSA source + refresh --advisory + refresh --curate
+// ===================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===================================================================
+
+test('#19 prefetch --no-network --quiet emits one-line summary', () => {
+  const r = cli(['prefetch', '--no-network', '--quiet']);
+  assert.match(r.stdout, /prefetch summary:/);
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from playbook-schema-validation ----
+require("node:test").describe("playbook-schema-validation", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Regression tests for the v0.12.20 audit S+T+U+Z P1 fixes.
+ *
+ *   S P1-A — Array attestation must NOT bypass the FP-check gate.
+ *   S P1-B — `signals.detection_classification: 'detected'` override must be
+ *            refused when ANY indicator was downgraded due to unattested FP
+ *            checks; a runtime_error documents the refusal.
+ *   U REG-1 — `signal_overrides_invalid` errors pushed by normalizeSubmission
+ *            must reach analyze.runtime_errors[] (F20 contract).
+ *   T P1-1 — withCatalogLock / withIndexLock must reclaim a lockfile whose
+ *            PID is dead (ESRCH) without waiting STALE_LOCK_MS.
+ *   T P1-2 — persistAttestation --force-overwrite must serialize concurrent
+ *            writers so the prior_evidence_hash chain does not lose
+ *            intermediate writers.
+ *   T P1-3 — prefetch must NOT leave a payload on disk with no index entry
+ *            when withIndexLock fails.
+ *   T P1-4 — scheduleEvery must throw RangeError on 0 / negative / NaN /
+ *            Infinity intervals.
+ *
+ * Concurrency tests use real subprocess invocation + race contention.
  */
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
+const os = require('node:os');
 const crypto = require('node:crypto');
+const { spawnSync, fork } = require('node:child_process');
 
 const ROOT = path.join(__dirname, '..');
-const prefetch = require(path.join(ROOT, 'lib', 'prefetch.js'));
-const { publicKeyFingerprint, checkExpectedFingerprint } = require(path.join(ROOT, 'lib', 'verify.js'));
+const RUNNER_PATH = path.resolve(ROOT, 'lib', 'playbook-runner.js');
 
-test('verifyIndexSignature returns valid when the real key matches the real pin', () => {
-  // The signing key on the working tree matches keys/EXPECTED_FINGERPRINT, so
-  // a freshly-signed index must verify — confirming the new pin check passes
-  // legitimate caches through rather than blocking them.
-  if (!fs.existsSync(path.join(ROOT, '.keys', 'private.pem'))) {
-    return; // no signing key available in this environment; nothing to assert
+// --- helpers --------------------------------------------------------------
+
+function freshRunner(playbookDir) {
+  if (playbookDir) process.env.EXCEPTD_PLAYBOOK_DIR = playbookDir;
+  else delete process.env.EXCEPTD_PLAYBOOK_DIR;
+  delete require.cache[RUNNER_PATH];
+  return require(RUNNER_PATH);
+}
+
+function tmpDir(label) {
+  return fs.mkdtempSync(path.join(os.tmpdir(), `exceptd-stuz-${label}-`));
+}
+
+function writePlaybook(dir, id, body) {
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, `${id}.json`), JSON.stringify(body, null, 2));
+}
+
+function synthPlaybook(overrides = {}) {
+  const base = {
+    _meta: {
+      id: 'synth',
+      version: '0.1.0',
+      last_threat_review: '2026-05-14',
+      threat_currency_score: 95,
+      changelog: [{ version: '0.1.0', date: '2026-05-14', summary: 'synthetic test playbook' }],
+      owner: '@blamejs/test',
+      air_gap_mode: false,
+      preconditions: [],
+      mutex: [],
+      feeds_into: [],
+    },
+    domain: {
+      name: 'synth domain', attack_class: 'kernel-lpe',
+      atlas_refs: [], attack_refs: [], cve_refs: [], cwe_refs: [], d3fend_refs: [],
+      frameworks_in_scope: ['nist-800-53'],
+    },
+    phases: {
+      govern: { jurisdiction_obligations: [], theater_fingerprints: [], framework_context: {}, skill_preload: [] },
+      direct: { threat_context: 'x', rwep_threshold: { escalate: 90, monitor: 70, close: 30 }, framework_lag_declaration: 'x', skill_chain: [], token_budget: {} },
+      look: { artifacts: [], collection_scope: {}, environment_assumptions: [], fallback_if_unavailable: [] },
+      detect: { indicators: [], false_positive_profile: [], minimum_signal: { detected: 'x', inconclusive: 'x', not_detected: 'x' } },
+      analyze: { rwep_inputs: [], blast_radius_model: { scope_question: '?', scoring_rubric: [] }, compliance_theater_check: null, framework_gap_mapping: [], escalation_criteria: [] },
+      validate: { remediation_paths: [], validation_tests: [], residual_risk_statement: null, evidence_requirements: [], regression_trigger: [] },
+      close: { evidence_package: null, learning_loop: { enabled: false }, notification_actions: [], exception_generation: null, regression_schedule: null },
+    },
+    directives: [{ id: 'default', title: 'default directive', applies_to: { always: true } }],
+  };
+  return deepMerge(base, overrides);
+}
+
+function deepMerge(a, b) {
+  if (b === null || b === undefined) return a;
+  if (Array.isArray(b)) return b;
+  if (typeof b !== 'object') return b;
+  const out = { ...a };
+  for (const k of Object.keys(b)) {
+    if (k in out && out[k] && typeof out[k] === 'object' && !Array.isArray(out[k]) && b[k] && typeof b[k] === 'object' && !Array.isArray(b[k])) {
+      out[k] = deepMerge(out[k], b[k]);
+    } else {
+      out[k] = b[k];
+    }
   }
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-pf-pin-ok-'));
+  return out;
+}
+
+// =========================================================================
+// S P1-A — Array attestation bypasses FP-check gate
+// =========================================================================
+
+
+// =========================================================================
+// S P1-B — `detection_classification: 'detected'` override cannot bypass FP downgrade
+// =========================================================================
+
+
+
+// =========================================================================
+// U REG-1 — signal_overrides_invalid must reach analyze.runtime_errors[]
+// =========================================================================
+
+
+// =========================================================================
+// T P1-1 — PID-liveness check on stale lockfiles
+// =========================================================================
+
+
+// =========================================================================
+// T P1-2 — persistAttestation force-overwrite serializes concurrent writers
+// =========================================================================
+
+
+// =========================================================================
+// T P1-3 — prefetch must NOT orphan a payload on lock failure
+// =========================================================================
+
+
+// =========================================================================
+// T P1-4 — scheduleEvery lower-bound guard
+// =========================================================================
+
+test('T P1-1: withIndexLock reclaims a lockfile whose PID is dead (ESRCH)', async () => {
+  const { _internal } = require('../lib/prefetch.js');
+  const { withIndexLock } = _internal;
+  const dir = tmpDir('t-p1-1');
   try {
-    fs.writeFileSync(
-      path.join(dir, '_index.json'),
-      JSON.stringify({ entries: { 'kev/x': { sha256: 'abc' } } }, null, 2) + '\n',
-    );
-    const s = prefetch.signIndex(dir);
-    assert.equal(s.signed, true, 'index signed with the real key');
-    const v = prefetch.verifyIndexSignature(dir);
-    assert.equal(v.status, 'valid', `expected valid; got ${JSON.stringify(v)}`);
+    fs.mkdirSync(dir, { recursive: true });
+    // Plant a lockfile with a PID that is virtually guaranteed dead. We
+    // pick max-int range and verify process.kill(pid, 0) raises ESRCH.
+    // (PID 2147483646 is well above any reasonable kernel limit.)
+    const lockPath = path.join(dir, '_index.json.lock');
+    const deadPid = 2147483646;
+    try {
+      process.kill(deadPid, 0);
+      // If this succeeded — extremely unlikely — skip the test.
+      return;
+    } catch (e) {
+      if (e.code !== 'ESRCH') {
+        // Different errno (EPERM on locked-down systems). The PID-liveness
+        // branch can't be exercised; fall back to mtime path implicitly.
+        return;
+      }
+    }
+    fs.writeFileSync(lockPath, String(deadPid));
+    // Touch mtime to NOW so the mtime fallback would NOT reclaim. Only the
+    // PID-liveness branch can succeed in <STALE_LOCK_MS.
+    const now = new Date();
+    fs.utimesSync(lockPath, now, now);
+
+    const start = Date.now();
+    await withIndexLock(dir, (current) => {
+      current.entries['reclaimed/probe'] = { fetched_at: new Date().toISOString() };
+      return current;
+    });
+    const elapsed = Date.now() - start;
+    // STALE_LOCK_MS is 30_000; PID-liveness reclaim should complete in well
+    // under a second. Bound at 5s to leave headroom on slow CI.
+    assert.ok(elapsed < 5000,
+      `PID-liveness reclaim must NOT wait for mtime fallback; took ${elapsed}ms`);
+    const idx = JSON.parse(fs.readFileSync(path.join(dir, '_index.json'), 'utf8'));
+    assert.ok(idx.entries['reclaimed/probe']);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
 
-test('the pin gate refuses a swapped public key (attacker-signed index would not authenticate)', () => {
-  // Generate an attacker keypair and a pin file naming a DIFFERENT (legitimate)
-  // fingerprint. The pin check verifyIndexSignature performs is exactly this:
-  // checkExpectedFingerprint(publicKeyFingerprint(<live public.pem>)).
-  const attacker = crypto.generateKeyPairSync('ed25519');
-  const legit = crypto.generateKeyPairSync('ed25519');
-  const attackerPem = attacker.publicKey.export({ type: 'spki', format: 'pem' });
-  const legitFp = publicKeyFingerprint(legit.publicKey.export({ type: 'spki', format: 'pem' }));
-
-  const pinDir = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-pf-pin-mismatch-'));
+test('T P1-3: prefetch tmp-then-lock pattern leaves no orphan payload when lock cannot be acquired', async () => {
+  // We exercise the contract directly by simulating a "lock fails" scenario.
+  // The lock helper uses O_EXCL on a sidecar .lock file with a bounded
+  // retry. We hold the lock open via a sibling process that never releases
+  // it, then drive the prefetch-style write path against the same cache
+  // dir. The expected behavior:
+  //   - The tmp file MAY appear transiently.
+  //   - On lock-acquisition failure, the tmp file MUST be cleaned up.
+  //   - The final payload at entryPath() MUST NOT exist (no orphan).
+  //   - The _index.json entry MUST NOT exist (no phantom index row).
+  //
+  // We test via the published _internal contract: writeFileAtomic + a
+  // never-releasing lockfile, then assert that a follow-up that fails
+  // to lock cleans up its staged tmp file. The lib/prefetch.js change
+  // wraps fetch.then() with a try/catch that unlinks the tmp on lock
+  // failure. We replicate the same shape here.
+  const { _internal } = require('../lib/prefetch.js');
+  const { withIndexLock } = _internal;
+  const dir = tmpDir('t-p1-3');
   try {
-    const pinPath = path.join(pinDir, 'EXPECTED_FINGERPRINT');
-    fs.writeFileSync(pinPath, legitFp.sha256 + '\n');
+    fs.mkdirSync(path.join(dir, 'test'), { recursive: true });
+    // Plant a non-stale, live-PID lockfile so the reclaim paths refuse to
+    // reclaim — withIndexLock will exhaust MAX_RETRIES and throw.
+    const lockPath = path.join(dir, '_index.json.lock');
+    fs.writeFileSync(lockPath, String(process.pid));
+    const now = new Date();
+    fs.utimesSync(lockPath, now, now);
 
-    const result = checkExpectedFingerprint(publicKeyFingerprint(attackerPem), pinPath);
-    assert.equal(result.status, 'mismatch', 'swapped key must mismatch the pin');
-    assert.equal(result.expected, legitFp.sha256);
-    assert.notEqual(result.actual, legitFp.sha256);
-    // Without KEYS_ROTATED=1 the rotation override stays false, so
-    // verifyIndexSignature returns status:"invalid" on this branch.
-    assert.equal(result.rotationOverride, process.env.KEYS_ROTATED === '1');
+    const targetPath = path.join(dir, 'test', 'sample.json');
+    const tmpPath = `${targetPath}.tmp.${process.pid}.${Math.random().toString(36).slice(2, 10)}`;
+    fs.writeFileSync(tmpPath, JSON.stringify({ payload: 'staged' }));
+
+    let threw = false;
+    try {
+      await withIndexLock(dir, (current) => {
+        fs.renameSync(tmpPath, targetPath);
+        current.entries['test/sample'] = { fetched_at: now.toISOString() };
+        return current;
+      });
+    } catch (e) {
+      threw = true;
+      // Cleanup mirrors the lib/prefetch.js catch block.
+      try { fs.unlinkSync(tmpPath); } catch {}
+    }
+    assert.ok(threw, 'withIndexLock must throw when the lockfile cannot be acquired');
+    assert.equal(fs.existsSync(tmpPath), false,
+      'staged tmp file must be unlinked on lock failure (no orphan)');
+    assert.equal(fs.existsSync(targetPath), false,
+      'final payload path must NOT exist when lock failed (no orphan in cache)');
+    assert.equal(fs.existsSync(path.join(dir, '_index.json')), false,
+      'no _index.json entry must be written when lock failed');
   } finally {
-    fs.rmSync(pinDir, { recursive: true, force: true });
+    fs.rmSync(dir, { recursive: true, force: true });
   }
 });
-
-test('the pin gate matches when the live fingerprint equals the pin', () => {
-  const kp = crypto.generateKeyPairSync('ed25519');
-  const pem = kp.publicKey.export({ type: 'spki', format: 'pem' });
-  const fp = publicKeyFingerprint(pem);
-  const pinDir = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-pf-pin-match-'));
-  try {
-    const pinPath = path.join(pinDir, 'EXPECTED_FINGERPRINT');
-    fs.writeFileSync(pinPath, fp.sha256 + '\n');
-    const result = checkExpectedFingerprint(publicKeyFingerprint(pem), pinPath);
-    assert.equal(result.status, 'match');
-  } finally {
-    fs.rmSync(pinDir, { recursive: true, force: true });
-  }
-});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
 });
 
 
-// ---- routed from prefetch-max-errors ----
-require("node:test").describe("prefetch-max-errors", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+// ---- routed from new-exports-smoke ----
+require("node:test").describe("new-exports-smoke", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * Regression: prefetch's warm-cache use must tolerate a few transient per-entry
- * fetch errors without failing the whole refresh.
+ * Smoke tests for the new module exports added in v0.12.24. These tests
+ * are intentionally narrow: they verify the export exists, has the expected
+ * shape, and handles a representative happy-path input. Behavior-coverage
+ * for each function lives in the dedicated test files (csaf-bundle-
+ * correctness, openvex-emission, prefetch, lint-skills).
  *
- * prefetch fans out hundreds (daily) to ~9.7k (Monday) per-CVE/per-RFC fetches
- * against rate-limited public APIs. The errors counter is incremented only
- * after the job queue exhausts its retries, but even so a handful of transient
- * misses per run is expected. Previously `process.exitCode = errors > 0 ? 1 : 0`
- * meant a single transient miss exited 1, and the warm-cache workflow step
- * (bash -e) failed the entire External Data Refresh before the dry-run/apply
- * ever read the cache. `--max-errors <N|N%>` is the tolerance; the default 0
- * preserves the strict any-error-exits-1 contract for a manual operator.
+ * The diff-coverage gate (scripts/check-test-coverage.js) treats any
+ * exported symbol that has no string reference in tests/ as an uncovered
+ * surface change. This file is the canonical "I added an export and a
+ * dedicated behavior test will follow" stop-gap that keeps the gate green.
  */
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('fs');
-const path = require('path');
-const { spawnSync } = require('child_process');
+const path = require('node:path');
 
-const ROOT = path.join(__dirname, '..');
-const { exitCodeForResult, parseErrorThreshold, formatSummary, parseArgs } = require('../lib/prefetch');
+const ROOT = path.resolve(__dirname, '..');
 
-function result(fetched, errors, by_source) {
-  return { fetched, skipped_fresh: 0, errors, by_source: by_source || {} };
+// ---------------------------------------------------------------------------
+// lib/lint-skills.js — air-gap completeness lint
+// ---------------------------------------------------------------------------
+
+
+
+// ---------------------------------------------------------------------------
+// lib/prefetch.js — _index.json Ed25519 signing
+// ---------------------------------------------------------------------------
+
+
+
+
+// ---------------------------------------------------------------------------
+// lib/scoring.js — strict CVSS 3.0/3.1 vector parse
+// ---------------------------------------------------------------------------
+
+
+
+// ---------------------------------------------------------------------------
+// scripts/check-test-coverage.js — coincidence-assert ban
+// ---------------------------------------------------------------------------
+
+test('lib/prefetch exposes canonicalIndexBytes', () => {
+  const prefetch = require(path.join(ROOT, 'lib', 'prefetch.js'));
+  assert.equal(typeof prefetch.canonicalIndexBytes, 'function',
+    'canonicalIndexBytes must be exported as a function');
+  // The canonicaliser must produce bytes (Buffer or string) and exclude the
+  // index_signature field from the canonical input (signing one's own
+  // signature is circular).
+  const bytes = prefetch.canonicalIndexBytes({ entries: { 'a/b': { sha256: 'x' } } });
+  assert.ok(bytes && (Buffer.isBuffer(bytes) || typeof bytes === 'string'),
+    'canonicalIndexBytes must return Buffer or string');
+});
+
+test('lib/prefetch exposes signIndex', () => {
+  const prefetch = require(path.join(ROOT, 'lib', 'prefetch.js'));
+  assert.equal(typeof prefetch.signIndex, 'function',
+    'signIndex must be exported as a function');
+});
+
+test('lib/prefetch exposes verifyIndexSignature', () => {
+  const prefetch = require(path.join(ROOT, 'lib', 'prefetch.js'));
+  assert.equal(typeof prefetch.verifyIndexSignature, 'function',
+    'verifyIndexSignature must be exported as a function');
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
-
-test('exitCodeForResult: default budget 0 keeps the strict manual-operator contract (any error -> 1)', () => {
-  assert.equal(exitCodeForResult(result(850, 1), { maxErrors: 0 }), 1);
-  // No opts at all must equal the old `errors > 0 ? 1 : 0`.
-  assert.equal(exitCodeForResult(result(9737, 1)), 1);
-  assert.equal(exitCodeForResult(result(9737, 0)), 0);
-});
-
-test('exitCodeForResult: zero errors is always exit 0', () => {
-  assert.equal(exitCodeForResult(result(9737, 0), { maxErrors: 0 }), 0);
-  assert.equal(exitCodeForResult(result(851, 0), { maxErrors: '50%' }), 0);
-});
-
-test('exitCodeForResult: the diagnosed transient runs (1/2/23 errors) pass under the warm-cache tolerance', () => {
-  // The exact error counts from the failing refresh runs.
-  assert.equal(exitCodeForResult(result(9737, 1), { maxErrors: 50 }), 0, 'Monday full sweep, 1 error');
-  assert.equal(exitCodeForResult(result(851, 2), { maxErrors: 50 }), 0, '06-07 daily, 2 errors');
-  assert.equal(exitCodeForResult(result(830, 23), { maxErrors: 50 }), 0, '06-06 daily, 23 errors');
-});
-
-test('exitCodeForResult: absolute budget is inclusive at the boundary, strict above it', () => {
-  assert.equal(exitCodeForResult(result(100, 50), { maxErrors: 50 }), 0, '50 <= 50 passes');
-  assert.equal(exitCodeForResult(result(100, 51), { maxErrors: 50 }), 1, '51 > 50 fails');
-});
-
-test('exitCodeForResult: a systemic outage still fails over a percentage budget', () => {
-  // planned = fetched + skipped_fresh + errors. 50% of 853 -> floor 426.
-  assert.equal(exitCodeForResult(result(427, 426), { maxErrors: '50%' }), 0, '426 == floor(0.5*853) passes');
-  assert.equal(exitCodeForResult(result(426, 427), { maxErrors: '50%' }), 1, '427 > floor(0.5*853) fails');
-  assert.equal(exitCodeForResult(result(353, 500), { maxErrors: '50%' }), 1, 'half-dead upstream fails');
-});
-
-test('a source that is entirely unreachable fails regardless of the global budget', () => {
-  // A complete KEV outage: 1 planned, 0 landed, 1 error — well under the
-  // budget, but the refresh would finish having silently skipped KEV.
-  const deadKev = {
-    fetched: 800, skipped_fresh: 0, errors: 1,
-    by_source: { kev: { fetched: 0, skipped_fresh: 0, errors: 1 }, nvd: { fetched: 800, skipped_fresh: 0, errors: 0 } },
-  };
-  assert.equal(exitCodeForResult(deadKev, { maxErrors: 50 }), 1, 'a fully-dead feed must fail even under budget');
-
-  // A partially-degraded source (some entries landed) stays tolerated.
-  const partial = {
-    fetched: 417, skipped_fresh: 0, errors: 23,
-    by_source: { nvd: { fetched: 417, skipped_fresh: 0, errors: 23 } },
-  };
-  assert.equal(exitCodeForResult(partial, { maxErrors: 50 }), 0);
-
-  // An all-fresh source (cache hit, nothing fetched, no errors) does not trip it.
-  const allFresh = {
-    fetched: 0, skipped_fresh: 440, errors: 0,
-    by_source: { nvd: { fetched: 0, skipped_fresh: 440, errors: 0 } },
-  };
-  assert.equal(exitCodeForResult(allFresh, { maxErrors: 50 }), 0);
-});
-
-test('parseErrorThreshold + parseArgs accept integer and percentage; default is 0', () => {
-  assert.equal(parseErrorThreshold('50'), 50);
-  assert.equal(parseErrorThreshold('5%'), '5%');
-  assert.equal(parseArgs(['node', 'prefetch.js']).maxErrors, 0);
-  assert.equal(parseArgs(['node', 'prefetch.js', '--max-errors', '50']).maxErrors, 50);
-  assert.equal(parseArgs(['node', 'prefetch.js', '--max-errors=5%']).maxErrors, '5%');
-});
-
-test('parseErrorThreshold throws on a malformed value (drives exit 2 in main)', () => {
-  assert.throws(() => parseErrorThreshold('abc'));
-  assert.throws(() => parseErrorThreshold('50%%'));
-  assert.throws(() => parseErrorThreshold('-5'));
-  // parseArgs records the error rather than throwing, so main() can refuse.
-  assert.ok(parseArgs(['node', 'prefetch.js', '--max-errors', 'abc'])._argError);
-});
-
-test('a malformed --max-errors exits 2 (usage error), not 1 or a silent unbounded tolerance', () => {
-  const r = spawnSync(process.execPath, [path.join(ROOT, 'lib', 'prefetch.js'), '--no-network', '--max-errors', 'abc'], { encoding: 'utf8' });
-  assert.equal(r.status, 2);
-  assert.match(r.stderr || r.stdout || '', /invalid --max-errors/);
-});
-
-test('formatSummary names the per-source error counts so a --quiet log is actionable', () => {
-  const line = formatSummary(result(830, 23, { nvd: { errors: 20 }, epss: { errors: 3 }, kev: { errors: 0 } }), {});
-  assert.match(line, /23 error\(s\)/);
-  assert.match(line, /nvd=20/);
-  assert.match(line, /epss=3/);
-  assert.doesNotMatch(line, /kev=/, 'sources with zero errors are omitted from the breakdown');
-  // No breakdown bracket when there are no errors.
-  assert.doesNotMatch(formatSummary(result(853, 0, { nvd: { errors: 0 } }), {}), /\[/);
-});
-
-test('the refresh workflow warm-cache step carries the --max-errors tolerance', () => {
-  const yaml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'refresh.yml'), 'utf8');
-  assert.match(
-    yaml,
-    /node lib\/prefetch\.js --quiet --max-errors 50\b/,
-    'the warm-cache prefetch invocation must pass --max-errors so a transient per-entry miss no longer fails the whole refresh',
-  );
-});
-});
-
-
-// ---- routed from prefetch-retry-status-field ----
-require("node:test").describe("prefetch-retry-status-field", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
-// Regression: prefetch's timedFetch must tag HTTP failures with the field the
-// vendored retry classifier actually reads (err.statusCode), so a transient
-// 429/5xx from a KEV/NVD/EPSS/OSV source routes through the job-queue backoff
-// instead of being dropped on the first hiccup. Earlier it set only err.status,
-// which vendor/blamejs/retry.js isRetryable never inspects — every retryable
-// HTTP status was misclassified non-retryable and the fetch failed after one
-// attempt with no backoff.
-
-const test = require('node:test');
-const assert = require('node:assert/strict');
-
-const prefetch = require('../lib/prefetch');
-const { timedFetch } = prefetch._internal;
-const { JobQueue } = require('../lib/job-queue');
-const { isRetryable } = require('../vendor/blamejs/retry');
-
-function withStubbedFetch(impl, fn) {
-  const orig = global.fetch;
-  global.fetch = impl;
-  return Promise.resolve()
-    .then(fn)
-    .finally(() => { global.fetch = orig; });
-}
-
-test('timedFetch tags HTTP failures with statusCode the vendored classifier reads', async () => {
-  let thrown;
-  await withStubbedFetch(
-    async () => ({ ok: false, status: 503, headers: { get: () => null }, json: async () => ({}) }),
-    async () => {
-      try {
-        await timedFetch('https://example.test/kev.json');
-        assert.fail('expected timedFetch to throw on a 503');
-      } catch (err) {
-        thrown = err;
-      }
-    }
-  );
-  // Exact field + value the classifier keys off, and the classifier verdict.
-  assert.equal(thrown.statusCode, 503);
-  assert.equal(typeof thrown.statusCode, 'number');
-  assert.equal(isRetryable(thrown), true, 'a 503 from timedFetch must classify retryable');
-});
-
-test('a transient 503 from timedFetch is retried through the job-queue backoff', async () => {
-  const q = new JobQueue({
-    sources: { kev: { concurrency: 1 } },
-    retry: { maxAttempts: 3, baseDelayMs: 1, maxDelayMs: 2, jitterFactor: 0 },
-  });
-  let calls = 0;
-  await withStubbedFetch(
-    async () => {
-      calls++;
-      if (calls <= 2) {
-        return { ok: false, status: 503, headers: { get: () => null }, json: async () => ({}) };
-      }
-      return { ok: true, status: 200, headers: { get: () => null }, json: async () => ({ ok: true }) };
-    },
-    async () => {
-      const res = await q.add({
-        source: 'kev',
-        run: () => timedFetch('https://example.test/kev.json'),
-        meta: { id: 'x' },
-      });
-      assert.deepEqual(res.json, { ok: true });
-    }
-  );
-  await q.drain();
-  const s = q.stats().kev;
-  assert.equal(calls, 3, 'timedFetch must be called maxAttempts times for two 503s then a 200');
-  assert.equal(s.retried, 2, 'job-queue must record two retries');
-  assert.equal(s.completed, 1);
-  assert.equal(s.failed, 0);
-});
-
-test('a permanent 404 from timedFetch is NOT retried', async () => {
-  const q = new JobQueue({
-    sources: { kev: { concurrency: 1 } },
-    retry: { maxAttempts: 5, baseDelayMs: 1, maxDelayMs: 2, jitterFactor: 0 },
-  });
-  let calls = 0;
-  await withStubbedFetch(
-    async () => {
-      calls++;
-      return { ok: false, status: 404, headers: { get: () => null }, json: async () => ({}) };
-    },
-    async () => {
-      await assert.rejects(
-        q.add({ source: 'kev', run: () => timedFetch('https://example.test/missing.json'), meta: { id: 'y' } }),
-        /HTTP 404/
-      );
-    }
-  );
-  await q.drain();
-  assert.equal(calls, 1, 'a 404 must fail on the first attempt with no retry');
-  assert.equal(q.stats().kev.retried, 0);
-});
 });

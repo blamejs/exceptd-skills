@@ -265,136 +265,210 @@ describe('attestation-trust-boundary (reattest slice)', () => {
 });
 
 
-// ---- routed from reattest-pin-and-persist ----
-require("node:test").describe("reattest-pin-and-persist", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+// ---- routed from renderer-and-reattest-traversal ----
+require("node:test").describe("renderer-and-reattest-traversal", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * tests/reattest-pin-and-persist.test.js
+ * Regression suite for a cluster found auditing the human-readable output
+ * paths and the attestation read verbs:
  *
- * Two trust-boundary regressions on the attestation surface:
+ *   SECURITY — `reattest` joined an unvalidated session-id into a filesystem
+ *     path, so `reattest "../.."` escaped the attestation root to read a forged
+ *     attestation and write a signed replay record outside the root. It now
+ *     validates the session-id at the same boundary the other read verbs use.
  *
- *   1. A keys/public.pem failing the EXPECTED_FINGERPRINT pin must be a
- *      TAMPER class, not a benign "unsigned attestation" config state.
- *      verifyAttestationSidecar tags the pin-failure return with
- *      tamper_class:"fingerprint-mismatch"; the shared replay-refusal
- *      predicate and the sidecar classifier must both honour it —
- *      otherwise reattest replays against a swapped key while the sibling
- *      `attest verify` correctly refuses.
+ *   run-multi (`run --all` / `run-all`) had no human renderer and dumped the
+ *     full (hundreds-of-KB) JSON even in default mode; it now prints a table.
  *
- *   2. persistAttestation's create path must not orphan the placed body
- *      when the sidecar rename fails after the body landed: an orphaned
- *      unsigned body holds the slot forever (every retry collides EEXIST,
- *      verification reports the attestation unsigned).
+ *   `attest diff --against` dumped raw JSON while the no-against branch
+ *     rendered a summary; both now share one renderer.
  *
- * Exit-code/predicate assertions are exact; every field-presence check is
- * paired with a content-shape check.
+ *   run-renderer detail: CVE KEV renders Y/N (not the raw boolean), a
+ *     deterministic indicator doesn't print "deterministic/deterministic",
+ *     and a `message`-shaped preflight warning isn't shown as "(no detail)".
+ *
+ * Discipline: exact exit codes; value + type assertions; the security test
+ * asserts BOTH the refusal AND that nothing was written outside the root.
+ */
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const { makeSuiteHome, makeCli, tryJson } = require("./_helpers/cli");
+
+const cli = makeCli(makeSuiteHome("exceptd-renderer-"));
+
+// The shared harness sets EXCEPTD_RAW_JSON=1, which forces JSON and bypasses
+// the human renderer. Human-mode tests pass HUMAN env to disable it ("" is
+// falsy under the `!!process.env.EXCEPTD_RAW_JSON` check).
+const HUMAN = { EXCEPTD_RAW_JSON: "" };
+
+const DET2 = JSON.stringify({ signal_overrides: { "aws-secret-access-key": "hit", "github-personal-access-token": "hit" } });
+
+test("SECURITY: reattest refuses a path-traversal session-id and writes nothing outside the root", () => {
+  // Isolated home so the attestation root is a known tempdir.
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "exceptd-trav-"));
+  try {
+    const env = { EXCEPTD_HOME: home };
+    // seed a real attestation so the root exists
+    cli(["run", "secrets", "--evidence", "-"], { input: DET2, env });
+    // plant a forged attestation OUTSIDE the attestations root (sibling under home)
+    const escape = path.join(home, "escape-target");
+    fs.mkdirSync(escape, { recursive: true });
+    fs.writeFileSync(path.join(escape, "attestation.json"), JSON.stringify({
+      session_id: "v", playbook_id: "secrets", directive_id: "full-repo-secret-scan",
+      evidence_hash: "deadbeef", submission: { signal_overrides: {} }, captured_at: "2026-01-01T00:00:00Z",
+    }));
+    // attestations root is <home>/attestations; traverse up into escape-target
+    const r = cli(["reattest", "../escape-target", "--force-replay", "--json"], { env });
+    assert.equal(r.status, 1, "traversal must be refused with exit 1");
+    const body = tryJson(r.stderr) || tryJson(r.stdout);
+    assert.ok(body && body.ok === false, "must emit a structured refusal");
+    assert.match(body.error, /Invalid session-id/, "must name the validation failure");
+    // and CRUCIALLY: no replay record was written into the out-of-root dir
+    const wrote = fs.readdirSync(escape).some(f => f.startsWith("replay-"));
+    assert.equal(wrote, false, "reattest must NOT write a replay record outside the attestation root");
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("reattest still works for a valid session-id", () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "exceptd-trav2-"));
+  try {
+    const env = { EXCEPTD_HOME: home };
+    const run = tryJson(cli(["run", "secrets", "--evidence", "-", "--json"], { input: DET2, env }).stdout);
+    const r = cli(["reattest", run.session_id, "--force-replay", "--json"], { env });
+    const body = tryJson(r.stdout);
+    assert.ok(body, "valid reattest must emit JSON");
+    assert.equal(body.status, "unchanged", "replaying the recorded submission reproduces the prior hash");
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from runtime-errors-and-vex-disposition ----
+require("node:test").describe("runtime-errors-and-vex-disposition", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Tests for the audit-AA P1 closures:
+ *
+ *   AA P1-1  `algorithm: "unsigned"` sidecar substitution is now detected
+ *            by both `attest verify` (exit 6 when private key present) and
+ *            `cmdReattest` (requires --force-replay regardless).
+ *   AA P1-2  Corrupt-JSON .sig sidecar surfaces as a structured tamper-class
+ *            result rather than throwing through the dispatcher. Both
+ *            `attest verify` and `cmdReattest` exit 6.
+ *   AA P1-3  `lib/verify.js verifyManifestSignature()` consults
+ *            `keys/EXPECTED_FINGERPRINT` BEFORE crypto.verify. Library
+ *            callers (refresh-network, verify-shipped-tarball, downstream
+ *            consumers) can no longer bypass the pin.
+ *
+ * Per the "coincidence-passing tests" rule: every exit-code assertion
+ * is EXACT (assert.equal(r.status, 6)), never notEqual(0).
  */
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 
-const ROOT = path.join(__dirname, '..');
-const cliMod = require(path.join(ROOT, 'bin', 'exceptd.js'));
+const { ROOT, makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
 
-test('replay-refusal predicate treats every tamper class as tamper, benign states as benign', () => {
-  const tampered = [
-    { signed: true, verified: false, reason: 'signature mismatch' },
-    { signed: false, verified: false, tamper_class: 'sidecar-corrupt', reason: 'sidecar JSON parse failed' },
-    { signed: false, verified: false, tamper_class: 'unsigned-substitution', reason: 'unsigned sidecar on signing host' },
-    { signed: false, verified: false, tamper_class: 'algorithm-unsupported', reason: 'algorithm "none"' },
-    { signed: false, verified: false, tamper_class: 'fingerprint-mismatch', reason: 'EXPECTED_FINGERPRINT mismatch: live=A pin=B' },
-  ];
-  for (const v of tampered) {
-    assert.equal(cliMod._isTamperedSidecarVerify(v), true,
-      `must refuse replay for ${v.tamper_class || 'signed-but-invalid'}`);
-  }
-  const benign = [
-    { signed: true, verified: true },
-    { signed: false, verified: false, reason: 'no .sig sidecar' },
-    { signed: false, verified: false, reason: 'attestation explicitly unsigned (no private key on host)' },
-    null,
-    undefined,
-  ];
-  for (const v of benign) {
-    assert.equal(cliMod._isTamperedSidecarVerify(v), false,
-      `must not classify ${v ? JSON.stringify(v).slice(0, 60) : String(v)} as tamper`);
-  }
-});
+const SUITE_HOME = makeSuiteHome('exceptd-audit-aa-');
+const cli = makeCli(SUITE_HOME);
 
-test('sidecar classifier labels the pin-failure class', () => {
-  const label = cliMod._classifySidecarVerify({
-    signed: false, verified: false,
-    tamper_class: 'fingerprint-mismatch',
-    reason: 'EXPECTED_FINGERPRINT mismatch: live=A pin=B',
+const PKG_PRIV_KEY = path.join(ROOT, '.keys', 'private.pem');
+const HAS_PRIV_KEY = fs.existsSync(PKG_PRIV_KEY);
+
+function locateAttestation(sid) {
+  const candidates = [
+    path.join(SUITE_HOME, 'attestations', sid),
+    path.join(SUITE_HOME, '.exceptd', 'attestations', sid),
+  ];
+  const attRoot = candidates.find(p => fs.existsSync(p));
+  if (!attRoot) return null;
+  const files = fs.readdirSync(attRoot).filter(f => f.endsWith('.json') && !f.endsWith('.sig'));
+  if (files.length === 0) return null;
+  return { dir: attRoot, jsonFile: path.join(attRoot, files[0]), sigFile: path.join(attRoot, files[0] + '.sig') };
+}
+
+// ---------------------------------------------------------------------------
+// AA P1-1 — `algorithm: "unsigned"` substitution detection
+// ---------------------------------------------------------------------------
+
+test('AA P1-1: reattest refuses an explicitly-unsigned attestation without --force-replay',
+  { skip: !HAS_PRIV_KEY && 'private key required to produce a signed attestation that we then convert to unsigned' },
+  () => {
+    // Produce a signed attestation, swap the .sig for the unsigned stub
+    // (mimics either substitution OR a legitimately-unsigned attestation
+    // surfaced to a host with a private key). Reattest must refuse without
+    // --force-replay regardless of host private-key state.
+    const sid = 'aa-p11-unsigned-replay-' + Date.now();
+    const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
+    const r1 = cli(['run', 'library-author', '--evidence', '-', '--session-id', sid], { input: sub });
+    assert.equal(r1.status, 0, 'producer run must succeed');
+
+    const att = locateAttestation(sid);
+    assert.ok(att);
+    fs.writeFileSync(att.sigFile, JSON.stringify({
+      algorithm: 'unsigned',
+      signed: false,
+      signs_path: path.basename(att.jsonFile),
+    }, null, 2));
+
+    // No --force-replay → exit 6.
+    const r = cli(['reattest', sid, '--json']);
+    assert.equal(r.status, 6,
+      `reattest against an unsigned/substituted sidecar must exit 6 without --force-replay. Got status=${r.status}. stderr=${r.stderr.slice(0,400)}`);
   });
-  assert.equal(label, 'fingerprint-mismatch');
-});
 
-test('verifyAttestationSidecar pin-failure return carries the tamper class (source wiring)', () => {
-  // The pin failure cannot be triggered end-to-end without swapping the
-  // repository's own keys/public.pem (forbidden in tests), so pin the
-  // wiring structurally: inside verifyAttestationSidecar, the pinError
-  // branch must return tamper_class:"fingerprint-mismatch".
-  const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
-  const fnIdx = src.indexOf('function verifyAttestationSidecar(');
-  assert.notEqual(fnIdx, -1, 'verifyAttestationSidecar must exist'); // allow-notEqual: refusal-pin (structural existence check)
-  const window = src.slice(fnIdx, fnIdx + 2500);
-  assert.match(window, /assertExpectedFingerprint/,
-    'the sidecar verifier must consult the fingerprint pin');
-  assert.match(window, /tamper_class:\s*"fingerprint-mismatch"/,
-    'the pin-failure return must carry tamper_class:"fingerprint-mismatch" so consumers refuse replay');
-});
+test('AA P1-1: reattest --force-replay accepts explicitly-unsigned and records sidecar_verify_class + force_replay',
+  { skip: !HAS_PRIV_KEY && 'producer run requires private key to create signed attestation we then re-sidecar' },
+  () => {
+    const sid = 'aa-p11-force-' + Date.now();
+    const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
+    const r1 = cli(['run', 'library-author', '--evidence', '-', '--session-id', sid], { input: sub });
+    assert.equal(r1.status, 0);
 
-test('persistAttestation releases the slot when the sidecar cannot be placed after the body landed', () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'persist-orphan-'));
-  const prevHome = process.env.EXCEPTD_HOME;
-  process.env.EXCEPTD_HOME = tmp;
-  try {
-    const sid = 'orphan-slot-check';
-    const sessionDir = path.join(tmp, 'attestations', sid);
-    fs.mkdirSync(sessionDir, { recursive: true });
-    const bodyPath = path.join(sessionDir, 'kernel.json');
-    // Block the sidecar destination with a DIRECTORY: the body hard-link
-    // succeeds, the sidecar rename onto a directory fails on every
-    // platform, and the create path must then release the slot.
-    fs.mkdirSync(bodyPath + '.sig');
+    const att = locateAttestation(sid);
+    assert.ok(att);
+    fs.writeFileSync(att.sigFile, JSON.stringify({
+      algorithm: 'unsigned',
+      signed: false,
+      signs_path: path.basename(att.jsonFile),
+    }, null, 2));
 
-    const args = {
-      sessionId: sid,
-      playbookId: 'kernel',
-      directiveId: 'all-catalogued-kernel-cves',
-      evidenceHash: '0'.repeat(64),
-      operator: 'fixture',
-      operatorConsent: { explicit: true },
-      submission: { signals: {} },
-      runOpts: {},
-      forceOverwrite: false,
-      filename: 'kernel.json',
-    };
-    const failed = cliMod.persistAttestation(args);
-    assert.equal(failed.ok, false, 'sidecar placement failure must not report success');
-    assert.equal(typeof failed.error, 'string');
-    assert.match(failed.error, /Failed to write attestation/,
-      'the failure surfaces as the structured write-failure envelope');
-    assert.equal(fs.existsSync(bodyPath), false,
-      'the placed body must be removed so the slot is not held by an orphaned unsigned attestation');
-
-    // Once the obstruction is gone, the same create succeeds cleanly —
-    // proving the failed attempt left no EEXIST residue.
-    fs.rmdirSync(bodyPath + '.sig');
-    const r = cliMod.persistAttestation(args);
-    assert.equal(r.ok, true, `retry after obstruction removal must succeed; got ${JSON.stringify(r).slice(0, 200)}`);
-    assert.equal(fs.existsSync(bodyPath), true, 'body placed');
-    assert.equal(fs.statSync(bodyPath + '.sig').isFile(), true, 'sidecar placed as a file');
-  } finally {
-    if (prevHome === undefined) delete process.env.EXCEPTD_HOME;
-    else process.env.EXCEPTD_HOME = prevHome;
-    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* tempdir cleanup is best-effort */ }
-  }
-});
+    const r = cli(['reattest', sid, '--force-replay', '--json']);
+    assert.equal(r.status, 0,
+      `reattest --force-replay against an unsigned sidecar must succeed (exit 0). Got status=${r.status}. stderr=${r.stderr.slice(0,400)}`);
+    const body = tryJson(r.stdout) || {};
+    assert.equal(body.force_replay, true, 'emit body must record force_replay:true');
+    // The classification label captures WHICH override class was overridden.
+    // Both "unsigned-substitution" (when private key present) and
+    // "explicitly-unsigned" (no private key) are acceptable here — the host
+    // private-key state determines which the verifier reports.
+    assert.ok(
+      body.sidecar_verify_class === 'explicitly-unsigned' || body.sidecar_verify_class === 'unsigned-substitution',
+      `sidecar_verify_class must be "explicitly-unsigned" or "unsigned-substitution"; got ${JSON.stringify(body.sidecar_verify_class)}`
+    );
+  });
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
 });

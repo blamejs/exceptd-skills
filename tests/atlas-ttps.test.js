@@ -1,22 +1,32 @@
 "use strict";
 
 
-// ---- routed from atlas-version-canonical ----
-;(() => {
+// ---- routed from hard-rule-forcing-functions ----
+require("node:test").describe("hard-rule-forcing-functions", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * tests/atlas-version-canonical.test.js
+ * tests/hard-rule-forcing-functions.test.js
  *
- * Single source of truth for the project's pinned ATLAS version is
- * data/atlas-ttps.json._meta.atlas_version. Every operator-facing
- * reference across docs, agents, GitHub templates, and skill bodies
- * must match it. Pre-fix the contributor/maintainer/context/agent
- * docs cited a stale v5.1.0 while the catalog had moved to v5.4.0 —
- * Hard Rule #8 was theater because half the codebase didn't obey it.
+ * Cycle 16 audit fix (v0.12.36): closes 3 gaps in AGENTS.md Hard Rule
+ * forcing-function coverage. Without these tests the rules were
+ * policy-only — a future PR could violate them and the CI gate would
+ * stay green.
  *
- * This test scans operator-facing surfaces and refuses any version
- * string that doesn't match the catalog's atlas_version. A future
- * ATLAS bump becomes a one-line change in data/atlas-ttps.json + a
- * bulk replace elsewhere; the test surfaces every site that drifted.
+ *   Rule #3 (no CVSS-only risk scoring): every non-draft CVE in
+ *     data/cve-catalog.json must declare rwep_score + rwep_factors.
+ *
+ *   Rule #5 (global-first, not US-centric): the framework-control-gaps
+ *     catalog must carry entries for EU + UK + AU + INTL alongside US.
+ *
+ *   Rule #8 (Pinned ATLAS version): manifest.json's atlas_version field
+ *     must equal data/atlas-ttps.json._meta.atlas_version exactly, and
+ *     same for attack_version. Pre-cycle-9 these drifted silently.
+ *
+ *   Cross-format CVE consistency: CSAF + OpenVEX + SARIF emitters must
+ *     agree on the catalogued-CVE set per playbook run.
+ *
+ * Per the anti-coincidence rule, every assertion checks an EXACT
+ * value (deep-equality or specific count).
  */
 
 const test = require('node:test');
@@ -25,119 +35,35 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
-const atlasMeta = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'atlas-ttps.json'), 'utf8'));
-const CANONICAL_ATLAS = atlasMeta._meta.atlas_version;
+const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
+const cve = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'cve-catalog.json'), 'utf8'));
+const gaps = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'framework-control-gaps.json'), 'utf8'));
+const atlas = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'atlas-ttps.json'), 'utf8'));
+const attack = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'attack-techniques.json'), 'utf8'));
 
-// Operator-facing surfaces that explicitly reference ATLAS versions.
-// CHANGELOG.md is excluded because historical entries necessarily cite
-// the version current at their release date.
-const FILES_TO_CHECK = [
-  'AGENTS.md',
-  'CONTRIBUTING.md',
-  'MAINTAINERS.md',
-  'CONTEXT.md',
-  'ARCHITECTURE.md',
-  'README.md',
-  'SECURITY.md',
-  '.github/copilot-instructions.md',
-  '.github/PULL_REQUEST_TEMPLATE.md',
-  '.cursorrules',
-];
 
-function listSkillBodies() {
-  const skillsDir = path.join(ROOT, 'skills');
-  if (!fs.existsSync(skillsDir)) return [];
-  const out = [];
-  for (const name of fs.readdirSync(skillsDir)) {
-    const p = path.join(skillsDir, name, 'skill.md');
-    if (fs.existsSync(p)) out.push(path.relative(ROOT, p));
-  }
-  return out;
+function frameworkRegion(frameworkText) {
+  if (!frameworkText) return 'OTHER';
+  if (/NIST|FedRAMP|CMMC|HIPAA|HITRUST|PCI|SOC|CIS Controls|OFAC|SEC|NYDFS|CIRCIA/i.test(frameworkText)) return 'US';
+  if (/NIS2|DORA|GDPR|^EU |EU-|ENISA|CRA |AI Act|EU 2014\/833/i.test(frameworkText)) return 'EU';
+  if (/\b(?:UK|CAF|Ofcom|NCSC|OFSI|UK-GDPR)\b/i.test(frameworkText)) return 'UK';
+  if (/\b(?:AU|ACSC|ISM|Essential 8|APRA|eSafety|AU NDB)\b/i.test(frameworkText)) return 'AU';
+  if (/\b(?:ISO|IEC \d|3GPP|GSMA|ITU|FCC|TSA|OWASP|SLSA|CycloneDX|SPDX)\b/i.test(frameworkText)) return 'INTL';
+  return 'OTHER';
 }
 
-function listAgentBodies() {
-  const agentsDir = path.join(ROOT, 'agents');
-  if (!fs.existsSync(agentsDir)) return [];
-  return fs.readdirSync(agentsDir)
-    .filter(f => f.endsWith('.md'))
-    .map(f => path.relative(ROOT, path.join(agentsDir, f)));
+test('Hard Rule #8 — manifest.atlas_version matches data/atlas-ttps.json._meta.atlas_version exactly', () => {
+  const manifestPin = manifest.atlas_version;
+  const catalogPin = atlas._meta.atlas_version;
+  assert.equal(typeof manifestPin, 'string', 'manifest.atlas_version must be set');
+  assert.equal(typeof catalogPin, 'string', 'atlas-ttps._meta.atlas_version must be set');
+  assert.equal(manifestPin, catalogPin,
+    `Rule #8 violation: manifest pins ATLAS v${manifestPin} but catalog meta is v${catalogPin}. Pre-cycle-9 silent-drift class re-introduced.`);
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
-
-// Match "ATLAS v5.x.x" or "ATLAS v5.x" — captures any version string in
-// the ATLAS namespace. Conservative: only fires on explicit
-// "ATLAS v<digits>" so "ATT&CK v19.0" / "RFC 5280 v3" aren't captured.
-const ATLAS_VERSION_RE = /ATLAS\s+v?(\d+\.\d+(?:\.\d+)?)/g;
-
-function scanFile(rel) {
-  const abs = path.join(ROOT, rel);
-  if (!fs.existsSync(abs)) return [];
-  const text = fs.readFileSync(abs, 'utf8');
-  const drift = [];
-  let m;
-  ATLAS_VERSION_RE.lastIndex = 0;
-  while ((m = ATLAS_VERSION_RE.exec(text)) !== null) {
-    const found = m[1];
-    if (found !== CANONICAL_ATLAS) {
-      const lineNo = text.slice(0, m.index).split('\n').length;
-      drift.push(`${rel}:${lineNo} — found ATLAS v${found}, expected v${CANONICAL_ATLAS}`);
-    }
-  }
-  return drift;
-}
-
-test('atlas-ttps.json._meta.atlas_version is the canonical pin', () => {
-  assert.equal(typeof CANONICAL_ATLAS, 'string');
-  // ATLAS moved its content versioning to CalVer (YYYY.MM[.N]) at v2026.05;
-  // earlier pins were 3-part semver. Accept either shape.
-  assert.match(CANONICAL_ATLAS, /^(\d{4}\.\d{2}(?:\.\d+)?|\d+\.\d+\.\d+)$/, `atlas_version must be CalVer YYYY.MM[.N] or semver; got ${CANONICAL_ATLAS}`);
 });
-
-test('every ATLAS version reference in operator-facing docs matches the canonical pin', () => {
-  const drift = [];
-  for (const rel of FILES_TO_CHECK) drift.push(...scanFile(rel));
-  assert.equal(drift.length, 0,
-    `ATLAS version drift in operator-facing docs (canonical v${CANONICAL_ATLAS}):\n  ${drift.join('\n  ')}`);
-});
-
-test('manifest.json carries the same ATLAS version pin', () => {
-  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
-  assert.equal(manifest.atlas_version, CANONICAL_ATLAS,
-    `manifest.json.atlas_version (${manifest.atlas_version}) must match data/atlas-ttps.json._meta.atlas_version (${CANONICAL_ATLAS}).`);
-});
-
-test('every skill body referencing ATLAS uses the canonical version', () => {
-  const drift = [];
-  for (const rel of listSkillBodies()) drift.push(...scanFile(rel));
-  assert.equal(drift.length, 0,
-    `ATLAS version drift in skill bodies (canonical v${CANONICAL_ATLAS}):\n  ${drift.join('\n  ')}`);
-});
-
-test('every agent body referencing ATLAS uses the canonical version', () => {
-  const drift = [];
-  for (const rel of listAgentBodies()) drift.push(...scanFile(rel));
-  assert.equal(drift.length, 0,
-    `ATLAS version drift in agent bodies (canonical v${CANONICAL_ATLAS}):\n  ${drift.join('\n  ')}`);
-});
-
-test('no legacy semver ATLAS version (v5.x) lingers in .github workflows / issue templates', () => {
-  // The canonical ATLAS pin moved to CalVer (2026.05); a `v5.x` ATLAS-era
-  // reference in an operator-facing .github file is stale drift. The main
-  // adjacency regex misses these because the version sits a few words after
-  // "ATLAS" (e.g. "ATLAS version (v5.1.0)", "ATLAS TTP(s) (v5.1.0)").
-  const ghFiles = [];
-  for (const sub of ['workflows', 'ISSUE_TEMPLATE']) {
-    const dir = path.join(ROOT, '.github', sub);
-    if (!fs.existsSync(dir)) continue;
-    for (const f of fs.readdirSync(dir)) {
-      if (/\.(ya?ml|md)$/.test(f)) ghFiles.push(path.join('.github', sub, f));
-    }
-  }
-  const stale = [];
-  for (const rel of ghFiles) {
-    const text = fs.readFileSync(path.join(ROOT, rel), 'utf8');
-    const m = text.match(/ATLAS[^\n]{0,40}?v5\.\d+(?:\.\d+)?/gi);
-    if (m) stale.push(`${rel}: ${m.join(', ')}`);
-  }
-  assert.equal(stale.length, 0, `stale legacy ATLAS v5.x in .github:\n  ${stale.join('\n  ')}`);
-});
-})();

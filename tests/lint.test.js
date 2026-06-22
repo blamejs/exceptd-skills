@@ -1,77 +1,243 @@
 "use strict";
 
 
-// ---- routed from lint-unknown-precondition-key ----
-require("node:test").describe("lint-unknown-precondition-key", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+// ---- routed from operator-bugs ----
+require("node:test").describe("operator-bugs", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * Regression: `lint` flags precondition_checks keys the playbook does not
- * declare. Pre-fix, the flat `observations` shape surfaced a foreign
- * precondition id (e.g. crypto collector attesting `kernel-symbols-readable`, which
- * belongs to kernel/runtime/hardening) as unknown_observation_key, but the
- * nested `precondition_checks` shape every collector actually emits was never
- * checked — so collector↔playbook precondition-id drift was silent on the
- * canonical collect→lint path. The new unknown_precondition_key check mirrors
- * unknown_artifact_key / unknown_signal_override_key symmetrically.
+ * Operator-reported bug regression suite.
+ *
+ * Every operator-reported bug that has been fixed lands here as a named test
+ * case so re-introductions surface at `npm test`, not at user re-report.
+ * Numbering matches the operator report sequence (items #1 through #N as
+ * reported across the v0.9.5 → v0.11.x arc).
+ *
+ * Pattern for new items:
+ *   describe('#N short label', () => { it('precise behavior', ...); });
+ *
+ * Avoid coupling tests to file paths / playbook IDs that may change. Prefer
+ * direct runner exercises over CLI shell-outs where possible — CLI tests
+ * stay narrow (smoke-level) because they spawn subprocesses and slow the
+ * suite down.
  */
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
+const fs = require('node:fs');
+const { spawnSync } = require('node:child_process');
 
-const { makeSuiteHome, makeCli, tryJson, secureTmpFile } = require('./_helpers/cli');
+const { ROOT, CLI, makeSuiteHome, makeCli, tryJson, secureTmpFile } = require('./_helpers/cli');
+const runner = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
 
-const SUITE_HOME = makeSuiteHome('exceptd-lint-precondition-');
+const SUITE_HOME = makeSuiteHome('exceptd-operator-bugs-');
 const cli = makeCli(SUITE_HOME);
 
-function writeEvidence(name, obj) {
-  const p = secureTmpFile(`${name}.json`, 'exceptd-lint-pre-');
-  fs.writeFileSync(p, JSON.stringify(obj));
-  return p;
+// ===================================================================
+
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+// ===================================================================
+
+// ===================================================================
+
+
+
+// ===================================================================
+
+
+
+// ===================================================================
+
+
+
+
+// ===================================================================
+
+
+// ===================================================================
+
+// ===================================================================
+// CSAF framework gaps emit as `document.notes[]` with `category: details`,
+// not as `vulnerabilities[]` entries with `ids: [{system_name:
+// 'exceptd-framework-gap'}]`. The `system_name` slot is reserved for
+// recognised vulnerability tracking authorities (CVE, GHSA, etc.); the
+// custom string is rejected by NVD / ENISA / Red Hat dashboards. Notes
+// are the right home for advisory context, not pseudo-CVEs. The test
+// asserts the notes-based shape and anti-asserts the pseudo-vulnerability
+// shape.
+
+
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===================================================================
+// v0.11.14 freshness additions — opt-in registry check + upstream-check
+// + refresh --network. Tests use EXCEPTD_REGISTRY_FIXTURE so they're
+// fully offline-deterministic.
+// ===================================================================
+
+function withFixture(version, daysAgo) {
+  const file = secureTmpFile('npm-fixture.json', 'npm-fixture-');
+  const publishedAt = new Date(Date.now() - daysAgo * 24 * 3600 * 1000).toISOString();
+  fs.writeFileSync(file, JSON.stringify({
+    "dist-tags": { latest: version },
+    version,
+    time: { [version]: publishedAt, modified: publishedAt },
+  }));
+  return file;
 }
 
-function lint(playbook, evidencePath) {
-  const r = cli(['lint', playbook, evidencePath, '--json']);
-  const body = tryJson((r.stdout || '').trim()) || {};
-  return { r, body, issues: body.issues || [] };
+
+
+
+
+
+
+
+// ===================================================================
+// v0.12.0 — GHSA source + refresh --advisory + refresh --curate
+// ===================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===================================================================
+
+test('#83 lint follows val.artifact indirection', () => {
+  // Submission uses arbitrary observation keys + val.artifact indirection.
+  // Pre-0.11.5 lint reported missing_required_artifact because it didn't
+  // walk val.artifact. Post-fix, lint normalizes through the runner's
+  // normalizeSubmission and validates the canonical shape.
+  const pb = runner.loadPlaybook('library-author');
+  const requiredId = (pb.phases.look.artifacts || []).find(a => a.required)?.id;
+  if (!requiredId) return; // skip if playbook has no required artifacts
+  const sub = JSON.stringify({
+    observations: {
+      'obs-1': { artifact: requiredId, captured: true, value: 'x', indicator: 'publish-workflow-uses-static-token', result: 'miss' }
+    }
+  });
+  // Write to a tmp file for lint.
+  const tmpFile = secureTmpFile('ev.json', 'lint-');
+  fs.writeFileSync(tmpFile, sub);
+  const r = cli(['lint', 'library-author', tmpFile, '--json']);
+  fs.unlinkSync(tmpFile);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'lint output should be JSON');
+  const missingErrors = (data.issues || []).filter(i => i.kind === 'missing_required_artifact' && i.artifact_id === requiredId);
+  assert.equal(missingErrors.length, 0,
+    `lint should follow val.artifact indirection — required artifact ${requiredId} was provided as observations["obs-1"].artifact`);
+});
+
+test('#83 lint and run agree on the same flat submission', () => {
+  // Load the playbook to discover its real required-artifact ids dynamically
+  // rather than hard-coding (which makes the test brittle to playbook edits).
+  const pb = runner.loadPlaybook('library-author');
+  const requiredArtifacts = (pb.phases.look.artifacts || []).filter(a => a.required);
+  const ind = (pb.phases.detect.indicators || [])[0]?.id;
+  if (requiredArtifacts.length === 0 || !ind) return; // skip if playbook structure unexpected
+
+  // Build a submission that supplies every required artifact via val.artifact
+  // indirection (the case that pre-0.11.5 lint mishandled).
+  const observations = {};
+  requiredArtifacts.forEach((a, i) => {
+    observations[`obs-${i}`] = {
+      artifact: a.id, captured: true, value: 'x',
+      indicator: ind, result: 'miss',
+    };
+  });
+  const sub = JSON.stringify({ observations });
+  const tmpFile = secureTmpFile('ev.json', 'agree-');
+  fs.writeFileSync(tmpFile, sub);
+  try {
+    const lintRes = cli(['lint', 'library-author', tmpFile, '--json']);
+    const lintData = tryJson(lintRes.stdout);
+    // Lint may emit warnings (e.g. precondition_unverified, unknown_signal)
+    // but should NOT emit errors about missing required artifacts.
+    const errs = (lintData?.issues || []).filter(i => i.severity === 'error');
+    assert.equal(errs.length, 0,
+      'lint should not error on a runner-valid submission with val.artifact indirection. Errors: ' +
+      JSON.stringify(errs.map(e => e.kind)));
+
+    // Run the same submission.
+    const runRes = cli(['run', 'library-author', '--evidence', tmpFile, '--json']);
+    const runData = tryJson(runRes.stdout);
+    assert.equal(runData?.ok, true, 'run should accept the same submission lint accepted');
+  } finally {
+    fs.unlinkSync(tmpFile);
+  }
+});
+
+test('#94 lint missing_required_artifact is a warning, not error', () => {
+  // Lint should not error on a submission the runner accepts.
+  const tmpFile = secureTmpFile('ev.json', 'lint94-');
+  fs.writeFileSync(tmpFile, JSON.stringify({ observations: {} }));
+  const r = cli(['lint', 'library-author', tmpFile, '--json']);
+  fs.unlinkSync(tmpFile);
+  const data = tryJson(r.stdout);
+  const errors = (data?.issues || []).filter(i => i.severity === 'error');
+  const missingRequiredAsError = errors.filter(i => i.kind === 'missing_required_artifact');
+  assert.equal(missingRequiredAsError.length, 0,
+    'missing_required_artifact should be warn, not error — runner accepts the same submission');
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
-
-test('nested precondition_checks with a foreign id is flagged unknown_precondition_key', () => {
-  // `kernel-symbols-readable` is a precondition id crypto does not declare
-  // (crypto declares filesystem-read, openssl-or-equivalent-present, linux-platform).
-  const ev = writeEvidence('foreign', { precondition_checks: { 'kernel-symbols-readable': false } });
-  const { issues } = lint('crypto', ev);
-  const hit = issues.find((i) => i.kind === 'unknown_precondition_key' && i.precondition_id === 'kernel-symbols-readable');
-  assert.ok(hit, `expected unknown_precondition_key for kernel-symbols-readable; got kinds=${issues.map((i) => i.kind).join(',')}`);
-  assert.equal(hit.severity, 'warn', 'unknown_precondition_key should be a warn (collector drift, not a hard error)');
-});
-
-test('precondition_checks with only declared ids yields zero unknown_precondition_key', () => {
-  // filesystem-read IS a declared crypto precondition → no unknown-key flag.
-  const ev = writeEvidence('known', { precondition_checks: { 'filesystem-read': true } });
-  const { issues } = lint('crypto', ev);
-  const unknown = issues.filter((i) => i.kind === 'unknown_precondition_key');
-  assert.equal(unknown.length, 0,
-    `a declared precondition id must not be flagged; got ${JSON.stringify(unknown)}`);
-});
-
-test('the same foreign id is flagged in BOTH the nested and flat shapes (parity)', () => {
-  // Nested shape: precondition_checks → unknown_precondition_key.
-  const nested = lint('crypto', writeEvidence('parity-nested', { precondition_checks: { 'kernel-symbols-readable': false } }));
-  const nestedHit = nested.issues.find((i) => i.kind === 'unknown_precondition_key' && i.precondition_id === 'kernel-symbols-readable');
-  assert.ok(nestedHit, 'nested shape must flag kernel-symbols-readable via unknown_precondition_key');
-
-  // Flat shape: the same key under observations → unknown_observation_key.
-  // The foreign id surfaces in BOTH shapes; pre-fix only the flat side did.
-  const flat = lint('crypto', writeEvidence('parity-flat', { observations: { 'kernel-symbols-readable': false } }));
-  const flatHit = flat.issues.find(
-    (i) => (i.kind === 'unknown_observation_key' || i.kind === 'unknown_precondition_key')
-      && (i.key === 'kernel-symbols-readable' || i.precondition_id === 'kernel-symbols-readable'),
-  );
-  assert.ok(flatHit, `flat shape must also flag kernel-symbols-readable; got kinds=${flat.issues.map((i) => i.kind).join(',')}`);
-});
 });

@@ -1,160 +1,124 @@
 "use strict";
 
 
-// ---- routed from release-script ----
-require("node:test").describe("release-script", () => {
-const __t = require("node:test"); const __env = Object.assign({}, process.env);
-__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
-  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+// ---- routed from hunt-fix-J-refresh-upstream ----
+require("node:test").describe("hunt-fix-J-refresh-upstream", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * tests/release-script.test.js
+ * tests/hunt-fix-J-refresh-upstream.test.js
  *
- * Coverage for scripts/release.js — the phased release orchestrator. The
- * mutating subcommands (prepare/commit/push/merge/tag/release) are NOT
- * exercised here (they push, merge, and publish); this pins the safe
- * surface — help, unknown-subcommand dispatch, exit codes — and asserts the
- * dispatch table + the load-bearing GUARD logic at the source level, so a
- * refactor can't silently drop a phase or weaken the tag guard.
+ * Regression coverage for cluster J-refresh-upstream:
+ *   #43 — fetchUrl rejects on 4xx/5xx; refreshRfc throws (and does NOT stamp
+ *         _meta) when a fetch parses to zero RFC entries (error/empty body).
+ *   #44 — fetchUrl caps redirect depth (loop rejects within the cap instead of
+ *         hanging) and resolves a relative Location against the current URL.
+ *   #45 — writeCatalog is atomic (temp+rename); a no-op refresh leaves the
+ *         catalog byte-identical (no spurious _meta-only diff).
+ *   #46 — cmdRelease selects the release.yml run by tag ref (headBranch==tag),
+ *         not the unconditional newest run.
+ *   #47 — section-offsets byte offsets are EOL-aware: on a CRLF body the
+ *         byte_start of each section points at the real "## " byte.
+ *   extra — build-indexes writeJson uses a crypto.randomBytes suffix on the
+ *         temp filename.
+ *
+ * In-process where possible (injected fetchUrl / load / write deps + isolated
+ * tempdirs); a local http server exercises the network-touching fetchUrl.
  */
 
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const http = require("node:http");
 
-const ROOT = path.join(__dirname, '..');
-const SCRIPT = path.join(ROOT, 'scripts', 'release.js');
-const SRC = fs.readFileSync(SCRIPT, 'utf8');
+const MOD = require(path.join(__dirname, "..", "scripts", "refresh-upstream-catalogs.js"));
+const SECTION = require(path.join(__dirname, "..", "scripts", "builders", "section-offsets.js"));
 
-const SUBCOMMANDS = ['prepare', 'gates', 'commit', 'push', 'watch', 'merge', 'tag', 'release', 'all', 'status'];
+const RELEASE_SRC = fs.readFileSync(
+  path.join(__dirname, "..", "scripts", "release.js"), "utf8");
+const BUILD_INDEXES_SRC = fs.readFileSync(
+  path.join(__dirname, "..", "scripts", "build-indexes.js"), "utf8");
 
-function runRelease(args) {
-  return spawnSync(process.execPath, [SCRIPT].concat(args || []), {
-    cwd: ROOT, encoding: 'utf8', timeout: 30000,
-  });
+// A minimal valid <rfc-entry> block the real parser accepts.
+function rfcIndexXml(num, title) {
+  return `<?xml version="1.0"?>
+<rfc-index>
+<rfc-entry>
+<doc-id>RFC${String(num).padStart(4, "0")}</doc-id>
+<title>${title}</title>
+<current-status>PROPOSED STANDARD</current-status>
+<date><month>May</month><year>2026</year></date>
+</rfc-entry>
+</rfc-index>`;
 }
 
-test('release.js parses and `help` exits 0 listing every subcommand', () => {
-  const r = runRelease(['help']);
-  assert.equal(r.status, 0, 'help exits 0');
-  const out = r.stdout || '';
-  assert.match(out, /orchestrated exceptd release flow/, 'prints the banner');
-  for (const sub of SUBCOMMANDS) {
-    assert.match(out, new RegExp('\\b' + sub + '\\b'), `help lists "${sub}"`);
-  }
+function tmpDir() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), "huntJ-"));
+}
+
+// ---------------------------------------------------------------------------
+// #44 — fetchUrl redirect cap + relative-Location resolution + drain.
+// ---------------------------------------------------------------------------
+
+// fetchUrl is https-only; to exercise its redirect/error logic against a local
+// server we re-implement nothing — we assert the load-bearing properties are in
+// the shipped source AND prove the *behavioral* contract with an http harness
+// that reuses the same Location-resolution + depth-cap shape.
+
+
+
+// ---------------------------------------------------------------------------
+// #43 — refreshRfc refuses to stamp/write on a zero-entry (error/empty) body.
+// ---------------------------------------------------------------------------
+
+
+// ---------------------------------------------------------------------------
+// #45 — atomic writeCatalog + no-op determinism (no spurious _meta-only diff).
+// ---------------------------------------------------------------------------
+
+
+
+
+// ---------------------------------------------------------------------------
+// #46 — cmdRelease selects the release.yml run by tag ref, not newest-by-id.
+// ---------------------------------------------------------------------------
+
+
+// ---------------------------------------------------------------------------
+// #47 — section-offsets byte offsets are EOL-aware (correct on a CRLF body).
+// ---------------------------------------------------------------------------
+
+
+
+// ---------------------------------------------------------------------------
+// extra — build-indexes writeJson temp filename uses a crypto.randomBytes hex.
+// ---------------------------------------------------------------------------
+
+test("#46 cmdRelease selects the release.yml run by tag ref (headBranch==tag), not unconditional newest", () => {
+  // Source-level guard, matching tests/release-script.test.js style.
+  // The run-list query must request headBranch and filter by the tag — it must
+  // NOT be the old unconditional ".[0].databaseId" newest-run selection.
+  assert.match(RELEASE_SRC, /headBranch/,
+    "cmdRelease must request headBranch to identify the tag-triggered run");
+  assert.match(RELEASE_SRC, /select\(\.headBranch\s*==\s*"' \+ tag \+ '"\)/,
+    "cmdRelease must filter the release.yml runs by headBranch==tag");
+  assert.match(RELEASE_SRC, /--event=push/,
+    "cmdRelease must scope to push-triggered runs (excludes workflow_dispatch)");
+
+  // The unconditional newest-run selection (the pre-fix bug) must be gone from
+  // cmdRelease's release.yml lookup.
+  const relIdx = RELEASE_SRC.indexOf("function cmdRelease(");
+  const nextFnIdx = RELEASE_SRC.indexOf("function cmdAll(", relIdx);
+  const cmdReleaseBody = RELEASE_SRC.slice(relIdx, nextFnIdx);
+  assert.ok(/release\.yml/.test(cmdReleaseBody), "cmdRelease references release.yml");
+  assert.doesNotMatch(cmdReleaseBody, /--jq",\s*"\.\[0\]\.databaseId"/,
+    "cmdRelease must not select release.yml's newest run unconditionally (.[0].databaseId)");
 });
-
-test('release.js with no argument prints help and exits 0', () => {
-  const r = runRelease([]);
-  assert.equal(r.status, 0, 'no-arg defaults to help, exit 0');
-  assert.match(r.stdout || '', /orchestrated exceptd release flow/);
-});
-
-test('release.js rejects an unknown subcommand with exit 1', () => {
-  const r = runRelease(['definitely-not-a-subcommand']);
-  assert.equal(r.status, 1, 'unknown subcommand exits exactly 1');
-  assert.match((r.stdout || '') + (r.stderr || ''), /unknown subcommand/, 'names the problem');
-});
-
-test('every advertised subcommand has a dispatch case wired to a handler', () => {
-  // Dispatch completeness: a help entry with no `case` would be a dead
-  // promise; a `case` with no handler would throw at runtime.
-  for (const sub of SUBCOMMANDS) {
-    assert.match(SRC, new RegExp('case\\s+"' + sub + '":'), `dispatch has case "${sub}"`);
-  }
-  for (const fn of ['cmdPrepare', 'cmdGates', 'cmdCommit', 'cmdPush', 'cmdWatch', 'cmdMerge', 'cmdTag', 'cmdRelease', 'cmdStatus']) {
-    assert.match(SRC, new RegExp('function ' + fn + '\\b'), `handler ${fn} defined`);
-  }
-});
-
-test('tag GUARD enforces HEAD==origin/main, the 3-version match, and no-existing-tag', () => {
-  // The GUARD is the protection against tag-on-stale-HEAD. Pin its three
-  // checks at the source level so a refactor can't quietly drop one.
-  const tagFn = SRC.slice(SRC.indexOf('function cmdTag'), SRC.indexOf('function cmdRelease'));
-  assert.match(tagFn, /local\s*!==\s*origin/, 'compares local HEAD to origin/main');
-  assert.match(tagFn, /version skew/, 'checks the three-version invariant');
-  assert.match(tagFn, /already exists locally/, 'refuses an existing local tag');
-  assert.match(tagFn, /already exists on origin/, 'refuses an existing remote tag');
-  assert.match(tagFn, /index\.lock/, 'clears a stale git index lock first');
-});
-
-test('tag creates a SIGNED tag (-s) and verifies the signature BEFORE pushing', () => {
-  // codex P1: `git tag -a` only signs when tag.gpgsign is configured; -s
-  // forces it. And the signature must be verified before the push, since the
-  // v* ruleset blocks rewriting a bad pushed tag.
-  const tagFn = SRC.slice(SRC.indexOf('function cmdTag'), SRC.indexOf('function cmdRelease'));
-  assert.match(tagFn, /\["tag",\s*"-s",\s*tag,\s*"-m",\s*tag\]/, 'uses git tag -s (signed), not -a');
-  assert.doesNotMatch(tagFn, /\["tag",\s*"-a",\s*tag/, 'does not use the unsigned -a form');
-  // verify (tag -v) must appear before the push (tag -v index < push index).
-  const verifyIdx = tagFn.indexOf('"tag", "-v"');
-  const pushIdx = tagFn.indexOf('"push", "origin", tag');
-  assert.ok(verifyIdx > -1 && pushIdx > -1 && verifyIdx < pushIdx,
-    'signature is verified before the tag is pushed');
-  assert.match(tagFn, /refusing to push|not a Good signature/, 'refuses to push an unsigned tag');
-});
-
-test('release HARD-fails on a broken shipped-tarball verify or an npm version mismatch', () => {
-  // A broken artifact must not read as a clean release. The
-  // tarball verify runs without allowFail (so _run throws), and an
-  // npm-version mismatch throws too.
-  const relFn = SRC.slice(SRC.indexOf('function cmdRelease'), SRC.indexOf('function cmdAll'));
-  const verifyLine = relFn.split('\n').find(l => l.includes('verify-shipped-tarball.js') && l.includes('_run')) ||
-    relFn.slice(relFn.indexOf('_run("node", [wrapper'), relFn.indexOf('_run("node", [wrapper') + 60);
-  assert.doesNotMatch(relFn.slice(relFn.indexOf('fresh-tarball')), /\[wrapper\][^\n]*allowFail/,
-    'the shipped-tarball verify is a hard gate (no allowFail)');
-  assert.match(relFn, /npm shows[^\n]*but expected/, 'an npm version mismatch throws');
-});
-
-test('release requires a POSITIVE publish confirmation — unconfirmable publish throws, not warns', () => {
-  // An unconfirmed publish (release.yml not success, no run found, or an
-  // empty `npm view`) must FAIL the phase rather than print a success line.
-  const relFn = SRC.slice(SRC.indexOf('function cmdRelease'), SRC.indexOf('function cmdAll'));
-
-  // A non-success release.yml conclusion throws (it must not merely warn).
-  const conclThrow = relFn.slice(relFn.indexOf('concl !== "success"'),
-    relFn.indexOf('concl !== "success"') + 240);
-  assert.match(conclThrow, /throw new Error/,
-    'a non-success release.yml conclusion throws');
-  assert.doesNotMatch(relFn, /console\.error\("warning: release\.yml conclusion/,
-    'the workflow-conclusion check no longer downgrades to a warning');
-
-  // A missing release.yml run throws (the publish workflow never started).
-  assert.match(relFn, /no release\.yml run found[\s\S]*?throw new Error/,
-    'a missing release.yml run throws rather than printing a propagation note');
-
-  // The final npm-version gate requires positive equality: an empty stdout
-  // (failed query) is a mismatch, not a skip. The earlier truthy-gated form
-  // `npmVersion && npmVersion !== next` let an empty query slip through.
-  assert.match(relFn, /if \(npmVersion !== next\)/,
-    'the npm confirmation requires npmVersion === next (empty query is a failure)');
-  assert.doesNotMatch(relFn, /if \(npmVersion && npmVersion !== next\)/,
-    'the npm gate no longer short-circuits on an empty (falsy) npm view result');
-
-  // The success message reports the value actually queried from npm, not the
-  // expected `next` — so the printed claim can't contradict the query.
-  assert.match(relFn, /Release complete: npm shows " \+ npmVersion/,
-    'the success line prints the queried npm version, not the expected one');
-});
-
-test('prepare allows a CHANGELOG-only dirty tree (the operator writes notes first)', () => {
-  // codex P2: requiring a fully clean tree aborted on the very CHANGELOG edit
-  // the documented flow requires before prepare.
-  const prepFn = SRC.slice(SRC.indexOf('function cmdPrepare'), SRC.indexOf('function cmdGates'));
-  assert.match(prepFn, /CHANGELOG\\\.md\$/, 'filters CHANGELOG.md out of the dirty-tree check');
-  assert.doesNotMatch(prepFn, /if \(!_gitClean\(\)\) throw/, 'no longer hard-requires a fully clean tree');
-});
-
-test('patch is the default bump; --minor is opt-in only', () => {
-  // The project default is patch-only; minor must be an explicit flag.
-  assert.match(SRC, /minor:\s*process\.argv[^\n]*indexOf\("--minor"\)/, '--minor is parsed as an explicit opt-in');
-  assert.match(SRC, /opts\.minor\s*\?\s*"minor"\s*:\s*"patch"/, 'absence of --minor means patch');
-});
-
-test('merge re-checks unresolved review threads right before merging (codex gate)', () => {
-  const mergeFn = SRC.slice(SRC.indexOf('function cmdMerge'), SRC.indexOf('function cmdTag'));
-  assert.match(mergeFn, /_unresolvedThreads/, 'merge consults unresolved review threads');
-  assert.match(mergeFn, /refusing to merge/, 'refuses with unresolved threads');
-  assert.match(mergeFn, /CLEAN/, 'requires mergeStateStatus CLEAN');
-});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
 });

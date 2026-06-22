@@ -316,3 +316,333 @@ test_describe('air-gap-and-refresh-correctness', () => {
     assert.ok(body.files_written > 0, 'a successful swap writes at least one file');
   });
 });
+
+
+// ---- routed from operator-bugs ----
+require("node:test").describe("operator-bugs", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Operator-reported bug regression suite.
+ *
+ * Every operator-reported bug that has been fixed lands here as a named test
+ * case so re-introductions surface at `npm test`, not at user re-report.
+ * Numbering matches the operator report sequence (items #1 through #N as
+ * reported across the v0.9.5 → v0.11.x arc).
+ *
+ * Pattern for new items:
+ *   describe('#N short label', () => { it('precise behavior', ...); });
+ *
+ * Avoid coupling tests to file paths / playbook IDs that may change. Prefer
+ * direct runner exercises over CLI shell-outs where possible — CLI tests
+ * stay narrow (smoke-level) because they spawn subprocesses and slow the
+ * suite down.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const { spawnSync } = require('node:child_process');
+
+const { ROOT, CLI, makeSuiteHome, makeCli, tryJson, secureTmpFile } = require('./_helpers/cli');
+const runner = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
+
+const SUITE_HOME = makeSuiteHome('exceptd-operator-bugs-');
+const cli = makeCli(SUITE_HOME);
+
+// ===================================================================
+
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+// ===================================================================
+
+// ===================================================================
+
+
+
+// ===================================================================
+
+
+
+// ===================================================================
+
+
+
+
+// ===================================================================
+
+
+// ===================================================================
+
+// ===================================================================
+// CSAF framework gaps emit as `document.notes[]` with `category: details`,
+// not as `vulnerabilities[]` entries with `ids: [{system_name:
+// 'exceptd-framework-gap'}]`. The `system_name` slot is reserved for
+// recognised vulnerability tracking authorities (CVE, GHSA, etc.); the
+// custom string is rejected by NVD / ENISA / Red Hat dashboards. Notes
+// are the right home for advisory context, not pseudo-CVEs. The test
+// asserts the notes-based shape and anti-asserts the pseudo-vulnerability
+// shape.
+
+
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===================================================================
+// v0.11.14 freshness additions — opt-in registry check + upstream-check
+// + refresh --network. Tests use EXCEPTD_REGISTRY_FIXTURE so they're
+// fully offline-deterministic.
+// ===================================================================
+
+function withFixture(version, daysAgo) {
+  const file = secureTmpFile('npm-fixture.json', 'npm-fixture-');
+  const publishedAt = new Date(Date.now() - daysAgo * 24 * 3600 * 1000).toISOString();
+  fs.writeFileSync(file, JSON.stringify({
+    "dist-tags": { latest: version },
+    version,
+    time: { [version]: publishedAt, modified: publishedAt },
+  }));
+  return file;
+}
+
+
+
+
+
+
+
+
+// ===================================================================
+// v0.12.0 — GHSA source + refresh --advisory + refresh --curate
+// ===================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===================================================================
+
+test('refresh-network parseTar + fingerprintPublicKey unit smoke', () => {
+  const { parseTar, fingerprintPublicKey } = require(path.join(ROOT, 'lib', 'refresh-network.js'));
+  assert.equal(typeof parseTar, 'function');
+  assert.equal(typeof fingerprintPublicKey, 'function');
+  // Empty tar buffer parses to empty entries (defensive).
+  const empty = parseTar(Buffer.alloc(1024));
+  assert.deepEqual(empty, [], 'parseTar handles empty/zero tar gracefully');
+  // Local public key fingerprints to a non-null base64 string.
+  const pem = fs.readFileSync(path.join(ROOT, 'keys', 'public.pem'), 'utf8');
+  const fp = fingerprintPublicKey(pem);
+  assert.match(fp, /^[A-Za-z0-9+/=]+$/, 'fingerprint is base64');
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from hunt-fix-F-refresh-net ----
+require("node:test").describe("hunt-fix-F-refresh-net", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * tests/hunt-fix-F-refresh-net.test.js
+ *
+ * Regression pins for the F-refresh-net cluster:
+ *   #15 — cve-regression-watcher (NEW-CTRL-074) was dead in production: the
+ *         refresh orchestrator never threaded the advisories source's
+ *         observations onto ctx, so the watcher always saw empty input and
+ *         evaluated zero observations. Now main()'s source loop threads
+ *         ctx.advisoriesObservations (preferred) + ctx.advisoriesDiffs
+ *         between advisories and the watcher (sequential AND --swarm).
+ *   #16 — `refresh --network --air-gap` was silently bypassed when
+ *         EXCEPTD_REGISTRY_FIXTURE was set; the air-gap refusal is now
+ *         unconditional w.r.t. the fixture env var.
+ *   #48 — content-only regression candidates were not deduplicated across
+ *         feeds (unlike CVE-id-bearing candidates); now grouped by a stable
+ *         key with merged surfaced_by.
+ *   #51 — isAllowedTarballHost validated u.hostname but the connect reused
+ *         u.host (port-inclusive); the guard now rejects a non-default port.
+ *
+ * Each case fails on the pre-fix behavior and passes after.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
+
+const ROOT = path.join(__dirname, '..');
+const REFRESH_EXTERNAL = path.join(ROOT, 'lib', 'refresh-external.js');
+const REFRESH_NETWORK = path.join(ROOT, 'lib', 'refresh-network.js');
+const ADV_FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'refresh', 'advisories.json');
+
+const WATCHER = require(path.join(ROOT, 'lib', 'cve-regression-watcher.js'));
+const { isAllowedTarballHost } = require(REFRESH_NETWORK);
+
+// ---------------------------------------------------------------------------
+// Helper: build an isolated fixture dir with the advisories feed bodies (which
+// reference the historical CVE-2020-17103 inline) and a custom CVE catalog
+// where CVE-2020-17103 is a DIRECT key with no *-REREGRESSION-<year> entry, so
+// the watcher's verdict is the unambiguous `annotate`.
+// ---------------------------------------------------------------------------
+function buildChainFixture() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hunt-F-chain-'));
+  fs.copyFileSync(ADV_FIXTURE, path.join(dir, 'advisories.json'));
+  const catalogPath = path.join(dir, 'cve-catalog.json');
+  fs.writeFileSync(catalogPath, JSON.stringify({
+    _meta: { schema_version: '1.0.0' },
+    'CVE-2020-17103': { aliases: [] },
+  }));
+  return { dir, catalogPath };
+}
+
+function runChain(extraArgs) {
+  const { dir, catalogPath } = buildChainFixture();
+  const reportPath = path.join(dir, 'report.json');
+  const args = [
+    REFRESH_EXTERNAL,
+    '--from-fixture', dir,
+    '--catalog', catalogPath,
+    '--source', 'advisories,cve-regression-watcher',
+    '--report-out', reportPath,
+    '--quiet',
+    ...(extraArgs || []),
+  ];
+  const r = spawnSync(process.execPath, args, {
+    env: { ...process.env, EXCEPTD_TEST_HARNESS: '1' },
+    encoding: 'utf8',
+    maxBuffer: 32 * 1024 * 1024,
+  });
+  const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+  return { r, report };
+}
+
+// ===========================================================================
+// #15 — the chaining is wired end-to-end through the real CLI source loop.
+//       These spawn the orchestrator so they exercise the EXACT broken wiring
+//       (the prior unit tests passed through fetchDiff(ctx) directly and
+//       bypassed it).
+// ===========================================================================
+
+
+
+
+// ===========================================================================
+// #16 — air-gap refusal is unconditional w.r.t. EXCEPTD_REGISTRY_FIXTURE.
+// ===========================================================================
+
+
+// ===========================================================================
+// #48 — content-only candidate dedup / source-merge across feeds.
+// ===========================================================================
+
+
+
+
+// ===========================================================================
+// #51 — host-allowlist port hole.
+// ===========================================================================
+
+test('#16 refresh --network --air-gap refuses even with EXCEPTD_REGISTRY_FIXTURE set (exit 4)', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hunt-F-ag-'));
+  const fixturePath = path.join(dir, 'meta.json');
+  // A complete metadata fixture (version + dist.tarball + shasum). Pre-fix
+  // the air-gap predicate `&& !process.env.EXCEPTD_REGISTRY_FIXTURE` would
+  // short-circuit FALSE here and proceed to a live tarball fetch.
+  fs.writeFileSync(fixturePath, JSON.stringify({
+    version: '999.0.0',
+    dist: { tarball: 'https://registry.npmjs.org/x.tgz', shasum: 'deadbeef' },
+  }));
+  const r = spawnSync(process.execPath, [REFRESH_NETWORK, 'refresh', '--network', '--air-gap', '--json'], {
+    env: { ...process.env, EXCEPTD_REGISTRY_FIXTURE: fixturePath },
+    encoding: 'utf8',
+  });
+  assert.equal(r.status, 4, `air-gap must refuse with exit 4; got ${r.status} (stdout: ${r.stdout.slice(0, 300)})`);
+  const body = JSON.parse((r.stdout || r.stderr).trim().split('\n').pop());
+  assert.equal(body.ok, false);
+  assert.equal(body.source, 'air-gap');
+  assert.equal(typeof body.error, 'string');
+  assert.match(body.error, /requires network egress; refused/,
+    'the refusal message must name the air-gap egress block');
+});
+
+test('#51 isAllowedTarballHost rejects a non-default port', () => {
+  assert.equal(isAllowedTarballHost('https://registry.npmjs.org:9999/x.tgz'), false,
+    'a port-bearing allowlisted host must be rejected (validate/connect must agree)');
+});
+
+test('#51 isAllowedTarballHost accepts the default and explicit-443 ports', () => {
+  assert.equal(isAllowedTarballHost('https://registry.npmjs.org/x.tgz'), true);
+  assert.equal(isAllowedTarballHost('https://registry.npmjs.org:443/x.tgz'), true);
+});
+
+test('#51 isAllowedTarballHost still rejects look-alike and internal hosts', () => {
+  // The anchored regex must stay intact — the port fix must not relax it.
+  assert.equal(isAllowedTarballHost('https://registry.npmjs.org.attacker.test/x.tgz'), false);
+  assert.equal(isAllowedTarballHost('http://169.254.169.254/latest/meta-data/'), false);
+  assert.equal(isAllowedTarballHost('not a url'), false);
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});

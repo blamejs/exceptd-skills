@@ -1650,85 +1650,877 @@ describe('cli-surface-drift', () => {
   });
 });
 
-// ---- routed from attest-require-signed-and-prune ----
-;(() => {
+
+// ---- routed from audit-usability-fixes ----
+require("node:test").describe("audit-usability-fixes", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * Regression suite for `attest verify --require-signed` (strict mode) and
- * `attest prune` (attestation GC).
+ * CLI usability regression suite.
  *
- * --require-signed is tested on a sig-stripped attestation so the result is
- * deterministic on both keyed (local) and keyless (CI) checkouts: an unsigned
- * attestation must fail under --require-signed (exit 1) but stay lenient
- * (exit 0) without it.
+ * Pins the behavior of a set of CLI ergonomics fixes so they cannot silently
+ * regress at the next refactor. Each test exercises the real CLI through the
+ * shared cli() harness (subprocess spawn of bin/exceptd.js) and asserts the
+ * EXACT exit code and field shapes per the project anti-coincidence rule:
+ * never `notEqual(0)`, never `assert.ok(field)` without a paired value/type
+ * assertion.
  *
- * Discipline: exact exit codes; value/type assertions paired with presence.
+ * Areas covered:
+ *   1. Unknown-flag hard-fail across all verbs (+ typo suggestion + the
+ *      tailored cross-verb "irrelevant flag" message that must NOT collapse
+ *      into a generic unknown-flag refusal).
+ *   2. `--format json` returns the full run result, not a stub.
+ *   3. Multiple --format values emit a one-format-wins note to stderr.
+ *   4. Standardized bundles (sarif / csaf-2.0 / openvex) carry no top-level
+ *      `ok` key and present their spec marker.
+ *   5. `skill` / `framework-gap` honor --help; `refresh` keeps its own help.
+ *   6. `collect` emits JSON when piped (non-TTY) so the documented pipe works.
+ *   7. `refresh --check-advisories` arg parsing (report-only, no network).
+ *   8. `attest list --limit` envelope + bad-value rejection.
  */
 
-const test = require("node:test");
-const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const os = require("node:os");
-const path = require("node:path");
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const os = require('node:os');
 
-const { makeCli, tryJson } = require("./_helpers/cli");
+const { ROOT, makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
 
-function freshHome(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-}
-function findSig(home) {
-  const stack = [home];
-  while (stack.length) {
-    const d = stack.pop();
-    let ents;
-    try { ents = fs.readdirSync(d, { withFileTypes: true }); } catch { continue; }
-    for (const e of ents) {
-      const full = path.join(d, e.name);
-      if (e.isDirectory()) stack.push(full);
-      else if (e.name === "attestation.json.sig") return full;
-    }
-  }
-  return null;
-}
+const SUITE_HOME = makeSuiteHome('exceptd-audit-usability-');
+const cli = makeCli(SUITE_HOME);
 
-test("attest verify --require-signed rejects an unsigned/stripped attestation; lenient verify matches the host's signing state", () => {
-  const home = freshHome("exceptd-reqsigned-");
-  const cli = makeCli(home);
-  const env = { EXCEPTD_HOME: home };
+// ===================================================================
+// 1. Unknown-flag hard-fail (all verbs, not just doctor)
+// ===================================================================
+
+
+
+
+
+
+
+
+
+// ===================================================================
+// 2. `--format json` returns the FULL run result (not a stub)
+// ===================================================================
+
+
+// ===================================================================
+// 3. MULTI-FORMAT note to stderr
+// ===================================================================
+
+
+// ===================================================================
+// 4. STANDARDIZED BUNDLES carry NO top-level `ok` key
+// ===================================================================
+
+
+
+
+// ===================================================================
+// 5. `skill --help` / `framework-gap --help` honor --help;
+//    refresh keeps its OWN detailed help
+// ===================================================================
+
+
+
+
+// ===================================================================
+// 6. `collect` emits JSON when piped (non-TTY) so the documented pipe works
+// ===================================================================
+
+
+// ===================================================================
+// 7. `refresh --check-advisories` parsing (no network — parseArgs directly)
+// ===================================================================
+
+
+// ===================================================================
+// 8. `attest list --limit`
+// ===================================================================
+
+test('attest list --limit on an empty isolated root: deterministic envelope', () => {
+  const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'audit-attest-home-'));
+  const tmpCwd = fs.mkdtempSync(path.join(os.tmpdir(), 'audit-attest-cwd-'));
   try {
-    const run = cli(["run", "secrets", "--evidence", "-", "--session-id", "rs1"], { input: '{"artifacts":{},"signals":{}}', env });
-    assert.equal(run.status, 0, `setup run failed: ${run.stderr.slice(0, 200)}`);
-    // Was the attestation actually Ed25519-signed? (keyed local dev vs keyless
-    // CI.) This determines whether stripping the sidecar is benign or tamper.
-    const sig = findSig(home);
-    let wasSigned = false;
-    if (sig) { try { wasSigned = JSON.parse(fs.readFileSync(sig, "utf8")).algorithm === "Ed25519"; } catch { /* unsigned */ } }
-    if (sig) fs.rmSync(sig, { force: true });
-
-    const lenient = cli(["attest", "verify", "rs1", "--json"], { env });
-    if (wasSigned) {
-      // C-H1: stripping the sidecar of a signed attestation (a sig was
-      // expected — signing key present) is now tamper-detected by default
-      // verify, agreeing with reattest.
-      assert.equal(lenient.status, 6, "stripping a SIGNED attestation's sidecar must be tamper (exit 6)");
-    } else {
-      // Keyless host: a missing sidecar with no signing key and no signed peer
-      // is a genuinely-unsigned attestation — lenient verify stays benign.
-      assert.equal(lenient.status, 0, "lenient verify of a genuinely-unsigned attestation exits 0");
-    }
-
-    const strict = cli(["attest", "verify", "rs1", "--require-signed", "--json"], { env });
-    const body = tryJson(strict.stdout) || tryJson(strict.stderr);
-    assert.ok(body && body.ok === false, "strict verify of an unsigned/stripped attestation must fail");
-    if (wasSigned) {
-      // Tamper detection (exit 6) precedes the --require-signed gate: a stripped
-      // sidecar where one was expected is tamper, which is the stronger signal.
-      assert.equal(strict.status, 6, "stripped signed sidecar under --require-signed is still tamper (exit 6)");
-    } else {
-      assert.equal(strict.status, 1, "--require-signed on a genuinely-unsigned attestation must exit 1");
-      assert.equal(body.require_signed, true);
-    }
+    const r = cli(['attest', 'list', '--limit', '3', '--json'], {
+      cwd: tmpCwd,
+      env: { EXCEPTD_HOME: tmpHome },
+    });
+    assert.equal(r.status, 0, `expected exit 0; got ${r.status} (stderr: ${r.stderr.slice(0, 200)})`);
+    const body = tryJson(r.stdout.trim());
+    assert.ok(body, `attest list --json must parse; got: ${r.stdout.slice(0, 200)}`);
+    assert.equal(body.count, 0);
+    assert.equal(body.shown, 0);
+    assert.equal(body.limit, 3);
+    assert.ok(Array.isArray(body.attestations), 'attestations must be an array');
+    assert.equal(body.attestations.length, 0, 'empty root yields zero attestations');
   } finally {
-    fs.rmSync(home, { recursive: true, force: true });
+    try { fs.rmSync(tmpHome, { recursive: true, force: true }); } catch {}
+    try { fs.rmSync(tmpCwd, { recursive: true, force: true }); } catch {}
   }
 });
-})();
+
+test('attest list --limit rejects a non-integer value (exit 1)', () => {
+  const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'audit-attest-home-'));
+  const tmpCwd = fs.mkdtempSync(path.join(os.tmpdir(), 'audit-attest-cwd-'));
+  try {
+    const r = cli(['attest', 'list', '--limit', 'abc'], {
+      cwd: tmpCwd,
+      env: { EXCEPTD_HOME: tmpHome },
+    });
+    assert.equal(r.status, 1, `expected exit 1; got ${r.status}`);
+    assert.match(r.stderr, /non-negative integer/);
+  } finally {
+    try { fs.rmSync(tmpHome, { recursive: true, force: true }); } catch {}
+    try { fs.rmSync(tmpCwd, { recursive: true, force: true }); } catch {}
+  }
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from help-verb-attest-list-deprecation ----
+require("node:test").describe("help-verb-attest-list-deprecation", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * tests/help-verb-attest-list-deprecation.test.js
+ *
+ * Cycle 11 P2/P3 fixes (v0.12.32):
+ *
+ *   F4 — `exceptd help <verb>` now routes through printPlaybookVerbHelp()
+ *        so operators get verb-specific help regardless of whether they
+ *        type `exceptd help run` or `exceptd run --help`. Pre-fix it
+ *        dropped the verb argument and printed the top-level help.
+ *
+ *   F5 — `attest list` empty-state human renderer surfaces `roots_evaluated`
+ *        showing every candidate root + whether it existed (`[scanned-empty]`
+ *        vs `[not-present]`). Pre-fix it said `(no attestations under )`
+ *        with an empty path list when no roots existed at all. JSON output
+ *        also carries a structured `roots_evaluated[]` array.
+ *
+ *   F7 — Legacy-verb deprecation banner now persists suppression across
+ *        invocations via an OS-tempdir marker keyed by exceptd version.
+ *        Pre-fix the env-var guard reset on every fresh node process so
+ *        operators saw the same banner on every `exceptd plan` invocation.
+ *
+ * Per the anti-coincidence rule, every assertion checks an EXACT
+ * value (status code, string presence/absence, array shape).
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const os = require('node:os');
+const { spawnSync } = require('node:child_process');
+
+const ROOT = path.join(__dirname, '..');
+const CLI = path.join(ROOT, 'bin', 'exceptd.js');
+
+function cli(args, opts = {}) {
+  return spawnSync(process.execPath, [CLI, ...args], {
+    encoding: 'utf8',
+    cwd: opts.cwd || ROOT,
+    env: { ...process.env, ...(opts.env || {}) },
+  });
+}
+
+function tryJson(s) {
+  try { return JSON.parse(s); } catch { return null; }
+}
+
+// F4 ------------------------------------------------------------------------
+
+
+
+// F5 ------------------------------------------------------------------------
+
+
+
+// F7 v0.13.0 update --------------------------------------------------------
+//
+// v0.13.0 honored the long-advertised legacy-verb removal. The pre-v0.13
+// deprecation-banner mechanism (soft banner + tempdir marker for once-per-
+// version display) was replaced by a hard refusal with a replacement hint.
+// The two prior F7 tests asserted banner+suppress semantics; both are
+// replaced with refusal-shape assertions below.
+
+test('F5: `attest list --json` carries roots_evaluated[] with per-root exists flag', () => {
+  // Force a synthetic EXCEPTD_HOME so the test is deterministic regardless
+  // of what's on the host. Run in a tempdir so the cwd-relative
+  // `.exceptd/attestations/` path is also empty.
+  const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-test-home-'));
+  const tmpCwd = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-test-cwd-'));
+  try {
+    const r = cli(['attest', 'list', '--json'], {
+      cwd: tmpCwd,
+      env: { EXCEPTD_HOME: tmpHome, EXCEPTD_DEPRECATION_SHOWN: '1' },
+    });
+    assert.equal(r.status, 0);
+    const body = tryJson(r.stdout);
+    assert.ok(body, `attest list --json must parse; got: ${r.stdout.slice(0, 200)}`);
+    assert.equal(body.ok, true);
+    assert.equal(body.count, 0);
+    assert.equal(Array.isArray(body.roots_evaluated), true);
+    assert.equal(body.roots_evaluated.length >= 1, true);
+    for (const r of body.roots_evaluated) {
+      assert.equal(typeof r.root, 'string');
+      assert.equal(typeof r.exists, 'boolean');
+    }
+  } finally {
+    try { fs.rmSync(tmpHome, { recursive: true, force: true }); } catch {}
+    try { fs.rmSync(tmpCwd, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test('F5: `attest list` empty-state human output names each candidate root', () => {
+  const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-test-home-'));
+  const tmpCwd = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-test-cwd-'));
+  try {
+    const r = cli(['attest', 'list'], {
+      cwd: tmpCwd,
+      env: { EXCEPTD_HOME: tmpHome, EXCEPTD_DEPRECATION_SHOWN: '1' },
+    });
+    assert.equal(r.status, 0);
+    // Pre-fix output: "  (no attestations under )" — empty path.
+    // Post-fix output: candidate roots block with [scanned-empty] / [not-present] markers.
+    assert.match(r.stdout, /candidate roots evaluated:/);
+    assert.match(r.stdout, /\[scanned-empty\]|\[not-present\]/);
+  } finally {
+    try { fs.rmSync(tmpHome, { recursive: true, force: true }); } catch {}
+    try { fs.rmSync(tmpCwd, { recursive: true, force: true }); } catch {}
+  }
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from operator-bugs ----
+require("node:test").describe("operator-bugs", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Operator-reported bug regression suite.
+ *
+ * Every operator-reported bug that has been fixed lands here as a named test
+ * case so re-introductions surface at `npm test`, not at user re-report.
+ * Numbering matches the operator report sequence (items #1 through #N as
+ * reported across the v0.9.5 → v0.11.x arc).
+ *
+ * Pattern for new items:
+ *   describe('#N short label', () => { it('precise behavior', ...); });
+ *
+ * Avoid coupling tests to file paths / playbook IDs that may change. Prefer
+ * direct runner exercises over CLI shell-outs where possible — CLI tests
+ * stay narrow (smoke-level) because they spawn subprocesses and slow the
+ * suite down.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const { spawnSync } = require('node:child_process');
+
+const { ROOT, CLI, makeSuiteHome, makeCli, tryJson, secureTmpFile } = require('./_helpers/cli');
+const runner = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
+
+const SUITE_HOME = makeSuiteHome('exceptd-operator-bugs-');
+const cli = makeCli(SUITE_HOME);
+
+// ===================================================================
+
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+// ===================================================================
+
+// ===================================================================
+
+
+
+// ===================================================================
+
+
+
+// ===================================================================
+
+
+
+
+// ===================================================================
+
+
+// ===================================================================
+
+// ===================================================================
+// CSAF framework gaps emit as `document.notes[]` with `category: details`,
+// not as `vulnerabilities[]` entries with `ids: [{system_name:
+// 'exceptd-framework-gap'}]`. The `system_name` slot is reserved for
+// recognised vulnerability tracking authorities (CVE, GHSA, etc.); the
+// custom string is rejected by NVD / ENISA / Red Hat dashboards. Notes
+// are the right home for advisory context, not pseudo-CVEs. The test
+// asserts the notes-based shape and anti-asserts the pseudo-vulnerability
+// shape.
+
+
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===================================================================
+// v0.11.14 freshness additions — opt-in registry check + upstream-check
+// + refresh --network. Tests use EXCEPTD_REGISTRY_FIXTURE so they're
+// fully offline-deterministic.
+// ===================================================================
+
+function withFixture(version, daysAgo) {
+  const file = secureTmpFile('npm-fixture.json', 'npm-fixture-');
+  const publishedAt = new Date(Date.now() - daysAgo * 24 * 3600 * 1000).toISOString();
+  fs.writeFileSync(file, JSON.stringify({
+    "dist-tags": { latest: version },
+    version,
+    time: { [version]: publishedAt, modified: publishedAt },
+  }));
+  return file;
+}
+
+
+
+
+
+
+
+
+// ===================================================================
+// v0.12.0 — GHSA source + refresh --advisory + refresh --curate
+// ===================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===================================================================
+
+test('#98 attest export --format garbage on a real session returns format error', () => {
+  // Pre-strengthening this combined two distinct errors under one regex:
+  //  - "no session dir" (the session-id arm)
+  //  - "not in accepted set" (the format-rejection arm)
+  // The regression class was that EITHER message satisfied the test, so a
+  // bug that flipped session-not-found and format-validation back and forth
+  // wouldn't be caught. Split into two tests, each pinning exactly one
+  // error path.
+  //
+  // Arm A: real session id (we just wrote one via `run`) + garbage format.
+  // The error must be the FORMAT error, not the session-not-found error —
+  // otherwise format validation never ran against a real session.
+  const sid = 'export-fmt-arm-' + Date.now();
+  const seedRun = cli(['run', 'library-author', '--evidence', '-', '--session-id', sid, '--force-overwrite'], { input: '{}' });
+  assert.equal(seedRun.status, 0, 'pre-stage run must succeed so attest-export sees a real session');
+  const r = cli(['attest', 'export', sid, '--format', 'garbage']);
+  assert.equal(r.status, 1, 'attest export with garbage format must exit 1 (emitError --format validation)');
+  const err = tryJson(r.stderr.trim());
+  assert.ok(err, 'rejection must be parseable JSON on stderr');
+  assert.equal(err.ok, false, 'body must carry ok:false');
+  assert.match(err.error, /attest export: --format .* not in accepted set/,
+    'with a real session id, the format error must fire (NOT the session-not-found error) — otherwise --format validation is unreachable behind the session-lookup gate');
+});
+
+test('#98 attest export on missing session id returns session-not-found error', () => {
+  // Arm B: garbage session id + valid format. The error must be the
+  // SESSION-NOT-FOUND error so operators get the right diagnostic for the
+  // arm they hit. Pre-strengthening one regex matched both messages, so
+  // the runner could have flipped the arms and the test wouldn't notice.
+  const r = cli(['attest', 'export', 'never-existed-' + Date.now(), '--format', 'json']);
+  assert.equal(r.status, 1, 'missing session must exit 1 (emitError session-not-found)');
+  const err = tryJson(r.stderr.trim());
+  assert.ok(err, 'rejection must be parseable JSON on stderr');
+  assert.equal(err.ok, false, 'body must carry ok:false');
+  assert.match(err.error, /attest export: no session dir/,
+    'with a missing session id, the session-not-found error must fire (NOT the format error)');
+  assert.equal(typeof err.session_id, 'string',
+    'rejected session id must echo back so operators see what was searched');
+});
+
+test('attest diff <sid> (no --against) emits the v0.11+ envelope (not the legacy reattest shape)', () => {
+  // Before this fix, `attest diff <sid>` without --against fell through
+  // to cmdReattest which emitted `verb: "reattest"` + the legacy
+  // {status, prior_evidence_hash, replay_evidence_hash} envelope.
+  // The pure-comparison path now finds the most-recent prior
+  // attestation for the same playbook and emits the v0.11+ envelope
+  // (verb: "attest diff", a_session/b_session, artifact_diff,
+  // signal_override_diff).
+  const sub = JSON.stringify({
+    observations: { w: { captured: true, value: 'x', indicator: 'publish-workflow-uses-static-token', result: 'miss' } }
+  });
+  const sidA = 'diff-noagainst-a-' + Date.now();
+  const sidB = 'diff-noagainst-b-' + Date.now();
+  cli(['run', 'library-author', '--evidence', '-', '--session-id', sidA, '--force-overwrite'], { input: sub });
+  cli(['run', 'library-author', '--evidence', '-', '--session-id', sidB, '--force-overwrite'], { input: sub });
+  const r = cli(['attest', 'diff', sidB, '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'attest diff <sid> --json should emit parseable JSON');
+  assert.equal(data.verb, 'attest diff',
+    `verb must be "attest diff", not legacy "reattest"; got: ${data.verb}`);
+  assert.equal(data.a_session, sidB);
+  assert.ok(data.b_session, 'b_session must name the auto-selected prior session');
+  assert.ok(['unchanged', 'drifted'].includes(data.status),
+    `status must be unchanged/drifted; got: ${data.status}`);
+  assert.ok(data.signal_override_diff,
+    'signal_override_diff must be present (granular drift surface)');
+  assert.ok(data.artifact_diff,
+    'artifact_diff must be present (granular drift surface)');
+});
+
+test('#102 attest diff unchanged_count counts identical entries', () => {
+  // Run twice with the same flat-shape submission. Diff should report
+  // unchanged_count >= 1 for the artifact and signal_override.
+  const sub = JSON.stringify({
+    observations: { w: { captured: true, value: 'x', indicator: 'publish-workflow-uses-static-token', result: 'miss' } }
+  });
+  const sid1 = 'diffunch1-' + Date.now();
+  const sid2 = 'diffunch2-' + Date.now();
+  cli(['run', 'library-author', '--evidence', '-', '--session-id', sid1, '--force-overwrite'], { input: sub });
+  cli(['run', 'library-author', '--evidence', '-', '--session-id', sid2, '--force-overwrite'], { input: sub });
+  const r = cli(['attest', 'diff', sid1, '--against', sid2, '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'attest diff output should be JSON');
+  assert.ok(data.artifact_diff.unchanged_count >= 1,
+    'identical submissions should count unchanged artifacts > 0');
+  assert.ok(data.signal_override_diff.unchanged_count >= 1,
+    'identical submissions should count unchanged signal_overrides > 0');
+});
+
+test('#102 attest diff includes total_compared field', () => {
+  const sub = JSON.stringify({ observations: { w: { captured: true, indicator: 'publish-workflow-uses-static-token', result: 'miss' } } });
+  const sid1 = 'tc-a-' + Date.now();
+  const sid2 = 'tc-b-' + Date.now();
+  cli(['run', 'library-author', '--evidence', '-', '--session-id', sid1, '--force-overwrite'], { input: sub });
+  cli(['run', 'library-author', '--evidence', '-', '--session-id', sid2, '--force-overwrite'], { input: sub });
+  const r = cli(['attest', 'diff', sid1, '--against', sid2, '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(typeof data?.artifact_diff?.total_compared === 'number',
+    'artifact_diff must include total_compared (disambiguates 0/0 vs 0-of-N)');
+  assert.ok(typeof data?.signal_override_diff?.total_compared === 'number');
+});
+
+test('#126 attest diff total_compared matches observation count when identical', () => {
+  const sub = JSON.stringify({
+    observations: {
+      w: { captured: true, indicator: 'publish-workflow-uses-static-token', result: 'miss' },
+      x: { captured: true, indicator: 'npm-token-rotation-cadence', result: 'miss' }
+    }
+  });
+  const sid1 = 'tc-c-' + Date.now();
+  const sid2 = 'tc-d-' + Date.now();
+  cli(['run', 'library-author', '--evidence', '-', '--session-id', sid1, '--force-overwrite'], { input: sub });
+  cli(['run', 'library-author', '--evidence', '-', '--session-id', sid2, '--force-overwrite'], { input: sub });
+  const r = cli(['attest', 'diff', sid1, '--against', sid2, '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'attest diff JSON must parse');
+  assert.ok(data.artifact_diff.total_compared > 0,
+    'identical submissions with 2 observations must have total_compared > 0 (not 0)');
+  assert.ok(data.artifact_diff.unchanged_count > 0,
+    'identical submissions must have unchanged_count > 0');
+  assert.equal(data.artifact_diff.total_compared, data.artifact_diff.unchanged_count,
+    'all artifacts identical → total_compared === unchanged_count');
+});
+
+test('#127 emit() body with ok:false sets non-zero exit (universal contract)', () => {
+  // The class of bug: any verb that emits a result with ok:false to stdout
+  // must not return exit 0. Pre-0.11.13 several paths leaked through.
+  // attest verify on a non-existent session id is GUARANTEED to produce
+  // ok:false (the session lookup is the first gate and there's no way
+  // around it). Pre-strengthening, this test guarded the assertion under
+  // `if (sawOkFalse) { assert(...) }` — so a regression that ran the verb
+  // through some other path without ok:false would have silently passed
+  // (the `if` never fired, the assertion was a no-op). Hard-assert that
+  // ok:false IS observed AND the exit is non-zero, unconditionally.
+  const r = cli(['attest', 'verify', 'no-such-session-id-' + Date.now(), '--json']);
+  const stdoutBody = tryJson(r.stdout) || {};
+  const stderrBody = tryJson(r.stderr.trim()) || {};
+  const sawOkFalse = stdoutBody.ok === false || stderrBody.ok === false;
+  assert.equal(sawOkFalse, true,
+    `attest verify on a missing session id MUST produce ok:false in stdout or stderr (the session-not-found gate is unavoidable). If false, the runner found a way around the gate — that's the regression. stdout=${JSON.stringify(r.stdout.slice(0,300))} stderr=${JSON.stringify(r.stderr.slice(0,300))}`);
+  assert.equal(r.status, 1,
+    'ok:false on stdout OR stderr must exit 1 — universal emit() contract (bin/exceptd.js:615)');
+});
+
+test('#127 attest diff with missing session ids exits non-zero', () => {
+  const r = cli(['attest', 'diff', 'does-not-exist-a', '--against', 'does-not-exist-b', '--json']);
+  assert.equal(r.status, 1, 'attest diff missing sessions must exit 1 (emitError session-not-found, universal emit contract)');
+  // Pre-strengthening, only the exit code was checked — a regression that
+  // exited non-zero for an UNRELATED reason (e.g. CLI crashed before
+  // session lookup) would have passed. Drill into stderr and confirm the
+  // specific missing session id is named, so operators see which one
+  // failed lookup (the diff has two arms, A and B).
+  const err = tryJson(r.stderr.trim());
+  assert.ok(err, 'attest diff must emit JSON error on stderr');
+  assert.equal(err.ok, false, 'body must carry ok:false');
+  assert.match(err.error, /does-not-exist-a/,
+    'error must name the failed session id (the A side is checked first) so operators know which arm to fix');
+});
+
+test('#128 attest diff with empty submissions falls back to playbook catalog', () => {
+  // Both runs use empty {} submission; identical evidence hashes. The diff
+  // should count the playbook's artifact catalog so operators see
+  // "N artifacts, all uniform on both sides" rather than 0/0.
+  const sid1 = 'empty-cat-a-' + Date.now();
+  const sid2 = 'empty-cat-b-' + Date.now();
+  cli(['run', 'sbom', '--evidence', '-', '--session-id', sid1, '--force-overwrite'], { input: '{}' });
+  cli(['run', 'sbom', '--evidence', '-', '--session-id', sid2, '--force-overwrite'], { input: '{}' });
+  const r = cli(['attest', 'diff', sid1, '--against', sid2, '--json']);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'diff JSON must parse');
+  assert.equal(data.status, 'unchanged', 'identical empty submissions hash-match → status=unchanged');
+  assert.ok(data.artifact_diff.total_compared > 0,
+    'empty submissions must fall back to playbook artifact catalog count, not 0');
+  assert.equal(data.artifact_diff.total_compared, data.artifact_diff.unchanged_count,
+    'all catalog entries identical (both empty) → total_compared === unchanged_count');
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from runtime-errors-and-vex-disposition ----
+require("node:test").describe("runtime-errors-and-vex-disposition", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Tests for the audit-AA P1 closures:
+ *
+ *   AA P1-1  `algorithm: "unsigned"` sidecar substitution is now detected
+ *            by both `attest verify` (exit 6 when private key present) and
+ *            `cmdReattest` (requires --force-replay regardless).
+ *   AA P1-2  Corrupt-JSON .sig sidecar surfaces as a structured tamper-class
+ *            result rather than throwing through the dispatcher. Both
+ *            `attest verify` and `cmdReattest` exit 6.
+ *   AA P1-3  `lib/verify.js verifyManifestSignature()` consults
+ *            `keys/EXPECTED_FINGERPRINT` BEFORE crypto.verify. Library
+ *            callers (refresh-network, verify-shipped-tarball, downstream
+ *            consumers) can no longer bypass the pin.
+ *
+ * Per the "coincidence-passing tests" rule: every exit-code assertion
+ * is EXACT (assert.equal(r.status, 6)), never notEqual(0).
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+
+const { ROOT, makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+
+const SUITE_HOME = makeSuiteHome('exceptd-audit-aa-');
+const cli = makeCli(SUITE_HOME);
+
+const PKG_PRIV_KEY = path.join(ROOT, '.keys', 'private.pem');
+const HAS_PRIV_KEY = fs.existsSync(PKG_PRIV_KEY);
+
+function locateAttestation(sid) {
+  const candidates = [
+    path.join(SUITE_HOME, 'attestations', sid),
+    path.join(SUITE_HOME, '.exceptd', 'attestations', sid),
+  ];
+  const attRoot = candidates.find(p => fs.existsSync(p));
+  if (!attRoot) return null;
+  const files = fs.readdirSync(attRoot).filter(f => f.endsWith('.json') && !f.endsWith('.sig'));
+  if (files.length === 0) return null;
+  return { dir: attRoot, jsonFile: path.join(attRoot, files[0]), sigFile: path.join(attRoot, files[0] + '.sig') };
+}
+
+// ---------------------------------------------------------------------------
+// AA P1-1 — `algorithm: "unsigned"` substitution detection
+// ---------------------------------------------------------------------------
+
+test('AA P1-1: attest verify exits 6 when an unsigned sidecar is substituted on a host WITH a private key',
+  { skip: !HAS_PRIV_KEY && 'private key absent — substitution path requires .keys/private.pem on the verifying host' },
+  () => {
+    // Produce a real (signed) attestation, then substitute the .sig with the
+    // unsigned stub. Pre-fix: `attest verify` reported signed:false and
+    // exited 0 — the tamper predicate `r.signed && !r.verified` never fired.
+    // Post-fix: substitution is detected because .keys/private.pem exists on
+    // the verifying host, and verify exits 6.
+    const sid = 'aa-p11-subst-' + Date.now();
+    const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
+    const r1 = cli(['run', 'library-author', '--evidence', '-', '--session-id', sid], { input: sub });
+    assert.equal(r1.status, 0, 'pre-substitution run must succeed; stderr=' + r1.stderr.slice(0, 400));
+
+    const att = locateAttestation(sid);
+    assert.ok(att, 'attestation must exist');
+
+    // Tamper attestation.json AND substitute the .sig with the unsigned stub.
+    const orig = fs.readFileSync(att.jsonFile, 'utf8');
+    fs.writeFileSync(att.jsonFile, orig.replace(/\}\s*$/, ', "__tampered": true }'));
+    fs.writeFileSync(att.sigFile, JSON.stringify({
+      algorithm: 'unsigned',
+      signed: false,
+      reason: 'attestation explicitly unsigned',
+      signs_path: path.basename(att.jsonFile),
+    }, null, 2));
+
+    const r = cli(['attest', 'verify', sid, '--json']);
+    assert.equal(r.status, 6,
+      `attest verify on unsigned-substituted sidecar must exit 6 (TAMPERED) when private key is present. Got status=${r.status}. stderr=${r.stderr.slice(0,400)}`);
+    const body = tryJson(r.stdout) || tryJson(r.stderr) || {};
+    assert.equal(body.ok, false, 'substitution body must carry ok:false');
+    assert.ok(Array.isArray(body.results), 'verify must emit results array');
+    assert.ok(
+      body.results.some(x => x.tamper_class === 'unsigned-substitution'),
+      'at least one result must classify as tamper_class:"unsigned-substitution"'
+    );
+  });
+
+test('AA P1-1: a legitimately-unsigned attestation on a host WITHOUT a private key is allowed (no substitution signal)', () => {
+  // Source-level assertion: the unsigned-substitution branch in
+  // verifyAttestationSidecar checks `fs.existsSync(privKeyPath)`. When the
+  // private key is absent, the function returns the original explicitly-
+  // unsigned reason (no tamper_class). The legitimately-unsigned path
+  // remains usable for operators who have never run generate-keypair.
+  const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
+  const fnStart = src.indexOf('function verifyAttestationSidecar(attFile)');
+  const fnEnd = src.indexOf('function cmdReattest', fnStart);
+  const block = src.slice(fnStart, fnEnd);
+  // Two unsigned-return shapes must coexist: one with tamper_class
+  // (substitution path) and one without (legitimate path).
+  assert.match(block, /tamper_class:\s*["']unsigned-substitution["']/,
+    'verifyAttestationSidecar must classify substitution');
+  // The legitimate-unsigned return is the one whose reason starts with
+  // "attestation explicitly unsigned (no private key when written)" AND
+  // does NOT carry tamper_class.
+  const legitMatch = block.match(/return\s*\{\s*file:\s*attFile,\s*signed:\s*false,\s*verified:\s*false,\s*reason:\s*"attestation explicitly unsigned \(no private key when written\)"\s*\}/);
+  assert.ok(legitMatch,
+    'verifyAttestationSidecar must retain the legitimate-unsigned return path (no tamper_class) for hosts without a private key');
+});
+
+// ---------------------------------------------------------------------------
+// AA P1-2 — Corrupt-JSON sidecar refusal
+// ---------------------------------------------------------------------------
+
+test('AA P1-2: attest verify exits 6 (not 1) when the .sig sidecar is corrupt JSON',
+  { skip: !HAS_PRIV_KEY && 'producer run requires private key' },
+  () => {
+    // Pre-fix: JSON.parse threw into the outer dispatcher catch → exit 1
+    // (generic). Post-fix: wrapped parse returns a tamper-class result and
+    // the per-result reduce promotes to exit 6.
+    const sid = 'aa-p12-corrupt-' + Date.now();
+    const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
+    const r1 = cli(['run', 'library-author', '--evidence', '-', '--session-id', sid], { input: sub });
+    assert.equal(r1.status, 0);
+
+    const att = locateAttestation(sid);
+    assert.ok(att);
+    // Write truncated / malformed JSON.
+    fs.writeFileSync(att.sigFile, '{"algorithm":"Ed25');
+
+    const r = cli(['attest', 'verify', sid, '--json']);
+    assert.equal(r.status, 6,
+      `attest verify on a corrupt .sig must exit 6 (TAMPERED), not 1 (generic). Got status=${r.status}. stderr=${r.stderr.slice(0,400)}`);
+    const body = tryJson(r.stdout) || tryJson(r.stderr) || {};
+    assert.equal(body.ok, false, 'corrupt-sidecar verify body must carry ok:false');
+    assert.ok(Array.isArray(body.results), 'verify must still emit results array even on corrupt sidecar (no unhandled throw)');
+    assert.ok(
+      body.results.some(x => x.tamper_class === 'sidecar-corrupt'),
+      'at least one result must classify as tamper_class:"sidecar-corrupt"'
+    );
+  });
+
+test('AA P1-2: reattest exits 6 when the .sig sidecar is corrupt JSON',
+  { skip: !HAS_PRIV_KEY && 'producer run requires private key' },
+  () => {
+    const sid = 'aa-p12-corrupt-reattest-' + Date.now();
+    const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
+    const r1 = cli(['run', 'library-author', '--evidence', '-', '--session-id', sid], { input: sub });
+    assert.equal(r1.status, 0);
+
+    const att = locateAttestation(sid);
+    assert.ok(att);
+    fs.writeFileSync(att.sigFile, 'not-valid-json{{{');
+
+    const r = cli(['reattest', sid, '--json']);
+    assert.equal(r.status, 6,
+      `reattest against a corrupt .sig must exit 6, not fall through to the benign NOTE branch. Got status=${r.status}. stderr=${r.stderr.slice(0,400)}`);
+  });
+
+// ---------------------------------------------------------------------------
+// AA P1-3 — EXPECTED_FINGERPRINT pin consulted in verifyManifestSignature
+// ---------------------------------------------------------------------------
+
+test('AA P1-3: verifyManifestSignature accepts the live manifest (pin matches keys/public.pem)', () => {
+  // Sanity-check: the live manifest must still verify after the pin gate
+  // was added. This protects against accidentally regressing the live
+  // verify path while wiring the new check.
+  const verifyMod = require(path.join(ROOT, 'lib', 'verify.js'));
+  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
+  const r = verifyMod.verifyManifestSignature(manifest);
+  assert.equal(r.status, 'valid', `live manifest must still verify post-pin-gate; got ${JSON.stringify(r)}`);
+});
+
+test('AA P1-3: verifyManifestSignature refuses when keys/public.pem diverges from keys/EXPECTED_FINGERPRINT', () => {
+  // Simulate the divergence by patching checkExpectedFingerprint via a
+  // sandbox: load lib/verify.js fresh under a tempdir-rooted PKG layout
+  // where keys/public.pem is a freshly-generated attacker key and
+  // keys/EXPECTED_FINGERPRINT pins the LEGITIMATE key. The library must
+  // refuse to verify under the attacker key.
+  //
+  // Easiest implementation: spawn a sub-test in a tempdir that mirrors the
+  // repo structure for keys/, manifest.json, and lib/. Rather than copy
+  // lib/verify.js (which would diverge), we re-require it under a
+  // pinPath-substituted shim using its exported checkExpectedFingerprint
+  // primitive — verifyManifestSignature internally calls
+  // checkExpectedFingerprint(liveFp) with the default pin path, so we patch
+  // EXPECTED_FINGERPRINT_PATH by tampering with the OS environment we
+  // control.
+  //
+  // The clean approach: bypass the library wrapper and exercise the policy
+  // primitive directly. checkExpectedFingerprint is the public surface; if
+  // the library uses it correctly the policy is enforced. We assert both:
+  //   1. The primitive returns "mismatch" on a divergent fingerprint
+  //      without KEYS_ROTATED.
+  //   2. The library function verifyManifestSignature() body references
+  //      checkExpectedFingerprint before crypto.verify.
+  const verifyMod = require(path.join(ROOT, 'lib', 'verify.js'));
+
+  // (1) Primitive-level: a divergent pin fails without KEYS_ROTATED.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'aa-p13-pin-'));
+  const pinPath = path.join(tmp, 'EXPECTED_FINGERPRINT');
+  fs.writeFileSync(pinPath, 'SHA256:DEADBEEFnotTheActualKeyJustATestPin12345678=');
+  const fakeFp = { sha256: 'SHA256:totally-different-fingerprint-value' };
+  const result = verifyMod.checkExpectedFingerprint(fakeFp, pinPath);
+  assert.equal(result.status, 'mismatch');
+  assert.equal(result.rotationOverride, false,
+    'KEYS_ROTATED unset → rotationOverride must be false (caller must refuse)');
+
+  // (2) Source-level: verifyManifestSignature() body calls
+  // checkExpectedFingerprint BEFORE crypto.verify. Without this ordering,
+  // a tampered public.pem could verify before the pin gate fires.
+  const src = fs.readFileSync(path.join(ROOT, 'lib', 'verify.js'), 'utf8');
+  const fnStart = src.indexOf('function verifyManifestSignature(manifest)');
+  assert.ok(fnStart > 0, 'verifyManifestSignature must be present in lib/verify.js');
+  // Slice to the actual function boundary, not a fixed char window — the body
+  // grows as guards are added (e.g. the no-pin rejection), and a too-small
+  // window would push crypto.verify out of view and false-fail this ordering
+  // check.
+  const fnEnd = src.indexOf('\nfunction ', fnStart + 1);
+  const fnBlock = src.slice(fnStart, fnEnd > fnStart ? fnEnd : fnStart + 4000);
+  const pinIdx = fnBlock.indexOf('checkExpectedFingerprint(');
+  const verifyIdx = fnBlock.indexOf('crypto.verify(');
+  assert.ok(pinIdx > 0,
+    'verifyManifestSignature must call checkExpectedFingerprint() per AA P1-3');
+  assert.ok(verifyIdx > pinIdx,
+    'checkExpectedFingerprint() must be called BEFORE crypto.verify() — otherwise an attacker-rotated public.pem can authenticate before the pin gate fires');
+});
+
+test('AA P1-3: verifyManifestSignature returns structured fingerprint-mismatch error (not a generic invalid)', () => {
+  // A library-caller (refresh-network, verify-shipped-tarball, etc.) must
+  // be able to distinguish "wrong key" from "tampered manifest". The
+  // mismatch return carries explicit fingerprint_mismatch / expected /
+  // actual fields so downstream code can present the operator-actionable
+  // rotation guidance rather than a generic tamper message.
+  const src = fs.readFileSync(path.join(ROOT, 'lib', 'verify.js'), 'utf8');
+  const fnStart = src.indexOf('function verifyManifestSignature(manifest)');
+  const fnEnd = src.indexOf('function loadManifestValidated', fnStart);
+  const block = src.slice(fnStart, fnEnd > 0 ? fnEnd : fnStart + 3000);
+  assert.match(block, /fingerprint_mismatch:\s*true/,
+    'verifyManifestSignature must emit fingerprint_mismatch:true on pin divergence');
+  assert.match(block, /fingerprint-mismatch/,
+    'verifyManifestSignature must surface "fingerprint-mismatch" in the reason string for log scrapers');
+});
+
+test('AA P1-3: verifyManifestSignature honors KEYS_ROTATED=1 for legitimate rotations', () => {
+  // The override env must be respected at the library layer. Operators
+  // rotating keys/public.pem set KEYS_ROTATED=1, re-sign, then commit the
+  // new EXPECTED_FINGERPRINT. Refusing to verify during that window would
+  // brick `node lib/verify.js update` (which signs against the new key).
+  const verifyMod = require(path.join(ROOT, 'lib', 'verify.js'));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'aa-p13-rot-'));
+  const pinPath = path.join(tmp, 'EXPECTED_FINGERPRINT');
+  fs.writeFileSync(pinPath, 'SHA256:somethingElse=');
+  const prev = process.env.KEYS_ROTATED;
+  try {
+    process.env.KEYS_ROTATED = '1';
+    const result = verifyMod.checkExpectedFingerprint({ sha256: 'SHA256:newKey=' }, pinPath);
+    assert.equal(result.status, 'mismatch');
+    assert.equal(result.rotationOverride, true,
+      'KEYS_ROTATED=1 must surface rotationOverride:true so callers can accept the rotation');
+  } finally {
+    if (prev === undefined) delete process.env.KEYS_ROTATED;
+    else process.env.KEYS_ROTATED = prev;
+  }
+});
+
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});

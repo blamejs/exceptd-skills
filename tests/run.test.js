@@ -1279,204 +1279,281 @@ test.describe('attestation-signature-roundtrip (run stdin slice)', () => {
 });
 
 
-// ---- routed from bundle-schema-conformance ----
-;(() => {
+// ---- routed from audit-correctness-cluster ----
+require("node:test").describe("audit-correctness-cluster", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * Regression suite for strict CSAF 2.0 / SARIF 2.1.0 schema-conformance fixes
- * (validated against the published schemas / profile mandatory tests):
+ * Regression suite for a correctness cluster found auditing the run/ci/ai-run
+ * verbs and the close/framework-gap surfaces for silent-wrong-answer bugs:
  *
- *   CSAF 6.1.27.5 — every /vulnerabilities[] item carries `notes` (the
- *     CVE-keyed entries previously omitted it).
- *   CSAF 6.1.27.3 / §4.3 — a csaf_informational_advisory carries NO
- *     /vulnerabilities and no /product_tree.
- *   CSAF 6.1.27.2 — a csaf_informational_advisory carries /document/references
- *     with an external item.
- *   CSAF 6.1.16 + 6.1.30 — tracking.version equals the last revision_history
- *     number, and both use the same (semantic) versioning scheme.
- *   SARIF §3.27.9 — a result with kind:"informational" has level:"none"
- *     (not "note").
- *   SARIF artifactLocation.uri is a URI reference: a submission-supplied
- *     Windows backslash path is normalized to forward slashes.
+ *   H1 — `ci <playbook> --evidence -` given a FLAT submission (the same shape
+ *        `run` accepts) silently produced a PASS: the runner keyed the bundle
+ *        by playbook id, found nothing, and evaluated an empty submission.
+ *        ci must now treat a single-positional flat submission as belonging to
+ *        that playbook, matching `run`'s verdict.
  *
- * Discipline: exact field assertions tied to the cited rule.
+ *   H2 — `ai-run <pb> --no-stream --evidence -` bypassed the evidence-shape
+ *        guard `run` enforces, so `null` / `[]` / a scalar ran as if empty.
+ *        It must be rejected at the read boundary with an actionable message.
+ *
+ *   H3 — the ci framework_gap_rollup read a nonexistent `why_insufficient`
+ *        key, so every rollup entry's explanation was null. The data lives in
+ *        `actual_gap`; the rollup must surface it.
+ *
+ *   M1 — the regulatory clock only started when the AGENT submitted
+ *        detection_classification:'detected'. An engine-confirmed detection
+ *        (indicators fired, engine classified 'detected') with --ack never
+ *        started the clock, so notification deadlines silently stalled.
+ *
+ *   M2 — `framework-gap <bogus> <scenario>` produced a zero-gap report
+ *        indistinguishable from a real "no gaps" result, so a typo read as
+ *        proof the framework covered the scenario. An unknown framework must
+ *        be refused; documented short forms ("NIST-800-53") must still resolve.
+ *
+ * Discipline: exact exit codes; presence assertions paired with value/type.
  */
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { makeSuiteHome, makeCli, tryJson } = require("./_helpers/cli");
 
-const cli = makeCli(makeSuiteHome("exceptd-conformance-"));
-const SBOM_CVE = JSON.stringify({ signal_overrides: { "package-matches-catalogued-cve": "hit" } });
+const cli = makeCli(makeSuiteHome("exceptd-auditcorrect-"));
 
-test("CSAF: every CVE-keyed vulnerability carries notes (6.1.27.5)", () => {
-  const doc = tryJson(cli(["run", "sbom", "--evidence", "-", "--format", "csaf-2.0", "--json"], { input: SBOM_CVE }).stdout);
-  assert.equal(doc.document.category, "csaf_security_advisory");
-  const cveVulns = (doc.vulnerabilities || []).filter(v => v.cve);
-  assert.ok(cveVulns.length >= 1, "expected at least one CVE-keyed vulnerability");
-  for (const v of cveVulns) {
-    assert.ok(Array.isArray(v.notes) && v.notes.length >= 1, `CVE vuln ${v.cve} must carry notes`);
-    assert.equal(typeof v.notes[0].text, "string");
-  }
+// A flat secrets submission whose overrides fire real indicators.
+const FLAT_SECRETS = JSON.stringify({
+  signal_overrides: { "aws-secret-access-key": "hit", "github-personal-access-token": "hit" },
 });
 
-test("CSAF: tracking.version equals the last revision number, homogeneous versioning (6.1.16 + 6.1.30)", () => {
-  const doc = tryJson(cli(["run", "sbom", "--evidence", "-", "--format", "csaf-2.0", "--json"], { input: SBOM_CVE }).stdout);
-  const t = doc.document.tracking;
-  const last = t.revision_history[t.revision_history.length - 1];
-  assert.equal(t.version, last.number, "tracking.version must equal the last revision_history number");
-  // Both must be the same scheme: semantic versioning (contains a dot) here.
-  const isSemver = (s) => /^\d+\.\d+\.\d+/.test(s);
-  assert.equal(isSemver(t.version), isSemver(last.number), "version and revision number must share a versioning scheme");
-  assert.ok(isSemver(t.version), "this emitter uses semantic versioning for both");
-});
 
-test("CSAF: an informational advisory omits vulnerabilities + product_tree and carries an external reference", () => {
-  const doc = tryJson(cli(["run", "crypto", "--evidence", "-", "--format", "csaf-2.0", "--json"], { input: '{"precondition_checks":{"linux-platform":true}}' }).stdout);
-  assert.equal(doc.document.category, "csaf_informational_advisory");
-  assert.ok(!("vulnerabilities" in doc), "informational advisory must NOT carry /vulnerabilities (6.1.27.3)");
-  assert.ok(!("product_tree" in doc), "informational advisory must NOT carry /product_tree (§4.3)");
-  assert.ok(Array.isArray(doc.document.references) && doc.document.references.length >= 1, "must carry /document/references (6.1.27.2)");
-  assert.ok(doc.document.references.some(r => r.category === "external"), "must include an external reference");
-});
 
-test("SARIF: a kind:informational result has level:none, not note (§3.27.9)", () => {
-  const sarif = tryJson(cli(["run", "sbom", "--evidence", "-", "--format", "sarif", "--json"], { input: SBOM_CVE }).stdout);
-  const informational = (sarif.runs?.[0]?.results || []).filter(r => r.kind === "informational");
-  assert.ok(informational.length >= 1, "expected at least one informational (framework-gap) result");
-  for (const r of informational) {
-    assert.equal(r.level, "none", "kind:informational requires level:none, never note/warning");
-  }
-});
 
-test("SARIF: a submission-supplied backslash evidence path normalizes to a forward-slash URI", () => {
-  const bs = String.fromCharCode(92);
-  const sub = JSON.stringify({
-    observations: { w: { captured: true, indicator: "publish-workflow-uses-static-token", result: "hit" } },
-    evidence_locations: { "publish-workflow-uses-static-token": [["a", "b", "c.env"].join(bs), { uri: ["d", "e.txt"].join(bs), startLine: 2 }] },
+
+// The bug codex flagged: the guard above only fires on `--evidence`, but
+// --no-stream ALSO auto-reads stdin. Whether a spawnSync pipe triggers the
+// auto-stdin path is platform-divergent (POSIX FIFOs report readable; win32
+// spawnSync pipes do not), so probe reachability first and only assert the
+// rejection where the path is actually live — never coincidence-pass.
+function autoStdinReachable() {
+  const probe = cli(["ai-run", "secrets", "--no-stream", "--json"], {
+    input: JSON.stringify({ signal_overrides: { "aws-secret-access-key": "hit", "github-personal-access-token": "hit" } }),
   });
-  const sarif = tryJson(cli(["run", "library-author", "--evidence", "-", "--format", "sarif", "--json"], { input: sub }).stdout);
-  const uris = (sarif.runs?.[0]?.results || []).flatMap(r => (r.locations || []).map(l => l.physicalLocation?.artifactLocation?.uri));
-  assert.ok(uris.length >= 1, "expected located results");
-  for (const u of uris) {
-    assert.ok(!u.includes(bs), `SARIF uri must use forward slashes (RFC 3986); got ${u}`);
-  }
-  assert.ok(uris.includes("a/b/c.env"), "the backslash string path must normalize to a/b/c.env");
+  const pj = tryJson(probe.stdout);
+  return !!(pj && pj.phases?.analyze?._detect_classification === "detected");
+}
+
+
+
+
+const AI_API_FIRES = JSON.stringify({
+  signal_overrides: {
+    "cleartext-api-key-in-dotfile": "hit",
+    "ai-api-beaconing-cadence": "hit",
+    "long-lived-aws-keys": "hit",
+  },
 });
-})();
+
+test("M1: an engine-confirmed detection starts the clock with --ack (no agent classification submitted)", () => {
+  const r = cli(["run", "ai-api", "--evidence", "-", "--ack", "--json"], { input: AI_API_FIRES });
+  const j = tryJson(r.stdout);
+  assert.ok(j, "run must emit JSON");
+  assert.equal(j.phases.analyze._detect_classification, "detected", "engine must classify detected from the fired signals");
+  const notifs = j.phases.close?.jurisdiction_notifications || j.phases.close?.notification_actions || [];
+  // The detect_confirmed obligations must have a real ISO deadline, not the
+  // pending sentinel — the engine classification started the clock.
+  const started = notifs.filter(n => (n.deadline || n.notification_deadline) && (n.deadline || n.notification_deadline) !== "pending_clock_start_event");
+  assert.ok(started.length >= 1, "at least one obligation's clock must start from the engine-confirmed detection + --ack");
+  for (const n of started) {
+    assert.match(n.deadline || n.notification_deadline, /^\d{4}-\d{2}-\d{2}T/, "a started clock yields an ISO deadline");
+  }
+});
+
+test("M1: without --ack an engine-confirmed detection leaves the clock pending", () => {
+  const r = cli(["run", "ai-api", "--evidence", "-", "--json"], { input: AI_API_FIRES });
+  const j = tryJson(r.stdout);
+  assert.ok(j, "run must emit JSON");
+  const notifs = j.phases.close?.jurisdiction_notifications || j.phases.close?.notification_actions || [];
+  const detectConfirmed = notifs.filter(n => n.clock_pending_ack === true);
+  assert.ok(detectConfirmed.length >= 1, "detect_confirmed obligations must surface clock_pending_ack without --ack");
+  for (const n of detectConfirmed) {
+    assert.equal(n.deadline || n.notification_deadline, "pending_clock_start_event", "pending obligations carry the sentinel, not an ISO date");
+  }
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
 
 
-// ---- routed from collector-evidence-locations ----
-;(() => {
+// ---- routed from audit-usability-fixes ----
+require("node:test").describe("audit-usability-fixes", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * tests/collector-evidence-locations.test.js
+ * CLI usability regression suite.
  *
- * Pins the code-scope collectors' per-indicator evidence-location output:
- *   - A collector that knows WHICH file triggered an indicator surfaces it
- *     as a top-level `evidence_locations: { "<indicator-id>": [ {uri, ...} ] }`
- *     keyed by the same indicator id it flips to "hit".
- *   - The runner threads those onto the firing indicator so SARIF
- *     results[].locations gets a real file location instead of the coarse
- *     playbook-source fallback.
+ * Pins the behavior of a set of CLI ergonomics fixes so they cannot silently
+ * regress at the next refactor. Each test exercises the real CLI through the
+ * shared cli() harness (subprocess spawn of bin/exceptd.js) and asserts the
+ * EXACT exit code and field shapes per the project anti-coincidence rule:
+ * never `notEqual(0)`, never `assert.ok(field)` without a paired value/type
+ * assertion.
  *
- * citation-hygiene is the most deterministic wired collector: a fabricated
- * CVE id (e.g. CVE-2024-XXXX) flips `fabricated-cve-id` to "hit" from a
- * single fixture file with no catalog dependency.
+ * Areas covered:
+ *   1. Unknown-flag hard-fail across all verbs (+ typo suggestion + the
+ *      tailored cross-verb "irrelevant flag" message that must NOT collapse
+ *      into a generic unknown-flag refusal).
+ *   2. `--format json` returns the full run result, not a stub.
+ *   3. Multiple --format values emit a one-format-wins note to stderr.
+ *   4. Standardized bundles (sarif / csaf-2.0 / openvex) carry no top-level
+ *      `ok` key and present their spec marker.
+ *   5. `skill` / `framework-gap` honor --help; `refresh` keeps its own help.
+ *   6. `collect` emits JSON when piped (non-TTY) so the documented pipe works.
+ *   7. `refresh --check-advisories` arg parsing (report-only, no network).
+ *   8. `attest list --limit` envelope + bad-value rejection.
  */
 
-const test = require("node:test");
-const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const path = require("node:path");
-const os = require("node:os");
-const { spawnSync } = require("node:child_process");
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const os = require('node:os');
 
-const ROOT = path.join(__dirname, "..");
-const CLI = path.join(ROOT, "bin", "exceptd.js");
+const { ROOT, makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
 
-function cli(args, opts = {}) {
-  return spawnSync(process.execPath, [CLI, ...args], {
-    encoding: "utf8",
-    cwd: opts.cwd || ROOT,
-    env: { ...process.env, EXCEPTD_DEPRECATION_SHOWN: "1", EXCEPTD_UNSIGNED_WARNED: "1", ...(opts.env || {}) },
-    input: opts.input,
-  });
-}
+const SUITE_HOME = makeSuiteHome('exceptd-audit-usability-');
+const cli = makeCli(SUITE_HOME);
 
-function mkFixture() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "exceptd-evloc-"));
-  // A fabricated (non-canonical) CVE citation flips fabricated-cve-id.
-  fs.writeFileSync(path.join(dir, "notes.md"), "We patched CVE-2024-XXXX last week.\n");
-  return dir;
-}
+// ===================================================================
+// 1. Unknown-flag hard-fail (all verbs, not just doctor)
+// ===================================================================
 
-const citationCollector = require(path.join(ROOT, "lib", "collectors", "citation-hygiene.js"));
 
-test("citation-hygiene emits evidence_locations keyed by the indicator it flips to hit", () => {
-  const dir = mkFixture();
-  try {
-    const sub = citationCollector.collect({ cwd: dir });
-    assert.equal(sub.signal_overrides["fabricated-cve-id"], "hit", "fabricated CVE must flip the indicator");
-    assert.ok(sub.evidence_locations && typeof sub.evidence_locations === "object", "evidence_locations present");
-    const locs = sub.evidence_locations["fabricated-cve-id"];
-    assert.ok(Array.isArray(locs) && locs.length >= 1, "fabricated-cve-id has >= 1 location");
-    assert.equal(locs[0].uri, "notes.md", "uri points at the fixture file");
-    // The collector now derives a 1-based line from the citation's byte
-    // offset; the fixture's fabricated CVE is on line 1.
-    assert.equal(locs[0].startLine, 1, "startLine points at the line carrying the bad citation");
-    // Every evidence_locations key must be an indicator the collector
-    // actually flipped to "hit" (no orphan keys).
-    for (const id of Object.keys(sub.evidence_locations)) {
-      assert.equal(sub.signal_overrides[id], "hit", `evidence_locations key ${id} must be a flipped-to-hit indicator`);
-    }
-  } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
-  }
+
+
+
+
+
+
+
+// ===================================================================
+// 2. `--format json` returns the FULL run result (not a stub)
+// ===================================================================
+
+
+// ===================================================================
+// 3. MULTI-FORMAT note to stderr
+// ===================================================================
+
+
+// ===================================================================
+// 4. STANDARDIZED BUNDLES carry NO top-level `ok` key
+// ===================================================================
+
+
+
+
+// ===================================================================
+// 5. `skill --help` / `framework-gap --help` honor --help;
+//    refresh keeps its OWN detailed help
+// ===================================================================
+
+
+
+
+// ===================================================================
+// 6. `collect` emits JSON when piped (non-TTY) so the documented pipe works
+// ===================================================================
+
+
+// ===================================================================
+// 7. `refresh --check-advisories` parsing (no network — parseArgs directly)
+// ===================================================================
+
+
+// ===================================================================
+// 8. `attest list --limit`
+// ===================================================================
+
+test('run --format json emits the full run result, not a stub', () => {
+  const r = cli(['run', 'secrets', '--evidence', '-', '--format', 'json'], { input: '{}' });
+  assert.equal(r.status, 0, `expected exit 0; got ${r.status} (stderr: ${r.stderr.slice(0, 200)})`);
+  const body = tryJson(r.stdout.trim());
+  assert.ok(body, `run --format json stdout must parse; got: ${r.stdout.slice(0, 200)}`);
+  assert.equal(typeof body.phases, 'object');
+  assert.ok(body.phases !== null, 'phases must not be null');
+  assert.equal(body.playbook_id, 'secrets');
+  assert.ok(Object.keys(body).length > 5,
+    `full result must carry more than 5 top-level keys; got ${Object.keys(body).length}`);
 });
 
-test("run --format sarif surfaces the collector's evidence_locations as result.locations", () => {
-  const dir = mkFixture();
-  try {
-    const sub = citationCollector.collect({ cwd: dir });
-    // The fabricated-cve-id indicator declares false_positive_checks_required;
-    // a hit verdict only survives when those checks are attested. Attest by
-    // index so the deterministic hit reaches verdict=hit and emits a result.
-    sub.signal_overrides["fabricated-cve-id__fp_checks"] = { "0": true, "1": true };
-    const subPath = path.join(dir, "sub.json");
-    fs.writeFileSync(subPath, JSON.stringify(sub));
-
-    const r = cli(["run", "citation-hygiene", "--evidence", subPath, "--format", "sarif"]);
-    assert.equal(r.status, 0, `run exited 0 (stderr: ${r.stderr})`);
-    const sarif = JSON.parse(r.stdout);
-    const results = sarif.runs[0].results || [];
-    const fired = results.filter(x => x.ruleId.endsWith("/fabricated-cve-id"));
-    assert.equal(fired.length, 1, "exactly one fabricated-cve-id SARIF result");
-    const result = fired[0];
-    assert.ok(Array.isArray(result.locations) && result.locations.length >= 1, "result has locations");
-    const uri = result.locations[0].physicalLocation.artifactLocation.uri;
-    assert.equal(uri, "notes.md", "SARIF location uri matches the fixture file");
-  } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
-  }
+test('multiple --format values: first format to stdout, note to stderr', () => {
+  const r = cli(['run', 'secrets', '--evidence', '-', '--format', 'sarif', '--format', 'openvex'], { input: '{}' });
+  assert.equal(r.status, 0, `expected exit 0; got ${r.status} (stderr: ${r.stderr.slice(0, 200)})`);
+  const body = tryJson(r.stdout.trim());
+  assert.ok(body, `stdout must parse as JSON; got: ${r.stdout.slice(0, 200)}`);
+  // First format wins on stdout → SARIF carries a $schema.
+  assert.equal(typeof body['$schema'], 'string');
+  assert.match(body['$schema'], /sarif/);
+  assert.match(r.stderr, /--format values given|bundles_by_format/);
 });
-})();
+
+test('sarif bundle: no top-level ok, carries spec marker', () => {
+  // crypto gates on a Linux-platform precondition; satisfy it so the run
+  // proceeds to emit a bundle regardless of the test host's OS.
+  const r = cli(['run', 'crypto', '--evidence', '-', '--format', 'sarif'], { input: '{"precondition_checks":{"linux-platform":true}}' });
+  assert.equal(r.status, 0, `expected exit 0; got ${r.status} (stderr: ${r.stderr.slice(0, 200)})`);
+  const body = tryJson(r.stdout.trim());
+  assert.ok(body, `sarif stdout must parse; got: ${r.stdout.slice(0, 200)}`);
+  assert.equal(('ok' in body), false, 'standardized bundle must NOT carry a top-level ok key');
+  assert.equal(body.version, '2.1.0');
+  assert.ok(Array.isArray(body.runs), 'sarif must carry a runs array');
+});
+
+test('csaf-2.0 bundle: no top-level ok, carries document object', () => {
+  const r = cli(['run', 'crypto', '--evidence', '-', '--format', 'csaf-2.0'], { input: '{"precondition_checks":{"linux-platform":true}}' });
+  assert.equal(r.status, 0, `expected exit 0; got ${r.status} (stderr: ${r.stderr.slice(0, 200)})`);
+  const body = tryJson(r.stdout.trim());
+  assert.ok(body, `csaf stdout must parse; got: ${r.stdout.slice(0, 200)}`);
+  assert.equal(('ok' in body), false, 'standardized bundle must NOT carry a top-level ok key');
+  assert.equal(typeof body.document, 'object');
+  assert.ok(body.document !== null, 'csaf document must not be null');
+});
+
+test('openvex bundle: no top-level ok, carries @context string', () => {
+  const r = cli(['run', 'crypto', '--evidence', '-', '--format', 'openvex'], { input: '{"precondition_checks":{"linux-platform":true}}' });
+  assert.equal(r.status, 0, `expected exit 0; got ${r.status} (stderr: ${r.stderr.slice(0, 200)})`);
+  const body = tryJson(r.stdout.trim());
+  assert.ok(body, `openvex stdout must parse; got: ${r.stdout.slice(0, 200)}`);
+  assert.equal(('ok' in body), false, 'standardized bundle must NOT carry a top-level ok key');
+  assert.equal(typeof body['@context'], 'string');
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
 
 
-// ---- routed from collector-precondition-fixes ----
-;(() => {
+// ---- routed from blamejs-scan-fixes ----
+require("node:test").describe("blamejs-scan-fixes", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * tests/collector-precondition-fixes.test.js
+ * tests/blamejs-scan-fixes.test.js
  *
  * Pins the fixes a scan of the sibling blamejs repo surfaced:
- *  - collectors auto-attest the preconditions they can verify from collected
- *    evidence (so `collect --cwd <repo> | run` doesn't spuriously warn on a
- *    repo that clearly has a lockfile / manifest / assistant config — the
- *    runner can't probe the scanned --cwd);
- *  - a YAML COMMENT mentioning a publish verb no longer mis-classifies a CI
- *    workflow as a publish workflow;
- *  - an explicit-false precondition HALT carries a specific remediation, and
- *    the human renderer no longer asserts a platform-gate ("Linux-only") cause
- *    for every precondition block.
- * Exact-value pins per the anti-coincidence rule.
+ *  - playbooks that declare bundle_format "json" (secrets / cred-stores /
+ *    runtime / citation-hygiene) now build a real structured-JSON evidence
+ *    bundle instead of falling through to the "Unknown format" placeholder;
+ *  - the crypto-codebase collector attests the playbook's own
+ *    `repo-has-source-tree` gate (it previously emitted a `repo-context` key
+ *    the playbook never references, so a source repo got a spurious
+ *    precondition_unverified warning).
+ * Exact-value pins, with content paired to presence per the project's
+ * field-present-vs-field-populated rule.
  */
 
 const test = require('node:test');
@@ -1485,1265 +1562,1611 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const sbom = require('../lib/collectors/sbom.js');
-const libauthor = require('../lib/collectors/library-author.js');
-const mcp = require('../lib/collectors/mcp.js');
+const runner = require('../lib/playbook-runner.js');
+const cryptoCodebase = require('../lib/collectors/crypto-codebase.js');
+const containersCollector = require('../lib/collectors/containers.js');
 const { makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
 
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-dogfix-'));
+const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-dogfix2-'));
 process.on('exit', () => { try { fs.rmSync(TMP, { recursive: true, force: true }); } catch { /* non-fatal */ } });
 let _n = 0;
 function mkfx() { const d = path.join(TMP, 'fx-' + _n++); fs.mkdirSync(d, { recursive: true }); return d; }
 
-test('sbom collector attests any-package-manager-present from a collected lockfile (and false without one)', () => {
-  const withLock = mkfx();
-  fs.writeFileSync(path.join(withLock, 'package-lock.json'), '{"lockfileVersion":3,"packages":{"":{}}}');
-  assert.equal(sbom.collect({ cwd: withLock }).precondition_checks['any-package-manager-present'], true);
-  assert.equal(sbom.collect({ cwd: mkfx() }).precondition_checks['any-package-manager-present'], false);
-});
-
-test('library-author collector attests publishable-artifact-evidence from a manifest (and false without one)', () => {
-  const withManifest = mkfx();
-  fs.writeFileSync(path.join(withManifest, 'package.json'), '{"name":"x","version":"1.0.0"}');
-  assert.equal(libauthor.collect({ cwd: withManifest }).precondition_checks['publishable-artifact-evidence'], true);
-  assert.equal(libauthor.collect({ cwd: mkfx() }).precondition_checks['publishable-artifact-evidence'], false);
-});
-
-test('library-author does NOT classify a CI workflow as publish from a comment-only publish verb', () => {
-  const fx = mkfx();
-  const wf = path.join(fx, '.github', 'workflows');
-  fs.mkdirSync(wf, { recursive: true });
-  // ci.yml's only "npm publish" is inside a comment — must not count.
-  fs.writeFileSync(path.join(wf, 'ci.yml'),
-    'name: ci\njobs:\n  t:\n    steps:\n      - run: echo hi # matches the npm publish workflow depth\n');
-  // a real publish workflow with an actual command — must count.
-  fs.writeFileSync(path.join(wf, 'release.yml'),
-    'name: release\njobs:\n  p:\n    steps:\n      - run: npm publish --provenance\n');
-  fs.writeFileSync(path.join(fx, 'package.json'), '{"name":"x","version":"1.0.0"}');
-  const meta = libauthor.collect({ cwd: fx }).collector_meta || {};
-  const pw = JSON.stringify(meta.publish_workflows || meta.publishWorkflows || []);
-  assert.ok(/release\.yml/.test(pw), 'a real npm-publish workflow IS classified as publish');
-  assert.ok(!/ci\.yml/.test(pw), 'a CI workflow whose only publish mention is a comment is NOT classified as publish');
-});
-
-test('mcp collector attests any-ai-coding-assistant-installed from a config OR an install dir, and never submits false', () => {
-  // (a) a vendor config FILE present -> true
-  const cfg = mkfx();
-  fs.mkdirSync(path.join(cfg, '.cursor'), { recursive: true });
-  fs.writeFileSync(path.join(cfg, '.cursor', 'mcp.json'), '{}');
-  assert.equal(mcp.collect({ env: { HOME: cfg, USERPROFILE: cfg } }).precondition_checks['any-ai-coding-assistant-installed'], true);
-  // (b) an install DIRECTORY present but NO config file yet -> still true
-  //     (the precondition treats the dir as satisfying the gate; submitting
-  //     false here would wrongly skip the detect phase — codex P2).
-  const dirOnly = mkfx();
-  fs.mkdirSync(path.join(dirOnly, '.config', 'Code'), { recursive: true });
-  assert.equal(mcp.collect({ env: { HOME: dirOnly, USERPROFILE: dirOnly } }).precondition_checks['any-ai-coding-assistant-installed'], true);
-  // (c) nothing present -> the key is OMITTED (never false), leaving the
-  //     skip_phase gate to the host-side resolver rather than force-skipping.
-  const bare = mkfx();
-  assert.equal('any-ai-coding-assistant-installed' in mcp.collect({ env: { HOME: bare, USERPROFILE: bare } }).precondition_checks, false);
-});
-
-test('explicit-false precondition halt carries a specific remediation, not the generic platform hint', () => {
+test('the run human render surfaces collector_warnings so a skip is not hidden behind "evidence: complete"', () => {
+  // EXCEPTD_RAW_JSON='' forces the human render (the helper defaults it to '1').
   const cli = makeCli(makeSuiteHome());
-  const ev = JSON.stringify({ precondition_checks: { 'operator-owns-ci-fleet': false } });
-  const j = tryJson(cli(['run', 'cicd-pipeline-compromise', '--evidence', '-', '--json'], { input: ev }).stdout);
-  assert.equal(j.blocked_by, 'precondition');
-  assert.equal(typeof j.remediation, 'string');
-  assert.ok(/submitted as false/.test(j.remediation), 'remediation names the specific gate, not a platform guess');
-  // The universal satisfaction mechanism (submit the precondition true) must
-  // be named — it works for every playbook regardless of which verb blocked.
-  assert.ok(/precondition_checks/.test(j.remediation), 'remediation points at the precondition_checks submission mechanism');
-  assert.ok(j.remediation.includes('"operator-owns-ci-fleet": true'), 'remediation shows the exact attestation to submit');
-  // The flag example must be attributed to the collect verb (it is a collect
-  // flag; the block surfaces at run, where passing it is silently ignored).
-  assert.ok(/collect cicd-pipeline-compromise --attest-ownership/.test(j.remediation), 'the --attest-ownership example names the collect verb');
-  const human = cli(['run', 'cicd-pipeline-compromise', '--evidence', '-'], { input: ev });
-  assert.equal(/Linux-only playbook/.test(human.stdout), false, 'the misleading platform-gate hint must not appear on an intent-gate halt');
+  const ev = JSON.stringify({
+    precondition_checks: { 'repo-context': true },
+    signal_overrides: {},
+    collector_errors: [{ kind: 'file_too_large_skipped', reason: 'api-snapshot.json: 1469464 bytes exceeds 1048576-byte scan limit; not scanned' }],
+  });
+  const human = cli(['run', 'secrets', '--evidence', '-'], { input: ev, env: { EXCEPTD_RAW_JSON: '' } });
+  assert.ok(/Collector notices \(1\)/.test(human.stdout), 'human render lists collector notices');
+  assert.ok(/file_too_large_skipped/.test(human.stdout), 'the skip kind is shown to the human reader');
+  assert.ok(/api-snapshot\.json/.test(human.stdout), 'the skipped file is named');
 });
-})();
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
 
 
-// ---- routed from csaf-bundle-correctness ----
-;(() => {
+// ---- routed from bundle-and-doctor-correctness ----
+require("node:test").describe("bundle-and-doctor-correctness", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * audit CC — CSAF / SARIF / bundles-by-format correctness against the strict
- * downstream validators (BSI CSAF validator, GitHub Code Scanning).
+ * Regression suite for a cluster found auditing the structured-bundle emitters
+ * and the doctor subchecks:
  *
- *   P1-1: tracking.status defaults to 'interim' (CSAF §3.1.11.3.5.1).
- *   P1-2: non-CVE identifiers (MAL-, GHSA-, OSV-) route to vulnerabilities[].ids[]
- *         with a real system_name, NOT to vulnerabilities[].cve.
- *   P1-3: document.publisher.namespace is supplied by the operator running the
- *         scan, not the tooling vendor.
- *   P1-4: --operator threads into tracking.generator.engine and
- *         publisher.contact_details.
- *   P2-1: bundles_by_format is always { [primaryFormat]: body } even without
- *         additional --format flags.
- *   P2-2: cvss_v3 block carries vectorString (CSAF §3.2.1.5); block is dropped
- *         when score is unset.
- *   P2-6: SARIF ruleId carries a playbook prefix so cross-playbook merges in
- *         a single sarif-log don't dedupe rules.
+ *   CSAF threats text hard-coded "(CISA KEV)" for any confirmed-exploitation
+ *     CVE, even when cisa_kev is false — operator-facing misattribution.
+ *   SARIF/OpenVEX rendered the literal "null" for an unassessed blast_radius.
+ *   SARIF cve_match results carried no locations, so GitHub Code Scanning
+ *     silently dropped the highest-severity result class.
+ *   An empty-vulnerabilities run emitted a csaf_security_advisory (Profile 4,
+ *     where empty vulnerabilities is wrong) instead of csaf_informational.
+ *   ci --format csaf/sarif/openvex wrapped documents in an exceptd envelope
+ *     carrying a top-level `ok` key — invalid in all three standard formats.
+ *   doctor --rfcs scraped table rows and undercounted the catalog, dropping
+ *     non-RFC families; its freshness fields statted a nonexistent file.
  *
- * Run under: node --test --test-concurrency=1 tests/
- */
-
-const test = require('node:test');
-const { describe, it } = test;
-const assert = require('node:assert/strict');
-const path = require('node:path');
-const fs = require('node:fs');
-const os = require('node:os');
-const { spawnSync } = require('node:child_process');
-
-// Isolated sandbox for this suite's CLI subprocesses: route attestations into a
-// throwaway EXCEPTD_HOME (so `run` does not pollute the maintainer's real
-// ~/.exceptd) and scope EXCEPTD_LOCK_DIR to it (so mutex-grouped runs do not
-// race on the host-global lock dir — the non-deterministic predeploy flake).
-const CSAF_SUITE_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-csaf-'));
-process.on('exit', () => { try { fs.rmSync(CSAF_SUITE_HOME, { recursive: true, force: true }); } catch { /* non-fatal */ } });
-
-const RUNNER_PATH = path.resolve(__dirname, '..', 'lib', 'playbook-runner.js');
-const CLI_PATH = path.resolve(__dirname, '..', 'bin', 'exceptd.js');
-const REAL_PLAYBOOK_DIR = path.resolve(__dirname, '..', 'data', 'playbooks');
-
-function loadRunner() {
-  delete require.cache[RUNNER_PATH];
-  process.env.EXCEPTD_PLAYBOOK_DIR = REAL_PLAYBOOK_DIR;
-  return require(RUNNER_PATH);
-}
-
-// Build a real kernel close() result with `_bundle_formats` and the given
-// runOpts. The kernel playbook has matched_cves (real CVE-XXXX-YYYY ids) and
-// framework_gap_mapping entries, so the CSAF emitter exercises both the
-// CVE-routing and notes paths.
-function closeKernel(runOpts = {}, agentSignalsExtra = {}) {
-  const runner = loadRunner();
-  const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {
-    signal_overrides: { 'kver-in-affected-range': 'hit' }
-  });
-  const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det, {
-    patch_available: false, blast_radius_score: 3
-  });
-  const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {});
-  const c = runner.close('kernel', 'all-catalogued-kernel-cves', an, v, {
-    _bundle_formats: ['csaf-2.0', 'sarif-2.1.0', 'openvex-0.2.0'],
-    ...agentSignalsExtra,
-  }, { session_id: 'auditcccsaffixestest', ...runOpts });
-  return { close: c, analyze: an, validate: v };
-}
-
-// Build a CSAF bundle directly against a synthesized analyze result whose
-// matched_cves carries a MAL- identifier. The buildEvidenceBundle path is
-// what matters for CC P1-2; we drive it via close() so the public surface
-// is exercised end-to-end. The runner exports its internal pipeline via
-// detect/analyze/close — to inject a non-CVE matched id we patch
-// analyze.matched_cves between analyze and close (same shape as v0.12.14's
-// vex_fixed tests).
-function closeWithSyntheticMatchedId(matchedId, opts = {}) {
-  const runner = loadRunner();
-  const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {
-    signal_overrides: { 'kver-in-affected-range': 'hit' }
-  });
-  const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det, {
-    patch_available: false, blast_radius_score: 3
-  });
-  // Replace matched_cves with one synthetic entry that has the target id.
-  an.matched_cves = [{
-    cve_id: matchedId,
-    rwep: 80, cvss_score: 9.3,
-    cvss_vector: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H',
-    cisa_kev: false, active_exploitation: 'confirmed',
-    ai_discovered: false, live_patch_available: false,
-    patch_available: true, vex_status: null, correlated_via: ['synthetic'],
-  }];
-  const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {});
-  const c = runner.close('kernel', 'all-catalogued-kernel-cves', an, v, {
-    _bundle_formats: ['csaf-2.0'],
-  }, { session_id: 'auditccsynthetictest', ...opts });
-  return c.evidence_package.bundles_by_format['csaf-2.0'];
-}
-
-// ---------- P1-1 ----------
-
-describe('audit CC P1-1 — CSAF tracking.status defaults to interim', () => {
-  it('runtime emit with no --csaf-status sets status to interim', () => {
-    const { close: c } = closeKernel();
-    const csaf = c.evidence_package.bundles_by_format['csaf-2.0'];
-    assert.equal(csaf.document.tracking.status, 'interim',
-      'CSAF §3.1.11.3.5.1: runtime detection is not an immutable advisory; runtime emit defaults to interim');
-  });
-
-  it('runOpts.csafStatus=final promotes to final', () => {
-    const { close: c } = closeKernel({ csafStatus: 'final' });
-    const csaf = c.evidence_package.bundles_by_format['csaf-2.0'];
-    assert.equal(csaf.document.tracking.status, 'final');
-  });
-
-  it('runOpts.csafStatus=draft is accepted', () => {
-    const { close: c } = closeKernel({ csafStatus: 'draft' });
-    const csaf = c.evidence_package.bundles_by_format['csaf-2.0'];
-    assert.equal(csaf.document.tracking.status, 'draft');
-  });
-
-  it('unknown csafStatus value silently falls back to interim (defence-in-depth — CLI rejects upstream)', () => {
-    const { close: c } = closeKernel({ csafStatus: 'finel' });
-    const csaf = c.evidence_package.bundles_by_format['csaf-2.0'];
-    assert.equal(csaf.document.tracking.status, 'interim');
-  });
-});
-
-// ---------- P1-2 ----------
-
-describe('audit CC P1-2 — non-CVE ids route to ids[] with proper system_name', () => {
-  it('CVE-shaped id stays in vulnerabilities[].cve', () => {
-    const csaf = closeWithSyntheticMatchedId('CVE-2026-31431');
-    const vuln = csaf.vulnerabilities.find(v => v.cve === 'CVE-2026-31431');
-    assert.ok(vuln, 'CVE-shaped id must remain in `cve` field');
-    assert.equal(vuln.ids, undefined,
-      'CVE-shaped id must NOT also emit an ids[] entry — pre-fix never did and validators dedupe');
-  });
-
-  it('MAL-2026-3083 emits via ids[] with system_name: Malicious-Package', () => {
-    const csaf = closeWithSyntheticMatchedId('MAL-2026-3083');
-    const malVuln = csaf.vulnerabilities.find(v =>
-      Array.isArray(v.ids) && v.ids.some(idEntry => idEntry.text === 'MAL-2026-3083')
-    );
-    assert.ok(malVuln, `MAL- id must appear under ids[]; got: ${JSON.stringify(csaf.vulnerabilities[0]).slice(0, 200)}`);
-    assert.equal(malVuln.cve, undefined,
-      'MAL- id must NOT be placed under `cve` (CSAF §3.2.1.2 regex rejects it)');
-    const entry = malVuln.ids.find(e => e.text === 'MAL-2026-3083');
-    assert.equal(entry.system_name, 'Malicious-Package',
-      'MAL- ids carry system_name: Malicious-Package');
-    assert.equal(entry.text, 'MAL-2026-3083');
-  });
-
-  it('GHSA-xxxx-xxxx-xxxx emits with system_name: GHSA', () => {
-    const csaf = closeWithSyntheticMatchedId('GHSA-4xqg-gf5c-ghwq');
-    const v = csaf.vulnerabilities.find(x =>
-      Array.isArray(x.ids) && x.ids.some(e => e.text === 'GHSA-4xqg-gf5c-ghwq')
-    );
-    assert.ok(v);
-    assert.equal(v.cve, undefined);
-    const entry = v.ids.find(e => e.text === 'GHSA-4xqg-gf5c-ghwq');
-    assert.equal(entry.system_name, 'GHSA');
-  });
-
-  it('OSV-2026-1 emits with system_name: OSV', () => {
-    const csaf = closeWithSyntheticMatchedId('OSV-2026-1');
-    const v = csaf.vulnerabilities.find(x =>
-      Array.isArray(x.ids) && x.ids.some(e => e.text === 'OSV-2026-1')
-    );
-    assert.ok(v);
-    const entry = v.ids.find(e => e.text === 'OSV-2026-1');
-    assert.equal(entry.system_name, 'OSV');
-  });
-
-  it('unknown-prefix id falls back to OSV system_name (never to `cve`)', () => {
-    const csaf = closeWithSyntheticMatchedId('PYSEC-2026-99');
-    const v = csaf.vulnerabilities.find(x =>
-      Array.isArray(x.ids) && x.ids.some(e => e.text === 'PYSEC-2026-99')
-    );
-    assert.ok(v, 'unknown-prefix id must still surface via ids[], not be silently dropped');
-    assert.equal(v.cve, undefined, 'unknown-prefix id must NOT be placed under `cve`');
-  });
-});
-
-// ---------- P1-3 ----------
-
-describe('audit CC P1-3 — publisher.namespace from operator, not tooling vendor', () => {
-  it('default emit (no operator, no namespace) falls back to urn:exceptd:operator:unknown with explanatory note', () => {
-    const { close: c } = closeKernel();
-    const csaf = c.evidence_package.bundles_by_format['csaf-2.0'];
-    assert.equal(csaf.document.publisher.namespace, 'urn:exceptd:operator:unknown');
-    assert.equal(csaf.exceptd_extension.publisher_namespace_source, 'fallback');
-    // The notes[] array MUST include the explanatory note category=general so
-    // operators see why the fallback is in place.
-    const notes = csaf.document.notes || [];
-    const fallbackNote = notes.find(n => n.category === 'general' && /Publisher namespace not supplied/i.test(n.title));
-    assert.ok(fallbackNote, 'fallback emit must surface a general note explaining the missing publisher namespace');
-  });
-
-  it('runOpts.publisherNamespace lands in document.publisher.namespace', () => {
-    const { close: c } = closeKernel({ publisherNamespace: 'https://operator.example' });
-    const csaf = c.evidence_package.bundles_by_format['csaf-2.0'];
-    assert.equal(csaf.document.publisher.namespace, 'https://operator.example');
-    assert.equal(csaf.exceptd_extension.publisher_namespace_source, 'runOpts.publisherNamespace');
-  });
-
-  it('URL-shaped --operator (no explicit namespace) is used as fallback publisher namespace', () => {
-    const { close: c } = closeKernel({ operator: 'https://alice.example' });
-    const csaf = c.evidence_package.bundles_by_format['csaf-2.0'];
-    assert.equal(csaf.document.publisher.namespace, 'https://alice.example');
-    assert.equal(csaf.exceptd_extension.publisher_namespace_source, 'runOpts.operator');
-  });
-
-  it('explicit publisherNamespace wins over URL-shaped operator', () => {
-    const { close: c } = closeKernel({
-      publisherNamespace: 'https://org.example',
-      operator: 'https://individual.example',
-    });
-    const csaf = c.evidence_package.bundles_by_format['csaf-2.0'];
-    assert.equal(csaf.document.publisher.namespace, 'https://org.example');
-  });
-
-  it('fallback emit also surfaces bundle_publisher_unclaimed in runOpts._runErrors', () => {
-    // Direct buildEvidenceBundle exercises the bundle path with a real
-    // _runErrors accumulator (close() doesn't pre-seed one for direct callers,
-    // but the orchestrator does — we mimic that here).
-    const runOpts = { session_id: 'auditccrunerrtest', _runErrors: [] };
-    const runner = loadRunner();
-    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {
-      signal_overrides: { 'kver-in-affected-range': 'hit' }
-    }, runOpts);
-    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det,
-      { patch_available: false, blast_radius_score: 3 }, runOpts);
-    const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {}, runOpts);
-    runner.close('kernel', 'all-catalogued-kernel-cves', an, v, {
-      _bundle_formats: ['csaf-2.0'],
-    }, runOpts);
-    const unclaimed = runOpts._runErrors.filter(e => e && e.kind === 'bundle_publisher_unclaimed');
-    assert.equal(unclaimed.length, 1,
-      `fallback emit must push exactly one bundle_publisher_unclaimed entry; got ${unclaimed.length}: ${JSON.stringify(runOpts._runErrors)}`);
-    const entry = unclaimed[0];
-    assert.equal(typeof entry.reason, 'string');
-    assert.ok(entry.reason.length > 0, 'bundle_publisher_unclaimed must carry a non-empty reason string');
-    assert.match(String(entry.remediation || ''), /publisher-namespace/i,
-      'remediation field must point operators at the --publisher-namespace flag');
-  });
-
-  it('supplied --publisher-namespace does NOT push bundle_publisher_unclaimed', () => {
-    const runOpts = { session_id: 'auditcchappytest', _runErrors: [], publisherNamespace: 'https://operator.example' };
-    const runner = loadRunner();
-    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {
-      signal_overrides: { 'kver-in-affected-range': 'hit' }
-    }, runOpts);
-    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det,
-      { patch_available: false, blast_radius_score: 3 }, runOpts);
-    const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {}, runOpts);
-    runner.close('kernel', 'all-catalogued-kernel-cves', an, v, {
-      _bundle_formats: ['csaf-2.0'],
-    }, runOpts);
-    const unclaimed = runOpts._runErrors.filter(e => e && e.kind === 'bundle_publisher_unclaimed');
-    assert.deepEqual(unclaimed, [],
-      'no bundle_publisher_unclaimed entry should appear when namespace was supplied');
-  });
-});
-
-// ---------- P1-4 ----------
-
-describe('audit CC P1-4 — --operator threads into tracking.generator and publisher.contact_details', () => {
-  it('tracking.generator.engine names exceptd + a real version', () => {
-    const { close: c } = closeKernel({ operator: 'alice' });
-    const tracking = c.evidence_package.bundles_by_format['csaf-2.0'].document.tracking;
-    assert.ok(tracking.generator, 'tracking.generator must be present');
-    assert.ok(tracking.generator.engine, 'tracking.generator.engine must be present');
-    assert.equal(tracking.generator.engine.name, 'exceptd');
-    assert.equal(typeof tracking.generator.engine.version, 'string');
-    assert.ok(tracking.generator.engine.version.length > 0,
-      'tracking.generator.engine.version must be populated, not empty string');
-    assert.match(tracking.generator.engine.version, /^\d+\.\d+\.\d+/,
-      'tracking.generator.engine.version must be SemVer-shaped');
-    assert.equal(typeof tracking.generator.date, 'string');
-  });
-
-  it('publisher.contact_details carries the operator value', () => {
-    const { close: c } = closeKernel({ operator: 'alice' });
-    const publisher = c.evidence_package.bundles_by_format['csaf-2.0'].document.publisher;
-    assert.equal(publisher.contact_details, 'alice');
-  });
-
-  it('publisher.contact_details is omitted (not null) when --operator is absent', () => {
-    const { close: c } = closeKernel();
-    const publisher = c.evidence_package.bundles_by_format['csaf-2.0'].document.publisher;
-    assert.equal(publisher.contact_details, undefined,
-      'contact_details must be omitted entirely rather than carry a misleading null');
-  });
-});
-
-// ---------- P2-1 ----------
-
-describe('audit CC P2-1 — bundles_by_format is always populated', () => {
-  it('single-format emit produces { [primaryFormat]: bundle }', () => {
-    const runner = loadRunner();
-    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {
-      signal_overrides: { 'kver-in-affected-range': 'hit' }
-    });
-    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det, {
-      patch_available: false, blast_radius_score: 3
-    });
-    const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {});
-    const c = runner.close('kernel', 'all-catalogued-kernel-cves', an, v,
-      {} /* no _bundle_formats */,
-      { session_id: 'auditccp21test' }
-    );
-    const byFormat = c.evidence_package.bundles_by_format;
-    assert.notEqual(byFormat, null, 'bundles_by_format must never be null (pre-fix was null for single-format)');
-    assert.equal(typeof byFormat, 'object');
-    assert.ok(byFormat['csaf-2.0'], 'bundles_by_format must carry the primary format key');
-    assert.equal(byFormat['csaf-2.0'], c.evidence_package.bundle_body,
-      'bundles_by_format[primary] is the same object as bundle_body');
-  });
-});
-
-// ---------- P2-2 ----------
-
-describe('audit CC P2-2 — cvss_v3 block carries vectorString or is dropped entirely', () => {
-  it('matched CVE with cvss_score + cvss_vector emits full cvss_v3 block', () => {
-    const { close: c, analyze: an } = closeKernel();
-    const csaf = c.evidence_package.bundles_by_format['csaf-2.0'];
-    // Find a CVE that actually has a cvss_vector in the catalog.
-    const withVector = an.matched_cves.find(x => typeof x.cvss_vector === 'string' && x.cvss_vector.length > 0);
-    assert.ok(withVector, 'fixture: at least one matched CVE must have a cvss_vector in the catalog');
-    const vuln = csaf.vulnerabilities.find(v => v.cve === withVector.cve_id);
-    assert.ok(vuln);
-    assert.ok(Array.isArray(vuln.scores) && vuln.scores.length === 1);
-    const score = vuln.scores[0];
-    assert.ok(score.cvss_v3, 'cvss_v3 block must be present when score + vector are populated');
-    assert.equal(typeof score.cvss_v3.vectorString, 'string');
-    assert.match(score.cvss_v3.vectorString, /^CVSS:\d+\.\d+\//,
-      'cvss_v3.vectorString must match the CSAF §3.2.1.5 prefix');
-    assert.equal(score.cvss_v3.baseScore, withVector.cvss_score);
-    assert.equal(typeof score.cvss_v3.version, 'string');
-    assert.match(score.cvss_v3.baseSeverity, /^(NONE|LOW|MEDIUM|HIGH|CRITICAL)$/);
-  });
-
-  it('vulns with no cvss data emit scores: [] rather than a truncated cvss_v3 block', () => {
-    const runner = loadRunner();
-    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {
-      signal_overrides: { 'kver-in-affected-range': 'hit' }
-    });
-    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det, {
-      patch_available: false, blast_radius_score: 3
-    });
-    // Strip cvss data from one matched entry to exercise the empty-score path.
-    if (an.matched_cves.length > 0) {
-      an.matched_cves[0].cvss_score = null;
-      an.matched_cves[0].cvss_vector = null;
-    }
-    const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {});
-    const c = runner.close('kernel', 'all-catalogued-kernel-cves', an, v, {
-      _bundle_formats: ['csaf-2.0']
-    }, { session_id: 'auditccp22test' });
-    const csaf = c.evidence_package.bundles_by_format['csaf-2.0'];
-    const target = csaf.vulnerabilities.find(x => x.cve === an.matched_cves[0].cve_id);
-    assert.ok(target);
-    assert.deepEqual(target.scores, [],
-      'no-CVSS-data vuln must emit scores: [] — truncated cvss_v3 blocks are rejected by strict validators');
-  });
-});
-
-// ---------- P2-6 ----------
-
-describe('audit CC P2-6 — SARIF ruleId carries playbook prefix', () => {
-  it('every result.ruleId starts with `<playbook-slug>/`', () => {
-    const { close: c } = closeKernel();
-    const sarif = c.evidence_package.bundles_by_format['sarif-2.1.0'];
-    const results = sarif.runs[0].results;
-    assert.ok(results.length > 0, 'fixture: SARIF must have results');
-    for (const r of results) {
-      assert.match(String(r.ruleId), /^kernel\//,
-        `result.ruleId must carry playbook prefix; got ${r.ruleId}`);
-    }
-  });
-
-  it('every rule.id has a matching result.ruleId (SARIF §3.27.3 closure)', () => {
-    const { close: c } = closeKernel();
-    const sarif = c.evidence_package.bundles_by_format['sarif-2.1.0'];
-    const ruleIds = new Set((sarif.runs[0].tool.driver.rules || []).map(r => r.id));
-    const resultIds = (sarif.runs[0].results || []).map(r => r.ruleId);
-    const missing = resultIds.filter(id => !ruleIds.has(id));
-    assert.deepEqual(missing, [],
-      `every result.ruleId must have a corresponding rule.id in tool.driver.rules; missing: ${JSON.stringify(missing)}`);
-  });
-
-  it('no cross-playbook collision when two playbook bundles are merged in one sarif-log', () => {
-    // Run kernel and mcp end-to-end and check that the union of ruleIds has
-    // no duplicates — pre-fix `framework-gap-0` collided across every
-    // playbook that produced framework gaps.
-    const runner = loadRunner();
-    const kernelDet = runner.detect('kernel', 'all-catalogued-kernel-cves', {
-      signal_overrides: { 'kver-in-affected-range': 'hit' }
-    });
-    const kernelAn = runner.analyze('kernel', 'all-catalogued-kernel-cves', kernelDet, {
-      patch_available: false, blast_radius_score: 3
-    });
-    const kernelV = runner.validate('kernel', 'all-catalogued-kernel-cves', kernelAn, {});
-    const kernelClose = runner.close('kernel', 'all-catalogued-kernel-cves', kernelAn, kernelV, {
-      _bundle_formats: ['sarif-2.1.0']
-    }, { session_id: 'auditccp26kerneltest' });
-
-    // Use the framework playbook — same shape, different slug, both produce
-    // framework_gap_mapping entries.
-    const fwDet = runner.detect('framework', 'baseline-framework-gap-inventory',
-      { signal_overrides: {} });
-    const fwAn = runner.analyze('framework', 'baseline-framework-gap-inventory', fwDet, {});
-    const fwV = runner.validate('framework', 'baseline-framework-gap-inventory', fwAn, {});
-    const fwClose = runner.close('framework', 'baseline-framework-gap-inventory', fwAn, fwV, {
-      _bundle_formats: ['sarif-2.1.0']
-    }, { session_id: 'auditccp26fwtest' });
-
-    const kernelIds = (kernelClose.evidence_package.bundles_by_format['sarif-2.1.0'].runs[0].results || [])
-      .map(r => r.ruleId);
-    const fwIds = (fwClose.evidence_package.bundles_by_format['sarif-2.1.0'].runs[0].results || [])
-      .map(r => r.ruleId);
-    const inter = kernelIds.filter(id => fwIds.includes(id));
-    assert.deepEqual(inter, [],
-      `kernel and framework SARIF ruleIds must not collide; pre-fix bare ids like framework-gap-0 collided. Overlap: ${JSON.stringify(inter)}`);
-  });
-});
-
-// ---------- CLI end-to-end coverage for the two new flags ----------
-
-function tryJson(s) { try { return JSON.parse(s); } catch { return null; } }
-
-function cli(argv, opts = {}) {
-  const env = {
-    ...process.env,
-    EXCEPTD_HOME: CSAF_SUITE_HOME,
-    EXCEPTD_LOCK_DIR: path.join(CSAF_SUITE_HOME, '_locks'),
-    EXCEPTD_DEPRECATION_SHOWN: '1',
-    EXCEPTD_UNSIGNED_WARNED: '1',
-  };
-  delete env.EXCEPTD_PLAYBOOK_DIR;
-  return spawnSync(process.execPath, [CLI_PATH, ...argv], {
-    input: opts.input,
-    encoding: 'utf8',
-    env,
-    cwd: path.resolve(__dirname, '..'),
-  });
-}
-
-describe('audit CC — CLI flag plumbing', () => {
-  // library-author has no platform precondition; its `publish-workflow-uses-
-  // static-token` indicator is the same fixture #93 uses for SARIF CLI
-  // coverage.
-  const submissionFor = () => JSON.stringify({
-    observations: { w: { captured: true, indicator: 'publish-workflow-uses-static-token', result: 'hit' } },
-    verdict: {}
-  });
-
-  it('--publisher-namespace lands in CSAF document.publisher.namespace', () => {
-    const r = cli([
-      'run', 'library-author', '--evidence', '-',
-      '--format', 'csaf-2.0',
-      '--publisher-namespace', 'https://operator.example',
-      '--json',
-    ], { input: submissionFor() });
-    const data = tryJson(r.stdout);
-    assert.ok(data, `csaf via CLI must emit JSON; stderr: ${r.stderr}`);
-    assert.equal(data.document?.publisher?.namespace, 'https://operator.example');
-  });
-
-  it('--operator lands in tracking.generator.engine AND publisher.contact_details', () => {
-    const r = cli([
-      'run', 'library-author', '--evidence', '-',
-      '--format', 'csaf-2.0',
-      '--operator', 'alice',
-      '--ack',
-      '--json',
-    ], { input: submissionFor() });
-    const data = tryJson(r.stdout);
-    assert.ok(data, `csaf via CLI must emit JSON; stderr: ${r.stderr}`);
-    assert.equal(data.document?.publisher?.contact_details, 'alice');
-    assert.equal(data.document?.tracking?.generator?.engine?.name, 'exceptd');
-    assert.match(String(data.document?.tracking?.generator?.engine?.version || ''), /^\d+\.\d+\.\d+/);
-  });
-
-  it('--csaf-status final promotes tracking.status to final', () => {
-    const r = cli([
-      'run', 'library-author', '--evidence', '-',
-      '--format', 'csaf-2.0',
-      '--csaf-status', 'final',
-      '--json',
-    ], { input: submissionFor() });
-    const data = tryJson(r.stdout);
-    assert.ok(data, `csaf via CLI must emit JSON; stderr: ${r.stderr}`);
-    assert.equal(data.document?.tracking?.status, 'final');
-  });
-
-  it('default --csaf-status (omitted) yields interim', () => {
-    const r = cli([
-      'run', 'library-author', '--evidence', '-',
-      '--format', 'csaf-2.0',
-      '--json',
-    ], { input: submissionFor() });
-    const data = tryJson(r.stdout);
-    assert.ok(data, `csaf via CLI must emit JSON; stderr: ${r.stderr}`);
-    assert.equal(data.document?.tracking?.status, 'interim');
-  });
-
-  it('invalid --csaf-status value is rejected at input', () => {
-    const sub = JSON.stringify({ observations: {}, verdict: {} });
-    const r = cli([
-      'run', 'library-author', '--evidence', '-',
-      '--csaf-status', 'finel',
-      '--json',
-    ], { input: sub });
-    assert.equal(r.status, 1,
-      '--csaf-status finel must exit 1 (arg-validation refusal at CLI input)');
-    const err = tryJson(r.stderr) || tryJson(r.stdout);
-    assert.ok(err && err.ok === false,
-      `must emit an ok:false body; got stderr=${r.stderr.slice(0, 200)}`);
-    assert.match(String(err.error || ''), /csaf-status/i);
-  });
-
-  it('invalid --publisher-namespace (non-URL) is rejected', () => {
-    const sub = JSON.stringify({ observations: {}, verdict: {} });
-    const r = cli([
-      'run', 'library-author', '--evidence', '-',
-      '--publisher-namespace', 'not-a-url',
-      '--json',
-    ], { input: sub });
-    assert.equal(r.status, 1,
-      '--publisher-namespace not-a-url must exit 1 (arg-validation refusal)');
-    const err = tryJson(r.stderr) || tryJson(r.stdout);
-    assert.ok(err && err.ok === false);
-    assert.match(String(err.error || ''), /publisher-namespace/i);
-  });
-});
-})();
-
-
-// ---- routed from evidence-input-hardening ----
-;(() => {
-/**
- * tests/evidence-input-hardening.test.js
- *
- * Cycle 15 security fixes (v0.12.35):
- *
- *   F1 — `--evidence -` (stdin) was uncapped. The file-path branch
- *        enforced a 32 MiB cap; the stdin branch did `fs.readFileSync(0)`
- *        with no length limit. An attacker piping multi-GB JSON would
- *        OOM the runner. Now both branches share the same MAX_EVIDENCE_BYTES
- *        limit; stdin reads in 1 MB chunks and bails at the cap.
- *
- *   F2 — `Object.assign(out.precondition_checks, submission.precondition_checks)`
- *        re-invoked the `__proto__` setter when the operator's JSON contained
- *        a `__proto__` key. JSON.parse keeps `__proto__` as an own data
- *        property; Object.assign reads it via [[Get]] and writes via [[Set]],
- *        triggering the prototype-rebinding setter. Global Object.prototype
- *        stayed clean (Node confines the rebind to the assignment target),
- *        but the polluted local prototype was a defense-in-depth gap. Now
- *        own-key iteration explicitly skips `__proto__` / `constructor` /
- *        `prototype` keys.
- *
- * Per the anti-coincidence rule, every assertion checks an EXACT
- * exit code or value, never `assert.notEqual(0)` or wildcard match.
- */
-
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const path = require('node:path');
-const { spawnSync } = require('node:child_process');
-
-const ROOT = path.join(__dirname, '..');
-const CLI = path.join(ROOT, 'bin', 'exceptd.js');
-
-function cli(args, opts = {}) {
-  return spawnSync(process.execPath, [CLI, ...args], {
-    encoding: 'utf8',
-    cwd: opts.cwd || ROOT,
-    env: { ...process.env, EXCEPTD_DEPRECATION_SHOWN: '1', ...(opts.env || {}) },
-    input: opts.input,
-    maxBuffer: 200 * 1024 * 1024,
-  });
-}
-
-function tryJson(s) { try { return JSON.parse(s); } catch { return null; } }
-
-// F1 — stdin size cap ------------------------------------------------------
-
-test('F1: --evidence - accepts a small (< 32 MiB) JSON payload on stdin', () => {
-  const small = JSON.stringify({
-    precondition_checks: { 'linux-platform': true, 'uname-available': true },
-    artifacts: { 'kernel-release': '5.15.0-69-generic' },
-  });
-  const r = cli(['run', 'kernel', '--evidence', '-'], { input: small });
-  assert.equal(r.status, 0, `small payload must succeed; got ${r.status}, stderr: ${r.stderr.slice(0, 300)}`);
-});
-
-test('F1: --evidence - refuses payload over 32 MiB with structured error + exit 1', () => {
-  // Construct ~34 MiB payload (just over the 32 MiB cap).
-  const sizeMb = 34;
-  const filler = 'x'.repeat(1024 - 20);
-  const items = [];
-  for (let i = 0; i < sizeMb * 1024; i++) items.push(`"k${i}":"${filler}"`);
-  const big = `{"artifacts":{${items.join(',')}}}`;
-  // Sanity: payload must actually exceed 32 MiB.
-  assert.equal(big.length > 32 * 1024 * 1024, true,
-    `test payload must exceed 32 MiB; got ${big.length} bytes`);
-
-  const r = cli(['run', 'kernel', '--evidence', '-'], { input: big });
-  assert.equal(r.status, 1, `oversize stdin must exit 1; got ${r.status}`);
-  // Structured stderr JSON.
-  const err = tryJson(r.stderr);
-  assert.ok(err, `oversize-stdin error must be parseable JSON; got: ${r.stderr.slice(0, 200)}`);
-  assert.equal(err.ok, false);
-  assert.match(err.error, /evidence on stdin exceeds size limit/);
-  assert.match(err.error, /33554432 byte limit/);
-});
-
-// F2 — Prototype-pollution defense ----------------------------------------
-
-test('F2: evidence with __proto__ key does not pollute Object.prototype', () => {
-  const evil = JSON.stringify({
-    precondition_checks: {
-      'linux-platform': true,
-      'uname-available': true,
-      __proto__: { polluted: 'yes' },
-      constructor: { prototype: { injected: 1 } },
-    },
-    artifacts: { 'kernel-release': '5.15.0-69-generic' },
-  });
-  const r = cli(['run', 'kernel', '--evidence', '-'], { input: evil });
-  assert.equal(r.status, 0, `prototype-pollution test must complete; got ${r.status}`);
-  // After the child exits, our own process's Object.prototype must
-  // remain pristine. (Containment is the runtime's job, but our own
-  // process state would only be affected if we share heap with the
-  // child — we don't, so this is a sanity check.)
-  const o = {};
-  assert.equal(o.polluted, undefined, 'Object.prototype.polluted must be undefined');
-  assert.equal(o.injected, undefined, 'Object.prototype.injected must be undefined');
-  assert.equal(Object.prototype.hasOwnProperty.call(Object.prototype, 'polluted'), false);
-});
-
-test('F2: __proto__ / constructor / prototype keys in precondition_checks are stripped', () => {
-  // Pipe evidence; the runner must accept the run, but the precondition_checks
-  // bag inside should NOT have prototype-bag leakage. We assert via runtime
-  // observation: the run completes successfully + the JSON output does not
-  // surface `polluted: 'yes'` in any phase.
-  const evil = JSON.stringify({
-    precondition_checks: {
-      'linux-platform': true,
-      'uname-available': true,
-      __proto__: { polluted: 'yes' },
-    },
-    artifacts: { 'kernel-release': '5.15.0-69-generic' },
-  });
-  const r = cli(['run', 'kernel', '--evidence', '-', '--json'], { input: evil });
-  assert.equal(r.status, 0);
-  assert.equal(/"polluted":/.test(r.stdout), false,
-    `precondition bag must not surface __proto__ pollution in run output; got: ${r.stdout.slice(0, 400)}`);
-});
-})();
-
-
-// ---- routed from jurisdiction-pending ----
-;(() => {
-/**
- * tests/jurisdiction-pending.test.js
- *
- * Pins the pending-notification-obligations surface on detected runs.
- * The detection IS the regulatory event in many jurisdictions — the
- * operator must see the obligation landscape at the same moment they
- * see the finding, not after they remember to grep
- * `phases.close.notification_actions` in the JSON.
- *
- * Test pins:
- *   - Detected runs with no clocks started print the "Pending
- *     jurisdiction obligations (N)" block on the human renderer.
- *   - Obligations are grouped by `clock_start_event` (one row per
- *     start event, NOT one row per regulation).
- *   - The next-step pointer suggests `--format csaf-2.0` for the
- *     draft advisory + notification bodies.
- *   - Non-detect verdicts (not_detected / inconclusive) do NOT print
- *     the Pending block (no regulatory event to track).
+ * Discipline: exact values + types; presence paired with content.
  */
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const path = require("node:path");
+const { ROOT, makeSuiteHome, makeCli, tryJson } = require("./_helpers/cli");
+
+const cli = makeCli(makeSuiteHome("exceptd-bundledoc-"));
+
+// sbom + package-matches-catalogued-cve fires CVE-2026-45321. The CSAF
+// threats text once hard-coded "(CISA KEV)" for any confirmed-exploitation
+// CVE; the invariant under test is that the attribution tracks the entry's
+// live cisa_kev flag. The flag itself churns with reality (the automated
+// KEV refresh flips it when CISA lists the CVE), so the assertion reads the
+// catalog instead of pinning one value — pinning false broke the day CISA
+// added the CVE to KEV.
+const SBOM_CVE = JSON.stringify({ signal_overrides: { "package-matches-catalogued-cve": "hit" } });
+const CVE_CATALOG = require(path.join(ROOT, "data", "cve-catalog.json"));
+const MATCHED_ENTRY = CVE_CATALOG["CVE-2026-45321"];
+
+test("CSAF threats text attributes '(CISA KEV)' if and only if the entry's cisa_kev flag is set", () => {
+  const r = cli(["run", "sbom", "--evidence", "-", "--format", "csaf-2.0", "--json"], { input: SBOM_CVE });
+  const doc = tryJson(r.stdout);
+  assert.ok(doc && doc.document, "expected a CSAF document");
+  const v = (doc.vulnerabilities || [])[0];
+  assert.ok(v, "expected a vulnerability for the matched CVE");
+  const details = (v.threats || []).map(t => t.details).join(" | ");
+  if (MATCHED_ENTRY.active_exploitation === "confirmed") {
+    assert.match(details, /Active exploitation confirmed/, "must state confirmed exploitation");
+  }
+  if (MATCHED_ENTRY.cisa_kev === true) {
+    assert.match(details, /CISA KEV/, "must attribute to CISA KEV when cisa_kev is true");
+  } else {
+    assert.doesNotMatch(details, /CISA KEV/, "must NOT attribute to CISA KEV when cisa_kev is false");
+  }
+});
+
+test("SARIF cve_match result carries locations and renders 'not assessed' for null blast_radius", () => {
+  const r = cli(["run", "sbom", "--evidence", "-", "--format", "sarif", "--json"], { input: SBOM_CVE });
+  const sarif = tryJson(r.stdout);
+  assert.ok(sarif && sarif.version === "2.1.0", "expected SARIF 2.1.0");
+  const results = sarif.runs?.[0]?.results || [];
+  const cve = results.filter(x => x.properties?.kind === "cve_match");
+  assert.ok(cve.length >= 1, "expected at least one cve_match result");
+  for (const c of cve) {
+    assert.ok(Array.isArray(c.locations) && c.locations.length >= 1, "cve_match result must carry locations (else GitHub Code Scanning drops it)");
+    assert.ok(c.locations[0].physicalLocation?.artifactLocation?.uri, "location must have an artifact uri");
+  }
+  const withBlast = cve.find(c => /blast_radius/.test(c.message.text));
+  assert.match(withBlast.message.text, /blast_radius not assessed/, "null blast_radius must render 'not assessed', not 'null'");
+});
+
+test("OpenVEX impact_statement renders 'not assessed' for null blast_radius (not 'null/5')", () => {
+  const r = cli(["run", "sbom", "--evidence", "-", "--format", "openvex", "--json"], { input: SBOM_CVE });
+  const vex = tryJson(r.stdout);
+  assert.ok(vex && vex["@context"], "expected an OpenVEX document");
+  const stmt = (vex.statements || []).find(s => /Blast radius/.test(s.impact_statement || ""));
+  if (stmt) {
+    assert.match(stmt.impact_statement, /Blast radius not assessed/, "null blast_radius must render 'not assessed'");
+    assert.doesNotMatch(stmt.impact_statement, /null\/5/, "must not render 'null/5'");
+  }
+});
+
+test("an empty-evidence run emits a csaf_informational_advisory, not a security_advisory with empty vulnerabilities", () => {
+  const r = cli(["run", "crypto", "--evidence", "-", "--format", "csaf-2.0", "--json"], { input: '{"precondition_checks":{"linux-platform":true}}' });
+  const doc = tryJson(r.stdout);
+  assert.ok(doc && doc.document, "expected a CSAF document");
+  assert.equal((doc.vulnerabilities || []).length, 0, "this run has no vulnerabilities");
+  assert.equal(doc.document.category, "csaf_informational_advisory", "empty advisory must use the informational category");
+});
+
+test("a firing run still emits csaf_security_advisory", () => {
+  const r = cli(["run", "sbom", "--evidence", "-", "--format", "csaf-2.0", "--json"], { input: SBOM_CVE });
+  const doc = tryJson(r.stdout);
+  assert.equal(doc.document.category, "csaf_security_advisory", "a run with vulnerabilities keeps the security-advisory category");
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from engine-hardening-and-help ----
+require("node:test").describe("engine-hardening-and-help", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Regression suite for an engine-hardening + UX cluster:
+ *
+ *   Deeply-nested evidence overflowed the stack (canonicalStringify recursion
+ *     runs on every run via evidence_hash) with an opaque "internal error";
+ *     it is now rejected at a bounded depth with an actionable message.
+ *   --strict-preconditions missed a false skip_phase precondition (verdict
+ *     skipped, exit 0) — a CI gate silently passed. It now fails (exit 1).
+ *   A signal_overrides value that doesn't canonicalize (e.g. "maybe") was
+ *     silently dropped; it now surfaces a runtime_error.
+ *   A not_detected/clean classification override that would bury a
+ *     DETERMINISTIC hit is refused (substituted inconclusive) and no longer
+ *     reported as classification_override_applied. A probabilistic hit's
+ *     confirm-benign override is still honored.
+ *   run --all swallowed a mid-batch session-id collision (exit 0); it now
+ *     surfaces exit 7 like the single-run path.
+ *   watch --help started the blocking daemon (hung the terminal); collect
+ *     --help had no content. Both now print usage.
+ *
+ * Discipline: exact exit codes; value + type assertions.
+ */
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
-const { spawnSync } = require("node:child_process");
+const path = require("node:path");
+const { makeSuiteHome, makeCli, tryJson } = require("./_helpers/cli");
 
-const ROOT = path.join(__dirname, "..");
-const CLI = path.join(ROOT, "bin", "exceptd.js");
+const cli = makeCli(makeSuiteHome("exceptd-enginehard-"));
 
-function cli(args, opts = {}) {
-  return spawnSync(process.execPath, [CLI, ...args], {
-    encoding: "utf8",
-    cwd: opts.cwd || ROOT,
-    env: { ...process.env, EXCEPTD_DEPRECATION_SHOWN: "1", EXCEPTD_UNSIGNED_WARNED: "1", ...(opts.env || {}) },
-    input: opts.input,
-  });
-}
+test("deeply-nested evidence is rejected with an actionable message, not a stack overflow", () => {
+  let o = { x: 1 };
+  for (let i = 0; i < 3000; i++) o = { n: o };
+  const r = cli(["run", "secrets", "--evidence", "-", "--json"], { input: JSON.stringify({ signal_overrides: { "aws-access-key-id": o } }) });
+  const body = tryJson(r.stdout) || tryJson(r.stderr);
+  assert.ok(body && body.ok === false, "must reject, not crash");
+  assert.match(body.error, /nesting exceeds the maximum depth/, "must name the depth limit");
+});
 
-test("detected run prints 'Pending jurisdiction obligations' grouped by clock_start_event", () => {
-  // kernel playbook with the deterministic CVE indicator firing is the
-  // canonical detected-with-obligations shape.
-  const evidence = JSON.stringify({
-    precondition_checks: { "linux-platform": true, "uname-available": true },
-    artifacts: { "kernel-release": "5.15.0-69-generic" },
-    signal_overrides: { "kver-in-affected-range": "hit" },
-  });
-  const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "pending-obl-"));
+test("--strict-preconditions fails (exit 1) on a false skip_phase precondition", () => {
+  const r = cli(["run", "mcp", "--evidence", "-", "--strict-preconditions", "--json"],
+    { input: JSON.stringify({ precondition_checks: { "any-ai-coding-assistant-installed": false } }) });
+  assert.equal(r.status, 1, "a false skip precondition under --strict-preconditions must fail");
+  const body = tryJson(r.stdout);
+  assert.ok(body && Array.isArray(body.strict_preconditions_violated), "must surface the violation list");
+  assert.ok(body.strict_preconditions_violated.some(v => v.kind === "precondition_skip"), "the skip must be in the violation list");
+});
+
+test("an unrecognized signal_overrides value surfaces a runtime_error (not silently dropped)", () => {
+  const r = cli(["run", "secrets", "--evidence", "-", "--json"], { input: JSON.stringify({ signal_overrides: { "aws-access-key-id": "maybe" } }) });
+  const j = tryJson(r.stdout);
+  const kinds = (j.phases.analyze.runtime_errors || []).map(e => e.kind);
+  assert.ok(kinds.includes("signal_override_unrecognized"), `expected signal_override_unrecognized; got ${JSON.stringify(kinds)}`);
+});
+
+test("a not_detected override is refused when it would mask a deterministic hit", () => {
+  const r = cli(["run", "secrets", "--evidence", "-", "--json"], { input: JSON.stringify({ signal_overrides: { "aws-access-key-id": "hit" }, signals: { detection_classification: "not_detected" } }) });
+  const j = tryJson(r.stdout);
+  assert.equal(j.phases.analyze._detect_classification, "inconclusive", "deterministic hit must not be downgraded to not_detected");
+  assert.equal(j.phases.detect.classification_override_applied, null, "a refused override must not be reported as applied");
+  const kinds = (j.phases.analyze.runtime_errors || []).map(e => e.kind);
+  assert.ok(kinds.includes("classification_override_masks_deterministic_hit"), "must explain the refusal");
+});
+
+test("a probabilistic hit's not_detected confirm-benign override is still honored", () => {
+  const r = cli(["run", "secrets", "--evidence", "-", "--json"], { input: JSON.stringify({ signal_overrides: { "jwt-token-with-secret-context": "hit" }, signals: { detection_classification: "not_detected" } }) });
+  const j = tryJson(r.stdout);
+  assert.equal(j.phases.analyze._detect_classification, "not_detected", "a probabilistic hit remains overridable");
+  assert.equal(j.phases.detect.classification_override_applied, "not_detected", "the honored override is reported as applied");
+});
+
+test("run --all surfaces exit 7 when a reused --session-id collides across the whole batch", () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "exceptd-batchcol-"));
   try {
-    const env = { EXCEPTD_HOME: tmpHome };
-    const r = cli(["run", "kernel", "--evidence", "-"], { input: evidence, env });
-    assert.equal(r.status, 0, `run kernel must exit 0; stderr: ${r.stderr.slice(0, 200)}`);
-    // Assert the detected classification as a precondition BEFORE
-    // checking the pending-obligation output. Without this, a future
-    // regression in the deterministic hit indicator would silently
-    // skip the pending-obligation assertions (the test would still
-    // pass), and the feature could break without alerting.
-    assert.match(r.stdout, /\[!! DETECTED\]/,
-      "kernel + kver-in-affected-range:hit must classify as detected — the test scenario depends on this");
-    assert.match(r.stdout, /Pending jurisdiction obligations \(\d+\) — clock starts on operator action:/,
-      "detected run must surface pending jurisdiction obligations");
-    // At least one grouped event row. Format: `  on <event>:  <jur>/<reg> (Nh), ...`
-    assert.match(r.stdout, /\s+on \w+:\s+\w/,
-      "obligations must be grouped by clock_start_event");
-    // Next-step pointer.
-    assert.match(r.stdout, /→ next: exceptd run kernel --evidence <file> --format csaf-2\.0/,
-      "must point at csaf-2.0 format for draft advisory + notification bodies");
+    const env = { EXCEPTD_HOME: home };
+    const first = cli(["run", "--scope", "code", "--evidence", "-", "--session-id", "fixedsid123", "--json"], { input: "{}", env });
+    // first run persists; some playbooks may be clean — that's fine.
+    assert.ok(first.status === 0 || first.status === 2, `first run should succeed/escalate; got ${first.status}`);
+    const second = cli(["run", "--scope", "code", "--evidence", "-", "--session-id", "fixedsid123", "--json"], { input: "{}", env });
+    assert.equal(second.status, 7, "a batch re-run with a reused session-id must exit 7 (session-id collision), not 0");
   } finally {
-    try { fs.rmSync(tmpHome, { recursive: true, force: true }); } catch {}
+    fs.rmSync(home, { recursive: true, force: true });
   }
 });
-
-test("non-detect runs do NOT print the Pending block (irrelevant — no regulatory event)", () => {
-  // Empty submission → classification=not_detected. The renderer must
-  // not surface the Pending jurisdiction block in that case — there is
-  // no detection to trigger an obligation.
-  const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "non-detect-obl-"));
-  try {
-    const env = { EXCEPTD_HOME: tmpHome };
-    const r = cli(["run", "secrets", "--evidence", "-"], { input: "{}", env });
-    assert.equal(r.status, 0);
-    assert.doesNotMatch(r.stdout, /Pending jurisdiction obligations/,
-      "not_detected / inconclusive runs must NOT print the Pending block — no regulatory event to track");
-  } finally {
-    try { fs.rmSync(tmpHome, { recursive: true, force: true }); } catch {}
-  }
-});
-})();
-
-
-// ---- routed from offline-egress-airgap ----
-;(() => {
-/**
- * Regression: runs the operator believes are offline must make no network call.
- *
- *  [16] An intrinsically air-gapped playbook (_meta.air_gap_mode — secrets /
- *       cred-stores / containers) + `--upstream-check` must refuse the npm
- *       registry probe even without the explicit --air-gap flag.
- *  [2]  discoverNewRfcs queries IETF Datatracker live; under --air-gap it must
- *       make no call (the help no longer claims --from-cache alone is "entirely
- *       offline" — RFC discovery is live unless --air-gap is also passed).
- */
-
-const test = require('node:test');
-const assert = require('node:assert/strict');
-
-const { ROOT, makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
-const { discoverNewRfcs } = require('../lib/auto-discovery');
-
-const cli = makeCli(makeSuiteHome('exceptd-offline-egress-'));
-
-test('intrinsic air-gap playbook + --upstream-check refuses the registry probe (no flag)', () => {
-  const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
-  const r = cli(['run', 'secrets', '--upstream-check', '--evidence', '-', '--json'], { input: sub });
-  assert.equal(r.status, 0, `run must succeed; stderr=${r.stderr.slice(0, 300)}`);
-  const body = tryJson((r.stdout || '').split('\n').filter((l) => l.trim().startsWith('{')).pop() || '') || {};
-  assert.ok(body.upstream_check && typeof body.upstream_check === 'object', 'upstream_check must be present');
-  assert.equal(body.upstream_check.air_gap_blocked, true, 'intrinsic air-gap must block the registry probe');
-  assert.equal(body.upstream_check.source, 'air-gap');
-});
-
-test('discoverNewRfcs makes no network call under air-gap', async () => {
-  const orig = global.fetch;
-  let called = false;
-  global.fetch = async () => { called = true; throw new Error('network call attempted under air-gap'); };
-  try {
-    const r = await discoverNewRfcs({ airGap: true, rfcCatalog: {} });
-    assert.equal(called, false, 'discoverNewRfcs must not call fetch under air-gap');
-    assert.equal(r.diffs.length, 0);
-    assert.match(r.summary, /air-gap/i);
-  } finally {
-    global.fetch = orig;
-  }
-});
-})();
-
-
-// ---- routed from rwep-scoring-edge-cases ----
-;(() => {
-/**
- * audit MM / NN — CSAF id-routing + CVSS version gating + UTF-16BE
- * uninitialised-memory disclosure on odd-length payloads.
- *
- *   MM P1-A  RUSTSEC- ids route to system_name: 'RUSTSEC' (not 'OSV')
- *   MM P1-B  null / non-string cve_id is skipped + surfaces runtime_error
- *            `bundle_cve_id_missing` (pre-fix emitted literal text "null")
- *   MM P1-C  catalog vectors with CVSS:2.0 / CVSS:4.0 prefix do NOT emit a
- *            cvss_v3 score block (CSAF 2.0 schema enum is ['3.0','3.1']);
- *            runtime_error `bundle_cvss_v3_version_unsupported` surfaces
- *   MM P3-B  unknown-prefix ids fall back to system_name 'exceptd-unknown'
- *   NN P1-3  UTF-16BE readJsonFile:
- *            - odd-length payload after BOM throws a clean message
- *            - even-length payload decodes correctly
- *            - Buffer.alloc (zero-init) replaces Buffer.allocUnsafe so an
- *              unexpected loop bound never lets uninitialised heap bytes
- *              leak through the swapped buffer.
- *
- * Run under: node --test --test-concurrency=1 tests/
- */
-
-const test = require('node:test');
-const { describe, it } = test;
-const assert = require('node:assert/strict');
-const path = require('node:path');
-const fs = require('node:fs');
-const os = require('node:os');
-
-const RUNNER_PATH = path.resolve(__dirname, '..', 'lib', 'playbook-runner.js');
-const REAL_PLAYBOOK_DIR = path.resolve(__dirname, '..', 'data', 'playbooks');
-
-function loadRunner() {
-  delete require.cache[RUNNER_PATH];
-  process.env.EXCEPTD_PLAYBOOK_DIR = REAL_PLAYBOOK_DIR;
-  return require(RUNNER_PATH);
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
-
-// ---------------------------------------------------------------------------
-// Test harness: build a CSAF bundle against a synthesized matched_cves entry.
-// Mirrors closeWithSyntheticMatchedId() from csaf-bundle-correctness.test.js so
-// the two suites exercise the same code path.
-// ---------------------------------------------------------------------------
-
-function buildCsafWithSyntheticEntry(entryOverrides, runOpts = {}) {
-  const runner = loadRunner();
-  const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {
-    signal_overrides: { 'kver-in-affected-range': 'hit' }
-  });
-  const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det, {
-    patch_available: false, blast_radius_score: 3
-  });
-  // Replace matched_cves with the synthesized entry so we control id + vector.
-  an.matched_cves = [{
-    cve_id: 'CVE-2026-31431',
-    rwep: 80,
-    cvss_score: 9.3,
-    cvss_vector: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H',
-    cisa_kev: false,
-    active_exploitation: 'confirmed',
-    ai_discovered: false,
-    live_patch_available: false,
-    patch_available: true,
-    vex_status: null,
-    correlated_via: ['synthetic'],
-    ...entryOverrides,
-  }];
-  const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {}, runOpts);
-  const c = runner.close('kernel', 'all-catalogued-kernel-cves', an, v, {
-    _bundle_formats: ['csaf-2.0'],
-  }, { session_id: 'auditmmnntest', _runErrors: [], ...runOpts });
-  return {
-    csaf: c.evidence_package.bundles_by_format['csaf-2.0'],
-    runOpts,
-    analyze: an,
-  };
-}
-
-// ---------- MM P1-A ----------
-
-describe('audit MM P1-A — RUSTSEC- ids route to system_name: RUSTSEC', () => {
-  it('RUSTSEC-2024-0001 emits via ids[] with system_name: RUSTSEC (not OSV)', () => {
-    const runOpts = { _runErrors: [] };
-    const { csaf } = buildCsafWithSyntheticEntry({ cve_id: 'RUSTSEC-2024-0001' }, runOpts);
-    const rustsecVuln = csaf.vulnerabilities.find(v =>
-      Array.isArray(v.ids) && v.ids.some(e => e.text === 'RUSTSEC-2024-0001')
-    );
-    assert.ok(rustsecVuln, 'RUSTSEC- id must appear under ids[]');
-    assert.equal(rustsecVuln.cve, undefined,
-      'RUSTSEC- id must NOT be placed under `cve` (CSAF §3.2.1.2 regex rejects it)');
-    const entry = rustsecVuln.ids.find(e => e.text === 'RUSTSEC-2024-0001');
-    assert.deepEqual(entry, { system_name: 'RUSTSEC', text: 'RUSTSEC-2024-0001' },
-      'RUSTSEC- ids carry system_name: RUSTSEC verbatim');
-  });
 });
 
-// ---------- MM P3-B ----------
 
-describe('audit MM P3-B — unknown-prefix ids fall back to exceptd-unknown', () => {
-  it('PYSEC-2026-99 (unrecognised prefix) emits system_name: exceptd-unknown', () => {
-    const runOpts = { _runErrors: [] };
-    const { csaf } = buildCsafWithSyntheticEntry({ cve_id: 'PYSEC-2026-99' }, runOpts);
-    const vuln = csaf.vulnerabilities.find(v =>
-      Array.isArray(v.ids) && v.ids.some(e => e.text === 'PYSEC-2026-99')
-    );
-    assert.ok(vuln, 'unknown-prefix id must still surface via ids[], not be silently dropped');
-    const entry = vuln.ids.find(e => e.text === 'PYSEC-2026-99');
-    assert.equal(entry.system_name, 'exceptd-unknown',
-      'unknown-prefix ids carry system_name: exceptd-unknown so downstream ingesters know the authority was not recognised');
-  });
-});
-
-// ---------- MM P1-B ----------
-
-describe('audit MM P1-B — null / non-string cve_id is omitted with runtime_error', () => {
-  it('null cve_id: vuln entry omitted AND runtime_errors[] carries bundle_cve_id_missing', () => {
-    const runOpts = { _runErrors: [] };
-    const { csaf } = buildCsafWithSyntheticEntry({ cve_id: null }, runOpts);
-    // Pre-fix the vuln entry was present with ids[0].text === 'null' literal.
-    const literalNullVuln = csaf.vulnerabilities.find(v =>
-      Array.isArray(v.ids) && v.ids.some(e => e.text === 'null' || e.text === 'undefined')
-    );
-    assert.equal(literalNullVuln, undefined,
-      'no vuln entry may carry literal "null" / "undefined" text under ids[]');
-    // And the only matched_cves entry had cve_id: null, so cveVulns should
-    // have been filtered down to zero entries. indicator hits may still
-    // populate vulnerabilities[], but no CSAF-CVE-shape entry should exist.
-    const cveShapedVuln = csaf.vulnerabilities.find(v => typeof v.cve === 'string');
-    assert.equal(cveShapedVuln, undefined,
-      'null cve_id must NOT produce a CSAF `cve` field entry');
-    // runtime_error must surface.
-    const missing = runOpts._runErrors.filter(e => e && e.kind === 'bundle_cve_id_missing');
-    assert.equal(missing.length, 1,
-      `bundle_cve_id_missing must surface exactly once; got ${missing.length}: ${JSON.stringify(runOpts._runErrors)}`);
-    assert.equal(typeof missing[0].reason, 'string');
-    assert.ok(missing[0].reason.length > 0,
-      'bundle_cve_id_missing must carry a non-empty reason string');
-  });
-
-  it('undefined cve_id: same shape — entry omitted + runtime_error fires', () => {
-    const runOpts = { _runErrors: [] };
-    const { csaf } = buildCsafWithSyntheticEntry({ cve_id: undefined }, runOpts);
-    const literalUndef = csaf.vulnerabilities.find(v =>
-      Array.isArray(v.ids) && v.ids.some(e => e.text === 'undefined')
-    );
-    assert.equal(literalUndef, undefined);
-    const missing = runOpts._runErrors.filter(e => e && e.kind === 'bundle_cve_id_missing');
-    assert.equal(missing.length, 1);
-  });
-});
-
-// ---------- MM P1-C ----------
-
-describe('audit MM P1-C — cvss_v3 block dropped for 2.0 / 4.0 vectors', () => {
-  it('CVSS:4.0 vector: scores[] omits cvss_v3 block + runtime_error surfaces', () => {
-    const runOpts = { _runErrors: [] };
-    const v40Vector = 'CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N';
-    const { csaf } = buildCsafWithSyntheticEntry({
-      cve_id: 'CVE-2026-31431',
-      cvss_score: 9.3,
-      cvss_vector: v40Vector,
-    }, runOpts);
-    const vuln = csaf.vulnerabilities.find(x => x.cve === 'CVE-2026-31431');
-    assert.ok(vuln);
-    // The block must be omitted entirely — pre-fix it emitted version: '4.0'
-    // which BSI CSAF Validator rejects (enum: ['3.0','3.1']).
-    const hasCvssV3 = Array.isArray(vuln.scores) && vuln.scores.some(s => s && s.cvss_v3);
-    assert.equal(hasCvssV3, false,
-      'CVSS:4.0 vector must not produce a cvss_v3 block (CSAF 2.0 enum allows only 3.0 / 3.1)');
-    // runtime_error must surface so operators see the gap.
-    const unsupported = runOpts._runErrors.filter(e => e && (e.kind === 'csaf_cvss_invalid' || e.kind === 'bundle_cvss_v3_version_unsupported'));
-    assert.equal(unsupported.length, 1,
-      `bundle_cvss_v3_version_unsupported must surface exactly once; got ${unsupported.length}`);
-    assert.match(String(unsupported[0].reason || ''), /4\.0/,
-      'runtime_error reason must name the unsupported version explicitly');
-  });
-
-  it('CVSS:2.0 vector: scores[] omits cvss_v3 block + runtime_error surfaces', () => {
-    const runOpts = { _runErrors: [] };
-    const v20Vector = 'CVSS:2.0/AV:N/AC:L/Au:N/C:P/I:P/A:P';
-    const { csaf } = buildCsafWithSyntheticEntry({
-      cve_id: 'CVE-2026-31431',
-      cvss_score: 7.5,
-      cvss_vector: v20Vector,
-    }, runOpts);
-    const vuln = csaf.vulnerabilities.find(x => x.cve === 'CVE-2026-31431');
-    assert.ok(vuln);
-    const hasCvssV3 = Array.isArray(vuln.scores) && vuln.scores.some(s => s && s.cvss_v3);
-    assert.equal(hasCvssV3, false,
-      'CVSS:2.0 vector must not produce a cvss_v3 block');
-    const unsupported = runOpts._runErrors.filter(e => e && (e.kind === 'csaf_cvss_invalid' || e.kind === 'bundle_cvss_v3_version_unsupported'));
-    assert.equal(unsupported.length, 1);
-  });
-
-  it('CVSS:3.1 vector: cvss_v3 block IS emitted (positive control)', () => {
-    const runOpts = { _runErrors: [] };
-    const { csaf } = buildCsafWithSyntheticEntry({
-      cve_id: 'CVE-2026-31431',
-      cvss_score: 9.3,
-      cvss_vector: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H',
-    }, runOpts);
-    const vuln = csaf.vulnerabilities.find(x => x.cve === 'CVE-2026-31431');
-    assert.ok(vuln);
-    assert.ok(Array.isArray(vuln.scores) && vuln.scores.length === 1,
-      'CVSS:3.1 vector must produce exactly one score entry');
-    const cvssV3 = vuln.scores[0].cvss_v3;
-    assert.ok(cvssV3, 'cvss_v3 block must be present for 3.1 vector');
-    assert.equal(cvssV3.version, '3.1');
-    assert.equal(cvssV3.baseScore, 9.3);
-    // No runtime_error should fire for the supported version.
-    const unsupported = runOpts._runErrors.filter(e => e && (e.kind === 'csaf_cvss_invalid' || e.kind === 'bundle_cvss_v3_version_unsupported'));
-    assert.deepEqual(unsupported, []);
-  });
-
-  it('CVSS:3.0 vector: cvss_v3 block IS emitted', () => {
-    const runOpts = { _runErrors: [] };
-    const { csaf } = buildCsafWithSyntheticEntry({
-      cve_id: 'CVE-2026-31431',
-      cvss_score: 7.5,
-      cvss_vector: 'CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N',
-    }, runOpts);
-    const vuln = csaf.vulnerabilities.find(x => x.cve === 'CVE-2026-31431');
-    assert.ok(vuln);
-    assert.ok(Array.isArray(vuln.scores) && vuln.scores.length === 1);
-    assert.equal(vuln.scores[0].cvss_v3.version, '3.0');
-  });
-});
-
-// ---------- NN P1-3 ----------
-//
-// readJsonFile is not exported from bin/exceptd.js (its public surface is the
-// CLI itself), so we exercise it through writing a minimal harness that
-// requires the file in a child process. The simplest, isolated approach is
-// to spawn `node -e ...` and feed it the test buffer, since direct require()
-// of bin/exceptd.js executes the CLI entry point on load.
-
-describe('audit NN P1-3 — UTF-16BE odd-length payload refused; even-length parses', () => {
-  function writeUtf16BeRaw(filePath, byteArray) {
-    fs.writeFileSync(filePath, Buffer.from(byteArray));
-  }
-
-  // Run a tiny Node script that loads bin/exceptd.js's readJsonFile
-  // indirectly via `--evidence` and surfaces the error in stderr. This is
-  // the exact path operators hit, so testing through it covers both the
-  // alloc + length checks.
-  const { ROOT, makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
-  const SUITE_HOME = makeSuiteHome('audit-mm-nn-utf16-');
-  const cli = makeCli(SUITE_HOME);
-
-  it('UTF-16BE odd-length payload (BOM + 1 byte) is refused with a clear message', () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'audit-nn-p13-odd-'));
-    try {
-      const evPath = path.join(tmp, 'odd-utf16be.json');
-      // 0xFE 0xFF (BOM) + 5 single bytes => 7 total, 5-byte payload (odd).
-      writeUtf16BeRaw(evPath, [0xFE, 0xFF, 0x00, 0x7B, 0x00, 0x7D, 0x41]);
-      const r = cli(['run', 'library-author', '--evidence', evPath]);
-      assert.equal(r.status, 1, 'odd-length UTF-16BE input must exit 1 (readJsonFile refusal → dispatcher catch → emitError)');
-      const errBody = tryJson(r.stderr.trim()) || {};
-      const msg = String(errBody.error || r.stderr);
-      assert.match(msg, /UTF-16BE payload must have an even byte count/i,
-        'refusal message must name the byte-count constraint explicitly');
-      assert.match(msg, /file may be truncated/i,
-        'refusal message must hint at the most likely root cause (truncation)');
-    } finally {
-      fs.rmSync(tmp, { recursive: true, force: true });
-    }
-  });
-
-  it('UTF-16BE even-length payload decodes correctly via --evidence', () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'audit-nn-p13-even-'));
-    try {
-      const evPath = path.join(tmp, 'even-utf16be.json');
-      // "{}" in UTF-16BE: 0x00 0x7B 0x00 0x7D — even (4 bytes after 2-byte BOM).
-      // Plus an object that the runner accepts: { "observations": {}, "verdict": {} }
-      const json = '{"observations":{},"verdict":{}}';
-      // Encode as UTF-16LE then byte-swap to UTF-16BE.
-      const le = Buffer.from(json, 'utf16le');
-      const be = Buffer.alloc(le.length);
-      for (let i = 0; i < le.length - 1; i += 2) {
-        be[i] = le[i + 1];
-        be[i + 1] = le[i];
-      }
-      fs.writeFileSync(evPath, Buffer.concat([Buffer.from([0xFE, 0xFF]), be]));
-      const r = cli(['run', 'library-author', '--evidence', evPath]);
-      // Don't pin status — the run may exit 0 (clean) or with another
-      // legitimate non-zero code — but the read must not refuse on the
-      // byte-count check.
-      const errBody = tryJson(r.stderr.trim()) || {};
-      const msg = String(errBody.error || r.stderr);
-      assert.doesNotMatch(msg, /UTF-16BE payload must have an even byte count/i,
-        'even-length UTF-16BE payload must NOT trip the odd-length guard');
-      assert.doesNotMatch(msg, /Unexpected token|invalid JSON/i,
-        'even-length UTF-16BE payload must decode + parse cleanly; got: ' + msg);
-    } finally {
-      fs.rmSync(tmp, { recursive: true, force: true });
-    }
-  });
-
-  it('source no longer uses Buffer.allocUnsafe in the UTF-16BE branch', () => {
-    // Belt-and-braces: lock in the alloc semantics at the source level so a
-    // future refactor doesn't silently regress to allocUnsafe and reopen
-    // the information-disclosure path.
-    const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
-    // Locate the readJsonFile function and confirm Buffer.allocUnsafe is
-    // not invoked anywhere. A comment-mention is fine — we strip line
-    // comments and JSDoc bodies before scanning. The pattern is the call
-    // form `Buffer.allocUnsafe(` with no preceding `//` on the same line.
-    const lines = src.split(/\r?\n/);
-    const callLines = lines.filter(line => {
-      const ix = line.indexOf('Buffer.allocUnsafe(');
-      if (ix < 0) return false;
-      // Strip leading whitespace + `//` / `*` / `* ` for comment context.
-      const before = line.slice(0, ix).trimStart();
-      if (before.startsWith('//')) return false;
-      if (before.startsWith('*')) return false;
-      return true;
-    });
-    assert.deepEqual(callLines, [],
-      'Buffer.allocUnsafe must not be invoked in bin/exceptd.js — use Buffer.alloc for zero-init guarantee. Offending lines: ' + JSON.stringify(callLines));
-  });
-});
-})();
-
-
-// ---- routed from sarif-evidence-locations ----
-;(() => {
+// ---- routed from error-ux-hardening ----
+require("node:test").describe("error-ux-hardening", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * Pins the SARIF results[].locations support: a submission's optional
- * `evidence_locations` map is threaded onto firing indicators and emitted as
- * SARIF physical locations, so secret/file findings carry a real location
- * instead of shipping location-less (which GitHub code-scanning drops).
+ * Error-UX hardening regression suite.
+ *
+ * Pins the operator-facing error improvements: a case-only playbook typo gets a
+ * suggestion, input-validation errors are not mislabeled "internal error", the
+ * `ask` verb points a CVE/RFC question at the resolver, and the CVE
+ * malformed-id message is accurate for a short year (not just a non-numeric
+ * tail). All offline + deterministic.
  *
  * Discipline: exact exit codes; value/type assertions paired with presence.
  */
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
+
+const { makeSuiteHome, makeCli, tryJson } = require("./_helpers/cli");
+const SUITE_HOME = makeSuiteHome("exceptd-erruxe-");
+const cli = makeCli(SUITE_HOME);
+
+test("run SECRETS (case-only typo) → invalid-id error WITH a did-you-mean suggestion", () => {
+  const r = cli(["run", "SECRETS"]);
+  assert.equal(r.status, 1);
+  const body = tryJson(r.stderr);
+  assert.ok(body && body.ok === false, `expected ok:false body; got ${r.stderr.slice(0, 200)}`);
+  assert.match(body.error, /invalid <playbook> id/);
+  assert.match(body.error, /Did you mean: secrets\?/);
+  assert.ok(Array.isArray(body.did_you_mean) && body.did_you_mean.includes("secrets"));
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from hard-rule-forcing-functions ----
+require("node:test").describe("hard-rule-forcing-functions", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * tests/hard-rule-forcing-functions.test.js
+ *
+ * Cycle 16 audit fix (v0.12.36): closes 3 gaps in AGENTS.md Hard Rule
+ * forcing-function coverage. Without these tests the rules were
+ * policy-only — a future PR could violate them and the CI gate would
+ * stay green.
+ *
+ *   Rule #3 (no CVSS-only risk scoring): every non-draft CVE in
+ *     data/cve-catalog.json must declare rwep_score + rwep_factors.
+ *
+ *   Rule #5 (global-first, not US-centric): the framework-control-gaps
+ *     catalog must carry entries for EU + UK + AU + INTL alongside US.
+ *
+ *   Rule #8 (Pinned ATLAS version): manifest.json's atlas_version field
+ *     must equal data/atlas-ttps.json._meta.atlas_version exactly, and
+ *     same for attack_version. Pre-cycle-9 these drifted silently.
+ *
+ *   Cross-format CVE consistency: CSAF + OpenVEX + SARIF emitters must
+ *     agree on the catalogued-CVE set per playbook run.
+ *
+ * Per the anti-coincidence rule, every assertion checks an EXACT
+ * value (deep-equality or specific count).
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const ROOT = path.join(__dirname, '..');
+const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
+const cve = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'cve-catalog.json'), 'utf8'));
+const gaps = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'framework-control-gaps.json'), 'utf8'));
+const atlas = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'atlas-ttps.json'), 'utf8'));
+const attack = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'attack-techniques.json'), 'utf8'));
+
+
+function frameworkRegion(frameworkText) {
+  if (!frameworkText) return 'OTHER';
+  if (/NIST|FedRAMP|CMMC|HIPAA|HITRUST|PCI|SOC|CIS Controls|OFAC|SEC|NYDFS|CIRCIA/i.test(frameworkText)) return 'US';
+  if (/NIS2|DORA|GDPR|^EU |EU-|ENISA|CRA |AI Act|EU 2014\/833/i.test(frameworkText)) return 'EU';
+  if (/\b(?:UK|CAF|Ofcom|NCSC|OFSI|UK-GDPR)\b/i.test(frameworkText)) return 'UK';
+  if (/\b(?:AU|ACSC|ISM|Essential 8|APRA|eSafety|AU NDB)\b/i.test(frameworkText)) return 'AU';
+  if (/\b(?:ISO|IEC \d|3GPP|GSMA|ITU|FCC|TSA|OWASP|SLSA|CycloneDX|SPDX)\b/i.test(frameworkText)) return 'INTL';
+  return 'OTHER';
+}
+
+test('Cross-format CVE consistency — CSAF + OpenVEX + SARIF agree on the catalogued-CVE set per playbook run', () => {
+  const { spawnSync } = require('node:child_process');
+  const os = require('node:os');
+  const evidence = JSON.stringify({
+    precondition_checks: { 'linux-platform': true, 'uname-available': true },
+    artifacts: { 'kernel-release': '5.15.0-69-generic' },
+    signal_overrides: { 'kver-in-affected-range': 'hit' },
+  });
+  const evFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'cycle16-')), 'ev.json');
+  fs.writeFileSync(evFile, evidence);
+  try {
+    const CLI = path.join(ROOT, 'bin', 'exceptd.js');
+    function runFmt(fmt) {
+      const r = spawnSync(process.execPath, [CLI, 'run', 'kernel', '--evidence', evFile, '--format', fmt], {
+        encoding: 'utf8', cwd: ROOT,
+        env: { ...process.env, EXCEPTD_DEPRECATION_SHOWN: '1' },
+      });
+      assert.equal(r.status, 0, `${fmt} run must exit 0; got ${r.status}, stderr: ${r.stderr.slice(0, 200)}`);
+      return JSON.parse(r.stdout);
+    }
+    const csaf = runFmt('csaf');
+    const openvex = runFmt('openvex');
+    const sarif = runFmt('sarif');
+
+    const csafCves = new Set((csaf.vulnerabilities || []).map(v => v.cve).filter(Boolean));
+    const openvexCves = new Set(
+      (openvex.statements || [])
+        .map(s => s?.vulnerability?.['@id'])
+        .filter((id) => typeof id === 'string' && id.startsWith('urn:cve:'))
+        .map((id) => id.replace(/^urn:cve:/, '').toUpperCase()),
+    );
+    const sarifCves = new Set(
+      (sarif.runs || []).flatMap(r => (r.results || []).map(rr => rr.ruleId).filter(Boolean))
+        .filter((rid) => /CVE-/.test(rid))
+        .map((rid) => rid.replace(/^kernel\//, '')),
+    );
+
+    assert.deepEqual([...csafCves].sort(), [...openvexCves].sort(),
+      `CSAF vs OpenVEX CVE set divergence. CSAF: ${[...csafCves].sort().join(',')} | OpenVEX: ${[...openvexCves].sort().join(',')}`);
+    assert.deepEqual([...csafCves].sort(), [...sarifCves].sort(),
+      `CSAF vs SARIF CVE set divergence. CSAF: ${[...csafCves].sort().join(',')} | SARIF: ${[...sarifCves].sort().join(',')}`);
+  } finally {
+    try { fs.unlinkSync(evFile); } catch {}
+  }
+});
+
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from operator-bugs ----
+require("node:test").describe("operator-bugs", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Operator-reported bug regression suite.
+ *
+ * Every operator-reported bug that has been fixed lands here as a named test
+ * case so re-introductions surface at `npm test`, not at user re-report.
+ * Numbering matches the operator report sequence (items #1 through #N as
+ * reported across the v0.9.5 → v0.11.x arc).
+ *
+ * Pattern for new items:
+ *   describe('#N short label', () => { it('precise behavior', ...); });
+ *
+ * Avoid coupling tests to file paths / playbook IDs that may change. Prefer
+ * direct runner exercises over CLI shell-outs where possible — CLI tests
+ * stay narrow (smoke-level) because they spawn subprocesses and slow the
+ * suite down.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const { spawnSync } = require('node:child_process');
+
+const { ROOT, CLI, makeSuiteHome, makeCli, tryJson, secureTmpFile } = require('./_helpers/cli');
+const runner = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
+
+const SUITE_HOME = makeSuiteHome('exceptd-operator-bugs-');
+const cli = makeCli(SUITE_HOME);
+
+// ===================================================================
+
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+// ===================================================================
+
+// ===================================================================
+
+
+
+// ===================================================================
+
+
+
+// ===================================================================
+
+
+
+
+// ===================================================================
+
+
+// ===================================================================
+
+// ===================================================================
+// CSAF framework gaps emit as `document.notes[]` with `category: details`,
+// not as `vulnerabilities[]` entries with `ids: [{system_name:
+// 'exceptd-framework-gap'}]`. The `system_name` slot is reserved for
+// recognised vulnerability tracking authorities (CVE, GHSA, etc.); the
+// custom string is rejected by NVD / ENISA / Red Hat dashboards. Notes
+// are the right home for advisory context, not pseudo-CVEs. The test
+// asserts the notes-based shape and anti-asserts the pseudo-vulnerability
+// shape.
+
+
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===================================================================
+// v0.11.14 freshness additions — opt-in registry check + upstream-check
+// + refresh --network. Tests use EXCEPTD_REGISTRY_FIXTURE so they're
+// fully offline-deterministic.
+// ===================================================================
+
+function withFixture(version, daysAgo) {
+  const file = secureTmpFile('npm-fixture.json', 'npm-fixture-');
+  const publishedAt = new Date(Date.now() - daysAgo * 24 * 3600 * 1000).toISOString();
+  fs.writeFileSync(file, JSON.stringify({
+    "dist-tags": { latest: version },
+    version,
+    time: { [version]: publishedAt, modified: publishedAt },
+  }));
+  return file;
+}
+
+
+
+
+
+
+
+
+// ===================================================================
+// v0.12.0 — GHSA source + refresh --advisory + refresh --curate
+// ===================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===================================================================
+
+test('#31 session-id collision refused without --force-overwrite', () => {
+  // First run creates the attestation.
+  const sid = 'regressionsess-' + Date.now();
+  const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
+  const r1 = cli(['run', 'library-author', '--evidence', '-', '--session-id', sid], { input: sub });
+  assert.equal(r1.status, 0, 'first run must succeed');
+  // Second run with same session-id should be refused.
+  const r2 = cli(['run', 'library-author', '--evidence', '-', '--session-id', sid], { input: sub });
+  // Session-id collision without --force-overwrite sets
+  // process.exitCode = EXIT_CODES.SESSION_ID_COLLISION (= 7) in cmdRun.
+  // Pre-v0.12.24 this was 3, but exit 3 also meant "ran-but-no-evidence"
+  // in cmdCi — two semantics for one code. v0.12.24 split them so callers
+  // can distinguish collision (retry with fresh --session-id) from missing
+  // evidence (retry with stdin).
+  assert.equal(r2.status, 7, 'second run must exit 7 (SESSION_ID_COLLISION)');
+  const err = tryJson(r2.stderr.trim());
+  assert.ok(err, 'refusal should be JSON');
+  assert.match(err.error, /Session-id collision|already exists/);
+});
+
+test('#32 --mode validates against accepted set', () => {
+  const r = cli(['run', 'library-author', '--evidence', '-', '--mode', 'garbage'], { input: '{}' });
+  // Pin the exact non-zero code (1 = run-arg validation rejection) so a
+  // future regression that flips this verb to "exit 2 from generic parseArgs"
+  // or worse "silently accepts garbage and exits 0" doesn't slip by as
+  // "still non-zero, looks fine."
+  assert.equal(r.status, 1, '--mode rejection must exit 1');
+  const err = tryJson(r.stderr.trim());
+  assert.ok(err, 'rejection must be parseable JSON');
+  assert.equal(err.ok, false, 'body must carry ok:false');
+  assert.match(err.error, /--mode .* not in accepted set/,
+    'error must name the flag and the "accepted set" phrase so the operator can self-correct without grepping the source');
+  assert.equal(err.provided, 'garbage', 'rejected value must echo back so operators see what was rejected');
+});
+
+test('#33 --session-key must be hex', () => {
+  const r = cli(['run', 'library-author', '--evidence', '-', '--session-key', 'zzzznothex'], { input: '{}' });
+  assert.equal(r.status, 1, '--session-key rejection must exit 1');
+  const err = tryJson(r.stderr.trim());
+  assert.ok(err, 'rejection must be parseable JSON');
+  assert.equal(err.ok, false, 'body must carry ok:false');
+  assert.match(err.error, /--session-key must be hex/,
+    'error must name the flag and the hex requirement so operators see the exact constraint, not a generic "invalid argument"');
+});
+
+test('help deprecation pointer for prefetch names the cache-population equivalent', () => {
+  // `prefetch.js --no-network` is a report-only dry run, so a deprecation
+  // pointer reading `prefetch → refresh --no-network` sent operators to a
+  // command that populates nothing. The behavior-equivalent replacement is
+  // `refresh --prefetch` (dispatch strips the alias flag and runs the same
+  // cache population as bare `prefetch`). Pin the corrected pointer so a
+  // future help-text edit can't reintroduce the dry-run pointer.
+  const r = cli(['help']);
+  const out = `${r.stdout}${r.stderr}`;
+  assert.doesNotMatch(out, /prefetch\s+→\s+refresh --no-network/,
+    'help must not point prefetch users at the report-only dry-run form');
+  assert.match(out, /prefetch\s+→\s+refresh --prefetch/,
+    'help must point prefetch users at refresh --prefetch, the cache-population equivalent');
+});
+
+test('#76 run --format garbage returns structured JSON error', () => {
+  const r = cli(['run', 'library-author', '--evidence', '-', '--format', 'garbage'], { input: '{}' });
+  // emitError() sets process.exitCode = 1 universally (bin/exceptd.js:640).
+  // Pinning to 1 catches the regression where this verb starts routing
+  // through a path that exits 2 (unknown-verb) or 0 (silent acceptance).
+  assert.equal(r.status, 1, '--format garbage must exit 1 (emitError path)');
+  const err = tryJson(r.stderr.trim()) || tryJson(r.stdout.trim());
+  assert.ok(err && err.ok === false, 'output must include {ok:false} JSON error');
+  assert.match(err.error, /not in accepted set/);
+});
+
+test('#82 SARIF bundle via CLI includes indicator results when one fires', () => {
+  const sub = JSON.stringify({
+    observations: { w: { captured: true, indicator: 'publish-workflow-uses-static-token', result: 'hit' } },
+    verdict: {}
+  });
+  const r = cli(['run', 'library-author', '--evidence', '-', '--format', 'sarif', '--json'], { input: sub });
+  assert.equal(r.status, 0);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'sarif output should be JSON');
+  assert.equal(data.version, '2.1.0');
+  // Pre-strengthening: "some result has kind=indicator_hit" passed even if
+  // the result was for a DIFFERENT indicator than the one operator declared
+  // hit. The bug class: a runner that emits indicator_hit for every declared
+  // indicator regardless of the submission still passes that loose check.
+  // Strengthening: assert exactly one result matches BOTH ruleId=the
+  // specific indicator we declared hit AND kind=indicator_hit. That pins
+  // the runner to "operator submission drove this result," not "the runner
+  // emits indicator_hit unconditionally."
+  const results = data.runs?.[0]?.results || [];
+  // SARIF ruleIds are playbook-prefixed (`<playbook-slug>/<rule>`) so
+  // cross-playbook merges don't dedupe by ruleId. Match on the suffix
+  // instead of an exact equality.
+  const matching = results.filter(res =>
+    /(?:^|\/)publish-workflow-uses-static-token$/.test(String(res.ruleId)) &&
+    res.properties?.kind === 'indicator_hit'
+  );
+  assert.equal(matching.length, 1,
+    `exactly one SARIF result must match ruleId=publish-workflow-uses-static-token AND kind=indicator_hit — got ${matching.length}. Pre-strengthening "some result with kind=indicator_hit" allowed a runner regression that emits indicator_hit for every indicator regardless of the submitted result.`);
+});
+
+test('#82 CSAF bundle via CLI includes indicator vulnerabilities', () => {
+  const sub = JSON.stringify({
+    observations: { w: { captured: true, indicator: 'publish-workflow-uses-static-token', result: 'hit' } },
+    verdict: {}
+  });
+  const r = cli(['run', 'library-author', '--evidence', '-', '--format', 'csaf-2.0', '--json'], { input: sub });
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'csaf output should be JSON');
+  assert.equal(data.document?.csaf_version, '2.0');
+  assert.ok(Array.isArray(data.vulnerabilities));
+  // Pre-strengthening: "vulnerabilities.length > 0" passed when the bundle
+  // emitted only framework-gap entries (system_name='exceptd-framework-gap')
+  // and zero indicator entries — which is the very regression #82 was filed
+  // about. Indicator hits must surface as their own vulnerability rows with
+  // system_name='exceptd-indicator' so CSAF consumers don't conflate them
+  // with framework-control gaps.
+  const indicatorVulns = data.vulnerabilities.filter(v =>
+    Array.isArray(v.ids) && v.ids.some(id => id.system_name === 'exceptd-indicator')
+  );
+  assert.ok(indicatorVulns.length > 0,
+    `CSAF vulnerabilities must include at least one entry whose ids[].system_name === "exceptd-indicator"; got ${indicatorVulns.length}. Framework gaps (system_name=exceptd-framework-gap) alone are not sufficient.`);
+});
+
+test('#82 OpenVEX bundle via CLI includes indicator statements', () => {
+  const sub = JSON.stringify({
+    observations: { w: { captured: true, indicator: 'publish-workflow-uses-static-token', result: 'hit' } },
+    verdict: {}
+  });
+  const r = cli(['run', 'library-author', '--evidence', '-', '--format', 'openvex', '--json'], { input: sub });
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'openvex output should be JSON');
+  assert.match(data['@context'] || '', /openvex/);
+  // v0.12.12 (B4): indicator statements now live under the registered URN
+  // namespace `urn:exceptd:indicator:<playbook>:<indicator-id>` rather than
+  // the unregistered `exceptd:` scheme. Framework gaps are no longer emitted
+  // into the VEX feed at all (v0.12.12 B3) — they're control-design
+  // observations, not vulnerabilities. The substantive #82 guarantee
+  // remains: a real indicator hit MUST produce at least one VEX statement
+  // so playbooks with empty cve_refs still emit a usable bundle.
+  const indicatorStatements = (data.statements || []).filter(s => {
+    const vid = s.vulnerability?.['@id'] || '';
+    return vid.startsWith('urn:exceptd:indicator:');
+  });
+  assert.ok(indicatorStatements.length >= 1,
+    `OpenVEX must include at least one indicator statement (vulnerability.@id prefixed "urn:exceptd:indicator:<playbook>:"); got ${indicatorStatements.length}.`);
+});
+
+test('#91 CSAF emits framework_gap_mapping as document.notes (not pseudo-vulnerabilities)', () => {
+  const sub = JSON.stringify({
+    observations: { w: { captured: true, indicator: 'publish-workflow-uses-static-token', result: 'hit' } }
+  });
+  const r = cli(['run', 'library-author', '--evidence', '-', '--format', 'csaf-2.0', '--json'], { input: sub });
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'csaf output should be JSON');
+  // Anti-assertion: gaps no longer ride in vulnerabilities[].
+  const fwGapVulns = (data.vulnerabilities || []).filter(v =>
+    (v.ids || []).some(id => id.system_name === 'exceptd-framework-gap')
+  );
+  assert.equal(fwGapVulns.length, 0,
+    'framework gaps must NOT appear as vulnerabilities[] entries — they pollute downstream CSAF consumers');
+  // Positive assertion: gaps land in document.notes[].
+  // A separate `category: general` note may also appear when no
+  // --publisher-namespace was supplied. Filter to category=details
+  // before counting + asserting the framework-gap content shape.
+  const notes = data?.document?.notes || [];
+  assert.ok(Array.isArray(notes), 'document.notes must be an array');
+  const gapNotes = notes.filter(n => n.category === 'details');
+  assert.ok(gapNotes.length >= 1, 'library-author playbook surfaces at least one framework gap as a category=details note');
+  for (const n of gapNotes) {
+    assert.equal(n.category, 'details', 'framework-gap notes use category: details');
+    assert.ok(typeof n.text === 'string' && n.text.length > 0,
+      'each framework-gap note must carry a non-empty text body');
+  }
+});
+
+test('#91 OpenVEX excludes framework_gap_mapping statements (v0.12.12 B3)', () => {
+  // v0.12.12 (B3): framework gaps are control-design observations, not
+  // vulnerabilities. They were polluting the OpenVEX feed because pre-fix
+  // every gap was emitted as a statement with an unregistered
+  // `exceptd:framework-gap:` `@id` scheme. They remain in CSAF (as
+  // informational notes) and SARIF (rules with `kind: informational`),
+  // but downstream supply-chain VEX consumers should never receive them.
+  const sub = JSON.stringify({
+    observations: { w: { captured: true, indicator: 'publish-workflow-uses-static-token', result: 'hit' } }
+  });
+  const r = cli(['run', 'library-author', '--evidence', '-', '--format', 'openvex', '--json'], { input: sub });
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'openvex output should be JSON');
+  const fwGapStatements = (data.statements || []).filter(s => {
+    const vid = String(s.vulnerability?.['@id'] || '');
+    return vid.includes('framework-gap');
+  });
+  assert.equal(fwGapStatements.length, 0,
+    'OpenVEX must NOT include framework-gap statements; they pollute the supply-chain VEX feed.');
+});
+
+test('#92 CSAF tracking.current_release_date is non-null', () => {
+  const sub = JSON.stringify({});
+  const r = cli(['run', 'library-author', '--evidence', '-', '--format', 'csaf-2.0', '--json'], { input: sub });
+  const data = tryJson(r.stdout);
+  const ts = data?.document?.tracking?.current_release_date;
+  // CSAF 2.0 §3.2.1.12 requires this field to be an ISO 8601 timestamp,
+  // not just truthy. Pre-strengthening, the assertion accepted any non-empty
+  // string (including "TBD", "pending", or an empty object cast to "[object
+  // Object]") — the v0.11.10 field-present-but-not-spec-conformant bug
+  // class. Validators downstream reject anything that doesn't parse as a
+  // date, so pin the shape AT EMIT time, not after the operator reports it.
+  assert.equal(typeof ts, 'string',
+    `current_release_date must be a string per CSAF 2.0 §3.2.1.12; got ${typeof ts}`);
+  assert.match(ts, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/,
+    `current_release_date must be ISO 8601 (YYYY-MM-DDTHH:MM…); got ${JSON.stringify(ts)}`);
+  // Also confirm Date.parse round-trips so we catch "looks-like-ISO but
+  // semantically invalid" cases (e.g. month=13).
+  assert.ok(!Number.isNaN(Date.parse(ts)),
+    `current_release_date must round-trip through Date.parse; got ${JSON.stringify(ts)}`);
+});
+
+test('#93 SARIF defines every rule referenced by ruleId', () => {
+  const sub = JSON.stringify({
+    observations: { w: { captured: true, indicator: 'publish-workflow-uses-static-token', result: 'hit' } }
+  });
+  const r = cli(['run', 'library-author', '--evidence', '-', '--format', 'sarif', '--json'], { input: sub });
+  const data = tryJson(r.stdout);
+  const rules = new Set((data.runs?.[0]?.tool?.driver?.rules || []).map(x => x.id));
+  const results = data.runs?.[0]?.results || [];
+  const missingDefs = [...new Set(results.map(r => r.ruleId))].filter(id => !rules.has(id));
+  assert.equal(missingDefs.length, 0,
+    `SARIF spec §3.27.3: every referenced ruleId must have a rule definition. Missing: ${JSON.stringify(missingDefs)}`);
+});
+
+test('#96 --strict-preconditions exits 1 on warn-level preconditions', () => {
+  // secrets has a regex-engine (on_fail: warn) precondition. Without
+  // --strict-preconditions, exit 0. With it, exit 1.
+  const sub = JSON.stringify({});
+  const rDefault = cli(['run', 'secrets', '--evidence', '-'], { input: sub });
+  assert.equal(rDefault.status, 0, 'default mode: warn-level precondition exits 0');
+  const rStrict = cli(['run', 'secrets', '--evidence', '-', '--strict-preconditions'], { input: sub });
+  assert.equal(rStrict.status, 1, '--strict-preconditions: warn-level precondition exits 1');
+});
+
+test('#100 ok:false from preflight-halt exits non-zero', () => {
+  // Kernel-on-Windows triggers linux-platform halt → ok:false → exit 1.
+  // Locks in the exit-code contract: any result.ok === false maps to exit 1.
+  // On Linux: ok:true exit 0. On Windows/macOS: ok:false exit 1.
+  // The contract: exactly one of those two branches must hold — silent
+  // pass when JSON didn't parse at all is the regression worth catching
+  // (and pre-strengthening was exactly that silent fall-through).
+  const sub = JSON.stringify({});
+  const r = cli(['run', 'kernel', '--evidence', '-'], { input: sub });
+  const data = tryJson(r.stdout) || tryJson(r.stderr);
+  assert.ok(data, `run kernel must emit parseable JSON in either ok:true or ok:false branch. stdout=${JSON.stringify(r.stdout.slice(0,200))} stderr=${JSON.stringify(r.stderr.slice(0,200))}`);
+  assert.notEqual(data.ok, undefined,
+    'data.ok must be present (true or false) — undefined means the runner emitted a body without the contract field');
+  if (data.ok === false) {
+    // emit() universal contract (bin/exceptd.js:615) sets exitCode = 1
+    // whenever the emitted body has ok:false, unless a caller already
+    // chose a different non-zero code. Pin to 1 — notEqual(0) would
+    // silently pass if a future regression swapped to exit 2 (which
+    // collides with the "unknown verb" code).
+    assert.equal(r.status, 1, 'ok:false must exit 1 (universal emit() contract)');
+  } else {
+    assert.equal(data.ok, true, 'data.ok must be strictly true or false, never another truthy value');
+    assert.equal(r.status, 0, 'ok:true must exit 0 (contract: ok:true ↔ exit 0)');
+  }
+});
+
+test('#100 warn-level preconditions do NOT block (run completes ok:true exit 0)', () => {
+  // secrets has on_fail: warn preconditions (regex-engine). With empty
+  // evidence and no --strict-preconditions, the run MUST complete ok:true
+  // exit 0 — warn-level issues populate preflight_issues but don't fail.
+  // Pre-strengthening, this only checked `if (data.ok===true) assert.equal
+  // status 0`, which would have silently passed if the runner crashed
+  // before emitting JSON (data=null → branch never taken). Hard-assert
+  // both contract sides unconditionally.
+  const sub = JSON.stringify({});
+  const r = cli(['run', 'secrets', '--evidence', '-'], { input: sub });
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'secrets run must emit parseable JSON to stdout');
+  assert.equal(data.ok, true,
+    'warn-level preconditions are non-blocking by default — run must complete ok:true');
+  assert.equal(r.status, 0,
+    'warn-level run with ok:true must exit 0 — flipping to non-zero would re-introduce the very behavior --strict-preconditions was added to opt INTO');
+});
+
+test('#100 --strict-preconditions escalates warn-level to exit 1', () => {
+  // Pre-stage a submission that GUARANTEES at least one preflight issue:
+  // submit precondition_checks.regex-engine=false explicitly. This dodges
+  // any autoDetect path that might silently populate the check on hosts
+  // where pcre support is present. Without this pre-stage, the original
+  // test silently passed on machines where preflight_issues happened to
+  // be empty — the staged condition never reproduced, the `if` never
+  // fired, the assertion was a no-op (Hard Rule #11 violation).
+  const sub = JSON.stringify({ precondition_checks: { 'regex-engine': false } });
+  const r = cli(['run', 'secrets', '--evidence', '-', '--strict-preconditions'], { input: sub });
+  const data = tryJson(r.stdout) || tryJson(r.stderr);
+  assert.ok(data, '--strict-preconditions run must still emit JSON (just to a non-zero exit)');
+  assert.ok(Array.isArray(data.preflight_issues),
+    'preflight_issues must be present as an array on a --strict-preconditions run');
+  assert.ok(data.preflight_issues.length >= 1,
+    `with regex-engine:false pre-staged, preflight_issues MUST contain ≥1 entry; got ${data.preflight_issues.length}. If 0, the runner silently dropped the staged precondition check — that's the bug.`);
+  assert.equal(r.status, 1,
+    '--strict-preconditions must exit exactly 1 when preflight issues are present (NOT 0, NOT 2 — 1 is the warn-escalation code)');
+});
+
+test('#104 jurisdiction clocks fire on detected classification (with --ack — E7: operator awareness starts the clock)', () => {
+  // E7: pre-fix the engine auto-stamped clock_started_at = now whenever
+  // classification was 'detected', even without operator awareness. AGENTS.md
+  // Phase 7 binds the clock to operator awareness (typically --ack). This
+  // test now passes --ack so the clock legitimately starts.
+  const sub = JSON.stringify({
+    secrets: {
+      observations: { w: { captured: true, value: 'AKIA', indicator: 'aws-access-key-id', result: 'hit' } },
+      verdict: { classification: 'detected', blast_radius: 4 }
+    }
+  });
+  const tmpFile = secureTmpFile('ev.json', 'civ-');
+  fs.writeFileSync(tmpFile, sub);
+  const r = cli(['ci', '--required', 'secrets', '--evidence', tmpFile, '--ack', '--json']);
+  fs.unlinkSync(tmpFile);
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'ci output should be JSON');
+  assert.ok(data.summary.jurisdiction_clocks_started >= 1,
+    'detected classification with detect_confirmed obligations should fire at least one jurisdiction clock');
+  // Pre-strengthening, the count check passed even if the clocks_started
+  // counter was a stale integer with no underlying obligations (field-
+  // populated-but-content-empty class). Drill into the result the count
+  // SHOULD be derived from and verify the EU jurisdiction (GDPR/NIS2) is
+  // present — secrets stages multiple EU obligations under detect_confirmed,
+  // so absent that, the counter is lying.
+  const result = data.results?.[0];
+  assert.ok(result, 'ci must surface per-playbook results so the counter can be cross-checked');
+  const obligations = result.phases?.govern?.jurisdiction_obligations || [];
+  assert.ok(Array.isArray(obligations) && obligations.length > 0,
+    'govern.jurisdiction_obligations must be a non-empty array — that is what jurisdiction_clocks_started is counting against');
+  const euOblig = obligations.filter(o => o.jurisdiction === 'EU');
+  assert.ok(euOblig.length >= 1,
+    `secrets stages EU obligations (GDPR Art.33, NIS2 Art.23) under detect_confirmed — at least one must be present; got jurisdictions=${JSON.stringify([...new Set(obligations.map(o => o.jurisdiction))])}`);
+});
+
+test('#113 --operator surfaces in run result top-level', () => {
+  const r = cli(['run', 'library-author', '--evidence', '-', '--operator', 'robert@example.com', '--session-id', 'oper113-' + Date.now(), '--force-overwrite', '--json'], { input: '{}' });
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'run output should be JSON');
+  assert.equal(data.operator, 'robert@example.com',
+    '--operator must surface at result.operator (pre-0.11.9 was attestation-only)');
+});
+
+test('#114 --ack surfaces in run result top-level', () => {
+  const r = cli(['run', 'library-author', '--evidence', '-', '--ack', '--session-id', 'ack114-' + Date.now(), '--force-overwrite', '--json'], { input: '{}' });
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'run output should be JSON');
+  assert.ok(data.operator_consent && data.operator_consent.explicit === true,
+    '--ack must surface at result.operator_consent.explicit');
+});
+
+test('#119 result.ack alias for --ack consent state', () => {
+  const r = cli(['run', 'library-author', '--evidence', '-', '--ack', '--session-id', 'ack119-' + Date.now(), '--force-overwrite', '--json'], { input: '{}' });
+  const data = tryJson(r.stdout);
+  assert.equal(data?.ack, true, 'result.ack must be true when --ack is passed');
+  assert.equal(data?.operator_consent?.explicit, true, 'operator_consent.explicit also true');
+});
+
+test('#119 result.ack is false without --ack', () => {
+  const r = cli(['run', 'library-author', '--evidence', '-', '--session-id', 'noack-' + Date.now(), '--force-overwrite', '--json'], { input: '{}' });
+  const data = tryJson(r.stdout);
+  assert.equal(data?.ack, false, 'result.ack must be false without --ack');
+});
+
+test('#123 jurisdiction_notifications entries carry obligation metadata', () => {
+  const sub = JSON.stringify({
+    observations: { w: { captured: true, value: 'AKIA', indicator: 'aws-access-key-id', result: 'hit' } },
+    verdict: { classification: 'detected', blast_radius: 4 }
+  });
+  const r = cli(['run', 'secrets', '--evidence', '-', '--session-id', 'jur123-' + Date.now(), '--force-overwrite', '--json'], { input: sub });
+  const data = tryJson(r.stdout);
+  const notifs = data?.phases?.close?.jurisdiction_notifications || [];
+  assert.ok(notifs.length > 0, 'must have notifications when classification=detected');
+  const enriched = notifs.filter(n => n.jurisdiction && n.regulation);
+  assert.ok(enriched.length > 0,
+    'at least one notification entry must carry jurisdiction + regulation (enriched from govern.jurisdiction_obligations)');
+  for (const n of enriched) {
+    assert.equal(typeof n.jurisdiction, 'string', 'jurisdiction must be a string, not null');
+    assert.equal(typeof n.regulation, 'string', 'regulation must be a string, not null');
+    assert.ok(typeof n.window_hours === 'number', 'window_hours must be a number');
+    assert.ok(typeof n.notification_deadline === 'string', 'notification_deadline must be a string (ISO or sentinel)');
+    assert.ok(Array.isArray(n.evidence_required), 'evidence_required must be an array');
+  }
+});
+
+test('#124 --ack propagates into phases.govern.operator_consent', () => {
+  const r = cli(['run', 'library-author', '--evidence', '-', '--ack', '--session-id', 'gov124-' + Date.now(), '--force-overwrite', '--json'], { input: '{}' });
+  const data = tryJson(r.stdout);
+  assert.ok(data?.phases?.govern, 'govern phase must be present');
+  assert.ok(data.phases.govern.operator_consent,
+    'phases.govern.operator_consent must be populated when --ack passed (consent semantically belongs in govern)');
+  assert.equal(data.phases.govern.operator_consent.explicit, true);
+});
+
+test('#124 phases.govern.operator_consent is null without --ack', () => {
+  const r = cli(['run', 'library-author', '--evidence', '-', '--session-id', 'noackg-' + Date.now(), '--force-overwrite', '--json'], { input: '{}' });
+  const data = tryJson(r.stdout);
+  assert.equal(data?.phases?.govern?.operator_consent, null,
+    'govern.operator_consent must be null (not undefined) when --ack not passed');
+});
+
+test('#131 run <skill-name> suggests the right playbook', () => {
+  // Operators read the site, see skill names, type `exceptd run <skill>`.
+  // Pre-0.11.14: "Playbook not found." Post-0.11.14: error includes a hint
+  // pointing at the playbook that loads that skill.
+  const r = cli(['run', 'kernel-lpe-triage', '--evidence', '-', '--json'], { input: '{}' });
+  assert.equal(r.status, 1, 'unknown playbook must exit 1 (emitError refusal from cmdRun playbook lookup)');
+  const err = tryJson(r.stderr.trim());
+  assert.ok(err && err.ok === false, 'stderr must carry structured JSON error');
+  assert.match(err.error, /SKILL.*not.*PLAYBOOK|skill.*playbook|exceptd skill|exceptd plan/i,
+    'error must explain skill≠playbook and suggest the right verb');
+  // The "kernel" playbook loads "kernel-lpe-triage" — must be mentioned.
+  assert.match(err.error, /kernel\b/, 'must name the playbook that loads this skill');
+});
+
+test('#131 run <typo-playbook-id> suggests nearest playbooks', () => {
+  const r = cli(['run', 'secret', '--evidence', '-', '--json'], { input: '{}' });
+  assert.equal(r.status, 1, 'typo-playbook-id must exit 1 (emitError unknown-playbook with suggestion)');
+  const err = tryJson(r.stderr.trim());
+  assert.match(err.error, /Did you mean|exceptd plan|secrets/i,
+    'partial-match must suggest the canonical id');
+});
+
+test('run --upstream-check surfaces upstream_check on result and warns when behind', () => {
+  const fix = withFixture('99.99.99', 5);
+  try {
+    const r = cli(['run', 'library-author', '--evidence', '-', '--upstream-check', '--session-id', 'us-' + Date.now(), '--force-overwrite', '--json'], {
+      input: '{}',
+      env: { EXCEPTD_REGISTRY_FIXTURE: fix }
+    });
+    const data = tryJson(r.stdout);
+    assert.ok(data?.upstream_check, 'run result must carry upstream_check when --upstream-check is passed');
+    assert.equal(data.upstream_check.behind, true);
+    assert.equal(data.upstream_check.latest_version, '99.99.99');
+    assert.match(r.stderr, /STALE: local v.* < published v99\.99\.99/,
+      'stderr must surface a visible STALE warning so operators see the freshness gap before relying on findings');
+  } finally { fs.unlinkSync(fix); }
+});
+
+test('run without --upstream-check does NOT contact the registry', () => {
+  // No fixture configured — if the runner contacted the registry we'd either
+  // succeed (network) or fail (timeout). The contract is: opt-in only.
+  const r = cli(['run', 'library-author', '--evidence', '-', '--session-id', 'noUp-' + Date.now(), '--force-overwrite', '--json'], { input: '{}' });
+  const data = tryJson(r.stdout);
+  assert.ok(data, 'run JSON must parse');
+  assert.equal(data.upstream_check, undefined,
+    'no upstream_check field unless --upstream-check is explicitly passed');
+});
+
+test('#104 close emits jurisdiction_notifications alias + clocks count (with --ack — E7 binds clock to operator awareness)', () => {
+  const sub = JSON.stringify({
+    observations: { w: { captured: true, value: 'AKIA', indicator: 'aws-access-key-id', result: 'hit' } },
+    verdict: { classification: 'detected', blast_radius: 4 }
+  });
+  // E7: pre-fix the clock auto-stamped on classification=detected. Now the
+  // operator must acknowledge via --ack for the clock to start.
+  const r = cli(['run', 'secrets', '--evidence', '-', '--ack', '--session-id', 'jur104-' + Date.now(), '--force-overwrite', '--json'], { input: sub });
+  const data = tryJson(r.stdout);
+  assert.ok(Array.isArray(data?.phases?.close?.jurisdiction_notifications),
+    'phases.close.jurisdiction_notifications must be present (alias for notification_actions)');
+  assert.ok(data.phases.close.jurisdiction_clocks_count >= 1,
+    'jurisdiction_clocks_count must be > 0 when classification=detected + --ack with detect_confirmed obligations');
+});
+
+test('#E7 jurisdiction clock pending without --ack on detected classification', () => {
+  // E7: without --ack, classification=detected MUST NOT auto-start the clock.
+  // The pre-fix behavior (auto-stamping Date.now() in computeClockStart for
+  // detect_confirmed events) was legally incorrect per AGENTS.md Phase 7 —
+  // the clock binds to operator awareness, not engine classification.
+  const sub = JSON.stringify({
+    observations: { w: { captured: true, value: 'AKIA', indicator: 'aws-access-key-id', result: 'hit' } },
+    verdict: { classification: 'detected', blast_radius: 4 }
+  });
+  const r = cli(['run', 'secrets', '--evidence', '-', '--session-id', 'e7-' + Date.now(), '--force-overwrite', '--json'], { input: sub });
+  const data = tryJson(r.stdout);
+  const notifs = data?.phases?.close?.notification_actions || [];
+  const detectConfirmed = notifs.filter(n => n && n.clock_start_event === 'detect_confirmed');
+  assert.ok(detectConfirmed.length >= 1,
+    'secrets stages at least one detect_confirmed obligation');
+  assert.ok(detectConfirmed.every(n => n.clock_started_at == null),
+    'without --ack every detect_confirmed clock must be unstarted');
+  assert.ok(detectConfirmed.every(n => n.clock_pending_ack === true),
+    'each unstarted detect_confirmed notification must surface clock_pending_ack=true so operators see why');
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from precondition-source-provenance ----
+require("node:test").describe("precondition-source-provenance", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Regression suite for precondition_check_source provenance accuracy.
+ *
+ * Before the fix, a CLI `run` reported EVERY precondition as "merged" because
+ * the CLI copied the submission's precondition_checks into runOpts (the value
+ * then appeared in both the submission and runOpts maps). And an
+ * engine-auto-detected precondition was mislabeled "submission". Now:
+ *   - a submission-supplied precondition → "submission"
+ *   - an engine-auto-detected precondition → "auto"
+ *   - (engine-level) a value in both submission and runOpts → "merged"
+ * Gating is unchanged — preconditions still block correctly.
+ *
+ * Discipline: exact provenance value assertions + a gating guard.
+ */
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
 const { makeSuiteHome, makeCli, tryJson } = require("./_helpers/cli");
 
-const cli = makeCli(makeSuiteHome("exceptd-sariflocs-"));
+const cli = makeCli(makeSuiteHome("exceptd-pcsource-"));
 
-// A library-author observation-hit drives a clean 'hit' (the existing SARIF
-// tests use this path). Supply evidence_locations in both accepted forms.
-const SUB = JSON.stringify({
-  observations: { w: { captured: true, indicator: "publish-workflow-uses-static-token", result: "hit" } },
-  evidence_locations: {
-    "publish-workflow-uses-static-token": [
-      ".github/workflows/release.yml",
-      { uri: ".github/workflows/publish.yml", startLine: 12 },
-    ],
+test("a submission-supplied precondition reports provenance 'submission' (not 'merged')", () => {
+  const r = cli(["run", "secrets", "--evidence", "-", "--json"], {
+    input: JSON.stringify({ precondition_checks: { "repo-context": true }, signal_overrides: { "aws-access-key-id": "hit" } }),
+  });
+  const j = tryJson(r.stdout);
+  assert.ok(j && j.precondition_check_source, "must surface precondition_check_source");
+  assert.equal(j.precondition_check_source["repo-context"], "submission",
+    "an operator-submitted precondition must be tagged submission, not merged");
+});
+
+test("an engine-auto-detected precondition reports provenance 'auto' (not 'submission')", () => {
+  const r = cli(["run", "secrets", "--evidence", "-", "--json"], {
+    input: JSON.stringify({ signal_overrides: { "aws-access-key-id": "hit" } }),
+  });
+  const j = tryJson(r.stdout);
+  const src = j.precondition_check_source || {};
+  // repo-context (cwd readability) is auto-detected by the engine when not submitted.
+  assert.ok("repo-context" in src, "the auto-detected precondition must appear");
+  assert.equal(src["repo-context"], "auto",
+    "an engine-auto-detected precondition must be tagged auto, not submission");
+});
+
+test("gating is unchanged: a false halt precondition still blocks the run", () => {
+  const r = cli(["run", "kernel", "--evidence", "-", "--json"], {
+    input: JSON.stringify({ precondition_checks: { "linux-platform": false } }),
+  });
+  const j = tryJson(r.stdout);
+  assert.equal(j.verdict, "blocked", "a false halt precondition must still block");
+  assert.equal(j.blocked_by, "precondition");
+});
+
+test("engine-level: a precondition in both the submission and runOpts is still 'merged'", () => {
+  // Direct runner call (the programmatic-override path the CLI never produces):
+  // the same key in both maps is a genuine merge.
+  const runner = require("../lib/playbook-runner");
+  const res = runner.run("secrets", "full-repo-secret-scan",
+    { precondition_checks: { "repo-context": true }, signal_overrides: {} },
+    { precondition_checks: { "repo-context": true }, force_replay: true });
+  assert.ok(res, "run must return a result");
+  if (res.precondition_check_source) {
+    assert.equal(res.precondition_check_source["repo-context"], "merged",
+      "submission ∩ runOpts is a genuine merge");
+  }
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from renderer-and-reattest-traversal ----
+require("node:test").describe("renderer-and-reattest-traversal", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Regression suite for a cluster found auditing the human-readable output
+ * paths and the attestation read verbs:
+ *
+ *   SECURITY — `reattest` joined an unvalidated session-id into a filesystem
+ *     path, so `reattest "../.."` escaped the attestation root to read a forged
+ *     attestation and write a signed replay record outside the root. It now
+ *     validates the session-id at the same boundary the other read verbs use.
+ *
+ *   run-multi (`run --all` / `run-all`) had no human renderer and dumped the
+ *     full (hundreds-of-KB) JSON even in default mode; it now prints a table.
+ *
+ *   `attest diff --against` dumped raw JSON while the no-against branch
+ *     rendered a summary; both now share one renderer.
+ *
+ *   run-renderer detail: CVE KEV renders Y/N (not the raw boolean), a
+ *     deterministic indicator doesn't print "deterministic/deterministic",
+ *     and a `message`-shaped preflight warning isn't shown as "(no detail)".
+ *
+ * Discipline: exact exit codes; value + type assertions; the security test
+ * asserts BOTH the refusal AND that nothing was written outside the root.
+ */
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const { makeSuiteHome, makeCli, tryJson } = require("./_helpers/cli");
+
+const cli = makeCli(makeSuiteHome("exceptd-renderer-"));
+
+// The shared harness sets EXCEPTD_RAW_JSON=1, which forces JSON and bypasses
+// the human renderer. Human-mode tests pass HUMAN env to disable it ("" is
+// falsy under the `!!process.env.EXCEPTD_RAW_JSON` check).
+const HUMAN = { EXCEPTD_RAW_JSON: "" };
+
+const DET2 = JSON.stringify({ signal_overrides: { "aws-secret-access-key": "hit", "github-personal-access-token": "hit" } });
+
+test("run --all renders a per-playbook table in human mode (not a raw JSON dump)", () => {
+  const r = cli(["run-all"], { env: HUMAN });
+  const out = r.stdout;
+  assert.doesNotMatch(out.trimStart().slice(0, 1), /[{[]/, "default human output must not start with JSON");
+  assert.match(out, /playbook\s+verdict\s+rwep\s+evidence\s+finding/, "must render the summary table header");
+  assert.match(out, /detected=\d+\s+inconclusive=\d+/, "must render the rollup line");
+});
+
+test("attest diff --against renders a human summary (not raw JSON)", () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "exceptd-diff-"));
+  try {
+    const env = { EXCEPTD_HOME: home };
+    const a = tryJson(cli(["run", "secrets", "--evidence", "-", "--json"], { input: JSON.stringify({ signal_overrides: { "aws-secret-access-key": "hit" } }), env }).stdout);
+    const b = tryJson(cli(["run", "secrets", "--evidence", "-", "--json"], { input: JSON.stringify({ signal_overrides: { "github-personal-access-token": "hit" } }), env }).stdout);
+    const r = cli(["attest", "diff", a.session_id, "--against", b.session_id], { env: { ...env, ...HUMAN } });
+    assert.doesNotMatch(r.stdout.trimStart().slice(0, 1), /[{[]/, "must not dump JSON in human mode");
+    assert.match(r.stdout, /attest diff:/, "must render the diff header");
+    assert.match(r.stdout, /artifact diff:/, "must render the artifact diff line");
+    assert.match(r.stdout, /sidecar verify:/, "must render the sidecar class");
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("run CVE line renders KEV=Y/N, and a deterministic indicator is not doubled", () => {
+  // ai-api with firing signals produces a matched CVE + deterministic indicators.
+  const r = cli(["run", "ai-api", "--evidence", "-"], {
+    input: JSON.stringify({ signal_overrides: { "cleartext-api-key-in-dotfile": "hit", "ai-api-beaconing-cadence": "hit", "long-lived-aws-keys": "hit" } }),
+    env: HUMAN,
+  });
+  const out = r.stdout;
+  assert.doesNotMatch(out, /KEV=(true|false)/, "KEV must render Y/N, never the raw boolean");
+  assert.match(out, /KEV=[YN]/, "KEV must render as Y or N");
+  assert.doesNotMatch(out, /deterministic\/deterministic/, "must not double-print deterministic/deterministic");
+});
+
+test("run preflight warning surfaces a message-shaped detail (not '(no detail)')", () => {
+  const r = cli(["run", "ai-api", "--evidence", "-"], { input: JSON.stringify({ signal_overrides: { "ai-api-beaconing-cadence": "hit" } }), env: HUMAN });
+  const out = r.stdout;
+  if (/Preflight warnings/.test(out)) {
+    // If a preflight warning rendered, it must not be the bare "(no detail)".
+    const warnBlock = out.slice(out.indexOf("Preflight warnings"));
+    assert.doesNotMatch(warnBlock.split("\n").slice(1, 3).join("\n"), /: \(no detail\)\s*$/m,
+      "a message-shaped preflight warning must show its message, not (no detail)");
+  }
+});
+
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from resolver-trust-and-flag-hardening ----
+require("node:test").describe("resolver-trust-and-flag-hardening", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Resolver-trust + flag-hardening regression suite.
+ *
+ * Pins three independently-exploitable contracts so they can't silently
+ * regress:
+ *
+ *   1. Resolved-cache integrity (lib/citation-resolve.js). A resolved record is
+ *      only trusted when it carries a sha256 `_digest` over its own canonical
+ *      bytes AND its embedded `resolved_at` is inside the freshness window.
+ *      A poisoned/tampered/stale/future-dated file cannot launder a verdict —
+ *      it reads back as a cache miss and the resolver falls through to
+ *      offline/unknown. This is the security headline: an operator-writable
+ *      cache directory can never turn a rejected/fabricated citation into a
+ *      "published" one.
+ *
+ *   2. Unknown-flag rejection on the cve/rfc resolvers. A swallowed `--josn`
+ *      would emit human text into a pipe that asked for JSON and defeat a CI
+ *      gate, so an unrecognized flag is a hard exit 1 with an ok:false envelope.
+ *
+ *   3. Evidence-shape / --max-rwep / --format guards on run + ci. `null`, an
+ *      array, or a scalar parse as valid JSON but are not a submission; a
+ *      non-numeric or negative cap would degenerate the gate; `--format`
+ *      explicitly overrides `--json`.
+ *
+ * Plus the applyResolution RFC-flip contract (a cited RFC number that resolves
+ * to nothing is a bad citation; an obsoleted-but-real RFC is not).
+ *
+ * Discipline (project anti-coincidence rules): assert EXACT exit codes (never
+ * notEqual(0)); pair every field-presence check with a value/type assertion;
+ * never weaken a test to make it pass. Every test is deterministic and offline:
+ * cache tests inject a per-suite EXCEPTD_RESOLVE_CACHE_DIR and a tiny catalog
+ * fixture WITHOUT the test ids (so the resolver reaches the cache path), and
+ * pass { noNetwork: true } so no network is touched.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const os = require('node:os');
+const crypto = require('node:crypto');
+
+const { makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+
+// --- isolated resolved-cache dir + a tiny catalog fixture that deliberately
+//     does NOT contain the ids these tests resolve, so resolveCve falls past
+//     the catalog branch into the cache branch. Both env vars are set BEFORE
+//     require('../lib/citation-resolve.js') — the catalog path is read +
+//     memoized at module-require time; the cache dir is read at call time but
+//     is set here too to be safe. --------------------------------------------
+const CACHE_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-resolver-trust-cache-'));
+const FIXTURE_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-resolver-trust-fixture-'));
+const CVE_FIXTURE = path.join(FIXTURE_DIR, 'cve-catalog.json');
+
+// A catalog hit for the CLI fixture-id test, but NONE of the cache-integrity
+// test ids, so those reach the cache path rather than short-circuiting here.
+const CVE_FIXTURE_DATA = {
+  'CVE-2030-0001': {
+    cvss_score: 9.8,
+    cisa_kev: true,
+    name: 'FixtureVuln',
+    status: 'published',
   },
+};
+fs.writeFileSync(CVE_FIXTURE, JSON.stringify(CVE_FIXTURE_DATA, null, 2));
+
+process.on('exit', () => {
+  try { fs.rmSync(CACHE_DIR, { recursive: true, force: true }); } catch { /* non-fatal */ }
+  try { fs.rmSync(FIXTURE_DIR, { recursive: true, force: true }); } catch { /* non-fatal */ }
 });
 
-test("SARIF result for a firing indicator carries the submission's evidence_locations", () => {
-  const r = cli(["run", "library-author", "--evidence", "-", "--format", "sarif", "--json"], { input: SUB });
-  const sarif = tryJson(r.stdout);
-  assert.ok(sarif && sarif.version === "2.1.0", `expected SARIF 2.1.0; got ${r.stdout.slice(0, 160)}`);
-  const result = (sarif.runs?.[0]?.results || []).find(x => /publish-workflow-uses-static-token/.test(x.ruleId));
-  assert.ok(result, "the fired indicator must have a SARIF result");
-  assert.ok(Array.isArray(result.locations) && result.locations.length === 2,
-    `expected 2 locations; got ${JSON.stringify(result.locations)}`);
-  const uris = result.locations.map(l => l.physicalLocation?.artifactLocation?.uri);
-  assert.ok(uris.includes(".github/workflows/release.yml"), "string-form location must become a uri");
-  const withLine = result.locations.find(l => l.physicalLocation?.artifactLocation?.uri === ".github/workflows/publish.yml");
-  assert.equal(withLine.physicalLocation.region.startLine, 12, "object-form startLine must become a SARIF region");
+process.env.EXCEPTD_CVE_CATALOG = CVE_FIXTURE;
+process.env.EXCEPTD_RESOLVE_CACHE_DIR = CACHE_DIR;
+
+const { resolveCve } = require('../lib/citation-resolve.js');
+const citationHygiene = require('../lib/collectors/citation-hygiene.js');
+
+// Spawned-CLI harness. Pass the fixture catalog + isolated cache dir as env
+// overrides so subprocesses resolve offline against them, not the network.
+const SUITE_HOME = makeSuiteHome('exceptd-resolver-trust-');
+const baseCli = makeCli(SUITE_HOME);
+const RESOLVER_ENV = {
+  EXCEPTD_CVE_CATALOG: CVE_FIXTURE,
+  EXCEPTD_RESOLVE_CACHE_DIR: CACHE_DIR,
+};
+function cli(args, opts = {}) {
+  return baseCli(args, { ...opts, env: { ...RESOLVER_ENV, ...(opts.env || {}) } });
+}
+
+// --- digest helper: replicate lib/citation-resolve.js recordDigest exactly so
+//     a test can write a VALID (trusted) cache record. sha256 over the record's
+//     canonical JSON: keys sorted, `_digest` excluded. ------------------------
+function recordDigest(rec) {
+  const canon = {};
+  for (const k of Object.keys(rec).sort()) {
+    if (k === '_digest') continue;
+    canon[k] = rec[k];
+  }
+  return crypto.createHash('sha256').update(JSON.stringify(canon)).digest('hex');
+}
+function writeRawCveCache(id, rec) {
+  const dir = path.join(CACHE_DIR, 'cve');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, `${id}.json`), JSON.stringify(rec));
+  return path.join(dir, `${id}.json`);
+}
+function writeDigestedCveCache(id, rec) {
+  const signed = { ...rec };
+  signed._digest = recordDigest(signed);
+  return writeRawCveCache(id, signed);
+}
+
+// ===================================================================
+// 1. Resolved-cache integrity
+// ===================================================================
+
+
+
+
+
+
+
+
+// ===================================================================
+// 2. cve / rfc unknown-flag rejection (spawned CLIs)
+// ===================================================================
+
+
+
+
+// ===================================================================
+// 3. run evidence-shape guard
+// ===================================================================
+
+for (const bad of [
+  { label: 'null', input: 'null' },
+  { label: 'array', input: '[]' },
+  { label: 'string', input: '"astring"' },
+  { label: 'number', input: '123' },
+]) {
+  test(`run CLI: --evidence - with ${bad.label} exits 1 with "evidence must be a JSON object"`, () => {
+    const r = cli(['run', 'secrets', '--evidence', '-'], { input: bad.input });
+    assert.equal(r.status, 1, `expected exit 1; got ${r.status} (stderr: ${r.stderr.slice(0, 200)})`);
+    const body = tryJson(r.stderr.trim());
+    assert.ok(body, `stderr should be parseable JSON; got: ${r.stderr.slice(0, 200)}`);
+    assert.equal(body.ok, false);
+    assert.match(body.error, /evidence must be a JSON object/);
+  });
+}
+
+
+// ===================================================================
+// 4. applyResolution RFC flip
+// ===================================================================
+
+
+
+// ===================================================================
+// 5. ci --max-rwep validation
+// ===================================================================
+
+
+
+
+// ===================================================================
+// 6. --format overrides --json (note on stderr, markdown on stdout)
+// ===================================================================
+
+
+// ===================================================================
+// 7. help lists the cve / rfc / collect verbs
+// ===================================================================
+
+test('run CLI: --evidence - with an empty object {} runs (exit 0, not the shape error)', () => {
+  const r = cli(['run', 'secrets', '--evidence', '-', '--json'], { input: '{}' });
+  assert.equal(r.status, 0, `expected exit 0; got ${r.status} (stderr: ${r.stderr.slice(0, 200)})`);
+  const body = tryJson(r.stdout.trim());
+  assert.ok(body, `stdout should be parseable JSON; got: ${r.stdout.slice(0, 200)}`);
+  assert.equal(body.ok, true);
 });
 
-test("a firing indicator with no evidence_locations does not crash and yields a valid SARIF doc", () => {
-  const sub = JSON.stringify({ observations: { w: { captured: true, indicator: "publish-workflow-uses-static-token", result: "hit" } } });
-  const r = cli(["run", "library-author", "--evidence", "-", "--format", "sarif", "--json"], { input: sub });
-  const sarif = tryJson(r.stdout);
-  assert.ok(sarif && sarif.version === "2.1.0");
-  const result = (sarif.runs?.[0]?.results || []).find(x => /publish-workflow-uses-static-token/.test(x.ruleId));
-  assert.ok(result, "result present");
-  // locations may be absent or the coarse playbook-source fallback; either is
-  // valid SARIF — just assert no crash and the result exists.
-  if (result.locations !== undefined) assert.ok(Array.isArray(result.locations));
+test('run CLI: --format markdown overrides --json — stdout is markdown, stderr carries the note', () => {
+  const r = cli(['run', 'secrets', '--evidence', '-', '--json', '--format', 'markdown'], { input: '{}' });
+  assert.equal(r.status, 0, `expected exit 0; got ${r.status} (stderr: ${r.stderr.slice(0, 200)})`);
+  assert.equal(r.stdout.trimStart()[0], '#',
+    `stdout should be a markdown document (starts with '#'); got: ${r.stdout.slice(0, 80)}`);
+  assert.match(r.stderr, /overrides --json/);
 });
-})();
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from ux-next-step-guidance ----
+require("node:test").describe("ux-next-step-guidance", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * tests/ux-next-step-guidance.test.js
+ *
+ * Stage-by-stage next-step guidance surfaces. The behavior is
+ * operator-facing prose, so regression coverage is grep-shaped — each
+ * assertion pins the exact substring an operator searches for when
+ * they ask "what do I do now?"
+ *
+ * Surfaces pinned:
+ *   1. ci BLOCKED prints "Next steps (unblock the N halted playbook(s)):"
+ *      with one `exceptd lint <playbook> -` per blocked id.
+ *   2. ci NO_EVIDENCE prints "Next steps (every playbook ran inconclusive
+ *      — no evidence supplied):" with a lint + ci-evidence-dir pair.
+ *   3. run prints "evidence: <state> (<evaluated>/<known> indicators
+ *      evaluated)" on every success.
+ *   4. run prints "Attestation written:" + the verify/diff command pair
+ *      after persistence.
+ *   5. run non-detect prose says "Remediation path (informational — verdict
+ *      =<x>, no action required now):" — NOT "Recommended remediation:".
+ *   6. run unknown-playbook error references the live playbook count,
+ *      not a hardcoded literal.
+ *   7. ci FAIL fires guidance even when no playbook hit detected (delta-
+ *      cap path).
+ *   8. lint flags nested-shape submissions that supply artifacts but no
+ *      signal_overrides — the workflow trapdoor.
+ *
+ * Per the anti-coincidence rule: assertions check exact substrings.
+ */
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const path = require("node:path");
+const fs = require("node:fs");
+const os = require("node:os");
+const { spawnSync } = require("node:child_process");
+
+const ROOT = path.join(__dirname, "..");
+const CLI = path.join(ROOT, "bin", "exceptd.js");
+
+function cli(args, opts = {}) {
+  return spawnSync(process.execPath, [CLI, ...args], {
+    encoding: "utf8",
+    cwd: opts.cwd || ROOT,
+    env: { ...process.env, EXCEPTD_DEPRECATION_SHOWN: "1", ...(opts.env || {}) },
+    input: opts.input,
+  });
+}
+
+function tryJson(s) { try { return JSON.parse(s); } catch { return null; } }
+
+test("run prints 'evidence: <state> (N/M indicators evaluated)' on the verdict line", () => {
+  const evidence = JSON.stringify({
+    precondition_checks: { "linux-platform": true, "uname-available": true },
+    artifacts: { "kernel-release": "5.15.0-69-generic" },
+    signal_overrides: { "kver-in-affected-range": "hit" },
+  });
+  const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "run-evidence-"));
+  try {
+    const r = cli(["run", "kernel", "--evidence", "-",
+      "--attestation-root", path.join(tmpHome, "attestations")], { input: evidence });
+    assert.equal(r.status, 0, `run kernel must exit 0; stderr: ${r.stderr.slice(0, 200)}`);
+    // Match the literal "evidence: " row followed by the N/M counter.
+    assert.match(r.stdout, /evidence: (complete|partial|missing|unknown|not-evaluated)\s+\(\d+\/\d+ indicators evaluated\)/,
+      "verdict line must surface evidence_completeness + indicators-evaluated counter");
+  } finally {
+    try { fs.rmSync(tmpHome, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("run prints 'Attestation written: <path>' + verify/diff command pair after persistence", () => {
+  const evidence = JSON.stringify({
+    precondition_checks: { "linux-platform": true, "uname-available": true },
+    artifacts: { "kernel-release": "5.15.0-69-generic" },
+    signal_overrides: { "kver-in-affected-range": "hit" },
+  });
+  const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "run-attest-"));
+  try {
+    const r = cli(["run", "kernel", "--evidence", "-",
+      "--attestation-root", path.join(tmpHome, "attestations")], { input: evidence });
+    assert.equal(r.status, 0, `run kernel must exit 0; stderr: ${r.stderr.slice(0, 200)}`);
+    assert.match(r.stdout, /Attestation written: .+attestation\.json/,
+      "human renderer must print the absolute attestation_path");
+    assert.match(r.stdout, /exceptd attest verify [0-9a-f-]+\s+# tamper check/,
+      "human renderer must point at attest verify with the session id");
+    assert.match(r.stdout, /exceptd attest diff [0-9a-f-]+\s+# vs\. most-recent prior/,
+      "human renderer must point at attest diff with the session id");
+  } finally {
+    try { fs.rmSync(tmpHome, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("run non-detect prose says 'Remediation path (informational — verdict=<x>, no action required now):'", () => {
+  // A run with no evidence on `secrets` returns not_detected (the
+  // catalog-baseline indicators don't fire against the local cwd).
+  const r = cli(["run", "secrets", "--evidence", "-"], { input: "{}" });
+  assert.equal(r.status, 0, `run secrets must exit 0; stderr: ${r.stderr.slice(0, 200)}`);
+  // Either inconclusive or not_detected — both must use the
+  // informational phrasing, NOT "Recommended remediation:".
+  if (/classification=(not_detected|inconclusive)/.test(r.stdout)) {
+    assert.match(r.stdout, /Remediation path \(informational — verdict=(not_detected|inconclusive), no action required now\):/,
+      "non-detect runs must NOT print 'Recommended remediation:' (that string is for detected runs)");
+    // And the misleading detected-only phrasing must NOT appear.
+    assert.doesNotMatch(r.stdout, /^Recommended remediation:/m,
+      "non-detect runs must not print the unconditional detected-only phrasing");
+  }
+});
+
+test("run unknown-playbook error says 'list the <live count> playbooks', not the stale literal 13", () => {
+  const r = cli(["run", "this-playbook-does-not-exist"]);
+  assert.equal(r.status, 1);
+  const err = tryJson(r.stderr);
+  assert.ok(err, `stderr must be JSON; got: ${r.stderr.slice(0, 200)}`);
+  // The live count is whatever runner.listPlaybooks() returns; it must
+  // NOT be the literal "13" (the value before the v0.13.x expansion).
+  assert.doesNotMatch(err.error, /list the 13 playbooks/,
+    "playbook-not-found message must not carry the stale hardcoded count");
+  assert.match(err.error, /list the \d+ playbooks/,
+    "playbook-not-found message must reference a live count");
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from readme-run-format-consistency ----
+require("node:test").describe("readme-run-format-consistency", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * tests/readme-run-format-consistency.test.js
+ *
+ * The `run --format` value list must stay consistent across the three
+ * operator-facing surfaces: the README synopsis, the `exceptd help` text, and
+ * the runtime's accepted `supported_formats`. A README that omits a value the
+ * runtime accepts and `--help` advertises misleads an operator reading the
+ * command reference to learn which formats are valid.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const ROOT = path.join(__dirname, '..');
+const README = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
+const HELP = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
+const RUNNER = fs.readFileSync(path.join(ROOT, 'lib', 'playbook-runner.js'), 'utf8');
+
+// Anchors the run --format synopsis line uniquely in both README and --help.
+const ANCHOR = 'csaf-2.0 | sarif | openvex';
+
+function pipeTokens(text, anchor) {
+  const line = text.split('\n').find(l => l.includes(anchor));
+  assert.ok(line, `expected a line containing "${anchor}"`);
+  const run = line.slice(line.indexOf('csaf-2.0'));
+  return run.replace(/[.\s]+$/, '').split('|').map(s => s.trim()).filter(Boolean);
+}
+
+function runtimeFormats(text) {
+  const m = text.match(/supported_formats:\s*\[([^\]]*)\]/);
+  assert.ok(m, 'expected a supported_formats array literal in lib/playbook-runner.js');
+  return m[1].split(',').map(s => s.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean);
+}
+
+test('README run --format synopsis advertises json', () => {
+  const readme = pipeTokens(README, ANCHOR);
+  assert.equal(readme.includes('json'), true,
+    `README --format list must include json; got: ${readme.join(' | ')}`);
+});
+
+test('README and `exceptd help` advertise the identical run --format value set', () => {
+  const readme = pipeTokens(README, ANCHOR);
+  const help = pipeTokens(HELP, ANCHOR);
+  assert.deepEqual([...readme].sort(), [...help].sort(),
+    `README (${readme.join('|')}) and --help (${help.join('|')}) must advertise the same --format values`);
+});
+
+test('every README-advertised run --format value is accepted by the runtime', () => {
+  const readme = pipeTokens(README, ANCHOR);
+  const runtime = runtimeFormats(RUNNER);
+  for (const tok of readme) {
+    assert.equal(runtime.includes(tok), true,
+      `README advertises --format ${tok}, but the runtime supported_formats does not accept it`);
+  }
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
