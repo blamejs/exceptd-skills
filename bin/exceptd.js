@@ -6571,9 +6571,18 @@ function rekeyArtifactsByStableId(artifacts, signalOrigins) {
   for (const [indicatorId, obsKey] of Object.entries(signalOrigins)) {
     if (typeof obsKey === "string") obsKeyToIndicator[obsKey] = indicatorId;
   }
+  const originalKeys = new Set(Object.keys(artifacts));
   const out = {};
   for (const [k, v] of Object.entries(artifacts)) {
-    const stable = Object.prototype.hasOwnProperty.call(obsKeyToIndicator, k) ? obsKeyToIndicator[k] : k;
+    const mapped = obsKeyToIndicator[k];
+    // Re-key to the stable indicator id ONLY when it won't drop an artifact: the
+    // indicator id must not already be a DISTINCT original artifact key, and must
+    // not have been claimed by an earlier re-keyed entry. On any such collision,
+    // keep the original key so no artifact is silently overwritten / lost from
+    // the diff (two observations sharing one indicator, or an artifact key that
+    // already equals an indicator id).
+    const stable = (mapped && mapped !== k && !originalKeys.has(mapped)
+      && !Object.prototype.hasOwnProperty.call(out, mapped)) ? mapped : k;
     out[stable] = v;
   }
   return out;

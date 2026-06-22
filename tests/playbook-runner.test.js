@@ -3532,6 +3532,19 @@ describe('round-5: output/binding resolution (interpolation, SARIF locations, CS
     }
     for (const pid of leafPids) assert.ok(referenced.has(pid), `branch leaf ${pid} must be referenced from a vulnerability product_status`);
   });
+
+  it('CSAF VEX-fixed product_status.fixed does NOT list affected-version CSAFPID leaves', () => {
+    // The CSAFPID leaves are parsed from affected_versions (vulnerable ranges),
+    // so they must never appear under `fixed` — only the synthetic target product.
+    const out = runner.run('kernel', 'all-catalogued-kernel-cves',
+      { signals: { _bundle_formats: ['csaf-2.0'], 'CVE-2026-31431': true, vex_fixed: ['CVE-2026-31431'] } },
+      { ...PRE, operator: 'https://x.example', publisherNamespace: 'https://x.example' });
+    const csaf = out.phases.close.evidence_package.bundles_by_format['csaf-2.0'];
+    const fixedVuln = (csaf.vulnerabilities || []).find(v => v.product_status && Array.isArray(v.product_status.fixed));
+    assert.ok(fixedVuln, 'a VEX-fixed CVE should produce a product_status.fixed entry');
+    assert.ok(!fixedVuln.product_status.fixed.some(p => /^CSAFPID-/.test(p)),
+      'affected-version CSAFPID leaves must not be mislabeled under fixed');
+  });
 });
 
 test.describe("reconciliation-fixes", () => {
