@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.18.12 — 2026-06-22
+
+A correctness pass across the CLI, the engine, scoring, the collectors, framework-gap reporting, signature verification, and the CWE-chain index.
+
+`ci`/`run --evidence-dir` now refuses a `<playbook>.json` entry that is not a JSON object (an array, scalar, or null) with the same object-shape error the single-file and stdin paths use, instead of binding it as empty evidence and reporting a clean `not_detected` PASS at exit 0 — a mis-shaped per-playbook submission no longer produces a false-clean gate result.
+
+`verifyManifestSignature` consults the `keys/EXPECTED_FINGERPRINT` key pin before the missing-signature path, so a swapped `keys/public.pem` whose `manifest_signature` was stripped is rejected through the library API rather than treated as a benign legacy state. Escalation and `feeds_into` ordering comparisons against a duration literal — e.g. the kernel playbook's `reboot_window > 24h` raise-severity chain — normalize both sides to hours and compare numerically instead of lexicographically (so a 48-hour window escalates and a 6-hour window does not); an ordering comparison that degrades to two non-numeric, non-duration strings now surfaces a `condition_type_mismatch` diagnostic instead of evaluating silently.
+
+`compare()`'s factor explanation lists the reboot (+5) driver whenever a reboot is required, regardless of live-patch availability, matching the score it actually computes; and a post-weight RWEP block that stores `active_exploitation` as a status string is read as a post-weight block (its weighted factors, including the AI factor, are no longer dropped or mis-flagged as a mixed shape).
+
+The secrets collector's `ssh-key-bad-perms` posture and the credential-store AWS doc-fixture demotion no longer false-positive on checked-in test-path fixtures or a duplicate profile name. A single-framework `framework-gap` report scopes its theater-risk list and matching-gap count to the requested framework instead of leaking controls from frameworks the operator did not ask about. `rfc --check` no longer falsely matches an unrelated title when the claimed title repeats a token. The CWE-chains index excludes auto-imported draft CVEs, matching the by-CVE half's curated-truth invariant. A null or non-object MCP server entry (config scan) or dispatch finding is skipped with a clear marker rather than dropping the file's other findings or throwing an opaque error.
+
 ## 0.18.11 — 2026-06-22
 
 Regenerates the CycloneDX SBOM (`sbom.cdx.json`) so its recorded hash for `CHANGELOG.md` matches the shipped file.

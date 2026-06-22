@@ -2192,6 +2192,59 @@ describe('condition mini-language (evalCondition)', () => {
     assert.equal(evalCondition('rwep >= 90', { rwep: 50 }), false);
   });
 
+  it('ordering against a duration literal (24h) normalizes both sides to hours, not lexicographic/NaN', () => {
+    // kernel.json's raise_severity escalation is `reboot_window > 24h`. The RHS
+    // coercion only converts a BARE numeric, so `24h` stayed a string. Pre-fix a
+    // numeric LHS compared `48 > '24h'` → `48 > NaN` → false (a 48h window
+    // silently failed to escalate), and a string LHS compared lexicographically
+    // `'6h' > '24h'` → `'6' > '2'` → true (a 6h window WRONGLY escalated).
+    const cond = 'reboot_window > 24h';
+    // 48 hours (bare number) > 24h → escalates. Pre-fix: false.
+    assert.equal(evalCondition(cond, { reboot_window: 48 }), true);
+    assert.strictEqual(evalCondition(cond, { reboot_window: 48 }), true);
+    // '6h' < 24h → does NOT escalate. Pre-fix: true (lexicographic inversion).
+    assert.equal(evalCondition(cond, { reboot_window: '6h' }), false);
+    assert.strictEqual(evalCondition(cond, { reboot_window: '6h' }), false);
+    // '100h' > 24h → escalates.
+    assert.equal(evalCondition(cond, { reboot_window: '100h' }), true);
+    // exactly 24h is not strictly greater.
+    assert.equal(evalCondition(cond, { reboot_window: '24h' }), false);
+    // cross-unit: 2 days == 48h > 24h → escalates (same unit family after norm).
+    assert.equal(evalCondition(cond, { reboot_window: '2d' }), true);
+    // 30 minutes is far below 24h.
+    assert.equal(evalCondition(cond, { reboot_window: '30min' }), false);
+  });
+
+  it('the full kernel reboot_window escalation condition fires for a 48h window and not a 6h window', () => {
+    const cond = 'rwep >= 90 AND patch_available == true AND livepatch_active == false AND reboot_window > 24h';
+    const base = { rwep: 95, patch_available: true, livepatch_active: false };
+    assert.equal(evalCondition(cond, { ...base, reboot_window: 48 }), true);
+    assert.equal(evalCondition(cond, { ...base, reboot_window: '6h' }), false);
+  });
+
+  it('a degraded ordering of two non-numeric, non-severity, non-duration strings surfaces condition_type_mismatch', () => {
+    const errs = [];
+    // 'theater' > 'foo' is lexicographically true but semantically meaningless —
+    // the comparison silently degraded with no diagnostic pre-fix.
+    const r = evalCondition('a > b', { a: 'theater', b: 'foo', _runErrors: errs });
+    assert.equal(typeof r, 'boolean');
+    assert.equal(errs.length, 1);
+    assert.equal(errs[0].kind, 'condition_type_mismatch');
+    assert.equal(errs[0].condition, 'a > b');
+  });
+
+  it('a duration-vs-duration ordering does NOT surface condition_type_mismatch', () => {
+    const errs = [];
+    assert.equal(evalCondition('reboot_window > 24h', { reboot_window: '6h', _runErrors: errs }), false);
+    assert.equal(errs.filter((e) => e.kind === 'condition_type_mismatch').length, 0);
+  });
+
+  it('a numeric ordering does NOT surface condition_type_mismatch', () => {
+    const errs = [];
+    assert.equal(evalCondition('rwep >= 90', { rwep: 100, _runErrors: errs }), true);
+    assert.equal(errs.filter((e) => e.kind === 'condition_type_mismatch').length, 0);
+  });
+
   it('`contains` is accepted as a synonym for `includes`', () => {
     assert.equal(evalCondition('scope.targets contains named-remote', { scope: { targets: ['named-remote'] } }), true);
     assert.equal(evalCondition('scope.targets includes named-remote', { scope: { targets: ['named-remote'] } }), true);

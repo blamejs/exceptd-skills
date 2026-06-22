@@ -106,10 +106,18 @@ function firstChunkAfterHeader(body, headerRegex, maxChars = 600) {
 }
 
 function handoffTargets(body, allSkillNames, selfName) {
-  // Look in the Hand-Off section; backtick-quoted skill names count as a target.
-  const handoffStart = body.search(/^## Hand-?Off/m);
-  if (handoffStart < 0) return [];
-  const slice = body.slice(handoffStart);
+  // Look ONLY in the Hand-Off section; backtick-quoted skill names count as a
+  // target. Bound the scan to [Hand-Off header, next real H2) so unrelated
+  // later sections are not mis-attributed as hand-off targets. Header
+  // detection and the section boundary are both fence-aware (a `## ` line
+  // inside a ```...``` block is not a real H2).
+  const lines = body.split(/\r?\n/);
+  const h2 = findRealH2Indices(lines);
+  const handoffIdx = h2.find((i) => /^## Hand-?Off/.test(lines[i]));
+  if (handoffIdx == null) return [];
+  const nextH2 = h2.find((i) => i > handoffIdx);
+  const sectionEnd = nextH2 != null ? nextH2 : lines.length;
+  const slice = lines.slice(handoffIdx, sectionEnd).join("\n");
   const targets = new Set();
   for (const name of allSkillNames) {
     if (name === selfName) continue;

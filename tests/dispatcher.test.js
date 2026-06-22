@@ -151,6 +151,39 @@ test('scanner mcp_config_parse_error finding carries a direct skill_hint', () =>
   assert.match(block, /skill_hint:\s*'mcp-agent-trust'/, 'the parse-error finding literal must set skill_hint');
 });
 
+// --- dispatch element-level type guard: null / non-object element refuses loudly ---
+
+test('dispatch refuses a null / non-object element with a named TypeError (not an opaque deref)', () => {
+  const { dispatch } = require('../orchestrator/dispatcher.js');
+  // Pre-fix each of these flowed into matchFinding and threw an opaque
+  // "Cannot read properties of null (reading 'skill_hint')" / a TypeError on
+  // a number's .skill_hint access. The element-level guard must throw a clear,
+  // named refusal instead — consistent with the top-level array guard.
+  for (const bad of [[null], [42], ['a string'], [undefined], [['nested', 'array']]]) {
+    assert.throws(
+      () => dispatch(bad),
+      (err) => err instanceof TypeError &&
+        /dispatch: each finding must be a non-null object/.test(err.message),
+      `dispatch(${JSON.stringify(bad)}) must throw the named element TypeError`,
+    );
+  }
+
+  // A bad element mixed with valid findings must STILL refuse (loud, not partial).
+  assert.throws(
+    () => dispatch([
+      { domain: 'mcp', signal: 'mcp_server_detected', severity: 'high', skill_hint: 'mcp-agent-trust', server_name: 'ok' },
+      null,
+    ]),
+    (err) => err instanceof TypeError &&
+      /dispatch: each finding must be a non-null object/.test(err.message),
+  );
+
+  // Sanity: a well-formed single-element array still dispatches without throwing.
+  assert.doesNotThrow(() => dispatch([
+    { domain: 'mcp', signal: 'mcp_server_detected', severity: 'high', skill_hint: 'mcp-agent-trust', server_name: 'ok' },
+  ]));
+});
+
 
 // ---- routed from dispatch-collector-scoring-fixes ----
 require("node:test").describe("dispatch-collector-scoring-fixes", () => {

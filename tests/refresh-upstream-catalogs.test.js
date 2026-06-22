@@ -338,6 +338,158 @@ test("#45 writeCatalog is atomic (temp+rename) — no truncated file is left", (
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
+// A <rfc-entry> with an arbitrary (possibly unmapped) current-status, so we can
+// drive the backfill status-bump path with a status outside RFC_STATUS_MAP.
+function rfcIndexXmlStatus(num, title, status) {
+  return `<?xml version="1.0"?>
+<rfc-index>
+<rfc-entry>
+<doc-id>RFC${String(num).padStart(4, "0")}</doc-id>
+<title>${title}</title>
+<current-status>${status}</current-status>
+<date><month>May</month><year>2026</year></date>
+</rfc-entry>
+</rfc-index>`;
+}
+
+// finding 1 — backfill status-bump must NOT write undefined when the upstream
+// current-status is not in RFC_STATUS_MAP. Old code did `cur.status =
+// RFC_STATUS_MAP[e.status]` unconditionally → undefined → the status field was
+// dropped from the curated row (JSON.stringify omits an undefined property).
+test("refreshRfc status-bump falls back to the raw upstream status when unmapped (never writes undefined)", async () => {
+  const dir = tmpDir();
+  const file = path.join(dir, "rfc-references.json");
+  // An auto-imported curated row whose current stored status DIFFERS from the
+  // upstream status word, and whose upstream status word is NOT in
+  // RFC_STATUS_MAP ("RETIRED" is not a mapped IETF status).
+  const cat = {
+    _meta: { schema_version: "1.0.0", last_updated: "2026-01-01", last_threat_review: "2026-01-01" },
+    "RFC-7777": {
+      number: 7777, title: "Curated", status: "Proposed Standard",
+      authors: ["A"], abstract: "x", keywords: ["k"], obsoletes: [], updates: [],
+      updated_by: [], obsoleted_by: [], is_also: [], txt_url: "t", html_url: "h",
+      area: "sec", working_group: "wg", stream: "IETF", doi: "d", page_count: 1,
+      _auto_imported: true,
+    },
+  };
+  fs.writeFileSync(file, JSON.stringify(cat, null, 2) + "\n");
+
+  const deps = {
+    fetchUrl: async () => rfcIndexXmlStatus(7777, "Curated", "RETIRED"),
+    loadCatalog: () => JSON.parse(fs.readFileSync(file, "utf8")),
+    writeCatalog: (rel, obj) => fs.writeFileSync(file, JSON.stringify(obj, null, 2) + "\n"),
+  };
+
+  const r = await MOD.refreshRfc({ _deps: deps });
+  const after = JSON.parse(fs.readFileSync(file, "utf8"));
+  const row = after["RFC-7777"];
+
+  // The status field must still exist and be a string — never dropped/undefined.
+  assert.ok("status" in row, "status field must NOT be dropped on an unmapped upstream status");
+  assert.equal(typeof row.status, "string", "status must remain a string");
+  // The fallback wrote the raw upstream status; it was bumped because it differs
+  // from the prior 'Proposed Standard'.
+  assert.equal(row.status, "RETIRED",
+    "an unmapped upstream status must fall back to the raw upstream value, not undefined");
+  assert.equal(r.statusBumped, 1, "exactly one status bump for the changed unmapped status");
+
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+// finding 1 (companion) — when the unmapped upstream status already MATCHES the
+// stored status, no bump fires and the field is left intact (no undefined write,
+// no spurious touch).
+test("refreshRfc status-bump is a no-op when an unmapped upstream status already matches", async () => {
+  const dir = tmpDir();
+  const file = path.join(dir, "rfc-references.json");
+  const cat = {
+    _meta: { schema_version: "1.0.0", last_updated: "2026-01-01", last_threat_review: "2026-01-01" },
+    "RFC-7766": {
+      number: 7766, title: "Curated", status: "RETIRED",
+      authors: ["A"], abstract: "x", keywords: ["k"], obsoletes: [], updates: [],
+      updated_by: [], obsoleted_by: [], is_also: [], txt_url: "t", html_url: "h",
+      area: "sec", working_group: "wg", stream: "IETF", doi: "d", page_count: 1,
+      _auto_imported: true,
+    },
+  };
+  fs.writeFileSync(file, JSON.stringify(cat, null, 2) + "\n");
+
+  const deps = {
+    fetchUrl: async () => rfcIndexXmlStatus(7766, "Curated", "RETIRED"),
+    loadCatalog: () => JSON.parse(fs.readFileSync(file, "utf8")),
+    writeCatalog: (rel, obj) => fs.writeFileSync(file, JSON.stringify(obj, null, 2) + "\n"),
+  };
+
+  const r = await MOD.refreshRfc({ _deps: deps });
+  const after = JSON.parse(fs.readFileSync(file, "utf8"));
+  assert.equal(after["RFC-7766"].status, "RETIRED", "matching unmapped status is left untouched");
+  assert.equal(r.statusBumped, 0, "no status bump when the unmapped status already matches");
+
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+// finding 2 — backfillAtlas must mirror backfillAttack: fill the short
+// description + array-only tactic on a curated row missing them, and leave a
+// populated row untouched. Old backfillAtlas omitted both backfills entirely.
+test("backfillAtlas backfills description + array tactic on a sparse curated row", () => {
+  const cur = { id: "AML.T9999", name: "Curated technique" }; // no description, no tactic
+  const fresh = {
+    id: "AML.T9999",
+    name: "Curated technique",
+    description: "A short ATLAS description.",
+    tactic: ["AI Attack Staging", "Defense Evasion"],
+    description_full: "A short ATLAS description. Plus more detail.",
+    platforms: [],
+    detection: null,
+    reference_url: "https://atlas.mitre.org/techniques/AML.T9999",
+    stix_id: "attack-pattern--abc",
+    is_subtechnique: false,
+  };
+
+  const touched = MOD.backfillAtlas(cur, fresh);
+
+  assert.equal(touched, true, "backfillAtlas must report it touched the row");
+  assert.equal(typeof cur.description, "string", "description must be a string after backfill");
+  assert.equal(cur.description, "A short ATLAS description.",
+    "the short description must be backfilled (parity with backfillAttack)");
+  assert.ok(Array.isArray(cur.tactic), "tactic must be an array after backfill");
+  assert.deepEqual(cur.tactic, ["AI Attack Staging", "Defense Evasion"],
+    "the array tactic must be backfilled (parity with backfillAttack)");
+});
+
+// finding 2 (companion) — a populated curated row is left untouched: existing
+// description + a stringified tactic must NOT be overwritten.
+test("backfillAtlas leaves a populated row untouched (string tactic not overwritten)", () => {
+  const cur = {
+    id: "AML.T8888",
+    name: "Populated technique",
+    description: "Operator-curated description.",
+    tactic: "AI Model Access", // string form — must not be clobbered by an array
+  };
+  const fresh = {
+    id: "AML.T8888",
+    name: "Populated technique",
+    description: "Upstream short description.",
+    tactic: ["Reconnaissance"],
+    description_full: null,
+    platforms: [],
+    detection: null,
+    reference_url: null,
+    stix_id: null,
+    is_subtechnique: true,
+  };
+
+  const touched = MOD.backfillAtlas(cur, fresh);
+
+  assert.equal(cur.description, "Operator-curated description.",
+    "an existing description must not be overwritten");
+  assert.equal(cur.tactic, "AI Model Access",
+    "a stringified tactic must not be overwritten with an array form");
+  // is_subtechnique was undefined on cur, so that one legitimately fills.
+  assert.equal(cur.is_subtechnique, true, "is_subtechnique fills when previously undefined");
+  assert.equal(touched, true, "touched is true because is_subtechnique filled");
+});
+
 const test_describe = typeof test.describe === "function" ? test.describe : (name, fn) => fn();
 
 // ===========================================================================
@@ -917,4 +1069,23 @@ test("refreshD3fend normalizes a trailing-period upstream id to the catalog KEY 
   };
   const r = await MOD.refreshD3fend({ dry: true, _deps });
   assert.equal(r.added, 0, "the period-suffixed upstream id maps to the existing normalized key, so nothing is added");
+});
+
+require("node:test").describe("refresh-upstream backfillAtlas single-tactic string (codex P2 round-2)", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const m = require("../scripts/refresh-upstream-catalogs.js");
+  test("backfillAtlas hydrates a single-tactic STRING tactic into a row that has none", () => {
+    const cur = { name: "x" };
+    m.backfillAtlas(cur, { tactic: "reconnaissance" });
+    assert.equal(cur.tactic, "reconnaissance");
+  });
+  test("backfillAtlas preserves an existing string tactic against an array, but fills an empty row from an array", () => {
+    const keep = { tactic: "recon" };
+    m.backfillAtlas(keep, { tactic: ["a", "b"] });
+    assert.equal(keep.tactic, "recon");
+    const fill = { name: "y" };
+    m.backfillAtlas(fill, { tactic: ["a", "b"] });
+    assert.deepEqual(fill.tactic, ["a", "b"]);
+  });
 });

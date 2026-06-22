@@ -101,3 +101,31 @@ test('the live manifest still verifies valid (the fail-closed change does not br
   assert.equal(r.status, 'valid', `the committed manifest must verify valid against the committed key + pin; got ${JSON.stringify(r)}`);
 });
 });
+
+require("node:test").describe("verify.js F13 — key pin runs before the signature-missing return", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const ROOT = path.join(__dirname, "..");
+  const SRC = fs.readFileSync(path.join(ROOT, "lib", "verify.js"), "utf8");
+  const verify = require("../lib/verify.js");
+  test("F13: verifyManifestSignature consults the key pin BEFORE the manifest_signature-missing return (swapped key + stripped signature cannot dodge the pin)", () => {
+    const fnStart = SRC.indexOf("function verifyManifestSignature(manifest)");
+    assert.ok(fnStart > -1);
+    const fnEnd = SRC.indexOf("\nfunction ", fnStart + 1);
+    const body = SRC.slice(fnStart, fnEnd === -1 ? undefined : fnEnd);
+    const pinAt = body.indexOf("checkExpectedFingerprint(");
+    const missingAt = body.indexOf("return { status: 'missing' }");
+    assert.ok(pinAt > -1, "verifyManifestSignature must call checkExpectedFingerprint");
+    assert.ok(missingAt > -1, "verifyManifestSignature must retain the missing-signature return");
+    assert.ok(pinAt < missingAt, "the key-pin check must run BEFORE the manifest_signature-missing return so a stripped signature + swapped key still trips the pin");
+  });
+  test("F13: the legacy (no manifest_signature) path is preserved for the correct key; the live signed manifest still verifies valid", () => {
+    const m = JSON.parse(fs.readFileSync(path.join(ROOT, "manifest.json"), "utf8"));
+    assert.equal(verify.verifyManifestSignature(m).status, "valid");
+    const noSig = JSON.parse(JSON.stringify(m));
+    delete noSig.manifest_signature;
+    assert.equal(verify.verifyManifestSignature(noSig).status, "missing");
+  });
+});
