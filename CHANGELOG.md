@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.11 — 2026-06-22
+
+Regenerates the CycloneDX SBOM (`sbom.cdx.json`) so its recorded hash for `CHANGELOG.md` matches the shipped file.
+
 ## 0.18.10 — 2026-06-20
 
 A large correctness pass across the condition engine, scoring, correlation, the collectors, the validators, the orchestrator, the refresh pipeline, and the CLI.
