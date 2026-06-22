@@ -90,6 +90,13 @@ const COMMENT_EXEMPT = new Set([
   // literals are load-bearing data, not sprinkled release tags.
   "scripts/check-version-bump.js",
   "tests/version-bump-cadence.test.js",
+  // The version-tag gate's own regression test asserts the trailing-period /
+  // IPv4 / longer-run boundaries and the PHASE_RESIDUE_RES / FILENAME_VERSION_RE
+  // / countLineViolations exports, so it MUST embed literal stamps like
+  // `0.18.9.`, `0.18.99`, `Pre-0.13.22`, and `foo-v0_13_2.test.js` as the inputs
+  // under test — load-bearing data for the detector's boundary cases, not
+  // sprinkled release tags.
+  "tests/check-version-tags.test.js",
 ]);
 
 // Git-ignored files (a contributor's local-only working docs, scratch) are
@@ -115,11 +122,15 @@ function gitIgnoredSet(relPaths) {
 // Pattern: project version like `v0.13.22` or bare `0.13.22`. Matches
 // our pre-1.0 release range. External package versions like ATLAS
 // `v5.6.0` or CycloneDX `1.6` don't match because the major is 0.
-// The dot/digit lookarounds keep an IPv4 octet run (e.g. `127.0.0.1`, whose
-// `0.0.1` tail would otherwise count as a version tag) and any longer
-// dotted-numeric sequence from registering — a release version is never
-// embedded inside a larger digit.digit run.
-const VERSION_TAG_RE = /(?<![\d.])v?0\.\d+\.\d+(?![\d.])/;
+// The trailing lookahead rejects a longer minor/patch digit (so `0.18.99`
+// still matches, but the stamp can't be part of a wider number) and a
+// dot-followed-by-digit (an IPv4 next octet / longer dotted-numeric run, e.g.
+// `127.0.0.1`, whose `0.0.1` tail would otherwise register). A sentence-ending
+// period after the patch (dot followed by non-digit / end-of-line, e.g.
+// `// fixed in 0.18.9.`) is NOT excluded — that is exactly the version residue
+// the gate must catch. The leading `(?<![\d.])` lookbehind keeps the IPv4
+// suppression on the other side.
+const VERSION_TAG_RE = /(?<![\d.])v?0\.\d+\.\d+(?!\d)(?!\.\d)/;
 
 // Phase residue patterns — broader than just version tags.
 const PHASE_RESIDUE_RES = [
@@ -313,6 +324,14 @@ function main() {
 
   process.exitCode = 1;
 }
+
+module.exports = {
+  VERSION_TAG_RE,
+  PHASE_RESIDUE_RES,
+  FILENAME_VERSION_RE,
+  countLineViolations,
+  scanCurrent,
+};
 
 if (require.main === module) main();
 

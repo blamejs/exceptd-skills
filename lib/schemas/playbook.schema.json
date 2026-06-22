@@ -39,7 +39,7 @@
                             "properties": {
                               "source": {
                                 "type": "string",
-                                "pattern": "(https://|http://|gh api|gh release|curl |wget |fetch )"
+                                "pattern": "(https://|http://|gh api|gh release|curl |wget |fetch |GET /|POST /|PUT /|PATCH /|DELETE /|Graph|Okta|Entra ID|Microsoft Graph)"
                               }
                             },
                             "required": ["source"]

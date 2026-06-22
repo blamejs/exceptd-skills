@@ -250,6 +250,19 @@ const GATES = [
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
   {
+    // Test-subject coverage gate. Bidirectional: every tests/<x>.test.js must
+    // be named after a real SUBJECT the codebase has (a module / CLI verb /
+    // CVE id / playbook / data primitive / repo artifact), and every such
+    // subject must have a test. Blocks the naming drift that lets a test be
+    // filed under a version/finding label (where downstream readers can't find
+    // it) and surfaces any module/playbook that ships without a test. Derived
+    // dynamically from the source tree, so the list is never hand-maintained.
+    name: "Test-subject coverage (every test maps to a subject; every subject has a test)",
+    command: process.execPath,
+    args: [path.join(ROOT, "scripts", "check-test-subjects.js")],
+    ciJobName: "Data integrity (catalog + manifest snapshot)",
+  },
+  {
     // Release-notes extract + quality gate. Runs the same `## <version>`
     // CHANGELOG extraction the release workflow publishes as the GitHub
     // Release body, and lints it for operator-facing quality (no internal

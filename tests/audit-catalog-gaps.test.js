@@ -154,14 +154,20 @@ test("--class with unknown value exits 2 and prints valid options", () => {
 // confusing failure messages when an unrelated catalog edit broke the
 // "shipped catalogs dangling-free" assertion. Pinned only the file
 // reference here so a tooling consumer can locate the live-data test.
-test("the live-catalog dangling-free invariant is asserted in shipped-catalog-integrity.test.js (v0.13.20 split)", () => {
+test("the live-catalog dangling-free invariant is asserted somewhere in the suite", () => {
   const fs = require("node:fs");
-  const p = path.join(__dirname, "shipped-catalog-integrity.test.js");
-  assert.ok(fs.existsSync(p),
-    "tests/shipped-catalog-integrity.test.js must exist — it carries the live-catalog assertion the detector-test no longer mixes in");
-  const body = fs.readFileSync(p, "utf8");
-  assert.match(body, /inspectRefs/,
-    "the integrity test must exercise inspectRefs against the live catalog");
+  // Reorg-robust: the shipped-catalog integrity check (inspectRefs against the
+  // live catalogs) must exist in SOME test file — wherever the subject reorg
+  // homed it — rather than pinning a single filename that consolidation moves.
+  const dir = __dirname;
+  const hit = fs.readdirSync(dir)
+    .filter((f) => f.endsWith(".test.js"))
+    .some((f) => {
+      const body = fs.readFileSync(path.join(dir, f), "utf8");
+      return /inspectRefs\s*\(/.test(body) && /dangling/i.test(body);
+    });
+  assert.ok(hit,
+    "some test file must exercise inspectRefs for the live-catalog dangling-ref invariant");
 });
 
 // Original test kept (renamed) as a compatibility hook so external
@@ -183,4 +189,145 @@ test("legacy alias: detector returns zero dangling refs on the shipped catalogs 
     0,
     `shipped catalogs must have zero dangling cross-refs; got ${findings.length}: ${JSON.stringify(findings.slice(0, 3))}`
   );
+});
+
+
+// ---- routed from shipped-catalog-integrity ----
+require("node:test").describe("shipped-catalog-integrity", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * tests/shipped-catalog-integrity.test.js
+ *
+ * Live-catalog invariants. v0.13.20 split — the audit-catalog-gaps
+ * detector tests now exercise synthetic inputs only; the assertions
+ * about the LIVE shipped catalogs live here. When a catalog edit
+ * breaks one of these the failure message points at the data, not at
+ * the detector logic.
+ *
+ * Pins:
+ *   1. Every cross-catalog reference resolves (no dangling refs).
+ *   2. CVE catalog draft-debt ratio is reported but not enforced —
+ *      bulk-import auto-imported entries are legitimate intake work.
+ *   3. Every required-context field on every entry that does NOT
+ *      declare a class-level exemption (forward_looking, _matrix-
+ *      qualified ICS exception, etc.) is populated. Missing-context
+ *      surfaces as a test failure, NOT a silent audit warning.
+ */
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+
+const ROOT = path.join(__dirname, "..");
+const MOD = require(path.join(ROOT, "scripts", "audit-catalog-gaps.js"));
+
+function loadAll() {
+  const data = path.join(ROOT, "data");
+  return {
+    "cve-catalog": JSON.parse(fs.readFileSync(path.join(data, "cve-catalog.json"), "utf8")),
+    "cwe-catalog": JSON.parse(fs.readFileSync(path.join(data, "cwe-catalog.json"), "utf8")),
+    "attack-techniques": JSON.parse(fs.readFileSync(path.join(data, "attack-techniques.json"), "utf8")),
+    "atlas-ttps": JSON.parse(fs.readFileSync(path.join(data, "atlas-ttps.json"), "utf8")),
+    "framework-control-gaps": JSON.parse(fs.readFileSync(path.join(data, "framework-control-gaps.json"), "utf8"))
+  };
+}
+
+test("shipped catalogs: zero dangling cross-catalog references", () => {
+  const findings = MOD.inspectRefs(loadAll());
+  assert.equal(
+    findings.length,
+    0,
+    `shipped catalogs must have zero dangling cross-refs; got ${findings.length}: ${JSON.stringify(findings.slice(0, 3))}`
+  );
+});
+
+test("shipped catalogs: missing-context budget is enforced per catalog (no silent regression)", () => {
+  // v0.13.20 honest-state: we have known missing-context on cve-catalog
+  // (operator-curation backlog for IoCs on bulk-imported CVEs) and on
+  // zeroday-lessons (per-primitive new_control_requirements pending).
+  // The release explicitly stops auto-filling stubs that hid these
+  // gaps — operators see them honestly via `npm run audit-catalog-gaps`.
+  //
+  // The integrity test enforces a budget per catalog: a snapshot of the
+  // missing-context count today. If a future PR makes the gap worse,
+  // the test fires. If a PR closes gaps, the budget gets lowered in
+  // the same PR. This is the no-MVP rule applied to the catalog —
+  // you can't make the catalog WORSE without explicit acknowledgement.
+  const BUDGET = {
+    // The bulk-imported KEV draft backlog has been fully curated — every CVE
+    // entry now carries a behavioral iocs block, so the missing-iocs count is 0.
+    // This budget stays at 0 as a guard: any future entry shipped without iocs
+    // is a regression and fails the gate.
+    "cve-catalog":     { iocs: 0 },
+    "cwe-catalog":     {},
+    "attack-techniques": {},
+    "atlas-ttps":      {},
+    "d3fend-catalog":  {},
+    // Obsoleted/historic RFCs are now imported so a superseded RFC resolves
+    // offline. 31 of them carry no abstract in the IETF index (older RFCs
+    // predate the abstract field); that absence is upstream, not a curation
+    // regression — the rows are otherwise complete (title, status, obsoleted_by).
+    "rfc-references":  { abstract: 31 },
+    "framework-control-gaps": {},
+    // Lessons whose remediation reuses existing controls (perimeter/edge patch
+    // SLA, endpoint and application hardening, kernel/driver hardening) rather
+    // than demanding a new one carry no new_control_requirements — the field is
+    // honestly absent rather than padded with a fabricated control, which the
+    // no-orphaned-controls rule forbids. The count rises as such lessons are
+    // added for newly-curated CVEs (e.g. legacy client-side browser/reader RCEs
+    // whose defense is patch + end-of-life-retirement + Protected View/ASR, not
+    // a novel control). Raised to the current actual when that happens.
+    "zeroday-lessons": { new_control_requirements: 269 }
+  };
+  const findings = {};
+  for (const key of Object.keys(MOD.SPEC)) {
+    findings[key] = {};
+    const r = MOD.inspect(key);
+    for (const f of r.missing_context) {
+      findings[key][f.field] = (findings[key][f.field] || 0) + 1;
+    }
+  }
+  const regressions = [];
+  for (const [key, fieldsBudget] of Object.entries(BUDGET)) {
+    const actual = findings[key] || {};
+    // Any field not in the budget must be at 0 (new gap class regressed).
+    for (const field of Object.keys(actual)) {
+      const allowed = fieldsBudget[field] || 0;
+      if (actual[field] > allowed) {
+        regressions.push(`${key}.${field}: budget=${allowed} actual=${actual[field]} (regression of ${actual[field] - allowed})`);
+      }
+    }
+  }
+  if (regressions.length > 0) {
+    assert.fail(
+      `missing-context regression beyond budget:\n  ${regressions.join("\n  ")}\n` +
+      `Either close the gap in this PR (preferred) or, if the gap is intentional, update the BUDGET above with a justifying comment.`
+    );
+  }
+});
+
+test("shipped catalogs: framework-control-gaps forward_looking exemption is used as a SCHEMA field, not as _gap_skip", () => {
+  // Class 5.15 from the v0.13.19 audit: 84 framework gaps had blanket
+  // _gap_skip annotations as the exemption. v0.13.20 converted them
+  // to forward_looking:true. Pin that no _gap_skip remains on those
+  // entries.
+  const fwc = loadAll()["framework-control-gaps"];
+  const stillSkipped = [];
+  for (const id of Object.keys(fwc)) {
+    if (id === "_meta") continue;
+    const e = fwc[id];
+    if (e && e._gap_skip && Array.isArray(e._gap_skip.fields) && e._gap_skip.fields.includes("evidence_cves")) {
+      stillSkipped.push(id);
+    }
+  }
+  assert.equal(stillSkipped.length, 0,
+    `framework-control-gaps entries must use forward_looking:true (not _gap_skip on evidence_cves). Stragglers: ${stillSkipped.join(", ")}`);
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
 });

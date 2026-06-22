@@ -598,3 +598,228 @@ test("escalation/feeds_into conditions rooted at resolvable phase results pass",
     "analyze/finding roots in escalations and analyze/validate/finding roots in feeds_into are resolvable",
   );
 });
+
+// ---------- null-playbook guard + air-gap network-source detector ----------
+//
+// CLI-level cases use a copied-into-tempdir mini-repo (validator + exit-codes
+// + schemas + the data it reads) so the real on-disk catalogs are never
+// mutated.
+
+function mkTmp(prefix) {
+  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+}
+
+function writeJson(p, obj) {
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  // String content for the literal-null case is passed through verbatim.
+  fs.writeFileSync(p, typeof obj === "string" ? obj : JSON.stringify(obj));
+}
+
+function copyInto(dst, relPath) {
+  const target = path.join(dst, relPath);
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.copyFileSync(path.join(ROOT, relPath), target);
+}
+
+function runNode(scriptPath, args) {
+  return spawnSync(process.execPath, [scriptPath, ...args], { encoding: "utf8" });
+}
+
+// ===========================================================================
+// #20 — checkCrossRefs null-playbook guard
+// ===========================================================================
+
+test("#20 checkCrossRefs does not throw on a null playbook and returns []", () => {
+  const ctx = loadContext();
+  const ids = new Set(loadPlaybooks().filter((p) => p.data).map((p) => p.data._meta.id));
+  assert.doesNotThrow(() => checkCrossRefs(null, ctx, ids));
+  assert.deepEqual(checkCrossRefs(null, ctx, ids), []);
+  // Array / primitive playbooks are also no-ops.
+  assert.deepEqual(checkCrossRefs([], ctx, ids), []);
+  assert.deepEqual(checkCrossRefs("nope", ctx, ids), []);
+});
+
+test("#20 CLI: a literal-null playbook file FAILs with the type error and does not crash", () => {
+  const tmp = mkTmp("hfd20-cli-");
+  try {
+    copyInto(tmp, path.join("lib", "validate-playbooks.js"));
+    copyInto(tmp, path.join("lib", "exit-codes.js"));
+    copyInto(tmp, path.join("lib", "schemas", "playbook.schema.json"));
+    copyInto(tmp, "manifest.json");
+    for (const f of ["atlas-ttps.json", "cve-catalog.json", "cwe-catalog.json", "d3fend-catalog.json", "attack-techniques.json"]) {
+      copyInto(tmp, path.join("data", f));
+    }
+    // The crashing input: a playbook file whose JSON content is literally null.
+    writeJson(path.join(tmp, "data", "playbooks", "synthetic.json"), "null");
+
+    const r = runNode(path.join(tmp, "lib", "validate-playbooks.js"), []);
+    assert.equal(r.status, 1);
+    assert.match(r.stdout, /expected type "object", got null/);
+    assert.doesNotMatch(r.stdout, /TypeError|Cannot read properties of null/);
+    assert.doesNotMatch(r.stderr, /TypeError|Cannot read properties of null/);
+    // The summary line printed (process did not abort before the tail).
+    assert.match(r.stdout, /playbooks validated/);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+// ===========================================================================
+// #21 — air-gap network-source detector flags API-verb-phrased sources
+// ===========================================================================
+
+function minimalAirGapPlaybook(source, withAlt) {
+  // Smallest playbook shape that exercises the air-gap completeness check in
+  // checkCrossRefs. It needs a TTP mapping (atlas_refs) to avoid the unrelated
+  // TTP-floor error muddying the assertion; we use the live atlas key set.
+  const atlasKey = "__will_be_filled__";
+  const art = { source };
+  if (withAlt) art.air_gap_alternative = "Local file already staged in cwd; read it directly.";
+  return {
+    _meta: { id: "synthetic-airgap", air_gap_mode: true, scope: "cross-cutting" },
+    domain: {},
+    phases: { look: { artifacts: [art] } },
+    __atlasKey: atlasKey,
+  };
+}
+
+function airGapFindings(source, withAlt) {
+  const ctx = loadContext();
+  const ids = new Set(["synthetic-airgap"]);
+  const pb = minimalAirGapPlaybook(source, withAlt);
+  delete pb.__atlasKey;
+  return checkCrossRefs(pb, ctx, ids).filter((f) => /air_gap_mode is true and source/.test(f.message));
+}
+
+test("#21 an API-verb-phrased source under air_gap_mode with no alternative is flagged at error severity", () => {
+  const findings = airGapFindings("Entra ID: GET /directoryRoles via Graph", false);
+  assert.equal(findings.length, 1, `expected exactly one air-gap finding, got: ${JSON.stringify(findings)}`);
+  assert.equal(findings[0].severity, "error");
+  assert.match(findings[0].message, /air_gap_mode is true and source .* makes a network call/);
+});
+
+test("#21 the same API-verb source WITH an air_gap_alternative is silent", () => {
+  const findings = airGapFindings("Entra ID: GET /directoryRoles via Graph", true);
+  assert.deepEqual(findings, []);
+});
+
+test("#21 a purely-local source under air_gap_mode is silent (no over-firing)", () => {
+  assert.deepEqual(airGapFindings("~/.ssh/config", false), []);
+  assert.deepEqual(airGapFindings("Walk cwd for *.env files", false), []);
+  // "api/v\\d" deliberately NOT a token: a local artifact referencing an API
+  // path must not be misclassified as a network call.
+  assert.deepEqual(airGapFindings("Code-scan: grep for /api/v2 callback handlers", false), []);
+});
+
+test("#21 the full shipped corpus still produces zero air-gap findings under the broadened regex", () => {
+  const ctx = loadContext();
+  const playbooks = loadPlaybooks();
+  const ids = new Set(playbooks.filter((p) => p.data).map((p) => p.data._meta.id));
+  const airGapHits = [];
+  for (const pb of playbooks) {
+    if (!pb.data) continue;
+    const hits = checkCrossRefs(pb.data, ctx, ids).filter((f) =>
+      /air_gap_mode is true and source/.test(f.message),
+    );
+    for (const h of hits) airGapHits.push(`${pb.file}: ${h.message}`);
+  }
+  assert.deepEqual(airGapHits, [], `broadened regex must not over-fire on the shipped corpus:\n${airGapHits.join("\n")}`);
+});
+
+// ===========================================================================
+// _meta.fed_by schema acceptance — the field is declared, so the validator
+// emits no "unexpected property fed_by" warning.
+// ===========================================================================
+
+test('A: playbook.schema.json declares _meta.fed_by as an array of strings', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'lib', 'schemas', 'playbook.schema.json'), 'utf8');
+  // Schema must accept the field — the "unexpected property fed_by"
+  // cosmetic warnings on the playbooks should be gone.
+  const schema = JSON.parse(src);
+  const meta = schema.properties._meta;
+  assert.ok(meta, 'schema must declare _meta');
+  assert.ok(meta.properties.fed_by, '_meta.fed_by must be declared');
+  assert.equal(meta.properties.fed_by.type, 'array');
+  assert.equal(meta.properties.fed_by.items.type, 'string');
+});
+
+test('A: validate-playbooks no longer emits any "unexpected property fed_by" warnings', () => {
+  const r = spawnSync(process.execPath, [path.join(ROOT, 'lib', 'validate-playbooks.js')], {
+    encoding: 'utf8', cwd: ROOT,
+  });
+  // Acceptable: passes or warns on unrelated fields. Must NOT contain
+  // any "fed_by" warning.
+  assert.ok(!/unexpected property "fed_by"/i.test(r.stdout + r.stderr),
+    `validate-playbooks must not warn on fed_by anymore; got:\n${r.stdout.slice(0, 800)}`);
+});
+
+
+// ---- routed from v0_13_4-fixes ----
+require("node:test").describe("v0_13_4-fixes", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * tests/v0_13_4-fixes.test.js
+ *
+ * Pin tests for the v0.13.4 patch.
+ *
+ * Coverage:
+ *   A — _meta.fed_by is now schema-accepted (drives the 20 cosmetic
+ *       validate-playbooks warnings to 0).
+ *   C — README + AGENTS surface the v0.13.x operator-facing features.
+ *   E — 2 stuck-draft CVEs (MAL-2026-ANTHROPIC-MCP-STDIO + CVE-2026-GTIG-AI-2FA)
+ *       are deleted from the catalog and from any cross-referencing data file.
+ *   (B and D pin coverage is in their dedicated test files; this file
+ *    covers the items that don't have a natural dedicated home.)
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
+
+const ROOT = path.join(__dirname, '..');
+
+// ---------- A. fed_by schema acceptance ----------
+
+
+
+// ---------- C. README + AGENTS surface v0.13.x features ----------
+
+
+
+
+
+
+
+
+// ---------- E. 2 stuck-draft CVEs deleted ----------
+
+test('A: playbook.schema.json declares _meta.fed_by as an array of strings', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'lib', 'schemas', 'playbook.schema.json'), 'utf8');
+  // Schema must accept the field — the "unexpected property fed_by"
+  // cosmetic warnings on 20 playbooks should be gone.
+  const schema = JSON.parse(src);
+  const meta = schema.properties._meta;
+  assert.ok(meta, 'schema must declare _meta');
+  assert.ok(meta.properties.fed_by, '_meta.fed_by must be declared');
+  assert.equal(meta.properties.fed_by.type, 'array');
+  assert.equal(meta.properties.fed_by.items.type, 'string');
+});
+
+test('A: validate-playbooks no longer emits any "unexpected property fed_by" warnings', () => {
+  const r = spawnSync(process.execPath, [path.join(ROOT, 'lib', 'validate-playbooks.js')], {
+    encoding: 'utf8', cwd: ROOT,
+  });
+  // Acceptable: passes or warns on unrelated fields. Must NOT contain
+  // any "fed_by" warning.
+  assert.ok(!/unexpected property "fed_by"/i.test(r.stdout + r.stderr),
+    `validate-playbooks must not warn on fed_by anymore; got:\n${r.stdout.slice(0, 800)}`);
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});

@@ -74,9 +74,27 @@ function writeJson(name, obj) {
   // is atomic on POSIX and Windows, so a reader (or the next build's
   // parse-check) only ever sees the complete old or complete new file.
   const abs = path.join(IDX, name);
-  const tmp = `${abs}.tmp-${process.pid}`;
+  // Random suffix (not just pid) so a Promise.all fan-out (--parallel) sharing
+  // a pid can't race the same tmp path, and the in-repo temp name isn't
+  // predictable. Mirrors lib/citation-resolve.js cachePut.
+  const tmp = `${abs}.tmp-${process.pid}.${crypto.randomBytes(4).toString("hex")}`;
   fs.writeFileSync(tmp, JSON.stringify(obj, null, 2) + "\n", "utf8");
-  fs.renameSync(tmp, abs);
+  // rename-over-existing is atomic, but on Windows a sync client / AV / indexer
+  // (e.g. Dropbox holding the target open for a few ms) can make it transiently
+  // EPERM/EACCES/EBUSY. Retry with short backoff so a build doesn't fail on a
+  // lock that clears in milliseconds; on POSIX the first attempt always wins.
+  let lastErr;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    try { fs.renameSync(tmp, abs); return; }
+    catch (e) {
+      lastErr = e;
+      if (e.code !== "EPERM" && e.code !== "EACCES" && e.code !== "EBUSY") break;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20 * (attempt + 1));
+    }
+  }
+  // Persistent failure: drop the temp sibling so it doesn't orphan, then surface.
+  try { fs.unlinkSync(tmp); } catch { /* best effort */ }
+  throw lastErr;
 }
 
 function readJson(p) {
@@ -795,7 +813,7 @@ async function main() {
     for (const n of wanted) {
       if (!OUTPUTS.find((o) => o.name === n)) {
         console.error(`build-indexes: unknown output "${n}". Valid: ${OUTPUTS.map((o) => o.name).join(", ")}`);
-        process.exit(2);
+        process.exitCode = 2; return;
       }
     }
     chosen = withDependencyClosure(wanted);

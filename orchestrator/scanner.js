@@ -15,6 +15,30 @@ const { execFileSync, spawnSync } = require('child_process');
 
 const DATA_DIR = process.env.EXCEPTD_DATA_DIR || path.join(__dirname, '..', 'data');
 
+// CLI flags that request air-gap (no-egress) operation. `--air-gap` is the
+// documented form; `--offline` / `--no-network` are accepted aliases (the
+// orchestrator's flag allowlists accept all three). The flag MUST be honored
+// equivalently to EXCEPTD_AIR_GAP=1 on the egress path — historically the env
+// var suppressed the outbound TLS probe but the CLI flag did not, so an
+// operator passing `--air-gap` still fired a TLS s_client connect.
+const AIR_GAP_FLAGS = ['--air-gap', '--offline', '--no-network'];
+
+/**
+ * Resolve whether air-gap mode is active. True when EXCEPTD_AIR_GAP=1, when an
+ * explicit `opts.airGap` is passed, OR when any air-gap flag is present on the
+ * invoking process's argv. Checking argv makes the CLI flag effective even
+ * though the scanner is reached in-process from the orchestrator entry — the
+ * flag and the env var are now equivalent on the egress path.
+ *
+ * @param {{ airGap?: boolean }} [opts]
+ */
+function isAirGap(opts) {
+  if (opts && opts.airGap) return true;
+  if (process.env.EXCEPTD_AIR_GAP === '1') return true;
+  const argv = Array.isArray(process.argv) ? process.argv : [];
+  return argv.some(a => typeof a === 'string' && AIR_GAP_FLAGS.includes(a));
+}
+
 // --- public API ---
 
 /**
@@ -32,9 +56,13 @@ const DATA_DIR = process.env.EXCEPTD_DATA_DIR || path.join(__dirname, '..', 'dat
  * deadlines, auditor-ready exception language, regression schedules.
  * `exceptd scan` will be removed in v1.0.
  *
+ * @param {{ airGap?: boolean }} [opts] - When `opts.airGap` is set, the
+ *   outbound TLS probe is suppressed exactly as EXCEPTD_AIR_GAP=1 does. The
+ *   air-gap CLI flags (--air-gap / --offline / --no-network) are also honored
+ *   directly off process.argv, so the flag is equivalent to the env var.
  * @returns {{ timestamp: string, host: object, findings: object[], summary: object }}
  */
-async function scan() {
+async function scan(opts) {
   const timestamp = new Date().toISOString();
   const findings = [];
 
@@ -50,7 +78,7 @@ async function scan() {
   const host = hostInfo();
   findings.push(...kernelScan());
   findings.push(...mcpScan());
-  findings.push(...cryptoScan());
+  findings.push(...cryptoScan(opts));
   findings.push(...aiApiScan());
   findings.push(...frameworkScan());
 
@@ -65,11 +93,11 @@ async function scan() {
  * Run a targeted scan for a specific domain.
  * @param {'kernel'|'mcp'|'crypto'|'ai_api'|'framework'} domain
  */
-async function scanDomain(domain) {
+async function scanDomain(domain, opts) {
   const scanners = { kernel: kernelScan, mcp: mcpScan, crypto: cryptoScan, ai_api: aiApiScan, framework: frameworkScan };
   const fn = scanners[domain];
   if (!fn) throw new Error(`Unknown scan domain: ${domain}. Valid: ${Object.keys(scanners).join(', ')}`);
-  return fn();
+  return fn(opts);
 }
 
 // --- domain scanners ---
@@ -175,7 +203,7 @@ function mcpScan() {
   return findings;
 }
 
-function cryptoScan() {
+function cryptoScan(opts) {
   const findings = [];
 
   const opensslRaw = safeExecFile('openssl', ['version']);
@@ -218,15 +246,18 @@ function cryptoScan() {
 
   // Air-gap mode short-circuits the outbound TLS probe entirely; emit a
   // skipped annotation so operators can see the probe was intentionally
-  // suppressed rather than failing silently.
-  if (process.env.EXCEPTD_AIR_GAP === '1') {
+  // suppressed rather than failing silently. Honored equivalently for the
+  // EXCEPTD_AIR_GAP=1 env var AND the --air-gap / --offline / --no-network CLI
+  // flags (isAirGap inspects opts, env, and process.argv) — the flag is NOT a
+  // no-op on this egress path.
+  if (isAirGap(opts)) {
     findings.push({
       domain: 'crypto',
       signal: 'tls_probe',
       probe: 'skipped (air-gap)',
       severity: 'info',
       skill_hint: 'pqc-first',
-      action_required: 'Air-gap mode active — TLS probe suppressed. Run with EXCEPTD_AIR_GAP=0 to probe.'
+      action_required: 'Air-gap mode active — TLS probe suppressed. Run without --air-gap (and with EXCEPTD_AIR_GAP unset) to probe.'
     });
   } else {
     const target = process.env.EXCEPTD_TLS_PROBE_TARGET || 'registry.npmjs.org:443';
@@ -589,4 +620,4 @@ function loadJson(filename) {
   }
 }
 
-module.exports = { scan, scanDomain, sanitizeConfig };
+module.exports = { scan, scanDomain, sanitizeConfig, isAirGap };

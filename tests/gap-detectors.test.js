@@ -11,8 +11,11 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 const D = require(path.join(__dirname, "..", "lib", "gap-detectors.js"));
+const gd = D;
 
 // ---------- helpers ----------
 
@@ -373,4 +376,323 @@ test("PLACEHOLDER_SENTINELS: every pattern is a regex and matches its canonical 
     const matched = examples.some((ex) => re.test(ex));
     assert.ok(matched, `regex ${re} must match at least one canonical example string`);
   }
+});
+
+// ---------------------------------------------------------------------------
+// REFERENCE_TOKEN_RE recognizes D3A-* / D3F-* D3FEND ids so a skill/playbook
+// citation removes the referenced entry from the unused-orphan set.
+// ---------------------------------------------------------------------------
+
+function fullTokenMatch(s) {
+  const re = gd.REFERENCE_TOKEN_RE;
+  re.lastIndex = 0;
+  const m = s.match(re);
+  return !!(m && m.includes(s));
+}
+
+test('#14 REFERENCE_TOKEN_RE matches D3A-* and D3F-* D3FEND artifact ids', () => {
+  assert.equal(fullTokenMatch('D3A-AAD'), true, 'D3A-AAD must be recognized as a reference token');
+  assert.equal(fullTokenMatch('D3F-UGPH'), true, 'D3F-UGPH must be recognized as a reference token');
+});
+
+test('#14 REFERENCE_TOKEN_RE still matches every prior token class', () => {
+  assert.equal(fullTokenMatch('D3-EAL'), true);
+  assert.equal(fullTokenMatch('CWE-79'), true);
+  assert.equal(fullTokenMatch('T1059.003'), true);
+  assert.equal(fullTokenMatch('AML.T0051'), true);
+  assert.equal(fullTokenMatch('RFC-8446'), true);
+});
+
+test('#14 a skill body citing a D3A-* id removes that entry from the unused-orphan set', () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'hunt-c14-'));
+  // Synthetic skills tree citing the D3A-* id in prose.
+  const skillDir = path.join(tmp, 'skills', 'example-skill');
+  fs.mkdirSync(skillDir, { recursive: true });
+  fs.writeFileSync(path.join(skillDir, 'skill.md'),
+    '# Example\n\nThis primitive maps to the D3A-AAD digital artifact.\n', 'utf8');
+
+  const refs = gd.buildExternalRefs(tmp);
+  assert.ok(refs.skillRefs.has('D3A-AAD'),
+    'the D3A-AAD citation must be collected into skillRefs');
+
+  // An _auto_imported D3FEND entry that IS referenced must not be flagged.
+  const loaded = {
+    'cve-catalog': { _meta: {} },
+    'd3fend-catalog': {
+      _meta: {},
+      'D3A-AAD': { _auto_imported: true, name: 'Account Access Removal' },
+    },
+  };
+  const referenced = gd.unusedOrphanFindings(loaded, {
+    skillRefs: refs.skillRefs,
+    playbookRefs: refs.playbookRefs,
+  });
+  assert.ok(!referenced.some(f => f.id === 'D3A-AAD'),
+    'a referenced D3A-* entry must NOT be flagged as an unused orphan');
+
+  // Control: an UN-referenced _auto_imported D3A-* entry is still flagged,
+  // proving the test would fail if the guard mis-fired.
+  const unreferenced = gd.unusedOrphanFindings({
+    'cve-catalog': { _meta: {} },
+    'd3fend-catalog': { _meta: {}, 'D3A-ZZZ': { _auto_imported: true, name: 'Orphan' } },
+  }, { skillRefs: new Set(), playbookRefs: new Set() });
+  assert.ok(unreferenced.some(f => f.id === 'D3A-ZZZ'),
+    'an unreferenced auto-imported D3A-* entry must be flagged as orphan');
+});
+
+
+// ---- routed from hunt-fix-C-correlations ----
+require("node:test").describe("hunt-fix-C-correlations", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Regression coverage for the C-correlations cluster:
+ *
+ *   #9  byTtp() returned found:false / entry:null for every ATT&CK
+ *       technique — only the ATLAS catalog was consulted for the entry,
+ *       while skills + related_cves correctly unioned both id spaces.
+ *   #10 byTtp() d3fend correlation read the always-empty `counters` field
+ *       instead of the populated `counters_attack_techniques`.
+ *   #11 framework-gap lagScore() reported framework_specific_gaps:0 for
+ *       every framework whose global-frameworks short key is not a literal
+ *       substring of its catalog display string.
+ *   #12 containers collector tracked USER globally, so a multi-stage build
+ *       with a non-root USER in an early stage masked a root final stage.
+ *   #13 byCwe/byTtp/bySkill leaked _auto_imported draft CVEs into the
+ *       related_cves/cve_refs correlations (byCve excluded them; these
+ *       transitive paths did not).
+ *   #14 gap-detectors REFERENCE_TOKEN_RE could not match D3A-* / D3F-*
+ *       D3FEND ids, mis-flagging referenced entries as unused orphans.
+ *
+ * Real-catalog assertions read the shipped data/ tree (default DATA_DIR).
+ * The draft-leak case (#13) needs a synthetic catalog, which cross-ref-api
+ * binds at require-time from EXCEPTD_DATA_DIR — so it runs in a child
+ * process with that env var pointed at an isolated tempdir.
+ *
+ * Run under --test-concurrency=1 (the cross-ref cache + shared data dir are
+ * process-global).
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const cp = require('node:child_process');
+
+const xref = require('../lib/cross-ref-api.js');
+const fg = require('../lib/framework-gap.js');
+const gd = require('../lib/gap-detectors.js');
+const containers = require('../lib/collectors/containers.js');
+
+const ROOT = path.join(__dirname, '..');
+const DATA_DIR = path.join(ROOT, 'data');
+
+function loadJson(p) {
+  return JSON.parse(fs.readFileSync(p, 'utf8'));
+}
+
+// ---------------------------------------------------------------------------
+// Finding #9 — byTtp resolves the ATT&CK technique record, not only ATLAS.
+// ---------------------------------------------------------------------------
+
+
+
+
+// ---------------------------------------------------------------------------
+// Finding #10 — byTtp d3fend correlation reads counters_attack_techniques.
+// ---------------------------------------------------------------------------
+
+
+
+// ---------------------------------------------------------------------------
+// Finding #11 — lagScore counts framework-specific gaps by normalized match.
+// ---------------------------------------------------------------------------
+
+const controlGaps = loadJson(path.join(DATA_DIR, 'framework-control-gaps.json'));
+const globalFrameworks = loadJson(path.join(DATA_DIR, 'global-frameworks.json'));
+
+
+
+
+
+// ---------------------------------------------------------------------------
+// Finding #12 — containers collector resets USER state per build stage.
+// ---------------------------------------------------------------------------
+
+function dockerfileTempdir(content) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'hunt-c12-'));
+  fs.writeFileSync(path.join(d, 'Dockerfile'), content, 'utf8');
+  return d;
+}
+
+
+
+
+
+
+
+// ---------------------------------------------------------------------------
+// Finding #13 — draft CVEs never leak into transitive correlations.
+//
+// cross-ref-api binds DATA_DIR at require-time from EXCEPTD_DATA_DIR, so the
+// synthetic catalog must be exercised in a child process.
+// ---------------------------------------------------------------------------
+
+
+// ---------------------------------------------------------------------------
+// Finding #14 — REFERENCE_TOKEN_RE recognizes D3A-* / D3F-* D3FEND ids.
+// ---------------------------------------------------------------------------
+
+function fullTokenMatch(s) {
+  const re = gd.REFERENCE_TOKEN_RE;
+  re.lastIndex = 0;
+  const m = s.match(re);
+  return !!(m && m.includes(s));
+}
+
+test('#14 REFERENCE_TOKEN_RE matches D3A-* and D3F-* D3FEND artifact ids', () => {
+  assert.equal(fullTokenMatch('D3A-AAD'), true, 'D3A-AAD must be recognized as a reference token');
+  assert.equal(fullTokenMatch('D3F-UGPH'), true, 'D3F-UGPH must be recognized as a reference token');
+});
+
+test('#14 REFERENCE_TOKEN_RE still matches every prior token class', () => {
+  assert.equal(fullTokenMatch('D3-EAL'), true);
+  assert.equal(fullTokenMatch('CWE-79'), true);
+  assert.equal(fullTokenMatch('T1059.003'), true);
+  assert.equal(fullTokenMatch('AML.T0051'), true);
+  assert.equal(fullTokenMatch('RFC-8446'), true);
+});
+
+test('#14 a skill body citing a D3A-* id removes that entry from the unused-orphan set', () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'hunt-c14-'));
+  // Synthetic skills tree citing the D3A-* id in prose.
+  const skillDir = path.join(tmp, 'skills', 'example-skill');
+  fs.mkdirSync(skillDir, { recursive: true });
+  fs.writeFileSync(path.join(skillDir, 'skill.md'),
+    '# Example\n\nThis primitive maps to the D3A-AAD digital artifact.\n', 'utf8');
+
+  const refs = gd.buildExternalRefs(tmp);
+  assert.ok(refs.skillRefs.has('D3A-AAD'),
+    'the D3A-AAD citation must be collected into skillRefs');
+
+  // An _auto_imported D3FEND entry that IS referenced must not be flagged.
+  const loaded = {
+    'cve-catalog': { _meta: {} },
+    'd3fend-catalog': {
+      _meta: {},
+      'D3A-AAD': { _auto_imported: true, name: 'Account Access Removal' },
+    },
+  };
+  const referenced = gd.unusedOrphanFindings(loaded, {
+    skillRefs: refs.skillRefs,
+    playbookRefs: refs.playbookRefs,
+  });
+  assert.ok(!referenced.some(f => f.id === 'D3A-AAD'),
+    'a referenced D3A-* entry must NOT be flagged as an unused orphan');
+
+  // Control: an UN-referenced _auto_imported D3A-* entry is still flagged,
+  // proving the test would fail if the guard mis-fired.
+  const unreferenced = gd.unusedOrphanFindings({
+    'cve-catalog': { _meta: {} },
+    'd3fend-catalog': { _meta: {}, 'D3A-ZZZ': { _auto_imported: true, name: 'Orphan' } },
+  }, { skillRefs: new Set(), playbookRefs: new Set() });
+  assert.ok(unreferenced.some(f => f.id === 'D3A-ZZZ'),
+    'an unreferenced auto-imported D3A-* entry must be flagged as orphan');
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from shipped-catalog-integrity ----
+require("node:test").describe("shipped-catalog-integrity", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * tests/shipped-catalog-integrity.test.js
+ *
+ * Live-catalog invariants. v0.13.20 split — the audit-catalog-gaps
+ * detector tests now exercise synthetic inputs only; the assertions
+ * about the LIVE shipped catalogs live here. When a catalog edit
+ * breaks one of these the failure message points at the data, not at
+ * the detector logic.
+ *
+ * Pins:
+ *   1. Every cross-catalog reference resolves (no dangling refs).
+ *   2. CVE catalog draft-debt ratio is reported but not enforced —
+ *      bulk-import auto-imported entries are legitimate intake work.
+ *   3. Every required-context field on every entry that does NOT
+ *      declare a class-level exemption (forward_looking, _matrix-
+ *      qualified ICS exception, etc.) is populated. Missing-context
+ *      surfaces as a test failure, NOT a silent audit warning.
+ */
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+
+const ROOT = path.join(__dirname, "..");
+const MOD = require(path.join(ROOT, "scripts", "audit-catalog-gaps.js"));
+
+function loadAll() {
+  const data = path.join(ROOT, "data");
+  return {
+    "cve-catalog": JSON.parse(fs.readFileSync(path.join(data, "cve-catalog.json"), "utf8")),
+    "cwe-catalog": JSON.parse(fs.readFileSync(path.join(data, "cwe-catalog.json"), "utf8")),
+    "attack-techniques": JSON.parse(fs.readFileSync(path.join(data, "attack-techniques.json"), "utf8")),
+    "atlas-ttps": JSON.parse(fs.readFileSync(path.join(data, "atlas-ttps.json"), "utf8")),
+    "framework-control-gaps": JSON.parse(fs.readFileSync(path.join(data, "framework-control-gaps.json"), "utf8"))
+  };
+}
+
+test("shipped catalogs: extended-detector budgets (no silent regression on v0.13.21 detection classes)", () => {
+  // v0.13.21 expanded the audit with seven extended detectors. The
+  // shipped catalog has known findings on most of them — operator-
+  // curation backlog, KEV-due-date passage, bulk-imported orphans —
+  // and the budget approach mirrors the missing-context budget above.
+  // A future PR worsening any class beyond budget fires; closing gaps
+  // lowers the budget in the same PR.
+  const D = require(path.join(__dirname, "..", "lib", "gap-detectors.js"));
+  const all = D.runAllDetectors(loadAll(), {});
+  const byClass = {};
+  for (const f of all) {
+    byClass[f.class] = (byClass[f.class] || 0) + 1;
+  }
+  const BUDGET = {
+    "content-quality": 12,        // 10 KEV-no-vendor-advisories + slack
+    // data-freshness only (source_verified / last_updated / epss_date). The
+    // calendar-driven KEV-due-passed sub-check was removed (external operator
+    // date, not catalog freshness; grew unboundedly as KEV drafts got curated).
+    // Actual 0 with fresh data; 10 leaves refresh headroom.
+    "temporal-staleness": 10,
+    "logical-consistency": 5,
+    "cross-ref-completeness": 5,
+    "schema-evolution": 0,
+    "operator-action-sla": 0,     // no entries currently exceed the SLA window
+    "unused-orphan": 1400         // bulk-imported CWE / RFC orphans by design
+  };
+  const regressions = [];
+  for (const [cls, count] of Object.entries(byClass)) {
+    const allowed = BUDGET[cls] || 0;
+    if (count > allowed) regressions.push(`${cls}: budget=${allowed} actual=${count}`);
+  }
+  // Also alert if any class has ZERO budget but is missing from BUDGET
+  // (catches a future addition that forgot to set a budget).
+  for (const cls of Object.keys(BUDGET)) {
+    if (!(cls in byClass)) continue;
+  }
+  assert.deepEqual(regressions, [],
+    "extended-detector class regression(s):\n  " + regressions.join("\n  ") +
+    "\nClose the gap in this PR (preferred) or update BUDGET above with a justifying comment.");
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
 });

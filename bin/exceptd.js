@@ -538,6 +538,15 @@ function main() {
   if (argv.includes("--json-stdout-only")) {
     process.env.EXCEPTD_DEPRECATION_SHOWN = "1";
     process.env.EXCEPTD_UNSIGNED_WARNED = "1";
+    // Route the canonical error envelope (emitError) to STDOUT under this flag.
+    // Without it, --json-stdout-only sends all diagnostics to stderr and then
+    // suppresses non-"Error"-prefixed stderr — but emitError's ok:false body is
+    // neither stdout-bound nor "Error"-prefixed, so an error invocation produced
+    // NO diagnostic on stdout OR stderr (just an exit code). A `| jq` consumer
+    // reading stdout would see an empty document on every failure. Set a
+    // dedicated global so emitError can detect the flag and write its JSON
+    // envelope to stdout (where the consumer is already reading) instead.
+    global.__exceptdJsonStdoutOnly = true;
     const origStderrWrite = process.stderr.write.bind(process.stderr);
     process.stderr.write = (chunk, encoding, cb) => {
       // Let actual error frames through (uncaught exceptions need to surface
@@ -575,7 +584,7 @@ function main() {
 
   if (argv.length === 0) {
     printWelcome();
-    process.exit(0);
+    safeExit(EXIT_CODES.SUCCESS); return;
   }
   const cmd = argv[0];
   const rest = argv.slice(1);
@@ -601,14 +610,14 @@ function main() {
         return;
       }
       if (printPlaybookVerbHelp(verb)) {
-        process.exit(0);
+        safeExit(EXIT_CODES.SUCCESS); return;
       }
       // Verb not found — emit a one-line note pointing at the top-level
       // help so operators don't silently see the wrong content.
       process.stderr.write(`[exceptd help] no verb-specific help for "${verb}" — falling through to top-level help. Run \`exceptd help\` for the full verb list.\n`);
     }
     printHelp();
-    process.exit(0);
+    safeExit(EXIT_CODES.SUCCESS); return;
   }
   if (cmd === "version" || cmd === "--version" || cmd === "-v") {
     process.stdout.write(readPkgVersion() + "\n");
@@ -919,7 +928,12 @@ function emitError(msg, extra, pretty) {
   // Explicit --json / --pretty / --json-stdout-only also force JSON
   // regardless of TTY (e.g. an operator redirecting to a file).
   const body = Object.assign({ ok: false, error: msg }, extra || {});
-  const wantJson = !!global.__exceptdWantJson || !!process.env.EXCEPTD_RAW_JSON;
+  // --json-stdout-only routes the envelope to stdout (below), so the envelope
+  // MUST be JSON. For a top-level error raised before flag parsing sets
+  // __exceptdWantJson (an unknown/removed verb), the stdout-only flag is the
+  // only signal present — fold it into the JSON selection so a human string is
+  // never written to the machine-readable stdout channel (breaking `| jq`).
+  const wantJson = !!global.__exceptdWantJson || !!process.env.EXCEPTD_RAW_JSON || !!global.__exceptdJsonStdoutOnly;
   const stderrIsTty = process.stderr.isTTY === true;
   let s;
   if (wantJson || !stderrIsTty) {
@@ -934,7 +948,16 @@ function emitError(msg, extra, pretty) {
     }
     s = lines.join("\n");
   }
-  process.stderr.write(s + "\n");
+  // Under --json-stdout-only, route the JSON error envelope to STDOUT (where the
+  // consumer is already reading machine-readable output) instead of the
+  // suppressed stderr channel — otherwise the error would surface on neither
+  // stream. The flag forces JSON (global.__exceptdWantJson is set via
+  // args._jsonMode), so `s` here is already the JSON envelope, not human text.
+  if (global.__exceptdJsonStdoutOnly) {
+    process.stdout.write(s + "\n");
+  } else {
+    process.stderr.write(s + "\n");
+  }
   process.exitCode = EXIT_CODES.GENERIC_FAILURE;
 }
 
@@ -1252,7 +1275,7 @@ function dispatchPlaybook(cmd, argv) {
   // get usage text instead of an error about missing arguments.
   if (argv.includes("--help") || argv.includes("-h")) {
     printPlaybookVerbHelp(cmd);
-    process.exit(0);
+    safeExit(EXIT_CODES.SUCCESS); return;
   }
 
   const args = parseArgs(argv, {
@@ -4191,6 +4214,144 @@ function buildJurisdictionClockRollup(results) {
   return [...m.values()];
 }
 
+// Shared, hardened reader for `--evidence-dir <dir>`. Both `run` (cmdRunMulti)
+// and `ci` (cmdCi) accept --evidence-dir; the symlink / junction / O_NOFOLLOW /
+// realpath-containment / playbook-id defenses must apply identically to both.
+// Previously cmdCi read entries with a bare fs.readFileSync, so a `<pb>.json`
+// symlink/junction inside the dir bypassed every containment check that `run`
+// applies. Factor the read into one helper so the class is fixed once and a
+// future third caller can't regress.
+//
+// Returns { ok: true, bundle } on success, or
+// { ok: false, error: <msg>, extra: <obj|null> } on the first refusal — the
+// caller routes the error through its own emitError() so the verb-prefixed
+// message ("run: ..." vs "ci: ...") is preserved. The directory's existence /
+// type and the empty-string guard are the caller's responsibility (the two
+// verbs surface those with verb-specific wording).
+function readEvidenceDir(dir, verb) {
+  const bundle = {};
+  const resolvedDir = path.resolve(dir);
+  // Resolve the directory's realpath ONCE so the per-entry containment gate
+  // below compares like-for-like. On macOS the tmpdir — and many operator
+  // directories anywhere — live under a symlinked ancestor (e.g. /var ->
+  // /private/var, or a symlinked mount/home). Without resolving the base, a
+  // legitimate <pb-id>.json whose realpath is /private/var/.../f fails a
+  // `startsWith(resolvedDir)` test against /var/.../ and every evidence file is
+  // wrongly refused. Resolving the base keeps the junction/symlink-escape
+  // defense (an entry whose target leaves the resolved dir still fails) while
+  // accepting files that merely sit under a symlinked parent.
+  let realResolvedDir;
+  try { realResolvedDir = fs.realpathSync(resolvedDir); }
+  catch { realResolvedDir = resolvedDir; }
+  // Only `<playbook-id>.json` entries are honored. Reject anything where the
+  // filename strip leaves traversal segments — npm refuses to write such
+  // filenames so the realistic risk is an operator symlink/junction inside the
+  // dir, but the filter is cheap.
+  for (const f of fs.readdirSync(dir).filter(x => x.endsWith(".json"))) {
+    const pbId = f.replace(/\.json$/, "");
+    // Reuse the shared playbook-id validator so the --evidence-dir entry
+    // filter agrees with the runtime playbook-id allowlist. Rejects
+    // dots / underscores / uppercase that no real playbook id uses, which would
+    // otherwise silently absorb a typo'd filename as a "valid" entry that
+    // loadPlaybook then refused mid-loop.
+    const pbCheck = validateIdComponent(pbId, "playbook");
+    if (!pbCheck.ok) {
+      return {
+        ok: false,
+        error: `${verb}: --evidence-dir entry ${JSON.stringify(f)} has invalid playbook-id segment (${pbCheck.reason}).`,
+        extra: { entry: f, expected_shape: "<playbook-id>.json (lowercase, starts with letter, no dots)" },
+      };
+    }
+    const entryPath = path.resolve(path.join(resolvedDir, f));
+    if (!entryPath.startsWith(resolvedDir + path.sep)) {
+      return { ok: false, error: `${verb}: --evidence-dir entry ${f} resolves outside the directory; refusing.`, extra: null };
+    }
+    // The path.resolve check above only catches `..` traversal in the joined
+    // path; reading the path would still follow symlinks, so a
+    // `<pb-id>.json -> /etc/shadow` symlink inside the dir would slurp the
+    // target. Rather than lstat/realpath the PATH and then re-open it (a
+    // check-then-use TOCTOU window), open a single O_NOFOLLOW descriptor FIRST
+    // and make every subsequent decision about that exact descriptor.
+    // O_NOFOLLOW refuses a symlinked leaf at open (ELOOP) on POSIX; on Windows
+    // it is a no-op, so the fstat type check + lstat + realpath gate below carry
+    // the junction/symlink defense. Opening before any path stat means the bytes
+    // read come from the inode we validated, not a path that could be re-pointed
+    // between check and read.
+    let efd;
+    try {
+      const O_NOFOLLOW = fs.constants.O_NOFOLLOW || 0;
+      efd = fs.openSync(entryPath, fs.constants.O_RDONLY | O_NOFOLLOW);
+    } catch (e) {
+      const why = e.code === "ELOOP"
+        ? "symbolic link refused (symlinks bypass the directory-confinement check)"
+        : e.message;
+      return { ok: false, error: `${verb}: --evidence-dir entry ${f}: open failed: ${why}`, extra: { entry: f } };
+    }
+    try {
+      const st = fs.fstatSync(efd);
+      if (!st.isFile()) {
+        return { ok: false, error: `${verb}: --evidence-dir entry ${f} is not a regular file; refusing (symlink / junction / dir / fifo bypass the directory-confinement check).`, extra: { entry: f } };
+      }
+      // Hardlink defense in depth: no clean cross-platform refusal exists —
+      // hardlinks are indistinguishable from regular files at the inode level.
+      // Surface a stderr warning when nlink > 1 so the operator is aware a
+      // second name may point at the same file. Not a refusal — legitimate use
+      // cases (atomic rename, package-manager dedup) produce nlink > 1 without
+      // malicious intent.
+      if (st.nlink > 1) {
+        process.stderr.write(`[exceptd ${verb} --evidence-dir] WARNING: ${f} has nlink=${st.nlink}; a hardlink to this file exists elsewhere on the filesystem. Hardlinks cannot be refused cross-platform — confirm the file content is what you expect.\n`);
+      }
+      // Read the bytes from `efd` FIRST — the descriptor was opened O_NOFOLLOW
+      // and fstat-confirmed a regular file, so this reads the exact inode we
+      // validated. Reading before the realpath gate (rather than checking the
+      // path then reading) means there is no check-then-use window at all; the
+      // containment gate below decides whether to USE the bytes, and discards
+      // them otherwise.
+      const raw = fs.readFileSync(efd, "utf8");
+      // Symlink refusal. O_NOFOLLOW already rejects a symlinked leaf at open on
+      // POSIX (ELOOP), but it is a no-op on Windows, where the open follows the
+      // link. Detect and refuse a symlink explicitly via lstat — regardless of
+      // where it points — so a symlinked entry is never accepted. This runs
+      // AFTER the descriptor read (the bytes are dropped on refusal), so there
+      // is no path-check-before-read TOCTOU window.
+      let lst;
+      try { lst = fs.lstatSync(entryPath); }
+      catch (e) {
+        return { ok: false, error: `${verb}: --evidence-dir entry ${f}: lstat failed: ${e.message}`, extra: null };
+      }
+      if (lst.isSymbolicLink()) {
+        return { ok: false, error: `${verb}: --evidence-dir entry ${f} is a symbolic link; refusing (symlinks bypass the directory-confinement check).`, extra: { entry: f } };
+      }
+      // Windows directory junctions are reparse-point dirs that
+      // lstat().isSymbolicLink() returns FALSE for, and O_NOFOLLOW is a no-op
+      // there; realpath resolves the entry and confirms it still lives under the
+      // resolved evidence-dir. A target that escapes the dir is refused and the
+      // already-read bytes are dropped unused.
+      let realEntry;
+      try { realEntry = fs.realpathSync(entryPath); }
+      catch (e) {
+        return { ok: false, error: `${verb}: --evidence-dir entry ${f}: realpath failed: ${e.message}`, extra: null };
+      }
+      if (!realEntry.startsWith(realResolvedDir + path.sep)) {
+        return {
+          ok: false,
+          error: `${verb}: --evidence-dir entry ${f} resolves outside the directory (junction / reparse-point / symlink target). Refusing.`,
+          extra: { entry: f, resolved_to: realEntry },
+        };
+      }
+      bundle[pbId] = JSON.parse(raw);
+    } catch (e) {
+      // A refusal object thrown by JSON.parse / readFileSync lands here; surface
+      // it with the entry name. (The explicit refusals above return directly and
+      // never reach this catch.)
+      return { ok: false, error: `${verb}: failed to read --evidence-dir entry ${f}: ${e.message}`, extra: null };
+    } finally {
+      try { fs.closeSync(efd); } catch { /* already closed / invalid fd */ }
+    }
+  }
+  return { ok: true, bundle };
+}
+
 function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
   const sessionId = runOpts.session_id || require("crypto").randomBytes(8).toString("hex");
   runOpts.session_id = sessionId;
@@ -4228,110 +4389,12 @@ function cmdRunMulti(runner, ids, args, runOpts, pretty, meta) {
     if (!fs.existsSync(dir)) {
       return emitError(`run: --evidence-dir ${dir} does not exist.`, null, pretty);
     }
-    const resolvedDir = path.resolve(dir);
-    // v0.12.12: only `<playbook-id>.json` entries are honored. Reject
-    // anything where the filename strip leaves traversal segments — npm
-    // refuses to write such filenames so the realistic risk is an operator
-    // symlink/junction inside the dir, but the filter is cheap.
-    for (const f of fs.readdirSync(dir).filter(x => x.endsWith(".json"))) {
-      const pbId = f.replace(/\.json$/, "");
-      // Reuse the shared playbook-id validator so the --evidence-dir entry
-      // filter agrees with the runtime playbook-id allowlist. Previously
-      // accepted dots / underscores / uppercase that no real playbook id
-      // uses, which would silently absorb a typo'd filename as a "valid"
-      // entry that loadPlaybook then refused mid-loop.
-      const pbCheck = validateIdComponent(pbId, "playbook");
-      if (!pbCheck.ok) {
-        return emitError(
-          `run: --evidence-dir entry ${JSON.stringify(f)} has invalid playbook-id segment (${pbCheck.reason}).`,
-          { entry: f, expected_shape: "<playbook-id>.json (lowercase, starts with letter, no dots)" },
-          pretty
-        );
-      }
-      const entryPath = path.resolve(path.join(resolvedDir, f));
-      if (!entryPath.startsWith(resolvedDir + path.sep)) {
-        return emitError(`run: --evidence-dir entry ${f} resolves outside the directory; refusing.`, null, pretty);
-      }
-      // The path.resolve check above only catches `..` traversal in the
-      // joined path; reading the path would still follow symlinks, so a
-      // `<pb-id>.json -> /etc/shadow` symlink inside the dir would slurp the
-      // target. Rather than lstat/realpath the PATH and then re-open it
-      // (a check-then-use TOCTOU window), open a single O_NOFOLLOW descriptor
-      // FIRST and make every subsequent decision about that exact descriptor.
-      // O_NOFOLLOW refuses a symlinked leaf at open (ELOOP) on POSIX; on
-      // Windows it is a no-op, so the fstat type check + realpath gate below
-      // carry the junction/symlink defense. Opening before any path stat means
-      // the bytes read come from the inode we validated, not a path that could
-      // be re-pointed between check and read.
-      let efd;
-      try {
-        const O_NOFOLLOW = fs.constants.O_NOFOLLOW || 0;
-        efd = fs.openSync(entryPath, fs.constants.O_RDONLY | O_NOFOLLOW);
-      } catch (e) {
-        const why = e.code === "ELOOP"
-          ? "symbolic link refused (symlinks bypass the directory-confinement check)"
-          : e.message;
-        return emitError(`run: --evidence-dir entry ${f}: open failed: ${why}`, { entry: f }, pretty);
-      }
-      try {
-        const st = fs.fstatSync(efd);
-        if (!st.isFile()) {
-          return emitError(`run: --evidence-dir entry ${f} is not a regular file; refusing (symlink / junction / dir / fifo bypass the directory-confinement check).`, { entry: f }, pretty);
-        }
-        // Hardlink defense in depth: no clean cross-platform refusal exists —
-        // hardlinks are indistinguishable from regular files at the inode
-        // level. Surface a stderr warning when nlink > 1 so the operator is
-        // aware a second name may point at the same file. Not a refusal —
-        // legitimate use cases (atomic rename, package-manager dedup) produce
-        // nlink > 1 without malicious intent.
-        if (st.nlink > 1) {
-          process.stderr.write(`[exceptd run --evidence-dir] WARNING: ${f} has nlink=${st.nlink}; a hardlink to this file exists elsewhere on the filesystem. Hardlinks cannot be refused cross-platform — confirm the file content is what you expect.\n`);
-        }
-        // Read the bytes from `efd` FIRST — the descriptor was opened
-        // O_NOFOLLOW and fstat-confirmed a regular file, so this reads the exact
-        // inode we validated. Reading before the realpath gate (rather than
-        // checking the path then reading) means there is no check-then-use
-        // window at all; the containment gate below decides whether to USE the
-        // bytes, and discards them otherwise.
-        const raw = fs.readFileSync(efd, "utf8");
-        // Symlink refusal. O_NOFOLLOW already rejects a symlinked leaf at open on
-        // POSIX (ELOOP), but it is a no-op on Windows, where the open follows the
-        // link. Detect and refuse a symlink explicitly via lstat — regardless of
-        // where it points — so a symlinked entry is never accepted. This runs
-        // AFTER the descriptor read (the bytes are dropped on refusal), so there
-        // is no path-check-before-read TOCTOU window.
-        let lst;
-        try { lst = fs.lstatSync(entryPath); }
-        catch (e) {
-          return emitError(`run: --evidence-dir entry ${f}: lstat failed: ${e.message}`, null, pretty);
-        }
-        if (lst.isSymbolicLink()) {
-          return emitError(`run: --evidence-dir entry ${f} is a symbolic link; refusing (symlinks bypass the directory-confinement check).`, { entry: f }, pretty);
-        }
-        // Windows directory junctions are reparse-point dirs that
-        // lstat().isSymbolicLink() returns FALSE for, and O_NOFOLLOW is a
-        // no-op there; realpath resolves the entry and confirms it still lives
-        // under the resolved evidence-dir. A target that escapes the dir is
-        // refused and the already-read bytes are dropped unused.
-        let realEntry;
-        try { realEntry = fs.realpathSync(entryPath); }
-        catch (e) {
-          return emitError(`run: --evidence-dir entry ${f}: realpath failed: ${e.message}`, null, pretty);
-        }
-        if (realEntry !== entryPath && !realEntry.startsWith(resolvedDir + path.sep)) {
-          return emitError(
-            `run: --evidence-dir entry ${f} resolves outside the directory (junction / reparse-point / symlink target). Refusing.`,
-            { entry: f, resolved_to: realEntry },
-            pretty
-          );
-        }
-        bundle[pbId] = JSON.parse(raw);
-      } catch (e) {
-        return emitError(`run: failed to read --evidence-dir entry ${f}: ${e.message}`, null, pretty);
-      } finally {
-        try { fs.closeSync(efd); } catch { /* already closed / invalid fd */ }
-      }
-    }
+    // Hardened read (symlink / junction / O_NOFOLLOW / realpath-containment /
+    // playbook-id gate) lives in the shared readEvidenceDir() helper so `run`
+    // and `ci` apply identical defenses.
+    const er = readEvidenceDir(dir, "run");
+    if (!er.ok) return emitError(er.error, er.extra, pretty);
+    Object.assign(bundle, er.bundle);
   }
 
   const results = [];
@@ -7815,7 +7878,15 @@ function cmdDoctor(runner, args, runOpts, pretty) {
 
   if (wantJson) {
     emit(out, indent);
-    if (!allGreen) process.exitCode = EXIT_CODES.GENERIC_FAILURE;
+    // Exit-code predicate must match the human path (gates on errorList only):
+    // warnings alone do NOT force exit 1. The body still carries all_green,
+    // warnings_count, and warning_checks for consumers that want the full
+    // picture; only the exit code stops conflating a warn-only nudge (missing
+    // private key on a consumer install, registry-behind) with a hard error.
+    // A genuine signature-verification failure sets ok:false WITHOUT
+    // severity:"warn", so bucketChecks routes it to errorList and it still
+    // forces exit 1 here.
+    if (errorList.length > 0) process.exitCode = EXIT_CODES.GENERIC_FAILURE;
     return;
   }
 
@@ -9044,18 +9115,25 @@ function cmdCi(runner, args, runOpts, pretty) {
     try { bundle = readEvidence(args.evidence); }
     catch (e) { return emitError(`ci: failed to read --evidence: ${e.message}`, null, pretty); }
   }
+  if (args["evidence-dir"] === "") {
+    return emitError("ci: --evidence-dir was given an empty value; pass an existing directory, or omit --evidence-dir", { verb: "ci", flag: "evidence-dir" }, pretty);
+  }
   if (args["evidence-dir"]) {
     const dir = args["evidence-dir"];
+    if (typeof dir !== "string") {
+      return emitError("ci: --evidence-dir must be a string.", null, pretty);
+    }
     if (!fs.existsSync(dir)) {
       return emitError(`ci: --evidence-dir ${dir} does not exist.`, null, pretty);
     }
-    for (const f of fs.readdirSync(dir).filter(x => x.endsWith(".json"))) {
-      try {
-        bundle[f.replace(/\.json$/, "")] = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
-      } catch (e) {
-        return emitError(`ci: failed to parse evidence-dir entry ${f}: ${e.message}`, null, pretty);
-      }
-    }
+    // Hardened read (symlink / junction / O_NOFOLLOW / realpath-containment /
+    // playbook-id gate) lives in the shared readEvidenceDir() helper so `ci`
+    // and `run` apply identical defenses. Previously `ci` read entries with a
+    // bare fs.readFileSync, so a `<pb>.json` symlink/junction inside the dir
+    // bypassed every containment check `run` applies.
+    const er = readEvidenceDir(dir, "ci");
+    if (!er.ok) return emitError(er.error, er.extra, pretty);
+    Object.assign(bundle, er.bundle);
   }
 
   // Flat-submission tolerance for a single positional playbook. `ci` keys its
@@ -9579,4 +9657,5 @@ module.exports = {
   _diffArtifacts: diffArtifacts,
   _diffSignalOverrides: diffSignalOverrides,
   _resolveSelfAttestation: resolveSelfAttestation,
+  _readEvidenceDir: readEvidenceDir,
 };

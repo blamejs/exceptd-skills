@@ -150,3 +150,193 @@ test('universalGaps() includes core AI/MCP/PQC items', () => {
   assert.match(allText, /prompt injection/i);
   assert.match(allText, /quantum/i);
 });
+
+// ---------------------------------------------------------------------------
+// Finding #34 — coverage() input guard + token-boundary framework match.
+// ---------------------------------------------------------------------------
+
+const atlasStub = {
+  'AML.TEST': {
+    name: 'Test',
+    framework_gap: true,
+    controls_that_partially_help: ['NIST-800-53-X', 'iso-27001-y'],
+    controls_that_dont_help: ['soc2-z'],
+    framework_gap_detail: 'detail',
+    detection: 'none',
+  },
+};
+
+test('#34 empty-string frameworkId no longer universal-matches — partially_covered_by is null', () => {
+  const r = mapper.coverage('', 'AML.TEST', {}, atlasStub);
+  assert.equal(r.partially_covered_by, null);
+  assert.equal(r.not_covered_by, null);
+  assert.equal(r.found, false);
+  assert.equal(r.error, 'frameworkId required');
+});
+
+test('#34 a short prefix "IS" must NOT match "NIST-..." via token boundary', () => {
+  const r = mapper.coverage('IS', 'AML.TEST', {}, atlasStub);
+  assert.equal(r.partially_covered_by, null);
+  assert.equal(r.not_covered_by, null);
+});
+
+test('#34 null / undefined frameworkId returns found:false WITHOUT throwing', () => {
+  const rn = mapper.coverage(null, 'AML.TEST', {}, atlasStub);
+  assert.equal(rn.found, false);
+  assert.equal(rn.error, 'frameworkId required');
+  const ru = mapper.coverage(undefined, 'AML.TEST', {}, atlasStub);
+  assert.equal(ru.found, false);
+  assert.equal(ru.error, 'frameworkId required');
+});
+
+test('#34 hyphen-led "-X" (empty first segment) fails closed, not universal-match', () => {
+  const r = mapper.coverage('-X', 'AML.TEST', {}, atlasStub);
+  assert.equal(r.found, false);
+  assert.equal(r.partially_covered_by, null);
+  assert.equal(r.not_covered_by, null);
+});
+
+test('#34 legitimate loose framework matching still works (token-boundary, case-insensitive)', () => {
+  assert.equal(mapper.coverage('NIST-800-53', 'AML.TEST', {}, atlasStub).partially_covered_by, 'NIST-800-53-X');
+  assert.equal(mapper.coverage('ISO-27001-2022', 'AML.TEST', {}, atlasStub).partially_covered_by, 'iso-27001-y');
+  assert.equal(mapper.coverage('SOC2-CC6', 'AML.TEST', {}, atlasStub).not_covered_by, 'soc2-z');
+});
+
+test('#34 unknown TTP still returns found:false cleanly (guard runs first, no throw)', () => {
+  const r = mapper.coverage('NIST-800-53', 'AML.NOPE', {}, atlasStub);
+  assert.equal(r.found, false);
+  assert.equal(r.ttp_id, 'AML.NOPE');
+});
+
+
+// ---- routed from hunt-fix-G-parsers ----
+require("node:test").describe("hunt-fix-G-parsers", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * tests/hunt-fix-G-parsers.test.js
+ *
+ * Regression coverage for the G-parsers cluster:
+ *   #31 lib/xml-tokenizer.js — unescaped '<' in a leaf field (title/body)
+ *        corrupted the field and silently dropped a title-only CVE.
+ *   #32 lib/source-advisories.js — the tokenizer loud-error contract was
+ *        opt-in and the live RSS/Atom path never opted in, so parse errors
+ *        were silently discarded ('0 new CVEs' instead of 'feed unparsable').
+ *   #33 lib/xml-tokenizer.js — Atom multi-<link> capture took the LAST href
+ *        regardless of rel; advisory_url could point at rel=self/replies.
+ *   #34 lib/ttp-mapper.js — coverage() with an empty/short/non-string
+ *        frameworkId matched EVERY control via includes('') (and threw on
+ *        null/undefined).
+ *
+ * Each case fails on the pre-fix behavior and passes after the root-cause fix.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+
+const T = require(path.join(__dirname, '..', 'lib', 'xml-tokenizer.js'));
+const SA = require(path.join(__dirname, '..', 'lib', 'source-advisories.js'));
+const mapper = require(path.join(__dirname, '..', 'lib', 'ttp-mapper.js'));
+
+// ---------------------------------------------------------------------------
+// Finding #31 — stray unescaped '<' in a leaf field no longer drops the field.
+// Three lead chars after '<': space, digit, letter.
+// ---------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+// ---------------------------------------------------------------------------
+// Finding #33 — rel-aware Atom <link> selection (first-alternate-wins).
+// ---------------------------------------------------------------------------
+
+
+
+
+
+
+// ---------------------------------------------------------------------------
+// Finding #32 — parse errors surface on the LIVE checkFeed/fetchDiff path.
+// ---------------------------------------------------------------------------
+
+function allFixtures(overrides) {
+  const fx = {};
+  for (const f of SA.FEEDS) {
+    fx[f.name] = f.kind === 'csaf-index' ? 'rhsa-2026_0001.json\n'
+      : f.kind === 'gitlab-activity' ? '<feed xmlns="http://www.w3.org/2005/Atom"></feed>'
+      : '<rss><channel></channel></rss>';
+  }
+  return Object.assign(fx, overrides || {});
+}
+
+
+
+
+// ---------------------------------------------------------------------------
+// Finding #34 — coverage() input guard + token-boundary framework match.
+// ---------------------------------------------------------------------------
+
+const atlasStub = {
+  'AML.TEST': {
+    name: 'Test',
+    framework_gap: true,
+    controls_that_partially_help: ['NIST-800-53-X', 'iso-27001-y'],
+    controls_that_dont_help: ['soc2-z'],
+    framework_gap_detail: 'detail',
+    detection: 'none',
+  },
+};
+
+test('#34 empty-string frameworkId no longer universal-matches — partially_covered_by is null', () => {
+  const r = mapper.coverage('', 'AML.TEST', {}, atlasStub);
+  assert.equal(r.partially_covered_by, null);
+  assert.equal(r.not_covered_by, null);
+  assert.equal(r.found, false);
+  assert.equal(r.error, 'frameworkId required');
+});
+
+test('#34 a short prefix "IS" must NOT match "NIST-..." via token boundary', () => {
+  const r = mapper.coverage('IS', 'AML.TEST', {}, atlasStub);
+  assert.equal(r.partially_covered_by, null);
+  assert.equal(r.not_covered_by, null);
+});
+
+test('#34 null / undefined frameworkId returns found:false WITHOUT throwing', () => {
+  const rn = mapper.coverage(null, 'AML.TEST', {}, atlasStub);
+  assert.equal(rn.found, false);
+  assert.equal(rn.error, 'frameworkId required');
+  const ru = mapper.coverage(undefined, 'AML.TEST', {}, atlasStub);
+  assert.equal(ru.found, false);
+  assert.equal(ru.error, 'frameworkId required');
+});
+
+test('#34 hyphen-led "-X" (empty first segment) fails closed, not universal-match', () => {
+  const r = mapper.coverage('-X', 'AML.TEST', {}, atlasStub);
+  assert.equal(r.found, false);
+  assert.equal(r.partially_covered_by, null);
+  assert.equal(r.not_covered_by, null);
+});
+
+test('#34 legitimate loose framework matching still works (token-boundary, case-insensitive)', () => {
+  assert.equal(mapper.coverage('NIST-800-53', 'AML.TEST', {}, atlasStub).partially_covered_by, 'NIST-800-53-X');
+  assert.equal(mapper.coverage('ISO-27001-2022', 'AML.TEST', {}, atlasStub).partially_covered_by, 'iso-27001-y');
+  assert.equal(mapper.coverage('SOC2-CC6', 'AML.TEST', {}, atlasStub).not_covered_by, 'soc2-z');
+});
+
+test('#34 unknown TTP still returns found:false cleanly (guard runs first, no throw)', () => {
+  const r = mapper.coverage('NIST-800-53', 'AML.NOPE', {}, atlasStub);
+  assert.equal(r.found, false);
+  assert.equal(r.ttp_id, 'AML.NOPE');
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});

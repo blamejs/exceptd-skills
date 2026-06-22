@@ -7,9 +7,41 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const MANIFEST_PATH = process.env.EXCEPTD_MANIFEST || path.join(__dirname, '..', 'manifest.json');
 const SKILLS_DIR = process.env.EXCEPTD_SKILLS_DIR || path.join(__dirname, '..', 'skills');
+
+/**
+ * Deterministic serialization of a finding for dedupe identity. Object keys are
+ * recursively sorted so two findings with the same content but different key
+ * insertion order produce the same fingerprint. Used to key the per-skill
+ * dedupe set on the FULL finding content rather than a single optional field
+ * (cve_id), so two genuinely distinct findings that route to the same skill
+ * — differing only in e.g. server_name or api_name — each keep a plan entry
+ * while true duplicates (identical content) still fold.
+ */
+function stableStringify(value) {
+  if (value === null || typeof value !== 'object') {
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    return '[' + value.map(stableStringify).join(',') + ']';
+  }
+  const keys = Object.keys(value).sort();
+  return '{' + keys.map(k => JSON.stringify(k) + ':' + stableStringify(value[k])).join(',') + '}';
+}
+
+/**
+ * Stable dedupe fingerprint for a finding. Prefer the catalogued cve_id when
+ * present (compact + already unique per CVE); otherwise hash the full finding
+ * content so the key stays bounded while still discriminating every distinct
+ * finding family without having to enumerate its fields.
+ */
+function findingFingerprint(finding) {
+  if (finding && finding.cve_id) return finding.cve_id;
+  return crypto.createHash('sha1').update(stableStringify(finding)).digest('hex');
+}
 
 // --- public API ---
 
@@ -42,14 +74,18 @@ function dispatch(findings) {
     }
 
     for (const skill of matched) {
-      // De-duplicate by (skill, finding identity), NOT by skill alone. Two
-      // distinct findings (e.g. two different CVEs) that route to the same skill
-      // must BOTH produce a plan entry so their per-CVE evidence is preserved —
-      // deduping on skill.name alone silently dropped every finding after the
-      // first that reached a given skill, defeating the per-CVE evidence the
-      // block below is built to carry. A genuine duplicate (same skill + same
-      // finding identity) is still folded.
-      const dedupeKey = `${skill.name}|${finding.cve_id || finding.signal || ''}`;
+      // De-duplicate by (skill, FULL finding identity), NOT by skill alone and
+      // NOT by skill + a single optional field. Two distinct findings (two
+      // different CVEs, two MCP servers under one config, two AI APIs) that
+      // route to the same skill must each produce a plan entry so their
+      // per-finding evidence is preserved — keying on skill.name + cve_id alone
+      // silently dropped every non-CVE finding after the first that reached a
+      // given skill (cve_id was undefined, so the coarse `signal` fallback
+      // collapsed them). The fingerprint is the cve_id when present, else a hash
+      // of the full finding content, so a genuine duplicate (same skill + same
+      // content) still folds while every distinct finding family stays separate
+      // without having to enumerate its discriminator fields.
+      const dedupeKey = `${skill.name}|${findingFingerprint(finding)}`;
       if (seen.has(dedupeKey)) continue;
       seen.add(dedupeKey);
 
@@ -180,4 +216,4 @@ function loadManifest() {
   return JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
 }
 
-module.exports = { dispatch, routeQuery, getSkillContext };
+module.exports = { dispatch, routeQuery, getSkillContext, stableStringify, findingFingerprint };

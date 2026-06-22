@@ -18,11 +18,17 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
-const { ADVISORIES_SOURCE, FEEDS, extractCveIds, parseRssAtom, parseCsafIndex } =
-  require(path.join(ROOT, 'lib', 'source-advisories.js'));
+const SA = require(path.join(ROOT, 'lib', 'source-advisories.js'));
+const { ADVISORIES_SOURCE, FEEDS, extractCveIds, parseRssAtom, parseCsafIndex } = SA;
+// The full module under another alias used by the intake-coverage pins below.
+const SOURCE = SA;
+// The XML tokenizer is the upstream parser source-advisories layers on; the
+// extractCveIds + parseFeedDetailed paths below thread input through it.
+const T = require(path.join(ROOT, 'lib', 'xml-tokenizer.js'));
 
 // ---------- extractCveIds ----------
 
@@ -273,4 +279,776 @@ test('ALL_SOURCES includes advisories source under the canonical key', () => {
   assert.ok('advisories' in ALL_SOURCES, 'lib/refresh-external.js must register advisories source');
   assert.equal(ALL_SOURCES.advisories.name, 'advisories');
   assert.equal(typeof ALL_SOURCES.advisories.fetchDiff, 'function');
+});
+
+// ---------------------------------------------------------------------------
+// Finding #31 — extractCveIds recovers a CVE from a stray-"<" title.
+// ---------------------------------------------------------------------------
+
+test('#31 extractCveIds recovers the CVE from a title-only item with a stray "<"', () => {
+  const xml = '<rss><channel><item>'
+    + '<title>CVE-2026-33333 affects versions < 5.0</title>'
+    + '<link>https://c</link></item></channel></rss>';
+  const items = T.parseFeed(xml);
+  const ids = SA.extractCveIds(`${items[0].title} ${items[0].body} ${items[0].link}`);
+  assert.deepEqual(ids, ['CVE-2026-33333']);
+  assert.ok(Array.isArray(ids));
+});
+
+// ---------------------------------------------------------------------------
+// Finding #32 — parse errors surface on the LIVE checkFeed/fetchDiff path.
+// ---------------------------------------------------------------------------
+
+function allFixtures(overrides) {
+  const fx = {};
+  for (const f of SA.FEEDS) {
+    fx[f.name] = f.kind === 'csaf-index' ? 'rhsa-2026_0001.json\n'
+      : f.kind === 'gitlab-activity' ? '<feed xmlns="http://www.w3.org/2005/Atom"></feed>'
+      : '<rss><channel></channel></rss>';
+  }
+  return Object.assign(fx, overrides || {});
+}
+
+test('#32 a reachable-but-unparsable RSS feed yields status=partial with parse_errors>0', async () => {
+  const fixtures = allFixtures({ qualys: '<rss><channel><item><title>unterminated' });
+  const r = await SA.ADVISORIES_SOURCE.fetchDiff({ fixtures: { advisories: fixtures }, cveCatalog: {} });
+  assert.equal(r.status, 'partial');
+  assert.equal(typeof r.parse_errors, 'number');
+  assert.ok(r.parse_errors > 0);
+  assert.ok(Array.isArray(r._parse_errors) && r._parse_errors.length > 0);
+  assert.match(r._parse_errors[0].message, /unterminated/i);
+  // The integer `errors` field stays the unreachable count — unchanged.
+  assert.equal(r.errors, 0);
+  assert.match(r.summary, /returned parse errors/);
+});
+
+test('#32 well-formed feeds keep status=ok and parse_errors=0 (no false partial)', async () => {
+  const fixtures = allFixtures({
+    qualys: '<rss><channel><item><title>CVE-2026-99001 disclosed</title>'
+      + '<link>https://q/1</link><pubDate>2026-05-14</pubDate><description></description></item></channel></rss>',
+  });
+  const r = await SA.ADVISORIES_SOURCE.fetchDiff({ fixtures: { advisories: fixtures }, cveCatalog: {} });
+  assert.equal(r.status, 'ok');
+  assert.equal(r.parse_errors, 0);
+  assert.deepEqual(r._parse_errors, []);
+});
+
+test('#32 checkFeed-level partial: parseRssAtom always collects errors (channel cannot be dropped)', () => {
+  // The opt-in array still works...
+  const errors = [];
+  SA.parseRssAtom('<rss><channel><item><title>unterminated', errors);
+  assert.ok(errors.length > 0);
+  assert.match(errors[0].message, /unterminated/i);
+  // ...and parseFeedDetailed returns the channel unconditionally.
+  const detailed = T.parseFeedDetailed('<rss><channel><item><title>unterminated');
+  assert.ok(Array.isArray(detailed.items));
+  assert.ok(Array.isArray(detailed.errors));
+  assert.ok(detailed.errors.length > 0);
+  assert.match(detailed.errors[0].message, /unterminated/i);
+});
+
+// ---------------------------------------------------------------------------
+// Vendor-security-blog intake coverage (DirtyDecrypt class).
+// ---------------------------------------------------------------------------
+
+const REQUIRED_VENDOR_FEEDS = [
+  "microsoft-security-blog",
+  "sysdig-blog",
+  "trail-of-bits-blog",
+  "embrace-the-red",
+];
+
+test("source-advisories.FEEDS includes the four vendor-security-blog sources", () => {
+  const feedNames = SOURCE.FEEDS.map((f) => f.name);
+  for (const required of REQUIRED_VENDOR_FEEDS) {
+    assert.ok(feedNames.includes(required),
+      `FEEDS must include "${required}" — closes the DirtyDecrypt-class intake gap`);
+  }
+});
+
+test("every vendor-security-blog feed carries an HTTPS URL with kind=rss", () => {
+  for (const required of REQUIRED_VENDOR_FEEDS) {
+    const feed = SOURCE.FEEDS.find((f) => f.name === required);
+    assert.ok(feed, `feed "${required}" must be defined`);
+    assert.equal(feed.kind, "rss", `${required} must be parsed as RSS / Atom`);
+    assert.match(feed.url, /^https:\/\//,
+      `${required} must use HTTPS for transport integrity (RSS feeds over plaintext are mutable in transit)`);
+  }
+});
+
+test("fixture-mode has frozen content for every vendor-blog feed (no live-RSS fall-through)", () => {
+  const fx = JSON.parse(fs.readFileSync(path.join(ROOT, "tests", "fixtures", "refresh", "advisories.json"), "utf8"));
+  for (const required of REQUIRED_VENDOR_FEEDS) {
+    assert.ok(typeof fx[required] === "string" && fx[required].length > 0,
+      `tests/fixtures/refresh/advisories.json must have a frozen entry for "${required}" — fixture-mode would otherwise fall through to live RSS`);
+  }
+});
+
+test("DirtyDecrypt CVE-2026-31635 is present in the catalog with rxgk anchor", () => {
+  // The operator-side anchor that explains why the intake fix exists.
+  const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "cve-catalog.json"), "utf8"));
+  const entry = catalog["CVE-2026-31635"];
+  assert.ok(entry, "DirtyDecrypt (CVE-2026-31635) must be in the catalog");
+  assert.match(entry.name, /DirtyDecrypt/);
+  assert.match(entry.vector, /rxgk_decrypt_skb|page-cache write/i,
+    "vector must name the rxgk page-cache write primitive");
+  assert.equal(entry.type, "LPE");
+  assert.equal(entry.poc_available, true);
+  assert.ok(entry.intake_gap_note,
+    "entry must carry an intake_gap_note explaining why this was added via manual triage");
+  assert.match(entry.intake_gap_note, /v0\.13\.14/,
+    "intake_gap_note must reference the release that closed the gap class");
+});
+
+test("DirtyDecrypt has a matching zeroday-lessons entry naming the intake-coverage control", () => {
+  const lessons = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "zeroday-lessons.json"), "utf8"));
+  const entry = lessons["CVE-2026-31635"];
+  assert.ok(entry, "DirtyDecrypt lesson must exist");
+  const controls = entry.new_control_requirements || [];
+  const intakeCtrl = controls.find((c) => c && (c.name || "").includes("VENDOR-BLOG-COVERAGE"));
+  assert.ok(intakeCtrl,
+    "lesson must reference NEW-CTRL-072 (PRIMARY-SOURCE-INTAKE-VENDOR-BLOG-COVERAGE)");
+});
+
+// ---------------------------------------------------------------------------
+// Nightmare-Eclipse researcher-handle intake coverage.
+// ---------------------------------------------------------------------------
+
+const REQUIRED_V0_13_17_FEEDS = [
+  { name: "bleepingcomputer-security", kind: "rss" },
+  { name: "thehackernews", kind: "rss" },
+  // The handle tracker migrated from GitHub events to the GitLab public
+  // activity Atom feed after the researcher's GitHub account was removed.
+  { name: "nightmare-eclipse-gitlab", kind: "gitlab-activity" },
+];
+
+const NIGHTMARE_ECLIPSE_KEYS = [
+  "CVE-2020-17103-REREGRESSION-2026",
+  "BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY",
+  "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
+  "BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND",
+];
+
+test("source-advisories.FEEDS includes the three v0.13.17 intake sources", () => {
+  const feedsByName = new Map(SOURCE.FEEDS.map((f) => [f.name, f]));
+  for (const req of REQUIRED_V0_13_17_FEEDS) {
+    const feed = feedsByName.get(req.name);
+    assert.ok(feed, `FEEDS must include "${req.name}" — closes the Nightmare-Eclipse class intake gap`);
+    assert.equal(feed.kind, req.kind, `${req.name} must be parsed as ${req.kind}`);
+    assert.match(feed.url, /^https:\/\//, `${req.name} must use HTTPS for transport integrity`);
+  }
+});
+
+test("fixture-mode has frozen content for every v0.13.17 feed", () => {
+  const fx = JSON.parse(fs.readFileSync(path.join(ROOT, "tests", "fixtures", "refresh", "advisories.json"), "utf8"));
+  for (const req of REQUIRED_V0_13_17_FEEDS) {
+    assert.ok(typeof fx[req.name] === "string" && fx[req.name].length > 0,
+      `tests/fixtures/refresh/advisories.json must have a frozen entry for "${req.name}" — fixture-mode would otherwise fall through to live fetch`);
+  }
+});
+
+test("the four Nightmare-Eclipse catalog entries are present with intake_gap_note", () => {
+  const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "cve-catalog.json"), "utf8"));
+  for (const key of NIGHTMARE_ECLIPSE_KEYS) {
+    const entry = catalog[key];
+    assert.ok(entry, `catalog must contain ${key}`);
+    assert.ok(entry.intake_gap_note,
+      `${key} must carry an intake_gap_note explaining why the prior intake missed it`);
+    assert.match(entry.intake_gap_note, /v0\.13\.17/,
+      `${key}.intake_gap_note must reference the release that closed the gap class`);
+    assert.match(
+      entry.discovery_attribution_note || "",
+      /Nightmare-Eclipse|Chaotic Eclipse/i,
+      `${key}.discovery_attribution_note must name the researcher handle so NEW-CTRL-073 can anchor`,
+    );
+  }
+});
+
+test("MiniPlasma entry encodes the historical-CVE relationship for NEW-CTRL-074", () => {
+  const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "cve-catalog.json"), "utf8"));
+  const mini = catalog["CVE-2020-17103-REREGRESSION-2026"];
+  assert.ok(mini, "MiniPlasma anchor entry must exist");
+  assert.ok(Array.isArray(mini.aliases), "MiniPlasma must declare its aliases[] for the regression-watcher lookup");
+  assert.ok(mini.aliases.includes("CVE-2020-17103"),
+    "MiniPlasma.aliases must reference the original CVE-2020-17103 — anchors the regression-watcher cross-check");
+});
+
+test("the four zeroday-lessons entries reference NEW-CTRL-073", () => {
+  const lessons = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "zeroday-lessons.json"), "utf8"));
+  for (const key of NIGHTMARE_ECLIPSE_KEYS) {
+    const lesson = lessons[key];
+    assert.ok(lesson, `zeroday-lessons must contain ${key}`);
+    const ctrls = (lesson.new_control_requirements || []).map((c) => c && c.id).filter(Boolean);
+    assert.ok(ctrls.includes("NEW-CTRL-073"),
+      `${key} must reference NEW-CTRL-073 (researcher-handle tracker)`);
+  }
+  // UnDefend additionally introduces NEW-CTRL-075 (AV-AGENT-CURRENCY-CROSS-VERIFICATION).
+  const undefend = lessons["BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND"];
+  const ctrls = (undefend.new_control_requirements || []).map((c) => c && c.id).filter(Boolean);
+  assert.ok(ctrls.includes("NEW-CTRL-075"),
+    "UnDefend must introduce NEW-CTRL-075 (AV-agent currency cross-verification)");
+});
+
+test("MiniPlasma anchor entry references NEW-CTRL-074 in its zeroday-lessons gap-closure surface", () => {
+  const lessons = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "zeroday-lessons.json"), "utf8"));
+  const mini = lessons["CVE-2020-17103-REREGRESSION-2026"];
+  assert.ok(mini, "MiniPlasma lesson must exist");
+  const ctrls = (mini.new_control_requirements || []).map((c) => c && c.id).filter(Boolean);
+  assert.ok(ctrls.includes("NEW-CTRL-074"),
+    "MiniPlasma must reference NEW-CTRL-074 (CVE regression-watcher) — the detection method that would have caught the historical-CVE reference at T+0");
+});
+
+// ---------------------------------------------------------------------------
+// FEEDS registry: the original advisory + primary-source pollers stay present
+// and every primary-source-poller URL is HTTPS with a recognized feed kind.
+// ---------------------------------------------------------------------------
+
+test('ADVISORIES_SOURCE FEEDS includes the eight advisory + primary-source poller entries (count >= 8)', () => {
+  // The original eight feeds (qualys, rhsa, usn, zdi + the kernel-org,
+  // oss-security, jfrog, cisa-current primary-source pollers) must stay
+  // present; the exact-count assertion lives above where it tracks the
+  // live total.
+  const { FEEDS } = require(path.join(ROOT, 'lib', 'source-advisories'));
+  assert.ok(FEEDS.length >= 8, `expected >= 8 feeds; got ${FEEDS.length}`);
+  const names = new Set(FEEDS.map((f) => f.name));
+  for (const required of ['cisa-current', 'jfrog', 'kernel-org', 'oss-security', 'qualys', 'rhsa', 'usn', 'zdi']) {
+    assert.ok(names.has(required), `original feed "${required}" must still be present`);
+  }
+});
+
+test('every primary-source-poller feed URL uses HTTPS and matches a feed kind', () => {
+  const { FEEDS } = require(path.join(ROOT, 'lib', 'source-advisories'));
+  const pollers = ['kernel-org', 'oss-security', 'jfrog', 'cisa-current'];
+  for (const name of pollers) {
+    const f = FEEDS.find((x) => x.name === name);
+    assert.ok(f, `${name}: feed must exist in FEEDS`);
+    assert.match(f.url, /^https:\/\//);
+    assert.ok(['rss', 'csaf-index'].includes(f.kind),
+      `${name}: kind must be rss or csaf-index`);
+    assert.ok(typeof f.description === 'string' && f.description.length > 0);
+  }
+});
+
+
+// ---- routed from doc-feed-count-currency ----
+require("node:test").describe("doc-feed-count-currency", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * tests/doc-feed-count-currency.test.js
+ *
+ * v0.13.15 regression pin. README.md + AGENTS.md include prose claims
+ * like "12 primary-source advisory feeds". When new feeds land in
+ * lib/source-advisories.js FEEDS, the doc claims must move in lockstep.
+ * Parallel to tests/doc-playbook-count-currency.test.js.
+ */
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+
+const ROOT = path.join(__dirname, "..");
+const { FEEDS } = require(path.join(ROOT, "lib", "source-advisories"));
+
+function findFeedCountClaims(filePath) {
+  const text = fs.readFileSync(filePath, "utf8");
+  const re = /\b(\d{1,3})\s+(?:vendor and coordinated-disclosure|primary-source(?:\s+advisory)?|advisory venues?)\s+feeds?\b/gi;
+  const claims = [];
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    const n = Number(m[1]);
+    const start = Math.max(0, m.index - 30);
+    const end = Math.min(text.length, m.index + 80);
+    claims.push({ n, snippet: text.slice(start, end).replace(/\s+/g, " ").trim() });
+  }
+  return claims;
+}
+
+test("README + AGENTS feed-count claims match live FEEDS.length", () => {
+  const live = FEEDS.length;
+  assert.ok(live >= 12, `expected >= 12 feeds; got ${live}`);
+  const docs = ["README.md", "AGENTS.md"];
+  const mismatches = [];
+  for (const rel of docs) {
+    const claims = findFeedCountClaims(path.join(ROOT, rel));
+    const hasFullTotal = claims.some((c) => c.n === live);
+    if (claims.length > 0 && !hasFullTotal) {
+      const summary = claims.map((c) => '"' + c.n + ' ... feeds"').join(", ");
+      mismatches.push(rel + ": no claim matches live FEEDS.length=" + live + "; found: " + summary);
+    }
+  }
+  assert.deepEqual(mismatches, [],
+    "doc feed-count drift; update doc claims to reference " + live + " primary-source advisory feeds.");
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from hunt-fix-G-parsers ----
+require("node:test").describe("hunt-fix-G-parsers", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * tests/hunt-fix-G-parsers.test.js
+ *
+ * Regression coverage for the G-parsers cluster:
+ *   #31 lib/xml-tokenizer.js — unescaped '<' in a leaf field (title/body)
+ *        corrupted the field and silently dropped a title-only CVE.
+ *   #32 lib/source-advisories.js — the tokenizer loud-error contract was
+ *        opt-in and the live RSS/Atom path never opted in, so parse errors
+ *        were silently discarded ('0 new CVEs' instead of 'feed unparsable').
+ *   #33 lib/xml-tokenizer.js — Atom multi-<link> capture took the LAST href
+ *        regardless of rel; advisory_url could point at rel=self/replies.
+ *   #34 lib/ttp-mapper.js — coverage() with an empty/short/non-string
+ *        frameworkId matched EVERY control via includes('') (and threw on
+ *        null/undefined).
+ *
+ * Each case fails on the pre-fix behavior and passes after the root-cause fix.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+
+const T = require(path.join(__dirname, '..', 'lib', 'xml-tokenizer.js'));
+const SA = require(path.join(__dirname, '..', 'lib', 'source-advisories.js'));
+const mapper = require(path.join(__dirname, '..', 'lib', 'ttp-mapper.js'));
+
+// ---------------------------------------------------------------------------
+// Finding #31 — stray unescaped '<' in a leaf field no longer drops the field.
+// Three lead chars after '<': space, digit, letter.
+// ---------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+// ---------------------------------------------------------------------------
+// Finding #33 — rel-aware Atom <link> selection (first-alternate-wins).
+// ---------------------------------------------------------------------------
+
+
+
+
+
+
+// ---------------------------------------------------------------------------
+// Finding #32 — parse errors surface on the LIVE checkFeed/fetchDiff path.
+// ---------------------------------------------------------------------------
+
+function allFixtures(overrides) {
+  const fx = {};
+  for (const f of SA.FEEDS) {
+    fx[f.name] = f.kind === 'csaf-index' ? 'rhsa-2026_0001.json\n'
+      : f.kind === 'gitlab-activity' ? '<feed xmlns="http://www.w3.org/2005/Atom"></feed>'
+      : '<rss><channel></channel></rss>';
+  }
+  return Object.assign(fx, overrides || {});
+}
+
+
+
+
+// ---------------------------------------------------------------------------
+// Finding #34 — coverage() input guard + token-boundary framework match.
+// ---------------------------------------------------------------------------
+
+const atlasStub = {
+  'AML.TEST': {
+    name: 'Test',
+    framework_gap: true,
+    controls_that_partially_help: ['NIST-800-53-X', 'iso-27001-y'],
+    controls_that_dont_help: ['soc2-z'],
+    framework_gap_detail: 'detail',
+    detection: 'none',
+  },
+};
+
+test('#32 a reachable-but-unparsable RSS feed yields status=partial with parse_errors>0', async () => {
+  const fixtures = allFixtures({ qualys: '<rss><channel><item><title>unterminated' });
+  const r = await SA.ADVISORIES_SOURCE.fetchDiff({ fixtures: { advisories: fixtures }, cveCatalog: {} });
+  assert.equal(r.status, 'partial');
+  assert.equal(typeof r.parse_errors, 'number');
+  assert.ok(r.parse_errors > 0);
+  assert.ok(Array.isArray(r._parse_errors) && r._parse_errors.length > 0);
+  assert.match(r._parse_errors[0].message, /unterminated/i);
+  // The integer `errors` field stays the unreachable count — unchanged.
+  assert.equal(r.errors, 0);
+  assert.match(r.summary, /returned parse errors/);
+});
+
+test('#32 well-formed feeds keep status=ok and parse_errors=0 (no false partial)', async () => {
+  const fixtures = allFixtures({
+    qualys: '<rss><channel><item><title>CVE-2026-99001 disclosed</title>'
+      + '<link>https://q/1</link><pubDate>2026-05-14</pubDate><description></description></item></channel></rss>',
+  });
+  const r = await SA.ADVISORIES_SOURCE.fetchDiff({ fixtures: { advisories: fixtures }, cveCatalog: {} });
+  assert.equal(r.status, 'ok');
+  assert.equal(r.parse_errors, 0);
+  assert.deepEqual(r._parse_errors, []);
+});
+
+test('#32 checkFeed-level partial: parseRssAtom always collects errors (channel cannot be dropped)', () => {
+  // The opt-in array still works...
+  const errors = [];
+  SA.parseRssAtom('<rss><channel><item><title>unterminated', errors);
+  assert.ok(errors.length > 0);
+  assert.match(errors[0].message, /unterminated/i);
+  // ...and parseFeedDetailed returns the channel unconditionally.
+  const detailed = T.parseFeedDetailed('<rss><channel><item><title>unterminated');
+  assert.ok(Array.isArray(detailed.items));
+  assert.ok(Array.isArray(detailed.errors));
+  assert.ok(detailed.errors.length > 0);
+  assert.match(detailed.errors[0].message, /unterminated/i);
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from intake-handle-tracker ----
+require("node:test").describe("intake-handle-tracker", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * tests/intake-handle-tracker.test.js
+ *
+ * NEW-CTRL-073 invariant: when a researcher handle appears in any
+ * catalog entry's discovery_attribution_note or poc_description, the
+ * intake pipeline must include a feed that tracks that handle. The
+ * handle becomes a known signal source after a single catalog-grade
+ * drop and warrants prioritized surfacing of subsequent drops.
+ *
+ * The first registered handle is Nightmare-Eclipse / Chaotic Eclipse
+ * via lib/source-advisories.js#FEEDS[nightmare-eclipse-gitlab] — a GitLab
+ * public-activity Atom feed, migrated from GitHub after the account was
+ * removed. Future additions follow the same pattern — register an activity
+ * feed for the handle (GitHub events JSON or GitLab .atom), add a
+ * frozen-fixture entry, the invariant flips back to satisfied.
+ *
+ * This pin asserts the activity parser round-trips a fixture payload into
+ * diff entries carrying researcher_handle + repo_name +
+ * triage_class=researcher-handle-drop, which downstream triage logic
+ * consumes to surface drops that haven't been assigned a CVE yet.
+ */
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+
+const ROOT = path.join(__dirname, "..");
+const SOURCE = require(path.join(ROOT, "lib", "source-advisories.js"));
+
+const REGISTERED_HANDLES = [
+  // Each entry: { name: visible handle string, feed: feed-name in FEEDS,
+  // anchor_entry_keys: catalog keys whose discovery_attribution_note must
+  // name the handle. }
+  {
+    name: "Nightmare-Eclipse",
+    feed: "nightmare-eclipse-gitlab",
+    anchor_entry_keys: [
+      "CVE-2020-17103-REREGRESSION-2026",
+      "BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY",
+      "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
+      "BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND",
+    ],
+  },
+];
+
+test("every registered handle has an activity feed in FEEDS", () => {
+  const feedsByName = new Map(SOURCE.FEEDS.map((f) => [f.name, f]));
+  for (const h of REGISTERED_HANDLES) {
+    const feed = feedsByName.get(h.feed);
+    assert.ok(feed, `FEEDS must include "${h.feed}" — handle "${h.name}" anchored by catalog entries`);
+    assert.equal(feed.kind, "gitlab-activity", `${h.feed} must be gitlab-activity (handle tracker)`);
+    assert.match(feed.url, /^https:\/\/gitlab\.com\/[^/]+\.atom$/,
+      `${h.feed} must point at the GitLab public-activity Atom feed for the handle`);
+    assert.equal(feed.researcher_handle, "Nightmare-Eclipse",
+      `${h.feed} must declare researcher_handle explicitly`);
+  }
+});
+
+test("gitlab-activity parser extracts ReleaseEvent + PublicEvent items", () => {
+  const fx = JSON.parse(fs.readFileSync(path.join(ROOT, "tests", "fixtures", "refresh", "advisories.json"), "utf8"));
+  const handleFeed = SOURCE.FEEDS.find((f) => f.name === "nightmare-eclipse-gitlab");
+  assert.ok(handleFeed, "feed nightmare-eclipse-gitlab must exist");
+  const items = SOURCE.parseGitLabActivity(fx["nightmare-eclipse-gitlab"], handleFeed);
+  assert.ok(items.length >= 3,
+    `parser must surface multiple drop events from the fixture; got ${items.length}`);
+  const types = new Set(items.map((it) => it.event_type));
+  assert.ok(types.has("ReleaseEvent"),
+    "parser must surface ReleaseEvent items (a tag push — the canonical handle-drop signal)");
+  assert.ok(types.has("PublicEvent"),
+    "parser must surface PublicEvent items (a newly created public project)");
+  // Every item carries the researcher_handle so downstream consumers can
+  // group by handle without re-parsing the feed URL.
+  for (const it of items) {
+    assert.equal(it.researcher_handle, "Nightmare-Eclipse",
+      "every gitlab-activity item must carry researcher_handle from the feed config");
+    assert.ok(it.repo_name, "every gitlab-activity item must carry repo_name");
+  }
+});
+
+test("gitlab-activity handle-drop surfaces in fetchDiff diffs even without a CVE ID", () => {
+  // Wire a synthetic fetchDiff call against the fixture; assert that a
+  // ReleaseEvent without a CVE-ID in its title still appears in the
+  // diffs[] with triage_class=researcher-handle-drop.
+  const fx = JSON.parse(fs.readFileSync(path.join(ROOT, "tests", "fixtures", "refresh", "advisories.json"), "utf8"));
+  const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "cve-catalog.json"), "utf8"));
+  const ctx = {
+    fixtures: { advisories: fx },
+    cveCatalog: catalog,
+  };
+  // Drive fetchDiff and inspect.
+  return SOURCE.ADVISORIES_SOURCE.fetchDiff(ctx).then((report) => {
+    assert.equal(report.status, "ok", "fetchDiff must report ok in fixture mode");
+    const handleDrops = report.diffs.filter((d) => d.triage_class === "researcher-handle-drop");
+    assert.ok(handleDrops.length >= 1,
+      `at least one researcher-handle-drop diff must be surfaced; got ${handleDrops.length}`);
+    const miniPlasmaDrop = handleDrops.find((d) => /MiniPlasma/i.test(d.title || ""));
+    assert.ok(miniPlasmaDrop, "MiniPlasma tag push (ReleaseEvent) must appear as a researcher-handle-drop diff");
+    assert.equal(miniPlasmaDrop.researcher_handle, "Nightmare-Eclipse",
+      "diff must carry researcher_handle so triage can group by handle");
+  });
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from intake-nightmare-eclipse-coverage ----
+require("node:test").describe("intake-nightmare-eclipse-coverage", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * tests/intake-nightmare-eclipse-coverage.test.js
+ *
+ * v0.13.17 regression pin for the Nightmare-Eclipse researcher-handle
+ * intake gap surfaced by the May 2026 audit.
+ *
+ * Background. The 12-feed intake (v0.13.14) caught BlueHammer
+ * (CVE-2026-33825) through Picus Security's Microsoft-Security-Blog
+ * publication, but missed four sibling drops by the same researcher
+ * handle:
+ *   - MiniPlasma  (re-regression of CVE-2020-17103, May 13)
+ *   - YellowKey   (BitLocker TPM-only bypass, May 2026)
+ *   - GreenPlasma (Windows LPE, May 2026)
+ *   - UnDefend    (Defender update-disruption, April 2026 with Huntress
+ *                  in-wild observation)
+ *
+ * The fix has three components:
+ *
+ *   (1) Three new feeds in lib/source-advisories.js#FEEDS:
+ *       - bleepingcomputer-security (tech-press RSS)
+ *       - thehackernews             (tech-press RSS)
+ *       - nightmare-eclipse-github  (github-events JSON, the canonical
+ *                                    handle tracker for NEW-CTRL-073)
+ *
+ *   (2) lib/cve-regression-watcher.js — a new detection method that
+ *       surfaces poller-diff historical-CVE references as candidate
+ *       silent-regression cases (NEW-CTRL-074). The MiniPlasma anchor:
+ *       a 2026 PoC drop that references CVE-2020-17103 inline.
+ *
+ *   (3) Four catalog entries:
+ *       CVE-2020-17103-REREGRESSION-2026 + the three BUG-2026-NIGHTMARE-
+ *       ECLIPSE-* keys, each with intake_gap_note explaining why the
+ *       prior intake missed them.
+ *
+ * This pin asserts (a) the three new feeds are registered with the
+ * expected kind + URL, (b) the fixture has matching frozen content for
+ * each (no live-feed fall-through), (c) the four catalog entries are
+ * present with their intake_gap_note, and (d) the four zeroday-lessons
+ * entries reference NEW-CTRL-073 + (UnDefend) NEW-CTRL-075.
+ */
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+
+const ROOT = path.join(__dirname, "..");
+const SOURCE = require(path.join(ROOT, "lib", "source-advisories.js"));
+
+const REQUIRED_V0_13_17_FEEDS = [
+  { name: "bleepingcomputer-security", kind: "rss" },
+  { name: "thehackernews", kind: "rss" },
+  // The handle tracker migrated from GitHub events to the GitLab public
+  // activity Atom feed after the researcher's GitHub account was removed.
+  { name: "nightmare-eclipse-gitlab", kind: "gitlab-activity" },
+];
+
+const NIGHTMARE_ECLIPSE_KEYS = [
+  "CVE-2020-17103-REREGRESSION-2026",
+  "BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY",
+  "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
+  "BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND",
+];
+
+test("source-advisories.FEEDS includes the three v0.13.17 intake sources", () => {
+  const feedsByName = new Map(SOURCE.FEEDS.map((f) => [f.name, f]));
+  for (const req of REQUIRED_V0_13_17_FEEDS) {
+    const feed = feedsByName.get(req.name);
+    assert.ok(feed, `FEEDS must include "${req.name}" — closes the Nightmare-Eclipse class intake gap`);
+    assert.equal(feed.kind, req.kind, `${req.name} must be parsed as ${req.kind}`);
+    assert.match(feed.url, /^https:\/\//, `${req.name} must use HTTPS for transport integrity`);
+  }
+});
+
+test("fixture-mode has frozen content for every v0.13.17 feed", () => {
+  const fx = JSON.parse(fs.readFileSync(path.join(ROOT, "tests", "fixtures", "refresh", "advisories.json"), "utf8"));
+  for (const req of REQUIRED_V0_13_17_FEEDS) {
+    assert.ok(typeof fx[req.name] === "string" && fx[req.name].length > 0,
+      `tests/fixtures/refresh/advisories.json must have a frozen entry for "${req.name}" — fixture-mode would otherwise fall through to live fetch`);
+  }
+});
+
+test("the four Nightmare-Eclipse catalog entries are present with intake_gap_note", () => {
+  const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "cve-catalog.json"), "utf8"));
+  for (const key of NIGHTMARE_ECLIPSE_KEYS) {
+    const entry = catalog[key];
+    assert.ok(entry, `catalog must contain ${key}`);
+    assert.ok(entry.intake_gap_note,
+      `${key} must carry an intake_gap_note explaining why the prior intake missed it`);
+    assert.match(entry.intake_gap_note, /v0\.13\.17/,
+      `${key}.intake_gap_note must reference the release that closed the gap class`);
+    assert.match(
+      entry.discovery_attribution_note || "",
+      /Nightmare-Eclipse|Chaotic Eclipse/i,
+      `${key}.discovery_attribution_note must name the researcher handle so NEW-CTRL-073 can anchor`,
+    );
+  }
+});
+
+test("MiniPlasma entry encodes the historical-CVE relationship for NEW-CTRL-074", () => {
+  const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "cve-catalog.json"), "utf8"));
+  const mini = catalog["CVE-2020-17103-REREGRESSION-2026"];
+  assert.ok(mini, "MiniPlasma anchor entry must exist");
+  assert.ok(Array.isArray(mini.aliases), "MiniPlasma must declare its aliases[] for the regression-watcher lookup");
+  assert.ok(mini.aliases.includes("CVE-2020-17103"),
+    "MiniPlasma.aliases must reference the original CVE-2020-17103 — anchors the regression-watcher cross-check");
+});
+
+test("the four zeroday-lessons entries reference NEW-CTRL-073", () => {
+  const lessons = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "zeroday-lessons.json"), "utf8"));
+  for (const key of NIGHTMARE_ECLIPSE_KEYS) {
+    const lesson = lessons[key];
+    assert.ok(lesson, `zeroday-lessons must contain ${key}`);
+    const ctrls = (lesson.new_control_requirements || []).map((c) => c && c.id).filter(Boolean);
+    assert.ok(ctrls.includes("NEW-CTRL-073"),
+      `${key} must reference NEW-CTRL-073 (researcher-handle tracker)`);
+  }
+  // UnDefend additionally introduces NEW-CTRL-075 (AV-AGENT-CURRENCY-CROSS-VERIFICATION).
+  const undefend = lessons["BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND"];
+  const ctrls = (undefend.new_control_requirements || []).map((c) => c && c.id).filter(Boolean);
+  assert.ok(ctrls.includes("NEW-CTRL-075"),
+    "UnDefend must introduce NEW-CTRL-075 (AV-agent currency cross-verification)");
+});
+
+test("MiniPlasma anchor entry references NEW-CTRL-074 in its zeroday-lessons gap-closure surface", () => {
+  const lessons = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "zeroday-lessons.json"), "utf8"));
+  const mini = lessons["CVE-2020-17103-REREGRESSION-2026"];
+  assert.ok(mini, "MiniPlasma lesson must exist");
+  const ctrls = (mini.new_control_requirements || []).map((c) => c && c.id).filter(Boolean);
+  assert.ok(ctrls.includes("NEW-CTRL-074"),
+    "MiniPlasma must reference NEW-CTRL-074 (CVE regression-watcher) — the detection method that would have caught the historical-CVE reference at T+0");
+});
+
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from intake-vendor-blog-coverage ----
+require("node:test").describe("intake-vendor-blog-coverage", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * tests/intake-vendor-blog-coverage.test.js
+ *
+ * v0.13.14 regression pin for the DirtyDecrypt-class intake gap.
+ *
+ * Background: CVE-2026-31635 (DirtyDecrypt) was patched silently in
+ * mainline 2026-04-25, then disclosed via a published PoC on 2026-05-17.
+ * The 8-feed primary-source intake (Qualys / RHSA / USN / ZDI / kernel.org
+ * / oss-security / JFrog / CISA) missed it: the kernel.org Atom feed
+ * window had rolled past the fix commit by the time the PoC published,
+ * the V12 rediscovery went to maintainers privately rather than to
+ * oss-security@openwall, and the BleepingComputer / Microsoft Security
+ * Blog publications surfaced on vendor blogs that no feed covered.
+ *
+ * The fix: lib/source-advisories.js now polls four vendor-security-blog
+ * feeds — microsoft-security-blog / sysdig-blog / trail-of-bits-blog /
+ * embrace-the-red. These are the canonical signal channel for
+ * "kernel-class CVE patched silently, class-of-bug research published
+ * weeks later" and for AI-tool / MCP supply-chain disclosures.
+ *
+ * This pin asserts (a) the four new feeds are registered, (b) the
+ * fixture has matching frozen-content entries so fixture-mode never
+ * falls through to live RSS for them, and (c) the DirtyDecrypt entry
+ * itself is in the catalog as the operator-side anchor.
+ */
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+
+const ROOT = path.join(__dirname, "..");
+const SOURCE = require(path.join(ROOT, "lib", "source-advisories.js"));
+const REQUIRED_VENDOR_FEEDS = [
+  "microsoft-security-blog",
+  "sysdig-blog",
+  "trail-of-bits-blog",
+  "embrace-the-red",
+];
+
+test("source-advisories.FEEDS includes the four vendor-security-blog sources", () => {
+  const feedNames = SOURCE.FEEDS.map((f) => f.name);
+  for (const required of REQUIRED_VENDOR_FEEDS) {
+    assert.ok(feedNames.includes(required),
+      `FEEDS must include "${required}" — closes the DirtyDecrypt-class intake gap`);
+  }
+});
+
+test("every vendor-security-blog feed carries an HTTPS URL with kind=rss", () => {
+  for (const required of REQUIRED_VENDOR_FEEDS) {
+    const feed = SOURCE.FEEDS.find((f) => f.name === required);
+    assert.ok(feed, `feed "${required}" must be defined`);
+    assert.equal(feed.kind, "rss", `${required} must be parsed as RSS / Atom`);
+    assert.match(feed.url, /^https:\/\//,
+      `${required} must use HTTPS for transport integrity (RSS feeds over plaintext are mutable in transit)`);
+  }
+});
+
+test("fixture-mode has frozen content for every vendor-blog feed (no live-RSS fall-through)", () => {
+  const fx = JSON.parse(fs.readFileSync(path.join(ROOT, "tests", "fixtures", "refresh", "advisories.json"), "utf8"));
+  for (const required of REQUIRED_VENDOR_FEEDS) {
+    assert.ok(typeof fx[required] === "string" && fx[required].length > 0,
+      `tests/fixtures/refresh/advisories.json must have a frozen entry for "${required}" — fixture-mode would otherwise fall through to live RSS`);
+  }
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
 });

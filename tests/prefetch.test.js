@@ -195,3 +195,523 @@ test('prefetch exits cleanly with no libuv assertion (Win + Node 25 regression)'
   assert.doesNotMatch(r.stderr || '', /UV_HANDLE_CLOSING/,
     `stderr must not contain UV_HANDLE_CLOSING — got ${JSON.stringify(r.stderr)}`);
 });
+
+// ===========================================================================
+// Source: cli-flag-and-envelope-hardening.test.js — prefetch unknown-flag
+// rejection (F3). Offline via --no-network; the rejection fires before any
+// fetch. Uses the shared cli() harness against bin/exceptd.js.
+// ===========================================================================
+{
+  const { makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+  const pfCli = makeCli(makeSuiteHome('exceptd-flag-envelope-'));
+
+  test('F3: prefetch --badflag -> ok:false exit 2', () => {
+    const r = pfCli(['prefetch', '--badflag', '--no-network'], { timeout: 20000 });
+    assert.equal(r.status, 2);
+    const body = tryJson(r.stderr.trim());
+    assert.ok(body, 'must emit a parseable JSON envelope on stderr');
+    assert.equal(body.ok, false);
+    assert.equal(body.verb, 'prefetch');
+    assert.deepEqual(body.unknown_flags, ['--badflag']);
+    assert.ok(Array.isArray(body.known_flags) && body.known_flags.includes('--source'));
+  });
+
+  test('F3: prefetch --no-network --source kev still runs (dry-run), exit 0', () => {
+    const r = pfCli(['prefetch', '--no-network', '--source', 'kev'], { timeout: 20000 });
+    assert.equal(r.status, 0);
+    assert.match(r.stdout, /prefetch summary:/);
+  });
+}
+
+
+// ---- routed from operator-bugs ----
+require("node:test").describe("operator-bugs", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Operator-reported bug regression suite.
+ *
+ * Every operator-reported bug that has been fixed lands here as a named test
+ * case so re-introductions surface at `npm test`, not at user re-report.
+ * Numbering matches the operator report sequence (items #1 through #N as
+ * reported across the v0.9.5 → v0.11.x arc).
+ *
+ * Pattern for new items:
+ *   describe('#N short label', () => { it('precise behavior', ...); });
+ *
+ * Avoid coupling tests to file paths / playbook IDs that may change. Prefer
+ * direct runner exercises over CLI shell-outs where possible — CLI tests
+ * stay narrow (smoke-level) because they spawn subprocesses and slow the
+ * suite down.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const { spawnSync } = require('node:child_process');
+
+const { ROOT, CLI, makeSuiteHome, makeCli, tryJson, secureTmpFile } = require('./_helpers/cli');
+const runner = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
+
+const SUITE_HOME = makeSuiteHome('exceptd-operator-bugs-');
+const cli = makeCli(SUITE_HOME);
+
+// ===================================================================
+
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+// ===================================================================
+
+// ===================================================================
+
+
+
+// ===================================================================
+
+
+
+// ===================================================================
+
+
+
+
+// ===================================================================
+
+
+// ===================================================================
+
+// ===================================================================
+// CSAF framework gaps emit as `document.notes[]` with `category: details`,
+// not as `vulnerabilities[]` entries with `ids: [{system_name:
+// 'exceptd-framework-gap'}]`. The `system_name` slot is reserved for
+// recognised vulnerability tracking authorities (CVE, GHSA, etc.); the
+// custom string is rejected by NVD / ENISA / Red Hat dashboards. Notes
+// are the right home for advisory context, not pseudo-CVEs. The test
+// asserts the notes-based shape and anti-asserts the pseudo-vulnerability
+// shape.
+
+
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+// ===================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===================================================================
+// v0.11.14 freshness additions — opt-in registry check + upstream-check
+// + refresh --network. Tests use EXCEPTD_REGISTRY_FIXTURE so they're
+// fully offline-deterministic.
+// ===================================================================
+
+function withFixture(version, daysAgo) {
+  const file = secureTmpFile('npm-fixture.json', 'npm-fixture-');
+  const publishedAt = new Date(Date.now() - daysAgo * 24 * 3600 * 1000).toISOString();
+  fs.writeFileSync(file, JSON.stringify({
+    "dist-tags": { latest: version },
+    version,
+    time: { [version]: publishedAt, modified: publishedAt },
+  }));
+  return file;
+}
+
+
+
+
+
+
+
+
+// ===================================================================
+// v0.12.0 — GHSA source + refresh --advisory + refresh --curate
+// ===================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===================================================================
+
+test('#19 prefetch --no-network --quiet emits one-line summary', () => {
+  const r = cli(['prefetch', '--no-network', '--quiet']);
+  assert.match(r.stdout, /prefetch summary:/);
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from playbook-schema-validation ----
+require("node:test").describe("playbook-schema-validation", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Regression tests for the v0.12.20 audit S+T+U+Z P1 fixes.
+ *
+ *   S P1-A — Array attestation must NOT bypass the FP-check gate.
+ *   S P1-B — `signals.detection_classification: 'detected'` override must be
+ *            refused when ANY indicator was downgraded due to unattested FP
+ *            checks; a runtime_error documents the refusal.
+ *   U REG-1 — `signal_overrides_invalid` errors pushed by normalizeSubmission
+ *            must reach analyze.runtime_errors[] (F20 contract).
+ *   T P1-1 — withCatalogLock / withIndexLock must reclaim a lockfile whose
+ *            PID is dead (ESRCH) without waiting STALE_LOCK_MS.
+ *   T P1-2 — persistAttestation --force-overwrite must serialize concurrent
+ *            writers so the prior_evidence_hash chain does not lose
+ *            intermediate writers.
+ *   T P1-3 — prefetch must NOT leave a payload on disk with no index entry
+ *            when withIndexLock fails.
+ *   T P1-4 — scheduleEvery must throw RangeError on 0 / negative / NaN /
+ *            Infinity intervals.
+ *
+ * Concurrency tests use real subprocess invocation + race contention.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+const crypto = require('node:crypto');
+const { spawnSync, fork } = require('node:child_process');
+
+const ROOT = path.join(__dirname, '..');
+const RUNNER_PATH = path.resolve(ROOT, 'lib', 'playbook-runner.js');
+
+// --- helpers --------------------------------------------------------------
+
+function freshRunner(playbookDir) {
+  if (playbookDir) process.env.EXCEPTD_PLAYBOOK_DIR = playbookDir;
+  else delete process.env.EXCEPTD_PLAYBOOK_DIR;
+  delete require.cache[RUNNER_PATH];
+  return require(RUNNER_PATH);
+}
+
+function tmpDir(label) {
+  return fs.mkdtempSync(path.join(os.tmpdir(), `exceptd-stuz-${label}-`));
+}
+
+function writePlaybook(dir, id, body) {
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, `${id}.json`), JSON.stringify(body, null, 2));
+}
+
+function synthPlaybook(overrides = {}) {
+  const base = {
+    _meta: {
+      id: 'synth',
+      version: '0.1.0',
+      last_threat_review: '2026-05-14',
+      threat_currency_score: 95,
+      changelog: [{ version: '0.1.0', date: '2026-05-14', summary: 'synthetic test playbook' }],
+      owner: '@blamejs/test',
+      air_gap_mode: false,
+      preconditions: [],
+      mutex: [],
+      feeds_into: [],
+    },
+    domain: {
+      name: 'synth domain', attack_class: 'kernel-lpe',
+      atlas_refs: [], attack_refs: [], cve_refs: [], cwe_refs: [], d3fend_refs: [],
+      frameworks_in_scope: ['nist-800-53'],
+    },
+    phases: {
+      govern: { jurisdiction_obligations: [], theater_fingerprints: [], framework_context: {}, skill_preload: [] },
+      direct: { threat_context: 'x', rwep_threshold: { escalate: 90, monitor: 70, close: 30 }, framework_lag_declaration: 'x', skill_chain: [], token_budget: {} },
+      look: { artifacts: [], collection_scope: {}, environment_assumptions: [], fallback_if_unavailable: [] },
+      detect: { indicators: [], false_positive_profile: [], minimum_signal: { detected: 'x', inconclusive: 'x', not_detected: 'x' } },
+      analyze: { rwep_inputs: [], blast_radius_model: { scope_question: '?', scoring_rubric: [] }, compliance_theater_check: null, framework_gap_mapping: [], escalation_criteria: [] },
+      validate: { remediation_paths: [], validation_tests: [], residual_risk_statement: null, evidence_requirements: [], regression_trigger: [] },
+      close: { evidence_package: null, learning_loop: { enabled: false }, notification_actions: [], exception_generation: null, regression_schedule: null },
+    },
+    directives: [{ id: 'default', title: 'default directive', applies_to: { always: true } }],
+  };
+  return deepMerge(base, overrides);
+}
+
+function deepMerge(a, b) {
+  if (b === null || b === undefined) return a;
+  if (Array.isArray(b)) return b;
+  if (typeof b !== 'object') return b;
+  const out = { ...a };
+  for (const k of Object.keys(b)) {
+    if (k in out && out[k] && typeof out[k] === 'object' && !Array.isArray(out[k]) && b[k] && typeof b[k] === 'object' && !Array.isArray(b[k])) {
+      out[k] = deepMerge(out[k], b[k]);
+    } else {
+      out[k] = b[k];
+    }
+  }
+  return out;
+}
+
+// =========================================================================
+// S P1-A — Array attestation bypasses FP-check gate
+// =========================================================================
+
+
+// =========================================================================
+// S P1-B — `detection_classification: 'detected'` override cannot bypass FP downgrade
+// =========================================================================
+
+
+
+// =========================================================================
+// U REG-1 — signal_overrides_invalid must reach analyze.runtime_errors[]
+// =========================================================================
+
+
+// =========================================================================
+// T P1-1 — PID-liveness check on stale lockfiles
+// =========================================================================
+
+
+// =========================================================================
+// T P1-2 — persistAttestation force-overwrite serializes concurrent writers
+// =========================================================================
+
+
+// =========================================================================
+// T P1-3 — prefetch must NOT orphan a payload on lock failure
+// =========================================================================
+
+
+// =========================================================================
+// T P1-4 — scheduleEvery lower-bound guard
+// =========================================================================
+
+test('T P1-1: withIndexLock reclaims a lockfile whose PID is dead (ESRCH)', async () => {
+  const { _internal } = require('../lib/prefetch.js');
+  const { withIndexLock } = _internal;
+  const dir = tmpDir('t-p1-1');
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    // Plant a lockfile with a PID that is virtually guaranteed dead. We
+    // pick max-int range and verify process.kill(pid, 0) raises ESRCH.
+    // (PID 2147483646 is well above any reasonable kernel limit.)
+    const lockPath = path.join(dir, '_index.json.lock');
+    const deadPid = 2147483646;
+    try {
+      process.kill(deadPid, 0);
+      // If this succeeded — extremely unlikely — skip the test.
+      return;
+    } catch (e) {
+      if (e.code !== 'ESRCH') {
+        // Different errno (EPERM on locked-down systems). The PID-liveness
+        // branch can't be exercised; fall back to mtime path implicitly.
+        return;
+      }
+    }
+    fs.writeFileSync(lockPath, String(deadPid));
+    // Touch mtime to NOW so the mtime fallback would NOT reclaim. Only the
+    // PID-liveness branch can succeed in <STALE_LOCK_MS.
+    const now = new Date();
+    fs.utimesSync(lockPath, now, now);
+
+    const start = Date.now();
+    await withIndexLock(dir, (current) => {
+      current.entries['reclaimed/probe'] = { fetched_at: new Date().toISOString() };
+      return current;
+    });
+    const elapsed = Date.now() - start;
+    // STALE_LOCK_MS is 30_000; PID-liveness reclaim should complete in well
+    // under a second. Bound at 5s to leave headroom on slow CI.
+    assert.ok(elapsed < 5000,
+      `PID-liveness reclaim must NOT wait for mtime fallback; took ${elapsed}ms`);
+    const idx = JSON.parse(fs.readFileSync(path.join(dir, '_index.json'), 'utf8'));
+    assert.ok(idx.entries['reclaimed/probe']);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('T P1-3: prefetch tmp-then-lock pattern leaves no orphan payload when lock cannot be acquired', async () => {
+  // We exercise the contract directly by simulating a "lock fails" scenario.
+  // The lock helper uses O_EXCL on a sidecar .lock file with a bounded
+  // retry. We hold the lock open via a sibling process that never releases
+  // it, then drive the prefetch-style write path against the same cache
+  // dir. The expected behavior:
+  //   - The tmp file MAY appear transiently.
+  //   - On lock-acquisition failure, the tmp file MUST be cleaned up.
+  //   - The final payload at entryPath() MUST NOT exist (no orphan).
+  //   - The _index.json entry MUST NOT exist (no phantom index row).
+  //
+  // We test via the published _internal contract: writeFileAtomic + a
+  // never-releasing lockfile, then assert that a follow-up that fails
+  // to lock cleans up its staged tmp file. The lib/prefetch.js change
+  // wraps fetch.then() with a try/catch that unlinks the tmp on lock
+  // failure. We replicate the same shape here.
+  const { _internal } = require('../lib/prefetch.js');
+  const { withIndexLock } = _internal;
+  const dir = tmpDir('t-p1-3');
+  try {
+    fs.mkdirSync(path.join(dir, 'test'), { recursive: true });
+    // Plant a non-stale, live-PID lockfile so the reclaim paths refuse to
+    // reclaim — withIndexLock will exhaust MAX_RETRIES and throw.
+    const lockPath = path.join(dir, '_index.json.lock');
+    fs.writeFileSync(lockPath, String(process.pid));
+    const now = new Date();
+    fs.utimesSync(lockPath, now, now);
+
+    const targetPath = path.join(dir, 'test', 'sample.json');
+    const tmpPath = `${targetPath}.tmp.${process.pid}.${Math.random().toString(36).slice(2, 10)}`;
+    fs.writeFileSync(tmpPath, JSON.stringify({ payload: 'staged' }));
+
+    let threw = false;
+    try {
+      await withIndexLock(dir, (current) => {
+        fs.renameSync(tmpPath, targetPath);
+        current.entries['test/sample'] = { fetched_at: now.toISOString() };
+        return current;
+      });
+    } catch (e) {
+      threw = true;
+      // Cleanup mirrors the lib/prefetch.js catch block.
+      try { fs.unlinkSync(tmpPath); } catch {}
+    }
+    assert.ok(threw, 'withIndexLock must throw when the lockfile cannot be acquired');
+    assert.equal(fs.existsSync(tmpPath), false,
+      'staged tmp file must be unlinked on lock failure (no orphan)');
+    assert.equal(fs.existsSync(targetPath), false,
+      'final payload path must NOT exist when lock failed (no orphan in cache)');
+    assert.equal(fs.existsSync(path.join(dir, '_index.json')), false,
+      'no _index.json entry must be written when lock failed');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
+// ---- routed from new-exports-smoke ----
+require("node:test").describe("new-exports-smoke", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Smoke tests for the new module exports added in v0.12.24. These tests
+ * are intentionally narrow: they verify the export exists, has the expected
+ * shape, and handles a representative happy-path input. Behavior-coverage
+ * for each function lives in the dedicated test files (csaf-bundle-
+ * correctness, openvex-emission, prefetch, lint-skills).
+ *
+ * The diff-coverage gate (scripts/check-test-coverage.js) treats any
+ * exported symbol that has no string reference in tests/ as an uncovered
+ * surface change. This file is the canonical "I added an export and a
+ * dedicated behavior test will follow" stop-gap that keeps the gate green.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+
+const ROOT = path.resolve(__dirname, '..');
+
+// ---------------------------------------------------------------------------
+// lib/lint-skills.js — air-gap completeness lint
+// ---------------------------------------------------------------------------
+
+
+
+// ---------------------------------------------------------------------------
+// lib/prefetch.js — _index.json Ed25519 signing
+// ---------------------------------------------------------------------------
+
+
+
+
+// ---------------------------------------------------------------------------
+// lib/scoring.js — strict CVSS 3.0/3.1 vector parse
+// ---------------------------------------------------------------------------
+
+
+
+// ---------------------------------------------------------------------------
+// scripts/check-test-coverage.js — coincidence-assert ban
+// ---------------------------------------------------------------------------
+
+test('lib/prefetch exposes canonicalIndexBytes', () => {
+  const prefetch = require(path.join(ROOT, 'lib', 'prefetch.js'));
+  assert.equal(typeof prefetch.canonicalIndexBytes, 'function',
+    'canonicalIndexBytes must be exported as a function');
+  // The canonicaliser must produce bytes (Buffer or string) and exclude the
+  // index_signature field from the canonical input (signing one's own
+  // signature is circular).
+  const bytes = prefetch.canonicalIndexBytes({ entries: { 'a/b': { sha256: 'x' } } });
+  assert.ok(bytes && (Buffer.isBuffer(bytes) || typeof bytes === 'string'),
+    'canonicalIndexBytes must return Buffer or string');
+});
+
+test('lib/prefetch exposes signIndex', () => {
+  const prefetch = require(path.join(ROOT, 'lib', 'prefetch.js'));
+  assert.equal(typeof prefetch.signIndex, 'function',
+    'signIndex must be exported as a function');
+});
+
+test('lib/prefetch exposes verifyIndexSignature', () => {
+  const prefetch = require(path.join(ROOT, 'lib', 'prefetch.js'));
+  assert.equal(typeof prefetch.verifyIndexSignature, 'function',
+    'verifyIndexSignature must be exported as a function');
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
