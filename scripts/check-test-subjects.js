@@ -51,13 +51,18 @@ function deriveSubjects() {
       if (exp) for (const k of exp[1].matchAll(/([A-Za-z_$][\w$]*)\s*[,:}\n]/g)) add(camelKebab(k[1]), "fn:" + rel);
     }
   }
-  ["lib", "orchestrator", "scripts", "bin"].forEach(walkSrc);
+  ["lib", "orchestrator", "scripts", "bin", "sources/validators"].forEach(walkSrc);
   add("orchestrator", "module:orchestrator/index.js");
   add("cli", "module:bin/exceptd.js");
+  // Vendored (pinned third-party) modules are valid test SUBJECTS but are not
+  // reverse-required — we don't force a dedicated test per vendored file.
+  (function walkVendor(d) { for (const e of ls(d)) { const rel = d + "/" + e.name; if (e.isDirectory()) walkVendor(rel); else if (e.name.endsWith(".js")) add(e.name.replace(/\.js$/, ""), "vendor:" + rel); } })("vendor");
 
-  // CLI verbs
+  // CLI verbs — both the switch-case form and the dispatch-table form
+  //   (verb: () => path.join(...)) that bin/exceptd.js uses for most subcommands.
   const cliSrc = read("bin/exceptd.js");
   for (const m of cliSrc.matchAll(/case\s+['"]([a-z][a-z0-9-]+)['"]/g)) { add("cli-" + m[1], "cli-verb"); add(m[1], "cli-verb"); }
+  for (const m of cliSrc.matchAll(/^\s*["']?([a-z][a-z0-9-]+)["']?:\s*\(\)\s*=>/gm)) { add("cli-" + m[1], "cli-verb"); add(m[1], "cli-verb"); }
 
   // data catalog files
   for (const e of ls("data")) if (e.isFile() && e.name.endsWith(".json")) add(e.name.replace(/\.json$/, ""), "data");
