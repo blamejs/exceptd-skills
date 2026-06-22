@@ -186,3 +186,27 @@ test("this very test file maps to a derived subject (no forward violation for ch
   assert.ok(subjects.has("check-test-subjects"),
     "check-test-subjects must be a derived subject (module basename) so this test is not a forward violation");
 });
+
+require("node:test").describe("check-test-subjects detector fixes (round-2 hunt)", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const m = require("../scripts/check-test-subjects.js");
+  test("F12: module.exports is brace-balanced — an export after a nested object literal is captured, not truncated", () => {
+    // lib/cross-ref-api.js exports getLoadErrors AFTER a nested {...} inside its
+    // module.exports; the old non-greedy /\{([\s\S]*?)\}/ stopped at the nested
+    // brace and dropped it, so the export had no derived subject.
+    assert.ok(m.deriveSubjects().has("get-load-errors"), "getLoadErrors (post-nested-brace export) must be a derived subject");
+  });
+  test("F11: deriveSubjects loads the CVE catalog — an absent/empty catalog throws rather than silently deriving zero", () => {
+    let cve = 0; for (const k of m.deriveSubjects().values()) if (k === "cve-primitive") cve++;
+    assert.ok(cve >= 400, `expected the shipped catalog's CVE-primitive subjects, got ${cve}`);
+  });
+  test("F10: run() exposes reverseRequired (module/cve/playbook only); both gate modes gate on it", () => {
+    const r = m.run();
+    assert.ok(Array.isArray(r.reverseRequired));
+    assert.ok(r.reverseRequired.every((x) => /^(module:|cve-primitive|playbook-primitive)/.test(x.kind)), "reverseRequired holds only reverse-required kinds");
+    assert.ok(r.reverse.length >= r.reverseRequired.length, "reverseRequired is a subset of reverse");
+    const nonReq = r.reverse.find((x) => /^(alias:|data|cli|vendor:|repo:|aggregate:|fn:|workflow)/.test(x.kind));
+    if (nonReq) assert.ok(!r.reverseRequired.includes(nonReq), "a non-required reverse entry is excluded from reverseRequired");
+  });
+});

@@ -49,6 +49,7 @@ const VALID_ALLOW_CLASSES = Object.freeze({
   "bidi-codepoint-literal": true,
   "unsorted-marked-array": true,
   "misaligned-marked-run": true,
+  "hand-rolled-sql": true,
 });
 
 const EXCLUDE_DIRS = new Set([
@@ -486,6 +487,37 @@ function detectMisalignedMarkedRun(files) {
   return hits;
 }
 
+// ---- hand-rolled SQL in a file that talks to a database ------------------
+//
+// exceptd ships no database today, so this is a FORWARD guard: the moment a
+// file imports a SQL driver, any SQL STATEMENT (`"SELECT …"`) or CLAUSE built
+// by string concatenation (`… + " WHERE " + …`) is a parameterization/injection
+// sink and must use the driver's bound-parameter API instead. The SQL-driver
+// import is the gate — a SQL-looking string in a file with no driver executes
+// nothing, so prose that merely begins with "Update …" / "Delete …" in a
+// non-DB file is never scanned (no false positives). A trusted static DDL
+// string can opt out with `// allow:hand-rolled-sql — <reason>`.
+const SQL_DRIVER_IMPORT = /require\(\s*["'](?:node:sqlite|better-sqlite3|sqlite3|sqlite|pg|mysql2?|knex|sequelize|drizzle-orm|postgres|@libsql\/[\w.-]+)(?:\/[^"']*)?["']\s*\)|\bfrom\s+["'](?:node:sqlite|better-sqlite3|pg|mysql2?|knex|sequelize|drizzle-orm)(?:\/[^"']*)?["']/;
+const SQL_STMT_START = /(["'`])\s*(?:SELECT\b|INSERT\s+(?:INTO|OR)\b|REPLACE\s+INTO\b|UPDATE\s+["'`]?[A-Za-z_]|DELETE\s+FROM\b|CREATE\s+(?:TABLE|UNIQUE\s+INDEX|INDEX|TRIGGER|VIRTUAL\s+TABLE)\b|ALTER\s+TABLE\b|DROP\s+(?:TABLE|TRIGGER|INDEX)\b|MERGE\s+INTO\b)/i;
+// Trailing-concat form tolerates an embedded SQL string-quote inside the
+// clause (e.g. `" WHERE name = 'x' " + id`) by scanning to the first `+`
+// concatenation operator rather than requiring the clause string to close on
+// the same quote with no interior quotes.
+const SQL_CLAUSE_FRAG = /(?:\+\s*["'`]\s*(?:SET|FROM|WHERE|VALUES|ORDER\s+BY|GROUP\s+BY|HAVING|RETURNING|LIMIT|OFFSET|ON\s+CONFLICT|(?:INNER\s+|LEFT\s+|RIGHT\s+|CROSS\s+)?JOIN)\b|["'`]\s*(?:SET|FROM|WHERE|VALUES\s*\(|ORDER\s+BY|GROUP\s+BY|HAVING|RETURNING|ON\s+CONFLICT|(?:INNER\s+|LEFT\s+|RIGHT\s+|CROSS\s+)?JOIN)\b[^+]*\+)/i;
+function detectHandRolledSql(files) {
+  const hits = [];
+  for (const rel of (files || filesUnder(["lib", "orchestrator", "bin/exceptd.js", "scripts"]))) {
+    const lines = readLines(rel);
+    if (!SQL_DRIVER_IMPORT.test(lines.join("\n"))) continue; // not a DB file — never scan prose
+    for (let i = 0; i < lines.length; i++) {
+      const code = stripLineComment(lines[i]);
+      if (SQL_STMT_START.test(code)) { hits.push({ file: rel, line: i + 1, content: lines[i].trim().slice(0, 110), why: "SQL statement in a string literal" }); continue; }
+      if (SQL_CLAUSE_FRAG.test(code)) { hits.push({ file: rel, line: i + 1, content: lines[i].trim().slice(0, 110), why: "SQL clause built by concatenation" }); }
+    }
+  }
+  return filterMarkers(hits, "hand-rolled-sql");
+}
+
 const CLASSES = [
   {
     id: "process-exit-after-stdout-write",
@@ -523,6 +555,12 @@ const CLASSES = [
     warnOnly: false,
     hint: "a typo'd or reason-less `// allow:<class>` suppresses nothing — fix the class id or add `— <reason>`",
   },
+  {
+    id: "hand-rolled-sql",
+    run: detectHandRolledSql,
+    warnOnly: false,
+    hint: "a SQL statement/clause assembled as a string in a file that imports a SQL driver is an injection sink — use bound parameters, or `// allow:hand-rolled-sql — <reason>` for a trusted static DDL string",
+  },
 ];
 
 function main() {
@@ -559,6 +597,10 @@ module.exports = {
   detectOrphanAllowClass,
   detectUnsortedMarkedArray,
   detectMisalignedMarkedRun,
+  detectHandRolledSql,
+  SQL_DRIVER_IMPORT,
+  SQL_STMT_START,
+  SQL_CLAUSE_FRAG,
   scanUnsortedMarkedArray,
   scanMisalignedMarkedRun,
   requireMainRanges,

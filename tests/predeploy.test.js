@@ -168,6 +168,56 @@ test("D: predeploy.js wires test-count gate as #15", () => {
   assert.match(src, /scripts.*check-test-count\.js/, "predeploy.js must reference scripts/check-test-count.js");
 });
 
+// ---------- informational-gate spawn-failure classification ----------
+
+test("runGate: an informational gate that fails to spawn is reported FAILED, not informational", () => {
+  // A gate whose command does not exist makes spawnSync return
+  // { error: <ENOENT>, status: null, signal: null }. That is a crash — the
+  // gate never ran — and must NOT be masked as an informational soft-signal.
+  // Pre-fix the crash predicate was `r.signal || (r.status !== null &&
+  // r.status > ceil)`, which is false for a spawn error (signal null, status
+  // null), so the gate fell through to status:"informational" and the release
+  // proceeded as if the gate had merely produced advisory output.
+  const { runGate } = require(path.join(ROOT, "scripts", "predeploy.js"));
+  const missing = path.join(ROOT, "scripts", "__definitely-not-a-real-binary-xyz123");
+  const outcome = runGate({
+    name: "synthetic informational gate (missing command)",
+    command: missing,
+    args: ["watchlist"],
+    informational: true,
+    informationalMaxExitCode: 1,
+  });
+
+  // EXACT value + type assertions — no notEqual / ok(field) coincidence-passers.
+  assert.equal(outcome.status, "failed",
+    "a spawn failure on an informational gate must classify as failed (a crash), not informational");
+  assert.equal(outcome.exitCode, null,
+    "a spawn failure has no exit code; exitCode must be null, not undefined");
+  assert.equal(typeof outcome.message, "string",
+    "a failed-spawn outcome must carry a human message string");
+  assert.match(outcome.message, /failed to spawn/,
+    "the message must explain the gate never spawned");
+  assert.match(outcome.message, /ENOENT/,
+    "the message must surface the underlying spawn error (ENOENT) for diagnosis");
+});
+
+test("runGate: an informational gate exiting within its ceiling is still informational (no over-correction)", () => {
+  // Guard against the fix over-firing: a real informational soft-signal
+  // (clean exit 1 <= informationalMaxExitCode) must remain informational.
+  const { runGate } = require(path.join(ROOT, "scripts", "predeploy.js"));
+  const outcome = runGate({
+    name: "synthetic informational gate (clean exit 1)",
+    command: process.execPath,
+    args: ["-e", "process.exit(1)"],
+    informational: true,
+    informationalMaxExitCode: 1,
+  });
+  assert.equal(outcome.status, "informational",
+    "a clean exit within the ceiling must stay informational");
+  assert.equal(outcome.exitCode, 1,
+    "the informational exit code must be reported exactly (1)");
+});
+
 
 // ---- routed from predeploy-gate-coverage ----
 require("node:test").describe("predeploy-gate-coverage", () => {

@@ -54,8 +54,17 @@ function deriveSubjects() {
       if (!["lib", "scripts", "orchestrator", "bin"].includes(parent)) add(parent + "-" + base, "alias:" + rel);
       const txt = read(rel);
       for (const m of txt.matchAll(/(?:^|\n)\s*(?:async\s+)?(?:function|class)\s+([A-Za-z_$][\w$]*)/g)) add(camelKebab(m[1]), "fn:" + rel);
-      const exp = txt.match(/module\.exports\s*=\s*\{([\s\S]*?)\}/);
-      if (exp) for (const k of exp[1].matchAll(/([A-Za-z_$][\w$]*)\s*[,:}\n]/g)) add(camelKebab(k[1]), "fn:" + rel);
+      // Capture the FULL module.exports object via a brace-balanced scan. A
+      // non-greedy /\{([\s\S]*?)\}/ stops at the first nested `}` and drops
+      // every export name after it (the brace-truncation class), under-deriving
+      // subjects so a real export silently has no required test.
+      const expAt = txt.search(/module\.exports\s*=\s*\{/);
+      if (expAt >= 0) {
+        const open = txt.indexOf("{", expAt);
+        let depth = 0, end = -1;
+        for (let k = open; k < txt.length; k++) { const ch = txt[k]; if (ch === "{") depth++; else if (ch === "}" && --depth === 0) { end = k; break; } }
+        if (end > open) for (const m of txt.slice(open + 1, end).matchAll(/([A-Za-z_$][\w$]*)\s*[,:}\n]/g)) add(camelKebab(m[1]), "fn:" + rel);
+      }
     }
   }
   ["lib", "orchestrator", "scripts", "bin", "sources/validators"].forEach(walkSrc);
@@ -74,7 +83,14 @@ function deriveSubjects() {
   // data catalog files
   for (const e of ls("data")) if (e.isFile() && e.name.endsWith(".json")) add(e.name.replace(/\.json$/, ""), "data");
   // data ENTRY primitives: every CVE id + every playbook
-  try { const cat = JSON.parse(read("data/cve-catalog.json")); for (const k of Object.keys(cat)) if (k !== "_meta") add(k.toLowerCase(), "cve-primitive"); } catch {}
+  // CVE-primitive subjects. An unreadable / malformed / empty catalog must NOT
+  // silently derive zero CVE subjects — that would let the reverse-coverage gate
+  // PASS with no CVE coverage at all (the absent-input false-pass class). Fail
+  // loud instead.
+  let cveDerived = 0;
+  try { const cat = JSON.parse(read("data/cve-catalog.json")); for (const k of Object.keys(cat)) if (k !== "_meta") { add(k.toLowerCase(), "cve-primitive"); cveDerived++; } }
+  catch (e) { throw new Error("check-test-subjects: cannot read/parse data/cve-catalog.json — refusing to derive subjects (reverse coverage would falsely pass with no CVE coverage): " + e.message); }
+  if (cveDerived === 0) throw new Error("check-test-subjects: data/cve-catalog.json yielded zero CVE entries — refusing to let reverse coverage pass with no CVE coverage.");
   for (const e of ls("data/playbooks")) if (e.isFile() && e.name.endsWith(".json")) { const b = e.name.replace(/\.json$/, ""); add(b, "playbook-primitive"); add("playbook-" + b, "alias:playbook"); }
   // workflows
   for (const e of ls(".github/workflows")) if (/\.ya?ml$/.test(e.name)) { const b = e.name.replace(/\.ya?ml$/, ""); add(b, "workflow"); add(b + "-workflow", "workflow"); }
@@ -111,14 +127,19 @@ function run() {
   for (const t of testFiles) if (!subjects.has(t.toLowerCase())) forward.push({ file: "tests/" + t + ".test.js", suggested: suggest(t) });
   const reverse = [];
   for (const [s, kind] of subjects) if (!testSet.has(s)) reverse.push({ subject: s, kind });
-  return { subjects: subjects.size, forward, reverse };
+  // Reverse-REQUIRED subset: only module / cve / playbook subjects must have a
+  // test (aliases, data files, cli verbs, repo artifacts are valid targets but
+  // not reverse-required). The exit-code logic gates on THIS, consistently
+  // across --worklist and the human/predeploy paths.
+  const reverseRequired = reverse.filter((x) => x.kind.startsWith("module:") || x.kind.startsWith("cve-primitive") || x.kind.startsWith("playbook-primitive"));
+  return { subjects: subjects.size, forward, reverse, reverseRequired };
 }
 
 if (require.main === module) {
   const r = run();
-  if (process.argv.includes("--worklist")) { process.stdout.write(JSON.stringify(r) + "\n"); process.exitCode = (r.forward.length || r.reverse.length) ? 1 : 0; }
+  const revMods = r.reverseRequired;
+  if (process.argv.includes("--worklist")) { process.stdout.write(JSON.stringify(r) + "\n"); process.exitCode = (r.forward.length || revMods.length) ? 1 : 0; }
   else {
-    const revMods = r.reverse.filter((x) => x.kind.startsWith("module:") || x.kind.startsWith("cve-primitive") || x.kind.startsWith("playbook-primitive"));
     console.log(`[check-test-subjects] valid subjects=${r.subjects} | FORWARD violations=${r.forward.length} | REVERSE (module/cve/playbook) gaps=${revMods.length}`);
     if (r.forward.length || revMods.length) { console.log("[check-test-subjects] FAIL — run with --worklist for the full list."); process.exitCode = 1; }
     else console.log("[check-test-subjects] ok — every test maps to a subject and every subject has a test.");

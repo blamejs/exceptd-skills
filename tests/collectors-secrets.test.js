@@ -87,6 +87,47 @@ test("secrets: evidence_locations carry a startLine pointing at the secret's lin
   }
 });
 
+test("secrets: a 0640 fixture-path ssh key does NOT raise ssh-key-bad-perms (test-path filtered)", { skip: process.platform === "win32" }, () => {
+  // The ssh-key-bad-perms posture must read the same test-path-filtered
+  // key set as ssh-private-key-block. A bad-perms (0640, != 0600) private
+  // key checked in under a /fixtures/ path is intentional test material and
+  // MUST NOT flip the posture indicator to "hit".
+  const tmp = mkTmp("fp-secrets-sshfixture-");
+  try {
+    const fixDir = path.join(tmp, "fixtures");
+    fs.mkdirSync(fixDir, { recursive: true });
+    const sshPath = path.join(fixDir, "id_rsa");
+    fs.writeFileSync(sshPath,
+      "-----BEGIN OPENSSH PRIVATE KEY-----\nfake\n-----END OPENSSH PRIVATE KEY-----\n");
+    fs.chmodSync(sshPath, 0o640);
+    const r = secretsCollector.collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["ssh-key-bad-perms"], "miss",
+      "a 0640 ssh key under /fixtures/ is test material; it must not raise the posture");
+    // Sanity: the block indicator is also filtered, so no fixture-only hit there either.
+    assert.equal(r.signal_overrides["ssh-private-key-block"], "miss",
+      "a fixture-only private key must not flip ssh-private-key-block either");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("secrets: a 0640 ssh key at a real (non-test) path DOES raise ssh-key-bad-perms", { skip: process.platform === "win32" }, () => {
+  // The complementary positive: a bad-perms key on a real path still fires,
+  // so the test-path filter doesn't blanket-suppress the posture.
+  const tmp = mkTmp("fp-secrets-sshreal-");
+  try {
+    const sshPath = path.join(tmp, "id_rsa");
+    fs.writeFileSync(sshPath,
+      "-----BEGIN OPENSSH PRIVATE KEY-----\nfake\n-----END OPENSSH PRIVATE KEY-----\n");
+    fs.chmodSync(sshPath, 0o640);
+    const r = secretsCollector.collect({ cwd: tmp });
+    assert.equal(r.signal_overrides["ssh-key-bad-perms"], "hit",
+      "a 0640 key on a production path (mode != 0600) must raise the posture");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 
 // ---- routed from collector-comment-marker-fp ----
 require("node:test").describe("collector-comment-marker-fp", () => {

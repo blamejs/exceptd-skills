@@ -1,5 +1,5 @@
 {
-  "baseline": 3967,
+  "baseline": 4004,
   "tolerance": 1,
   "update_baseline_when_growth_exceeds": 20,
   "notes": "Operator-pinned canonical test count. Bump when new test files land in a release. See scripts/check-test-count.js for the contract. v0.13.20 audit (class 5.14): the gate fired 3 times in 3 days during v0.13.17->19 because each release legitimately added 2-4 test files. The gate is doing its job (catching silent shrinkage); the bumps were honest reflections of new file additions, not gate misuse. v0.13.20 keeps the baseline + the 20-test grow-threshold convention.",

@@ -47,6 +47,7 @@ const UPSTREAM_TRIAGED = Object.freeze([ // keep-sorted
   "from-base64url-untrapped",
   "fs-path-from-operator-identifier-without-traversal-refusal",
   "gitleaks-entropy",
+  "hand-rolled-sql",
   "handrolled-buffer-collect",
   "handrolled-debounce",
   "hostname-compare-trailing-dot",

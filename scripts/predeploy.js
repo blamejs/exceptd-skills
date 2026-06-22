@@ -335,16 +335,27 @@ function runGate(gate) {
     const ceil = typeof gate.informationalMaxExitCode === "number"
       ? gate.informationalMaxExitCode
       : Infinity;
-    // A signal kill (spawnSync returns status:null with r.signal set — e.g. a
-    // 137 OOM kill) is a crash, not an informational soft-signal. Without this,
-    // an OOM-killed informational gate fell through to "informational" and the
-    // release proceeded as if the gate had merely produced advisory output.
-    if (r.signal || (r.status !== null && r.status > ceil)) {
+    // A spawn failure (spawnSync returns r.error set, status:null, signal:null —
+    // e.g. the gate command is missing / ENOENT / EACCES) is a crash, not an
+    // informational soft-signal. So is a signal kill (status:null with r.signal
+    // set — e.g. a 137 OOM kill) and a status that exceeds the soft-signal
+    // ceiling. Without surfacing the spawn-error case, an informational gate
+    // that never even ran fell through to "informational" and the release
+    // proceeded as if the gate had merely produced advisory output. The
+    // status===null && !signal case (no error object, but the process never
+    // produced an exit code) is treated the same way — a gate that did not
+    // exit cleanly cannot be classified as a soft signal.
+    const spawnFailed = !!r.error || (r.status === null && !r.signal);
+    if (r.error || r.signal || spawnFailed || (r.status !== null && r.status > ceil)) {
       return {
         status: "failed",
-        exitCode: r.status,
-        message: r.signal
+        exitCode: r.status ?? null,
+        message: r.error
+          ? `informational gate failed to spawn (treated as a crash): ${r.error.message}`
+          : r.signal
           ? `informational gate killed by signal ${r.signal} (treated as a crash)`
+          : r.status === null
+          ? `informational gate did not exit cleanly (no exit code, no signal) — treated as a crash`
           : `informational gate crashed (exit ${r.status} > informationalMaxExitCode=${ceil})`,
         durationMs,
         warnCount,
@@ -438,7 +449,7 @@ function main() {
   process.exit(failures.length > 0 ? 1 : 0); // allow:process-exit-after-stdout-write — local-only gate runner; output is the human/CI summary written synchronously above, never a piped --json result channel
 }
 
-module.exports = { GATES };
+module.exports = { GATES, runGate };
 
 if (require.main === module) {
   try {

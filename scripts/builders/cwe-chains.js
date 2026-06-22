@@ -81,11 +81,14 @@ function buildCweChains({ skills, cweCatalog, atlasTtps, cveCatalog, frameworkGa
     };
 
     // Related CVEs: walk evidence_cves on the framework_gaps that the
-    // referencing skills cite. Inner join via the skill graph.
+    // referencing skills cite. Inner join via the skill graph. Skip draft
+    // (_draft) CVEs so this CWE half agrees with the CVE half (build-indexes.js)
+    // and the reverse-ref index — all three must reflect the same curated,
+    // operator-queryable truth.
     const relatedCves = new Set();
     for (const gap of accum.framework_gaps) {
       for (const ev of (frameworkGaps[gap]?.evidence_cves || [])) {
-        if (cveCatalog[ev]) relatedCves.add(ev);
+        if (cveCatalog[ev] && cveCatalog[ev]._draft !== true) relatedCves.add(ev);
       }
     }
 

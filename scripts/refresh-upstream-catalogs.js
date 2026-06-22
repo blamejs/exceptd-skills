@@ -275,8 +275,13 @@ async function refreshRfc({ dry = false, _deps = {} } = {}) {
     const cur = cat[id];
     if (!cur) continue;
     let touched = false;
-    if (cur._auto_imported && cur.status !== RFC_STATUS_MAP[e.status]) {
-      cur.status = RFC_STATUS_MAP[e.status];
+    // Mirror the new-add path's `|| e.status` fallback: an upstream status
+    // outside RFC_STATUS_MAP must NOT write `undefined` (which would drop the
+    // status field on an existing curated row). Fall back to the raw upstream
+    // status, and only bump when the mapped value actually differs.
+    const mapped = RFC_STATUS_MAP[e.status] || e.status;
+    if (cur._auto_imported && mapped && cur.status !== mapped) {
+      cur.status = mapped;
       touched = true;
       statusBumped++;
     }
@@ -654,6 +659,16 @@ function backfillAtlas(cur, fresh) {
       if (!cur[key] && val) { cur[key] = val; touched = true; }
     }
   };
+  // Parity with backfillAttack: include the short description + tactic in the
+  // backfill set. Existing curated ATLAS rows often carry only {name} and need
+  // the short description + tactic too, not just description_full/platforms/etc.
+  fillIfEmpty("description", fresh.description);
+  // tactic: arrays only (existing rows may have a string tactic; do not
+  // overwrite a stringified tactic with an array form).
+  if ((!cur.tactic || (Array.isArray(cur.tactic) && cur.tactic.length === 0)) && Array.isArray(fresh.tactic) && fresh.tactic.length) {
+    cur.tactic = fresh.tactic;
+    touched = true;
+  }
   fillIfEmpty("description_full", fresh.description_full);
   fillIfEmpty("platforms", fresh.platforms);
   fillIfEmpty("detection", fresh.detection);
@@ -928,5 +943,8 @@ module.exports = {
   // Exported for regression tests: fetchUrl's status/redirect handling and
   // writeCatalog's atomicity are load-bearing fail-closed properties.
   fetchUrl,
-  writeCatalog
+  writeCatalog,
+  // Exported for regression tests: backfillAtlas must mirror backfillAttack's
+  // description + array-tactic backfill on curated rows.
+  backfillAtlas
 };

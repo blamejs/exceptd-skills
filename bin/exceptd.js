@@ -4339,12 +4339,19 @@ function readEvidenceDir(dir, verb) {
           extra: { entry: f, resolved_to: realEntry },
         };
       }
-      bundle[pbId] = JSON.parse(raw);
+      // Apply the SAME object-shape guard the single-file / stdin path uses
+      // (asEvidenceObject): a `<pb>.json` that parses to an array, scalar, or
+      // null is not a valid evidence document. Without this an mis-shaped entry
+      // was bound verbatim and ran downstream as empty evidence, yielding a
+      // false-clean `not_detected` PASS at exit 0 — the exact hole the
+      // single-file guard closes.
+      bundle[pbId] = asEvidenceObject(JSON.parse(raw));
     } catch (e) {
-      // A refusal object thrown by JSON.parse / readFileSync lands here; surface
-      // it with the entry name. (The explicit refusals above return directly and
-      // never reach this catch.)
-      return { ok: false, error: `${verb}: failed to read --evidence-dir entry ${f}: ${e.message}`, extra: null };
+      // A JSON parse error or the asEvidenceObject shape refusal lands here;
+      // surface it with the entry name so the operator sees the real reason
+      // (e.g. "evidence must be a JSON object"). The explicit symlink/junction
+      // refusals above return directly and never reach this catch.
+      return { ok: false, error: `${verb}: --evidence-dir entry ${f}: ${e.message}`, extra: { entry: f } };
     } finally {
       try { fs.closeSync(efd); } catch { /* already closed / invalid fd */ }
     }

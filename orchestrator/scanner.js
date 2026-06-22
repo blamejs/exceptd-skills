@@ -161,6 +161,26 @@ function mcpScan() {
 
         for (const serverName of serverList) {
           const server = mcpServers[serverName];
+          // A null / non-object / array server entry can't be probed for
+          // signature or pinned-version the way a real server config can.
+          // Dereferencing its fields would throw inside this per-server loop,
+          // which the outer catch would mis-report as a whole-file config
+          // parse error — dropping every sibling server's finding. Emit a
+          // per-server malformed marker and continue so siblings still scan,
+          // mirroring how a genuine parse failure is surfaced per-file.
+          if (server === null || typeof server !== 'object' || Array.isArray(server)) {
+            findings.push({
+              domain: 'mcp',
+              signal: 'mcp_server_malformed',
+              tool,
+              config_path: p,
+              server_name: serverName,
+              severity: 'low',
+              skill_hint: 'mcp-agent-trust',
+              action_required: 'MCP server entry is not an object — verify the config is well-formed'
+            });
+            continue;
+          }
           const isSigned = server.signature !== undefined;
           const serverJson = JSON.stringify(server);
           const hasPinnedVersion = /[@#]\d+\.\d+\.\d+/.test(serverJson);
