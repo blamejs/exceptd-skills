@@ -3393,6 +3393,20 @@ describe('round-3: dead-condition rewrites, validate engine-ctx, evidence-hash, 
       'choosing an output bundle format must not change the evidence identity');
   });
 
+  it('evidence_hash of a render-only-signals submission equals a no-signals submission', () => {
+    // A submission whose ONLY signal is the render directive _bundle_formats
+    // must hash identically to a submission with no signals at all — otherwise
+    // the digest records `{signals:{}}` vs no-signals and drifts on --format.
+    const PRE = { precondition_checks: { 'linux-platform': true, 'uname-available': true } };
+    const noSignals = runner.run('kernel', 'all-catalogued-kernel-cves', {}, PRE);
+    const renderOnly = runner.run('kernel', 'all-catalogued-kernel-cves', { signals: { _bundle_formats: ['sarif'] } }, PRE);
+    const emptyBag = runner.run('kernel', 'all-catalogued-kernel-cves', { signals: {} }, PRE);
+    assert.equal(noSignals.evidence_hash, renderOnly.evidence_hash,
+      'a render-only (_bundle_formats) signal bag must not change the evidence hash');
+    assert.equal(noSignals.evidence_hash, emptyBag.evidence_hash,
+      'an empty signals bag must hash like no signals');
+  });
+
   it('evidence_hash still changes on a real evidence change AND on a posture-affecting vex_filter', () => {
     const PRE = { precondition_checks: { 'linux-platform': true, 'uname-available': true } };
     const base = runner.run('kernel', 'all-catalogued-kernel-cves', { signals: { 'kver-in-affected-range': true } }, PRE);
