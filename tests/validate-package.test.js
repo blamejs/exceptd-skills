@@ -232,6 +232,96 @@ test("gate 13: validate-package.js fires when a files-allowlist entry is missing
     rmrf(tmp);
   }
 });
+
+test("gate 13b: validate-package.js fires when npm pack output omits a numeric size (size budget must not fail open)", () => {
+  // The size-budget gate previously only ran the comparison when
+  // `typeof packInfo.size === "number"` — so an npm-pack output shape that
+  // OMITS or non-numbers the `size` field silently skipped the budget check
+  // entirely (the absent-field-fails-open class). A bloated tarball whose
+  // pack output dropped `size` would then sail through. The fix pushes an
+  // explicit issue when size is non-numeric so the gate fails loudly.
+  //
+  // To force a size-less pack output deterministically and offline, a fake
+  // `npm` shim is placed first on PATH. It emits a faithful pack JSON shape
+  // (every REQUIRED_PATHS entry present, no forbidden files) so the ONLY
+  // failing condition is the absent `size` — isolating the guard under test.
+  const tmp = mktmp("package-nosize");
+  try {
+    const pkg = {
+      name: "@blamejs/predeploy-gate-test-fixture",
+      version: "0.0.0",
+      description: "tempdir package layout for predeploy gate 13b meta-test",
+      license: "Apache-2.0",
+      bin: { exceptd: "bin/exceptd.js" },
+      files: ["bin/", "lib/", "data/_indexes/", "keys/public.pem"],
+      publishConfig: { access: "public" },
+    };
+    writeFile(tmp, "package.json", JSON.stringify(pkg, null, 2));
+    writeFile(tmp, "bin/exceptd.js", "#!/usr/bin/env node\n");
+
+    // Resolve REQUIRED_PATHS from the module under test so the shim's file
+    // list always satisfies the present-files check regardless of future
+    // REQUIRED_PATHS edits.
+    const { REQUIRED_PATHS } = require(path.join(ROOT, "lib", "validate-package.js"));
+    // pack JSON with files[] = every required path, unpackedSize present, but
+    // NO `size` key at all.
+    const packJson = JSON.stringify([
+      {
+        name: pkg.name,
+        version: pkg.version,
+        unpackedSize: 1234,
+        files: REQUIRED_PATHS.map((p) => ({ path: p, size: 1 })),
+      },
+    ]);
+
+    // Cross-platform npm shim: npm.cmd for Windows shell:true, npm (sh) for
+    // POSIX. The script invokes spawnSync("npm", ...) which resolves via PATH.
+    const shimDir = path.join(tmp, "shim");
+    fs.mkdirSync(shimDir, { recursive: true });
+    const b64 = Buffer.from(packJson, "utf8").toString("base64");
+    fs.writeFileSync(
+      path.join(shimDir, "npm.cmd"),
+      `@echo off\r\nnode -e "process.stdout.write(Buffer.from('${b64}','base64').toString('utf8'))"\r\n`
+    );
+    const sh = path.join(shimDir, "npm");
+    fs.writeFileSync(
+      sh,
+      `#!/bin/sh\nnode -e "process.stdout.write(Buffer.from('${b64}','base64').toString('utf8'))"\n`
+    );
+    try { fs.chmodSync(sh, 0o755); } catch (_) { /* Windows: no-op */ }
+
+    copyFile(
+      path.join(ROOT, "lib", "validate-package.js"),
+      path.join(tmp, "lib", "validate-package.js")
+    );
+    copyExitCodes(tmp);
+
+    const env = Object.assign({}, process.env, {
+      PATH: shimDir + path.delimiter + process.env.PATH,
+      Path: shimDir + path.delimiter + (process.env.Path || process.env.PATH || ""),
+    });
+    const r = spawnSync(
+      process.execPath,
+      [path.join(tmp, "lib", "validate-package.js")],
+      { cwd: tmp, encoding: "utf8", env }
+    );
+    // Without the fix: size check is skipped, every required file is present,
+    // no forbidden files → exit 0 (gate fails open). With the fix: the
+    // non-numeric-size issue is pushed → exit 1.
+    assert.equal(
+      r.status,
+      1,
+      `validate-package.js must exit 1 when npm pack output omits a numeric size.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+    );
+    assert.match(
+      r.stderr,
+      /npm pack output missing numeric size — cannot enforce size budget/,
+      `validate-package.js should name the missing-size class. stderr: ${r.stderr}`
+    );
+  } finally {
+    rmrf(tmp);
+  }
+});
 ;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
   for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
   __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });

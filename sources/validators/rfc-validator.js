@@ -13,6 +13,10 @@
  *   drift        — at least one of those fields disagrees.
  *   missing      — Datatracker does not have this RFC / draft.
  *   unreachable  — network failed or the request timed out.
+ *   skipped      — the catalog key is not an IETF RFC/DRAFT (e.g. CSAF-2.0,
+ *                  ISO-29147, ISO-30111). Datatracker only tracks IETF
+ *                  documents, so these have no upstream to compare against —
+ *                  they are intentionally not validated here, NOT drift.
  *
  * Zero external dependencies. Node 24 stdlib (fetch + AbortController).
  *
@@ -107,15 +111,26 @@ function compareEntry(local, upstream) {
   return discrepancies;
 }
 
+// Datatracker only tracks IETF RFCs and Internet-Drafts. A catalog key that is
+// neither (CSAF-2.0, ISO-29147, ISO-30111, …) has no IETF upstream to compare
+// against, so it is out of scope for this validator rather than a discrepancy.
+function isIetfKey(id) {
+  return typeof id === 'string' && (id.startsWith('RFC-') || id.startsWith('DRAFT-'));
+}
+
 async function validateRfc(id, entry) {
   let docName;
   if (id.startsWith('RFC-')) docName = rfcNumberFromKey(id);
   else if (id.startsWith('DRAFT-')) docName = draftSlugFromKey(id);
   else {
+    // Not an IETF document — there is nothing on Datatracker to diff against.
+    // Report a distinct, non-drift status with no discrepancies so callers
+    // don't surface a permanent false-positive "drift" for every ISO/CSAF
+    // reference the catalog carries.
     return {
       id,
-      status: 'drift',
-      discrepancies: [`unrecognized catalog key shape: ${id}`],
+      status: 'skipped',
+      discrepancies: [],
       local: entry,
       fetched: null,
     };
@@ -150,7 +165,10 @@ async function validateRfc(id, entry) {
 }
 
 async function validateAllRfcs(refs, { concurrency = 4 } = {}) {
-  const ids = Object.keys(refs).filter(k => !k.startsWith('_'));
+  // Skip "_"-prefixed meta keys AND any non-IETF reference (ISO/CSAF/etc.):
+  // Datatracker has no record of those, so validating them only ever produced
+  // permanent false-positive "drift". They are simply out of scope here.
+  const ids = Object.keys(refs).filter(k => !k.startsWith('_') && isIetfKey(k));
   const results = [];
   for (let i = 0; i < ids.length; i += concurrency) {
     const batch = ids.slice(i, i + concurrency);

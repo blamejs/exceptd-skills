@@ -42,18 +42,44 @@ function stubFetch(routeFn, captured) {
 
 // --- bad-key short-circuits (no network) -----------------------------------
 
-test('an unrecognized catalog key shape returns drift without fetching', async () => {
+test('a non-IETF catalog key shape returns skipped without fetching', async () => {
+  // A BCP key is not an IETF RFC/DRAFT this validator can resolve on
+  // Datatracker. It short-circuits before any network call and is reported as
+  // 'skipped' (out of scope) rather than a permanent false-positive drift.
   let fetched = false;
   const orig = global.fetch;
   global.fetch = async () => { fetched = true; throw new Error('should not fetch'); };
   try {
     const r = await validateRfc('BCP-195', { status: 'Best Current Practice' });
-    assert.equal(r.status, 'drift');
+    assert.equal(r.status, 'skipped');
     assert.equal(r.fetched, null);
-    assert.ok(r.discrepancies.some(d => /unrecognized catalog key shape/.test(d)));
-    assert.equal(fetched, false, 'a bad key must short-circuit before any network call');
+    assert.deepEqual(r.discrepancies, []);
+    assert.equal(fetched, false, 'a non-IETF key must short-circuit before any network call');
   } finally {
     global.fetch = orig;
+  }
+});
+
+test('a non-IETF catalog key (CSAF/ISO) returns skipped, not drift, without fetching', async () => {
+  // Regression: validateRfc used to return status:'drift' with an
+  // "unrecognized catalog key shape" discrepancy for every non-IETF reference
+  // (CSAF-2.0, ISO-29147, ISO-30111). Datatracker only tracks IETF documents,
+  // so these have no upstream to diff against — they must be 'skipped', NOT a
+  // permanent false-positive drift.
+  for (const key of ['CSAF-2.0', 'ISO-29147', 'ISO-30111']) {
+    let fetched = false;
+    const orig = global.fetch;
+    global.fetch = async () => { fetched = true; throw new Error('should not fetch'); };
+    try {
+      const r = await validateRfc(key, { status: 'Standard' });
+      assert.equal(r.status, 'skipped', `${key} must be skipped, not drift`);
+      assert.deepEqual(r.discrepancies, [], 'a skipped non-IETF key must carry no discrepancies');
+      assert.equal(r.fetched, null);
+      assert.equal(r.id, key);
+      assert.equal(fetched, false, 'a non-IETF key must short-circuit before any network call');
+    } finally {
+      global.fetch = orig;
+    }
   }
 });
 
@@ -200,6 +226,38 @@ test('validateAllRfcs skips "_"-prefixed meta keys and validates the rest', asyn
     assert.equal(byId['RFC-8446'], 'match');
     assert.equal(byId['RFC-2026'], 'drift');
     assert.ok(!('_meta' in byId));
+  } finally {
+    restore();
+  }
+});
+
+test('validateAllRfcs excludes non-IETF keys (CSAF/ISO) and only validates RFC/DRAFT keys', async () => {
+  // Regression: these keys used to be validated and reported as permanent
+  // drift. They must be filtered out entirely — no result entry, no fetch.
+  const requested = [];
+  const restore = stubFetch((url) => {
+    if (url.includes('name=rfc8446')) return datatrackerRes({ std_level: 'ps' });
+    return datatrackerRes(null);
+  }, requested);
+  try {
+    const refs = {
+      _meta: { generated_at: 'x' },
+      'RFC-8446': { status: 'Proposed Standard' },
+      'CSAF-2.0': { status: 'Standard' },
+      'ISO-29147': { status: 'Standard' },
+      'ISO-30111': { status: 'Standard' },
+    };
+    const results = await validateAllRfcs(refs, { concurrency: 4 });
+    assert.equal(results.length, 1, 'only the RFC key is validated; non-IETF + _meta are excluded');
+    assert.equal(results[0].id, 'RFC-8446');
+    assert.equal(results[0].status, 'match');
+    const ids = results.map(r => r.id);
+    assert.ok(!ids.includes('CSAF-2.0'));
+    assert.ok(!ids.includes('ISO-29147'));
+    assert.ok(!ids.includes('ISO-30111'));
+    // No fetch was ever issued for a non-IETF key.
+    assert.ok(requested.every(u => u.includes('name=rfc8446')),
+      `only rfc8446 should be fetched, saw: ${JSON.stringify(requested)}`);
   } finally {
     restore();
   }

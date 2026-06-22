@@ -98,6 +98,46 @@ test('TokenBucket: tryTake returns 0 while tokens available, > 0 when starved', 
   assert.ok(w > 0, `expected positive wait, got ${w}`);
 });
 
+test('TokenBucket: refill preserves fractional elapsed time (no rate under-utilization)', () => {
+  // Regression: refill() used to snap lastRefill to `now` whenever it
+  // granted whole tokens, discarding the sub-interval remainder
+  // (elapsed % refillIntervalMs). That drops the bucket below its
+  // configured rate. The fix advances lastRefill by only the consumed
+  // whole-token time, so the residual carries forward.
+  //
+  // capacity 10, window 1000ms => refillIntervalMs = 100ms.
+  const realNow = Date.now;
+  let clock = 1_000_000;
+  Date.now = () => clock;
+  try {
+    const b = new TokenBucket({ tokens: 10, windowMs: 1000 });
+    assert.equal(b.refillIntervalMs, 100);
+
+    // Drain the bucket completely.
+    for (let i = 0; i < 10; i++) assert.equal(b.tryTake(), 0);
+    assert.equal(b.tryTake() > 0, true, 'bucket should be starved after draining');
+
+    // Advance 150ms: exactly one whole refill interval (100ms) elapsed,
+    // with a 50ms remainder that MUST be carried forward.
+    clock += 150;
+    assert.equal(b.tryTake(), 0,
+      'one whole token should be available after 150ms');
+    assert.equal(b.tryTake() > 0, true,
+      'only one token granted by 150ms — second take must starve');
+
+    // Advance only 50ms more. Combined with the carried-forward 50ms
+    // remainder that is exactly one more 100ms interval => one more token.
+    // With the old (remainder-discarding) code lastRefill had snapped to
+    // the 150ms mark, so only 50ms would have elapsed here and NO token
+    // would be granted — the under-utilization the fix removes.
+    clock += 50;
+    assert.equal(b.tryTake(), 0,
+      'carried-forward remainder must let the next take succeed at 200ms total');
+  } finally {
+    Date.now = realNow;
+  }
+});
+
 test('JobQueue: surfaces queue_meta on failed jobs', async () => {
   const q = new JobQueue({ sources: { x: { concurrency: 1 } }, retry: { maxAttempts: 1, baseDelayMs: 1, maxDelayMs: 1 } });
   try {

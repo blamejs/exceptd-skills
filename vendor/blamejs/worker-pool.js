@@ -322,6 +322,12 @@ function create(scriptPath, opts) {
     if (!terminated && workerSlots.length < size) {
       try { _spawnWorker(); } catch (_e) { /* already audited */ }
       _drainQueue();
+      // exceptd delta: also settle pending drain() waiters after a respawn.
+      // _drainQueue() only schedules queued tasks; if the queue is already
+      // empty (a worker recycled with nothing left to do) the pool is now idle
+      // and a caller awaiting drain() must be resolved, exactly as the
+      // no-respawn branch below does — otherwise drain() hangs forever.
+      _maybeResolveDrain();
     } else {
       _maybeResolveDrain();
     }
