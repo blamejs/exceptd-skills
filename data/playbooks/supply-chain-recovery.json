@@ -874,7 +874,7 @@
           "target_playbook": "mcp"
         },
         {
-          "condition": "any_credential_class_exfil'd_includes_sso_admin == true",
+          "condition": "credential-class-exfil-includes-sso-admin == true",
           "action": "trigger_playbook",
           "target_playbook": "idp-incident"
         },
@@ -995,7 +995,7 @@
           "id": "policy-exception",
           "description": "For recovery primitives that cannot be completed within the jurisdiction's window: generate auditor-ready policy exception with compensating controls, time-bound risk acceptance, and remediation milestones. Typical blockers: legacy host without re-imaging window, vendor refuses to rotate a shared maintainer credential, downstream-consumer notification depends on third-party advisory pipeline outside operator control.",
           "preconditions": [
-            "remediation_paths[1..6] partially blocked",
+            "prior_remediations_blocked == true",
             "ciso_acceptance_obtainable == true"
           ],
           "priority": 7,

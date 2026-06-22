@@ -508,11 +508,11 @@
       ],
       "escalation_criteria": [
         {
-          "condition": "An internet-facing inbound MX accepts non-standard end-of-data (smuggling) or relays for unauthenticated peers",
+          "condition": "smtp-smuggling-end-of-data-accepted == true OR inbound-open-relay == true",
           "action": "raise_severity"
         },
         {
-          "condition": "Sieve redirect is uncapped on a multi-tenant mailbox service (mail-exfil primitive)",
+          "condition": "sieve-redirect-uncapped == true",
           "action": "trigger_playbook"
         }
       ]
@@ -523,7 +523,7 @@
           "id": "enforce-standard-end-of-data",
           "description": "Reject non-standard end-of-data sequences on the inbound SMTP listener (and upgrade the MTA to the smuggling-fixed release); require canonical <CR><LF>.<CR><LF>.",
           "preconditions": [
-            "operator controls the inbound MTA configuration"
+            "operator_controls_inbound_mta == true"
           ],
           "priority": 1,
           "for_signals": [

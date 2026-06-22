@@ -719,7 +719,7 @@
           "target_playbook": "kernel"
         },
         {
-          "condition": "selinux_disabled AND apparmor_no_enforcing_profiles AND blast_radius_score >= 3",
+          "condition": "selinux-not-enforcing == true AND apparmor-no-enforcing-profiles == true AND blast_radius_score >= 3",
           "action": "raise_severity"
         },
         {

@@ -422,11 +422,11 @@
       ],
       "escalation_criteria": [
         {
-          "condition": "Sanctions screening is evadable by a homoglyph on a live onboarding/payment path",
+          "condition": "sanctions-screening-homoglyph-evasion == true OR sanctions-screening-alias-transliteration-gap == true",
           "action": "raise_severity"
         },
         {
-          "condition": "Erasure is marked complete with no per-store evidence across the data subject base",
+          "condition": "dsr-erasure-no-completion-proof == true",
           "action": "trigger_playbook"
         }
       ]
@@ -437,7 +437,7 @@
           "id": "normalize-and-fuzzy-screen",
           "description": "Normalize names to a canonical confusable-folded skeleton (NFKC + Unicode confusable folding via the vendored codepoint-class) and apply the list's aliases + transliteration + bounded edit-distance fuzzy match before deciding.",
           "preconditions": [
-            "operator performs sanctions screening"
+            "operator_performs_sanctions_screening == true"
           ],
           "priority": 1,
           "for_signals": [

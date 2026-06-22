@@ -455,11 +455,11 @@
       ],
       "escalation_criteria": [
         {
-          "condition": "An internet-facing authentication / payment path resolves names without DNSSEC and pins no peer cert (DANE/mTLS)",
+          "condition": "dnssec-validation-not-enforced == true AND (dane-tlsa-not-checked == true OR mtls-ca-not-pinned == true)",
           "action": "raise_severity"
         },
         {
-          "condition": "Unauthenticated time drives cert-validity or TOTP on production auth",
+          "condition": "unauthenticated-ntp-no-nts == true",
           "action": "trigger_playbook"
         }
       ]
@@ -470,7 +470,7 @@
           "id": "enforce-dnssec-and-rebinding-guard",
           "description": "Validate DNSSEC end-to-end (or trust a validating upstream over DoT/DoH), prefer signed answers, and pin the resolved IP for the connection lifetime while refusing private/link-local/metadata addresses.",
           "preconditions": [
-            "resolver path is operator-controlled"
+            "operator_controls_resolver_path == true"
           ],
           "priority": 1,
           "for_signals": [

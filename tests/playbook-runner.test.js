@@ -3267,6 +3267,170 @@ describe('run() — bundles, top_finding, collector_warnings, remediation select
   });
 });
 
+describe('round-3: dead-condition rewrites, validate engine-ctx, evidence-hash, feeds_into', () => {
+  let runner;
+  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+  const dir0 = (id) => runner.loadPlaybook(id).directives[0].id;
+
+  // --- #45a: rewritten escalation_criteria FIRE (were dead prose) ---
+  it('audit-log-integrity raise_severity fires on the rewritten indicator-id condition', () => {
+    const d = dir0('audit-log-integrity');
+    const det = runner.detect('audit-log-integrity', d, {});
+    const an = runner.analyze('audit-log-integrity', d, det, {
+      'audit-log-deletable-by-writing-identity': true,
+      'audit-hash-chain-not-verified': true,
+    });
+    const fired = an.escalations.find(e => e.action === 'raise_severity');
+    assert.ok(fired, 'rewritten raise_severity escalation must fire (was dead prose)');
+    assert.match(fired.condition, /audit-log-deletable-by-writing-identity == true/);
+  });
+
+  it('decompression-dos trigger_playbook fires on zip-slip == true (was prose)', () => {
+    const d = dir0('decompression-dos');
+    const det = runner.detect('decompression-dos', d, {});
+    const an = runner.analyze('decompression-dos', d, det, { 'zip-slip-path-traversal': true });
+    assert.ok(an.escalations.some(e => e.condition === 'zip-slip-path-traversal == true'),
+      'zip-slip escalation must fire');
+  });
+
+  it('multitenancy-isolation cross-tenant escalation fires on any one tenant-isolation indicator', () => {
+    const d = dir0('multitenancy-isolation');
+    const det = runner.detect('multitenancy-isolation', d, {});
+    const an = runner.analyze('multitenancy-isolation', d, det, { 'query-not-scoped-by-tenant': true });
+    assert.ok(an.escalations.some(e => /query-not-scoped-by-tenant == true/.test(e.condition)),
+      'OR-chain escalation must fire on a single fired indicator');
+  });
+
+  it('every shipped escalation/feeds_into/precondition condition parses (no condition_unparsed)', () => {
+    // Class guard mirroring the validate-playbooks parse-gate: exercising the
+    // REAL evaluator over every shipped condition proves none is dead prose.
+    const { _evalCondition } = runner;
+    const pbDir = REAL_PLAYBOOK_DIR;
+    const dead = [];
+    for (const f of fs.readdirSync(pbDir).filter(x => x.endsWith('.json'))) {
+      const pb = JSON.parse(fs.readFileSync(path.join(pbDir, f), 'utf8'));
+      const conds = [];
+      for (const ec of (pb.phases.analyze.escalation_criteria || [])) if (ec && typeof ec.condition === 'string') conds.push(ec.condition);
+      for (const fi of (pb._meta.feeds_into || [])) if (fi && typeof fi.condition === 'string') conds.push(fi.condition);
+      for (const rp of (pb.phases.validate.remediation_paths || [])) for (const pc of (rp.preconditions || [])) if (typeof pc === 'string') conds.push(pc);
+      for (const c of conds) {
+        const re = [];
+        _evalCondition(c, { _runErrors: re }, { _runErrors: re });
+        if (re.some(e => e && e.kind === 'condition_unparsed')) dead.push(`${f}: ${c}`);
+      }
+    }
+    assert.deepEqual(dead, [], `unparseable (dead) conditions found:\n${dead.join('\n')}`);
+  });
+
+  // --- #45d/#7: validate() precondition context exposes engine-computed roots ---
+  it('validate() resolves the engine-computed `analyze` root in a remediation precondition', () => {
+    const tmp = tmpDir('validate-engine-ctx');
+    try {
+      const pb = synthPlaybook({
+        _meta: { id: 'synth-engine-ctx' },
+        phases: {
+          detect: { indicators: [{ id: 'sig-a', type: 'config_value', value: 'x', description: 'x', confidence: 'high', deterministic: true }] },
+          validate: {
+            remediation_paths: [
+              { id: 'engine-gated', priority: 1, description: 'x', steps: ['x'], for_signals: ['sig-a'], preconditions: ["analyze.classification == 'detected'"] },
+            ],
+            validation_tests: [], evidence_requirements: [], regression_trigger: [],
+          },
+        },
+      });
+      writePlaybook(tmp, 'synth-engine-ctx', pb);
+      const r = freshRunner(tmp);
+      const det = r.detect('synth-engine-ctx', 'default', { signal_overrides: { 'sig-a': 'hit' } });
+      const an = r.analyze('synth-engine-ctx', 'default', det, {});
+      const v = r.validate('synth-engine-ctx', 'default', an, {});
+      const path = v.remediation_options_considered.find(c => c.id === 'engine-gated');
+      assert.ok(path, 'remediation path considered');
+      assert.equal(an.classification, 'detected');
+      assert.equal(path.all_satisfied, true,
+        'precondition gating on the engine-computed analyze.classification must now be satisfiable');
+    } finally {
+      runner = freshRunner(REAL_PLAYBOOK_DIR);
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('validate() leaves the engine-gated precondition UNsatisfied when the engine value differs', () => {
+    const tmp = tmpDir('validate-engine-ctx-neg');
+    try {
+      const pb = synthPlaybook({
+        _meta: { id: 'synth-engine-neg' },
+        phases: {
+          detect: { indicators: [{ id: 'sig-a', type: 'config_value', value: 'x', description: 'x', confidence: 'high', deterministic: true }] },
+          validate: {
+            remediation_paths: [
+              { id: 'engine-gated', priority: 1, description: 'x', steps: ['x'], for_signals: ['sig-a'], preconditions: ["analyze.classification == 'detected'"] },
+            ],
+            validation_tests: [], evidence_requirements: [], regression_trigger: [],
+          },
+        },
+      });
+      writePlaybook(tmp, 'synth-engine-neg', pb);
+      const r = freshRunner(tmp);
+      const det = r.detect('synth-engine-neg', 'default', {}); // nothing fired → not 'detected'
+      const an = r.analyze('synth-engine-neg', 'default', det, {});
+      const v = r.validate('synth-engine-neg', 'default', an, {});
+      const path = v.remediation_options_considered.find(c => c.id === 'engine-gated');
+      assert.notEqual(an.classification, 'detected');
+      assert.equal(path.all_satisfied, false, 'precondition must evaluate, not be vacuously true');
+    } finally {
+      runner = freshRunner(REAL_PLAYBOOK_DIR);
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  // --- #45d/#6: evidence_hash ignores render-only _bundle_formats, tracks real evidence ---
+  it('evidence_hash is stable across the render-only _bundle_formats signal', () => {
+    const PRE = { precondition_checks: { 'linux-platform': true, 'uname-available': true } };
+    const base = runner.run('kernel', 'all-catalogued-kernel-cves', { signals: { 'kver-in-affected-range': true } }, PRE);
+    const withFmt = runner.run('kernel', 'all-catalogued-kernel-cves', { signals: { 'kver-in-affected-range': true, _bundle_formats: ['sarif', 'openvex'] } }, PRE);
+    assert.match(base.evidence_hash, /^[0-9a-f]{64}$/);
+    assert.equal(base.evidence_hash, withFmt.evidence_hash,
+      'choosing an output bundle format must not change the evidence identity');
+  });
+
+  it('evidence_hash of a render-only-signals submission equals a no-signals submission', () => {
+    // A submission whose ONLY signal is the render directive _bundle_formats
+    // must hash identically to a submission with no signals at all — otherwise
+    // the digest records `{signals:{}}` vs no-signals and drifts on --format.
+    const PRE = { precondition_checks: { 'linux-platform': true, 'uname-available': true } };
+    const noSignals = runner.run('kernel', 'all-catalogued-kernel-cves', {}, PRE);
+    const renderOnly = runner.run('kernel', 'all-catalogued-kernel-cves', { signals: { _bundle_formats: ['sarif'] } }, PRE);
+    const emptyBag = runner.run('kernel', 'all-catalogued-kernel-cves', { signals: {} }, PRE);
+    assert.equal(noSignals.evidence_hash, renderOnly.evidence_hash,
+      'a render-only (_bundle_formats) signal bag must not change the evidence hash');
+    assert.equal(noSignals.evidence_hash, emptyBag.evidence_hash,
+      'an empty signals bag must hash like no signals');
+  });
+
+  it('evidence_hash still changes on a real evidence change AND on a posture-affecting vex_filter', () => {
+    const PRE = { precondition_checks: { 'linux-platform': true, 'uname-available': true } };
+    const base = runner.run('kernel', 'all-catalogued-kernel-cves', { signals: { 'kver-in-affected-range': true } }, PRE);
+    const moreEvidence = runner.run('kernel', 'all-catalogued-kernel-cves', { signals: { 'kver-in-affected-range': true, 'unpriv-userns-enabled': true } }, PRE);
+    const vex = runner.run('kernel', 'all-catalogued-kernel-cves', { signals: { 'kver-in-affected-range': true, vex_filter: ['CVE-2024-0001'] } }, PRE);
+    assert.notEqual(base.evidence_hash, moreEvidence.evidence_hash, 'a new signal must change the hash');
+    assert.notEqual(base.evidence_hash, vex.evidence_hash, 'a VEX disposition is posture-affecting evidence and must change the hash');
+  });
+
+  // --- #45d: containers -> sbom feeds_into is live (was rooted at a look-artifact id) ---
+  it('containers -> sbom feeds_into chains when container-image-layers > 0', () => {
+    const PRE = { operator_consent: { explicit: true }, precondition_checks: { 'linux-platform': true } };
+    let chained = null;
+    for (const d of runner.loadPlaybook('containers').directives.map(x => x.id)) {
+      let r;
+      try { r = runner.run('containers', d, { signals: { 'container-image-layers': 7, 'dockerfile-from-latest': true }, signal_overrides: { 'dockerfile-from-latest': true } }, PRE); }
+      catch { continue; }
+      if (r && r.phases && r.phases.close && Array.isArray(r.phases.close.feeds_into)) { chained = r.phases.close.feeds_into; if (chained.includes('sbom')) break; }
+    }
+    assert.ok(chained && chained.includes('sbom'),
+      'containers must chain to sbom when image layers are present (feeds_into was dead at container-image-layers.length)');
+  });
+});
+
 test.describe("reconciliation-fixes", () => {
   test('worstActiveExploitation ranks `theoretical` between none and unknown (worst-of holds)', () => {
     // P1: the rank table omitted `theoretical`, so `?? -1` lost to the -1 start —

@@ -1093,7 +1093,7 @@
           "id": "policy-exception",
           "description": "If a deprecated primitive cannot be removed in a minor version due to API-stability promise: generate auditor-ready policy exception. Time-bound until next major version with explicit migration roadmap, deprecation warning emitted at runtime, parallel new API published, downstream-consumer migration guide.",
           "preconditions": [
-            "remediation_paths[1..8] blocked for this specific primitive due to api_stability == true",
+            "prior_remediations_blocked == true AND api_stability == true",
             "next_major_version_window <= 12_months",
             "ciso_or_maintainer_acceptance_obtainable == true"
           ],
