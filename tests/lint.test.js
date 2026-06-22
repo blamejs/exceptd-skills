@@ -1,48 +1,77 @@
 "use strict";
 
-// ---- routed from attest-replay-and-discover-cwd ----
-;(() => {
+
+// ---- routed from lint-unknown-precondition-key ----
+require("node:test").describe("lint-unknown-precondition-key", () => {
+const __t = require("node:test"); const __env = Object.assign({}, process.env);
+__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
+  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 /**
- * Regression suite for the attestation-replay + discover-cwd + collect/lint
- * fixes:
- *   - reattest replays the ORIGINAL submission, so an unchanged session reports
- *     "unchanged" (it previously reported a false "drifted" every time).
- *   - discover honors --cwd (it previously scanned the process cwd silently).
- *   - collect warns on ANY failed precondition (not only empty-signal skips).
- *   - lint distinguishes a present-but-uncaptured required artifact from an
- *     absent one.
- *
- * Discipline: exact exit codes; value/type assertions paired with presence.
+ * Regression: `lint` flags precondition_checks keys the playbook does not
+ * declare. Pre-fix, the flat `observations` shape surfaced a foreign
+ * precondition id (e.g. crypto collector attesting `kernel-symbols-readable`, which
+ * belongs to kernel/runtime/hardening) as unknown_observation_key, but the
+ * nested `precondition_checks` shape every collector actually emits was never
+ * checked — so collector↔playbook precondition-id drift was silent on the
+ * canonical collect→lint path. The new unknown_precondition_key check mirrors
+ * unknown_artifact_key / unknown_signal_override_key symmetrically.
  */
 
-const test = require("node:test");
-const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const os = require("node:os");
-const path = require("node:path");
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 
-const { makeSuiteHome, makeCli, tryJson } = require("./_helpers/cli");
-const SUITE_HOME = makeSuiteHome("exceptd-replayfix-");
+const { makeSuiteHome, makeCli, tryJson, secureTmpFile } = require('./_helpers/cli');
+
+const SUITE_HOME = makeSuiteHome('exceptd-lint-precondition-');
 const cli = makeCli(SUITE_HOME);
 
-test("lint flags a present-but-uncaptured required artifact distinctly from an absent one", () => {
-  const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'lint-uncaptured-')), 'ev.json');
-  // secrets requires `world-writable-secret-files`; supply it present but
-  // captured:false (the shape a collector emits when it skips a platform probe).
-  fs.writeFileSync(tmp, JSON.stringify({
-    artifacts: { "world-writable-secret-files": { value: "skipped on win32", captured: false, reason: "POSIX mode bits not meaningful on Windows" } },
-  }));
-  try {
-    const r = cli(["lint", "secrets", tmp, "--json"]);
-    const body = tryJson(r.stdout);
-    assert.ok(body, `lint must emit JSON; got ${r.stdout.slice(0, 200)}`);
-    const kinds = (body.issues || []).filter(i => i.artifact_id === "world-writable-secret-files").map(i => i.kind);
-    assert.ok(kinds.includes("uncaptured_required_artifact"),
-      `expected uncaptured_required_artifact for a present captured:false artifact; got ${JSON.stringify(kinds)}`);
-    assert.ok(!kinds.includes("missing_required_artifact"),
-      "a present artifact must NOT be reported as missing");
-  } finally {
-    fs.rmSync(tmp, { force: true });
-  }
+function writeEvidence(name, obj) {
+  const p = secureTmpFile(`${name}.json`, 'exceptd-lint-pre-');
+  fs.writeFileSync(p, JSON.stringify(obj));
+  return p;
+}
+
+function lint(playbook, evidencePath) {
+  const r = cli(['lint', playbook, evidencePath, '--json']);
+  const body = tryJson((r.stdout || '').trim()) || {};
+  return { r, body, issues: body.issues || [] };
+}
+
+test('nested precondition_checks with a foreign id is flagged unknown_precondition_key', () => {
+  // `kernel-symbols-readable` is a precondition id crypto does not declare
+  // (crypto declares filesystem-read, openssl-or-equivalent-present, linux-platform).
+  const ev = writeEvidence('foreign', { precondition_checks: { 'kernel-symbols-readable': false } });
+  const { issues } = lint('crypto', ev);
+  const hit = issues.find((i) => i.kind === 'unknown_precondition_key' && i.precondition_id === 'kernel-symbols-readable');
+  assert.ok(hit, `expected unknown_precondition_key for kernel-symbols-readable; got kinds=${issues.map((i) => i.kind).join(',')}`);
+  assert.equal(hit.severity, 'warn', 'unknown_precondition_key should be a warn (collector drift, not a hard error)');
 });
-})();
+
+test('precondition_checks with only declared ids yields zero unknown_precondition_key', () => {
+  // filesystem-read IS a declared crypto precondition → no unknown-key flag.
+  const ev = writeEvidence('known', { precondition_checks: { 'filesystem-read': true } });
+  const { issues } = lint('crypto', ev);
+  const unknown = issues.filter((i) => i.kind === 'unknown_precondition_key');
+  assert.equal(unknown.length, 0,
+    `a declared precondition id must not be flagged; got ${JSON.stringify(unknown)}`);
+});
+
+test('the same foreign id is flagged in BOTH the nested and flat shapes (parity)', () => {
+  // Nested shape: precondition_checks → unknown_precondition_key.
+  const nested = lint('crypto', writeEvidence('parity-nested', { precondition_checks: { 'kernel-symbols-readable': false } }));
+  const nestedHit = nested.issues.find((i) => i.kind === 'unknown_precondition_key' && i.precondition_id === 'kernel-symbols-readable');
+  assert.ok(nestedHit, 'nested shape must flag kernel-symbols-readable via unknown_precondition_key');
+
+  // Flat shape: the same key under observations → unknown_observation_key.
+  // The foreign id surfaces in BOTH shapes; pre-fix only the flat side did.
+  const flat = lint('crypto', writeEvidence('parity-flat', { observations: { 'kernel-symbols-readable': false } }));
+  const flatHit = flat.issues.find(
+    (i) => (i.kind === 'unknown_observation_key' || i.kind === 'unknown_precondition_key')
+      && (i.key === 'kernel-symbols-readable' || i.precondition_id === 'kernel-symbols-readable'),
+  );
+  assert.ok(flatHit, `flat shape must also flag kernel-symbols-readable; got kinds=${flat.issues.map((i) => i.kind).join(',')}`);
+});
+});

@@ -3234,41 +3234,38 @@ test.describe("reconciliation-fixes", () => {
   });
 });
 
-// ---- routed from attestation-signature-roundtrip ----
-;(() => {
+
+// ---- routed from playbook-runner-error-paths ----
+require("node:test").describe("playbook-runner-error-paths", () => {
+const __t = require("node:test"); const __env = Object.assign({}, process.env);
+__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
+  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 /**
- * Audit-VV trust-boundary fixes (KK P1-1..P1-5 + MM P1-D).
+ * tests/playbook-runner-error-paths.test.js
  *
- * Each test pins an EXACT exit code (assert.equal(r.status, N)) and pairs
- * every field-presence check with a content-shape check, per the project's
- * coincidence-passing-tests rule. notEqual(r.status, 0) is forbidden — a
- * coincidence-passing test blocks future regressions while letting the
- * current one through.
+ * Regression coverage for the FF / DD / HH audit batch landing in v0.12.21:
  *
- * Fixes covered:
- *   KK P1-1  Sidecar shape no longer carries `signed_at` / `signs_path` /
- *            `signs_sha256`. The Ed25519 signature covers ONLY the
- *            attestation file bytes — fields in the sidecar that aren't in
- *            the signed message are replay-rewrite trivial.
- *   KK P1-2  cmdReattest persists `replay-<isoZ>.json` under the session
- *            directory whenever a replay produced a verdict (force-replay
- *            or otherwise). `attest verify <sid>` surfaces both the
- *            original + the replay in its results array.
- *   KK P1-3  Sidecar verifier rejects any algorithm field that isn't
- *            exactly "Ed25519" or "unsigned" (downgrade-bait substitution)
- *            with tamper_class:"algorithm-unsupported" and exit 6.
- *   KK P1-4  hasReadableStdin Windows fallback requires isTTY === false
- *            STRICTLY — not falsy. isTTY === undefined no longer routes
- *            through readFileSync(0) and blocks on wrapped duplexer test
- *            harnesses.
- *   KK P1-5  Pin loader strips leading UTF-8 BOM (Notepad with
- *            files.encoding=utf8bom) + ignores comment / empty lines.
- *            All four sites converge on the shared helper.
- *   MM P1-D  sanitizeOperatorText (library-side guard for direct
- *            buildEvidenceBundle callers) NFC-normalises, strips \p{C}
- *            (Cc/Cf/Cs/Co/Cn), caps at 256 codepoints, returns null on
- *            empty-after-strip so callers route through the
- *            bundle_publisher_unclaimed fallback.
+ *   FF P1-1  scoring.validate() skips _auto_imported:true entries.
+ *   FF P1-3  lib/refresh-external.js --air-gap flag reaches ctx.airGap.
+ *   FF P1-4  cross-ref-api.byCve() excludes auto-imported drafts by default
+ *            and re-includes them on { include_drafts: true }.
+ *   DD P1-1  cross-ref-api cache invalidates when the source file mtime
+ *            changes (long-running watcher visibility).
+ *   DD P1-2  persistAttestation lock spin is bounded — exercised indirectly
+ *            via the MAX_RETRIES = 10 invariant declared in source. The
+ *            persistAttestation function is sync and used inside the CLI
+ *            dispatcher; a runtime-contention test would require child
+ *            processes racing on the same attestation slot, which is
+ *            covered by the existing concurrent-attestation-writer helper.
+ *            Here we assert the bound declared in source has not crept back
+ *            up to 50 (the regression we fixed).
+ *   DD P1-3  acquireLock reclaims a lockfile whose recorded PID is dead and
+ *            returns null when the holder PID is alive.
+ *   HH P1-1  release.yml declares a top-level permissions: block.
+ *   HH P1-2  refresh.yml declares a top-level permissions: block.
+ *
+ * Per the anti-coincidence rule: each assertion checks the EXACT condition the fix produces.
+ * No assert.notEqual(0) / assert.ok(field) coincidence-passers.
  */
 
 const test = require('node:test');
@@ -3277,183 +3274,1354 @@ const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 
-const { ROOT, makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+const ROOT = path.join(__dirname, '..');
 
-const SUITE_HOME = makeSuiteHome('exceptd-audit-vv-trust-');
-const cli = makeCli(SUITE_HOME);
+// ============================================================================
+// FF P1-1 — scoring.validate() skip _auto_imported drafts
+// ============================================================================
 
-const PKG_PRIV_KEY = path.join(ROOT, '.keys', 'private.pem');
-const HAS_PRIV_KEY = fs.existsSync(PKG_PRIV_KEY);
-
-function locateAttestationFiles(sid) {
-  const candidates = [
-    path.join(SUITE_HOME, 'attestations', sid),
-    path.join(SUITE_HOME, '.exceptd', 'attestations', sid),
-  ];
-  const attRoot = candidates.find((p) => fs.existsSync(p));
-  if (!attRoot) return null;
-  const files = fs.readdirSync(attRoot);
-  const jsonFiles = files.filter((f) => f.endsWith('.json') && !f.endsWith('.sig'));
-  return {
-    dir: attRoot,
-    files: jsonFiles,
-    primaryJson: jsonFiles.includes('attestation.json')
-      ? path.join(attRoot, 'attestation.json')
-      : path.join(attRoot, jsonFiles[0]),
-    primarySig: jsonFiles.includes('attestation.json')
-      ? path.join(attRoot, 'attestation.json.sig')
-      : path.join(attRoot, jsonFiles[0] + '.sig'),
+test('FF P1-1: scoring.validate() skips entries flagged _auto_imported: true', () => {
+  const { validate } = require(path.join(ROOT, 'lib', 'scoring.js'));
+  // Shape that previously triggered the divergence error: poc_available:null
+  // on the entry but rwep_factors stored as if poc=true. The stored rwep_score
+  // (computed from defaults) would diverge from validate()'s recompute by ~20.
+  const draftCatalog = {
+    'CVE-9999-00001': {
+      type: 'TBD',
+      cvss_score: null,
+      cvss_vector: null,
+      cisa_kev: true,
+      poc_available: null,            // <-- the divergence trigger
+      ai_discovered: null,
+      active_exploitation: 'suspected',
+      affected: 'whatever',
+      patch_available: null,
+      patch_required_reboot: null,
+      live_patch_available: null,
+      live_patch_tools: [],
+      rwep_score: 70,                  // computed as if poc=true, reboot=true
+      rwep_factors: {
+        cisa_kev: 25, poc_available: 20, ai_factor: 0, active_exploitation: 10,
+        blast_radius: 15, patch_available: 0, live_patch_available: 0,
+        reboot_required: 5,
+      },
+      atlas_refs: [], attack_refs: [],
+      source_verified: '2026-05-14', last_updated: '2026-05-14',
+      verification_sources: ['https://example/'],
+      _auto_imported: true,
+    },
   };
+  const errors = validate(draftCatalog);
+  // The exact bug was a divergence-error string mentioning the CVE id.
+  for (const e of errors) {
+    assert.equal(
+      e.includes('CVE-9999-00001') && e.includes('rwep_score'),
+      false,
+      `auto-imported draft should not trigger rwep divergence error, got: ${e}`,
+    );
+  }
+});
+
+test('FF P1-1: scoring.validate() flags divergence on a NON-_auto_imported entry (regression)', () => {
+  const { validate } = require(path.join(ROOT, 'lib', 'scoring.js'));
+  const curatedCatalog = {
+    'CVE-9999-00002': {
+      type: 'RCE',
+      cvss_score: 9.8, cvss_vector: 'AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H',
+      cisa_kev: true,
+      poc_available: true, poc_description: 'public exploit on github',
+      ai_discovered: false,
+      active_exploitation: 'confirmed',
+      affected: 'vendor product 1.2.3', affected_versions: ['1.2.3'],
+      patch_available: true, patch_required_reboot: false,
+      live_patch_available: false, live_patch_tools: [],
+      // Stored rwep_score wildly diverges from recomputed value (>5).
+      // Real computed = 25+20+0+20+15+(-15)+0+0 = 65. Stored = 10.
+      rwep_score: 10,
+      rwep_factors: {
+        cisa_kev: 25, poc_available: 20, ai_factor: 0, active_exploitation: 20,
+        blast_radius: 15, patch_available: -15, live_patch_available: 0,
+        reboot_required: 0,
+      },
+      atlas_refs: [], attack_refs: [],
+      source_verified: '2026-05-14', last_updated: '2026-05-14',
+      verification_sources: ['https://nvd.nist.gov/'],
+      // NOT _auto_imported — full validation must fire.
+    },
+  };
+  const errors = validate(curatedCatalog);
+  const divergence = errors.find((e) => e.includes('CVE-9999-00002') && e.includes('rwep_score'));
+  assert.equal(typeof divergence, 'string', 'curated entry must still trigger divergence error');
+  assert.equal(divergence.includes('diverges from calculated'), true);
+});
+
+// ============================================================================
+// FF P1-3 — refresh-external --air-gap flag wiring
+// ============================================================================
+
+test('FF P1-3: refresh-external parseArgs recognises --air-gap', () => {
+  const { parseArgs } = require(path.join(ROOT, 'lib', 'refresh-external.js'));
+  const args = parseArgs(['node', 'refresh-external.js', '--air-gap']);
+  assert.equal(args.airGap, true);
+});
+
+test('FF P1-3: refresh-external parseArgs default has airGap unset (falsy)', () => {
+  const { parseArgs } = require(path.join(ROOT, 'lib', 'refresh-external.js'));
+  const args = parseArgs(['node', 'refresh-external.js']);
+  assert.equal(!!args.airGap, false);
+});
+
+test('FF P1-3: loadCtx threads --air-gap into ctx.airGap (true case)', () => {
+  const { loadCtx } = require(path.join(ROOT, 'lib', 'refresh-external.js'));
+  // Save & restore env so test ordering doesn't leak.
+  const priorEnv = process.env.EXCEPTD_AIR_GAP;
+  delete process.env.EXCEPTD_AIR_GAP;
+  try {
+    const ctx = loadCtx({ airGap: true });
+    assert.equal(ctx.airGap, true);
+  } finally {
+    if (priorEnv !== undefined) process.env.EXCEPTD_AIR_GAP = priorEnv;
+  }
+});
+
+test('FF P1-3: loadCtx threads EXCEPTD_AIR_GAP=1 into ctx.airGap (env fallback)', () => {
+  const { loadCtx } = require(path.join(ROOT, 'lib', 'refresh-external.js'));
+  const priorEnv = process.env.EXCEPTD_AIR_GAP;
+  process.env.EXCEPTD_AIR_GAP = '1';
+  try {
+    const ctx = loadCtx({});
+    assert.equal(ctx.airGap, true);
+  } finally {
+    if (priorEnv === undefined) delete process.env.EXCEPTD_AIR_GAP;
+    else process.env.EXCEPTD_AIR_GAP = priorEnv;
+  }
+});
+
+test('FF P1-3: loadCtx ctx.airGap defaults to false when neither flag nor env set', () => {
+  const { loadCtx } = require(path.join(ROOT, 'lib', 'refresh-external.js'));
+  const priorEnv = process.env.EXCEPTD_AIR_GAP;
+  delete process.env.EXCEPTD_AIR_GAP;
+  try {
+    const ctx = loadCtx({});
+    assert.equal(ctx.airGap, false);
+  } finally {
+    if (priorEnv !== undefined) process.env.EXCEPTD_AIR_GAP = priorEnv;
+  }
+});
+
+// ============================================================================
+// FF P1-4 — cross-ref-api.byCve() excludes drafts by default
+// ============================================================================
+
+// Each test allocates a fresh DATA_DIR + clears the cross-ref-api module cache
+// so the cache+mtime tests can mutate disk freely.
+function makeDataDir() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'xref-api-'));
+  fs.mkdirSync(path.join(dir, '_indexes'));
+  // Minimal index files so loadIndex() doesn't error out.
+  for (const f of ['xref.json', 'recipes.json', 'theater-fingerprints.json', 'summary-cards.json']) {
+    fs.writeFileSync(path.join(dir, '_indexes', f), '{}', 'utf8');
+  }
+  for (const f of ['cwe-catalog.json', 'atlas-ttps.json', 'd3fend-catalog.json',
+                   'framework-control-gaps.json', 'global-frameworks.json',
+                   'zeroday-lessons.json', 'rfc-references.json']) {
+    fs.writeFileSync(path.join(dir, f), '{}', 'utf8');
+  }
+  return dir;
 }
 
-// ---------------------------------------------------------------------------
-// KK P1-1 — sidecar `signed_at` is no longer present; rewriting it is a
-// no-op for verify. Conversely the attestation file `captured_at` is
-// signed; rewriting that field invalidates the signature.
-// ---------------------------------------------------------------------------
+function loadFreshXrefApi(dataDir) {
+  // Reset the module cache so EXCEPTD_DATA_DIR is honoured by a fresh require().
+  delete require.cache[require.resolve(path.join(ROOT, 'lib', 'cross-ref-api.js'))];
+  process.env.EXCEPTD_DATA_DIR = dataDir;
+  return require(path.join(ROOT, 'lib', 'cross-ref-api.js'));
+}
 
-
-
-
-// ---------------------------------------------------------------------------
-// KK P1-2 — force-replay persists a replay-*.json record on disk.
-// ---------------------------------------------------------------------------
-
-
-
-// ---------------------------------------------------------------------------
-// KK P1-3 — strict algorithm check.
-// ---------------------------------------------------------------------------
-
-
-
-
-// ---------------------------------------------------------------------------
-// KK P1-4 — hasReadableStdin Windows fallback strict isTTY===false.
-// ---------------------------------------------------------------------------
-
-
-
-// ---------------------------------------------------------------------------
-// KK P1-5 — pin loader strips BOM + tolerates CRLF + comments.
-// ---------------------------------------------------------------------------
-
-
-
-
-
-
-
-// ---------------------------------------------------------------------------
-// MM P1-D — sanitizeOperatorText library-side guard.
-// ---------------------------------------------------------------------------
-
-test('MM P1-D — sanitizeOperatorText strips U+202E (RTL OVERRIDE) and returns null when result is empty', () => {
-  const runnerMod = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
-  assert.equal(typeof runnerMod.sanitizeOperatorText, 'function',
-    'sanitizeOperatorText must be exported (or testable as a top-level function via the runner module)');
-  // 'alice' + U+202E (RTL OVERRIDE) + 'evilbob' — a bidi-forgery attempt.
-  const out = runnerMod.sanitizeOperatorText('alice‮evilbob');
-  // The result MUST NOT contain U+202E — that's the whole point.
-  assert.equal(typeof out, 'string', 'non-empty residue should still surface as a string after the bidi codepoint is stripped');
-  assert.ok(!out.includes('‮'),
-    `sanitised output must not contain U+202E; got ${JSON.stringify(out)}`);
-  // The remaining ASCII (alice + evilbob) is concatenated. That is fine —
-  // the forgery surface is the bidi codepoint, not the residual letters.
-  assert.equal(out, 'aliceevilbob',
-    `bidi-stripped concatenation must equal "aliceevilbob"; got ${JSON.stringify(out)}`);
+test('FF P1-4: byCve(id) excludes _auto_imported:true drafts by default', () => {
+  const dataDir = makeDataDir();
+  fs.writeFileSync(path.join(dataDir, 'cve-catalog.json'), JSON.stringify({
+    'CVE-2030-00001': { type: 'TBD', rwep_score: 70, _auto_imported: true },
+  }), 'utf8');
+  const xref = loadFreshXrefApi(dataDir);
+  const res = xref.byCve('CVE-2030-00001');
+  assert.equal(res.found, false);
+  assert.equal(res._draft_excluded, true);
+  assert.equal(res.cve_id, 'CVE-2030-00001');
 });
 
-test('MM P1-D — sanitizeOperatorText strips zero-width joiner / non-joiner / space and surrogate / private-use', () => {
-  const runnerMod = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
-  // U+200B ZWSP, U+200C ZWNJ, U+200D ZWJ, U+FEFF BOM mid-string, U+E000 PUA.
-  const out = runnerMod.sanitizeOperatorText('a​b‌c‍d﻿ef');
-  assert.equal(out, 'abcdef',
-    `every Cf/Co codepoint must be stripped; got ${JSON.stringify(out)}`);
+test('FF P1-4: byCve(id, { include_drafts: true }) returns the draft', () => {
+  const dataDir = makeDataDir();
+  fs.writeFileSync(path.join(dataDir, 'cve-catalog.json'), JSON.stringify({
+    'CVE-2030-00002': { type: 'TBD', rwep_score: 70, _auto_imported: true,
+                        atlas_refs: [], attack_refs: [] },
+  }), 'utf8');
+  const xref = loadFreshXrefApi(dataDir);
+  const res = xref.byCve('CVE-2030-00002', { include_drafts: true });
+  assert.equal(res.found, true);
+  assert.equal(res.cve_id, 'CVE-2030-00002');
+  assert.equal(res.rwep_score, 70);
 });
 
-test('MM P1-D — sanitizeOperatorText returns null on all-Cf input (empty after strip)', () => {
-  const runnerMod = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
-  // Only zero-width codepoints: post-strip the result is empty → null.
-  const out = runnerMod.sanitizeOperatorText('​‌‍‮﻿');
-  assert.equal(out, null,
-    `all-Cf input must collapse to null (callers route through the bundle_publisher_unclaimed fallback); got ${JSON.stringify(out)}`);
+test('FF P1-4: byCve(id) on a curated (non-draft) entry returns it normally', () => {
+  const dataDir = makeDataDir();
+  fs.writeFileSync(path.join(dataDir, 'cve-catalog.json'), JSON.stringify({
+    'CVE-2030-00003': {
+      type: 'RCE', rwep_score: 85, cisa_kev: true,
+      atlas_refs: ['AML.T0051'], attack_refs: ['T1190'],
+      active_exploitation: 'confirmed', ai_discovered: false,
+    },
+  }), 'utf8');
+  const xref = loadFreshXrefApi(dataDir);
+  const res = xref.byCve('CVE-2030-00003');
+  assert.equal(res.found, true);
+  assert.equal(res.rwep_score, 85);
+  assert.equal(res.cisa_kev, true);
 });
 
-test('MM P1-D — sanitizeOperatorText NFC-normalises before stripping', () => {
-  const runnerMod = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
-  // 'café' as 'cafe' + U+0301 COMBINING ACUTE ACCENT → NFC composes to U+00E9.
-  // The COMBINING ACCENT is category Mn (Mark, Nonspacing), which is NOT in
-  // \p{C} — but the NFC composition is what we care about. Verify the
-  // output is the canonical-composed form.
-  const out = runnerMod.sanitizeOperatorText('café');
-  assert.equal(out, 'café',
-    `NFC normalisation must compose combining marks; got ${JSON.stringify(out)}`);
+// ============================================================================
+// DD P1-1 — cross-ref-api cache invalidates on mtime change
+// ============================================================================
+
+test('DD P1-1: cross-ref-api cache invalidates when source file mtime changes', async () => {
+  const dataDir = makeDataDir();
+  const cvePath = path.join(dataDir, 'cve-catalog.json');
+  fs.writeFileSync(cvePath, JSON.stringify({
+    'CVE-2030-10001': { type: 'RCE', rwep_score: 50,
+                        atlas_refs: [], attack_refs: [],
+                        active_exploitation: 'suspected', ai_discovered: false },
+  }), 'utf8');
+  // Backdate mtime so the subsequent mutation produces a measurably-different
+  // mtimeMs on filesystems with coarse timestamp granularity (HFS+, FAT, some
+  // network mounts).
+  const past = Date.now() - 10_000;
+  fs.utimesSync(cvePath, past / 1000, past / 1000);
+
+  const xref = loadFreshXrefApi(dataDir);
+  const first = xref.byCve('CVE-2030-10001');
+  assert.equal(first.found, true);
+  assert.equal(first.rwep_score, 50);
+
+  // Mutate the catalog file directly without going through the API.
+  fs.writeFileSync(cvePath, JSON.stringify({
+    'CVE-2030-10001': { type: 'RCE', rwep_score: 95,
+                        atlas_refs: [], attack_refs: [],
+                        active_exploitation: 'confirmed', ai_discovered: false },
+  }), 'utf8');
+  // Force a future mtime to defeat coarse-granularity filesystems.
+  const future = Date.now() + 5_000;
+  fs.utimesSync(cvePath, future / 1000, future / 1000);
+
+  const second = xref.byCve('CVE-2030-10001');
+  assert.equal(second.found, true);
+  assert.equal(second.rwep_score, 95,
+    'cache must re-read after mtime change (was process-lifetime cached)');
 });
 
-test('MM P1-D — sanitizeOperatorText caps at 256 CODEPOINTS, not UTF-16 code units', () => {
-  const runnerMod = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
-  // 257 copies of U+1F600 (astral plane — each codepoint occupies 2 UTF-16
-  // code units, so .length = 514). The cap must operate on codepoints.
-  const input = '\u{1F600}'.repeat(257);
-  const out = runnerMod.sanitizeOperatorText(input);
-  // Array.from counts codepoints — exactly 256 after the cap.
-  assert.equal(Array.from(out).length, 256,
-    `cap must apply at 256 codepoints (not 256 UTF-16 code units); got ${Array.from(out).length}`);
+// ============================================================================
+// DD P1-2 — persistAttestation lock spin bounded to MAX_RETRIES = 10
+// ============================================================================
+
+test('persistAttestation lock MAX_RETRIES is bounded to 10 (was 50)', () => {
+  // The lock body uses `const MAX_RETRIES = 10;` inside the persistAttestation
+  // function. Anchor on the function name itself rather than a slot-token
+  // comment ("DD P1-2") — those comments are operator-noise per the operator-facing rule
+  // and may be cleaned up by future rewrites, while the function name is
+  // a stable structural landmark.
+  const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
+  // Find the persistAttestation function and grab the next MAX_RETRIES
+  // assignment inside its body. Using a function-name-anchored regex makes
+  // the test resilient to any cosmetic comment churn around the bound.
+  const persistIdx = src.indexOf('function persistAttestation(');
+  assert.notEqual(persistIdx, -1, 'persistAttestation function must exist in bin/exceptd.js'); // allow-notEqual: refusal-pin (indexOf returns -1 for missing; structural existence check)
+  // Search within ~9000 chars of the function body — widened after the
+  // atomic-write refactor grew the writeAttestation closure (which precedes
+  // the force-overwrite lock block). Still tight enough to refuse a stray
+  // match from a sibling function.
+  const window = src.slice(persistIdx, persistIdx + 9000);
+  const match = window.match(/const MAX_RETRIES = (\d+);/);
+  assert.ok(match, 'persistAttestation body must declare a MAX_RETRIES bound');
+  assert.equal(Number(match[1]), 10,
+    'persistAttestation MAX_RETRIES must be bounded to 10 (was 50 pre-DD-P1-2); raising it back unblocks the unbounded-spin class');
 });
 
-test('MM P1-D — sanitizeOperatorText strips one-of-each named family AND the \\p{C} backstop-only U+007F', () => {
-  const runnerMod = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
-  // One codepoint from each named family the centralizing strip helper owns,
-  // plus U+007F (DEL) which the named-family regexes do NOT cover (C0_CTRL
-  // stops at U+001F) and only the \p{C} backstop removes. Interleaved with
-  // ASCII so a missed strip would leave a visible residue.
-  const F = String.fromCodePoint;
-  const input = 'a' + F(0x202D) + 'b' + F(0x0001) + 'c' + F(0x200B) +
-    'd' + F(0x0000) + 'e' + F(0x007F) + 'f';
-  const out = runnerMod.sanitizeOperatorText(input);
-  assert.equal(out, 'abcdef',
-    `every named-family codepoint AND the backstop-only U+007F must be stripped; got ${JSON.stringify(out)}`);
+test('DD P1-2: persistAttestation surfaces lock_contention:true sentinel', () => {
+  // Sanity check that the source still returns lock_contention:true on
+  // exhausted retries. We assert on the shape of the literal return object.
+  const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
+  assert.equal(
+    /lock_contention:\s*true/.test(src),
+    true,
+    'persistAttestation must signal lock_contention sentinel for callers',
+  );
+  assert.equal(
+    /LOCK_CONTENTION:/.test(src),
+    true,
+    'persistAttestation must prefix the error string with LOCK_CONTENTION: for grep-ability',
+  );
 });
 
-test('MM P1-D — sanitizeOperatorText returns null for non-string input', () => {
-  const runnerMod = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
-  assert.equal(runnerMod.sanitizeOperatorText(null), null);
-  assert.equal(runnerMod.sanitizeOperatorText(undefined), null);
-  assert.equal(runnerMod.sanitizeOperatorText(42), null);
-  assert.equal(runnerMod.sanitizeOperatorText({}), null);
-  assert.equal(runnerMod.sanitizeOperatorText([]), null);
+// ============================================================================
+// DD P1-3 — acquireLock PID-liveness reclaim
+// ============================================================================
+
+const playbookRunner = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
+
+// Capture the pre-suite EXCEPTD_LOCK_DIR ONCE, then restore on every test
+// exit. Pre-strengthening: makeLockDir() set process.env.EXCEPTD_LOCK_DIR
+// without ever restoring it, so the first DD P1-3 test in the file leaked
+// the value into every downstream test in the same node process. This
+// caused real-world flake on suite re-runs in watch mode and confused the
+// playbook-runner's lock-dir resolution in unrelated tests.
+const ORIGINAL_LOCK_DIR_ENV = process.env.EXCEPTD_LOCK_DIR;
+function restoreLockDirEnv() {
+  if (ORIGINAL_LOCK_DIR_ENV === undefined) delete process.env.EXCEPTD_LOCK_DIR;
+  else process.env.EXCEPTD_LOCK_DIR = ORIGINAL_LOCK_DIR_ENV;
+}
+function makeLockDir() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pb-locks-'));
+  process.env.EXCEPTD_LOCK_DIR = dir;
+  return dir;
+}
+
+test('DD P1-3: acquireLock reclaims a lockfile whose recorded PID is dead', () => {
+  try {
+    const dir = makeLockDir();
+    const playbookId = 'pb-stale-pid-' + process.pid;
+    // Pick a PID that almost certainly does not exist. PIDs above the usual
+    // pid_max are a safe choice on Linux/macOS; on Windows process.kill(pid, 0)
+    // returns ESRCH for non-existent PIDs as well.
+    const deadPid = 999999;
+    const lockFile = path.join(dir, `${playbookId}.lock`);
+    fs.writeFileSync(lockFile, JSON.stringify({ pid: deadPid, started_at: '2026-01-01T00:00:00Z', playbook: playbookId }, null, 2));
+
+    const result = playbookRunner._acquireLock(playbookId);
+    assert.equal(result, lockFile,
+      'acquireLock must reclaim the lockfile when the recorded PID is not alive');
+
+    // Lockfile should now be ours.
+    const reread = JSON.parse(fs.readFileSync(lockFile, 'utf8'));
+    assert.equal(reread.pid, process.pid);
+    playbookRunner._releaseLock(result);
+  } finally {
+    restoreLockDirEnv();
+  }
 });
 
-test('MM P1-D — buildEvidenceBundle with a bidi-forged operator routes through bundle_publisher_unclaimed',
-  { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem' },
-  () => {
-    // End-to-end: a library caller invokes buildEvidenceBundle indirectly
-    // via the CLI by passing a bidi-forged --operator. Even though the CLI
-    // refuses the input at validateOperator(), this test confirms that
-    // when the runner's sanitizeOperatorText sees a forged input from
-    // a direct library caller (the CLI guard is one layer; sanitizer is
-    // the library-side defence-in-depth), the result routes through the
-    // fallback path.
-    //
-    // We exercise the sanitizer directly + assert the fallback contract:
-    // a sanitised null operator value MUST NOT appear in a CSAF
-    // publisher.namespace position.
-    const runnerMod = require(path.join(ROOT, 'lib', 'playbook-runner.js'));
-    const forgedOperator = 'alice‮evilbob';
-    const clean = runnerMod.sanitizeOperatorText(forgedOperator);
-    // After the strip, the residue is plain ASCII — NOT a URL — so the
-    // publisher-namespace resolution path's `/^https?:\/\//i` regex will
-    // reject it AND it will fall through to the urn:exceptd:operator:unknown
-    // fallback. Confirm the residue is NOT URL-shaped.
-    assert.equal(typeof clean, 'string');
-    assert.ok(!/^https?:\/\//i.test(clean),
-      `bidi-stripped residue must not look URL-shaped (would falsely populate publisher.namespace); got ${JSON.stringify(clean)}`);
-    // The companion assertion — a sanitised publisher-namespace input that
-    // collapses to null routes through the fallback as expected.
-    const forgedNs = '‮​‌';
-    const cleanNs = runnerMod.sanitizeOperatorText(forgedNs);
-    assert.equal(cleanNs, null,
-      `all-Cf publisher-namespace input must collapse to null so the runner picks up the bundle_publisher_unclaimed fallback`);
+test('DD P1-3: acquireLock returns null when lockfile is held by a live PID', () => {
+  try {
+    const dir = makeLockDir();
+    const playbookId = 'pb-live-pid-' + process.pid;
+    const lockFile = path.join(dir, `${playbookId}.lock`);
+    // Record OUR pid as the holder — guaranteed to be alive.
+    fs.writeFileSync(lockFile, JSON.stringify({ pid: process.pid, started_at: '2026-01-01T00:00:00Z', playbook: playbookId }, null, 2));
+    // pidAlive checks pid !== process.pid, so use a sibling helper to fake a
+    // different live pid. process.ppid is alive (the test runner's parent) and
+    // is !== process.pid.
+    const livePid = process.ppid && process.ppid !== process.pid ? process.ppid : process.pid + 1;
+    fs.writeFileSync(lockFile, JSON.stringify({ pid: livePid, started_at: '2026-01-01T00:00:00Z', playbook: playbookId }, null, 2));
+
+    let isAlive = false;
+    try { process.kill(livePid, 0); isAlive = true; } catch {}
+    if (!isAlive) {
+      // Skip: couldn't find a reliably-live distinct PID in this environment.
+      return;
+    }
+    const result = playbookRunner._acquireLock(playbookId);
+    assert.equal(result, null,
+      'acquireLock must return null when the recorded PID is alive and not the caller');
+    // Lockfile contents unchanged (still the live holder).
+    const reread = JSON.parse(fs.readFileSync(lockFile, 'utf8'));
+    assert.equal(reread.pid, livePid);
+  } finally {
+    restoreLockDirEnv();
+  }
+});
+
+test('DD P1-3: acquireLockDiagnostic distinguishes held vs reclaimed', () => {
+  try {
+    const dir = makeLockDir();
+    const playbookId = 'pb-diag-' + process.pid;
+    const lockFile = path.join(dir, `${playbookId}.lock`);
+    fs.writeFileSync(lockFile, JSON.stringify({ pid: 999998, started_at: '2026-01-01T00:00:00Z', playbook: playbookId }, null, 2));
+
+    const diag = playbookRunner._acquireLockDiagnostic(playbookId);
+    assert.equal(diag.ok, true);
+    assert.equal(diag.path, lockFile);
+    assert.equal(diag.reclaimed_from_pid, 999998);
+    playbookRunner._releaseLock(diag.path);
+  } finally {
+    restoreLockDirEnv();
+  }
+});
+
+// ============================================================================
+// HH P1-1 / HH P1-2 — workflow top-level permissions blocks
+// ============================================================================
+
+// Minimal YAML key probe — workflows are well-formed by construction; we just
+// need to assert the top-level `permissions:` key exists. We do not require a
+// full YAML parser; the workflow files are line-oriented enough that an
+// anchored regex is reliable. The workflows-security.test.js suite already
+// asserts every action ref is SHA-pinned, etc., so this is a focused check.
+function topLevelPermissionsDeclared(yamlText) {
+  // A top-level key is anchored at column 0. The block can be either a
+  // mapping (multiline) or an inline mapping. Both forms satisfy
+  // Scorecard's TokenPermissionsID.
+  return /^permissions:\s*(?:#.*)?(?:\n[ \t]+\S|\s*\{[^}]*\}\s*$)/m.test(yamlText);
+}
+
+test('HH P1-1: release.yml declares a top-level permissions: block', () => {
+  const yamlText = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'release.yml'), 'utf8');
+  assert.equal(topLevelPermissionsDeclared(yamlText), true,
+    'release.yml must declare workflow-level permissions:');
+  // Specifically the minimum-scope default we shipped (contents: read).
+  assert.equal(/^permissions:\s*\n\s*contents:\s*read/m.test(yamlText), true,
+    'release.yml top-level permissions: must default to contents: read');
+});
+
+test('HH P1-2: refresh.yml declares a top-level permissions: block', () => {
+  const yamlText = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'refresh.yml'), 'utf8');
+  assert.equal(topLevelPermissionsDeclared(yamlText), true,
+    'refresh.yml must declare workflow-level permissions:');
+  assert.equal(/^permissions:\s*\n\s*contents:\s*read/m.test(yamlText), true,
+    'refresh.yml top-level permissions: must default to contents: read');
+});
+});
+
+
+// ---- routed from playbook-runner-v014 ----
+require("node:test").describe("playbook-runner-v014", () => {
+const __t = require("node:test"); const __env = Object.assign({}, process.env);
+__t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __env)) delete process.env[k]; Object.assign(process.env, __env);
+  const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+/**
+ * Tests for the v0.12.14 audit-driven fixes to lib/playbook-runner.js.
+ *
+ * Each top-level describe maps to one finding id (F1..F30). Tests assert the
+ * post-fix behavior; every assertion would FAIL against the v0.12.13 codebase
+ * — that's the contract for AGENTS.md Hard Rule #15 (diff coverage).
+ *
+ * Runs under: node --test --test-concurrency=1 tests/
+ */
+
+const test = require('node:test');
+const { describe, it, before } = test;
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+
+const RUNNER_PATH = path.resolve(__dirname, '..', 'lib', 'playbook-runner.js');
+const REAL_PLAYBOOK_DIR = path.resolve(__dirname, '..', 'data', 'playbooks');
+
+function freshRunner(playbookDir) {
+  if (playbookDir) process.env.EXCEPTD_PLAYBOOK_DIR = playbookDir;
+  else delete process.env.EXCEPTD_PLAYBOOK_DIR;
+  delete require.cache[RUNNER_PATH];
+  return require(RUNNER_PATH);
+}
+
+function tmpDir(label) {
+  return fs.mkdtempSync(path.join(os.tmpdir(), `exceptd-pb-v014-${label}-`));
+}
+
+function writePlaybook(dir, id, body) {
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, `${id}.json`), JSON.stringify(body, null, 2));
+}
+
+function synthPlaybook(overrides = {}) {
+  const base = {
+    _meta: {
+      id: 'synth-v014',
+      version: '0.1.0',
+      last_threat_review: '2026-05-13',
+      threat_currency_score: 95,
+      changelog: [{ version: '0.1.0', date: '2026-05-13', summary: 'v014 fixtures' }],
+      owner: '@blamejs/test',
+      air_gap_mode: false,
+      preconditions: [],
+      mutex: [],
+      feeds_into: []
+    },
+    domain: {
+      name: 'synth v014',
+      attack_class: 'kernel-lpe',
+      atlas_refs: [],
+      attack_refs: [],
+      cve_refs: [],
+      cwe_refs: [],
+      d3fend_refs: [],
+      frameworks_in_scope: ['nist-800-53']
+    },
+    phases: {
+      govern: { jurisdiction_obligations: [], theater_fingerprints: [], framework_context: {}, skill_preload: [] },
+      direct: { threat_context: 'x', rwep_threshold: { escalate: 90, monitor: 70, close: 30 }, framework_lag_declaration: 'x', skill_chain: [], token_budget: {} },
+      look: { artifacts: [], collection_scope: {}, environment_assumptions: [], fallback_if_unavailable: [] },
+      detect: { indicators: [], false_positive_profile: [], minimum_signal: { detected: 'x', inconclusive: 'x', not_detected: 'x' } },
+      analyze: { rwep_inputs: [], blast_radius_model: { scope_question: '?', scoring_rubric: [] }, compliance_theater_check: null, framework_gap_mapping: [], escalation_criteria: [] },
+      validate: { remediation_paths: [], validation_tests: [], residual_risk_statement: null, evidence_requirements: [], regression_trigger: [] },
+      close: { evidence_package: null, learning_loop: { enabled: false }, notification_actions: [], exception_generation: null, regression_schedule: null }
+    },
+    directives: [
+      { id: 'default', title: 'default directive', applies_to: { always: true } }
+    ]
+  };
+  return deepMerge(base, overrides);
+}
+
+function deepMerge(a, b) {
+  if (b === null || b === undefined) return a;
+  if (Array.isArray(b)) return b;
+  if (typeof b !== 'object') return b;
+  const out = { ...a };
+  for (const [k, v] of Object.entries(b)) {
+    out[k] = (k in out) ? deepMerge(out[k], v) : v;
+  }
+  return out;
+}
+
+const KERNEL_PREFLIGHT = { precondition_checks: { 'linux-platform': true, 'uname-available': true } };
+
+// ===========================================================================
+// F1 — evidence_hash includes submission digest
+// ===========================================================================
+
+describe('F1: evidence_hash binds the operator submission', () => {
+  let runner;
+  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+
+  it('two submissions producing the same classification produce DIFFERENT evidence_hashes', () => {
+    const subA = {
+      artifacts: { 'kernel-release': { value: '5.15.0-1058-generic', captured: true } },
+      signal_overrides: { 'kver-in-affected-range': 'hit' },
+      signals: { patch_available: false, blast_radius_score: 3, detection_classification: 'detected' }
+    };
+    const subB = {
+      artifacts: { 'kernel-release': { value: '6.1.0-different-version', captured: true } },
+      signal_overrides: { 'kver-in-affected-range': 'hit' },
+      signals: { patch_available: false, blast_radius_score: 3, detection_classification: 'detected' }
+    };
+    const a = runner.run('kernel', 'all-catalogued-kernel-cves', subA, KERNEL_PREFLIGHT);
+    const b = runner.run('kernel', 'all-catalogued-kernel-cves', subB, KERNEL_PREFLIGHT);
+    assert.equal(a.ok, true);
+    assert.equal(b.ok, true);
+    assert.equal(a.phases.detect.classification, b.phases.detect.classification);
+    assert.notEqual(a.evidence_hash, b.evidence_hash);
+    assert.notEqual(a.submission_digest, b.submission_digest);
   });
-})();
+
+  it('identical submissions produce IDENTICAL evidence_hashes (reattest contract)', () => {
+    const submission = {
+      artifacts: { 'kernel-release': { value: '5.15.0', captured: true } },
+      signal_overrides: { 'kver-in-affected-range': 'hit' },
+      signals: { detection_classification: 'detected' }
+    };
+    const a = runner.run('kernel', 'all-catalogued-kernel-cves', submission, KERNEL_PREFLIGHT);
+    const b = runner.run('kernel', 'all-catalogued-kernel-cves', submission, KERNEL_PREFLIGHT);
+    assert.equal(a.evidence_hash, b.evidence_hash);
+    assert.equal(a.submission_digest, b.submission_digest);
+  });
+
+  it('submission_digest is exposed as a top-level field for reattest correlation', () => {
+    const submission = { signal_overrides: { 'kver-in-affected-range': 'miss' } };
+    const r = runner.run('kernel', 'all-catalogued-kernel-cves', submission, KERNEL_PREFLIGHT);
+    assert.match(r.submission_digest, /^[0-9a-f]{64}$/);
+  });
+});
+
+// ===========================================================================
+// F2 + F9 — session_id is threaded; CSAF + OpenVEX bake the same id
+// ===========================================================================
+
+describe('F2/F9: one session_id threaded through CSAF + OpenVEX + close()', () => {
+  let runner;
+  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+
+  it('run().session_id matches CSAF tracking.id and OpenVEX @id', () => {
+    const result = runner.run('kernel', 'all-catalogued-kernel-cves', {
+      artifacts: { 'kernel-release': { value: '5.15.0', captured: true } },
+      signal_overrides: { 'kver-in-affected-range': 'hit' },
+      signals: {
+        livepatch_available_for_cve: true,
+        host_supports_livepatch: true,
+        detection_classification: 'detected',
+        _bundle_formats: ['openvex-0.2.0']
+      }
+    }, KERNEL_PREFLIGHT);
+    assert.equal(result.ok, true);
+    const sessionId = result.session_id;
+    assert.ok(sessionId, 'session_id present');
+    // CSAF tracking.id includes the session id, not a timestamp.
+    const csaf = result.phases.close.evidence_package.bundle_body;
+    assert.ok(csaf.document.tracking.id.includes(sessionId),
+      `CSAF tracking.id should include session_id (${sessionId}); got ${csaf.document.tracking.id}`);
+    // OpenVEX @id baked the session id.
+    const openvex = result.phases.close.evidence_package.bundles_by_format['openvex-0.2.0'];
+    assert.ok(openvex['@id'].includes(sessionId),
+      `OpenVEX @id should include session_id (${sessionId}); got ${openvex['@id']}`);
+  });
+});
+
+// ===========================================================================
+// F3 — indicator cve_ref surfaces in matched_cves
+// ===========================================================================
+
+describe('F3: indicator-level cve_ref correlates into matched_cves', () => {
+  let runner;
+  let dir;
+
+  before(() => {
+    dir = tmpDir('f3');
+    writePlaybook(dir, 'p', synthPlaybook({
+      domain: { cve_refs: [] }, // empty — F3 path must add it anyway
+      phases: {
+        detect: {
+          indicators: [{
+            id: 'kern-ind', type: 'process', confidence: 'high', deterministic: true,
+            atlas_ref: null, attack_ref: null,
+            cve_ref: 'CVE-2026-31431',
+            false_positive_checks_required: []
+          }]
+        }
+      }
+    }));
+    runner = freshRunner(dir);
+  });
+
+  it('indicator fires with cve_ref → matched_cves includes the CVE; correlated_via names the indicator', () => {
+    const det = runner.detect('p', 'default', { signal_overrides: { 'kern-ind': 'hit' } });
+    const an = runner.analyze('p', 'default', det);
+    const m = an.matched_cves.find(c => c.cve_id === 'CVE-2026-31431');
+    assert.ok(m, 'CVE pulled in via indicator cve_ref');
+    assert.ok(m.correlated_via.some(s => s.startsWith('indicator_cve_ref:kern-ind')));
+  });
+
+  it('dedupes — same CVE appearing in domain.cve_refs AND indicator.cve_ref shows once', () => {
+    fs.rmSync(dir, { recursive: true, force: true });
+    dir = tmpDir('f3-dup');
+    writePlaybook(dir, 'p', synthPlaybook({
+      domain: { cve_refs: ['CVE-2026-31431'] },
+      phases: {
+        detect: {
+          indicators: [{
+            id: 'kern-ind', type: 'process', confidence: 'high', deterministic: true,
+            atlas_ref: null, attack_ref: null,
+            cve_ref: 'CVE-2026-31431',
+            false_positive_checks_required: []
+          }]
+        }
+      }
+    }));
+    runner = freshRunner(dir);
+    const det = runner.detect('p', 'default', { signal_overrides: { 'kern-ind': 'hit' } });
+    const an = runner.analyze('p', 'default', det);
+    const occurrences = an.matched_cves.filter(c => c.cve_id === 'CVE-2026-31431');
+    assert.equal(occurrences.length, 1);
+  });
+});
+
+// ===========================================================================
+// F4 — finding.severity emitted
+// ===========================================================================
+
+describe('F4: finding shape carries severity derived from rwep_adjusted', () => {
+  let runner;
+  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+
+  it('rwep >= 80 → critical', () => {
+    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {
+      signal_overrides: { 'kver-in-affected-range': 'hit' }
+    });
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det, { blast_radius_score: 4 });
+    // run analyzeFindingShape via close()'s feedsCtx — the shape is exposed
+    // via the feeds_into chain context; assert through a roundtrip:
+    const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an);
+    const c = runner.close('kernel', 'all-catalogued-kernel-cves', an, v);
+    // close uses finding shape internally — re-derive it deterministically:
+    // Severity is also surfaced into ${severity} interpolation context. Use
+    // module export _interpolate via a probe template that taps `severity`.
+    const probe = runner._interpolate('${severity}', { ...{},
+      // recreate analyzeFindingShape output via small re-impl test —
+      // we instead assert end-to-end: high RWEP → critical severity.
+    });
+    // Direct path: severity is computed by an unexported helper. Reach it
+    // through the public surface: analyzeFindingShape feeds notification
+    // drafts. Add a minimal synthetic playbook that interpolates ${severity}
+    // and assert via close.notification_actions.draft_notification.
+    assert.ok(an.rwep.adjusted >= 80);
+    void probe;
+    void c;
+  });
+
+  it('synthetic notification template referencing ${severity} renders the derived value', () => {
+    const dir = tmpDir('f4');
+    writePlaybook(dir, 'p', synthPlaybook({
+      _meta: { feeds_into: [] },
+      phases: {
+        govern: { jurisdiction_obligations: [{ jurisdiction: 'TEST', regulation: 'X', obligation: 'test', window_hours: 24, clock_starts: 'detect_confirmed', evidence_required: [] }] },
+        close: {
+          notification_actions: [{
+            obligation_ref: 'TEST/X 24h',
+            recipient: 'regulator@test',
+            draft_notification: 'severity=${severity} rwep=${rwep_adjusted}',
+            evidence_attached: []
+          }]
+        }
+      }
+    }));
+    const local = freshRunner(dir);
+    const an = { matched_cves: [], rwep: { adjusted: 95, base: 80 }, framework_gap_mapping: [], blast_radius_score: 3 };
+    const v = local.validate('p', 'default', an);
+    const c = local.close('p', 'default', an, v);
+    const draft = c.notification_actions[0].draft_notification;
+    assert.match(draft, /severity=critical/);
+    assert.match(draft, /rwep=95/);
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+});
+
+// ===========================================================================
+// F5 — rwep_factor semantics (factor scaling)
+// ===========================================================================
+
+describe('F5: rwep_factor scales weight by matched CVE attribute', () => {
+  let runner;
+  let dir;
+  before(() => {
+    dir = tmpDir('f5');
+    writePlaybook(dir, 'p', synthPlaybook({
+      domain: { cve_refs: ['CVE-2026-31431'] },
+      phases: {
+        detect: {
+          indicators: [{
+            id: 'kern-ind', type: 'kernel', confidence: 'high', deterministic: true,
+            atlas_ref: null, attack_ref: 'T1068',
+            false_positive_checks_required: []
+          }]
+        },
+        analyze: {
+          rwep_inputs: [
+            { signal_id: 'kern-ind', rwep_factor: 'cisa_kev', weight: 20 },
+            { signal_id: 'kern-ind', rwep_factor: 'active_exploitation', weight: 25 },
+            { signal_id: 'kern-ind', rwep_factor: 'public_poc', weight: 15 }
+          ]
+        }
+      }
+    }));
+    runner = freshRunner(dir);
+  });
+
+  it('weights scale by CVE attribute; breakdown surfaces factor_scale', () => {
+    const det = runner.detect('p', 'default', {
+      signal_overrides: { 'kern-ind': 'hit' },
+      signals: { 'CVE-2026-31431': true } // force correlation
+    });
+    const an = runner.analyze('p', 'default', det, { 'CVE-2026-31431': true });
+    const cisaEntry = an.rwep.breakdown.find(b => b.rwep_factor === 'cisa_kev');
+    assert.equal(cisaEntry.fired, true);
+    assert.equal(cisaEntry.factor_scale, 1, 'CVE-2026-31431 is KEV-listed → full weight');
+    assert.equal(cisaEntry.weight_applied, 20);
+  });
+
+  it('active_exploitation ladder: confirmed=1.0', () => {
+    const det = runner.detect('p', 'default', { signal_overrides: { 'kern-ind': 'hit' } });
+    const an = runner.analyze('p', 'default', det, { 'CVE-2026-31431': true });
+    const ae = an.rwep.breakdown.find(b => b.rwep_factor === 'active_exploitation');
+    assert.equal(ae.factor_scale, 1.0);
+  });
+});
+
+// ===========================================================================
+// F6 — blast_radius_score validation
+// ===========================================================================
+
+describe('F6: blast_radius_score validation + signal annotation', () => {
+  let runner;
+  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+
+  it('no signal → null + blast_radius_signal=default', () => {
+    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det);
+    assert.equal(an.blast_radius_score, null);
+    assert.equal(an.blast_radius_signal, 'default');
+  });
+
+  it('in-range value → supplied', () => {
+    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det, { blast_radius_score: 3 });
+    assert.equal(an.blast_radius_score, 3);
+    assert.equal(an.blast_radius_signal, 'supplied');
+  });
+
+  it('out-of-range value → null + signal=rejected + runtime_error', () => {
+    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det, { blast_radius_score: 99 });
+    assert.equal(an.blast_radius_score, null);
+    assert.equal(an.blast_radius_signal, 'rejected');
+    assert.ok(an.runtime_errors.some(e => e.kind === 'blast_radius_invalid'));
+  });
+});
+
+// ===========================================================================
+// F7 — corrupt cve-catalog.json degraded path
+// ===========================================================================
+
+describe('F7: corrupt catalog yields structured blocked_by, not crash', () => {
+  it('module-load catalog corruption surfaces as blocked_by:catalog_corrupt at run()', () => {
+    // The shipped catalog is fine; we exercise the degraded path by simulating
+    // the module-level _xrefLoadError via env-driven indirection. The cleanest
+    // path: load the runner against a synthetic DATA_DIR pointing at a
+    // tempdir containing a broken cve-catalog.json.
+    const tmp = tmpDir('f7');
+    const dataDir = path.join(tmp, 'data');
+    fs.mkdirSync(dataDir, { recursive: true });
+    fs.writeFileSync(path.join(dataDir, 'cve-catalog.json'), '{ not valid json');
+    fs.mkdirSync(path.join(dataDir, 'playbooks'));
+    writePlaybook(path.join(dataDir, 'playbooks'), 'p', synthPlaybook({}));
+    const prevData = process.env.EXCEPTD_DATA_DIR;
+    const prevPb = process.env.EXCEPTD_PLAYBOOK_DIR;
+    process.env.EXCEPTD_DATA_DIR = dataDir;
+    process.env.EXCEPTD_PLAYBOOK_DIR = path.join(dataDir, 'playbooks');
+    // Clear both runner + cross-ref-api caches so the new DATA_DIR takes.
+    delete require.cache[RUNNER_PATH];
+    delete require.cache[path.resolve(__dirname, '..', 'lib', 'cross-ref-api.js')];
+    try {
+      const local = require(RUNNER_PATH);
+      const r = local.run('p', 'default', {});
+      assert.equal(r.ok, false);
+      assert.equal(r.blocked_by, 'catalog_corrupt');
+      // Pair the field-presence assertion with a type + non-empty check
+      // (field-present-not-populated regression class).
+      assert.equal(typeof r.error, 'string');
+      assert.ok(r.error.length > 0, 'error string must be non-empty');
+    } finally {
+      if (prevData === undefined) delete process.env.EXCEPTD_DATA_DIR;
+      else process.env.EXCEPTD_DATA_DIR = prevData;
+      if (prevPb === undefined) delete process.env.EXCEPTD_PLAYBOOK_DIR;
+      else process.env.EXCEPTD_PLAYBOOK_DIR = prevPb;
+      delete require.cache[RUNNER_PATH];
+      delete require.cache[path.resolve(__dirname, '..', 'lib', 'cross-ref-api.js')];
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+});
+
+// ===========================================================================
+// F8 — unknown directive_id structured error
+// ===========================================================================
+
+describe('F8: unknown directive_id returns structured error', () => {
+  let runner;
+  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+
+  it('returns ok:false + blocked_by:directive_not_found + valid_directives list', () => {
+    const r = runner.run('kernel', 'does-not-exist-directive', {}, KERNEL_PREFLIGHT);
+    assert.equal(r.ok, false);
+    assert.equal(r.blocked_by, 'directive_not_found');
+    assert.ok(Array.isArray(r.valid_directives));
+    assert.ok(r.valid_directives.length > 0);
+  });
+});
+
+// ===========================================================================
+// F10 — extended regression interval parsing
+// ===========================================================================
+
+describe('F10: regression interval parser honors wk/mo/yr/on_event', () => {
+  let runner;
+  let dir;
+  before(() => {
+    dir = tmpDir('f10');
+    writePlaybook(dir, 'p', synthPlaybook({
+      phases: {
+        validate: {
+          regression_trigger: [
+            { interval: '7d', trigger: 'weekly' },
+            { interval: '2wk', trigger: 'biweekly' },
+            { interval: '1mo', trigger: 'monthly' },
+            { interval: '1yr', trigger: 'annual' },
+            { interval: 'on_event', trigger: 'release' },
+            { interval: '42xyz', trigger: 'bogus' }
+          ]
+        }
+      }
+    }));
+    runner = freshRunner(dir);
+  });
+
+  it('next_run picks the soonest calendar trigger (7d beats 2wk/1mo/1yr)', () => {
+    const v = runner.validate('p', 'default', { matched_cves: [], rwep: { adjusted: 0 } });
+    assert.ok(v.regression_next_run, 'next_run resolved');
+    const next = new Date(v.regression_next_run);
+    const sevenDays = Date.now() + 7 * 24 * 3600 * 1000;
+    assert.ok(Math.abs(next.getTime() - sevenDays) < 5 * 60 * 1000, 'next_run ~7 days away');
+  });
+
+  it('event triggers surface in regression_event_triggers', () => {
+    const v = runner.validate('p', 'default', { matched_cves: [], rwep: { adjusted: 0 } });
+    assert.ok(Array.isArray(v.regression_event_triggers));
+    assert.ok(v.regression_event_triggers.some(t => t.interval === 'on_event'));
+  });
+
+  it('unparseable intervals surface in regression_unparseable_triggers', () => {
+    const v = runner.validate('p', 'default', { matched_cves: [], rwep: { adjusted: 0 } });
+    assert.ok(Array.isArray(v.regression_unparseable_triggers));
+    assert.ok(v.regression_unparseable_triggers.some(t => t.interval === '42xyz'));
+  });
+});
+
+// ===========================================================================
+// F12 — jurisdiction_obligations sorted by window_hours
+// ===========================================================================
+
+describe('F12: jurisdiction_obligations sorted ascending by window_hours', () => {
+  let runner;
+  let dir;
+  before(() => {
+    dir = tmpDir('f12');
+    writePlaybook(dir, 'p', synthPlaybook({
+      phases: {
+        govern: {
+          jurisdiction_obligations: [
+            { jurisdiction: 'EU', regulation: 'GDPR', window_hours: 72, clock_starts: 'detect_confirmed' },
+            { jurisdiction: 'EU', regulation: 'DORA', window_hours: 4, clock_starts: 'detect_confirmed' },
+            { jurisdiction: 'EU', regulation: 'NIS2', window_hours: 24, clock_starts: 'detect_confirmed' }
+          ]
+        }
+      }
+    }));
+    runner = freshRunner(dir);
+  });
+
+  it('govern() returns obligations sorted by window_hours ASC', () => {
+    const g = runner.govern('p', 'default');
+    const windows = g.jurisdiction_obligations.map(o => o.window_hours);
+    assert.deepEqual(windows, [4, 24, 72]);
+  });
+});
+
+// ===========================================================================
+// F15 — signal_overrides type validation
+// ===========================================================================
+
+describe('F15: non-object signal_overrides rejected (not character-spread)', () => {
+  let runner;
+  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+
+  it('string signal_overrides is rejected and runtime_error surfaced', () => {
+    const r = runner.run('kernel', 'all-catalogued-kernel-cves', {
+      signal_overrides: 'foo'
+    }, KERNEL_PREFLIGHT);
+    assert.equal(r.ok, true);
+    // The character-spread bug would create {0:'f', 1:'o', 2:'o'} which leaks
+    // into detect's signals_received. Post-fix it's empty.
+    assert.deepEqual(r.phases.detect.signals_received.filter(k => /^\d+$/.test(k)), []);
+  });
+});
+
+// ===========================================================================
+// F16 — unknown bundle format does not leak analyze + validate
+// ===========================================================================
+
+describe('F16: unknown bundle format returns shape-only fallback', () => {
+  let runner;
+  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+
+  it('unknown format → {format, note, supported_formats[]} without analyze/validate', () => {
+    const result = runner.run('kernel', 'all-catalogued-kernel-cves', {
+      signal_overrides: { 'kver-in-affected-range': 'miss' },
+      signals: { _bundle_formats: ['totally-unknown-format'] }
+    }, KERNEL_PREFLIGHT);
+    assert.equal(result.ok, true);
+    const fallback = result.phases.close.evidence_package.bundles_by_format['totally-unknown-format'];
+    assert.equal(fallback.note, 'Unknown format');
+    assert.ok(Array.isArray(fallback.supported_formats));
+    assert.equal(fallback.analyze, undefined, 'analyze NOT leaked');
+    assert.equal(fallback.validate, undefined, 'validate NOT leaked');
+  });
+});
+
+// ===========================================================================
+// F17 — VEX fixed vs not_affected split
+// ===========================================================================
+
+describe('F17: vexFilterFromDoc splits fixed vs not_affected', () => {
+  let runner;
+  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+
+  it('OpenVEX fixed → goes into .fixed set; not_affected → into the main set', () => {
+    const doc = {
+      statements: [
+        { vulnerability: { name: 'CVE-2026-00001' }, status: 'not_affected' },
+        { vulnerability: { name: 'CVE-2026-00002' }, status: 'fixed' }
+      ]
+    };
+    const set = runner.vexFilterFromDoc(doc);
+    assert.ok(set.has('CVE-2026-00001'), 'not_affected → drop set');
+    assert.ok(!set.has('CVE-2026-00002'), 'fixed NOT in drop set');
+    assert.ok(set.fixed.has('CVE-2026-00002'), 'fixed → .fixed sidecar');
+  });
+
+  it('CycloneDX resolved → fixed sidecar; not_affected/false_positive → drop', () => {
+    const doc = {
+      vulnerabilities: [
+        { id: 'CVE-2026-00003', analysis: { state: 'not_affected' } },
+        { id: 'CVE-2026-00004', analysis: { state: 'false_positive' } },
+        { id: 'CVE-2026-00005', analysis: { state: 'resolved' } }
+      ]
+    };
+    const set = runner.vexFilterFromDoc(doc);
+    assert.ok(set.has('CVE-2026-00003'));
+    assert.ok(set.has('CVE-2026-00004'));
+    assert.ok(!set.has('CVE-2026-00005'));
+    assert.ok(set.fixed.has('CVE-2026-00005'));
+  });
+});
+
+// ===========================================================================
+// F18 — _rwep_base_strategy emitted
+// ===========================================================================
+
+describe('F18: rwep base strategy is observable', () => {
+  let runner;
+  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+
+  it("rwep object includes _rwep_base_strategy: 'max'", () => {
+    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det);
+    assert.equal(an.rwep._rwep_base_strategy, 'max');
+  });
+});
+
+// ===========================================================================
+// F19 — matched_cve_ids_array sibling
+// ===========================================================================
+
+describe('F19: matched_cve_ids has an array sibling', () => {
+  let runner;
+  let dir;
+  before(() => {
+    // Use a synthetic playbook that interpolates the array shape into a
+    // notification draft via the finding context.
+    dir = tmpDir('f19');
+    writePlaybook(dir, 'p', synthPlaybook({
+      phases: {
+        govern: { jurisdiction_obligations: [{ jurisdiction: 'X', regulation: 'Y', obligation: 't', window_hours: 24, clock_starts: 'detect_confirmed' }] },
+        close: { notification_actions: [{ obligation_ref: 'X/Y 24h', recipient: 'a@b', draft_notification: 'ids=${matched_cve_ids} count=${matched_cve_count}', evidence_attached: [] }] }
+      }
+    }));
+    runner = freshRunner(dir);
+  });
+
+  it('notification interpolation has both joined string and array sibling available', () => {
+    const an = { matched_cves: [{ cve_id: 'CVE-2026-31431' }, { cve_id: 'CVE-2026-43284' }], rwep: { adjusted: 50 }, framework_gap_mapping: [], blast_radius_score: 0 };
+    const v = runner.validate('p', 'default', an);
+    const c = runner.close('p', 'default', an, v);
+    const draft = c.notification_actions[0].draft_notification;
+    assert.match(draft, /ids=CVE-2026-31431, CVE-2026-43284/);
+    assert.match(draft, /count=2/);
+  });
+});
+
+// ===========================================================================
+// F20 — runtime_errors includes catalog_read kinds
+// ===========================================================================
+
+describe('F20: runtime_errors collects diverse error kinds', () => {
+  let runner;
+  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+
+  it('runtime_errors is an array on every analyze result (may be empty)', () => {
+    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det);
+    assert.ok(Array.isArray(an.runtime_errors));
+  });
+
+  it('blast_radius_invalid runtime_error surfaces with kind annotation', () => {
+    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det, { blast_radius_score: -5 });
+    assert.ok(an.runtime_errors.some(e => e.kind === 'blast_radius_invalid'));
+  });
+});
+
+// ===========================================================================
+// F21 — feeds_into auto_chained false
+// ===========================================================================
+
+describe('F21: feeds_into_auto_chained is observable + false', () => {
+  let runner;
+  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+
+  it('close().feeds_into_auto_chained === false', () => {
+    const result = runner.run('kernel', 'all-catalogued-kernel-cves', {}, KERNEL_PREFLIGHT);
+    assert.equal(result.phases.close.feeds_into_auto_chained, false);
+  });
+});
+
+// ===========================================================================
+// F22 — precondition_check_source annotation
+// ===========================================================================
+
+describe('F22: precondition_check_source surfaces merge provenance', () => {
+  let runner;
+  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+
+  it('a pc value supplied only via runOpts is tagged runOpts', () => {
+    const r = runner.run('kernel', 'all-catalogued-kernel-cves', {}, KERNEL_PREFLIGHT);
+    assert.equal(r.ok, true);
+    assert.equal(r.precondition_check_source['linux-platform'], 'runOpts');
+  });
+
+  it('a pc value supplied via both submission and runOpts is tagged merged', () => {
+    const r = runner.run('kernel', 'all-catalogued-kernel-cves', {
+      precondition_checks: { 'linux-platform': true }
+    }, KERNEL_PREFLIGHT);
+    assert.equal(r.precondition_check_source['linux-platform'], 'merged');
+  });
+});
+
+// ===========================================================================
+// F24 — theater_verdict allowlist
+// ===========================================================================
+
+describe('F24: theater_verdict validated against allowlist', () => {
+  let runner;
+  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+
+  it('arbitrary string is rejected; runtime_error surfaced; verdict falls back', () => {
+    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det, { theater_verdict: 'NOT_A_REAL_VERDICT' });
+    assert.notEqual(an.compliance_theater_check.verdict, 'NOT_A_REAL_VERDICT');
+    assert.ok(an.runtime_errors.some(e => e.kind === 'theater_verdict_invalid'));
+  });
+
+  it("'present' is accepted as a valid verdict", () => {
+    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det, { theater_verdict: 'present' });
+    assert.equal(an.compliance_theater_check.verdict, 'present');
+  });
+});
+
+// ===========================================================================
+// F25 — verdict_text renders for 'present' too
+// ===========================================================================
+
+describe('F25: verdict_text renders for theater AND present verdicts', () => {
+  let runner;
+  let dir;
+  before(() => {
+    dir = tmpDir('f25');
+    writePlaybook(dir, 'p', synthPlaybook({
+      phases: {
+        analyze: {
+          compliance_theater_check: {
+            claim: 'compliance claim',
+            audit_evidence: 'evidence',
+            reality_test: 'test',
+            theater_verdict_if_gap: 'gap-language'
+          }
+        }
+      }
+    }));
+    runner = freshRunner(dir);
+  });
+
+  it("verdict='present' renders verdict_text", () => {
+    const det = runner.detect('p', 'default', {});
+    const an = runner.analyze('p', 'default', det, { theater_verdict: 'present' });
+    assert.equal(an.compliance_theater_check.verdict_text, 'gap-language');
+  });
+
+  it("verdict='theater' renders verdict_text (regression check)", () => {
+    const det = runner.detect('p', 'default', {});
+    const an = runner.analyze('p', 'default', det, { theater_verdict: 'theater' });
+    assert.equal(an.compliance_theater_check.verdict_text, 'gap-language');
+  });
+
+  it("verdict='clear' does NOT render verdict_text", () => {
+    const det = runner.detect('p', 'default', {});
+    const an = runner.analyze('p', 'default', det, { theater_verdict: 'clear' });
+    assert.equal(an.compliance_theater_check.verdict_text, null);
+  });
+});
+
+// ===========================================================================
+// F28 — lockDir uses stable global path
+// ===========================================================================
+
+describe('F28: lockDir lives in a stable global path (not process.cwd)', () => {
+  it('EXCEPTD_LOCK_DIR override is honored', () => {
+    const tmp = tmpDir('f28-lockdir');
+    const prev = process.env.EXCEPTD_LOCK_DIR;
+    process.env.EXCEPTD_LOCK_DIR = tmp;
+    // Use a synthetic playbook so preflight gates don't depend on host OS.
+    const pbDir = tmpDir('f28-pb');
+    writePlaybook(pbDir, 'p', synthPlaybook({}));
+    process.env.EXCEPTD_PLAYBOOK_DIR = pbDir;
+    delete require.cache[RUNNER_PATH];
+    const local = require(RUNNER_PATH);
+    try {
+      const r = local.run('p', 'default', {});
+      assert.equal(r.ok, true);
+      // After the run completes the lock file is unlinked but the dir
+      // remains. Existence proves lockDir() resolved to our override path
+      // (not process.cwd() + .exceptd/locks).
+      assert.ok(fs.existsSync(tmp), 'lock dir touched');
+    } finally {
+      if (prev === undefined) delete process.env.EXCEPTD_LOCK_DIR;
+      else process.env.EXCEPTD_LOCK_DIR = prev;
+      delete process.env.EXCEPTD_PLAYBOOK_DIR;
+      delete require.cache[RUNNER_PATH];
+      fs.rmSync(tmp, { recursive: true, force: true });
+      fs.rmSync(pbDir, { recursive: true, force: true });
+    }
+  });
+});
+
+// ===========================================================================
+// lockDir prefers the per-user home over the shared OS tempdir
+// ===========================================================================
+//
+// The mutex lockfiles previously rooted at os.tmpdir()/exceptd-locks-<plat>.
+// A per-user dir (EXCEPTD_HOME || ~/.exceptd) is both safer (not the
+// world-writable shared tempdir a preplant/symlink attack targets) and a
+// better fit for lockDir's cross-cwd stable-lock goal — and it stops tripping
+// the os-temp-file scanner on the 'wx' write sites. EXCEPTD_LOCK_DIR still
+// wins outright; a non-writable home falls back to os.tmpdir() so locks never
+// silently no-op.
+
+describe('lockDir: per-user home preference with tmpdir fallback', () => {
+  function withEnv(overrides, fn) {
+    const keys = ['EXCEPTD_LOCK_DIR', 'EXCEPTD_HOME'];
+    const prev = {};
+    for (const k of keys) prev[k] = process.env[k];
+    for (const k of keys) delete process.env[k];
+    for (const [k, v] of Object.entries(overrides)) process.env[k] = v;
+    try { return fn(); }
+    finally {
+      for (const k of keys) {
+        if (prev[k] === undefined) delete process.env[k];
+        else process.env[k] = prev[k];
+      }
+    }
+  }
+
+  it('default (no EXCEPTD_LOCK_DIR) roots the lockfile under EXCEPTD_HOME/locks, NOT os.tmpdir()', () => {
+    const home = tmpDir('lockdir-home');
+    try {
+      const p = withEnv({ EXCEPTD_HOME: home }, () => {
+        const runner = freshRunner();
+        return runner._lockFilePath('kernel');
+      });
+      assert.equal(typeof p, 'string');
+      assert.equal(p.startsWith(path.join(home, 'locks')), true,
+        'lockfile must be rooted under EXCEPTD_HOME/locks');
+      // It must NOT be under the bare shared OS tempdir (the os-temp-file
+      // scanner source). Guard against false coincidence when tmpDir itself
+      // lives under os.tmpdir(): assert the lockfile is under home, which is
+      // the authoritative check.
+      assert.equal(p.startsWith(path.join(os.tmpdir(), 'exceptd-locks-')), false,
+        'lockfile must not be rooted at the shared os.tmpdir()/exceptd-locks dir');
+    } finally {
+      fs.rmSync(home, { recursive: true, force: true });
+      delete require.cache[RUNNER_PATH];
+    }
+  });
+
+  it('EXCEPTD_LOCK_DIR override still wins over the per-user home', () => {
+    const override = tmpDir('lockdir-override');
+    const home = tmpDir('lockdir-home2');
+    try {
+      const p = withEnv({ EXCEPTD_LOCK_DIR: override, EXCEPTD_HOME: home }, () => {
+        const runner = freshRunner();
+        return runner._lockFilePath('kernel');
+      });
+      assert.equal(p, path.join(override, 'kernel.lock'));
+    } finally {
+      fs.rmSync(override, { recursive: true, force: true });
+      fs.rmSync(home, { recursive: true, force: true });
+      delete require.cache[RUNNER_PATH];
+    }
+  });
+
+  it('non-writable EXCEPTD_HOME falls back to os.tmpdir() and the lock still acquires', () => {
+    // Point EXCEPTD_HOME at a path *under a regular file* so mkdirSync fails
+    // on every platform (can't create a directory beneath a file).
+    const blockerDir = tmpDir('lockdir-blocker');
+    const blockerFile = path.join(blockerDir, 'blocker.txt');
+    fs.writeFileSync(blockerFile, 'x');
+    const badHome = path.join(blockerFile, 'cannot-mkdir-under-a-file');
+    try {
+      const { p, lock } = withEnv({ EXCEPTD_HOME: badHome }, () => {
+        const runner = freshRunner();
+        const pp = runner._lockFilePath('kernel');
+        const ll = runner._acquireLock('kernel');
+        if (ll) runner._releaseLock(ll);
+        return { p: pp, lock: ll };
+      });
+      assert.equal(p.startsWith(path.join(os.tmpdir(), 'exceptd-locks-')), true,
+        'a non-writable home must fall back to os.tmpdir()/exceptd-locks');
+      assert.equal(typeof lock, 'string',
+        'the lock must still acquire via the tmpdir fallback (locks never silently no-op)');
+    } finally {
+      fs.rmSync(blockerDir, { recursive: true, force: true });
+      delete require.cache[RUNNER_PATH];
+    }
+  });
+
+  it('cross-process mutex refusal still fires under the per-user dir (reentrancy held)', () => {
+    const home = tmpDir('lockdir-home3');
+    try {
+      const result = withEnv({ EXCEPTD_HOME: home }, () => {
+        const runner = freshRunner();
+        const first = runner._acquireLock('kernel');
+        // A fresh same-process lockfile is legitimate reentrancy: a second
+        // acquire must be refused (null) while the first hold is live.
+        const second = runner._acquireLock('kernel');
+        const diag = runner._acquireLockDiagnostic('kernel');
+        if (first) runner._releaseLock(first);
+        return { first, second, diag };
+      });
+      assert.equal(typeof result.first, 'string', 'first acquire succeeds');
+      assert.equal(result.second, null, 'second acquire is refused while held');
+      assert.equal(result.diag.ok, false);
+      assert.equal(result.diag.reason, 'held_by_self');
+    } finally {
+      fs.rmSync(home, { recursive: true, force: true });
+      delete require.cache[RUNNER_PATH];
+    }
+  });
+});
+
+// ===========================================================================
+// F30 — regression_next_run_reason annotation
+// ===========================================================================
+
+describe('F30: regression_next_run_reason annotates why null', () => {
+  let runner;
+  let dir;
+  before(() => {
+    dir = tmpDir('f30');
+    writePlaybook(dir, 'no-trig', synthPlaybook({
+      phases: { validate: { regression_trigger: [] } }
+    }));
+    writePlaybook(dir, 'event-only', synthPlaybook({
+      phases: { validate: { regression_trigger: [{ interval: 'on_event', trigger: 'release' }] } }
+    }));
+    runner = freshRunner(dir);
+  });
+
+  it("empty triggers → reason='no_regression_triggers_declared'", () => {
+    const v = runner.validate('no-trig', 'default', { matched_cves: [], rwep: { adjusted: 0 } });
+    assert.equal(v.regression_next_run, null);
+    assert.equal(v.regression_next_run_reason, 'no_regression_triggers_declared');
+  });
+
+  it("all event-driven triggers → reason='all_triggers_event_driven'", () => {
+    const v = runner.validate('event-only', 'default', { matched_cves: [], rwep: { adjusted: 0 } });
+    assert.equal(v.regression_next_run, null);
+    assert.equal(v.regression_next_run_reason, 'all_triggers_event_driven');
+  });
+});
+});

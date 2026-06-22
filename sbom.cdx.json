@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:1108a87a-c4a8-4392-95cc-5e7822cbd83e",
+  "serialNumber": "urn:uuid:1aec2a71-254f-4ac5-8bba-3f8616d1f6b6",
   "version": 1,
   "metadata": {
-    "timestamp": "2035-01-21T15:21:30.000Z",
+    "timestamp": "2040-04-24T20:02:57.000Z",
     "tools": [
       {
         "vendor": "blamejs",
@@ -29,7 +29,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "5d3a3f59c08dd96e37042ce1334ffe559ceadbf806fc167214176c6ca2dba82f"
+          "content": "3f43f9756b9212312eb9b6b79bef91f987d868aeae9edd3fbc5da5bd3fd04af8"
         }
       ],
       "externalReferences": [
@@ -2446,6 +2446,21 @@
         {
           "alg": "SHA3-512",
           "content": "d5f544097b7aae12f90b8176c4e43354cbb2b41fc72fb8d302ecced7d8246cd4f694c36fd6aa47f62d543b4a9965e7a31de460845147ca69dca21f6176902034"
+        }
+      ]
+    },
+    {
+      "bom-ref": "file:scripts/check-test-subjects.js",
+      "type": "file",
+      "name": "scripts/check-test-subjects.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "cad423cac9e0b81c4b5342f8420bf5a24b27e1813d501743779ebfc6816213ec"
+        },
+        {
+          "alg": "SHA3-512",
+          "content": "9e0b3c309b6a997adb16d9f98b50904a5abdb89d28fb79f4194f9ac4ba820572cdd6037c8ffd30d771864e5a0c7ddcf01f738bd29cca9b3ffe058ac2853c2c0f"
         }
       ]
     },

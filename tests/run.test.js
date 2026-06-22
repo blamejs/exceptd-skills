@@ -1277,3 +1277,1473 @@ test.describe('attestation-signature-roundtrip (run stdin slice)', () => {
       'run must not be killed by the 10s timeout — the empty-pipe path must complete promptly');
   });
 });
+
+
+// ---- routed from bundle-schema-conformance ----
+;(() => {
+/**
+ * Regression suite for strict CSAF 2.0 / SARIF 2.1.0 schema-conformance fixes
+ * (validated against the published schemas / profile mandatory tests):
+ *
+ *   CSAF 6.1.27.5 — every /vulnerabilities[] item carries `notes` (the
+ *     CVE-keyed entries previously omitted it).
+ *   CSAF 6.1.27.3 / §4.3 — a csaf_informational_advisory carries NO
+ *     /vulnerabilities and no /product_tree.
+ *   CSAF 6.1.27.2 — a csaf_informational_advisory carries /document/references
+ *     with an external item.
+ *   CSAF 6.1.16 + 6.1.30 — tracking.version equals the last revision_history
+ *     number, and both use the same (semantic) versioning scheme.
+ *   SARIF §3.27.9 — a result with kind:"informational" has level:"none"
+ *     (not "note").
+ *   SARIF artifactLocation.uri is a URI reference: a submission-supplied
+ *     Windows backslash path is normalized to forward slashes.
+ *
+ * Discipline: exact field assertions tied to the cited rule.
+ */
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const { makeSuiteHome, makeCli, tryJson } = require("./_helpers/cli");
+
+const cli = makeCli(makeSuiteHome("exceptd-conformance-"));
+const SBOM_CVE = JSON.stringify({ signal_overrides: { "package-matches-catalogued-cve": "hit" } });
+
+test("CSAF: every CVE-keyed vulnerability carries notes (6.1.27.5)", () => {
+  const doc = tryJson(cli(["run", "sbom", "--evidence", "-", "--format", "csaf-2.0", "--json"], { input: SBOM_CVE }).stdout);
+  assert.equal(doc.document.category, "csaf_security_advisory");
+  const cveVulns = (doc.vulnerabilities || []).filter(v => v.cve);
+  assert.ok(cveVulns.length >= 1, "expected at least one CVE-keyed vulnerability");
+  for (const v of cveVulns) {
+    assert.ok(Array.isArray(v.notes) && v.notes.length >= 1, `CVE vuln ${v.cve} must carry notes`);
+    assert.equal(typeof v.notes[0].text, "string");
+  }
+});
+
+test("CSAF: tracking.version equals the last revision number, homogeneous versioning (6.1.16 + 6.1.30)", () => {
+  const doc = tryJson(cli(["run", "sbom", "--evidence", "-", "--format", "csaf-2.0", "--json"], { input: SBOM_CVE }).stdout);
+  const t = doc.document.tracking;
+  const last = t.revision_history[t.revision_history.length - 1];
+  assert.equal(t.version, last.number, "tracking.version must equal the last revision_history number");
+  // Both must be the same scheme: semantic versioning (contains a dot) here.
+  const isSemver = (s) => /^\d+\.\d+\.\d+/.test(s);
+  assert.equal(isSemver(t.version), isSemver(last.number), "version and revision number must share a versioning scheme");
+  assert.ok(isSemver(t.version), "this emitter uses semantic versioning for both");
+});
+
+test("CSAF: an informational advisory omits vulnerabilities + product_tree and carries an external reference", () => {
+  const doc = tryJson(cli(["run", "crypto", "--evidence", "-", "--format", "csaf-2.0", "--json"], { input: '{"precondition_checks":{"linux-platform":true}}' }).stdout);
+  assert.equal(doc.document.category, "csaf_informational_advisory");
+  assert.ok(!("vulnerabilities" in doc), "informational advisory must NOT carry /vulnerabilities (6.1.27.3)");
+  assert.ok(!("product_tree" in doc), "informational advisory must NOT carry /product_tree (§4.3)");
+  assert.ok(Array.isArray(doc.document.references) && doc.document.references.length >= 1, "must carry /document/references (6.1.27.2)");
+  assert.ok(doc.document.references.some(r => r.category === "external"), "must include an external reference");
+});
+
+test("SARIF: a kind:informational result has level:none, not note (§3.27.9)", () => {
+  const sarif = tryJson(cli(["run", "sbom", "--evidence", "-", "--format", "sarif", "--json"], { input: SBOM_CVE }).stdout);
+  const informational = (sarif.runs?.[0]?.results || []).filter(r => r.kind === "informational");
+  assert.ok(informational.length >= 1, "expected at least one informational (framework-gap) result");
+  for (const r of informational) {
+    assert.equal(r.level, "none", "kind:informational requires level:none, never note/warning");
+  }
+});
+
+test("SARIF: a submission-supplied backslash evidence path normalizes to a forward-slash URI", () => {
+  const bs = String.fromCharCode(92);
+  const sub = JSON.stringify({
+    observations: { w: { captured: true, indicator: "publish-workflow-uses-static-token", result: "hit" } },
+    evidence_locations: { "publish-workflow-uses-static-token": [["a", "b", "c.env"].join(bs), { uri: ["d", "e.txt"].join(bs), startLine: 2 }] },
+  });
+  const sarif = tryJson(cli(["run", "library-author", "--evidence", "-", "--format", "sarif", "--json"], { input: sub }).stdout);
+  const uris = (sarif.runs?.[0]?.results || []).flatMap(r => (r.locations || []).map(l => l.physicalLocation?.artifactLocation?.uri));
+  assert.ok(uris.length >= 1, "expected located results");
+  for (const u of uris) {
+    assert.ok(!u.includes(bs), `SARIF uri must use forward slashes (RFC 3986); got ${u}`);
+  }
+  assert.ok(uris.includes("a/b/c.env"), "the backslash string path must normalize to a/b/c.env");
+});
+})();
+
+
+// ---- routed from collector-evidence-locations ----
+;(() => {
+/**
+ * tests/collector-evidence-locations.test.js
+ *
+ * Pins the code-scope collectors' per-indicator evidence-location output:
+ *   - A collector that knows WHICH file triggered an indicator surfaces it
+ *     as a top-level `evidence_locations: { "<indicator-id>": [ {uri, ...} ] }`
+ *     keyed by the same indicator id it flips to "hit".
+ *   - The runner threads those onto the firing indicator so SARIF
+ *     results[].locations gets a real file location instead of the coarse
+ *     playbook-source fallback.
+ *
+ * citation-hygiene is the most deterministic wired collector: a fabricated
+ * CVE id (e.g. CVE-2024-XXXX) flips `fabricated-cve-id` to "hit" from a
+ * single fixture file with no catalog dependency.
+ */
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const os = require("node:os");
+const { spawnSync } = require("node:child_process");
+
+const ROOT = path.join(__dirname, "..");
+const CLI = path.join(ROOT, "bin", "exceptd.js");
+
+function cli(args, opts = {}) {
+  return spawnSync(process.execPath, [CLI, ...args], {
+    encoding: "utf8",
+    cwd: opts.cwd || ROOT,
+    env: { ...process.env, EXCEPTD_DEPRECATION_SHOWN: "1", EXCEPTD_UNSIGNED_WARNED: "1", ...(opts.env || {}) },
+    input: opts.input,
+  });
+}
+
+function mkFixture() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "exceptd-evloc-"));
+  // A fabricated (non-canonical) CVE citation flips fabricated-cve-id.
+  fs.writeFileSync(path.join(dir, "notes.md"), "We patched CVE-2024-XXXX last week.\n");
+  return dir;
+}
+
+const citationCollector = require(path.join(ROOT, "lib", "collectors", "citation-hygiene.js"));
+
+test("citation-hygiene emits evidence_locations keyed by the indicator it flips to hit", () => {
+  const dir = mkFixture();
+  try {
+    const sub = citationCollector.collect({ cwd: dir });
+    assert.equal(sub.signal_overrides["fabricated-cve-id"], "hit", "fabricated CVE must flip the indicator");
+    assert.ok(sub.evidence_locations && typeof sub.evidence_locations === "object", "evidence_locations present");
+    const locs = sub.evidence_locations["fabricated-cve-id"];
+    assert.ok(Array.isArray(locs) && locs.length >= 1, "fabricated-cve-id has >= 1 location");
+    assert.equal(locs[0].uri, "notes.md", "uri points at the fixture file");
+    // The collector now derives a 1-based line from the citation's byte
+    // offset; the fixture's fabricated CVE is on line 1.
+    assert.equal(locs[0].startLine, 1, "startLine points at the line carrying the bad citation");
+    // Every evidence_locations key must be an indicator the collector
+    // actually flipped to "hit" (no orphan keys).
+    for (const id of Object.keys(sub.evidence_locations)) {
+      assert.equal(sub.signal_overrides[id], "hit", `evidence_locations key ${id} must be a flipped-to-hit indicator`);
+    }
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("run --format sarif surfaces the collector's evidence_locations as result.locations", () => {
+  const dir = mkFixture();
+  try {
+    const sub = citationCollector.collect({ cwd: dir });
+    // The fabricated-cve-id indicator declares false_positive_checks_required;
+    // a hit verdict only survives when those checks are attested. Attest by
+    // index so the deterministic hit reaches verdict=hit and emits a result.
+    sub.signal_overrides["fabricated-cve-id__fp_checks"] = { "0": true, "1": true };
+    const subPath = path.join(dir, "sub.json");
+    fs.writeFileSync(subPath, JSON.stringify(sub));
+
+    const r = cli(["run", "citation-hygiene", "--evidence", subPath, "--format", "sarif"]);
+    assert.equal(r.status, 0, `run exited 0 (stderr: ${r.stderr})`);
+    const sarif = JSON.parse(r.stdout);
+    const results = sarif.runs[0].results || [];
+    const fired = results.filter(x => x.ruleId.endsWith("/fabricated-cve-id"));
+    assert.equal(fired.length, 1, "exactly one fabricated-cve-id SARIF result");
+    const result = fired[0];
+    assert.ok(Array.isArray(result.locations) && result.locations.length >= 1, "result has locations");
+    const uri = result.locations[0].physicalLocation.artifactLocation.uri;
+    assert.equal(uri, "notes.md", "SARIF location uri matches the fixture file");
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+})();
+
+
+// ---- routed from collector-precondition-fixes ----
+;(() => {
+/**
+ * tests/collector-precondition-fixes.test.js
+ *
+ * Pins the fixes a scan of the sibling blamejs repo surfaced:
+ *  - collectors auto-attest the preconditions they can verify from collected
+ *    evidence (so `collect --cwd <repo> | run` doesn't spuriously warn on a
+ *    repo that clearly has a lockfile / manifest / assistant config — the
+ *    runner can't probe the scanned --cwd);
+ *  - a YAML COMMENT mentioning a publish verb no longer mis-classifies a CI
+ *    workflow as a publish workflow;
+ *  - an explicit-false precondition HALT carries a specific remediation, and
+ *    the human renderer no longer asserts a platform-gate ("Linux-only") cause
+ *    for every precondition block.
+ * Exact-value pins per the anti-coincidence rule.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+
+const sbom = require('../lib/collectors/sbom.js');
+const libauthor = require('../lib/collectors/library-author.js');
+const mcp = require('../lib/collectors/mcp.js');
+const { makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+
+const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-dogfix-'));
+process.on('exit', () => { try { fs.rmSync(TMP, { recursive: true, force: true }); } catch { /* non-fatal */ } });
+let _n = 0;
+function mkfx() { const d = path.join(TMP, 'fx-' + _n++); fs.mkdirSync(d, { recursive: true }); return d; }
+
+test('sbom collector attests any-package-manager-present from a collected lockfile (and false without one)', () => {
+  const withLock = mkfx();
+  fs.writeFileSync(path.join(withLock, 'package-lock.json'), '{"lockfileVersion":3,"packages":{"":{}}}');
+  assert.equal(sbom.collect({ cwd: withLock }).precondition_checks['any-package-manager-present'], true);
+  assert.equal(sbom.collect({ cwd: mkfx() }).precondition_checks['any-package-manager-present'], false);
+});
+
+test('library-author collector attests publishable-artifact-evidence from a manifest (and false without one)', () => {
+  const withManifest = mkfx();
+  fs.writeFileSync(path.join(withManifest, 'package.json'), '{"name":"x","version":"1.0.0"}');
+  assert.equal(libauthor.collect({ cwd: withManifest }).precondition_checks['publishable-artifact-evidence'], true);
+  assert.equal(libauthor.collect({ cwd: mkfx() }).precondition_checks['publishable-artifact-evidence'], false);
+});
+
+test('library-author does NOT classify a CI workflow as publish from a comment-only publish verb', () => {
+  const fx = mkfx();
+  const wf = path.join(fx, '.github', 'workflows');
+  fs.mkdirSync(wf, { recursive: true });
+  // ci.yml's only "npm publish" is inside a comment — must not count.
+  fs.writeFileSync(path.join(wf, 'ci.yml'),
+    'name: ci\njobs:\n  t:\n    steps:\n      - run: echo hi # matches the npm publish workflow depth\n');
+  // a real publish workflow with an actual command — must count.
+  fs.writeFileSync(path.join(wf, 'release.yml'),
+    'name: release\njobs:\n  p:\n    steps:\n      - run: npm publish --provenance\n');
+  fs.writeFileSync(path.join(fx, 'package.json'), '{"name":"x","version":"1.0.0"}');
+  const meta = libauthor.collect({ cwd: fx }).collector_meta || {};
+  const pw = JSON.stringify(meta.publish_workflows || meta.publishWorkflows || []);
+  assert.ok(/release\.yml/.test(pw), 'a real npm-publish workflow IS classified as publish');
+  assert.ok(!/ci\.yml/.test(pw), 'a CI workflow whose only publish mention is a comment is NOT classified as publish');
+});
+
+test('mcp collector attests any-ai-coding-assistant-installed from a config OR an install dir, and never submits false', () => {
+  // (a) a vendor config FILE present -> true
+  const cfg = mkfx();
+  fs.mkdirSync(path.join(cfg, '.cursor'), { recursive: true });
+  fs.writeFileSync(path.join(cfg, '.cursor', 'mcp.json'), '{}');
+  assert.equal(mcp.collect({ env: { HOME: cfg, USERPROFILE: cfg } }).precondition_checks['any-ai-coding-assistant-installed'], true);
+  // (b) an install DIRECTORY present but NO config file yet -> still true
+  //     (the precondition treats the dir as satisfying the gate; submitting
+  //     false here would wrongly skip the detect phase — codex P2).
+  const dirOnly = mkfx();
+  fs.mkdirSync(path.join(dirOnly, '.config', 'Code'), { recursive: true });
+  assert.equal(mcp.collect({ env: { HOME: dirOnly, USERPROFILE: dirOnly } }).precondition_checks['any-ai-coding-assistant-installed'], true);
+  // (c) nothing present -> the key is OMITTED (never false), leaving the
+  //     skip_phase gate to the host-side resolver rather than force-skipping.
+  const bare = mkfx();
+  assert.equal('any-ai-coding-assistant-installed' in mcp.collect({ env: { HOME: bare, USERPROFILE: bare } }).precondition_checks, false);
+});
+
+test('explicit-false precondition halt carries a specific remediation, not the generic platform hint', () => {
+  const cli = makeCli(makeSuiteHome());
+  const ev = JSON.stringify({ precondition_checks: { 'operator-owns-ci-fleet': false } });
+  const j = tryJson(cli(['run', 'cicd-pipeline-compromise', '--evidence', '-', '--json'], { input: ev }).stdout);
+  assert.equal(j.blocked_by, 'precondition');
+  assert.equal(typeof j.remediation, 'string');
+  assert.ok(/submitted as false/.test(j.remediation), 'remediation names the specific gate, not a platform guess');
+  // The universal satisfaction mechanism (submit the precondition true) must
+  // be named — it works for every playbook regardless of which verb blocked.
+  assert.ok(/precondition_checks/.test(j.remediation), 'remediation points at the precondition_checks submission mechanism');
+  assert.ok(j.remediation.includes('"operator-owns-ci-fleet": true'), 'remediation shows the exact attestation to submit');
+  // The flag example must be attributed to the collect verb (it is a collect
+  // flag; the block surfaces at run, where passing it is silently ignored).
+  assert.ok(/collect cicd-pipeline-compromise --attest-ownership/.test(j.remediation), 'the --attest-ownership example names the collect verb');
+  const human = cli(['run', 'cicd-pipeline-compromise', '--evidence', '-'], { input: ev });
+  assert.equal(/Linux-only playbook/.test(human.stdout), false, 'the misleading platform-gate hint must not appear on an intent-gate halt');
+});
+})();
+
+
+// ---- routed from csaf-bundle-correctness ----
+;(() => {
+/**
+ * audit CC — CSAF / SARIF / bundles-by-format correctness against the strict
+ * downstream validators (BSI CSAF validator, GitHub Code Scanning).
+ *
+ *   P1-1: tracking.status defaults to 'interim' (CSAF §3.1.11.3.5.1).
+ *   P1-2: non-CVE identifiers (MAL-, GHSA-, OSV-) route to vulnerabilities[].ids[]
+ *         with a real system_name, NOT to vulnerabilities[].cve.
+ *   P1-3: document.publisher.namespace is supplied by the operator running the
+ *         scan, not the tooling vendor.
+ *   P1-4: --operator threads into tracking.generator.engine and
+ *         publisher.contact_details.
+ *   P2-1: bundles_by_format is always { [primaryFormat]: body } even without
+ *         additional --format flags.
+ *   P2-2: cvss_v3 block carries vectorString (CSAF §3.2.1.5); block is dropped
+ *         when score is unset.
+ *   P2-6: SARIF ruleId carries a playbook prefix so cross-playbook merges in
+ *         a single sarif-log don't dedupe rules.
+ *
+ * Run under: node --test --test-concurrency=1 tests/
+ */
+
+const test = require('node:test');
+const { describe, it } = test;
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const os = require('node:os');
+const { spawnSync } = require('node:child_process');
+
+// Isolated sandbox for this suite's CLI subprocesses: route attestations into a
+// throwaway EXCEPTD_HOME (so `run` does not pollute the maintainer's real
+// ~/.exceptd) and scope EXCEPTD_LOCK_DIR to it (so mutex-grouped runs do not
+// race on the host-global lock dir — the non-deterministic predeploy flake).
+const CSAF_SUITE_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-csaf-'));
+process.on('exit', () => { try { fs.rmSync(CSAF_SUITE_HOME, { recursive: true, force: true }); } catch { /* non-fatal */ } });
+
+const RUNNER_PATH = path.resolve(__dirname, '..', 'lib', 'playbook-runner.js');
+const CLI_PATH = path.resolve(__dirname, '..', 'bin', 'exceptd.js');
+const REAL_PLAYBOOK_DIR = path.resolve(__dirname, '..', 'data', 'playbooks');
+
+function loadRunner() {
+  delete require.cache[RUNNER_PATH];
+  process.env.EXCEPTD_PLAYBOOK_DIR = REAL_PLAYBOOK_DIR;
+  return require(RUNNER_PATH);
+}
+
+// Build a real kernel close() result with `_bundle_formats` and the given
+// runOpts. The kernel playbook has matched_cves (real CVE-XXXX-YYYY ids) and
+// framework_gap_mapping entries, so the CSAF emitter exercises both the
+// CVE-routing and notes paths.
+function closeKernel(runOpts = {}, agentSignalsExtra = {}) {
+  const runner = loadRunner();
+  const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {
+    signal_overrides: { 'kver-in-affected-range': 'hit' }
+  });
+  const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det, {
+    patch_available: false, blast_radius_score: 3
+  });
+  const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {});
+  const c = runner.close('kernel', 'all-catalogued-kernel-cves', an, v, {
+    _bundle_formats: ['csaf-2.0', 'sarif-2.1.0', 'openvex-0.2.0'],
+    ...agentSignalsExtra,
+  }, { session_id: 'auditcccsaffixestest', ...runOpts });
+  return { close: c, analyze: an, validate: v };
+}
+
+// Build a CSAF bundle directly against a synthesized analyze result whose
+// matched_cves carries a MAL- identifier. The buildEvidenceBundle path is
+// what matters for CC P1-2; we drive it via close() so the public surface
+// is exercised end-to-end. The runner exports its internal pipeline via
+// detect/analyze/close — to inject a non-CVE matched id we patch
+// analyze.matched_cves between analyze and close (same shape as v0.12.14's
+// vex_fixed tests).
+function closeWithSyntheticMatchedId(matchedId, opts = {}) {
+  const runner = loadRunner();
+  const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {
+    signal_overrides: { 'kver-in-affected-range': 'hit' }
+  });
+  const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det, {
+    patch_available: false, blast_radius_score: 3
+  });
+  // Replace matched_cves with one synthetic entry that has the target id.
+  an.matched_cves = [{
+    cve_id: matchedId,
+    rwep: 80, cvss_score: 9.3,
+    cvss_vector: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H',
+    cisa_kev: false, active_exploitation: 'confirmed',
+    ai_discovered: false, live_patch_available: false,
+    patch_available: true, vex_status: null, correlated_via: ['synthetic'],
+  }];
+  const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {});
+  const c = runner.close('kernel', 'all-catalogued-kernel-cves', an, v, {
+    _bundle_formats: ['csaf-2.0'],
+  }, { session_id: 'auditccsynthetictest', ...opts });
+  return c.evidence_package.bundles_by_format['csaf-2.0'];
+}
+
+// ---------- P1-1 ----------
+
+describe('audit CC P1-1 — CSAF tracking.status defaults to interim', () => {
+  it('runtime emit with no --csaf-status sets status to interim', () => {
+    const { close: c } = closeKernel();
+    const csaf = c.evidence_package.bundles_by_format['csaf-2.0'];
+    assert.equal(csaf.document.tracking.status, 'interim',
+      'CSAF §3.1.11.3.5.1: runtime detection is not an immutable advisory; runtime emit defaults to interim');
+  });
+
+  it('runOpts.csafStatus=final promotes to final', () => {
+    const { close: c } = closeKernel({ csafStatus: 'final' });
+    const csaf = c.evidence_package.bundles_by_format['csaf-2.0'];
+    assert.equal(csaf.document.tracking.status, 'final');
+  });
+
+  it('runOpts.csafStatus=draft is accepted', () => {
+    const { close: c } = closeKernel({ csafStatus: 'draft' });
+    const csaf = c.evidence_package.bundles_by_format['csaf-2.0'];
+    assert.equal(csaf.document.tracking.status, 'draft');
+  });
+
+  it('unknown csafStatus value silently falls back to interim (defence-in-depth — CLI rejects upstream)', () => {
+    const { close: c } = closeKernel({ csafStatus: 'finel' });
+    const csaf = c.evidence_package.bundles_by_format['csaf-2.0'];
+    assert.equal(csaf.document.tracking.status, 'interim');
+  });
+});
+
+// ---------- P1-2 ----------
+
+describe('audit CC P1-2 — non-CVE ids route to ids[] with proper system_name', () => {
+  it('CVE-shaped id stays in vulnerabilities[].cve', () => {
+    const csaf = closeWithSyntheticMatchedId('CVE-2026-31431');
+    const vuln = csaf.vulnerabilities.find(v => v.cve === 'CVE-2026-31431');
+    assert.ok(vuln, 'CVE-shaped id must remain in `cve` field');
+    assert.equal(vuln.ids, undefined,
+      'CVE-shaped id must NOT also emit an ids[] entry — pre-fix never did and validators dedupe');
+  });
+
+  it('MAL-2026-3083 emits via ids[] with system_name: Malicious-Package', () => {
+    const csaf = closeWithSyntheticMatchedId('MAL-2026-3083');
+    const malVuln = csaf.vulnerabilities.find(v =>
+      Array.isArray(v.ids) && v.ids.some(idEntry => idEntry.text === 'MAL-2026-3083')
+    );
+    assert.ok(malVuln, `MAL- id must appear under ids[]; got: ${JSON.stringify(csaf.vulnerabilities[0]).slice(0, 200)}`);
+    assert.equal(malVuln.cve, undefined,
+      'MAL- id must NOT be placed under `cve` (CSAF §3.2.1.2 regex rejects it)');
+    const entry = malVuln.ids.find(e => e.text === 'MAL-2026-3083');
+    assert.equal(entry.system_name, 'Malicious-Package',
+      'MAL- ids carry system_name: Malicious-Package');
+    assert.equal(entry.text, 'MAL-2026-3083');
+  });
+
+  it('GHSA-xxxx-xxxx-xxxx emits with system_name: GHSA', () => {
+    const csaf = closeWithSyntheticMatchedId('GHSA-4xqg-gf5c-ghwq');
+    const v = csaf.vulnerabilities.find(x =>
+      Array.isArray(x.ids) && x.ids.some(e => e.text === 'GHSA-4xqg-gf5c-ghwq')
+    );
+    assert.ok(v);
+    assert.equal(v.cve, undefined);
+    const entry = v.ids.find(e => e.text === 'GHSA-4xqg-gf5c-ghwq');
+    assert.equal(entry.system_name, 'GHSA');
+  });
+
+  it('OSV-2026-1 emits with system_name: OSV', () => {
+    const csaf = closeWithSyntheticMatchedId('OSV-2026-1');
+    const v = csaf.vulnerabilities.find(x =>
+      Array.isArray(x.ids) && x.ids.some(e => e.text === 'OSV-2026-1')
+    );
+    assert.ok(v);
+    const entry = v.ids.find(e => e.text === 'OSV-2026-1');
+    assert.equal(entry.system_name, 'OSV');
+  });
+
+  it('unknown-prefix id falls back to OSV system_name (never to `cve`)', () => {
+    const csaf = closeWithSyntheticMatchedId('PYSEC-2026-99');
+    const v = csaf.vulnerabilities.find(x =>
+      Array.isArray(x.ids) && x.ids.some(e => e.text === 'PYSEC-2026-99')
+    );
+    assert.ok(v, 'unknown-prefix id must still surface via ids[], not be silently dropped');
+    assert.equal(v.cve, undefined, 'unknown-prefix id must NOT be placed under `cve`');
+  });
+});
+
+// ---------- P1-3 ----------
+
+describe('audit CC P1-3 — publisher.namespace from operator, not tooling vendor', () => {
+  it('default emit (no operator, no namespace) falls back to urn:exceptd:operator:unknown with explanatory note', () => {
+    const { close: c } = closeKernel();
+    const csaf = c.evidence_package.bundles_by_format['csaf-2.0'];
+    assert.equal(csaf.document.publisher.namespace, 'urn:exceptd:operator:unknown');
+    assert.equal(csaf.exceptd_extension.publisher_namespace_source, 'fallback');
+    // The notes[] array MUST include the explanatory note category=general so
+    // operators see why the fallback is in place.
+    const notes = csaf.document.notes || [];
+    const fallbackNote = notes.find(n => n.category === 'general' && /Publisher namespace not supplied/i.test(n.title));
+    assert.ok(fallbackNote, 'fallback emit must surface a general note explaining the missing publisher namespace');
+  });
+
+  it('runOpts.publisherNamespace lands in document.publisher.namespace', () => {
+    const { close: c } = closeKernel({ publisherNamespace: 'https://operator.example' });
+    const csaf = c.evidence_package.bundles_by_format['csaf-2.0'];
+    assert.equal(csaf.document.publisher.namespace, 'https://operator.example');
+    assert.equal(csaf.exceptd_extension.publisher_namespace_source, 'runOpts.publisherNamespace');
+  });
+
+  it('URL-shaped --operator (no explicit namespace) is used as fallback publisher namespace', () => {
+    const { close: c } = closeKernel({ operator: 'https://alice.example' });
+    const csaf = c.evidence_package.bundles_by_format['csaf-2.0'];
+    assert.equal(csaf.document.publisher.namespace, 'https://alice.example');
+    assert.equal(csaf.exceptd_extension.publisher_namespace_source, 'runOpts.operator');
+  });
+
+  it('explicit publisherNamespace wins over URL-shaped operator', () => {
+    const { close: c } = closeKernel({
+      publisherNamespace: 'https://org.example',
+      operator: 'https://individual.example',
+    });
+    const csaf = c.evidence_package.bundles_by_format['csaf-2.0'];
+    assert.equal(csaf.document.publisher.namespace, 'https://org.example');
+  });
+
+  it('fallback emit also surfaces bundle_publisher_unclaimed in runOpts._runErrors', () => {
+    // Direct buildEvidenceBundle exercises the bundle path with a real
+    // _runErrors accumulator (close() doesn't pre-seed one for direct callers,
+    // but the orchestrator does — we mimic that here).
+    const runOpts = { session_id: 'auditccrunerrtest', _runErrors: [] };
+    const runner = loadRunner();
+    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {
+      signal_overrides: { 'kver-in-affected-range': 'hit' }
+    }, runOpts);
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det,
+      { patch_available: false, blast_radius_score: 3 }, runOpts);
+    const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {}, runOpts);
+    runner.close('kernel', 'all-catalogued-kernel-cves', an, v, {
+      _bundle_formats: ['csaf-2.0'],
+    }, runOpts);
+    const unclaimed = runOpts._runErrors.filter(e => e && e.kind === 'bundle_publisher_unclaimed');
+    assert.equal(unclaimed.length, 1,
+      `fallback emit must push exactly one bundle_publisher_unclaimed entry; got ${unclaimed.length}: ${JSON.stringify(runOpts._runErrors)}`);
+    const entry = unclaimed[0];
+    assert.equal(typeof entry.reason, 'string');
+    assert.ok(entry.reason.length > 0, 'bundle_publisher_unclaimed must carry a non-empty reason string');
+    assert.match(String(entry.remediation || ''), /publisher-namespace/i,
+      'remediation field must point operators at the --publisher-namespace flag');
+  });
+
+  it('supplied --publisher-namespace does NOT push bundle_publisher_unclaimed', () => {
+    const runOpts = { session_id: 'auditcchappytest', _runErrors: [], publisherNamespace: 'https://operator.example' };
+    const runner = loadRunner();
+    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {
+      signal_overrides: { 'kver-in-affected-range': 'hit' }
+    }, runOpts);
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det,
+      { patch_available: false, blast_radius_score: 3 }, runOpts);
+    const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {}, runOpts);
+    runner.close('kernel', 'all-catalogued-kernel-cves', an, v, {
+      _bundle_formats: ['csaf-2.0'],
+    }, runOpts);
+    const unclaimed = runOpts._runErrors.filter(e => e && e.kind === 'bundle_publisher_unclaimed');
+    assert.deepEqual(unclaimed, [],
+      'no bundle_publisher_unclaimed entry should appear when namespace was supplied');
+  });
+});
+
+// ---------- P1-4 ----------
+
+describe('audit CC P1-4 — --operator threads into tracking.generator and publisher.contact_details', () => {
+  it('tracking.generator.engine names exceptd + a real version', () => {
+    const { close: c } = closeKernel({ operator: 'alice' });
+    const tracking = c.evidence_package.bundles_by_format['csaf-2.0'].document.tracking;
+    assert.ok(tracking.generator, 'tracking.generator must be present');
+    assert.ok(tracking.generator.engine, 'tracking.generator.engine must be present');
+    assert.equal(tracking.generator.engine.name, 'exceptd');
+    assert.equal(typeof tracking.generator.engine.version, 'string');
+    assert.ok(tracking.generator.engine.version.length > 0,
+      'tracking.generator.engine.version must be populated, not empty string');
+    assert.match(tracking.generator.engine.version, /^\d+\.\d+\.\d+/,
+      'tracking.generator.engine.version must be SemVer-shaped');
+    assert.equal(typeof tracking.generator.date, 'string');
+  });
+
+  it('publisher.contact_details carries the operator value', () => {
+    const { close: c } = closeKernel({ operator: 'alice' });
+    const publisher = c.evidence_package.bundles_by_format['csaf-2.0'].document.publisher;
+    assert.equal(publisher.contact_details, 'alice');
+  });
+
+  it('publisher.contact_details is omitted (not null) when --operator is absent', () => {
+    const { close: c } = closeKernel();
+    const publisher = c.evidence_package.bundles_by_format['csaf-2.0'].document.publisher;
+    assert.equal(publisher.contact_details, undefined,
+      'contact_details must be omitted entirely rather than carry a misleading null');
+  });
+});
+
+// ---------- P2-1 ----------
+
+describe('audit CC P2-1 — bundles_by_format is always populated', () => {
+  it('single-format emit produces { [primaryFormat]: bundle }', () => {
+    const runner = loadRunner();
+    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {
+      signal_overrides: { 'kver-in-affected-range': 'hit' }
+    });
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det, {
+      patch_available: false, blast_radius_score: 3
+    });
+    const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {});
+    const c = runner.close('kernel', 'all-catalogued-kernel-cves', an, v,
+      {} /* no _bundle_formats */,
+      { session_id: 'auditccp21test' }
+    );
+    const byFormat = c.evidence_package.bundles_by_format;
+    assert.notEqual(byFormat, null, 'bundles_by_format must never be null (pre-fix was null for single-format)');
+    assert.equal(typeof byFormat, 'object');
+    assert.ok(byFormat['csaf-2.0'], 'bundles_by_format must carry the primary format key');
+    assert.equal(byFormat['csaf-2.0'], c.evidence_package.bundle_body,
+      'bundles_by_format[primary] is the same object as bundle_body');
+  });
+});
+
+// ---------- P2-2 ----------
+
+describe('audit CC P2-2 — cvss_v3 block carries vectorString or is dropped entirely', () => {
+  it('matched CVE with cvss_score + cvss_vector emits full cvss_v3 block', () => {
+    const { close: c, analyze: an } = closeKernel();
+    const csaf = c.evidence_package.bundles_by_format['csaf-2.0'];
+    // Find a CVE that actually has a cvss_vector in the catalog.
+    const withVector = an.matched_cves.find(x => typeof x.cvss_vector === 'string' && x.cvss_vector.length > 0);
+    assert.ok(withVector, 'fixture: at least one matched CVE must have a cvss_vector in the catalog');
+    const vuln = csaf.vulnerabilities.find(v => v.cve === withVector.cve_id);
+    assert.ok(vuln);
+    assert.ok(Array.isArray(vuln.scores) && vuln.scores.length === 1);
+    const score = vuln.scores[0];
+    assert.ok(score.cvss_v3, 'cvss_v3 block must be present when score + vector are populated');
+    assert.equal(typeof score.cvss_v3.vectorString, 'string');
+    assert.match(score.cvss_v3.vectorString, /^CVSS:\d+\.\d+\//,
+      'cvss_v3.vectorString must match the CSAF §3.2.1.5 prefix');
+    assert.equal(score.cvss_v3.baseScore, withVector.cvss_score);
+    assert.equal(typeof score.cvss_v3.version, 'string');
+    assert.match(score.cvss_v3.baseSeverity, /^(NONE|LOW|MEDIUM|HIGH|CRITICAL)$/);
+  });
+
+  it('vulns with no cvss data emit scores: [] rather than a truncated cvss_v3 block', () => {
+    const runner = loadRunner();
+    const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {
+      signal_overrides: { 'kver-in-affected-range': 'hit' }
+    });
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det, {
+      patch_available: false, blast_radius_score: 3
+    });
+    // Strip cvss data from one matched entry to exercise the empty-score path.
+    if (an.matched_cves.length > 0) {
+      an.matched_cves[0].cvss_score = null;
+      an.matched_cves[0].cvss_vector = null;
+    }
+    const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {});
+    const c = runner.close('kernel', 'all-catalogued-kernel-cves', an, v, {
+      _bundle_formats: ['csaf-2.0']
+    }, { session_id: 'auditccp22test' });
+    const csaf = c.evidence_package.bundles_by_format['csaf-2.0'];
+    const target = csaf.vulnerabilities.find(x => x.cve === an.matched_cves[0].cve_id);
+    assert.ok(target);
+    assert.deepEqual(target.scores, [],
+      'no-CVSS-data vuln must emit scores: [] — truncated cvss_v3 blocks are rejected by strict validators');
+  });
+});
+
+// ---------- P2-6 ----------
+
+describe('audit CC P2-6 — SARIF ruleId carries playbook prefix', () => {
+  it('every result.ruleId starts with `<playbook-slug>/`', () => {
+    const { close: c } = closeKernel();
+    const sarif = c.evidence_package.bundles_by_format['sarif-2.1.0'];
+    const results = sarif.runs[0].results;
+    assert.ok(results.length > 0, 'fixture: SARIF must have results');
+    for (const r of results) {
+      assert.match(String(r.ruleId), /^kernel\//,
+        `result.ruleId must carry playbook prefix; got ${r.ruleId}`);
+    }
+  });
+
+  it('every rule.id has a matching result.ruleId (SARIF §3.27.3 closure)', () => {
+    const { close: c } = closeKernel();
+    const sarif = c.evidence_package.bundles_by_format['sarif-2.1.0'];
+    const ruleIds = new Set((sarif.runs[0].tool.driver.rules || []).map(r => r.id));
+    const resultIds = (sarif.runs[0].results || []).map(r => r.ruleId);
+    const missing = resultIds.filter(id => !ruleIds.has(id));
+    assert.deepEqual(missing, [],
+      `every result.ruleId must have a corresponding rule.id in tool.driver.rules; missing: ${JSON.stringify(missing)}`);
+  });
+
+  it('no cross-playbook collision when two playbook bundles are merged in one sarif-log', () => {
+    // Run kernel and mcp end-to-end and check that the union of ruleIds has
+    // no duplicates — pre-fix `framework-gap-0` collided across every
+    // playbook that produced framework gaps.
+    const runner = loadRunner();
+    const kernelDet = runner.detect('kernel', 'all-catalogued-kernel-cves', {
+      signal_overrides: { 'kver-in-affected-range': 'hit' }
+    });
+    const kernelAn = runner.analyze('kernel', 'all-catalogued-kernel-cves', kernelDet, {
+      patch_available: false, blast_radius_score: 3
+    });
+    const kernelV = runner.validate('kernel', 'all-catalogued-kernel-cves', kernelAn, {});
+    const kernelClose = runner.close('kernel', 'all-catalogued-kernel-cves', kernelAn, kernelV, {
+      _bundle_formats: ['sarif-2.1.0']
+    }, { session_id: 'auditccp26kerneltest' });
+
+    // Use the framework playbook — same shape, different slug, both produce
+    // framework_gap_mapping entries.
+    const fwDet = runner.detect('framework', 'baseline-framework-gap-inventory',
+      { signal_overrides: {} });
+    const fwAn = runner.analyze('framework', 'baseline-framework-gap-inventory', fwDet, {});
+    const fwV = runner.validate('framework', 'baseline-framework-gap-inventory', fwAn, {});
+    const fwClose = runner.close('framework', 'baseline-framework-gap-inventory', fwAn, fwV, {
+      _bundle_formats: ['sarif-2.1.0']
+    }, { session_id: 'auditccp26fwtest' });
+
+    const kernelIds = (kernelClose.evidence_package.bundles_by_format['sarif-2.1.0'].runs[0].results || [])
+      .map(r => r.ruleId);
+    const fwIds = (fwClose.evidence_package.bundles_by_format['sarif-2.1.0'].runs[0].results || [])
+      .map(r => r.ruleId);
+    const inter = kernelIds.filter(id => fwIds.includes(id));
+    assert.deepEqual(inter, [],
+      `kernel and framework SARIF ruleIds must not collide; pre-fix bare ids like framework-gap-0 collided. Overlap: ${JSON.stringify(inter)}`);
+  });
+});
+
+// ---------- CLI end-to-end coverage for the two new flags ----------
+
+function tryJson(s) { try { return JSON.parse(s); } catch { return null; } }
+
+function cli(argv, opts = {}) {
+  const env = {
+    ...process.env,
+    EXCEPTD_HOME: CSAF_SUITE_HOME,
+    EXCEPTD_LOCK_DIR: path.join(CSAF_SUITE_HOME, '_locks'),
+    EXCEPTD_DEPRECATION_SHOWN: '1',
+    EXCEPTD_UNSIGNED_WARNED: '1',
+  };
+  delete env.EXCEPTD_PLAYBOOK_DIR;
+  return spawnSync(process.execPath, [CLI_PATH, ...argv], {
+    input: opts.input,
+    encoding: 'utf8',
+    env,
+    cwd: path.resolve(__dirname, '..'),
+  });
+}
+
+describe('audit CC — CLI flag plumbing', () => {
+  // library-author has no platform precondition; its `publish-workflow-uses-
+  // static-token` indicator is the same fixture #93 uses for SARIF CLI
+  // coverage.
+  const submissionFor = () => JSON.stringify({
+    observations: { w: { captured: true, indicator: 'publish-workflow-uses-static-token', result: 'hit' } },
+    verdict: {}
+  });
+
+  it('--publisher-namespace lands in CSAF document.publisher.namespace', () => {
+    const r = cli([
+      'run', 'library-author', '--evidence', '-',
+      '--format', 'csaf-2.0',
+      '--publisher-namespace', 'https://operator.example',
+      '--json',
+    ], { input: submissionFor() });
+    const data = tryJson(r.stdout);
+    assert.ok(data, `csaf via CLI must emit JSON; stderr: ${r.stderr}`);
+    assert.equal(data.document?.publisher?.namespace, 'https://operator.example');
+  });
+
+  it('--operator lands in tracking.generator.engine AND publisher.contact_details', () => {
+    const r = cli([
+      'run', 'library-author', '--evidence', '-',
+      '--format', 'csaf-2.0',
+      '--operator', 'alice',
+      '--ack',
+      '--json',
+    ], { input: submissionFor() });
+    const data = tryJson(r.stdout);
+    assert.ok(data, `csaf via CLI must emit JSON; stderr: ${r.stderr}`);
+    assert.equal(data.document?.publisher?.contact_details, 'alice');
+    assert.equal(data.document?.tracking?.generator?.engine?.name, 'exceptd');
+    assert.match(String(data.document?.tracking?.generator?.engine?.version || ''), /^\d+\.\d+\.\d+/);
+  });
+
+  it('--csaf-status final promotes tracking.status to final', () => {
+    const r = cli([
+      'run', 'library-author', '--evidence', '-',
+      '--format', 'csaf-2.0',
+      '--csaf-status', 'final',
+      '--json',
+    ], { input: submissionFor() });
+    const data = tryJson(r.stdout);
+    assert.ok(data, `csaf via CLI must emit JSON; stderr: ${r.stderr}`);
+    assert.equal(data.document?.tracking?.status, 'final');
+  });
+
+  it('default --csaf-status (omitted) yields interim', () => {
+    const r = cli([
+      'run', 'library-author', '--evidence', '-',
+      '--format', 'csaf-2.0',
+      '--json',
+    ], { input: submissionFor() });
+    const data = tryJson(r.stdout);
+    assert.ok(data, `csaf via CLI must emit JSON; stderr: ${r.stderr}`);
+    assert.equal(data.document?.tracking?.status, 'interim');
+  });
+
+  it('invalid --csaf-status value is rejected at input', () => {
+    const sub = JSON.stringify({ observations: {}, verdict: {} });
+    const r = cli([
+      'run', 'library-author', '--evidence', '-',
+      '--csaf-status', 'finel',
+      '--json',
+    ], { input: sub });
+    assert.equal(r.status, 1,
+      '--csaf-status finel must exit 1 (arg-validation refusal at CLI input)');
+    const err = tryJson(r.stderr) || tryJson(r.stdout);
+    assert.ok(err && err.ok === false,
+      `must emit an ok:false body; got stderr=${r.stderr.slice(0, 200)}`);
+    assert.match(String(err.error || ''), /csaf-status/i);
+  });
+
+  it('invalid --publisher-namespace (non-URL) is rejected', () => {
+    const sub = JSON.stringify({ observations: {}, verdict: {} });
+    const r = cli([
+      'run', 'library-author', '--evidence', '-',
+      '--publisher-namespace', 'not-a-url',
+      '--json',
+    ], { input: sub });
+    assert.equal(r.status, 1,
+      '--publisher-namespace not-a-url must exit 1 (arg-validation refusal)');
+    const err = tryJson(r.stderr) || tryJson(r.stdout);
+    assert.ok(err && err.ok === false);
+    assert.match(String(err.error || ''), /publisher-namespace/i);
+  });
+});
+})();
+
+
+// ---- routed from evidence-input-hardening ----
+;(() => {
+/**
+ * tests/evidence-input-hardening.test.js
+ *
+ * Cycle 15 security fixes (v0.12.35):
+ *
+ *   F1 — `--evidence -` (stdin) was uncapped. The file-path branch
+ *        enforced a 32 MiB cap; the stdin branch did `fs.readFileSync(0)`
+ *        with no length limit. An attacker piping multi-GB JSON would
+ *        OOM the runner. Now both branches share the same MAX_EVIDENCE_BYTES
+ *        limit; stdin reads in 1 MB chunks and bails at the cap.
+ *
+ *   F2 — `Object.assign(out.precondition_checks, submission.precondition_checks)`
+ *        re-invoked the `__proto__` setter when the operator's JSON contained
+ *        a `__proto__` key. JSON.parse keeps `__proto__` as an own data
+ *        property; Object.assign reads it via [[Get]] and writes via [[Set]],
+ *        triggering the prototype-rebinding setter. Global Object.prototype
+ *        stayed clean (Node confines the rebind to the assignment target),
+ *        but the polluted local prototype was a defense-in-depth gap. Now
+ *        own-key iteration explicitly skips `__proto__` / `constructor` /
+ *        `prototype` keys.
+ *
+ * Per the anti-coincidence rule, every assertion checks an EXACT
+ * exit code or value, never `assert.notEqual(0)` or wildcard match.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
+
+const ROOT = path.join(__dirname, '..');
+const CLI = path.join(ROOT, 'bin', 'exceptd.js');
+
+function cli(args, opts = {}) {
+  return spawnSync(process.execPath, [CLI, ...args], {
+    encoding: 'utf8',
+    cwd: opts.cwd || ROOT,
+    env: { ...process.env, EXCEPTD_DEPRECATION_SHOWN: '1', ...(opts.env || {}) },
+    input: opts.input,
+    maxBuffer: 200 * 1024 * 1024,
+  });
+}
+
+function tryJson(s) { try { return JSON.parse(s); } catch { return null; } }
+
+// F1 — stdin size cap ------------------------------------------------------
+
+test('F1: --evidence - accepts a small (< 32 MiB) JSON payload on stdin', () => {
+  const small = JSON.stringify({
+    precondition_checks: { 'linux-platform': true, 'uname-available': true },
+    artifacts: { 'kernel-release': '5.15.0-69-generic' },
+  });
+  const r = cli(['run', 'kernel', '--evidence', '-'], { input: small });
+  assert.equal(r.status, 0, `small payload must succeed; got ${r.status}, stderr: ${r.stderr.slice(0, 300)}`);
+});
+
+test('F1: --evidence - refuses payload over 32 MiB with structured error + exit 1', () => {
+  // Construct ~34 MiB payload (just over the 32 MiB cap).
+  const sizeMb = 34;
+  const filler = 'x'.repeat(1024 - 20);
+  const items = [];
+  for (let i = 0; i < sizeMb * 1024; i++) items.push(`"k${i}":"${filler}"`);
+  const big = `{"artifacts":{${items.join(',')}}}`;
+  // Sanity: payload must actually exceed 32 MiB.
+  assert.equal(big.length > 32 * 1024 * 1024, true,
+    `test payload must exceed 32 MiB; got ${big.length} bytes`);
+
+  const r = cli(['run', 'kernel', '--evidence', '-'], { input: big });
+  assert.equal(r.status, 1, `oversize stdin must exit 1; got ${r.status}`);
+  // Structured stderr JSON.
+  const err = tryJson(r.stderr);
+  assert.ok(err, `oversize-stdin error must be parseable JSON; got: ${r.stderr.slice(0, 200)}`);
+  assert.equal(err.ok, false);
+  assert.match(err.error, /evidence on stdin exceeds size limit/);
+  assert.match(err.error, /33554432 byte limit/);
+});
+
+// F2 — Prototype-pollution defense ----------------------------------------
+
+test('F2: evidence with __proto__ key does not pollute Object.prototype', () => {
+  const evil = JSON.stringify({
+    precondition_checks: {
+      'linux-platform': true,
+      'uname-available': true,
+      __proto__: { polluted: 'yes' },
+      constructor: { prototype: { injected: 1 } },
+    },
+    artifacts: { 'kernel-release': '5.15.0-69-generic' },
+  });
+  const r = cli(['run', 'kernel', '--evidence', '-'], { input: evil });
+  assert.equal(r.status, 0, `prototype-pollution test must complete; got ${r.status}`);
+  // After the child exits, our own process's Object.prototype must
+  // remain pristine. (Containment is the runtime's job, but our own
+  // process state would only be affected if we share heap with the
+  // child — we don't, so this is a sanity check.)
+  const o = {};
+  assert.equal(o.polluted, undefined, 'Object.prototype.polluted must be undefined');
+  assert.equal(o.injected, undefined, 'Object.prototype.injected must be undefined');
+  assert.equal(Object.prototype.hasOwnProperty.call(Object.prototype, 'polluted'), false);
+});
+
+test('F2: __proto__ / constructor / prototype keys in precondition_checks are stripped', () => {
+  // Pipe evidence; the runner must accept the run, but the precondition_checks
+  // bag inside should NOT have prototype-bag leakage. We assert via runtime
+  // observation: the run completes successfully + the JSON output does not
+  // surface `polluted: 'yes'` in any phase.
+  const evil = JSON.stringify({
+    precondition_checks: {
+      'linux-platform': true,
+      'uname-available': true,
+      __proto__: { polluted: 'yes' },
+    },
+    artifacts: { 'kernel-release': '5.15.0-69-generic' },
+  });
+  const r = cli(['run', 'kernel', '--evidence', '-', '--json'], { input: evil });
+  assert.equal(r.status, 0);
+  assert.equal(/"polluted":/.test(r.stdout), false,
+    `precondition bag must not surface __proto__ pollution in run output; got: ${r.stdout.slice(0, 400)}`);
+});
+})();
+
+
+// ---- routed from jurisdiction-pending ----
+;(() => {
+/**
+ * tests/jurisdiction-pending.test.js
+ *
+ * Pins the pending-notification-obligations surface on detected runs.
+ * The detection IS the regulatory event in many jurisdictions — the
+ * operator must see the obligation landscape at the same moment they
+ * see the finding, not after they remember to grep
+ * `phases.close.notification_actions` in the JSON.
+ *
+ * Test pins:
+ *   - Detected runs with no clocks started print the "Pending
+ *     jurisdiction obligations (N)" block on the human renderer.
+ *   - Obligations are grouped by `clock_start_event` (one row per
+ *     start event, NOT one row per regulation).
+ *   - The next-step pointer suggests `--format csaf-2.0` for the
+ *     draft advisory + notification bodies.
+ *   - Non-detect verdicts (not_detected / inconclusive) do NOT print
+ *     the Pending block (no regulatory event to track).
+ */
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const path = require("node:path");
+const fs = require("node:fs");
+const os = require("node:os");
+const { spawnSync } = require("node:child_process");
+
+const ROOT = path.join(__dirname, "..");
+const CLI = path.join(ROOT, "bin", "exceptd.js");
+
+function cli(args, opts = {}) {
+  return spawnSync(process.execPath, [CLI, ...args], {
+    encoding: "utf8",
+    cwd: opts.cwd || ROOT,
+    env: { ...process.env, EXCEPTD_DEPRECATION_SHOWN: "1", EXCEPTD_UNSIGNED_WARNED: "1", ...(opts.env || {}) },
+    input: opts.input,
+  });
+}
+
+test("detected run prints 'Pending jurisdiction obligations' grouped by clock_start_event", () => {
+  // kernel playbook with the deterministic CVE indicator firing is the
+  // canonical detected-with-obligations shape.
+  const evidence = JSON.stringify({
+    precondition_checks: { "linux-platform": true, "uname-available": true },
+    artifacts: { "kernel-release": "5.15.0-69-generic" },
+    signal_overrides: { "kver-in-affected-range": "hit" },
+  });
+  const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "pending-obl-"));
+  try {
+    const env = { EXCEPTD_HOME: tmpHome };
+    const r = cli(["run", "kernel", "--evidence", "-"], { input: evidence, env });
+    assert.equal(r.status, 0, `run kernel must exit 0; stderr: ${r.stderr.slice(0, 200)}`);
+    // Assert the detected classification as a precondition BEFORE
+    // checking the pending-obligation output. Without this, a future
+    // regression in the deterministic hit indicator would silently
+    // skip the pending-obligation assertions (the test would still
+    // pass), and the feature could break without alerting.
+    assert.match(r.stdout, /\[!! DETECTED\]/,
+      "kernel + kver-in-affected-range:hit must classify as detected — the test scenario depends on this");
+    assert.match(r.stdout, /Pending jurisdiction obligations \(\d+\) — clock starts on operator action:/,
+      "detected run must surface pending jurisdiction obligations");
+    // At least one grouped event row. Format: `  on <event>:  <jur>/<reg> (Nh), ...`
+    assert.match(r.stdout, /\s+on \w+:\s+\w/,
+      "obligations must be grouped by clock_start_event");
+    // Next-step pointer.
+    assert.match(r.stdout, /→ next: exceptd run kernel --evidence <file> --format csaf-2\.0/,
+      "must point at csaf-2.0 format for draft advisory + notification bodies");
+  } finally {
+    try { fs.rmSync(tmpHome, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test("non-detect runs do NOT print the Pending block (irrelevant — no regulatory event)", () => {
+  // Empty submission → classification=not_detected. The renderer must
+  // not surface the Pending jurisdiction block in that case — there is
+  // no detection to trigger an obligation.
+  const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "non-detect-obl-"));
+  try {
+    const env = { EXCEPTD_HOME: tmpHome };
+    const r = cli(["run", "secrets", "--evidence", "-"], { input: "{}", env });
+    assert.equal(r.status, 0);
+    assert.doesNotMatch(r.stdout, /Pending jurisdiction obligations/,
+      "not_detected / inconclusive runs must NOT print the Pending block — no regulatory event to track");
+  } finally {
+    try { fs.rmSync(tmpHome, { recursive: true, force: true }); } catch {}
+  }
+});
+})();
+
+
+// ---- routed from offline-egress-airgap ----
+;(() => {
+/**
+ * Regression: runs the operator believes are offline must make no network call.
+ *
+ *  [16] An intrinsically air-gapped playbook (_meta.air_gap_mode — secrets /
+ *       cred-stores / containers) + `--upstream-check` must refuse the npm
+ *       registry probe even without the explicit --air-gap flag.
+ *  [2]  discoverNewRfcs queries IETF Datatracker live; under --air-gap it must
+ *       make no call (the help no longer claims --from-cache alone is "entirely
+ *       offline" — RFC discovery is live unless --air-gap is also passed).
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+
+const { ROOT, makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+const { discoverNewRfcs } = require('../lib/auto-discovery');
+
+const cli = makeCli(makeSuiteHome('exceptd-offline-egress-'));
+
+test('intrinsic air-gap playbook + --upstream-check refuses the registry probe (no flag)', () => {
+  const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
+  const r = cli(['run', 'secrets', '--upstream-check', '--evidence', '-', '--json'], { input: sub });
+  assert.equal(r.status, 0, `run must succeed; stderr=${r.stderr.slice(0, 300)}`);
+  const body = tryJson((r.stdout || '').split('\n').filter((l) => l.trim().startsWith('{')).pop() || '') || {};
+  assert.ok(body.upstream_check && typeof body.upstream_check === 'object', 'upstream_check must be present');
+  assert.equal(body.upstream_check.air_gap_blocked, true, 'intrinsic air-gap must block the registry probe');
+  assert.equal(body.upstream_check.source, 'air-gap');
+});
+
+test('discoverNewRfcs makes no network call under air-gap', async () => {
+  const orig = global.fetch;
+  let called = false;
+  global.fetch = async () => { called = true; throw new Error('network call attempted under air-gap'); };
+  try {
+    const r = await discoverNewRfcs({ airGap: true, rfcCatalog: {} });
+    assert.equal(called, false, 'discoverNewRfcs must not call fetch under air-gap');
+    assert.equal(r.diffs.length, 0);
+    assert.match(r.summary, /air-gap/i);
+  } finally {
+    global.fetch = orig;
+  }
+});
+})();
+
+
+// ---- routed from rwep-scoring-edge-cases ----
+;(() => {
+/**
+ * audit MM / NN — CSAF id-routing + CVSS version gating + UTF-16BE
+ * uninitialised-memory disclosure on odd-length payloads.
+ *
+ *   MM P1-A  RUSTSEC- ids route to system_name: 'RUSTSEC' (not 'OSV')
+ *   MM P1-B  null / non-string cve_id is skipped + surfaces runtime_error
+ *            `bundle_cve_id_missing` (pre-fix emitted literal text "null")
+ *   MM P1-C  catalog vectors with CVSS:2.0 / CVSS:4.0 prefix do NOT emit a
+ *            cvss_v3 score block (CSAF 2.0 schema enum is ['3.0','3.1']);
+ *            runtime_error `bundle_cvss_v3_version_unsupported` surfaces
+ *   MM P3-B  unknown-prefix ids fall back to system_name 'exceptd-unknown'
+ *   NN P1-3  UTF-16BE readJsonFile:
+ *            - odd-length payload after BOM throws a clean message
+ *            - even-length payload decodes correctly
+ *            - Buffer.alloc (zero-init) replaces Buffer.allocUnsafe so an
+ *              unexpected loop bound never lets uninitialised heap bytes
+ *              leak through the swapped buffer.
+ *
+ * Run under: node --test --test-concurrency=1 tests/
+ */
+
+const test = require('node:test');
+const { describe, it } = test;
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const os = require('node:os');
+
+const RUNNER_PATH = path.resolve(__dirname, '..', 'lib', 'playbook-runner.js');
+const REAL_PLAYBOOK_DIR = path.resolve(__dirname, '..', 'data', 'playbooks');
+
+function loadRunner() {
+  delete require.cache[RUNNER_PATH];
+  process.env.EXCEPTD_PLAYBOOK_DIR = REAL_PLAYBOOK_DIR;
+  return require(RUNNER_PATH);
+}
+
+// ---------------------------------------------------------------------------
+// Test harness: build a CSAF bundle against a synthesized matched_cves entry.
+// Mirrors closeWithSyntheticMatchedId() from csaf-bundle-correctness.test.js so
+// the two suites exercise the same code path.
+// ---------------------------------------------------------------------------
+
+function buildCsafWithSyntheticEntry(entryOverrides, runOpts = {}) {
+  const runner = loadRunner();
+  const det = runner.detect('kernel', 'all-catalogued-kernel-cves', {
+    signal_overrides: { 'kver-in-affected-range': 'hit' }
+  });
+  const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', det, {
+    patch_available: false, blast_radius_score: 3
+  });
+  // Replace matched_cves with the synthesized entry so we control id + vector.
+  an.matched_cves = [{
+    cve_id: 'CVE-2026-31431',
+    rwep: 80,
+    cvss_score: 9.3,
+    cvss_vector: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H',
+    cisa_kev: false,
+    active_exploitation: 'confirmed',
+    ai_discovered: false,
+    live_patch_available: false,
+    patch_available: true,
+    vex_status: null,
+    correlated_via: ['synthetic'],
+    ...entryOverrides,
+  }];
+  const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {}, runOpts);
+  const c = runner.close('kernel', 'all-catalogued-kernel-cves', an, v, {
+    _bundle_formats: ['csaf-2.0'],
+  }, { session_id: 'auditmmnntest', _runErrors: [], ...runOpts });
+  return {
+    csaf: c.evidence_package.bundles_by_format['csaf-2.0'],
+    runOpts,
+    analyze: an,
+  };
+}
+
+// ---------- MM P1-A ----------
+
+describe('audit MM P1-A — RUSTSEC- ids route to system_name: RUSTSEC', () => {
+  it('RUSTSEC-2024-0001 emits via ids[] with system_name: RUSTSEC (not OSV)', () => {
+    const runOpts = { _runErrors: [] };
+    const { csaf } = buildCsafWithSyntheticEntry({ cve_id: 'RUSTSEC-2024-0001' }, runOpts);
+    const rustsecVuln = csaf.vulnerabilities.find(v =>
+      Array.isArray(v.ids) && v.ids.some(e => e.text === 'RUSTSEC-2024-0001')
+    );
+    assert.ok(rustsecVuln, 'RUSTSEC- id must appear under ids[]');
+    assert.equal(rustsecVuln.cve, undefined,
+      'RUSTSEC- id must NOT be placed under `cve` (CSAF §3.2.1.2 regex rejects it)');
+    const entry = rustsecVuln.ids.find(e => e.text === 'RUSTSEC-2024-0001');
+    assert.deepEqual(entry, { system_name: 'RUSTSEC', text: 'RUSTSEC-2024-0001' },
+      'RUSTSEC- ids carry system_name: RUSTSEC verbatim');
+  });
+});
+
+// ---------- MM P3-B ----------
+
+describe('audit MM P3-B — unknown-prefix ids fall back to exceptd-unknown', () => {
+  it('PYSEC-2026-99 (unrecognised prefix) emits system_name: exceptd-unknown', () => {
+    const runOpts = { _runErrors: [] };
+    const { csaf } = buildCsafWithSyntheticEntry({ cve_id: 'PYSEC-2026-99' }, runOpts);
+    const vuln = csaf.vulnerabilities.find(v =>
+      Array.isArray(v.ids) && v.ids.some(e => e.text === 'PYSEC-2026-99')
+    );
+    assert.ok(vuln, 'unknown-prefix id must still surface via ids[], not be silently dropped');
+    const entry = vuln.ids.find(e => e.text === 'PYSEC-2026-99');
+    assert.equal(entry.system_name, 'exceptd-unknown',
+      'unknown-prefix ids carry system_name: exceptd-unknown so downstream ingesters know the authority was not recognised');
+  });
+});
+
+// ---------- MM P1-B ----------
+
+describe('audit MM P1-B — null / non-string cve_id is omitted with runtime_error', () => {
+  it('null cve_id: vuln entry omitted AND runtime_errors[] carries bundle_cve_id_missing', () => {
+    const runOpts = { _runErrors: [] };
+    const { csaf } = buildCsafWithSyntheticEntry({ cve_id: null }, runOpts);
+    // Pre-fix the vuln entry was present with ids[0].text === 'null' literal.
+    const literalNullVuln = csaf.vulnerabilities.find(v =>
+      Array.isArray(v.ids) && v.ids.some(e => e.text === 'null' || e.text === 'undefined')
+    );
+    assert.equal(literalNullVuln, undefined,
+      'no vuln entry may carry literal "null" / "undefined" text under ids[]');
+    // And the only matched_cves entry had cve_id: null, so cveVulns should
+    // have been filtered down to zero entries. indicator hits may still
+    // populate vulnerabilities[], but no CSAF-CVE-shape entry should exist.
+    const cveShapedVuln = csaf.vulnerabilities.find(v => typeof v.cve === 'string');
+    assert.equal(cveShapedVuln, undefined,
+      'null cve_id must NOT produce a CSAF `cve` field entry');
+    // runtime_error must surface.
+    const missing = runOpts._runErrors.filter(e => e && e.kind === 'bundle_cve_id_missing');
+    assert.equal(missing.length, 1,
+      `bundle_cve_id_missing must surface exactly once; got ${missing.length}: ${JSON.stringify(runOpts._runErrors)}`);
+    assert.equal(typeof missing[0].reason, 'string');
+    assert.ok(missing[0].reason.length > 0,
+      'bundle_cve_id_missing must carry a non-empty reason string');
+  });
+
+  it('undefined cve_id: same shape — entry omitted + runtime_error fires', () => {
+    const runOpts = { _runErrors: [] };
+    const { csaf } = buildCsafWithSyntheticEntry({ cve_id: undefined }, runOpts);
+    const literalUndef = csaf.vulnerabilities.find(v =>
+      Array.isArray(v.ids) && v.ids.some(e => e.text === 'undefined')
+    );
+    assert.equal(literalUndef, undefined);
+    const missing = runOpts._runErrors.filter(e => e && e.kind === 'bundle_cve_id_missing');
+    assert.equal(missing.length, 1);
+  });
+});
+
+// ---------- MM P1-C ----------
+
+describe('audit MM P1-C — cvss_v3 block dropped for 2.0 / 4.0 vectors', () => {
+  it('CVSS:4.0 vector: scores[] omits cvss_v3 block + runtime_error surfaces', () => {
+    const runOpts = { _runErrors: [] };
+    const v40Vector = 'CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N';
+    const { csaf } = buildCsafWithSyntheticEntry({
+      cve_id: 'CVE-2026-31431',
+      cvss_score: 9.3,
+      cvss_vector: v40Vector,
+    }, runOpts);
+    const vuln = csaf.vulnerabilities.find(x => x.cve === 'CVE-2026-31431');
+    assert.ok(vuln);
+    // The block must be omitted entirely — pre-fix it emitted version: '4.0'
+    // which BSI CSAF Validator rejects (enum: ['3.0','3.1']).
+    const hasCvssV3 = Array.isArray(vuln.scores) && vuln.scores.some(s => s && s.cvss_v3);
+    assert.equal(hasCvssV3, false,
+      'CVSS:4.0 vector must not produce a cvss_v3 block (CSAF 2.0 enum allows only 3.0 / 3.1)');
+    // runtime_error must surface so operators see the gap.
+    const unsupported = runOpts._runErrors.filter(e => e && (e.kind === 'csaf_cvss_invalid' || e.kind === 'bundle_cvss_v3_version_unsupported'));
+    assert.equal(unsupported.length, 1,
+      `bundle_cvss_v3_version_unsupported must surface exactly once; got ${unsupported.length}`);
+    assert.match(String(unsupported[0].reason || ''), /4\.0/,
+      'runtime_error reason must name the unsupported version explicitly');
+  });
+
+  it('CVSS:2.0 vector: scores[] omits cvss_v3 block + runtime_error surfaces', () => {
+    const runOpts = { _runErrors: [] };
+    const v20Vector = 'CVSS:2.0/AV:N/AC:L/Au:N/C:P/I:P/A:P';
+    const { csaf } = buildCsafWithSyntheticEntry({
+      cve_id: 'CVE-2026-31431',
+      cvss_score: 7.5,
+      cvss_vector: v20Vector,
+    }, runOpts);
+    const vuln = csaf.vulnerabilities.find(x => x.cve === 'CVE-2026-31431');
+    assert.ok(vuln);
+    const hasCvssV3 = Array.isArray(vuln.scores) && vuln.scores.some(s => s && s.cvss_v3);
+    assert.equal(hasCvssV3, false,
+      'CVSS:2.0 vector must not produce a cvss_v3 block');
+    const unsupported = runOpts._runErrors.filter(e => e && (e.kind === 'csaf_cvss_invalid' || e.kind === 'bundle_cvss_v3_version_unsupported'));
+    assert.equal(unsupported.length, 1);
+  });
+
+  it('CVSS:3.1 vector: cvss_v3 block IS emitted (positive control)', () => {
+    const runOpts = { _runErrors: [] };
+    const { csaf } = buildCsafWithSyntheticEntry({
+      cve_id: 'CVE-2026-31431',
+      cvss_score: 9.3,
+      cvss_vector: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H',
+    }, runOpts);
+    const vuln = csaf.vulnerabilities.find(x => x.cve === 'CVE-2026-31431');
+    assert.ok(vuln);
+    assert.ok(Array.isArray(vuln.scores) && vuln.scores.length === 1,
+      'CVSS:3.1 vector must produce exactly one score entry');
+    const cvssV3 = vuln.scores[0].cvss_v3;
+    assert.ok(cvssV3, 'cvss_v3 block must be present for 3.1 vector');
+    assert.equal(cvssV3.version, '3.1');
+    assert.equal(cvssV3.baseScore, 9.3);
+    // No runtime_error should fire for the supported version.
+    const unsupported = runOpts._runErrors.filter(e => e && (e.kind === 'csaf_cvss_invalid' || e.kind === 'bundle_cvss_v3_version_unsupported'));
+    assert.deepEqual(unsupported, []);
+  });
+
+  it('CVSS:3.0 vector: cvss_v3 block IS emitted', () => {
+    const runOpts = { _runErrors: [] };
+    const { csaf } = buildCsafWithSyntheticEntry({
+      cve_id: 'CVE-2026-31431',
+      cvss_score: 7.5,
+      cvss_vector: 'CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N',
+    }, runOpts);
+    const vuln = csaf.vulnerabilities.find(x => x.cve === 'CVE-2026-31431');
+    assert.ok(vuln);
+    assert.ok(Array.isArray(vuln.scores) && vuln.scores.length === 1);
+    assert.equal(vuln.scores[0].cvss_v3.version, '3.0');
+  });
+});
+
+// ---------- NN P1-3 ----------
+//
+// readJsonFile is not exported from bin/exceptd.js (its public surface is the
+// CLI itself), so we exercise it through writing a minimal harness that
+// requires the file in a child process. The simplest, isolated approach is
+// to spawn `node -e ...` and feed it the test buffer, since direct require()
+// of bin/exceptd.js executes the CLI entry point on load.
+
+describe('audit NN P1-3 — UTF-16BE odd-length payload refused; even-length parses', () => {
+  function writeUtf16BeRaw(filePath, byteArray) {
+    fs.writeFileSync(filePath, Buffer.from(byteArray));
+  }
+
+  // Run a tiny Node script that loads bin/exceptd.js's readJsonFile
+  // indirectly via `--evidence` and surfaces the error in stderr. This is
+  // the exact path operators hit, so testing through it covers both the
+  // alloc + length checks.
+  const { ROOT, makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+  const SUITE_HOME = makeSuiteHome('audit-mm-nn-utf16-');
+  const cli = makeCli(SUITE_HOME);
+
+  it('UTF-16BE odd-length payload (BOM + 1 byte) is refused with a clear message', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'audit-nn-p13-odd-'));
+    try {
+      const evPath = path.join(tmp, 'odd-utf16be.json');
+      // 0xFE 0xFF (BOM) + 5 single bytes => 7 total, 5-byte payload (odd).
+      writeUtf16BeRaw(evPath, [0xFE, 0xFF, 0x00, 0x7B, 0x00, 0x7D, 0x41]);
+      const r = cli(['run', 'library-author', '--evidence', evPath]);
+      assert.equal(r.status, 1, 'odd-length UTF-16BE input must exit 1 (readJsonFile refusal → dispatcher catch → emitError)');
+      const errBody = tryJson(r.stderr.trim()) || {};
+      const msg = String(errBody.error || r.stderr);
+      assert.match(msg, /UTF-16BE payload must have an even byte count/i,
+        'refusal message must name the byte-count constraint explicitly');
+      assert.match(msg, /file may be truncated/i,
+        'refusal message must hint at the most likely root cause (truncation)');
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('UTF-16BE even-length payload decodes correctly via --evidence', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'audit-nn-p13-even-'));
+    try {
+      const evPath = path.join(tmp, 'even-utf16be.json');
+      // "{}" in UTF-16BE: 0x00 0x7B 0x00 0x7D — even (4 bytes after 2-byte BOM).
+      // Plus an object that the runner accepts: { "observations": {}, "verdict": {} }
+      const json = '{"observations":{},"verdict":{}}';
+      // Encode as UTF-16LE then byte-swap to UTF-16BE.
+      const le = Buffer.from(json, 'utf16le');
+      const be = Buffer.alloc(le.length);
+      for (let i = 0; i < le.length - 1; i += 2) {
+        be[i] = le[i + 1];
+        be[i + 1] = le[i];
+      }
+      fs.writeFileSync(evPath, Buffer.concat([Buffer.from([0xFE, 0xFF]), be]));
+      const r = cli(['run', 'library-author', '--evidence', evPath]);
+      // Don't pin status — the run may exit 0 (clean) or with another
+      // legitimate non-zero code — but the read must not refuse on the
+      // byte-count check.
+      const errBody = tryJson(r.stderr.trim()) || {};
+      const msg = String(errBody.error || r.stderr);
+      assert.doesNotMatch(msg, /UTF-16BE payload must have an even byte count/i,
+        'even-length UTF-16BE payload must NOT trip the odd-length guard');
+      assert.doesNotMatch(msg, /Unexpected token|invalid JSON/i,
+        'even-length UTF-16BE payload must decode + parse cleanly; got: ' + msg);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('source no longer uses Buffer.allocUnsafe in the UTF-16BE branch', () => {
+    // Belt-and-braces: lock in the alloc semantics at the source level so a
+    // future refactor doesn't silently regress to allocUnsafe and reopen
+    // the information-disclosure path.
+    const src = fs.readFileSync(path.join(ROOT, 'bin', 'exceptd.js'), 'utf8');
+    // Locate the readJsonFile function and confirm Buffer.allocUnsafe is
+    // not invoked anywhere. A comment-mention is fine — we strip line
+    // comments and JSDoc bodies before scanning. The pattern is the call
+    // form `Buffer.allocUnsafe(` with no preceding `//` on the same line.
+    const lines = src.split(/\r?\n/);
+    const callLines = lines.filter(line => {
+      const ix = line.indexOf('Buffer.allocUnsafe(');
+      if (ix < 0) return false;
+      // Strip leading whitespace + `//` / `*` / `* ` for comment context.
+      const before = line.slice(0, ix).trimStart();
+      if (before.startsWith('//')) return false;
+      if (before.startsWith('*')) return false;
+      return true;
+    });
+    assert.deepEqual(callLines, [],
+      'Buffer.allocUnsafe must not be invoked in bin/exceptd.js — use Buffer.alloc for zero-init guarantee. Offending lines: ' + JSON.stringify(callLines));
+  });
+});
+})();
+
+
+// ---- routed from sarif-evidence-locations ----
+;(() => {
+/**
+ * Pins the SARIF results[].locations support: a submission's optional
+ * `evidence_locations` map is threaded onto firing indicators and emitted as
+ * SARIF physical locations, so secret/file findings carry a real location
+ * instead of shipping location-less (which GitHub code-scanning drops).
+ *
+ * Discipline: exact exit codes; value/type assertions paired with presence.
+ */
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const { makeSuiteHome, makeCli, tryJson } = require("./_helpers/cli");
+
+const cli = makeCli(makeSuiteHome("exceptd-sariflocs-"));
+
+// A library-author observation-hit drives a clean 'hit' (the existing SARIF
+// tests use this path). Supply evidence_locations in both accepted forms.
+const SUB = JSON.stringify({
+  observations: { w: { captured: true, indicator: "publish-workflow-uses-static-token", result: "hit" } },
+  evidence_locations: {
+    "publish-workflow-uses-static-token": [
+      ".github/workflows/release.yml",
+      { uri: ".github/workflows/publish.yml", startLine: 12 },
+    ],
+  },
+});
+
+test("SARIF result for a firing indicator carries the submission's evidence_locations", () => {
+  const r = cli(["run", "library-author", "--evidence", "-", "--format", "sarif", "--json"], { input: SUB });
+  const sarif = tryJson(r.stdout);
+  assert.ok(sarif && sarif.version === "2.1.0", `expected SARIF 2.1.0; got ${r.stdout.slice(0, 160)}`);
+  const result = (sarif.runs?.[0]?.results || []).find(x => /publish-workflow-uses-static-token/.test(x.ruleId));
+  assert.ok(result, "the fired indicator must have a SARIF result");
+  assert.ok(Array.isArray(result.locations) && result.locations.length === 2,
+    `expected 2 locations; got ${JSON.stringify(result.locations)}`);
+  const uris = result.locations.map(l => l.physicalLocation?.artifactLocation?.uri);
+  assert.ok(uris.includes(".github/workflows/release.yml"), "string-form location must become a uri");
+  const withLine = result.locations.find(l => l.physicalLocation?.artifactLocation?.uri === ".github/workflows/publish.yml");
+  assert.equal(withLine.physicalLocation.region.startLine, 12, "object-form startLine must become a SARIF region");
+});
+
+test("a firing indicator with no evidence_locations does not crash and yields a valid SARIF doc", () => {
+  const sub = JSON.stringify({ observations: { w: { captured: true, indicator: "publish-workflow-uses-static-token", result: "hit" } } });
+  const r = cli(["run", "library-author", "--evidence", "-", "--format", "sarif", "--json"], { input: sub });
+  const sarif = tryJson(r.stdout);
+  assert.ok(sarif && sarif.version === "2.1.0");
+  const result = (sarif.runs?.[0]?.results || []).find(x => /publish-workflow-uses-static-token/.test(x.ruleId));
+  assert.ok(result, "result present");
+  // locations may be absent or the coarse playbook-source fallback; either is
+  // valid SARIF — just assert no crash and the result exists.
+  if (result.locations !== undefined) assert.ok(Array.isArray(result.locations));
+});
+})();
