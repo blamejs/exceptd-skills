@@ -86,57 +86,51 @@ test('zeroday-lessons.json carries no orphan entries for the deleted CVEs', () =
 });
 
 
-// ---- routed from intake-vendor-blog-coverage ----
-require("node:test").describe("intake-vendor-blog-coverage", () => {
+// ---- routed from v0_13_4-fixes ----
+require("node:test").describe("v0_13_4-fixes", () => {
 const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * tests/intake-vendor-blog-coverage.test.js
+ * tests/v0_13_4-fixes.test.js
  *
- * v0.13.14 regression pin for the DirtyDecrypt-class intake gap.
+ * Pin tests for the v0.13.4 patch.
  *
- * Background: CVE-2026-31635 (DirtyDecrypt) was patched silently in
- * mainline 2026-04-25, then disclosed via a published PoC on 2026-05-17.
- * The 8-feed primary-source intake (Qualys / RHSA / USN / ZDI / kernel.org
- * / oss-security / JFrog / CISA) missed it: the kernel.org Atom feed
- * window had rolled past the fix commit by the time the PoC published,
- * the V12 rediscovery went to maintainers privately rather than to
- * oss-security@openwall, and the BleepingComputer / Microsoft Security
- * Blog publications surfaced on vendor blogs that no feed covered.
- *
- * The fix: lib/source-advisories.js now polls four vendor-security-blog
- * feeds — microsoft-security-blog / sysdig-blog / trail-of-bits-blog /
- * embrace-the-red. These are the canonical signal channel for
- * "kernel-class CVE patched silently, class-of-bug research published
- * weeks later" and for AI-tool / MCP supply-chain disclosures.
- *
- * This pin asserts (a) the four new feeds are registered, (b) the
- * fixture has matching frozen-content entries so fixture-mode never
- * falls through to live RSS for them, and (c) the DirtyDecrypt entry
- * itself is in the catalog as the operator-side anchor.
+ * Coverage:
+ *   A — _meta.fed_by is now schema-accepted (drives the 20 cosmetic
+ *       validate-playbooks warnings to 0).
+ *   C — README + AGENTS surface the v0.13.x operator-facing features.
+ *   E — 2 stuck-draft CVEs (MAL-2026-ANTHROPIC-MCP-STDIO + CVE-2026-GTIG-AI-2FA)
+ *       are deleted from the catalog and from any cross-referencing data file.
+ *   (B and D pin coverage is in their dedicated test files; this file
+ *    covers the items that don't have a natural dedicated home.)
  */
 
-const test = require("node:test");
-const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const path = require("node:path");
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 
-const ROOT = path.join(__dirname, "..");
-const SOURCE = require(path.join(ROOT, "lib", "source-advisories.js"));
-const REQUIRED_VENDOR_FEEDS = [
-  "microsoft-security-blog",
-  "sysdig-blog",
-  "trail-of-bits-blog",
-  "embrace-the-red",
-];
+const ROOT = path.join(__dirname, '..');
 
-test("DirtyDecrypt has a matching zeroday-lessons entry naming the intake-coverage control", () => {
-  const lessons = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "zeroday-lessons.json"), "utf8"));
-  const entry = lessons["CVE-2026-31635"];
-  assert.ok(entry, "DirtyDecrypt lesson must exist");
-  const controls = entry.new_control_requirements || [];
-  const intakeCtrl = controls.find((c) => c && (c.name || "").includes("VENDOR-BLOG-COVERAGE"));
-  assert.ok(intakeCtrl,
-    "lesson must reference NEW-CTRL-072 (PRIMARY-SOURCE-INTAKE-VENDOR-BLOG-COVERAGE)");
+// ---------- A. fed_by schema acceptance ----------
+
+
+
+// ---------- C. README + AGENTS surface v0.13.x features ----------
+
+
+
+
+
+
+
+
+// ---------- E. 2 stuck-draft CVEs deleted ----------
+
+test('E: zeroday-lessons.json carries no orphan entries for the deleted CVEs', () => {
+  const l = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'zeroday-lessons.json'), 'utf8'));
+  assert.ok(!('MAL-2026-ANTHROPIC-MCP-STDIO' in l));
+  assert.ok(!('CVE-2026-GTIG-AI-2FA' in l));
 });
 ;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
   for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);

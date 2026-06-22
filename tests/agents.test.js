@@ -1,5 +1,9 @@
-'use strict';
+"use strict";
 
+
+// ---- routed from j-agent-refs-resolve ----
+require("node:test").describe("j-agent-refs-resolve", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
  * tests/j-agent-refs-resolve.test.js
  *
@@ -48,4 +52,11 @@ test('agents/source-validator.md references only agents that exist', () => {
     [],
     `source-validator.md references agents with no agents/<name>.md: ${dangling.join(', ')}`
   );
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
 });

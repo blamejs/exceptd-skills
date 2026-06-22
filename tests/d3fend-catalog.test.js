@@ -1,26 +1,28 @@
 "use strict";
 
 
-// ---- routed from standards-version-canonical ----
-require("node:test").describe("standards-version-canonical", () => {
+// ---- routed from docs-catalog-counts-pinned ----
+require("node:test").describe("docs-catalog-counts-pinned", () => {
 const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * tests/standards-version-canonical.test.js
+ * tests/docs-catalog-counts-pinned.test.js
  *
- * D3FEND and CWE join ATLAS and ATT&CK as pinned external standards whose
- * single source of truth lives in the catalog `_meta`:
- *   - data/d3fend-catalog.json._meta.d3fend_version
- *   - data/cwe-catalog.json._meta.cwe_version
+ * Cycle 14 docs-accuracy fix (v0.12.34): operator-facing README.md +
+ * ARCHITECTURE.md were pinning ATLAS v5.1.0 / ATT&CK v17 / 38 skills /
+ * 28 D3FEND entries — nine releases after cycle 9 corrected the manifest
+ * pin (v5.6.0 / v19.0). The CHANGELOG advertised v5.6.0 but the README's
+ * badge still said v5.1.0; operators reading "which catalog version does
+ * this skill set track" saw a 6-month-stale answer.
  *
- * Every operator-facing mention of a D3FEND or CWE version — docs, skill
- * bodies, the catalog-summary builder, and its derived index — must equal the
- * pinned value. Before this guard existed the pins drifted badly: the catalog
- * stayed on D3FEND v1.0.0 / CWE 4.16 for over a year while the real releases
- * reached v1.3.0 / 4.20, and the docs even disagreed with the catalog (README
- * said CWE v4.17 while _meta said 4.16; one skill still cited D3FEND v0.10).
+ * This test asserts that EVERY version mention in the docs aligns with the
+ * CURRENT `_meta` pins — not just absence of a specific obsolete string.
+ * codex P2 (v0.12.34 follow-up): a banned-string approach catches the
+ * historical drift but lets future drift through silently. When ATLAS
+ * advances beyond 5.4.0, a doc mention that remains on 5.4.0 must also
+ * fail this gate.
  *
- * Exact-match (not stale-only): these are point-in-time pins with no
- * forward-watch convention, so any deviation — older or newer — is drift.
+ * Per the anti-coincidence rule, every assertion checks an EXACT
+ * value or asserts the empty-set property "no mismatching pin found."
  */
 
 const test = require('node:test');
@@ -29,56 +31,86 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
-const D3FEND = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'd3fend-catalog.json'), 'utf8'))._meta.d3fend_version;
-const CWE = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'cwe-catalog.json'), 'utf8'))._meta.cwe_version;
+const README = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
+const ARCH = fs.readFileSync(path.join(ROOT, 'ARCHITECTURE.md'), 'utf8');
+const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
+const atlas = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'atlas-ttps.json'), 'utf8'));
+const attack = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'attack-techniques.json'), 'utf8'));
+const d3fend = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'd3fend-catalog.json'), 'utf8'));
+const cve = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'cve-catalog.json'), 'utf8'));
+const globalFrameworks = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'global-frameworks.json'), 'utf8'));
+const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
 
-const DOC_FILES = [
-  'README.md',
-  'ARCHITECTURE.md',
-  'CONTEXT.md',
-  'AGENTS.md',
-  '.cursorrules',
-  'scripts/builders/catalog-summaries.js',
-  'data/_indexes/catalog-summaries.json',
-];
-
-function skillBodies() {
-  const dir = path.join(ROOT, 'skills');
-  if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir)
-    .map((n) => path.join('skills', n, 'skill.md'))
-    .filter((rel) => fs.existsSync(path.join(ROOT, rel)));
+function entryCount(catalog) {
+  return Object.keys(catalog).filter((k) => k !== '_meta').length;
 }
 
-// "D3FEND v1.3.0" / "D3FEND 1.3.0" — version must follow the framework name.
-const D3FEND_RE = /D3FEND\s+v?(\d+\.\d+(?:\.\d+)?)/g;
-// "CWE v4.20" / "CWE 4.20" — the `4.` prefix avoids matching "CWE-79" IDs.
-const CWE_RE = /CWE\s+v?(4\.\d+)/g;
+// Canonical jurisdiction count: every non-metadata top-level entry in the
+// registry (GLOBAL, the International / Multi-Jurisdiction standards scope, is
+// a counted entry). Only `_`-prefixed keys are metadata. This is the single
+// source the operator-facing surfaces below must agree with.
+function jurisdictionCount() {
+  return Object.keys(globalFrameworks).filter((k) => !k.startsWith('_')).length;
+}
 
-function scan(rel, re, canonical) {
-  const abs = path.join(ROOT, rel);
-  if (!fs.existsSync(abs)) return [];
-  const text = fs.readFileSync(abs, 'utf8');
-  const drift = [];
-  for (const m of text.matchAll(re)) {
-    if (m[1] !== canonical) {
-      const lineNo = text.slice(0, m.index).split('\n').length;
-      drift.push(`${rel}:${lineNo} — found ${m[1]}, canonical is ${canonical}`);
+// Generic mismatch scan. Pull every version-shaped token next to the named
+// context and assert it equals the live pin. If future ATLAS bumps to
+// 5.5.0 and a doc still says 5.4.0, this fails — codex P2 review asked
+// for this generalized behavior over the prior banned-string approach.
+function findMismatches(doc, contextRe, livePin) {
+  const mismatches = [];
+  let m;
+  const re = new RegExp(contextRe.source, contextRe.flags.includes('g') ? contextRe.flags : contextRe.flags + 'g');
+  while ((m = re.exec(doc)) !== null) {
+    const found = m[1];
+    if (found !== livePin) {
+      const start = Math.max(0, m.index - 30);
+      const end = Math.min(doc.length, m.index + m[0].length + 30);
+      mismatches.push({ found, expected: livePin, context: doc.slice(start, end).replace(/\s+/g, ' ').trim() });
     }
   }
-  return drift;
+  return mismatches;
 }
 
-test('catalog _meta pins are well-formed', () => {
-  assert.match(D3FEND, /^\d+\.\d+\.\d+$/, `d3fend_version must be semver; got ${D3FEND}`);
-  assert.match(CWE, /^\d+\.\d+$/, `cwe_version must be major.minor; got ${CWE}`);
-});
 
-test('every D3FEND version mention equals the catalog pin', () => {
-  const drift = [];
-  for (const rel of [...DOC_FILES, ...skillBodies()]) drift.push(...scan(rel, D3FEND_RE, D3FEND));
-  assert.equal(drift.length, 0,
-    `D3FEND version drift (canonical v${D3FEND}):\n  ${drift.join('\n  ')}`);
+
+
+
+
+
+// Cycle 15 P2 F6 (v0.12.35): the v0.12.34 docs-pin test only covered
+// README + ARCHITECTURE. Cycle 15 audit found 25+ skill bodies + several
+// scripts/ + data/_indexes/ files still citing "MITRE ATLAS v5.1.0".
+// This second test extends the gate across the wider operator-facing
+// surface so the same drift class can't slip past again.
+//
+// Strategy: scan every operator-facing markdown / JS file under skills/,
+// scripts/builders/, and data/_indexes/ for the literal pattern
+// "MITRE ATLAS v<version>" and assert the version always equals the
+// live atlas-ttps._meta.atlas_version pin. The README + ARCHITECTURE
+// tests above cover those two specific files; this test covers the
+// rest.
+const SKILL_DIR = path.join(ROOT, 'skills');
+const INDEX_DIR = path.join(ROOT, 'data', '_indexes');
+const BUILDER_DIR = path.join(ROOT, 'scripts');
+
+function walkFiles(rootDir, predicate) {
+  const out = [];
+  if (!fs.existsSync(rootDir)) return out;
+  for (const entry of fs.readdirSync(rootDir, { withFileTypes: true })) {
+    const full = path.join(rootDir, entry.name);
+    if (entry.isDirectory()) out.push(...walkFiles(full, predicate));
+    else if (entry.isFile() && predicate(full)) out.push(full);
+  }
+  return out;
+}
+
+test('ARCHITECTURE.md — D3FEND entry count equals live d3fend-catalog count', () => {
+  const live = entryCount(d3fend);
+  const m = ARCH.match(/(\d+) MITRE D3FEND defensive technique entries/);
+  assert.ok(m, 'ARCHITECTURE must declare D3FEND entry count in standard phrase');
+  assert.equal(Number(m[1]), live,
+    `ARCHITECTURE D3FEND count = ${m[1]}; live catalog has ${live} entries`);
 });
 ;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
   for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);

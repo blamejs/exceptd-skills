@@ -1,6 +1,52 @@
 "use strict";
 
 
+// ---- routed from catalog-data-integrity ----
+require("node:test").describe("catalog-data-integrity", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * Regression suite for a catalog data-integrity / curation pass:
+ *
+ *   - The AI supply-chain families (ShadowMQ, Triton auth-bypass) carry ATLAS
+ *     mappings — they were unmapped while sibling family entries carried
+ *     AML.T0049 (Hard Rule #7 coherence).
+ *   - The active_exploitation "theoretical" status is an explicit entry in the
+ *     RWEP scoring ladder (not an incidental `?? 0` fall-through).
+ *   - The jurisdiction count is consistent across the stale-content and
+ *     catalog-summaries builders and the README badge (all count GLOBAL → 35).
+ *   - framework-control-gaps _meta.entry_count matches the actual entry count
+ *     (a gate now enforces this).
+ *   - Shipped playbook threat_currency_score stays within the documented band.
+ */
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const path = require("node:path");
+
+const ROOT = path.join(__dirname, "..");
+const cve = require(path.join(ROOT, "data", "cve-catalog.json"));
+const atlas = require(path.join(ROOT, "data", "atlas-ttps.json"));
+const gaps = require(path.join(ROOT, "data", "framework-control-gaps.json"));
+const gf = require(path.join(ROOT, "data", "global-frameworks.json"));
+const scoring = require(path.join(ROOT, "lib", "scoring.js"));
+
+test("jurisdiction count is consistent (GLOBAL included → 35) across builders", () => {
+  const live = Object.keys(gf).filter((k) => !k.startsWith("_")).length;
+  assert.equal(live, 35, "the canonical jurisdiction count (non-underscore keys, GLOBAL included) is 35");
+  // The stale-content builder must use the same rule (no GLOBAL exclusion).
+  const src = require("fs").readFileSync(path.join(ROOT, "scripts", "builders", "stale-content.js"), "utf8");
+  assert.doesNotMatch(src, /!startsWith\("_"\)\s*&&\s*k\s*!==\s*"GLOBAL"/,
+    "stale-content must not uniquely exclude GLOBAL from the jurisdiction count");
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});
+
+
 // ---- routed from docs-catalog-counts-pinned ----
 require("node:test").describe("docs-catalog-counts-pinned", () => {
 const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
@@ -105,35 +151,24 @@ function walkFiles(rootDir, predicate) {
   return out;
 }
 
-test('README — every ATT&CK version mention equals live attack-techniques._meta.attack_version', () => {
-  const live = attack._meta.attack_version;
-  const liveMajor = live.split('.')[0];
-  const patterns = [
-    /ATT[%&]26?CK[-\s]*v(\d+(?:\.\d+)?)/g,
-    /ATT&CK v(\d+(?:\.\d+)?)/g,
-  ];
-  const allMismatches = [];
-  for (const p of patterns) {
-    const re = new RegExp(p.source, p.flags);
-    let m;
-    while ((m = re.exec(README)) !== null) {
-      const found = m[1];
-      if (found !== live && found !== liveMajor) {
-        const start = Math.max(0, m.index - 30);
-        const end = Math.min(README.length, m.index + m[0].length + 30);
-        allMismatches.push({ found, expected: `${live} or ${liveMajor}`, context: README.slice(start, end).replace(/\s+/g, ' ').trim() });
-      }
-    }
+test('jurisdiction count — README badge, README body, and package description equal the live registry count', () => {
+  const live = jurisdictionCount();
+  const mismatches = [];
+
+  const badge = README.match(/badge\/jurisdictions-(\d+)-/);
+  assert.ok(badge, 'README must declare a jurisdictions badge');
+  if (Number(badge[1]) !== live) mismatches.push(`README badge: ${badge[1]} vs live ${live}`);
+
+  for (const m of README.matchAll(/(\d+)\s+jurisdictions/g)) {
+    if (Number(m[1]) !== live) mismatches.push(`README body "${m[1]} jurisdictions" vs live ${live}`);
   }
-  const seen = new Set();
-  const unique = allMismatches.filter((m) => {
-    const k = `${m.found}|${m.context}`;
-    if (seen.has(k)) return false;
-    seen.add(k);
-    return true;
-  });
-  assert.deepEqual(unique, [],
-    `README ATT&CK version mentions must all equal live ${live} (or major-only ${liveMajor}); mismatches: ${JSON.stringify(unique, null, 2)}`);
+
+  const pkgMatch = (pkg.description || '').match(/(\d+)\s+jurisdictions/);
+  assert.ok(pkgMatch, 'package.json description must state the jurisdiction count');
+  if (Number(pkgMatch[1]) !== live) mismatches.push(`package.json: ${pkgMatch[1]} vs live ${live}`);
+
+  assert.deepEqual(mismatches, [],
+    `Jurisdiction count drift (live registry = ${live}):\n  ${mismatches.join('\n  ')}`);
 });
 ;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
   for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);

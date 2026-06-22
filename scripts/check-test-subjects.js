@@ -86,6 +86,7 @@ function deriveSubjects() {
   add("agents", "repo:agents/");
   add("playbooks", "aggregate:data/playbooks");
   add("workflows", "aggregate:.github/workflows");
+  add("governance", "repo:governance-files"); // LICENSE/NOTICE/FUNDING/CoC/gitignore/gitleaks presence + integrity
   return subjects;
 }
 

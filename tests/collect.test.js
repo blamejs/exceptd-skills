@@ -1,182 +1,35 @@
 "use strict";
 
 
-// ---- routed from audit-usability-fixes ----
-require("node:test").describe("audit-usability-fixes", () => {
+// ---- routed from w-collectors-fp-attestation ----
+require("node:test").describe("w-collectors-fp-attestation", () => {
 const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * CLI usability regression suite.
+ * tests/w-collectors-fp-attestation.test.js
  *
- * Pins the behavior of a set of CLI ergonomics fixes so they cannot silently
- * regress at the next refactor. Each test exercises the real CLI through the
- * shared cli() harness (subprocess spawn of bin/exceptd.js) and asserts the
- * EXACT exit code and field shapes per the project anti-coincidence rule:
- * never `notEqual(0)`, never `assert.ok(field)` without a paired value/type
- * assertion.
+ * Every collector that flips an indicator carrying
+ * false_positive_checks_required to "hit" must also emit the sibling
+ * "<id>__fp_checks" attestation for the checks it deterministically ran.
+ * Without it, the runner downgrades a real `collect`-surfaced hit to
+ * inconclusive when the same submission is piped into `run`, silently
+ * masking the finding.
  *
- * Areas covered:
- *   1. Unknown-flag hard-fail across all verbs (+ typo suggestion + the
- *      tailored cross-verb "irrelevant flag" message that must NOT collapse
- *      into a generic unknown-flag refusal).
- *   2. `--format json` returns the full run result, not a stub.
- *   3. Multiple --format values emit a one-format-wins note to stderr.
- *   4. Standardized bundles (sarif / csaf-2.0 / openvex) carry no top-level
- *      `ok` key and present their spec marker.
- *   5. `skill` / `framework-gap` honor --help; `refresh` keeps its own help.
- *   6. `collect` emits JSON when piped (non-TTY) so the documented pipe works.
- *   7. `refresh --check-advisories` arg parsing (report-only, no network).
- *   8. `attest list --limit` envelope + bad-value rejection.
- */
-
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const path = require('node:path');
-const fs = require('node:fs');
-const os = require('node:os');
-
-const { ROOT, makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
-
-const SUITE_HOME = makeSuiteHome('exceptd-audit-usability-');
-const cli = makeCli(SUITE_HOME);
-
-// ===================================================================
-// 1. Unknown-flag hard-fail (all verbs, not just doctor)
-// ===================================================================
-
-
-
-
-
-
-
-
-
-// ===================================================================
-// 2. `--format json` returns the FULL run result (not a stub)
-// ===================================================================
-
-
-// ===================================================================
-// 3. MULTI-FORMAT note to stderr
-// ===================================================================
-
-
-// ===================================================================
-// 4. STANDARDIZED BUNDLES carry NO top-level `ok` key
-// ===================================================================
-
-
-
-
-// ===================================================================
-// 5. `skill --help` / `framework-gap --help` honor --help;
-//    refresh keeps its OWN detailed help
-// ===================================================================
-
-
-
-
-// ===================================================================
-// 6. `collect` emits JSON when piped (non-TTY) so the documented pipe works
-// ===================================================================
-
-
-// ===================================================================
-// 7. `refresh --check-advisories` parsing (no network — parseArgs directly)
-// ===================================================================
-
-
-// ===================================================================
-// 8. `attest list --limit`
-// ===================================================================
-
-test('collect emits JSON when piped (non-TTY), not human prose', () => {
-  const r = cli(['collect', 'secrets']);
-  assert.equal(r.status, 0, `expected exit 0; got ${r.status} (stderr: ${r.stderr.slice(0, 200)})`);
-  const body = tryJson(r.stdout.trim());
-  assert.ok(body, `collect stdout must parse as JSON when piped; got: ${r.stdout.slice(0, 200)}`);
-  assert.equal(typeof body.playbook_id, 'string');
-  assert.equal(body.verb, 'collect');
-});
-;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
-  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
-  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
-  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
-    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
-}
-});
-
-
-// ---- routed from blamejs-scan-fixes ----
-require("node:test").describe("blamejs-scan-fixes", () => {
-const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
-/**
- * tests/blamejs-scan-fixes.test.js
+ * This pins the class for the whole collector set:
  *
- * Pins the fixes a scan of the sibling blamejs repo surfaced:
- *  - playbooks that declare bundle_format "json" (secrets / cred-stores /
- *    runtime / citation-hygiene) now build a real structured-JSON evidence
- *    bundle instead of falling through to the "Unknown format" placeholder;
- *  - the crypto-codebase collector attests the playbook's own
- *    `repo-has-source-tree` gate (it previously emitted a `repo-context` key
- *    the playbook never references, so a source repo got a spurious
- *    precondition_unverified warning).
- * Exact-value pins, with content paired to presence per the project's
- * field-present-vs-field-populated rule.
- */
-
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-
-const runner = require('../lib/playbook-runner.js');
-const cryptoCodebase = require('../lib/collectors/crypto-codebase.js');
-const containersCollector = require('../lib/collectors/containers.js');
-const { makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
-
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-dogfix2-'));
-process.on('exit', () => { try { fs.rmSync(TMP, { recursive: true, force: true }); } catch { /* non-fatal */ } });
-let _n = 0;
-function mkfx() { const d = path.join(TMP, 'fx-' + _n++); fs.mkdirSync(d, { recursive: true }); return d; }
-
-test('collect --help documents the --attest-ownership flag it accepts', () => {
-  // The flag is allowlisted and consumed by the collector, and the
-  // precondition-block remediation tells operators to use it — so collect's
-  // own help must list it (otherwise an operator following the hint cannot
-  // discover the flag).
-  const cli = makeCli(makeSuiteHome());
-  const out = cli(['collect', '--help']).stdout || '';
-  assert.ok(/--attest-ownership/.test(out), 'collect --help lists the --attest-ownership flag');
-});
-;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
-  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
-  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
-  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
-    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
-}
-});
-
-
-// ---- routed from collectors ----
-require("node:test").describe("collectors", () => {
-const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
-/**
- * tests/collectors.test.js
+ *   1. Parametric source guard — for every collector module, derive its
+ *      FP-gated indicator ids from the playbook JSON and confirm that an
+ *      indicator the collector decides deterministically either references
+ *      __fp_checks in its source or is in an explicit "no deterministic FP
+ *      index" allowlist (with the reason recorded here). A new collector
+ *      that flips an FP-gated indicator without attesting cannot pass.
  *
- * Pins the collector interface contract + reference implementations:
- *   - exceptd collect <unknown> -> structured error + exit 1 + lists
- *     the available collectors so an operator can discover them.
- *   - exceptd collect <known> -> submission JSON with the required
- *     top-level keys (precondition_checks, artifacts,
- *     signal_overrides, collector_meta, collector_errors).
- *   - exceptd collect <known> | exceptd run <known> --evidence -
- *     round-trips: the runner accepts the collector's output without
- *     schema errors.
- *   - exceptd collect <known> --cwd <nonexistent> -> structured error.
- *   - secrets collector finds expected file types on a synthetic
- *     repo with a fake .env + fake .npmrc.
+ *   2. Behavioural round-trips — for the collectors triggerable from a
+ *      staged tempdir fixture, drive a real hit and assert the emitted
+ *      attestation has the shape run() requires (object, index-keyed,
+ *      values === true), and that the collect -> run pipeline reaches
+ *      `detected` (not inconclusive) for at least one indicator whose FP
+ *      checks are all deterministic, while honestly leaving indicators
+ *      that carry a network/operator-judgement check at inconclusive.
  */
 
 const test = require("node:test");
@@ -184,2252 +37,441 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const os = require("node:os");
-const { spawnSync } = require("node:child_process");
 
 const ROOT = path.join(__dirname, "..");
-const CLI = path.join(ROOT, "bin", "exceptd.js");
 
-function cli(args, opts = {}) {
-  return spawnSync(process.execPath, [CLI, ...args], {
-    encoding: "utf8",
-    cwd: opts.cwd || ROOT,
-    env: { ...process.env, EXCEPTD_DEPRECATION_SHOWN: "1", EXCEPTD_UNSIGNED_WARNED: "1", ...(opts.env || {}) },
-    input: opts.input,
-  });
+function loadPlaybook(id) {
+  return JSON.parse(fs.readFileSync(path.join(ROOT, "data", "playbooks", `${id}.json`), "utf8"));
 }
 
-function tryJson(s) { try { return JSON.parse(s); } catch { return null; } }
-
-// Direct module imports so the diff-coverage gate sees the exports
-// are exercised by unit-level tests, not just via subprocess
-// invocation through the CLI.
-const secretsCollector = require(path.join(ROOT, "lib", "collectors", "secrets.js"));
-const kernelCollector = require(path.join(ROOT, "lib", "collectors", "kernel.js"));
-const sbomCollector = require(path.join(ROOT, "lib", "collectors", "sbom.js"));
-const containersCollector = require(path.join(ROOT, "lib", "collectors", "containers.js"));
-const libraryAuthorCollector = require(path.join(ROOT, "lib", "collectors", "library-author.js"));
-const cryptoCodebaseCollector = require(path.join(ROOT, "lib", "collectors", "crypto-codebase.js"));
-const credStoresCollector = require(path.join(ROOT, "lib", "collectors", "cred-stores.js"));
-const hardeningCollector = require(path.join(ROOT, "lib", "collectors", "hardening.js"));
-const runtimeCollector = require(path.join(ROOT, "lib", "collectors", "runtime.js"));
-const aiApiCollector = require(path.join(ROOT, "lib", "collectors", "ai-api.js"));
-const mcpCollector = require(path.join(ROOT, "lib", "collectors", "mcp.js"));
-
-
-
-const ENVELOPE_KEYS = [
-  "precondition_checks", "artifacts", "signal_overrides",
-  "collector_meta", "collector_errors",
-];
-
-test("collector modules export the contract: playbook_id + collect()", () => {
-  for (const mod of [secretsCollector, kernelCollector, sbomCollector, containersCollector, libraryAuthorCollector, cryptoCodebaseCollector, credStoresCollector, hardeningCollector, runtimeCollector, aiApiCollector, mcpCollector]) {
-    assert.equal(typeof mod.playbook_id, "string", "playbook_id must be a string");
-    assert.ok(mod.playbook_id.length > 0);
-    assert.equal(typeof mod.collect, "function", "collect must be a function");
-  }
-  assert.equal(secretsCollector.playbook_id, "secrets");
-  assert.equal(kernelCollector.playbook_id, "kernel");
-  assert.equal(sbomCollector.playbook_id, "sbom");
-  assert.equal(containersCollector.playbook_id, "containers");
-  assert.equal(libraryAuthorCollector.playbook_id, "library-author");
-  assert.equal(cryptoCodebaseCollector.playbook_id, "crypto-codebase");
-  assert.equal(credStoresCollector.playbook_id, "cred-stores");
-  assert.equal(hardeningCollector.playbook_id, "hardening");
-  assert.equal(runtimeCollector.playbook_id, "runtime");
-  assert.equal(aiApiCollector.playbook_id, "ai-api");
-  assert.equal(mcpCollector.playbook_id, "mcp");
-});
-
-test("collector.collect() returns the contract envelope when called directly", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-direct-"));
-  try {
-    const result = sbomCollector.collect({ cwd: tmp });
-    for (const k of ["precondition_checks", "artifacts", "signal_overrides", "collector_meta", "collector_errors"]) {
-      assert.ok(k in result, `direct collect() return must carry "${k}"`);
-    }
-    assert.equal(result.collector_meta.collector_id, "sbom");
-    // Empty tempdir has no lockfile + no SBOM → artifacts carry the
-    // "none found" prose; the precondition reflects the absence.
-    assert.equal(result.precondition_checks["sbom-tool-available"], false);
-    assert.match(result.artifacts["lockfile-inventory"].value, /no lockfile found/);
-  } finally {
-    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
-  }
-});
-
-test("collect <unknown> exits 1 with structured error + lists available collectors", () => {
-  const r = cli(["collect", "this-collector-does-not-exist"]);
-  assert.equal(r.status, 1);
-  const err = tryJson(r.stderr);
-  assert.ok(err, "stderr must be parseable JSON");
-  assert.equal(err.type, "collector_not_found");
-  assert.ok(Array.isArray(err.collectors_available));
-  // The three reference collectors must be present.
-  assert.ok(err.collectors_available.includes("secrets"));
-  assert.ok(err.collectors_available.includes("kernel"));
-  assert.ok(err.collectors_available.includes("sbom"));
-  // The error must point the operator at the AI-evidence path.
-  assert.match(err.error, /AI-evidence path remains/);
-});
-
-test("collect --cwd <nonexistent> exits with structured error", () => {
-  const r = cli(["collect", "kernel", "--cwd", "/path/that/absolutely/does/not/exist-" + Date.now()]);
-  assert.equal(r.status, 1);
-  const err = tryJson(r.stderr);
-  assert.ok(err);
-  assert.match(err.error, /does not exist/);
-});
-
-test("collect <pb> --pretty produces indented JSON envelope", () => {
-  const r = cli(["collect", "kernel", "--pretty"]);
-  assert.equal(r.status, 0);
-  assert.match(r.stdout, /^\{\n /, "pretty mode must indent the JSON envelope");
-  const body = tryJson(r.stdout);
-  assert.ok(body);
-  assert.equal(body.collector_meta.collector_id, "kernel");
-});
-
-test("crypto-codebase collector flips the deterministic predicates on bad fixtures", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-bad-"));
-  try {
-    fs.mkdirSync(path.join(tmp, "src"));
-    // Weak hash in security context: md5 + the variable name "token"
-    // appears in the same file — flow heuristic flips.
-    fs.writeFileSync(path.join(tmp, "src", "auth.js"), [
-      "const crypto = require('crypto');",
-      "function token(payload) {",
-      "  return crypto.createHash('md5').update(payload).digest('hex');",
-      "}",
-    ].join("\n"));
-    // Weak cipher mode (ECB) + RSA-1024 + TLS-old-protocol in one file.
-    fs.writeFileSync(path.join(tmp, "src", "broken.js"), [
-      "const c = require('crypto');",
-      "c.createCipheriv('aes-128-ecb', key, null);",
-      "c.generateKeyPairSync('rsa', { modulusLength: 1024 });",
-      "tls.createServer({ secureProtocol: 'TLSv1_method' });",
-    ].join("\n"));
-    // Math.random with security variable in proximity.
-    fs.writeFileSync(path.join(tmp, "src", "rng.js"), [
-      "function makeToken() {",
-      "  const session_token = Math.random().toString(36).slice(2);",
-      "  return session_token;",
-      "}",
-    ].join("\n"));
-    // Under-iterated PBKDF2 + low bcrypt cost.
-    fs.writeFileSync(path.join(tmp, "src", "kdf.js"), [
-      "const crypto = require('crypto');",
-      "const bcrypt = require('bcrypt');",
-      "crypto.pbkdf2Sync(pw, salt, 10000, 32, 'sha256');",
-      "bcrypt.hashSync(password, 8);",
-    ].join("\n"));
-    // Hardcoded PEM key material in source.
-    fs.writeFileSync(path.join(tmp, "src", "key.js"), [
-      "const KEY = `-----BEGIN PRIVATE KEY-----",
-      "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKc=",
-      "-----END PRIVATE KEY-----`;",
-    ].join("\n"));
-
-    const r = cryptoCodebaseCollector.collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["weak-hash-import"], "hit");
-    assert.equal(r.signal_overrides["weak-cipher-mode"], "hit");
-    assert.equal(r.signal_overrides["rsa-1024-anywhere"], "hit");
-    assert.equal(r.signal_overrides["math-random-in-security-path"], "hit");
-    assert.equal(r.signal_overrides["pbkdf2-under-iterated"], "hit");
-    assert.equal(r.signal_overrides["bcrypt-cost-low"], "hit");
-    assert.equal(r.signal_overrides["hardcoded-key-material"], "hit");
-    assert.equal(r.signal_overrides["tls-old-protocol"], "hit");
-    assert.equal(r.signal_overrides["vendored-pqc-no-provenance"], "miss");
-    assert.equal(r.collector_errors.length, 0);
-    // ecdsa-without-pqc-roadmap should NOT be set — no classical sig
-    // markers in the fixtures means the indicator stays unflipped
-    // (inconclusive).
-    assert.equal(r.signal_overrides["ecdsa-without-pqc-roadmap"], undefined);
-  } finally {
-    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
-  }
-});
-
-test("crypto-codebase collector returns clean miss on a benign fixture", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-clean-"));
-  try {
-    fs.mkdirSync(path.join(tmp, "src"));
-    fs.writeFileSync(path.join(tmp, "package.json"), JSON.stringify({ name: "x", version: "1.0.0" }));
-    fs.writeFileSync(path.join(tmp, "src", "ok.js"), [
-      "const crypto = require('crypto');",
-      "function token() {",
-      "  return crypto.randomBytes(32).toString('hex');",
-      "}",
-      "crypto.pbkdf2Sync(pw, salt, 600001, 32, 'sha256');",
-      "bcrypt.hashSync(pw, 12);",
-    ].join("\n"));
-    const r = cryptoCodebaseCollector.collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["weak-hash-import"], "miss");
-    assert.equal(r.signal_overrides["weak-cipher-mode"], "miss");
-    assert.equal(r.signal_overrides["rsa-1024-anywhere"], "miss");
-    assert.equal(r.signal_overrides["math-random-in-security-path"], "miss");
-    assert.equal(r.signal_overrides["pbkdf2-under-iterated"], "miss");
-    assert.equal(r.signal_overrides["bcrypt-cost-low"], "miss");
-    assert.equal(r.signal_overrides["hardcoded-key-material"], "miss");
-    assert.equal(r.signal_overrides["tls-old-protocol"], "miss");
-  } finally {
-    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
-  }
-});
-
-test("crypto-codebase collector demotes test/spec/fixture paths", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-testdemote-"));
-  try {
-    fs.mkdirSync(path.join(tmp, "tests"), { recursive: true });
-    // Same bad-cipher fixture as the hit test, but under tests/ — the
-    // production-context indicators must NOT flip.
-    fs.writeFileSync(path.join(tmp, "tests", "kat.js"), [
-      "// Known-answer test against published RC4 vector.",
-      "const c = require('crypto');",
-      "c.createCipheriv('aes-128-ecb', key, null);",
-      "c.generateKeyPairSync('rsa', { modulusLength: 1024 });",
-    ].join("\n"));
-    const r = cryptoCodebaseCollector.collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["weak-cipher-mode"], "miss");
-    assert.equal(r.signal_overrides["rsa-1024-anywhere"], "miss");
-  } finally {
-    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
-  }
-});
-
-test("crypto-codebase ecdsa-without-pqc-roadmap fires only when classical sig + no roadmap", () => {
-  const baseline = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-ecdsa-"));
-  try {
-    fs.mkdirSync(path.join(baseline, "src"));
-    // Classical ECDSA use, no PQC impl, no roadmap text → hit.
-    fs.writeFileSync(path.join(baseline, "src", "sig.js"), [
-      "const sig = crypto.sign('ECDSA', data, key);",
-      "// curve secp256r1",
-    ].join("\n"));
-    const r1 = cryptoCodebaseCollector.collect({ cwd: baseline });
-    assert.equal(r1.signal_overrides["ecdsa-without-pqc-roadmap"], "hit");
-
-    // Add a roadmap mention in SECURITY.md → miss.
-    fs.writeFileSync(path.join(baseline, "SECURITY.md"), [
-      "## PQC migration",
-      "This library publishes a hybrid-signature migration roadmap for downstream consumers.",
-    ].join("\n"));
-    const r2 = cryptoCodebaseCollector.collect({ cwd: baseline });
-    assert.equal(r2.signal_overrides["ecdsa-without-pqc-roadmap"], "miss");
-  } finally {
-    try { fs.rmSync(baseline, { recursive: true, force: true }); } catch {}
-  }
-});
-
-test("crypto-codebase no-ml-kem-implementation fires on PQC claim without ML-KEM", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-mlkem-"));
-  try {
-    // README claims PQC-ready; no ML-KEM/Kyber/liboqs anywhere in src.
-    fs.writeFileSync(path.join(tmp, "README.md"), [
-      "# my-lib",
-      "Post-quantum ready library for next-gen cryptography.",
-    ].join("\n"));
-    fs.mkdirSync(path.join(tmp, "src"));
-    fs.writeFileSync(path.join(tmp, "src", "ok.js"), "module.exports = {};\n");
-    const r = cryptoCodebaseCollector.collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["no-ml-kem-implementation"], "hit");
-  } finally {
-    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
-  }
-});
-
-test("crypto-codebase fips-claim-without-runtime-activation fires only when claim + no activation", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-fips-"));
-  try {
-    fs.writeFileSync(path.join(tmp, "SECURITY.md"), "This library is FIPS 140-3 validated.\n");
-    fs.mkdirSync(path.join(tmp, "src"));
-    fs.writeFileSync(path.join(tmp, "src", "ok.js"), "module.exports = {};\n");
-    const r1 = cryptoCodebaseCollector.collect({ cwd: tmp });
-    assert.equal(r1.signal_overrides["fips-claim-without-runtime-activation"], "hit");
-
-    // Add a setFips activation call site → flip to miss.
-    fs.writeFileSync(path.join(tmp, "src", "boot.js"), [
-      "const crypto = require('crypto');",
-      "crypto.setFips(true);",
-    ].join("\n"));
-    const r2 = cryptoCodebaseCollector.collect({ cwd: tmp });
-    assert.equal(r2.signal_overrides["fips-claim-without-runtime-activation"], "miss");
-  } finally {
-    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
-  }
-});
-
-test("crypto-codebase vendored-pqc-no-provenance fires on vendor PQC without provenance marker", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-vendor-"));
-  try {
-    fs.mkdirSync(path.join(tmp, "vendor", "kyber-impl"), { recursive: true });
-    fs.writeFileSync(path.join(tmp, "vendor", "kyber-impl", "kyber.c"), "/* kyber */\n");
-    const r1 = cryptoCodebaseCollector.collect({ cwd: tmp });
-    assert.equal(r1.signal_overrides["vendored-pqc-no-provenance"], "hit");
-
-    fs.writeFileSync(path.join(tmp, "vendor", "kyber-impl", "_PROVENANCE.json"), JSON.stringify({ upstream: "x" }));
-    const r2 = cryptoCodebaseCollector.collect({ cwd: tmp });
-    assert.equal(r2.signal_overrides["vendored-pqc-no-provenance"], "miss");
-  } finally {
-    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
-  }
-});
-
-test("crypto-codebase pbkdf2 1024 iterations fires (codex P1 #77)", () => {
-  // Regression test for codex P1: pbkdf2Sync(pw, salt, 1024, ...) is
-  // an under-iterated call; the iter scanner must not pre-filter 1024
-  // as a "common key-bit-size" value.
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-pbkdf2-1024-"));
-  try {
-    fs.mkdirSync(path.join(tmp, "src"));
-    fs.writeFileSync(path.join(tmp, "src", "kdf.js"), [
-      "const crypto = require('crypto');",
-      "crypto.pbkdf2Sync(pw, salt, 1024, 32, 'sha256');",
-    ].join("\n"));
-    const r = cryptoCodebaseCollector.collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["pbkdf2-under-iterated"], "hit");
-  } finally {
-    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
-  }
-});
-
-test("crypto-codebase test-fixture PQC/FIPS code does not contaminate behavioral signals (codex P1 #77)", () => {
-  // Regression test for codex P1: ML-KEM / FIPS / Dilithium references
-  // inside tests/ should NOT count as evidence the library ships the
-  // capability. The library claims PQC-ready but its only ML-KEM
-  // reference is in a test — should still flip no-ml-kem-implementation
-  // to hit, because the production tree carries no impl.
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-fixture-contam-"));
-  try {
-    fs.writeFileSync(path.join(tmp, "README.md"), "Post-quantum ready library.\n");
-    fs.mkdirSync(path.join(tmp, "tests"), { recursive: true });
-    fs.mkdirSync(path.join(tmp, "src"), { recursive: true });
-    fs.writeFileSync(path.join(tmp, "tests", "kem-fixture.js"), [
-      "// Test fixture references ML-KEM keys for round-trip checks",
-      "const kyberKey = require('./fixtures/ml-kem-768.bin');",
-    ].join("\n"));
-    fs.writeFileSync(path.join(tmp, "src", "main.js"), "module.exports = {};\n");
-    const r = cryptoCodebaseCollector.collect({ cwd: tmp });
-    // PQC claim + no production ML-KEM impl → hit (test fixture must
-    // not flip sawMlKemImpl=true).
-    assert.equal(r.signal_overrides["no-ml-kem-implementation"], "hit");
-  } finally {
-    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
-  }
-});
-
-test("crypto-codebase vendored-pqc walks all the way up to repo root (codex P2 #77)", () => {
-  // Regression test for codex P2: provenance marker at vendor root
-  // must be discovered even when the PQC source is deeply nested.
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-deep-vendor-"));
-  try {
-    fs.mkdirSync(path.join(tmp, "vendor", "a", "b", "c", "d", "e", "kyber-impl"), { recursive: true });
-    fs.writeFileSync(path.join(tmp, "vendor", "a", "b", "c", "d", "e", "kyber-impl", "kyber.c"), "/* kyber */\n");
-    // Marker at the vendor root — 6+ levels above the source file.
-    fs.writeFileSync(path.join(tmp, "vendor", "_PROVENANCE.json"), JSON.stringify({ upstream: "x" }));
-    const r = cryptoCodebaseCollector.collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["vendored-pqc-no-provenance"], "miss",
-      "provenance marker at vendor root must be found regardless of nesting depth");
-  } finally {
-    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
-  }
-});
-
-test("collect crypto-codebase pipes into run --evidence -", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-crypto-pipe-"));
-  try {
-    fs.mkdirSync(path.join(tmp, "src"));
-    fs.writeFileSync(path.join(tmp, "src", "auth.js"), [
-      "function token() {",
-      "  return require('crypto').createHash('md5').update('x').digest('hex');",
-      "}",
-    ].join("\n"));
-    const collected = cli(["collect", "crypto-codebase", "--json", "--cwd", tmp]);
-    assert.equal(collected.status, 0, `collect stderr: ${collected.stderr}`);
-    const ran = cli(["run", "crypto-codebase", "--evidence", "-", "--json"], { input: collected.stdout });
-    // The runner may return any verdict; what matters is that it
-    // accepts the collector's submission and returns a structured
-    // envelope rather than a parse error.
-    const body = tryJson(ran.stdout) || tryJson(ran.stderr);
-    assert.ok(body, `run must emit parseable JSON; status=${ran.status}, stdout: ${ran.stdout.slice(0, 200)}; stderr: ${ran.stderr.slice(0, 200)}`);
-    assert.equal(body.playbook_id, "crypto-codebase");
-  } finally {
-    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
-  }
-});
-
-// Fake-HOME helper for cred-stores fixture tests. Each test stages a
-// synthetic ~/.aws / ~/.kube / etc. inside the tempdir and points
-// the collector at it via env.HOME (env.USERPROFILE on Windows is
-// honoured by the collector too).
-function fakeHome(prefix) {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-  return {
-    home: tmp,
-    write(rel, content) {
-      const full = path.join(tmp, rel);
-      fs.mkdirSync(path.dirname(full), { recursive: true });
-      fs.writeFileSync(full, content);
-      return full;
-    },
-    cleanup() {
-      try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
-    },
-  };
+function fpGatedIndicatorIds(playbook) {
+  const inds = (playbook.phases && playbook.phases.detect && playbook.phases.detect.indicators) || [];
+  return inds
+    .filter((i) => Array.isArray(i.false_positive_checks_required) && i.false_positive_checks_required.length > 0)
+    .map((i) => i.id);
 }
 
-test("cred-stores collector flips zero on a clean fake-home", () => {
-  const h = fakeHome("cred-clean-");
-  try {
-    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["aws-static-key-present"], "miss");
-    assert.equal(r.signal_overrides["kube-static-token"], "miss");
-    assert.equal(r.signal_overrides["gcp-service-account-json-adc"], "miss");
-    assert.equal(r.signal_overrides["docker-cleartext-auth"], "miss");
-    assert.equal(r.signal_overrides["npm-pat-present"], "miss");
-    assert.equal(r.signal_overrides["pypi-token-present"], "miss");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("cred-stores aws-static-key-present fires on AKIA* with no federation", () => {
-  const h = fakeHome("cred-aws-static-");
-  try {
-    h.write(".aws/credentials", [
-      "[default]",
-      // Synthetic AKIA value — not the AWS-published doc-fixture
-      // (AKIAIOSFODNN7EXAMPLE), which the collector demotes per
-      // false_positive_checks_required[0].
-      "aws_access_key_id = AKIASYNTHETICTESTKEY",
-      "aws_secret_access_key = " + "a".repeat(40),
-    ].join("\n"));
-    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["aws-static-key-present"], "hit");
-    // Codex P1 #78: the collector must attest the FP checks it ran so
-    // the runner doesn't downgrade hit → inconclusive.
-    const att = r.signal_overrides["aws-static-key-present__fp_checks"];
-    assert.equal(typeof att, "object", "fp-check attestation must be present on hit");
-    assert.equal(att["0"], true);
-    assert.equal(att["2"], true);
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("cred-stores aws-static-key-present demotes the AWS-published doc-fixture key (codex P1 #78 FP[0])", () => {
-  const h = fakeHome("cred-aws-docfixture-");
-  try {
-    h.write(".aws/credentials", [
-      "[default]",
-      "aws_access_key_id = AKIAIOSFODNN7EXAMPLE",
-      "aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-    ].join("\n"));
-    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["aws-static-key-present"], "miss");
-    assert.equal(r.signal_overrides["aws-static-key-present__fp_checks"], undefined);
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("cred-stores aws-static-key-present demotes break-glass profile names (codex P1 #78 FP[2])", () => {
-  const h = fakeHome("cred-aws-breakglass-");
-  try {
-    h.write(".aws/credentials", [
-      "[breakglass-emergency]",
-      "aws_access_key_id = AKIASYNTHETICBREAKGLASS",
-      "aws_secret_access_key = " + "z".repeat(40),
-    ].join("\n"));
-    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["aws-static-key-present"], "miss");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("cred-stores aws-static-key-present demotes when sso_session present", () => {
-  const h = fakeHome("cred-aws-sso-");
-  try {
-    h.write(".aws/credentials", [
-      "[profile work]",
-      "sso_session = my-org",
-      "sso_account_id = 111122223333",
-      "sso_role_name = ReadOnly",
-    ].join("\n"));
-    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["aws-static-key-present"], "miss");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("cred-stores kube-static-token fires on users[].user.token", () => {
-  const h = fakeHome("cred-kube-static-");
-  try {
-    h.write(".kube/config", [
-      "apiVersion: v1",
-      "kind: Config",
-      "users:",
-      "- name: admin",
-      "  user:",
-      "    token: abcdef1234567890",
-    ].join("\n"));
-    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["kube-static-token"], "hit");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("cred-stores kube-static-token miss on auth-provider cached tokens (codex P2 #78)", () => {
-  // Regression test for codex P2: tokens cached under
-  // auth-provider.config.access-token (gcp-iap, oidc, etc.) are NOT
-  // static credentials — they're dynamic provider tokens. The
-  // collector must scope its token: match to user.token /
-  // user.token-data, not any sub-key in the user block.
-  const h = fakeHome("cred-kube-authprovider-");
-  try {
-    h.write(".kube/config", [
-      "apiVersion: v1",
-      "kind: Config",
-      "users:",
-      "- name: gcp-iap-user",
-      "  user:",
-      "    auth-provider:",
-      "      name: gcp",
-      "      config:",
-      "        access-token: ya29.cached-dynamic-token-not-static",
-      "        id-token: eyJhbGc.cached-id-token",
-      "        refresh-token: refresh-cached",
-    ].join("\n"));
-    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["kube-static-token"], "miss",
-      "auth-provider.config.access-token must NOT count as user.token static credential");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("cred-stores kube-static-token miss when only exec provider", () => {
-  const h = fakeHome("cred-kube-exec-");
-  try {
-    h.write(".kube/config", [
-      "apiVersion: v1",
-      "kind: Config",
-      "users:",
-      "- name: admin",
-      "  user:",
-      "    exec:",
-      "      apiVersion: client.authentication.k8s.io/v1beta1",
-      "      command: aws",
-      "      args:",
-      "      - eks",
-      "      - get-token",
-    ].join("\n"));
-    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["kube-static-token"], "miss");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("cred-stores gcp-service-account-json-adc fires on type=service_account", () => {
-  const h = fakeHome("cred-gcp-sa-");
-  try {
-    h.write(".config/gcloud/application_default_credentials.json", JSON.stringify({
-      type: "service_account",
-      private_key: "stub",
-      client_email: "svc@project.iam.gserviceaccount.com",
-    }));
-    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["gcp-service-account-json-adc"], "hit");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("cred-stores gcp-service-account-json-adc miss on user adc shape", () => {
-  const h = fakeHome("cred-gcp-user-");
-  try {
-    h.write(".config/gcloud/application_default_credentials.json", JSON.stringify({
-      type: "authorized_user",
-      client_id: "x",
-      refresh_token: "y",
-    }));
-    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["gcp-service-account-json-adc"], "miss");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("cred-stores docker-cleartext-auth fires when auths set with no cred helper", () => {
-  const h = fakeHome("cred-docker-cleartext-");
-  try {
-    h.write(".docker/config.json", JSON.stringify({
-      auths: { "https://index.docker.io/v1/": { auth: "dXNlcjpwYXNzd29yZA==" } },
-    }));
-    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["docker-cleartext-auth"], "hit");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("cred-stores docker-cleartext-auth demotes vendor-token user patterns (codex P1 #78 FP[0])", () => {
-  const h = fakeHome("cred-docker-vendortoken-");
-  try {
-    // base64("<token>:abcdef") — the user portion is `<token>`, a
-    // documented ECR-helper convention; not a static cleartext cred.
-    const authValue = Buffer.from("<token>:abcdef").toString("base64");
-    h.write(".docker/config.json", JSON.stringify({
-      auths: { "public.ecr.aws": { auth: authValue } },
-    }));
-    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["docker-cleartext-auth"], "miss");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("cred-stores docker-cleartext-auth demotes local-only registries (codex P1 #78 FP[1])", () => {
-  const h = fakeHome("cred-docker-local-");
-  try {
-    const authValue = Buffer.from("user:password").toString("base64");
-    h.write(".docker/config.json", JSON.stringify({
-      auths: { "localhost:5000": { auth: authValue } },
-    }));
-    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["docker-cleartext-auth"], "miss",
-      "loopback registry is local-only, blast radius is negligible");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("cred-stores docker-cleartext-auth attests all three FP checks on hit (codex P1 #78)", () => {
-  const h = fakeHome("cred-docker-fp-attest-");
-  try {
-    const authValue = Buffer.from("real-user:real-pass").toString("base64");
-    h.write(".docker/config.json", JSON.stringify({
-      auths: { "registry.example.com": { auth: authValue } },
-    }));
-    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["docker-cleartext-auth"], "hit");
-    const att = r.signal_overrides["docker-cleartext-auth__fp_checks"];
-    assert.equal(typeof att, "object");
-    assert.equal(att["0"], true);
-    assert.equal(att["1"], true);
-    assert.equal(att["2"], true);
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("cred-stores docker-cleartext-auth miss when credsStore covers the registry", () => {
-  const h = fakeHome("cred-docker-helper-");
-  try {
-    h.write(".docker/config.json", JSON.stringify({
-      auths: { "https://index.docker.io/v1/": { auth: "dXNlcjpwYXNzd29yZA==" } },
-      credsStore: "desktop",
-    }));
-    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["docker-cleartext-auth"], "miss");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("cred-stores npm-pat-present + pypi-token-present fire on the catalogued patterns", () => {
-  const h = fakeHome("cred-npm-pypi-");
-  try {
-    h.write(".npmrc", "//registry.npmjs.org/:_authToken=npm_" + "A".repeat(36) + "\n");
-    h.write(".pypirc", [
-      "[pypi]",
-      "username = __token__",
-      "password = pypi-" + "A".repeat(50),
-    ].join("\n"));
-    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["npm-pat-present"], "hit");
-    assert.equal(r.signal_overrides["pypi-token-present"], "hit");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("cred-stores project-level .npmrc / .pypirc are picked up via cwd", () => {
-  const h = fakeHome("cred-proj-");
-  const projTmp = fs.mkdtempSync(path.join(os.tmpdir(), "cred-proj-cwd-"));
-  try {
-    fs.writeFileSync(path.join(projTmp, ".npmrc"), "//registry.npmjs.org/:_authToken=npm_" + "B".repeat(40) + "\n");
-    const r = credStoresCollector.collect({ cwd: projTmp, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["npm-pat-present"], "hit",
-      "project-level .npmrc token must flip the indicator");
-  } finally {
-    h.cleanup();
-    try { fs.rmSync(projTmp, { recursive: true, force: true }); } catch {}
-  }
-});
-
-test("cred-stores credentials-file-bad-perms: posix only; skipped on win32", { skip: process.platform === "win32" }, () => {
-  const h = fakeHome("cred-perms-");
-  try {
-    const credPath = h.write(".aws/credentials", "[default]\naws_access_key_id = AKIASYNTHETICTESTKEY\n");
-    // Make it world-readable — not 0600.
-    fs.chmodSync(credPath, 0o644);
-    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["credentials-file-bad-perms"], "hit");
-    // Codex P1 #78: FP checks the collector ran must be attested.
-    const att = r.signal_overrides["credentials-file-bad-perms__fp_checks"];
-    assert.equal(typeof att, "object");
-    assert.equal(att["0"], true);
-    assert.equal(att["1"], true);
-    fs.chmodSync(credPath, 0o600);
-    const r2 = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r2.signal_overrides["credentials-file-bad-perms"], "miss");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("cred-stores credentials-file-bad-perms includes gcloud ADC (codex P2 #78)", { skip: process.platform === "win32" }, () => {
-  const h = fakeHome("cred-perms-gcloud-");
-  try {
-    const adcPath = h.write(".config/gcloud/application_default_credentials.json", JSON.stringify({ type: "authorized_user" }));
-    fs.chmodSync(adcPath, 0o644);
-    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["credentials-file-bad-perms"], "hit",
-      "world-readable application_default_credentials.json must flip the indicator");
-  } finally {
-    h.cleanup();
-  }
-});
-
-// Builds a synthetic /proc + /sys + /etc/ssh layout under a tempdir
-// and returns args.paths that point the hardening collector at it.
-function fakeLinuxRoot(prefix, sysctls = {}, cmdline = "", lockdown = "", sshd = "", kallsyms = "") {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-  const write = (rel, content) => {
-    const full = path.join(tmp, rel);
-    fs.mkdirSync(path.dirname(full), { recursive: true });
-    fs.writeFileSync(full, content);
-    return full;
-  };
-  const out = { tmp, cleanup: () => { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {} } };
-  const paths = {};
-  if (sysctls.kptrRestrict != null) paths.kptrRestrict = write("proc/sys/kernel/kptr_restrict", String(sysctls.kptrRestrict));
-  if (sysctls.unprivUserns != null) paths.unprivUserns = write("proc/sys/kernel/unprivileged_userns_clone", String(sysctls.unprivUserns));
-  if (sysctls.unprivBpf != null) paths.unprivBpf = write("proc/sys/kernel/unprivileged_bpf_disabled", String(sysctls.unprivBpf));
-  if (sysctls.yamaPtrace != null) paths.yamaPtrace = write("proc/sys/kernel/yama/ptrace_scope", String(sysctls.yamaPtrace));
-  if (sysctls.suidDumpable != null) paths.suidDumpable = write("proc/sys/fs/suid_dumpable", String(sysctls.suidDumpable));
-  if (cmdline != null) paths.cmdline = write("proc/cmdline", cmdline);
-  if (lockdown != null) paths.lockdown = write("sys/kernel/security/lockdown", lockdown);
-  if (sshd != null) paths.sshdConfig = write("etc/ssh/sshd_config", sshd);
-  if (kallsyms != null) paths.kallsyms = write("proc/kallsyms", kallsyms);
-  // sshd_config.d does not exist by default — point at a non-existent path.
-  paths.sshdConfigD = path.join(tmp, "etc", "ssh", "sshd_config.d.nonexistent");
-  out.paths = paths;
+function allPreconditions(playbook) {
+  const out = {};
+  for (const p of (playbook._meta && playbook._meta.preconditions) || []) out[p.id] = true;
   return out;
 }
 
-test("hardening collector skips with linux-platform=false on non-Linux", () => {
-  // Force-skip path: when forceLinux is NOT set and platform != linux,
-  // collector emits a skipped envelope with linux-platform=false.
-  const r = hardeningCollector.collect({ cwd: ROOT });
-  if (process.platform !== "linux") {
-    assert.equal(r.precondition_checks["linux-platform"], false);
-    assert.deepEqual(r.signal_overrides, {});
-    assert.match(r.artifacts["sysctl-kernel-hardening"].reason, /linux required/);
-  } else {
-    assert.equal(r.precondition_checks["linux-platform"], true);
+// Every collector under lib/collectors that maps to a shipped playbook.
+const COLLECTOR_FILES = fs
+  .readdirSync(path.join(ROOT, "lib", "collectors"))
+  .filter((f) => f.endsWith(".js") && f !== "README.md" && f !== "scan-excludes.js");
+
+// Collectors whose FP-gated indicators have NO deterministic FP-check index a
+// stdlib collector can satisfy (every required check is network reachability,
+// live-process inspection, package-signature lookup, or pure operator
+// judgement). These correctly emit no attestation — the runner's honest
+// downgrade to inconclusive is the intended behaviour. Recorded explicitly so
+// the source guard distinguishes "correctly abstains" from "forgot to attest".
+const NO_DETERMINISTIC_FP_INDEX = {
+  // crypto interrogates the live openssl/sshd surface; oqsprovider listing,
+  // static-link/libcrypto inspection, distro-backport lookup, and lsof all sit
+  // outside what it captures.
+  crypto: ["ml-dsa-slh-dsa-absent", "openssl-pre-3-5"],
+  // mcp's FP checks are tool-purpose / publisher-signature / field-position
+  // judgements not derivable from the response-log bytes alone.
+  mcp: ["mcp-response-ansi-escape", "mcp-response-unicode-tag-smuggling",
+    "mcp-server-running-as-root", "mcp-server-invoked-from-ci-pipeline"],
+  // containers' FP checks are base-image-provenance / cluster-spec /
+  // org-allowlist judgements; the line-scanner does not resolve them.
+  containers: ["dockerfile-runs-as-root", "dockerfile-curl-pipe-bash",
+    "compose-cap-add-sys-admin", "compose-host-network"],
+  // cicd: every FP check retains a runner-privilege / secret-sensitivity /
+  // role-permission-scope judgement the static workflow scan cannot decide, so
+  // each indicator correctly stays inconclusive regardless of attestation.
+  "cicd-pipeline-compromise": ["workflow-injection-sink",
+    "pull-request-target-with-pr-checkout", "wildcarded-oidc-sub-claim",
+    "actions-floating-tag-pin", "secret-exposed-to-fork-pr"],
+  // hardening: kptr-restrict-disabled is attested (kallsyms cross-check);
+  // the rest need operator MAC-profile / single-tenant judgement or a
+  // root-only dmesg read the collector cannot perform.
+  hardening: ["yama-ptrace-permissive", "kaslr-disabled-at-boot", "mitigations-off"],
+  // runtime: world-writable-in-trusted-path is attested (sticky-bit /
+  // special-file stat); the other two need /etc/shadow lock state, binary
+  // checksum allowlists, or process-launch provenance — operator judgement.
+  runtime: ["duplicate-uid-zero", "orphan-privileged-process"],
+  // citation-hygiene: fabricated-cve-id / rejected-or-disputed-cve /
+  // rfc-number-title-mismatch are attested. cve-citation-needs-external-
+  // verification only ever resolves to inconclusive (its FP[0] is an NVD
+  // network lookup), so the collector never flips it to a hit to attest.
+  "citation-hygiene": ["cve-citation-needs-external-verification"],
+};
+
+test("every collector maps to a shipped playbook and exports the contract", () => {
+  for (const file of COLLECTOR_FILES) {
+    const mod = require(path.join(ROOT, "lib", "collectors", file));
+    assert.equal(typeof mod.playbook_id, "string", `${file} must export playbook_id`);
+    assert.equal(typeof mod.collect, "function", `${file} must export collect()`);
+    const pbPath = path.join(ROOT, "data", "playbooks", `${mod.playbook_id}.json`);
+    assert.ok(fs.existsSync(pbPath), `${file} -> ${mod.playbook_id}.json must exist`);
   }
 });
 
-test("hardening collector flips all deterministic indicators against a synthetic bad layout", () => {
-  const h = fakeLinuxRoot("harden-bad-", {
-    kptrRestrict: 0,
-    unprivUserns: 1,
-    unprivBpf: 0,
-    yamaPtrace: 0,
-    suidDumpable: 1,
-  }, "BOOT_IMAGE=/vmlinuz root=UUID=x mitigations=off nokaslr quiet",
-     "[none] integrity confidentiality\n",
-     "PermitRootLogin yes\nPasswordAuthentication yes\n",
-     "ffffffff81000000 T _stext\n");
-  try {
-    const r = hardeningCollector.collect({ cwd: ROOT, args: { paths: h.paths, forceLinux: true } });
-    assert.equal(r.precondition_checks["linux-platform"], true);
-    assert.equal(r.signal_overrides["kptr-restrict-disabled"], "hit");
-    assert.equal(r.signal_overrides["unprivileged-userns-enabled"], "hit");
-    assert.equal(r.signal_overrides["unprivileged-bpf-allowed"], "hit");
-    assert.equal(r.signal_overrides["yama-ptrace-permissive"], "hit");
-    assert.equal(r.signal_overrides["kaslr-disabled-at-boot"], "hit");
-    assert.equal(r.signal_overrides["mitigations-off"], "hit");
-    assert.equal(r.signal_overrides["sshd-permitrootlogin-yes"], "hit");
-    assert.equal(r.signal_overrides["kernel-lockdown-none"], "hit");
-    // kptr FP-check attestation: collector saw kallsyms leak non-zero
-    // addresses → attests FP[1].
-    const att = r.signal_overrides["kptr-restrict-disabled__fp_checks"];
-    assert.equal(typeof att, "object", "kptr fp-check attestation must be present");
-    assert.equal(att["1"], true);
-  } finally {
-    h.cleanup();
+test("collectors attest (or explicitly abstain from) every FP-gated indicator they can flip", () => {
+  for (const file of COLLECTOR_FILES) {
+    const mod = require(path.join(ROOT, "lib", "collectors", file));
+    const pb = loadPlaybook(mod.playbook_id);
+    const gated = fpGatedIndicatorIds(pb);
+    if (!gated.length) continue;
+    const src = fs.readFileSync(path.join(ROOT, "lib", "collectors", file), "utf8");
+    const abstain = new Set(NO_DETERMINISTIC_FP_INDEX[mod.playbook_id] || []);
+    // A collector may build the attestation key dynamically inside a loop
+    // (`signal_overrides[`${id}__fp_checks`] = ...`) rather than as a literal.
+    // Recognise that form so a dynamically-attesting collector isn't flagged.
+    const attestsDynamic = /`\$\{[^`]*\}__fp_checks`/.test(src);
+    for (const id of gated) {
+      // Does the collector even reference this indicator id at all? If it
+      // never names it, the collector defers the indicator (leaves it
+      // unflipped) and there is nothing to attest.
+      if (!src.includes(`"${id}"`)) continue;
+      const attests = src.includes(`"${id}__fp_checks"`) || attestsDynamic;
+      const declaredAbstain = abstain.has(id);
+      assert.ok(
+        attests || declaredAbstain,
+        `${file}: flips FP-gated indicator "${id}" but emits no "${id}__fp_checks" ` +
+        `attestation and is not in the documented no-deterministic-FP-index allowlist. ` +
+        `A real hit will be downgraded to inconclusive by run().`,
+      );
+      // Guard the allowlist against drift: an indicator can't be BOTH attested
+      // and declared as abstaining.
+      assert.ok(!(attests && declaredAbstain),
+        `${file}: "${id}" both attests and is in the abstain allowlist — remove it from NO_DETERMINISTIC_FP_INDEX.`);
+    }
   }
 });
 
-test("hardening collector returns clean miss on a hardened synthetic layout", () => {
-  const h = fakeLinuxRoot("harden-good-", {
-    kptrRestrict: 2,
-    unprivUserns: 0,
-    unprivBpf: 1,
-    yamaPtrace: 1,
-    suidDumpable: 0,
-  }, "BOOT_IMAGE=/vmlinuz root=UUID=x quiet lockdown=confidentiality",
-     "none integrity [confidentiality]\n",
-     "PermitRootLogin prohibit-password\nPasswordAuthentication no\n",
-     "0000000000000000 T _stext\n");
+// ---- behavioural round-trips -------------------------------------------
+
+// Assert an attestation object is the exact shape run()'s FP gate consumes:
+// a plain object (NOT an array) whose keys map to === true.
+function assertAttestationShape(att, label) {
+  assert.equal(typeof att, "object", `${label}: attestation must be an object`);
+  assert.ok(att !== null && !Array.isArray(att), `${label}: attestation must not be null/array`);
+  const keys = Object.keys(att);
+  assert.ok(keys.length > 0, `${label}: attestation must carry at least one index`);
+  for (const k of keys) {
+    assert.match(k, /^\d+$/, `${label}: attestation key "${k}" must be a numeric index`);
+    assert.equal(att[k], true, `${label}: attestation index "${k}" must be true`);
+  }
+}
+
+function runRoundTrip(playbookId, submission) {
+  const runner = require(path.join(ROOT, "lib", "playbook-runner.js"));
+  const pb = loadPlaybook(playbookId);
+  const directive = runner.run(playbookId, null, submission, {}).valid_directives[0];
+  const res = runner.run(playbookId, directive, submission, { precondition_checks: allPreconditions(pb) });
+  return (res.phases && res.phases.detect) || {};
+}
+
+function indicatorVerdict(detect, id) {
+  const ind = (detect.indicators || []).find((i) => i.id === id);
+  return ind ? ind.verdict : undefined;
+}
+
+function mkTmp(prefix) {
+  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+}
+
+// Fixture tokens are assembled at runtime so the committed source never
+// contains a contiguous secret-shaped string — secret scanners (including
+// push protection) would otherwise flag the test file itself. The assembled
+// values land only in per-test tempdir fixtures.
+const SLACK_FIXTURE = ["xoxb", "1111111111", "2222222222", "AbCdEfGhIjKlMnOp"].join("-");
+const STRIPE_FIXTURE = "sk_test_" + ["4eC39HqLyjW", "DarjtT1zdp7dc"].join("");
+
+test("secrets: collect -> run reaches detected for all-deterministic FP indicators", () => {
+  const secrets = require(path.join(ROOT, "lib", "collectors", "secrets.js"));
+  const tmp = mkTmp("w-fp-secrets-");
   try {
-    const r = hardeningCollector.collect({ cwd: ROOT, args: { paths: h.paths, forceLinux: true } });
-    for (const id of [
-      "kptr-restrict-disabled", "unprivileged-userns-enabled", "unprivileged-bpf-allowed",
-      "yama-ptrace-permissive", "kaslr-disabled-at-boot", "mitigations-off",
-      "sshd-permitrootlogin-yes", "kernel-lockdown-none",
-    ]) {
-      assert.equal(r.signal_overrides[id], "miss", `${id} must be miss on hardened layout`);
+    // The OpenAI regex also matches sk-ant-* keys, so keep the anthropic key
+    // out of this fixture; the dedicated openai case below isolates it.
+    fs.writeFileSync(path.join(tmp, "slack.env"), "SLACK_BOT_TOKEN=" + SLACK_FIXTURE + "\n");
+    fs.writeFileSync(path.join(tmp, "stripe.env"), "STRIPE_KEY=" + STRIPE_FIXTURE + "\n");
+    fs.writeFileSync(path.join(tmp, "aws.env"),
+      "aws_access_key_id = AKIASYNTHREALKEY01\naws_secret_access_key = " + "b".repeat(40) + "\n");
+
+    const sub = secrets.collect({ cwd: tmp });
+    const detected = ["slack-bot-or-user-token", "stripe-secret-key", "aws-secret-access-key"];
+    for (const id of detected) {
+      assert.equal(sub.signal_overrides[id], "hit", `secrets ${id} should flip to hit`);
+      assertAttestationShape(sub.signal_overrides[`${id}__fp_checks`], `secrets ${id}`);
+    }
+    const det = runRoundTrip("secrets", sub);
+    assert.equal(det.classification, "detected");
+    for (const id of detected) {
+      assert.equal(indicatorVerdict(det, id), "hit",
+        `secrets ${id} must stay hit (not downgraded) after run`);
     }
   } finally {
-    h.cleanup();
+    fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
 
-test("hardening collector kptr fp-check NOT attested when kallsyms is zeroed (legitimate kptr=2)", () => {
-  // kptr_restrict=0 but kallsyms shows zeroed addresses — the FP[1]
-  // counter-evidence (kallsyms zeros despite kptr=0) means the
-  // indicator should NOT carry the attestation (operator must check).
-  const h = fakeLinuxRoot("harden-kptr-zeroed-", { kptrRestrict: 0 },
-    "BOOT_IMAGE=/vmlinuz quiet", "[none]\n", "PermitRootLogin no\n",
-    "0000000000000000 T _stext\n");
+test("secrets: isolated openai/anthropic keys each reach detected", () => {
+  const secrets = require(path.join(ROOT, "lib", "collectors", "secrets.js"));
+  for (const [id, line] of [
+    ["openai-api-key", "OPENAI_API_KEY=sk-proj-" + "A1b2C3d4".repeat(7)],
+    ["anthropic-api-key", "ANTHROPIC_API_KEY=sk-ant-api03-" + "Z9y8X7w6".repeat(11)],
+  ]) {
+    const tmp = mkTmp("w-fp-secrets-iso-");
+    try {
+      fs.writeFileSync(path.join(tmp, "k.env"), line + "\n");
+      const sub = secrets.collect({ cwd: tmp });
+      assert.equal(sub.signal_overrides[id], "hit", `secrets ${id} should flip to hit`);
+      assertAttestationShape(sub.signal_overrides[`${id}__fp_checks`], `secrets ${id}`);
+      const det = runRoundTrip("secrets", sub);
+      assert.equal(indicatorVerdict(det, id), "hit", `secrets ${id} must stay hit after run`);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  }
+});
+
+test("secrets: a real-shaped key under a docs path is not falsely attested (run downgrades it)", () => {
+  const secrets = require(path.join(ROOT, "lib", "collectors", "secrets.js"));
+  const tmp = mkTmp("w-fp-secrets-doc-");
   try {
-    const r = hardeningCollector.collect({ cwd: ROOT, args: { paths: h.paths, forceLinux: true } });
-    assert.equal(r.signal_overrides["kptr-restrict-disabled"], "hit");
-    // Attestation must be absent — collector can't honestly confirm
-    // the indicator is real when kallsyms shows zeros.
-    assert.equal(r.signal_overrides["kptr-restrict-disabled__fp_checks"], undefined);
+    // The hit still flips (docs/ is not in the prod-vs-test split), but the
+    // path-based FP check is unsatisfied, so the collector must NOT attest it
+    // and run() must downgrade to inconclusive rather than detected.
+    fs.mkdirSync(path.join(tmp, "docs"), { recursive: true });
+    fs.writeFileSync(path.join(tmp, "docs", "guide.md"), "SLACK_BOT_TOKEN=" + SLACK_FIXTURE + "\n");
+    const sub = secrets.collect({ cwd: tmp });
+    assert.equal(sub.signal_overrides["slack-bot-or-user-token"], "hit", "the regex still matches under docs/");
+    const att = sub.signal_overrides["slack-bot-or-user-token__fp_checks"];
+    // The path index (FP[2]) must be absent — the hit is under a docs path.
+    assert.ok(!att || att["2"] === undefined, "must not attest the path FP check for a docs-path hit");
+    const det = runRoundTrip("secrets", sub);
+    assert.equal(indicatorVerdict(det, "slack-bot-or-user-token"), "inconclusive",
+      "a docs-path hit must downgrade to inconclusive, not detected");
   } finally {
-    h.cleanup();
+    fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
 
-test("hardening collector PermitRootLogin without-password counts as hit (legacy form)", () => {
-  const h = fakeLinuxRoot("harden-rootlogin-legacy-", { kptrRestrict: 2 },
-    "BOOT_IMAGE=/vmlinuz quiet", "[confidentiality]\n",
-    "PermitRootLogin without-password\n");
+test("ai-api: collect -> run reaches detected; network-gated indicator stays inconclusive", () => {
+  const aiApi = require(path.join(ROOT, "lib", "collectors", "ai-api.js"));
+  const home = mkTmp("w-fp-aiapi-");
   try {
-    const r = hardeningCollector.collect({ cwd: ROOT, args: { paths: h.paths, forceLinux: true } });
-    assert.equal(r.signal_overrides["sshd-permitrootlogin-yes"], "hit");
+    fs.writeFileSync(path.join(home, ".bashrc"), "export OPENAI_API_KEY=sk-proj-" + "A1b2C3d4".repeat(7) + "\n");
+    fs.mkdirSync(path.join(home, ".aws"), { recursive: true });
+    fs.writeFileSync(path.join(home, ".aws", "credentials"),
+      "[default]\naws_access_key_id = AKIAREALKEY1234567\naws_secret_access_key = " + "q".repeat(40) + "\n");
+    fs.mkdirSync(path.join(home, ".config", "gcloud"), { recursive: true });
+    fs.writeFileSync(path.join(home, ".config", "gcloud", "application_default_credentials.json"),
+      JSON.stringify({
+        type: "service_account",
+        private_key: "-----BEGIN PRIVATE KEY-----\n" + "M".repeat(1100) + "\n-----END PRIVATE KEY-----\n",
+        client_email: "svc@my-proj.iam.gserviceaccount.com",
+      }));
+    fs.mkdirSync(path.join(home, ".kube"), { recursive: true });
+    fs.writeFileSync(path.join(home, ".kube", "config"),
+      ["apiVersion: v1", "clusters:", "- cluster:", "    server: https://prod.example.com:6443",
+        "users:", "- name: admin", "  user:", "    token: " + "t".repeat(64)].join("\n"));
+
+    const sub = aiApi.collect({ cwd: ROOT, env: { HOME: home, USERPROFILE: home } });
+    const reachable = ["cleartext-api-key-in-dotfile", "gcp-service-account-json", "kubeconfig-with-static-token"];
+    for (const id of reachable) {
+      assert.equal(sub.signal_overrides[id], "hit", `ai-api ${id} should flip to hit`);
+      assertAttestationShape(sub.signal_overrides[`${id}__fp_checks`], `ai-api ${id}`);
+    }
+    // long-lived-aws-keys carries the sts-network FP[2]; attest the
+    // deterministic subset but never the network index.
+    assert.equal(sub.signal_overrides["long-lived-aws-keys"], "hit");
+    assertAttestationShape(sub.signal_overrides["long-lived-aws-keys__fp_checks"], "ai-api long-lived-aws-keys");
+
+    const det = runRoundTrip("ai-api", sub);
+    assert.equal(det.classification, "detected");
+    for (const id of reachable) {
+      assert.equal(indicatorVerdict(det, id), "hit", `ai-api ${id} must stay hit after run`);
+    }
+    assert.equal(indicatorVerdict(det, "long-lived-aws-keys"), "inconclusive",
+      "long-lived-aws-keys must stay inconclusive — its live-key check is network-gated");
   } finally {
-    h.cleanup();
+    fs.rmSync(home, { recursive: true, force: true });
   }
 });
 
-test("hardening collector honours sshd Include drop-in precedence (codex P1 #79)", () => {
-  // Regression test for codex P1: when sshd_config starts with
-  //   Include /etc/ssh/sshd_config.d/*.conf
-  // OpenSSH parses the drop-in directives FIRST, so any
-  // `PermitRootLogin yes` in a drop-in beats a later
-  // `PermitRootLogin no` in the base file. The collector must
-  // honour that ordering.
-  const h = fakeLinuxRoot("harden-sshd-include-", { kptrRestrict: 2 },
-    "BOOT_IMAGE=/vmlinuz quiet", "[confidentiality]\n", null);
+test("crypto-codebase: collect -> run attests the deterministic FP indices it ran", () => {
+  const cc = require(path.join(ROOT, "lib", "collectors", "crypto-codebase.js"));
+  const tmp = mkTmp("w-fp-cc-");
   try {
-    // sshd_config: Include first, then PermitRootLogin no.
-    const sshdConfig = path.join(h.tmp, "etc", "ssh", "sshd_config");
-    fs.mkdirSync(path.dirname(sshdConfig), { recursive: true });
-    fs.writeFileSync(sshdConfig,
-      "Include /etc/ssh/sshd_config.d/*.conf\n" +
-      "PermitRootLogin no\n");
-    // Drop-in: PermitRootLogin yes (should win).
-    const dDir = path.join(h.tmp, "etc", "ssh", "sshd_config.d");
-    fs.mkdirSync(dDir, { recursive: true });
-    fs.writeFileSync(path.join(dDir, "10-cloud-init.conf"), "PermitRootLogin yes\n");
-    h.paths.sshdConfig = sshdConfig;
-    h.paths.sshdConfigD = dDir;
-    const r = hardeningCollector.collect({ cwd: ROOT, args: { paths: h.paths, forceLinux: true } });
-    assert.equal(r.signal_overrides["sshd-permitrootlogin-yes"], "hit",
-      "drop-in PermitRootLogin yes must beat base-file no when Include appears first");
+    fs.writeFileSync(path.join(tmp, "package.json"), "{}");
+    fs.writeFileSync(path.join(tmp, "auth.js"),
+      "const crypto=require('crypto');\nfunction sign(token){return crypto.createHash('md5').update(token).digest('hex');}\n");
+    const sub = cc.collect({ cwd: tmp });
+    assert.equal(sub.signal_overrides["weak-hash-import"], "hit");
+    assertAttestationShape(sub.signal_overrides["weak-hash-import__fp_checks"], "crypto-codebase weak-hash-import");
+    // weak-hash-import retains FP[1] (legacy-protocol-shim, operator), so the
+    // honest verdict is inconclusive — the attestation records {0,2} only.
+    const det = runRoundTrip("crypto-codebase", sub);
+    const att = sub.signal_overrides["weak-hash-import__fp_checks"];
+    assert.equal(att["0"], true);
+    assert.equal(att["2"], true);
+    assert.equal(att["1"], undefined, "must not attest the operator-judgement legacy-shim check");
+    assert.equal(indicatorVerdict(det, "weak-hash-import"), "inconclusive");
   } finally {
-    h.cleanup();
+    fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
 
-test("hardening collector leaves unreadable sysctls unflipped (codex P1 #79)", () => {
-  // Regression test for codex P1: when sysctl reads fail (permission
-  // denied, masked /proc in a container, knob absent on the kernel
-  // build), the indicator must NOT flip to "miss" — that asserts a
-  // hardened posture without evidence. It must stay unflipped so the
-  // runner returns inconclusive.
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "harden-unreadable-"));
+test("runtime: world-writable-in-trusted-path reaches detected; benign carriers demoted", () => {
+  const runtime = require(path.join(ROOT, "lib", "collectors", "runtime.js"));
+  const tmp = mkTmp("w-fp-runtime-");
   try {
-    // Point every sysctl path at a non-existent location; only
-    // populate cmdline + lockdown + sshd so those indicators DO flip.
-    const paths = {
-      kptrRestrict: path.join(tmp, "missing-kptr"),
-      unprivUserns: path.join(tmp, "missing-userns"),
-      unprivBpf: path.join(tmp, "missing-bpf"),
-      yamaPtrace: path.join(tmp, "missing-yama"),
-      suidDumpable: path.join(tmp, "missing-suid"),
-      cmdline: path.join(tmp, "cmdline"),
-      lockdown: path.join(tmp, "lockdown"),
-      sshdConfig: path.join(tmp, "sshd_config"),
-      sshdConfigD: path.join(tmp, "sshd_config.d.nonexistent"),
-      kallsyms: path.join(tmp, "missing-kallsyms"),
-    };
-    fs.writeFileSync(paths.cmdline, "BOOT_IMAGE=/vmlinuz quiet");
-    fs.writeFileSync(paths.lockdown, "[confidentiality]\n");
-    fs.writeFileSync(paths.sshdConfig, "PermitRootLogin no\n");
+    const tp = path.join(tmp, "opt");
+    fs.mkdirSync(tp, { recursive: true });
+    // genuine hit: regular non-empty world-writable file
+    const f = path.join(tp, "hijackme.sh");
+    fs.writeFileSync(f, "#!/bin/sh\necho x\n");
+    try { fs.chmodSync(f, 0o666); } catch { /* chmod is a no-op on some hosts */ }
+    // benign per FP[1]: 0-byte stamp
+    const z = path.join(tp, "stamp");
+    fs.writeFileSync(z, "");
+    try { fs.chmodSync(z, 0o666); } catch { /* */ }
 
-    const r = hardeningCollector.collect({ cwd: ROOT, args: { paths, forceLinux: true } });
-    // Sysctl-derived indicators must NOT be present in signal_overrides.
-    assert.equal(r.signal_overrides["kptr-restrict-disabled"], undefined);
-    assert.equal(r.signal_overrides["unprivileged-userns-enabled"], undefined);
-    assert.equal(r.signal_overrides["unprivileged-bpf-allowed"], undefined);
-    assert.equal(r.signal_overrides["yama-ptrace-permissive"], undefined);
-    // cmdline-derived + sshd-derived indicators DO flip — they're
-    // readable.
-    assert.equal(r.signal_overrides["kaslr-disabled-at-boot"], "miss");
-    assert.equal(r.signal_overrides["mitigations-off"], "miss");
-    assert.equal(r.signal_overrides["sshd-permitrootlogin-yes"], "miss");
-  } finally {
-    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
-  }
-});
-
-test("hardening collector lockdown=integrity in cmdline counts kernel-lockdown as miss", () => {
-  const h = fakeLinuxRoot("harden-lockdown-int-", { kptrRestrict: 2 },
-    "BOOT_IMAGE=/vmlinuz quiet lockdown=integrity",
-    "", // no /sys/kernel/security/lockdown file
-    "PermitRootLogin no\n");
-  // Override the lockdown path with a deliberately non-existent
-  // file so the collector treats it as absent. (Deleting the key
-  // lets the default `/sys/kernel/security/lockdown` take over,
-  // which DOES exist on CI Linux hosts and would contaminate the
-  // test's intended absent-file scenario.)
-  h.paths.lockdown = path.join(h.tmp, "lockdown.nonexistent");
-  try {
-    const r = hardeningCollector.collect({ cwd: ROOT, args: { paths: h.paths, forceLinux: true } });
-    assert.equal(r.signal_overrides["kernel-lockdown-none"], "miss");
-  } finally {
-    h.cleanup();
-  }
-});
-
-function fakeRuntimeRoot(prefix) {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-  const write = (rel, content) => {
-    const full = path.join(tmp, rel);
-    fs.mkdirSync(path.dirname(full), { recursive: true });
-    fs.writeFileSync(full, content);
-    return full;
-  };
-  const mkdir = (rel) => { const full = path.join(tmp, rel); fs.mkdirSync(full, { recursive: true }); return full; };
-  return {
-    tmp, write, mkdir,
-    cleanup() { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {} },
-  };
-}
-
-test("runtime collector skips with linux-platform=false on non-Linux", () => {
-  if (process.platform === "linux") return; // Linux host would actually flip
-  const r = runtimeCollector.collect({ cwd: ROOT });
-  assert.equal(r.precondition_checks["linux-platform"], false);
-  assert.deepEqual(r.signal_overrides, {});
-});
-
-test("runtime collector flips sudoers-nopasswd-wildcard on a wildcard rule", () => {
-  const h = fakeRuntimeRoot("runtime-sudo-wild-");
-  try {
-    const sudoers = h.write("etc/sudoers", "Defaults requiretty\nroot ALL=(ALL) ALL\n");
-    const sudoersD = h.mkdir("etc/sudoers.d");
-    h.write("etc/sudoers.d/10-bad", "deploy ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart *\n");
-    h.write("etc/passwd", "root:x:0:0:root:/root:/bin/bash\n");
-    const r = runtimeCollector.collect({
+    const sub = runtime.collect({
       cwd: ROOT,
-      args: {
-        paths: { sudoers, sudoersD, passwd: path.join(h.tmp, "etc/passwd"), trustedPaths: [], procRoot: path.join(h.tmp, "nonexistent") },
-        forceLinux: true,
-      },
-    });
-    assert.equal(r.signal_overrides["sudoers-nopasswd-wildcard"], "hit");
-    assert.equal(r.signal_overrides["duplicate-uid-zero"], "miss");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("runtime collector skips root NOPASSWD ALL (tautological — not a finding)", () => {
-  const h = fakeRuntimeRoot("runtime-sudo-root-");
-  try {
-    const sudoers = h.write("etc/sudoers", "root ALL=(ALL) NOPASSWD: ALL\n");
-    const passwd = h.write("etc/passwd", "root:x:0:0:root:/root:/bin/bash\n");
-    const r = runtimeCollector.collect({
-      cwd: ROOT,
-      args: {
-        paths: { sudoers, sudoersD: path.join(h.tmp, "nodir"), passwd, trustedPaths: [], procRoot: path.join(h.tmp, "nodir") },
-        forceLinux: true,
-      },
-    });
-    assert.equal(r.signal_overrides["sudoers-nopasswd-wildcard"], "miss");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("runtime collector flips duplicate-uid-zero on >1 UID-0 entries", () => {
-  const h = fakeRuntimeRoot("runtime-uid0-");
-  try {
-    const sudoers = h.write("etc/sudoers", "");
-    const passwd = h.write("etc/passwd",
-      "root:x:0:0:root:/root:/bin/bash\n" +
-      "toor:x:0:0:backdoor:/root:/bin/bash\n");
-    const r = runtimeCollector.collect({
-      cwd: ROOT,
-      args: {
-        paths: { sudoers, sudoersD: path.join(h.tmp, "nodir"), passwd, trustedPaths: [], procRoot: path.join(h.tmp, "nodir") },
-        forceLinux: true,
-      },
-    });
-    assert.equal(r.signal_overrides["duplicate-uid-zero"], "hit");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("runtime collector duplicate-uid-zero miss on single UID 0", () => {
-  const h = fakeRuntimeRoot("runtime-uid0-single-");
-  try {
-    const passwd = h.write("etc/passwd",
-      "root:x:0:0:root:/root:/bin/bash\n" +
-      "alice:x:1000:1000:Alice:/home/alice:/bin/bash\n");
-    const r = runtimeCollector.collect({
-      cwd: ROOT,
-      args: {
-        paths: { sudoers: path.join(h.tmp, "noexist"), sudoersD: path.join(h.tmp, "nodir"), passwd, trustedPaths: [], procRoot: path.join(h.tmp, "nodir") },
-        forceLinux: true,
-      },
-    });
-    assert.equal(r.signal_overrides["duplicate-uid-zero"], "miss");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("runtime collector world-writable-in-trusted-path: posix only", { skip: process.platform === "win32" }, () => {
-  const h = fakeRuntimeRoot("runtime-ww-");
-  try {
-    const trustedDir = h.mkdir("opt");
-    const bad = h.write("opt/payload.sh", "#!/bin/sh\necho pwn\n");
-    fs.chmodSync(bad, 0o777);
-    const r = runtimeCollector.collect({
-      cwd: ROOT,
-      args: {
-        paths: {
-          sudoers: path.join(h.tmp, "noexist"),
-          sudoersD: path.join(h.tmp, "nodir"),
-          passwd: path.join(h.tmp, "nopasswd"),
-          trustedPaths: [trustedDir],
-          procRoot: path.join(h.tmp, "nodir"),
-        },
-        forceLinux: true,
-      },
-    });
-    assert.equal(r.signal_overrides["world-writable-in-trusted-path"], "hit");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("runtime collector mixed-user sudoers entry fires when non-root principal grants wildcard (codex P2 #80)", () => {
-  const h = fakeRuntimeRoot("runtime-mixed-sudo-");
-  try {
-    const sudoers = h.write("etc/sudoers", "root,deploy ALL=(ALL) NOPASSWD: ALL\n");
-    const passwd = h.write("etc/passwd", "root:x:0:0:root:/root:/bin/bash\n");
-    const r = runtimeCollector.collect({
-      cwd: ROOT,
-      args: {
-        paths: { sudoers, sudoersD: path.join(h.tmp, "nodir"), passwd, trustedPaths: [], procRoot: path.join(h.tmp, "nodir") },
-        forceLinux: true,
-      },
-    });
-    assert.equal(r.signal_overrides["sudoers-nopasswd-wildcard"], "hit",
-      "root,deploy NOPASSWD: ALL grants wildcard to deploy — must fire");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("runtime collector orphan-privileged stays unflipped when /proc/<pid>/exe unreadable (codex P1 #80)", () => {
-  // Synthesise /proc layout where every PID's status file exists
-  // but no exe symlink does — mirrors hidepid / ptrace-restrict on
-  // non-root scope. The collector must NOT report "miss" — that
-  // would mask real orphan-privileged implants.
-  const h = fakeRuntimeRoot("runtime-orphan-noexe-");
-  try {
-    const procRoot = h.mkdir("proc");
-    // PID 1 (no exe symlink readable)
-    h.write("proc/1/status", "Name:\tsystemd\nPPid:\t0\nUid:\t0\t0\t0\t0\n");
-    // PID 100, UID 0, PPID 1 — would look like an orphan, but exe
-    // symlink missing.
-    h.write("proc/100/status", "Name:\tsuspicious\nPPid:\t1\nUid:\t0\t0\t0\t0\n");
-    const r = runtimeCollector.collect({
-      cwd: ROOT,
-      args: {
-        paths: {
-          sudoers: path.join(h.tmp, "nosudoers"),
-          sudoersD: path.join(h.tmp, "nodir"),
-          passwd: path.join(h.tmp, "nopasswd"),
-          trustedPaths: [],
-          procRoot,
-        },
-        forceLinux: true,
-      },
-    });
-    // exe links unreadable → indicator unflipped (codex P1 #80)
-    assert.equal(r.signal_overrides["orphan-privileged-process"], undefined,
-      "missing exe links must leave indicator unflipped, not assert clean");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("runtime collector leaves indicators unflipped when sources unreadable", () => {
-  // All paths point at non-existent locations → no indicator should
-  // be set; runner returns inconclusive.
-  const h = fakeRuntimeRoot("runtime-empty-");
-  try {
-    const r = runtimeCollector.collect({
-      cwd: ROOT,
-      args: {
-        paths: {
-          sudoers: path.join(h.tmp, "noexist1"),
-          sudoersD: path.join(h.tmp, "noexist2"),
-          passwd: path.join(h.tmp, "noexist3"),
-          trustedPaths: [path.join(h.tmp, "noexist4")],
-          procRoot: path.join(h.tmp, "noexist5"),
-        },
-        forceLinux: true,
-      },
-    });
-    assert.equal(r.signal_overrides["sudoers-nopasswd-wildcard"], undefined);
-    assert.equal(r.signal_overrides["duplicate-uid-zero"], undefined);
-    assert.equal(r.signal_overrides["world-writable-in-trusted-path"], undefined);
-    assert.equal(r.signal_overrides["orphan-privileged-process"], undefined);
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("ai-api collector flips zero on a clean fake-home", () => {
-  const h = fakeHome("ai-api-clean-");
-  try {
-    const r = aiApiCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["cleartext-api-key-in-dotfile"], "miss");
-    assert.equal(r.signal_overrides["long-lived-aws-keys"], "miss");
-    assert.equal(r.signal_overrides["gcp-service-account-json"], "miss");
-    assert.equal(r.signal_overrides["kubeconfig-with-static-token"], "miss");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("ai-api cleartext-api-key-in-dotfile fires on OPENAI_API_KEY export in .zshrc", () => {
-  const h = fakeHome("ai-api-zshrc-");
-  try {
-    h.write(".zshrc", "export PATH=$PATH:/usr/local/bin\nexport OPENAI_API_KEY=sk-" + "A".repeat(30) + "\n");
-    const r = aiApiCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["cleartext-api-key-in-dotfile"], "hit");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("ai-api cleartext-api-key-in-dotfile fires on ANTHROPIC + HF tokens", () => {
-  const h = fakeHome("ai-api-anthropic-");
-  try {
-    h.write(".bashrc", "export ANTHROPIC_API_KEY=sk-ant-" + "A".repeat(30) + "\nexport HF_TOKEN=hf_" + "A".repeat(30) + "\n");
-    const r = aiApiCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["cleartext-api-key-in-dotfile"], "hit");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("ai-api cleartext-api-key-in-dotfile fires on fish-style set -gx", () => {
-  const h = fakeHome("ai-api-fish-");
-  try {
-    h.write(".config/fish/config.fish", "set -gx GOOGLE_API_KEY " + "A".repeat(40) + "\n");
-    const r = aiApiCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["cleartext-api-key-in-dotfile"], "hit");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("ai-api long-lived-aws-keys: STS session_token sibling demotes to miss", () => {
-  const h = fakeHome("ai-api-aws-sts-");
-  try {
-    h.write(".aws/credentials", [
-      "[default]",
-      "aws_access_key_id = ASIASYNTHETICTEMPKEY",
-      "aws_secret_access_key = " + "a".repeat(40),
-      "aws_session_token = " + "z".repeat(40),
-    ].join("\n"));
-    const r = aiApiCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["long-lived-aws-keys"], "miss",
-      "aws_session_token sibling marks the profile as STS-temporary, not long-lived");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("ai-api long-lived-aws-keys: AKIA without session token fires", () => {
-  const h = fakeHome("ai-api-aws-longlived-");
-  try {
-    h.write(".aws/credentials", [
-      "[default]",
-      "aws_access_key_id = AKIASYNTHETICTESTKEY",
-      "aws_secret_access_key = " + "a".repeat(40),
-    ].join("\n"));
-    const r = aiApiCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["long-lived-aws-keys"], "hit");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("ai-api kubeconfig-with-static-token honours user.token / not auth-provider", () => {
-  const h = fakeHome("ai-api-kube-token-");
-  try {
-    h.write(".kube/config", [
-      "users:",
-      "- name: admin",
-      "  user:",
-      "    token: abcdef1234567890",
-    ].join("\n"));
-    const r = aiApiCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["kubeconfig-with-static-token"], "hit");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("ai-api kubeconfig-with-static-token miss on auth-provider cached token", () => {
-  const h = fakeHome("ai-api-kube-authprov-");
-  try {
-    h.write(".kube/config", [
-      "users:",
-      "- name: gcp-iap",
-      "  user:",
-      "    auth-provider:",
-      "      name: gcp",
-      "      config:",
-      "        access-token: ya29.dynamic-cached",
-    ].join("\n"));
-    const r = aiApiCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["kubeconfig-with-static-token"], "miss");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("mcp collector flips zero on a clean fake-home", () => {
-  const h = fakeHome("mcp-clean-");
-  try {
-    const r = mcpCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["mcp-version-without-integrity"], "miss");
-    assert.equal(r.signal_overrides["copilot-yolo-mode-flag"], "miss");
-    // ANSI / unicode indicators should be unflipped when no logs exist.
-    assert.equal(r.signal_overrides["mcp-response-ansi-escape"], undefined);
-    assert.equal(r.signal_overrides["mcp-response-unicode-tag-smuggling"], undefined);
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("mcp version-without-integrity fires on npx @scope/pkg@x.y.z without integrity sibling", () => {
-  const h = fakeHome("mcp-pinned-");
-  try {
-    h.write(".cursor/mcp.json", JSON.stringify({
-      mcpServers: {
-        "fs-server": { command: "npx", args: ["-y", "@modelcontextprotocol/server-filesystem@1.2.3"] },
-      },
-    }));
-    const r = mcpCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["mcp-version-without-integrity"], "hit");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("mcp version-without-integrity miss when integrity sibling present", () => {
-  const h = fakeHome("mcp-integ-");
-  try {
-    h.write(".cursor/mcp.json", JSON.stringify({
-      mcpServers: {
-        "fs-server": {
-          command: "npx",
-          args: ["-y", "@modelcontextprotocol/server-filesystem@1.2.3"],
-          integrity: "sha256-abc123",
-        },
-      },
-    }));
-    const r = mcpCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["mcp-version-without-integrity"], "miss");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("mcp copilot-yolo-mode-flag fires on chat.tools.autoApprove=true", () => {
-  const h = fakeHome("mcp-yolo-");
-  try {
-    h.write(".config/Code/User/settings.json", JSON.stringify({
-      "chat.tools.autoApprove": true,
-    }));
-    const r = mcpCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["copilot-yolo-mode-flag"], "hit");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("mcp copilot-yolo-mode-flag fires on per-server autoApprove=true", () => {
-  const h = fakeHome("mcp-yolo-perserver-");
-  try {
-    h.write(".config/Code/User/settings.json", JSON.stringify({
-      "chat.mcp.servers": {
-        "dangerous-server": { autoApprove: true },
-      },
-    }));
-    const r = mcpCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["copilot-yolo-mode-flag"], "hit");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("mcp ansi-escape + unicode-tag-smuggling fire on tainted log content", () => {
-  const h = fakeHome("mcp-tainted-log-");
-  try {
-    // ANSI escape: 0x1B in the JSONL content.
-    h.write(".claude/logs/mcp/server1.jsonl",
-      `{"method":"tools/call","result":{"content":[{"text":"hello \x1b[31mred\x1b[0m"}]}}\n`);
-    // Unicode tag smuggling: codepoint U+E0040.
-    const tagSmuggled = "innocent " + String.fromCodePoint(0xE0040) + " text";
-    h.write(".cursor/logs/mcp-call.jsonl",
-      JSON.stringify({ method: "tools/list", result: { tools: [{ description: tagSmuggled }] } }) + "\n");
-    const r = mcpCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["mcp-response-ansi-escape"], "hit");
-    assert.equal(r.signal_overrides["mcp-response-unicode-tag-smuggling"], "hit");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("mcp ansi-escape miss when log content is clean", () => {
-  const h = fakeHome("mcp-clean-log-");
-  try {
-    h.write(".claude/logs/mcp/server1.jsonl",
-      JSON.stringify({ method: "tools/call", result: { content: [{ text: "plain text" }] } }) + "\n");
-    const r = mcpCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["mcp-response-ansi-escape"], "miss");
-    assert.equal(r.signal_overrides["mcp-response-unicode-tag-smuggling"], "miss");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("mcp project-level .vscode/settings.json under cwd flips yolo flag", () => {
-  const h = fakeHome("mcp-proj-vsc-");
-  const projTmp = fs.mkdtempSync(path.join(os.tmpdir(), "mcp-proj-cwd-"));
-  try {
-    fs.mkdirSync(path.join(projTmp, ".vscode"), { recursive: true });
-    fs.writeFileSync(path.join(projTmp, ".vscode", "settings.json"), JSON.stringify({
-      chat: { tools: { autoApprove: true } },
-    }));
-    const r = mcpCollector.collect({ cwd: projTmp, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["copilot-yolo-mode-flag"], "hit");
-  } finally {
-    h.cleanup();
-    try { fs.rmSync(projTmp, { recursive: true, force: true }); } catch {}
-  }
-});
-
-test("collect mcp pipes into run --evidence -", () => {
-  const h = fakeHome("mcp-pipe-");
-  try {
-    h.write(".cursor/mcp.json", JSON.stringify({
-      mcpServers: { fs: { command: "npx", args: ["@modelcontextprotocol/server-filesystem@1.0.0"] } },
-    }));
-    const collected = cli(["collect", "mcp", "--json"], { env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(collected.status, 0);
-    const ran = cli(["run", "mcp", "--evidence", "-", "--json"], { input: collected.stdout, env: { HOME: h.home, USERPROFILE: h.home } });
-    const body = tryJson(ran.stdout) || tryJson(ran.stderr);
-    assert.ok(body);
-    assert.equal(body.playbook_id, "mcp");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("collect ai-api pipes into run --evidence -", () => {
-  const h = fakeHome("ai-api-pipe-");
-  try {
-    h.write(".zshrc", "export OPENAI_API_KEY=sk-" + "P".repeat(40) + "\n");
-    const collected = cli(["collect", "ai-api", "--json"], { env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(collected.status, 0);
-    const ran = cli(["run", "ai-api", "--evidence", "-", "--json"], { input: collected.stdout, env: { HOME: h.home, USERPROFILE: h.home } });
-    const body = tryJson(ran.stdout) || tryJson(ran.stderr);
-    assert.ok(body, `run must emit parseable JSON; stdout: ${ran.stdout.slice(0,200)}`);
-    assert.equal(body.playbook_id, "ai-api");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("collect cred-stores pipes into run --evidence -", () => {
-  const h = fakeHome("cred-pipe-");
-  try {
-    h.write(".npmrc", "//registry.npmjs.org/:_authToken=npm_" + "C".repeat(36) + "\n");
-    const collected = cli(["collect", "cred-stores", "--json"], { env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(collected.status, 0, `collect stderr: ${collected.stderr}`);
-    const ran = cli(["run", "cred-stores", "--evidence", "-", "--json"], { input: collected.stdout, env: { HOME: h.home, USERPROFILE: h.home } });
-    const body = tryJson(ran.stdout) || tryJson(ran.stderr);
-    assert.ok(body, `run must emit parseable JSON; status=${ran.status}, stdout: ${ran.stdout.slice(0, 200)}`);
-    assert.equal(body.playbook_id, "cred-stores");
-  } finally {
-    h.cleanup();
-  }
-});
-
-test("crypto collector flips openssl-pre-3-5 + sshd-no-pqc-kex + ml-kem-absent + ml-dsa-slh-dsa-absent + weak-mac-or-cipher on a pre-3.5 host without PQC", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "crypto-collector-bad-"));
-  try {
-    const sshdPath = path.join(tmp, "sshd_config");
-    fs.writeFileSync(sshdPath, [
-      "Port 22",
-      "KexAlgorithms curve25519-sha256,ecdh-sha2-nistp256",
-      "MACs hmac-sha1,hmac-sha2-256",
-      "Ciphers aes256-ctr,arcfour",
-      "PermitRootLogin no",
-      "",
-    ].join("\n"));
-    const sshdD = path.join(tmp, "sshd_config.d");
-    fs.mkdirSync(sshdD);
-    const opensslVerPath = path.join(tmp, "openssl-version.txt");
-    fs.writeFileSync(opensslVerPath, "OpenSSL 3.0.13 30 Jan 2024\nbuilt on: ...\n");
-    const opensslKemPath = path.join(tmp, "openssl-kem.txt");
-    fs.writeFileSync(opensslKemPath, "Name: X25519\nName: X448\n");
-    const opensslSigPath = path.join(tmp, "openssl-sig.txt");
-    fs.writeFileSync(opensslSigPath, "Name: ECDSA\nName: RSA-PSS\n");
-    const certStoreDir = path.join(tmp, "certs");
-    fs.mkdirSync(certStoreDir);
-    fs.writeFileSync(path.join(certStoreDir, "ca.pem"), "-----BEGIN CERTIFICATE-----\n");
-
-    const { collect } = require("../lib/collectors/crypto.js");
-    const r = collect({
-      cwd: tmp,
       args: {
         forceLinux: true,
         paths: {
-          sshdConfig: sshdPath,
-          sshdConfigD: sshdD,
-          opensslVersionOutput: opensslVerPath,
-          opensslKemOutput: opensslKemPath,
-          opensslSignatureOutput: opensslSigPath,
-          certStore: certStoreDir,
+          trustedPaths: [tp],
+          sudoers: path.join(tmp, "none"),
+          sudoersD: path.join(tmp, "none.d"),
+          passwd: path.join(tmp, "none"),
+          procRoot: path.join(tmp, "noproc"),
         },
       },
     });
-
-    assert.equal(r.signal_overrides["openssl-pre-3-5"], "hit");
-    assert.equal(r.signal_overrides["sshd-no-pqc-kex"], "hit");
-    assert.equal(r.signal_overrides["ml-kem-absent"], "hit");
-    assert.equal(r.signal_overrides["ml-dsa-slh-dsa-absent"], "hit");
-    assert.equal(r.signal_overrides["weak-mac-or-cipher"], "hit");
-    assert.equal(r.precondition_checks["linux-platform"], true);
-    assert.equal(r.collector_meta.collector_id, "crypto");
+    // If the host honoured chmod the indicator fires; if chmod was a no-op
+    // (rare CI), skip the behavioural half — the source guard still covers it.
+    if (sub.signal_overrides["world-writable-in-trusted-path"] === "hit") {
+      assertAttestationShape(sub.signal_overrides["world-writable-in-trusted-path__fp_checks"], "runtime world-writable");
+      const det = runRoundTrip("runtime", sub);
+      assert.equal(indicatorVerdict(det, "world-writable-in-trusted-path"), "hit",
+        "a genuine world-writable hit must stay hit after run");
+    }
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
 
-test("crypto collector returns clean miss on modern openssl + PQC sshd", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "crypto-collector-ok-"));
+test("sbom: lockfile-no-integrity reaches detected for a remote-registry entry missing integrity", () => {
+  const sbom = require(path.join(ROOT, "lib", "collectors", "sbom.js"));
+  const tmp = mkTmp("w-fp-sbom-");
   try {
-    const sshdPath = path.join(tmp, "sshd_config");
-    fs.writeFileSync(sshdPath, [
-      "Port 22",
-      "KexAlgorithms sntrup761x25519-sha512@openssh.com,curve25519-sha256",
-      "MACs hmac-sha2-512-etm@openssh.com",
-      "Ciphers chacha20-poly1305@openssh.com",
-      "",
-    ].join("\n"));
-    const opensslVerPath = path.join(tmp, "openssl-version.txt");
-    fs.writeFileSync(opensslVerPath, "OpenSSL 3.5.0 8 Apr 2025\n");
-    const opensslKemPath = path.join(tmp, "openssl-kem.txt");
-    fs.writeFileSync(opensslKemPath, "Name: mlkem768\nName: X25519\n");
-    const opensslSigPath = path.join(tmp, "openssl-sig.txt");
-    fs.writeFileSync(opensslSigPath, "Name: ML-DSA-65\nName: ECDSA\n");
-
-    const { collect } = require("../lib/collectors/crypto.js");
-    const r = collect({
-      cwd: tmp,
-      args: {
-        forceLinux: true,
-        paths: {
-          sshdConfig: sshdPath,
-          sshdConfigD: path.join(tmp, "sshd_config.d"),
-          opensslVersionOutput: opensslVerPath,
-          opensslKemOutput: opensslKemPath,
-          opensslSignatureOutput: opensslSigPath,
-          certStore: path.join(tmp, "no-certs"),
-        },
-      },
-    });
-    assert.equal(r.signal_overrides["openssl-pre-3-5"], "miss");
-    assert.equal(r.signal_overrides["sshd-no-pqc-kex"], "miss");
-    assert.equal(r.signal_overrides["ml-kem-absent"], "miss");
-    assert.equal(r.signal_overrides["ml-dsa-slh-dsa-absent"], "miss");
-    assert.equal(r.signal_overrides["weak-mac-or-cipher"], "miss");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("crypto collector emits empty submission on non-linux platforms", { skip: process.platform === "linux" }, () => {
-  const { collect } = require("../lib/collectors/crypto.js");
-  const r = collect({ args: { forceLinux: false } });
-  assert.equal(r.precondition_checks["linux-platform"], false);
-  assert.deepEqual(r.signal_overrides, {});
-  assert.equal(r.artifacts["openssl-version"].captured, false);
-});
-
-test("crypto collector flips weak-mac-or-cipher on aes-cbc variants", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "crypto-aes-cbc-"));
-  try {
-    const sshdPath = path.join(tmp, "sshd_config");
-    fs.writeFileSync(sshdPath, [
-      "Port 22",
-      "KexAlgorithms sntrup761x25519-sha512@openssh.com,curve25519-sha256",
-      "MACs hmac-sha2-512-etm@openssh.com",
-      "Ciphers aes256-ctr,aes128-cbc",
-      "",
-    ].join("\n"));
-    const { collect } = require("../lib/collectors/crypto.js");
-    const r = collect({
-      cwd: tmp,
-      args: {
-        forceLinux: true,
-        paths: {
-          sshdConfig: sshdPath,
-          sshdConfigD: path.join(tmp, "sshd_config.d"),
-          opensslVersionOutput: path.join(tmp, "noop"),
-          opensslKemOutput: path.join(tmp, "noop"),
-          opensslSignatureOutput: path.join(tmp, "noop"),
-          certStore: path.join(tmp, "no-certs"),
-        },
-      },
-    });
-    assert.equal(r.signal_overrides["weak-mac-or-cipher"], "hit");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("cicd-pipeline-compromise collector flips fork-PR-checkout + injection-sink + floating-tag + secret-exposed + OIDC-wildcard on a bad fixture", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-collector-bad-"));
-  try {
-    fs.mkdirSync(path.join(tmp, ".git"));
-    const wfDir = path.join(tmp, ".github", "workflows");
-    fs.mkdirSync(wfDir, { recursive: true });
-
-    fs.writeFileSync(path.join(wfDir, "test.yml"), [
-      "name: test",
-      "on: pull_request_target",
-      "jobs:",
-      "  test:",
-      "    runs-on: ubuntu-latest",
-      "    steps:",
-      "      - uses: actions/checkout@v4",
-      "        with:",
-      "          ref: ${{ github.event.pull_request.head.sha }}",
-      "      - uses: third-party/action@v1",
-      "      - name: build",
-      "        run: echo ${{ github.event.pull_request.title }}",
-      "      - name: secret",
-      "        run: curl -H \"x: ${{ secrets.NPM_TOKEN }}\" https://example.com",
-      "",
-    ].join("\n"));
-
-    const infraDir = path.join(tmp, "infra");
-    fs.mkdirSync(infraDir);
-    fs.writeFileSync(path.join(infraDir, "ci-trust-policy.json"), JSON.stringify({
-      Version: "2012-10-17",
-      Statement: [{
-        Effect: "Allow",
-        Principal: { Federated: "arn:aws:iam::123:oidc-provider/token.actions.githubusercontent.com" },
-        Action: "sts:AssumeRoleWithWebIdentity",
-        Condition: { StringLike: { "token.actions.githubusercontent.com:sub": "*" } },
-      }],
+    fs.writeFileSync(path.join(tmp, "package-lock.json"), JSON.stringify({
+      name: "x", lockfileVersion: 3,
+      packages: { "node_modules/lodash": { version: "4.17.21", resolved: "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz" } },
     }));
-
-    const { collect } = require("../lib/collectors/cicd-pipeline-compromise.js");
-    const r = collect({ cwd: tmp });
-
-    assert.equal(r.signal_overrides["pull-request-target-with-pr-checkout"], "hit");
-    assert.equal(r.signal_overrides["actions-floating-tag-pin"], "hit");
-    assert.equal(r.signal_overrides["workflow-injection-sink"], "hit");
-    assert.equal(r.signal_overrides["wildcarded-oidc-sub-claim"], "hit");
-    assert.equal(r.signal_overrides["secret-exposed-to-fork-pr"], "hit");
-    assert.equal(r.collector_meta.collector_id, "cicd-pipeline-compromise");
-    assert.equal(r.precondition_checks["cwd-is-repo"], true);
+    const sub = sbom.collect({ cwd: tmp });
+    assert.equal(sub.signal_overrides["lockfile-no-integrity"], "hit");
+    assertAttestationShape(sub.signal_overrides["lockfile-no-integrity__fp_checks"], "sbom lockfile-no-integrity");
+    const det = runRoundTrip("sbom", sub);
+    assert.equal(indicatorVerdict(det, "lockfile-no-integrity"), "hit");
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
 
-test("cicd-pipeline-compromise collector misses on a clean SHA-pinned + env-bound workflow", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-collector-ok-"));
+test("sbom: an integrity-less local-path entry is not falsely attested as a registry finding", () => {
+  const sbom = require(path.join(ROOT, "lib", "collectors", "sbom.js"));
+  const tmp = mkTmp("w-fp-sbom-local-");
   try {
-    fs.mkdirSync(path.join(tmp, ".git"));
-    const wfDir = path.join(tmp, ".github", "workflows");
-    fs.mkdirSync(wfDir, { recursive: true });
-    fs.writeFileSync(path.join(wfDir, "ci.yml"), [
-      "name: ci",
-      "on: [pull_request]",
-      "jobs:",
-      "  test:",
-      "    runs-on: ubuntu-latest",
-      "    steps:",
-      "      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29",
-      "      - uses: third-party/safe@" + "a".repeat(40),
-      "      - name: build",
-      "        env:",
-      "          PR_TITLE: ${{ github.event.pull_request.title }}",
-      "        run: echo \"$PR_TITLE\"",
-      "",
-    ].join("\n"));
-
-    const { collect } = require("../lib/collectors/cicd-pipeline-compromise.js");
-    const r = collect({ cwd: tmp });
-
-    assert.equal(r.signal_overrides["pull-request-target-with-pr-checkout"], "miss");
-    assert.equal(r.signal_overrides["actions-floating-tag-pin"], "miss");
-    assert.equal(r.signal_overrides["workflow-injection-sink"], "miss");
-    assert.equal(r.signal_overrides["secret-exposed-to-fork-pr"], "miss");
-    assert.equal(r.signal_overrides["wildcarded-oidc-sub-claim"], "miss");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("cicd-pipeline-compromise collector does not treat a lookalike OIDC issuer as the GitHub issuer", () => {
-  // The issuer pre-filter is boundary-anchored: a trust policy that references a
-  // host merely embedding the GitHub OIDC issuer as a label
-  // (`token.actions.githubusercontent.com.attacker.example`) is a different,
-  // attacker-controlled issuer and must not surface as a GitHub-OIDC wildcard.
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-oidc-lookalike-"));
-  try {
-    fs.mkdirSync(path.join(tmp, ".git"));
-    fs.writeFileSync(path.join(tmp, "trust-policy.json"), JSON.stringify({
-      Version: "2012-10-17",
-      Statement: [{
-        Effect: "Allow",
-        Principal: { Federated: "arn:aws:iam::123:oidc-provider/token.actions.githubusercontent.com.attacker.example" },
-        Action: "sts:AssumeRoleWithWebIdentity",
-        Condition: { StringLike: { "token.actions.githubusercontent.com.attacker.example:sub": "*" } },
-      }],
+    // Only a file:/workspace ref lacks integrity — FP[0] (remote-registry)
+    // must NOT be attested, so the runner keeps it inconclusive.
+    fs.writeFileSync(path.join(tmp, "package-lock.json"), JSON.stringify({
+      name: "x", lockfileVersion: 3,
+      packages: { "node_modules/local": { version: "1.0.0", resolved: "file:../local" } },
     }));
-    const { collect } = require("../lib/collectors/cicd-pipeline-compromise.js");
-    const r = collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["wildcarded-oidc-sub-claim"], "miss");
+    const sub = sbom.collect({ cwd: tmp });
+    if (sub.signal_overrides["lockfile-no-integrity"] === "hit") {
+      const att = sub.signal_overrides["lockfile-no-integrity__fp_checks"] || {};
+      assert.equal(att["0"], undefined, "must not attest the registry FP check for a file:-only gap");
+      const det = runRoundTrip("sbom", sub);
+      assert.equal(indicatorVerdict(det, "lockfile-no-integrity"), "inconclusive");
+    }
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
 
-test("cicd-pipeline-compromise distinguishes a custom GITHUB_TOKEN_PROD secret from the built-in token", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-secret-name-"));
+test("library-author: a third-party mutable action ref with no Dependabot reaches detected", () => {
+  const la = require(path.join(ROOT, "lib", "collectors", "library-author.js"));
+  const tmp = mkTmp("w-fp-la-");
   try {
-    fs.mkdirSync(path.join(tmp, ".git"));
-    const wfDir = path.join(tmp, ".github", "workflows");
-    fs.mkdirSync(wfDir, { recursive: true });
-    const wf = (secretName) => [
-      "name: ci",
-      "on: pull_request_target",
-      "jobs:",
-      "  build:",
-      "    runs-on: ubuntu-latest",
-      "    steps:",
-      "      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29",
-      "      - name: deploy",
-      "        env:",
-      `          TOKEN: \${{ secrets.${secretName} }}`,
-      "        run: ./deploy.sh",
-      "",
-    ].join("\n");
-    const { collect } = require("../lib/collectors/cicd-pipeline-compromise.js");
-
-    // A custom secret whose name merely STARTS WITH GITHUB_TOKEN is not the
-    // built-in token and must flip secret-exposed-to-fork-pr.
-    fs.writeFileSync(path.join(wfDir, "ci.yml"), wf("GITHUB_TOKEN_PROD"));
-    assert.equal(collect({ cwd: tmp }).signal_overrides["secret-exposed-to-fork-pr"], "hit");
-
-    // The built-in GITHUB_TOKEN alone must NOT flip it.
-    fs.writeFileSync(path.join(wfDir, "ci.yml"), wf("GITHUB_TOKEN"));
-    assert.equal(collect({ cwd: tmp }).signal_overrides["secret-exposed-to-fork-pr"], "miss");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("cicd-pipeline-compromise collector attests ci-config-readable on the success path (filesystem read genuinely performed)", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-preconds-"));
-  try {
-    fs.mkdirSync(path.join(tmp, ".git"));
-    const { collect } = require("../lib/collectors/cicd-pipeline-compromise.js");
-    const r = collect({ cwd: tmp });
-    assert.equal(r.precondition_checks["cwd-is-repo"], true);
-    assert.equal(r.precondition_checks["ci-config-readable"], true);
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("secrets collector demotes hits that exist only in test / fixture paths", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "secrets-demote-"));
-  try {
-    fs.mkdirSync(path.join(tmp, ".git"));
-    fs.mkdirSync(path.join(tmp, "test"), { recursive: true });
-    fs.writeFileSync(
-      path.join(tmp, "test", "fulcio_test.go"),
-      'const jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";\n',
-    );
+    fs.writeFileSync(path.join(tmp, "package.json"), JSON.stringify({ name: "x", version: "1.0.0" }));
     fs.mkdirSync(path.join(tmp, ".github", "workflows"), { recursive: true });
-    fs.writeFileSync(
-      path.join(tmp, ".github", "workflows", "cosign-test.key"),
-      "-----BEGIN PRIVATE KEY-----\nMIIBAA==\n-----END PRIVATE KEY-----\n",
-    );
-
-    const { collect } = require("../lib/collectors/secrets.js");
-    const r = collect({ cwd: tmp });
-
-    assert.equal(r.signal_overrides["jwt-token-with-secret-context"], "miss");
-    assert.equal(r.signal_overrides["ssh-private-key-block"], "miss");
+    fs.writeFileSync(path.join(tmp, ".github", "workflows", "publish.yml"),
+      ["name: publish", "on:", "  release:", "    types: [published]", "jobs:", "  pub:",
+        "    runs-on: ubuntu-latest", "    steps:", "      - uses: actions/checkout@v4",
+        "      - uses: thirdparty/some-action@main", "      - run: npm publish"].join("\n"));
+    const sub = la.collect({ cwd: tmp });
+    assert.equal(sub.signal_overrides["publish-workflow-action-refs-mutable"], "hit");
+    assertAttestationShape(sub.signal_overrides["publish-workflow-action-refs-mutable__fp_checks"], "library-author action-refs-mutable");
+    const det = runRoundTrip("library-author", sub);
+    assert.equal(indicatorVerdict(det, "publish-workflow-action-refs-mutable"), "hit");
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
 
-test("secrets collector still fires when production code has a real secret (demotion is not blanket suppression)", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "secrets-prod-hit-"));
+test("library-author: github-owned mutable refs + Dependabot leave the indicator inconclusive (honest abstain)", () => {
+  const la = require(path.join(ROOT, "lib", "collectors", "library-author.js"));
+  const tmp = mkTmp("w-fp-la-clean-");
   try {
-    fs.mkdirSync(path.join(tmp, ".git"));
-    fs.mkdirSync(path.join(tmp, "src"), { recursive: true });
-    fs.writeFileSync(
-      path.join(tmp, "src", "auth.go"),
-      'const jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";\n',
-    );
-
-    const { collect } = require("../lib/collectors/secrets.js");
-    const r = collect({ cwd: tmp });
-
-    assert.equal(r.signal_overrides["jwt-token-with-secret-context"], "hit");
+    fs.writeFileSync(path.join(tmp, "package.json"), JSON.stringify({ name: "x", version: "1.0.0" }));
+    fs.mkdirSync(path.join(tmp, ".github", "workflows"), { recursive: true });
+    fs.writeFileSync(path.join(tmp, ".github", "dependabot.yml"),
+      ["version: 2", "updates:", "  - package-ecosystem: github-actions", "    directory: \"/\"", "    schedule:", "      interval: weekly"].join("\n"));
+    // Only github-owned mutable refs -> FP[1] not survived.
+    fs.writeFileSync(path.join(tmp, ".github", "workflows", "publish.yml"),
+      ["name: publish", "on:", "  release:", "    types: [published]", "jobs:", "  pub:",
+        "    runs-on: ubuntu-latest", "    steps:", "      - uses: actions/checkout@v4", "      - run: npm publish"].join("\n"));
+    const sub = la.collect({ cwd: tmp });
+    if (sub.signal_overrides["publish-workflow-action-refs-mutable"] === "hit") {
+      const att = sub.signal_overrides["publish-workflow-action-refs-mutable__fp_checks"];
+      // Neither FP index should be attested: Dependabot present AND all refs github-owned.
+      assert.ok(!att || (att["0"] === undefined && att["1"] === undefined));
+      const det = runRoundTrip("library-author", sub);
+      assert.equal(indicatorVerdict(det, "publish-workflow-action-refs-mutable"), "inconclusive");
+    }
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
 
-test("library-author recognises container-native publish workflows (cosign sign + ko publish + id-token: write)", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "la-publish-"));
+test("citation-hygiene: a fabricated CVE in non-illustrative prose reaches detected", () => {
+  const ch = require(path.join(ROOT, "lib", "collectors", "citation-hygiene.js"));
+  const tmp = mkTmp("w-fp-ch-");
   try {
-    fs.mkdirSync(path.join(tmp, ".git"));
-    const wf = path.join(tmp, ".github", "workflows");
-    fs.mkdirSync(wf, { recursive: true });
-    fs.writeFileSync(
-      path.join(wf, "build.yaml"),
-      [
-        "name: build",
-        "on: push",
-        "jobs:",
-        "  build:",
-        "    permissions:",
-        "      id-token: write",
-        "      contents: read",
-        "    steps:",
-        "      - uses: sigstore/cosign-installer@" + "a".repeat(40),
-        "      - uses: ko-build/setup-ko@" + "b".repeat(40),
-        "      - run: ko publish ./cmd/foo",
-        "      - run: cosign sign $IMAGE",
-        "",
-      ].join("\n"),
-    );
-    fs.writeFileSync(path.join(tmp, "package.json"), '{"name":"x","version":"1.0.0"}');
-
-    const { collect } = require("../lib/collectors/library-author.js");
-    const r = collect({ cwd: tmp });
-
-    assert.ok(r.collector_meta.publish_workflows.includes("build.yaml"),
-      `expected build.yaml in publish_workflows; got: ${JSON.stringify(r.collector_meta.publish_workflows)}`);
-    assert.equal(r.signal_overrides["publish-workflow-no-id-token-write"], "miss");
+    // A well-shaped CVE citation (4-digit year) whose sequence number is too
+    // short to be canonical — recognised as a citation, flagged as fabricated.
+    fs.writeFileSync(path.join(tmp, "notes.md"), "Tracking CVE-2025-1 in the changelog.\n");
+    const sub = ch.collect({ cwd: tmp });
+    assert.equal(sub.signal_overrides["fabricated-cve-id"], "hit");
+    assertAttestationShape(sub.signal_overrides["fabricated-cve-id__fp_checks"], "citation-hygiene fabricated-cve-id");
+    const det = runRoundTrip("citation-hygiene", sub);
+    assert.equal(indicatorVerdict(det, "fabricated-cve-id"), "hit");
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
 
-test("cred-stores surfaces credentials-file-perms-check skip on Windows", { skip: process.platform !== "win32" }, () => {
-  const { collect } = require("../lib/collectors/cred-stores.js");
-  const r = collect({ cwd: process.cwd() });
-  const art = r.artifacts["credentials-file-perms-check"];
-  assert.ok(art, "credentials-file-perms-check artifact missing");
-  assert.equal(art.captured, false);
-  assert.match(art.reason, /Windows|ACL|POSIX/i);
-});
-
-test("cred-stores credentials-file-perms-check is captured on POSIX", { skip: process.platform === "win32" }, () => {
-  const { collect } = require("../lib/collectors/cred-stores.js");
-  const r = collect({ cwd: process.cwd() });
-  const art = r.artifacts["credentials-file-perms-check"];
-  assert.ok(art, "credentials-file-perms-check artifact missing");
-  assert.equal(art.captured, true);
-});
-
-test("crypto-codebase demotes weak-hash hits in content-integrity / fingerprinting files (non-security context)", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cc-integrity-"));
-  try {
-    fs.mkdirSync(path.join(tmp, ".git"));
-    fs.mkdirSync(path.join(tmp, "resources", "integrity"), { recursive: true });
-    fs.writeFileSync(
-      path.join(tmp, "resources", "integrity", "integrity.go"),
-      'package integrity\nimport "crypto/md5"\nfunc Hash(b []byte) string { h := md5.Sum(b); return string(h[:]) }\n',
-    );
-    const { collect } = require("../lib/collectors/crypto-codebase.js");
-    const r = collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["weak-hash-import"], "miss");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
+test("kernel: source attests the deterministic CONFIG_* FP index for the userns/bpf indicators", () => {
+  // /proc and /boot/config are not stageable in a tempdir, so this is the
+  // structural fallback: the collector must reference __fp_checks for the
+  // FP-gated indicators it flips off the sysctl snapshot.
+  const src = fs.readFileSync(path.join(ROOT, "lib", "collectors", "kernel.js"), "utf8");
+  for (const id of ["unpriv-userns-enabled", "unpriv-bpf-allowed"]) {
+    assert.ok(src.includes(`"${id}__fp_checks"`),
+      `kernel.js must attest "${id}__fp_checks" for the checks it ran against /boot/config`);
   }
-});
-
-test("crypto-codebase filename demotion does NOT bypass an explicit security-context token (integrity.go with password fires)", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cc-int-pw-"));
-  try {
-    fs.mkdirSync(path.join(tmp, ".git"));
-    fs.mkdirSync(path.join(tmp, "r"));
-    fs.writeFileSync(
-      path.join(tmp, "r", "integrity.go"),
-      'package r\nimport "crypto/md5"\nfunc PasswordCheck(password string) string { h := md5.Sum([]byte(password)); return string(h[:]) }\n',
-    );
-    const { collect } = require("../lib/collectors/crypto-codebase.js");
-    const r = collect({ cwd: tmp });
-    // Filename signals content-addressable, but the code carries a
-    // strong security token (password). The hit must fire.
-    assert.equal(r.signal_overrides["weak-hash-import"], "hit");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("crypto-codebase still fires weak-hash on a real security context (auth.go with token)", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cc-auth-token-"));
-  try {
-    fs.mkdirSync(path.join(tmp, ".git"));
-    fs.mkdirSync(path.join(tmp, "src"));
-    fs.writeFileSync(
-      path.join(tmp, "src", "auth.go"),
-      'package auth\nimport "crypto/md5"\nfunc TokenHash(t string) string { return string(md5.Sum([]byte(t)))[:] }\n',
-    );
-    const { collect } = require("../lib/collectors/crypto-codebase.js");
-    const r = collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["weak-hash-import"], "hit");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("crypto-codebase isTestPath demotes Go _test.go files", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cc-go-test-"));
-  try {
-    fs.mkdirSync(path.join(tmp, ".git"));
-    fs.writeFileSync(
-      path.join(tmp, "auth_test.go"),
-      'package auth\nimport "crypto/md5"\nfunc TestThing(t *testing.T) { token := md5.Sum([]byte("x")); _ = token }\n',
-    );
-    const { collect } = require("../lib/collectors/crypto-codebase.js");
-    const r = collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["weak-hash-import"], "miss");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("cicd-pipeline-compromise collector requires explicit --attest-ownership for the CI-fleet ownership precondition", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-attest-"));
-  try {
-    fs.mkdirSync(path.join(tmp, ".git"));
-    const { collect } = require("../lib/collectors/cicd-pipeline-compromise.js");
-
-    // Default: no flag → ownership NOT attested (playbook gate stays
-    // enforced, run halts at preflight unless operator opts in).
-    const noFlag = collect({ cwd: tmp });
-    assert.equal(noFlag.precondition_checks["operator-owns-ci-fleet"], false);
-
-    // Camel-case (programmatic): explicit attestOwnership: true
-    const camel = collect({ cwd: tmp, args: { attestOwnership: true } });
-    assert.equal(camel.precondition_checks["operator-owns-ci-fleet"], true);
-
-    // Kebab-case (CLI): --attest-ownership lands as args["attest-ownership"]
-    const kebab = collect({ cwd: tmp, args: { "attest-ownership": true } });
-    assert.equal(kebab.precondition_checks["operator-owns-ci-fleet"], true);
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("cicd-pipeline-compromise collector precondition fails outside a git repo", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-no-git-"));
-  try {
-    const { collect } = require("../lib/collectors/cicd-pipeline-compromise.js");
-    const r = collect({ cwd: tmp });
-    assert.equal(r.precondition_checks["cwd-is-repo"], false);
-    assert.deepEqual(r.signal_overrides, {});
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("cicd-pipeline-compromise collector covers github.head_ref shape of PR-target-checkout", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-head-ref-"));
-  try {
-    fs.mkdirSync(path.join(tmp, ".git"));
-    const wfDir = path.join(tmp, ".github", "workflows");
-    fs.mkdirSync(wfDir, { recursive: true });
-    fs.writeFileSync(path.join(wfDir, "test.yml"), [
-      "name: test",
-      "on:",
-      "  pull_request_target:",
-      "    types: [opened, synchronize]",
-      "jobs:",
-      "  build:",
-      "    runs-on: ubuntu-latest",
-      "    steps:",
-      "      - uses: actions/checkout@" + "b".repeat(40),
-      "        with:",
-      "          ref: ${{ github.head_ref }}",
-      "",
-    ].join("\n"));
-    const { collect } = require("../lib/collectors/cicd-pipeline-compromise.js");
-    const r = collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["pull-request-target-with-pr-checkout"], "hit");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("cicd-pipeline-compromise collector excludes actions/* first-party from floating-tag predicate", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-first-party-"));
-  try {
-    fs.mkdirSync(path.join(tmp, ".git"));
-    const wfDir = path.join(tmp, ".github", "workflows");
-    fs.mkdirSync(wfDir, { recursive: true });
-    fs.writeFileSync(path.join(wfDir, "ci.yml"), [
-      "name: ci",
-      "on: push",
-      "jobs:",
-      "  test:",
-      "    runs-on: ubuntu-latest",
-      "    steps:",
-      "      - uses: actions/checkout@v4",
-      "      - uses: actions/setup-node@v3",
-      "",
-    ].join("\n"));
-    const { collect } = require("../lib/collectors/cicd-pipeline-compromise.js");
-    const r = collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["actions-floating-tag-pin"], "miss");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("cicd-pipeline-compromise collector recognises block-list on: trigger form", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-block-list-"));
-  try {
-    fs.mkdirSync(path.join(tmp, ".git"));
-    const wfDir = path.join(tmp, ".github", "workflows");
-    fs.mkdirSync(wfDir, { recursive: true });
-    fs.writeFileSync(path.join(wfDir, "test.yml"), [
-      "name: test",
-      "on:",
-      "  - pull_request_target",
-      "  - push",
-      "jobs:",
-      "  build:",
-      "    runs-on: ubuntu-latest",
-      "    steps:",
-      "      - uses: actions/checkout@v4",
-      "        with:",
-      "          ref: ${{ github.event.pull_request.head.sha }}",
-      "",
-    ].join("\n"));
-    const { collect } = require("../lib/collectors/cicd-pipeline-compromise.js");
-    const r = collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["pull-request-target-with-pr-checkout"], "hit");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("cicd-pipeline-compromise PR-head ref must be bound to the actions/checkout step, not any step", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cicd-binding-"));
-  try {
-    fs.mkdirSync(path.join(tmp, ".git"));
-    const wfDir = path.join(tmp, ".github", "workflows");
-    fs.mkdirSync(wfDir, { recursive: true });
-    // Checkout uses BASE ref (safe); a separate step echos PR head.
-    // File-wide co-occurrence used to falsely flag this — must miss now.
-    fs.writeFileSync(path.join(wfDir, "test.yml"), [
-      "name: test",
-      "on: pull_request_target",
-      "jobs:",
-      "  build:",
-      "    runs-on: ubuntu-latest",
-      "    steps:",
-      "      - uses: actions/checkout@" + "a".repeat(40),
-      "        with:",
-      "          ref: ${{ github.event.pull_request.base.sha }}",
-      "      - name: log head",
-      "        env:",
-      "          PR_HEAD: ${{ github.event.pull_request.head.sha }}",
-      "        run: echo \"$PR_HEAD\"",
-      "",
-    ].join("\n"));
-    const { collect } = require("../lib/collectors/cicd-pipeline-compromise.js");
-    const r = collect({ cwd: tmp });
-    assert.equal(r.signal_overrides["pull-request-target-with-pr-checkout"], "miss");
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("crypto collector leaves indicators unflipped (inconclusive) when openssl + sshd_config are both unreadable", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "crypto-collector-empty-"));
-  try {
-    const { collect } = require("../lib/collectors/crypto.js");
-    const r = collect({
-      cwd: tmp,
-      args: {
-        forceLinux: true,
-        paths: {
-          sshdConfig: path.join(tmp, "nonexistent"),
-          sshdConfigD: path.join(tmp, "nonexistent.d"),
-          opensslVersionOutput: path.join(tmp, "no-version"),
-          opensslKemOutput: path.join(tmp, "no-kem"),
-          opensslSignatureOutput: path.join(tmp, "no-sig"),
-          certStore: path.join(tmp, "no-certs"),
-        },
-      },
-    });
-    // Nothing was readable → no indicator emits a verdict.
-    assert.equal(r.signal_overrides["openssl-pre-3-5"], undefined);
-    assert.equal(r.signal_overrides["sshd-no-pqc-kex"], undefined);
-    assert.equal(r.signal_overrides["ml-kem-absent"], undefined);
-    assert.equal(r.signal_overrides["weak-mac-or-cipher"], undefined);
-    assert.equal(r.artifacts["openssl-version"].captured, false);
-    assert.equal(r.artifacts["sshd-config-effective"].captured, false);
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test("cred-stores kube-static-token fires on a user.token under non-2-space indentation", () => {
-  const h = fakeHome("cred-kube-indent-");
-  try {
-    // 4-space indentation: the user-vs-auth-provider anchor must be
-    // indentation-agnostic, not hardcoded to the literal "\n  user:" (2-space).
-    h.write(".kube/config", [
-      "apiVersion: v1",
-      "kind: Config",
-      "users:",
-      "  - name: admin",
-      "    user:",
-      "      token: abcdef1234567890",
-    ].join("\n"));
-    const r = credStoresCollector.collect({ cwd: ROOT, env: { HOME: h.home, USERPROFILE: h.home } });
-    assert.equal(r.signal_overrides["kube-static-token"], "hit");
-  } finally {
-    h.cleanup();
-  }
-});
-
-;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
-  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
-  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
-  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
-    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
-}
-});
-
-
-// ---- routed from engine-hardening-and-help ----
-require("node:test").describe("engine-hardening-and-help", () => {
-const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
-/**
- * Regression suite for an engine-hardening + UX cluster:
- *
- *   Deeply-nested evidence overflowed the stack (canonicalStringify recursion
- *     runs on every run via evidence_hash) with an opaque "internal error";
- *     it is now rejected at a bounded depth with an actionable message.
- *   --strict-preconditions missed a false skip_phase precondition (verdict
- *     skipped, exit 0) — a CI gate silently passed. It now fails (exit 1).
- *   A signal_overrides value that doesn't canonicalize (e.g. "maybe") was
- *     silently dropped; it now surfaces a runtime_error.
- *   A not_detected/clean classification override that would bury a
- *     DETERMINISTIC hit is refused (substituted inconclusive) and no longer
- *     reported as classification_override_applied. A probabilistic hit's
- *     confirm-benign override is still honored.
- *   run --all swallowed a mid-batch session-id collision (exit 0); it now
- *     surfaces exit 7 like the single-run path.
- *   watch --help started the blocking daemon (hung the terminal); collect
- *     --help had no content. Both now print usage.
- *
- * Discipline: exact exit codes; value + type assertions.
- */
-
-const test = require("node:test");
-const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const os = require("node:os");
-const path = require("node:path");
-const { makeSuiteHome, makeCli, tryJson } = require("./_helpers/cli");
-
-const cli = makeCli(makeSuiteHome("exceptd-enginehard-"));
-
-test("collect --help prints usage (not 'no per-verb help available')", () => {
-  const r = cli(["collect", "--help"]);
-  assert.match(r.stdout, /collect <playbook>/, "must show the collect synopsis");
-  assert.doesNotMatch(r.stdout, /no per-verb help available/, "must not fall back to the no-help message");
-});
-;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
-  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
-  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
-  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
-    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
-}
-});
-
-
-// ---- routed from collectors-readme-exit-codes ----
-require("node:test").describe("collectors-readme-exit-codes", () => {
-const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
-/**
- * The collectors README documents the `exceptd collect` exit codes. That doc
- * ships in the npm tarball, so it is operator-facing and must match runtime.
- *
- * Runtime ground truth:
- *   - bin/exceptd.js cmdCollect routes BOTH the "no collector for the playbook"
- *     case and the "collector threw an unhandled exception" case through
- *     emitError() with no exit_code override.
- *   - emitError() sets process.exitCode = EXIT_CODES.GENERIC_FAILURE.
- *   - lib/exit-codes.js pins GENERIC_FAILURE = 1 and reserves 2 for
- *     DETECTED_ESCALATE (the CI escalation gate), which `collect` never emits.
- *
- * So a collector crash exits 1, not 2. This guard asserts the README cannot
- * drift back to claiming a distinct exit 2 for a collector crash, and that the
- * documented crash code equals the constant the code actually uses.
- *
- * The test reads bin/exceptd.js read-only — it does not import or run the CLI.
- */
-
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-
-const ROOT = path.join(__dirname, '..');
-const README = path.join(ROOT, 'lib', 'collectors', 'README.md');
-const BIN = path.join(ROOT, 'bin', 'exceptd.js');
-
-const { EXIT_CODES } = require(path.join(ROOT, 'lib', 'exit-codes.js'));
-
-// The exit code a collector crash actually produces. emitError() sets
-// GENERIC_FAILURE and the collector-throw path supplies no override.
-const COLLECTOR_CRASH_EXIT = EXIT_CODES.GENERIC_FAILURE;
-
-test('GENERIC_FAILURE is 1 and DETECTED_ESCALATE is 2 (the reserved CI-gate code)', () => {
-  assert.equal(EXIT_CODES.GENERIC_FAILURE, 1);
-  assert.equal(EXIT_CODES.DETECTED_ESCALATE, 2);
-  assert.equal(COLLECTOR_CRASH_EXIT, 1, 'a collector crash exits via GENERIC_FAILURE');
-});
-
-test('cmdCollect routes the collector-throw case through emitError with no exit_code override', () => {
-  const src = fs.readFileSync(BIN, 'utf8');
-
-  // Locate the collector-invocation `submission = mod.collect(...)` call and
-  // inspect the catch handler that immediately follows it. A fixed forward
-  // window is used rather than brace-balancing because the handler's message
-  // template contains `}` (e.g. `${e.message}`).
-  const anchor = src.search(/submission\s*=\s*mod\.collect\(/);
-  assert.ok(anchor >= 0, 'could not find the cmdCollect `submission = mod.collect(...)` call');
-  const window = src.slice(anchor, anchor + 700);
-
-  assert.match(window, /catch\s*\(e\)/, 'the collector call must be wrapped in a catch');
-  assert.match(window, /threw an unhandled exception/, 'the catch must be the collector-crash handler');
-  assert.match(window, /emitError/, 'the collector-crash path must route through emitError (which sets GENERIC_FAILURE)');
-  assert.ok(
-    !/exit_code\s*:/.test(window),
-    'the collector-crash path must NOT override exit_code — it must inherit GENERIC_FAILURE (1)',
-  );
-});
-
-// Parse the "- `N` — ..." exit-code bullets out of the README's exit-code
-// section so the doc text itself is checked, not just the runtime.
-function readmeExitBullets() {
-  const text = fs.readFileSync(README, 'utf8');
-  const start = text.indexOf('Exit codes:');
-  assert.ok(start >= 0, 'README must have an "Exit codes:" section');
-  const section = text.slice(start);
-  const bullets = [];
-  const re = /^- `(\d+)`\s*—\s*(.*)$/gm;
-  let mm;
-  while ((mm = re.exec(section)) !== null) {
-    bullets.push({ code: Number(mm[1]), text: mm[2] });
-  }
-  return bullets;
-}
-
-test('the README documents the collector-crash exit code as the actual runtime code', () => {
-  const bullets = readmeExitBullets();
-  assert.ok(bullets.length > 0, 'no exit-code bullets parsed from the README');
-
-  // The bullet describing a collector crash must carry the real crash code.
-  const crashBullet = bullets.find(b => /unhandled exception|collector threw|threw/i.test(b.text));
-  assert.ok(crashBullet, 'README must describe the collector-crash exit behavior');
-  assert.equal(
-    crashBullet.code,
-    COLLECTOR_CRASH_EXIT,
-    `README documents the collector crash as exit ${crashBullet.code}, but the code exits ${COLLECTOR_CRASH_EXIT}`,
-  );
-});
-
-test('the README never assigns the reserved escalation code 2 to the collect verb', () => {
-  const bullets = readmeExitBullets();
-  const two = bullets.find(b => b.code === EXIT_CODES.DETECTED_ESCALATE);
-  assert.equal(
-    two,
-    undefined,
-    'exit 2 is reserved for DETECTED_ESCALATE (CI gate) and must not appear as a documented collect exit code',
-  );
 });
 ;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
   for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);

@@ -754,495 +754,67 @@ test('A: validate-playbooks no longer emits any "unexpected property fed_by" war
 });
 
 
-// ---- routed from hunt-fix-D-validators ----
-require("node:test").describe("hunt-fix-D-validators", () => {
+// ---- routed from v0_13_4-fixes ----
+require("node:test").describe("v0_13_4-fixes", () => {
 const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
- * tests/hunt-fix-D-validators.test.js
+ * tests/v0_13_4-fixes.test.js
  *
- * Regression locks for five confirmed validator bugs (cluster D-validators):
+ * Pin tests for the v0.13.4 patch.
  *
- *   #17 validate-catalog-meta: validateMeta returned a bare string[] on the
- *       missing-_meta early path while the includeWarnings caller read
- *       result.errors — main() crashed with an uncaught TypeError on the first
- *       no-_meta file, aborting the whole gate. Now the early return honors the
- *       caller's requested shape and the loop continues to later files.
- *
- *   #18 validate-cve-catalog: additionalChecks dereferenced entry.poc_available
- *       before any null guard — a null catalog entry crashed main(). Guarded at
- *       the top; the malformed-entry FAIL still originates in validate().
- *
- *   #19 validate-catalog-meta: the freshness gate silently SKIPPED when
- *       last_updated was unparseable (fail-open). A malformed/impossible date
- *       is now an error under --strict / warning by default; a valid-but-old
- *       date still reports stale.
- *
- *   #20 validate-playbooks: checkCrossRefs read playbook._meta before any null
- *       guard — a literal-null playbook file crashed main(). Guarded at the top.
- *
- *   #21 validate-playbooks: the air-gap network-source detector missed
- *       API-verb-phrased sources ("GET /... via Graph", "Entra ID", "Okta",
- *       "Microsoft Graph"); broadened so such a source under air_gap_mode with
- *       no air_gap_alternative is flagged at error severity — without
- *       over-firing on the shipped corpus.
- *
- * Each case fails on the pre-fix behavior and passes after. CLI-level cases use
- * a copied-into-tempdir mini-repo (validator + exit-codes + schemas + the data
- * it reads) so the real on-disk catalogs are never mutated.
+ * Coverage:
+ *   A — _meta.fed_by is now schema-accepted (drives the 20 cosmetic
+ *       validate-playbooks warnings to 0).
+ *   C — README + AGENTS surface the v0.13.x operator-facing features.
+ *   E — 2 stuck-draft CVEs (MAL-2026-ANTHROPIC-MCP-STDIO + CVE-2026-GTIG-AI-2FA)
+ *       are deleted from the catalog and from any cross-referencing data file.
+ *   (B and D pin coverage is in their dedicated test files; this file
+ *    covers the items that don't have a natural dedicated home.)
  */
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const os = require('node:os');
 const { spawnSync } = require('node:child_process');
 
 const ROOT = path.join(__dirname, '..');
 
-const catalogMeta = require(path.join(ROOT, 'lib', 'validate-catalog-meta.js'));
-const cveCatalog = require(path.join(ROOT, 'lib', 'validate-cve-catalog.js'));
-const playbooksMod = require(path.join(ROOT, 'lib', 'validate-playbooks.js'));
+// ---------- A. fed_by schema acceptance ----------
 
-const { validateMeta, parseIsoDateStrict } = catalogMeta;
-const { additionalChecks } = cveCatalog;
-const { checkCrossRefs, loadContext, loadPlaybooks } = playbooksMod;
 
-// --- tempdir mini-repo helpers ---------------------------------------------
 
-function mkTmp(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-}
-
-function writeJson(p, obj) {
-  fs.mkdirSync(path.dirname(p), { recursive: true });
-  // String content for the literal-null case is passed through verbatim.
-  fs.writeFileSync(p, typeof obj === 'string' ? obj : JSON.stringify(obj));
-}
-
-function copyInto(dst, relPath) {
-  const target = path.join(dst, relPath);
-  fs.mkdirSync(path.dirname(target), { recursive: true });
-  fs.copyFileSync(path.join(ROOT, relPath), target);
-}
-
-function runNode(scriptPath, args) {
-  return spawnSync(process.execPath, [scriptPath, ...args], { encoding: 'utf8' });
-}
-
-// ===========================================================================
-// #17 — validate-catalog-meta missing-_meta early return honors both contracts
-// ===========================================================================
+// ---------- C. README + AGENTS surface v0.13.x features ----------
 
 
 
 
-// ===========================================================================
-// #19 — freshness gate fails closed on a malformed last_updated
-// ===========================================================================
 
-function freshMeta(lastUpdated) {
-  return {
-    _meta: {
-      tlp: 'CLEAR',
-      source_confidence: { scheme: 'Admiralty', default: 'B2', note: 'curated catalog' },
-      freshness_policy: {
-        default_review_cadence_days: 30,
-        stale_after_days: 90,
-        rebuild_after_days: 180,
-        note: 'review cadence for this catalog',
-        ...(lastUpdated !== undefined ? {} : {}),
-      },
-      last_updated: lastUpdated,
-    },
-  };
-}
 
-function validateMetaObj(metaObj, opts) {
-  // validateMeta reads from disk; stage a one-off file so we exercise the real
-  // code path (including the JSON parse) without touching the repo tree.
-  const tmp = mkTmp('hfd19-');
-  try {
-    const p = path.join(tmp, 'catalog.json');
-    writeJson(p, metaObj);
-    return validateMeta(p, opts);
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-}
 
-for (const bad of ['2026-13-99', '2026-04-31', 'unknown', 'soon', '2026/01/01', 123]) {
-  test(`#19 malformed last_updated ${JSON.stringify(bad)} is an ERROR under --strict (was silently skipped)`, () => {
-    const r = validateMetaObj(freshMeta(bad), { includeWarnings: true, strict: true });
-    const hit = r.errors.filter((e) => /last_updated.*not a valid ISO date/.test(e));
-    assert.equal(hit.length, 1, `expected exactly one date-validity error, got: ${JSON.stringify(r.errors)}`);
-    // It must NOT have also produced a staleness finding for the same field.
-    assert.equal(r.errors.filter((e) => /freshness:.*days old/.test(e)).length, 0);
+
+// ---------- E. 2 stuck-draft CVEs deleted ----------
+
+test('A: playbook.schema.json declares _meta.fed_by as an array of strings', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'lib', 'schemas', 'playbook.schema.json'), 'utf8');
+  // Schema must accept the field — the "unexpected property fed_by"
+  // cosmetic warnings on 20 playbooks should be gone.
+  const schema = JSON.parse(src);
+  const meta = schema.properties._meta;
+  assert.ok(meta, 'schema must declare _meta');
+  assert.ok(meta.properties.fed_by, '_meta.fed_by must be declared');
+  assert.equal(meta.properties.fed_by.type, 'array');
+  assert.equal(meta.properties.fed_by.items.type, 'string');
+});
+
+test('A: validate-playbooks no longer emits any "unexpected property fed_by" warnings', () => {
+  const r = spawnSync(process.execPath, [path.join(ROOT, 'lib', 'validate-playbooks.js')], {
+    encoding: 'utf8', cwd: ROOT,
   });
-
-  test(`#19 malformed last_updated ${JSON.stringify(bad)} is a WARNING in default mode (observable, not silent)`, () => {
-    const r = validateMetaObj(freshMeta(bad), { includeWarnings: true });
-    assert.equal(r.errors.length, 0, `default mode must not error: ${JSON.stringify(r.errors)}`);
-    const hit = r.warnings.filter((w) => /last_updated.*not a valid ISO date/.test(w));
-    assert.equal(hit.length, 1, `expected exactly one date-validity warning, got: ${JSON.stringify(r.warnings)}`);
-  });
-}
-
-
-
-
-// ===========================================================================
-// #18 — validate-cve-catalog additionalChecks null-entry guard
-// ===========================================================================
-
-
-
-
-// ===========================================================================
-// #20 — validate-playbooks checkCrossRefs null-playbook guard
-// ===========================================================================
-
-
-
-// ===========================================================================
-// #21 — air-gap network-source detector flags API-verb-phrased sources
-// ===========================================================================
-
-function minimalAirGapPlaybook(source, withAlt) {
-  // Smallest playbook shape that exercises the air-gap completeness check in
-  // checkCrossRefs. It needs a TTP mapping (atlas_refs) to avoid the unrelated
-  // TTP-floor error muddying the assertion; we use the live atlas key set.
-  const atlasKey = '__will_be_filled__';
-  const art = { source };
-  if (withAlt) art.air_gap_alternative = 'Local file already staged in cwd; read it directly.';
-  return {
-    _meta: { id: 'synthetic-airgap', air_gap_mode: true, scope: 'cross-cutting' },
-    domain: {},
-    phases: { look: { artifacts: [art] } },
-    __atlasKey: atlasKey,
-  };
-}
-
-function airGapFindings(source, withAlt) {
-  const ctx = loadContext();
-  const ids = new Set(['synthetic-airgap']);
-  const pb = minimalAirGapPlaybook(source, withAlt);
-  delete pb.__atlasKey;
-  return checkCrossRefs(pb, ctx, ids).filter((f) => /air_gap_mode is true and source/.test(f.message));
-}
-
-test('#20 checkCrossRefs does not throw on a null playbook and returns []', () => {
-  const ctx = loadContext();
-  const ids = new Set(loadPlaybooks().filter((p) => p.data).map((p) => p.data._meta.id));
-  assert.doesNotThrow(() => checkCrossRefs(null, ctx, ids));
-  assert.deepEqual(checkCrossRefs(null, ctx, ids), []);
-  // Array / primitive playbooks are also no-ops.
-  assert.deepEqual(checkCrossRefs([], ctx, ids), []);
-  assert.deepEqual(checkCrossRefs('nope', ctx, ids), []);
-});
-
-test('#20 CLI: a literal-null playbook file FAILs with the type error and does not crash', () => {
-  const tmp = mkTmp('hfd20-cli-');
-  try {
-    copyInto(tmp, path.join('lib', 'validate-playbooks.js'));
-    copyInto(tmp, path.join('lib', 'exit-codes.js'));
-    copyInto(tmp, path.join('lib', 'schemas', 'playbook.schema.json'));
-    copyInto(tmp, 'manifest.json');
-    for (const f of ['atlas-ttps.json', 'cve-catalog.json', 'cwe-catalog.json', 'd3fend-catalog.json', 'attack-techniques.json']) {
-      copyInto(tmp, path.join('data', f));
-    }
-    // The crashing input: a playbook file whose JSON content is literally null.
-    writeJson(path.join(tmp, 'data', 'playbooks', 'synthetic.json'), 'null');
-
-    const r = runNode(path.join(tmp, 'lib', 'validate-playbooks.js'), []);
-    assert.equal(r.status, 1);
-    assert.match(r.stdout, /expected type "object", got null/);
-    assert.doesNotMatch(r.stdout, /TypeError|Cannot read properties of null/);
-    assert.doesNotMatch(r.stderr, /TypeError|Cannot read properties of null/);
-    // The summary line printed (process did not abort before the tail).
-    assert.match(r.stdout, /playbooks validated/);
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test('#21 an API-verb-phrased source under air_gap_mode with no alternative is flagged at error severity', () => {
-  const findings = airGapFindings('Entra ID: GET /directoryRoles via Graph', false);
-  assert.equal(findings.length, 1, `expected exactly one air-gap finding, got: ${JSON.stringify(findings)}`);
-  assert.equal(findings[0].severity, 'error');
-  assert.match(findings[0].message, /air_gap_mode is true and source .* makes a network call/);
-});
-
-test('#21 the same API-verb source WITH an air_gap_alternative is silent', () => {
-  const findings = airGapFindings('Entra ID: GET /directoryRoles via Graph', true);
-  assert.deepEqual(findings, []);
-});
-
-test('#21 a purely-local source under air_gap_mode is silent (no over-firing)', () => {
-  assert.deepEqual(airGapFindings('~/.ssh/config', false), []);
-  assert.deepEqual(airGapFindings('Walk cwd for *.env files', false), []);
-  // "api/v\\d" deliberately NOT a token: a local artifact referencing an API
-  // path must not be misclassified as a network call.
-  assert.deepEqual(airGapFindings('Code-scan: grep for /api/v2 callback handlers', false), []);
-});
-
-test('#21 the full shipped corpus still produces zero air-gap findings under the broadened regex', () => {
-  const ctx = loadContext();
-  const playbooks = loadPlaybooks();
-  const ids = new Set(playbooks.filter((p) => p.data).map((p) => p.data._meta.id));
-  const airGapHits = [];
-  for (const pb of playbooks) {
-    if (!pb.data) continue;
-    const hits = checkCrossRefs(pb.data, ctx, ids).filter((f) =>
-      /air_gap_mode is true and source/.test(f.message),
-    );
-    for (const h of hits) airGapHits.push(`${pb.file}: ${h.message}`);
-  }
-  assert.deepEqual(airGapHits, [], `broadened regex must not over-fire on the shipped corpus:\n${airGapHits.join('\n')}`);
-});
-;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
-  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
-  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
-  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
-    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
-}
-});
-
-
-// ---- routed from playbook-directive-validation ----
-require("node:test").describe("playbook-directive-validation", () => {
-const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
-/**
- * tests/playbook-directive-validation.test.js
- *
- * Locks two directive-level validation gaps that previously let bad content
- * ship past the predeploy gate, even though the identical content is a hard
- * error at playbook level:
- *
- *   A. directives[].applies_to.{cve,atlas_ttp,attack_technique} are now
- *      cross-referenced to their catalogs (warning; error under --strict).
- *   B. directives[].phase_overrides re-validates its govern.clock_starts and
- *      direct.rwep_threshold copies — the runner deep-merges these into the
- *      base phase at run time, so a bogus override must be rejected pre-ship.
- *
- * Pattern: load the live context, deep-clone a shipped playbook, mutate
- * exactly one directive field, and assert the exact severity + message.
- */
-
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-const os = require('node:os');
-const { spawnSync } = require('node:child_process');
-
-const ROOT = path.join(__dirname, '..');
-const VALIDATOR = path.join(ROOT, 'lib', 'validate-playbooks.js');
-const { checkCrossRefs, loadContext, loadPlaybooks } = require(VALIDATOR);
-
-function ctxAndIds() {
-  const ctx = loadContext();
-  const playbooks = loadPlaybooks();
-  const ids = new Set(playbooks.filter((p) => p.data).map((p) => p.data._meta.id));
-  return { ctx, ids };
-}
-
-function goodKernel() {
-  return JSON.parse(
-    fs.readFileSync(path.join(ROOT, 'data', 'playbooks', 'kernel.json'), 'utf8'),
-  );
-}
-
-function severities(findings, sev) {
-  return findings.filter((f) => f.severity === sev);
-}
-
-// ---------- control ----------
-
-test('shipped kernel directives produce zero directive-coverage findings', () => {
-  const { ctx, ids } = ctxAndIds();
-  const findings = checkCrossRefs(goodKernel(), ctx, ids).filter((f) =>
-    /directives\[/.test(f.message),
-  );
-  assert.deepEqual(
-    findings,
-    [],
-    'unmutated shipped directives must produce no directive-coverage findings; got:\n' +
-      findings.map((f) => `  [${f.severity}] ${f.message}`).join('\n'),
-  );
-});
-
-// ---------- A. applies_to cross-reference ----------
-
-test('directive applies_to.cve unresolved → warning naming the directive path', () => {
-  const { ctx, ids } = ctxAndIds();
-  const pb = goodKernel();
-  pb.directives[0].applies_to = { cve: 'CVE-0000-00000' };
-  const findings = checkCrossRefs(pb, ctx, ids);
-  const matched = findings.filter((f) =>
-    /directives\[0\].*applies_to\.cve: unresolved "CVE-0000-00000"/.test(f.message),
-  );
-  assert.equal(matched.length, 1, 'exactly one applies_to.cve finding');
-  assert.equal(matched[0].severity, 'warning');
-
-  // Good form: a resolvable cve is silent.
-  const good = goodKernel();
-  good.directives[0].applies_to = { cve: 'CVE-2024-3094' };
-  const clean = checkCrossRefs(good, ctx, ids).filter((f) =>
-    /applies_to\.cve/.test(f.message),
-  );
-  assert.deepEqual(clean, [], 'resolvable applies_to.cve must be silent');
-});
-
-test('directive applies_to.atlas_ttp unresolved → warning', () => {
-  const { ctx, ids } = ctxAndIds();
-  const pb = goodKernel();
-  pb.directives[0].applies_to = { atlas_ttp: 'AML.T9999' };
-  const findings = checkCrossRefs(pb, ctx, ids);
-  const matched = findings.filter((f) =>
-    /directives\[0\].*applies_to\.atlas_ttp: unresolved "AML\.T9999"/.test(f.message),
-  );
-  assert.equal(matched.length, 1);
-  assert.equal(matched[0].severity, 'warning');
-});
-
-test('directive applies_to.attack_technique unresolved → warning', () => {
-  const { ctx, ids } = ctxAndIds();
-  const pb = goodKernel();
-  pb.directives[0].applies_to = { attack_technique: 'T9999999' };
-  const findings = checkCrossRefs(pb, ctx, ids);
-  const matched = findings.filter((f) =>
-    /directives\[0\].*applies_to\.attack_technique: unresolved "T9999999"/.test(f.message),
-  );
-  assert.equal(matched.length, 1);
-  assert.equal(matched[0].severity, 'warning');
-});
-
-test('directive applies_to.attack_technique with a null attack catalog → no finding', () => {
-  // Mirror domain.attack_refs: when the ATT&CK catalog is absent (null), the
-  // check must not fire (it cannot resolve anything).
-  const { ctx, ids } = ctxAndIds();
-  ctx.attackKeys = null;
-  const pb = goodKernel();
-  pb.directives[0].applies_to = { attack_technique: 'T9999999' };
-  const findings = checkCrossRefs(pb, ctx, ids).filter((f) =>
-    /applies_to\.attack_technique/.test(f.message),
-  );
-  assert.deepEqual(findings, [], 'null attack catalog must suppress the attack_technique check');
-});
-
-// ---------- B. phase_overrides re-validation ----------
-
-test('phase_overrides.govern bogus clock_starts → error naming the override path', () => {
-  const { ctx, ids } = ctxAndIds();
-  const pb = goodKernel();
-  pb.directives[0].phase_overrides = {
-    govern: {
-      jurisdiction_obligations: [
-        { jurisdiction: 'EU', regulation: 'NIS2', window_hours: 24, clock_starts: 'TOTALLY_BOGUS' },
-      ],
-    },
-  };
-  const findings = checkCrossRefs(pb, ctx, ids);
-  const matched = findings.filter((f) =>
-    /directives\[0\].*phase_overrides\.govern\.jurisdiction_obligations\[0\]\.clock_starts: invalid value "TOTALLY_BOGUS"/.test(
-      f.message,
-    ),
-  );
-  assert.equal(matched.length, 1, 'exactly one override clock_starts error');
-  assert.equal(matched[0].severity, 'error', 'override clock_starts is an error, like the base phase');
-});
-
-test('phase_overrides.direct rwep_threshold ordering violation → error naming the override path', () => {
-  const { ctx, ids } = ctxAndIds();
-  const pb = goodKernel();
-  pb.directives[0].phase_overrides = {
-    direct: { rwep_threshold: { close: 90, monitor: 50, escalate: 10 } },
-  };
-  const findings = checkCrossRefs(pb, ctx, ids);
-  const matched = findings.filter((f) =>
-    /directives\[0\].*phase_overrides\.direct\.rwep_threshold: ordering violation/.test(f.message),
-  );
-  assert.equal(matched.length, 1, 'exactly one override rwep ordering error');
-  assert.equal(matched[0].severity, 'error');
-});
-
-test('phase_overrides.direct rwep_threshold out-of-range → error naming the override path', () => {
-  const { ctx, ids } = ctxAndIds();
-  const pb = goodKernel();
-  pb.directives[0].phase_overrides = {
-    direct: { rwep_threshold: { close: 10, monitor: 50, escalate: 999 } },
-  };
-  const findings = checkCrossRefs(pb, ctx, ids);
-  const matched = findings.filter((f) =>
-    /directives\[0\].*phase_overrides\.direct\.rwep_threshold\.escalate: 999 outside 0\.\.100/.test(
-      f.message,
-    ),
-  );
-  assert.equal(matched.length, 1);
-  assert.equal(matched[0].severity, 'error');
-});
-
-test('a VALID phase_overrides still passes (no false positive)', () => {
-  const { ctx, ids } = ctxAndIds();
-  const pb = goodKernel();
-  pb.directives[0].phase_overrides = {
-    govern: {
-      jurisdiction_obligations: [
-        { jurisdiction: 'EU', regulation: 'NIS2', window_hours: 24, clock_starts: 'detect_confirmed' },
-      ],
-    },
-    direct: { rwep_threshold: { close: 25, monitor: 45, escalate: 75 } },
-  };
-  const findings = checkCrossRefs(pb, ctx, ids).filter((f) =>
-    /phase_overrides/.test(f.message),
-  );
-  assert.deepEqual(findings, [], 'a valid override must produce no override findings');
-  assert.equal(severities(findings, 'error').length, 0);
-});
-
-// ---------- end-to-end: predeploy --strict fails on a tampered override ----------
-
-function stageMirror(tmp) {
-  // Mirror just enough of the tree for the validator to load context + the
-  // single synthetic playbook. lib/, data catalogs, manifest, schema.
-  fs.mkdirSync(path.join(tmp, 'lib', 'schemas'), { recursive: true });
-  fs.mkdirSync(path.join(tmp, 'data', 'playbooks'), { recursive: true });
-  const copy = (rel) => fs.copyFileSync(path.join(ROOT, rel), path.join(tmp, rel));
-  copy('lib/validate-playbooks.js');
-  copy('lib/exit-codes.js');
-  copy('lib/schemas/playbook.schema.json');
-  copy('manifest.json');
-  for (const f of ['atlas-ttps.json', 'cve-catalog.json', 'cwe-catalog.json', 'd3fend-catalog.json', 'attack-techniques.json']) {
-    fs.copyFileSync(path.join(ROOT, 'data', f), path.join(tmp, 'data', f));
-  }
-}
-
-test('--strict fails the predeploy gate on a tampered directive override', () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'playbook-directive-override-'));
-  try {
-    stageMirror(tmp);
-    const pb = goodKernel();
-    pb.directives[0].phase_overrides = {
-      govern: {
-        jurisdiction_obligations: [
-          { jurisdiction: 'EU', regulation: 'NIS2', window_hours: 24, clock_starts: 'TOTALLY_BOGUS' },
-        ],
-      },
-    };
-    fs.writeFileSync(
-      path.join(tmp, 'data', 'playbooks', 'synthetic.json'),
-      JSON.stringify(pb, null, 2),
-    );
-    const r = spawnSync(process.execPath, [path.join(tmp, 'lib', 'validate-playbooks.js'), '--strict'], {
-      cwd: tmp,
-      encoding: 'utf8',
-    });
-    assert.equal(r.status, 1, `expected exit 1 for the tampered override; got ${r.status}\n${r.stdout}\n${r.stderr}`);
-    assert.match(r.stdout, /phase_overrides\.govern\.jurisdiction_obligations\[0\]\.clock_starts/);
-  } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
+  // Acceptable: passes or warns on unrelated fields. Must NOT contain
+  // any "fed_by" warning.
+  assert.ok(!/unexpected property "fed_by"/i.test(r.stdout + r.stderr),
+    `validate-playbooks must not warn on fed_by anymore; got:\n${r.stdout.slice(0, 800)}`);
 });
 ;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
   for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);

@@ -1,4 +1,9 @@
 "use strict";
+
+
+// ---- routed from workflows-security ----
+require("node:test").describe("workflows-security", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
 /**
  * tests/workflows-security.test.js
  *
@@ -375,4 +380,12 @@ test("refresh.yml validates inputs.source against [a-z,-]+ allowlist before pass
     1,
     "raw inputs.source must feed only the resolve-scope step; later steps take steps.scope outputs"
   );
+});
+
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
 });
