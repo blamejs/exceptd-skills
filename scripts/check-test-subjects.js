@@ -42,9 +42,16 @@ function deriveSubjects() {
       if (e.isDirectory()) { walkSrc(rel); continue; }
       if (!e.name.endsWith(".js")) continue;
       const base = e.name.replace(/\.js$/, "");
-      add(base, "module:" + rel);
+      // index.js is a directory entry point; the directory/canonical subject
+      // covers it, so treat the bare "index" basename as an alias, not a
+      // separately reverse-required module.
+      add(base, (base === "index" ? "alias:" : "module:") + rel);
       const parent = path.basename(path.dirname(rel));
-      if (!["lib", "scripts", "orchestrator", "bin"].includes(parent)) add(parent + "-" + base, "module:" + rel);
+      // parent-prefixed name (collectors-x, builders-x, validators-x) is an
+      // ALIAS of the canonical basename subject — a valid test target, but the
+      // canonical <base>.test.js already satisfies coverage, so don't double-
+      // count the alias as its own reverse gap.
+      if (!["lib", "scripts", "orchestrator", "bin"].includes(parent)) add(parent + "-" + base, "alias:" + rel);
       const txt = read(rel);
       for (const m of txt.matchAll(/(?:^|\n)\s*(?:async\s+)?(?:function|class)\s+([A-Za-z_$][\w$]*)/g)) add(camelKebab(m[1]), "fn:" + rel);
       const exp = txt.match(/module\.exports\s*=\s*\{([\s\S]*?)\}/);
@@ -68,7 +75,7 @@ function deriveSubjects() {
   for (const e of ls("data")) if (e.isFile() && e.name.endsWith(".json")) add(e.name.replace(/\.json$/, ""), "data");
   // data ENTRY primitives: every CVE id + every playbook
   try { const cat = JSON.parse(read("data/cve-catalog.json")); for (const k of Object.keys(cat)) if (k !== "_meta") add(k.toLowerCase(), "cve-primitive"); } catch {}
-  for (const e of ls("data/playbooks")) if (e.isFile() && e.name.endsWith(".json")) { const b = e.name.replace(/\.json$/, ""); add(b, "playbook-primitive"); add("playbook-" + b, "playbook-primitive"); }
+  for (const e of ls("data/playbooks")) if (e.isFile() && e.name.endsWith(".json")) { const b = e.name.replace(/\.json$/, ""); add(b, "playbook-primitive"); add("playbook-" + b, "alias:playbook"); }
   // workflows
   for (const e of ls(".github/workflows")) if (/\.ya?ml$/.test(e.name)) { const b = e.name.replace(/\.ya?ml$/, ""); add(b, "workflow"); add(b + "-workflow", "workflow"); }
 
