@@ -934,7 +934,7 @@
           "action": "raise_severity"
         },
         {
-          "condition": "rwep >= 75 AND library_published_to_registry == true",
+          "condition": "rwep >= 75 AND blast_radius_score >= 4",
           "action": "page_on_call"
         },
         {

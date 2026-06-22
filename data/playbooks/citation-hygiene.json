@@ -537,7 +537,7 @@
           "action": "raise_severity"
         },
         {
-          "condition": "compliance_theater_check.verdict == 'theater' AND citation-in-published-disclosure-surface == true",
+          "condition": "compliance_theater_check.verdict == 'theater' AND (fabricated-cve-id == true OR rejected-or-disputed-cve == true)",
           "action": "trigger_playbook",
           "target_playbook": "framework"
         },

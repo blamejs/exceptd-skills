@@ -2,7 +2,9 @@
 
 ## 0.18.15 — 2026-06-22
 
-Six more severity escalations now fire. Each combined a working clause (`rwep >= 90`, `blast_radius_score >= 4`, a theater verdict) with a second clause written in prose or in a shorthand the engine cannot evaluate; because the working clause came first and the validator stopped at the first clause that resolved, the dead second clause went unnoticed. The compound conditions are now fully expressed in the condition language and the escalations fire when their indicators do.
+Indicator-gated escalations and playbook chains now fire when their indicators are detected. An escalation or `feeds_into` written as `<indicator-id> == true` (the catalog's standard form) resolved only when that id was also passed as a raw signal; the normal scan path delivers detections separately, so on a real `exceptd collect <playbook>` these escalations and downstream chains stayed silent even when the indicator was found. Fired indicators are now bound into the escalation, chain, and remediation-precondition contexts, so a detection drives the condition that gates on it. An operator can still override a specific indicator, and engine-computed values still take precedence.
+
+Six more compound escalations now fire. Each combined a working clause (`rwep >= 90`, `blast_radius_score >= 4`, a theater verdict) with a second clause written in prose or shorthand the engine cannot evaluate; because the working clause came first and evaluation stopped at the first clause that resolved, the dead second clause went unnoticed. The compound conditions are now fully expressed in the condition language and gate on the playbook's real indicators.
 
 The validator's condition gate now checks every sub-clause of an AND/OR condition independently, so a dead clause hidden behind a clause that happens to resolve first can no longer ship.
 

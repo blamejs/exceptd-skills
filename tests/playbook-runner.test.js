@@ -3343,6 +3343,37 @@ describe('round-3: dead-condition rewrites, validate engine-ctx, evidence-hash, 
     assert.deepEqual(dead, [], `unparseable (dead) condition atoms found:\n${dead.join('\n')}`);
   });
 
+  // --- fired-indicator mirror: indicator-gated conditions resolve on the collector path ---
+  it('an indicator-gated escalation fires from a detect HIT (signal_overrides), not only when re-submitted under signals', () => {
+    // The collector / AI evidence path delivers indicator hits as
+    // signal_overrides (which detect reads); the escalation context spreads
+    // `signals`. Without mirroring fired indicators, `<indicator-id> == true`
+    // escalations stayed dead on the real path even when the indicator detected.
+    const d = dir0('library-author');
+    const det = runner.detect('library-author', d, {
+      signal_overrides: { 'no-security-md': 'hit', 'no-security-txt': 'hit' },
+    });
+    const hits = (det.indicators || []).filter(i => i.verdict === 'hit').map(i => i.id);
+    assert.ok(hits.includes('no-security-md') && hits.includes('no-security-txt'),
+      'both indicators must register as detect hits');
+    // product_is_public is host-asserted finding context (no indicator) → signals.
+    // Crucially, the two indicator ids are NOT in signals — only signal_overrides.
+    const an = runner.analyze('library-author', d, det, { product_is_public: true });
+    const fired = an.escalations.find(e => /no-security-md == true AND no-security-txt == true/.test(e.condition));
+    assert.ok(fired, 'the indicator-gated escalation must fire from the detect hits alone (collector path)');
+  });
+
+  it('an operator can still suppress a mirrored indicator by submitting it false under signals', () => {
+    const d = dir0('library-author');
+    const det = runner.detect('library-author', d, {
+      signal_overrides: { 'no-security-md': 'hit', 'no-security-txt': 'hit' },
+    });
+    // signals override the mirrored fired-indicator truth (lowest precedence).
+    const an = runner.analyze('library-author', d, det, { product_is_public: true, 'no-security-md': false });
+    const fired = an.escalations.find(e => /no-security-md == true AND no-security-txt == true/.test(e.condition));
+    assert.ok(!fired, 'a signals-submitted false must override the mirrored detect hit');
+  });
+
   // --- #45d/#7: validate() precondition context exposes engine-computed roots ---
   it('validate() resolves the engine-computed `analyze` root in a remediation precondition', () => {
     const tmp = tmpDir('validate-engine-ctx');
