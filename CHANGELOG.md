@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.18.17 — 2026-06-24
+
+A correctness pass across the upstream-refresh pipeline, the credential and MCP collectors, scoring and framework analysis, attestation hashing, and the release gates.
+
+The scheduled data refresh no longer fails on transient upstream throttling. The cache-warm step now separates retryable errors the upstream is asking us to back off on — a rate-limit (HTTP 429), a timeout, a 5xx — from hard data errors like a 404 or a parse failure. Only hard errors count toward the failure budget; transient throttling is surfaced in the run summary and retried on the next run. Previously a burst of NVD rate-limits failed the entire refresh and skipped the automated update PR. A feed that returns nothing at all still fails. The exported `prefetch()` API also honors `EXCEPTD_AIR_GAP=1` now, so a programmatic call from an air-gapped host no longer reaches the network.
+
+Cleartext-credential detection covers more of what it claims. An Azure, Google, or Cohere API key found in a shell dotfile now surfaces as a confirmed finding instead of being downgraded to inconclusive. An AWS profile that carries a static access key alongside a `role_arn` — the assume-role bootstrap shape — is flagged as a static-key exposure rather than treated as fully federated. On Windows, the POSIX-permission posture checks (world-writable env files, SSH key modes) report inconclusive rather than a false "clean" for a check that cannot run there.
+
+MCP integrity detection catches single-token launch commands. A server started with a whole pip invocation in one argument — `sh -c "pip install pkg==1.2.3"` — is now flagged as pinned-without-integrity; previously only the split-argument form was caught.
+
+"Rejected or disputed CVE" citations no longer false-positive. The check fired on any note that mentioned a dispute — including a CVSS *scoring* dispute, a disclosure-coordination dispute, or a different CVE the note merely referenced. It now fires only when the cited CVE's own record is rejected or disputed, and no longer attaches a false attestation that suppressed the downgrade for a valid, often actively-exploited citation.
+
+The runtime collector's `collect | run` pipe reaches analysis. The collector now attests the read-only-inventory precondition the runner cannot resolve mechanically, so `collect runtime | run runtime` no longer halts at preflight despite valid evidence.
+
+The RWEP-vs-CVSS explanation lists every factor it counts. Suspected and unknown active-exploitation (contributing +10 and +5) and the blast-radius contribution were omitted from the "driving factors" sentence, so a divergence driven by them showed a higher score with an understated — sometimes empty — reason. Both the driving and mitigating sides now enumerate the real contributions and name the structural cause when no single factor dominates.
+
+Framework gap analysis resolves frameworks whose catalog label differs from their formal name. The Australian Government ISM — and any framework in the same situation — reported zero control gaps and null metadata because its catalog labels did not match its registered name; a data-driven alias map now resolves both, and a framework that resolves to zero gaps is flagged instead of silently empty.
+
+EPSS and NVD scores are matched to the requested CVE by id. The cache-diff and KEV auto-import paths fell back to the first row or record in a payload, which could attribute one CVE's EPSS or CVSS to another when a cache entry held a different CVE's response. They now match by id and skip on a mismatch.
+
+Attestation and reattestation no longer report false drift from a relabeled observation. The evidence hash, and the deterministic session id derived from it, re-key evidence by the stable indicator it targets, so identical evidence submitted under a different observation label produces the same hash; a changed evidence value still changes it.
+
+The GHSA and OSV regression watch stops flagging editorial fields. Curated-only fields — AI-discovery, PoC availability, active-exploitation — were treated as upstream-sourced and flagged as "dropped" on every re-import; the watch now covers only fields the feed actually populates, and the diff summary counts new entries and field regressions separately rather than labeling both as new.
+
+Release gates fail closed on absent input. The version-cadence, test-subject, and code-pattern checks each had a path that passed without checking anything — an unreadable changelog, an empty playbook or module set, an empty scan universe. Each now fails rather than reporting clean when it has nothing to check.
+
 ## 0.18.16 — 2026-06-22
 
 A correctness pass on the evidence-output and attestation surfaces.

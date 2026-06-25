@@ -107,6 +107,25 @@ function suggestPatch(prev) {
   return a ? `${a.major}.${a.minor}.${a.patch + 1}` : null;
 }
 
+// Resolve the previous version from CHANGELOG text, or fail closed. Pure;
+// exported for unit tests. A release gate must NOT treat an unreadable or
+// heading-less CHANGELOG as a "first release" — doing so silently authorized
+// ANY bump (including an unapproved major), because checkBump(null, ...) takes
+// the initial-release pass. `text` is the CHANGELOG contents, or null when the
+// read failed. Returns { ok, prev?, reason? }: ok:false fails the gate; ok:true
+// yields prev, which is null ONLY for a genuine first release whose sole
+// `## X.Y.Z` heading equals cur (versions === [cur]).
+function determinePrevious(text, cur) {
+  if (text == null) {
+    return { ok: false, reason: 'CHANGELOG.md could not be read' };
+  }
+  const versions = changelogVersions(text);
+  if (versions.length === 0) {
+    return { ok: false, reason: 'no `## X.Y.Z` headings found in CHANGELOG.md — cannot determine previous version' };
+  }
+  return { ok: true, prev: versions.find((v) => v !== cur) || null };
+}
+
 function readAck() {
   if (!fs.existsSync(ACK_PATH)) return null;
   try {
@@ -130,11 +149,22 @@ function main() {
   }
   const cur = pkg.version;
 
-  let changelog = '';
-  try { changelog = fs.readFileSync(CHANGELOG_PATH, 'utf8'); } catch (_e) { changelog = ''; }
-  const versions = changelogVersions(changelog);
+  // Fail closed when CHANGELOG is unreadable or carries no version headings.
+  // Swallowing a read error to '' previously made versions=[] -> prev=null ->
+  // checkBump's initial-release pass, so a missing/malformed CHANGELOG silently
+  // authorized any bump. A genuine first release still passes: its sole
+  // `## X.Y.Z` heading equals cur, so determinePrevious returns prev=null with
+  // ok:true and checkBump takes the legitimate initial path.
+  let changelogText = null;
+  try { changelogText = fs.readFileSync(CHANGELOG_PATH, 'utf8'); } catch (_e) { changelogText = null; }
+  const prevRes = determinePrevious(changelogText, cur);
+  if (!prevRes.ok) {
+    process.stderr.write(`[check-version-bump] FAIL — ${prevRes.reason}; failing closed (cannot validate cadence).\n`);
+    process.exitCode = 1;
+    return;
+  }
   // prev = the most recent heading that differs from the current version.
-  const prev = versions.find((v) => v !== cur) || null;
+  const prev = prevRes.prev;
 
   const ack = readAck();
   const res = checkBump(prev, cur, ack);
@@ -170,4 +200,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { classifyBump, checkBump, changelogVersions };
+module.exports = { classifyBump, checkBump, changelogVersions, determinePrevious };

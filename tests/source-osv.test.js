@@ -960,3 +960,94 @@ require("node:test").describe("source-osv extractCvss highest-wins (round-2 HIGH
     assert.equal(extractCvss({ severity: [{ score: "9.8" }, { score: "5.0" }] }).score, 9.8);
   });
 });
+
+// ---------------------------------------------------------------------------
+// FIELD_DROPPED_WATCH set + buildDiff separate new/field-dropped counting
+// ---------------------------------------------------------------------------
+require("node:test").describe("source-osv FIELD_DROPPED_WATCH + buildDiff count split", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const os = require("node:os");
+  const ROOT = path.resolve(__dirname, "..");
+  const osvMod = require(path.join(ROOT, "lib", "source-osv.js"));
+
+  test("FIELD_DROPPED_WATCH is exactly [cvss_score, cisa_kev_pending] — editorial fields removed", () => {
+    assert.deepEqual(
+      osvMod.FIELD_DROPPED_WATCH,
+      ["cvss_score", "cisa_kev_pending"],
+      "watch set must contain only the upstream-sourced fields, in order",
+    );
+    // The editorial fields (curated by hand, never upstream-sourced) must NOT
+    // be watched — watching them flagged a false field_dropped on every
+    // curated re-import.
+    for (const editorial of ["ai_discovered", "poc_available", "active_exploitation"]) {
+      assert.equal(
+        osvMod.FIELD_DROPPED_WATCH.includes(editorial),
+        false,
+        `${editorial} is editorial-only and must NOT be in FIELD_DROPPED_WATCH`,
+      );
+    }
+  });
+
+  test("buildDiff summary counts new entries and field-dropped regressions SEPARATELY", async () => {
+    // A record with no severity[] normalizes to a null cvss_score. Seed the
+    // catalog with a pre-existing entry that previously had a populated
+    // cvss_score, then re-import the no-severity record. The seam produces a
+    // `field_dropped` diff and zero `_new_entry` diffs — so the summary must
+    // report "0 new entry diff(s)" and "1 field-dropped regression(s)",
+    // proving the two are no longer conflated under diffs.length.
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "exceptd-osv-fdrop-"));
+    const fp = path.join(tmp, "dropped.json");
+    fs.writeFileSync(fp, JSON.stringify([
+      {
+        id: "MAL-2026-77002",
+        summary: "upstream dropped its CVSS severity on re-import",
+        aliases: [],
+        modified: "2026-05-13T00:00:00Z",
+        published: "2026-05-12T00:00:00Z",
+        severity: [], // no CVSS → normalized cvss_score is null
+        affected: [],
+        references: [],
+      },
+    ]));
+    process.env.EXCEPTD_OSV_FIXTURE = fp;
+    try {
+      const r = await osvMod.buildDiff({
+        cveCatalog: {
+          // Pre-existing curated entry whose populated cvss_score the
+          // no-severity re-import will drop to null.
+          "MAL-2026-77002": { cvss_score: 9.8, cisa_kev_pending: false },
+        },
+        osv_ids: ["MAL-2026-77002"],
+      });
+      const newCount = r.diffs.filter((d) => d.field === "_new_entry").length;
+      const droppedCount = r.diffs.filter((d) => d.variant === "field_dropped").length;
+      assert.equal(newCount, 0, "no record was a brand-new entry");
+      assert.equal(droppedCount, 1, "the dropped cvss_score must produce one field_dropped diff");
+      // The summary must report the two counts separately, NOT label the
+      // field-dropped diff as a "new entry".
+      assert.match(r.summary, /0 new entry diff\(s\)/,
+        "field-dropped regressions must NOT be counted as new entries");
+      assert.match(r.summary, /1 field-dropped regression\(s\)/,
+        "field-dropped count must be reported separately");
+    } finally {
+      delete process.env.EXCEPTD_OSV_FIXTURE;
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  test("buildDiff summary source template uses separate newCount/droppedCount, not diffs.length", () => {
+    // Source-structure guard: the summary string must be built from
+    // field==='_new_entry' (newCount) and variant==='field_dropped'
+    // (droppedCount) filters, never from diffs.length for the "new" count.
+    const src = fs.readFileSync(path.join(ROOT, "lib", "source-osv.js"), "utf8");
+    assert.match(src, /d\.field === "_new_entry"/,
+      "buildDiff must derive newCount from the _new_entry field");
+    assert.match(src, /d\.variant === "field_dropped"/,
+      "buildDiff must derive droppedCount from the field_dropped variant");
+    assert.doesNotMatch(src, /\$\{diffs\.length\} new entry/,
+      "the 'new entry' count must NOT come from diffs.length (would include field_dropped)");
+  });
+});

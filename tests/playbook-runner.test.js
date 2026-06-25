@@ -6628,3 +6628,36 @@ describe('VEX drop-note (OpenVEX)', () => {
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+require("node:test").describe("round6-evidence-hash-stable-key", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const path = require("node:path");
+  const runner = require(path.resolve(__dirname, "..", "lib", "playbook-runner.js"));
+  // evidence_hash / submission_digest / deterministic session_id must be
+  // invariant to the operator's free-text observation KEY and sensitive to the
+  // evidence VALUE. The attest diff re-keys the COMPARISON; this pins the HASH
+  // itself (extractSubmissionForHash now re-keys artifacts by stable indicator
+  // id), so identical evidence under different observation keys no longer
+  // reports false reattest drift.
+  const DIR = "full-credential-store-inventory";
+  const base = (key, val) => ({
+    observations: { [key]: { captured: true, value: val, indicator: "aws-access-key-id", result: "hit" } },
+    verdict: { classification: "detected" },
+    precondition_checks: { "home-dir-readable": true },
+    operator_consent: { explicit: true },
+  });
+  const O = { bundleDeterministic: true };
+  test("identical (indicator,value) evidence under different observation keys -> identical evidence_hash/digest/session", () => {
+    const A = runner.run("cred-stores", DIR, base("obs-key-alpha", "AKIASAMEVALUE"), O);
+    const B = runner.run("cred-stores", DIR, base("totally-different-key", "AKIASAMEVALUE"), O);
+    assert.equal(A.evidence_hash, B.evidence_hash, "evidence_hash must not depend on the observation key");
+    assert.equal(A.submission_digest, B.submission_digest, "submission_digest must not depend on the observation key");
+    assert.equal(A.session_id, B.session_id, "deterministic session_id must not depend on the observation key");
+  });
+  test("changing the evidence VALUE changes evidence_hash (real drift is still detected)", () => {
+    const A = runner.run("cred-stores", DIR, base("obs-key-alpha", "AKIASAMEVALUE"), O);
+    const C = runner.run("cred-stores", DIR, base("obs-key-alpha", "AKIADIFFERENT99"), O);
+    assert.notEqual(A.evidence_hash, C.evidence_hash, "a different evidence value must produce a different evidence_hash");
+  });
+});

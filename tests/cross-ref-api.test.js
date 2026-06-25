@@ -129,6 +129,36 @@ test('#13 byCwe/byTtp/bySkill exclude _auto_imported drafts but keep curated CVE
   }
 });
 
+// ---------------------------------------------------------------------------
+// #7 byFramework resolves framework_meta from the region-nested
+// global-frameworks.json — a flat global[frameworkId] lookup always returned
+// null, so framework_meta was universally null. The resolver now walks
+// regions[*].frameworks[*] and matches by short key, full_name, or
+// catalog_aliases.
+// ---------------------------------------------------------------------------
+
+test('#7 byFramework resolves framework_meta via a catalog alias (au-ism)', () => {
+  const r = xref.byFramework('au-ism');
+  assert.ok(r.gap_count > 0, 'au-ism must surface its framework-control gaps');
+  assert.equal(r.gap_count, r.gaps.length, 'gap_count must match the gaps array length');
+  assert.notEqual(r.framework_meta, null, 'framework_meta must no longer be null for a known framework');
+  assert.equal(typeof r.framework_meta, 'object');
+  assert.equal(r.framework_meta._framework_key, 'ASD_ISM',
+    'alias au-ism must resolve to the ASD_ISM short key');
+  assert.equal(r.framework_meta._region, 'AU',
+    'ASD_ISM must be annotated with its AU region');
+});
+
+test('#7 byFramework resolves framework_meta via the short key (ASD_ISM)', () => {
+  const r = xref.byFramework('ASD_ISM');
+  assert.ok(r.gap_count > 0, 'ASD_ISM must surface its framework-control gaps');
+  assert.equal(r.gap_count, r.gaps.length, 'gap_count must match the gaps array length');
+  assert.notEqual(r.framework_meta, null, 'framework_meta must resolve non-null for the short key');
+  assert.equal(typeof r.framework_meta, 'object');
+  assert.equal(r.framework_meta._framework_key, 'ASD_ISM');
+  assert.equal(r.framework_meta._region, 'AU');
+});
+
 test.describe("ask-routing-and-recipe-cleanup", () => {
   const xrefMod = require("../lib/cross-ref-api.js");
 

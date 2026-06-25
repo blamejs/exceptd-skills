@@ -344,8 +344,10 @@ test_describe('refresh-curated-cvss-preservation', () => {
 
   function writeNvdCache(cacheDir, id, baseScore, vectorString) {
     fs.mkdirSync(path.join(cacheDir, 'nvd'), { recursive: true });
+    // nvdDiffFromCache resolves the record by cve.id, not position — the cached
+    // payload must carry the requested id or the metrics won't bind.
     const payload = {
-      vulnerabilities: [{ cve: { metrics: {
+      vulnerabilities: [{ cve: { id, metrics: {
         cvssMetricV31: [{ type: 'Primary', cvssData: { version: '3.1', baseScore, vectorString } }],
       } } }],
     };
@@ -758,6 +760,12 @@ test_describe('refresh-nvd-cvss-downgrade', () => {
 
   function writeNvdCache(cacheDir, id, payload) {
     fs.mkdirSync(path.join(cacheDir, 'nvd'), { recursive: true });
+    // nvdDiffFromCache resolves the record by cve.id — stamp the requested id
+    // onto the record so the id-match path binds (the hash is computed below,
+    // after the id is set, so on-disk bytes and recorded sha stay in sync).
+    if (payload?.vulnerabilities?.[0]?.cve && payload.vulnerabilities[0].cve.id == null) {
+      payload.vulnerabilities[0].cve.id = id;
+    }
     fs.writeFileSync(path.join(cacheDir, 'nvd', `${id}.json`), JSON.stringify(payload, null, 2) + '\n');
     const sha = crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex');
     const idxPath = path.join(cacheDir, '_index.json');

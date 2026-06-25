@@ -128,6 +128,74 @@ test("secrets: a 0640 ssh key at a real (non-test) path DOES raise ssh-key-bad-p
   }
 });
 
+// ---------------------------------------------------------------------------
+// win32 posture-indicator omission. POSIX mode bits are unreadable on Windows,
+// so the world-writable-env-file and ssh-key-bad-perms posture indicators must
+// be OMITTED from signal_overrides on win32 (so the runner returns
+// `inconclusive`) rather than assigned a forced false "miss" for a check that
+// physically cannot run. Mirrors the cred-stores credentials-file-bad-perms
+// win32 omission. The source-structure assertion is platform-independent (it
+// reads lib/collectors/secrets.js bytes); the runtime omission assertion is
+// gated to win32, where the key actually disappears.
+// ---------------------------------------------------------------------------
+
+test("secrets: both POSIX posture-indicator assignments are guarded by an `if (process.platform !== \"win32\")` block (source-structure)", () => {
+  const src = fs.readFileSync(
+    path.join(ROOT, "lib", "collectors", "secrets.js"), "utf8");
+  const lines = src.split(/\r?\n/);
+  const GUARD = 'if (process.platform !== "win32") {';
+
+  // For each posture indicator, find the line that ASSIGNS its
+  // signal_overrides verdict and confirm the nearest enclosing open-brace
+  // line above it is exactly the win32 guard — i.e. the assignment sits
+  // inside `if (process.platform !== "win32") { ... }`. Walking back to the
+  // first unmatched `{` proves enclosure rather than mere proximity.
+  for (const id of ["world-writable-env-file", "ssh-key-bad-perms"]) {
+    const assignNeedle = `signal_overrides["${id}"] =`;
+    const assignIdx = lines.findIndex(l => l.includes(assignNeedle));
+    assert.notEqual(assignIdx, -1,
+      `secrets.js must assign signal_overrides["${id}"] somewhere`);
+
+    // Walk upward, tracking brace depth, to find the line that opens the
+    // block containing this assignment.
+    let depth = 0;
+    let openerIdx = -1;
+    for (let i = assignIdx - 1; i >= 0; i--) {
+      const line = lines[i];
+      // Count braces on this earlier line (assignment line itself excluded).
+      const opens = (line.match(/\{/g) || []).length;
+      const closes = (line.match(/\}/g) || []).length;
+      depth += closes - opens;
+      if (depth < 0) { openerIdx = i; break; }
+    }
+    assert.notEqual(openerIdx, -1,
+      `secrets.js: could not locate the enclosing block opener for "${id}"`);
+    assert.equal(lines[openerIdx].trim(), GUARD,
+      `secrets.js: signal_overrides["${id}"] must sit inside an ` +
+      `\`${GUARD}\` block (it is the win32-omission guard); the nearest ` +
+      `enclosing opener was instead: ${lines[openerIdx].trim()}`);
+  }
+});
+
+test("secrets: on win32, collect() OMITS the world-writable-env-file key for a cwd holding a .env", { skip: process.platform !== "win32" }, () => {
+  // On Windows the POSIX mode bits backing this posture are unreadable, so
+  // the key must be ABSENT (runner -> inconclusive), never a forced "miss".
+  const tmp = mkTmp("fp-secrets-win32-env-");
+  try {
+    fs.writeFileSync(path.join(tmp, ".env"), "API_KEY=placeholder\nDEBUG=1\n");
+    const r = secretsCollector.collect({ cwd: tmp });
+    // The .env carrier was discovered (env-files artifact names it) yet the
+    // posture verdict is omitted on win32.
+    assert.match(r.artifacts["env-files"].value, /\.env/);
+    assert.ok(!("world-writable-env-file" in r.signal_overrides),
+      "win32 must omit world-writable-env-file (mode bits unreadable), not force a false miss");
+    assert.ok(!("ssh-key-bad-perms" in r.signal_overrides),
+      "win32 must omit ssh-key-bad-perms for the same reason");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 
 // ---- routed from collector-comment-marker-fp ----
 require("node:test").describe("collector-comment-marker-fp", () => {

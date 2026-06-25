@@ -1,6 +1,6 @@
 {
   "note": "Snapshot of pre-existing version-tag drift. The check-version-tags gate fails when these counts go UP. Refresh after an organic cleanup with `node scripts/check-version-tags.js --update-baseline`.",
-  "recorded_at": "2026-06-22",
+  "recorded_at": "2026-06-25",
   "byFile": {
     "AGENTS.md": 5,
     "bin/exceptd.js": 169,
@@ -70,7 +70,7 @@
     "tests/check-sbom-currency.test.js": 3,
     "tests/check-test-count.test.js": 1,
     "tests/check-test-coverage.test.js": 3,
-    "tests/check-version-bump.test.js": 20,
+    "tests/check-version-bump.test.js": 25,
     "tests/ci.test.js": 7,
     "tests/cicd-pipeline-compromise.test.js": 6,
     "tests/cli.test.js": 5,

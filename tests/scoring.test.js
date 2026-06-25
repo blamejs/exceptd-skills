@@ -996,14 +996,18 @@ test('compare() explanation includes the reboot driver even when live_patch_avai
   const magnitudes = [...r.explanation.matchAll(/\(([+-]\d+)/g)].map((m) => Number(m[1]));
   // Drivers in the "significantly higher" arm are the positive contributors the
   // delta is built from: cisa_kev +25, poc +20, ai +15, confirmed AE +20,
-  // reboot +5 => 85; cvssEquivalent already subtracted via the 90 vs 78 framing.
-  // Assert the reboot +5 is among them and the enumerated sum is the full
-  // positive-driver total (85), not 80 (which is what dropping reboot produced).
+  // blast radius +30, reboot +5 => 115. The blast_radius driver is now
+  // enumerated (it was previously omitted from the list even though it
+  // contributes to RWEP), so the enumerated total includes its clamped +30.
+  // Assert the reboot +5 and blast +30 are both present and the enumerated sum
+  // is the full positive-driver total (115), not 80 (dropping reboot) and not
+  // 85 (dropping the blast driver).
   assert.ok(magnitudes.includes(5), 'the +5 reboot magnitude must be enumerated');
+  assert.ok(magnitudes.includes(30), 'the +30 blast-radius magnitude must be enumerated');
   const enumeratedSum = magnitudes.reduce((a, b) => a + b, 0);
   assert.equal(typeof enumeratedSum, 'number');
-  assert.equal(enumeratedSum, 85,
-    'enumerated drivers must sum to 85 (incl. reboot +5); pre-fix they summed to 80');
+  assert.equal(enumeratedSum, 115,
+    'enumerated drivers must sum to 115 (incl. reboot +5 and blast +30); dropping reboot gives 80, dropping blast gives 85');
 });
 
 // ==========================================================================
@@ -1143,5 +1147,134 @@ require("node:test").describe("scoring: active-exploitation-only Shape A bag (co
     const withAi = s.deriveRwepFromFactors({ cisa_kev: 25, ai_factor: 15, active_exploitation: "confirmed", blast_radius: 0 });
     const noAi = s.deriveRwepFromFactors({ cisa_kev: 25, active_exploitation: "confirmed", blast_radius: 0 });
     assert.equal(withAi - noAi, 15, "the post-weight ai_factor must be summed, not dropped");
+  });
+});
+
+require("node:test").describe("compare() driving-factors enumeration: suspected/unknown AE + blast driver, no dangling list", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const s = require("../lib/scoring.js");
+
+  test("compare() lists a SUSPECTED active_exploitation (+10) AND blast radius (+N) as delta drivers", () => {
+    // The driving-factors list previously enumerated active_exploitation only
+    // for the 'confirmed' (+20) ladder rung and never listed blast_radius at
+    // all. A delta>10 driven by SUSPECTED exploitation (+10 via the 0.5
+    // multiplier) plus a positive blast_radius then either showed those drivers
+    // missing or — on a purely suspected/blast-driven entry — left a dangling
+    // "Factors driving delta: ." Build such an entry and pin both drivers by name.
+    const entry = {
+      cve_id: "CVE-TEST-DRIVE-1",
+      cvss_score: 5.0, // cvssEquivalent 50
+      rwep_score: 80, // delta = 80 - 50 = 30 (> 10)
+      active_exploitation: "suspected",
+      rwep_factors: { blast_radius: 25 },
+    };
+    const out = s.compare("CVE-TEST-DRIVE-1", { "CVE-TEST-DRIVE-1": entry });
+
+    // delta must be the real divergence the drivers explain.
+    assert.equal(out.delta, 30);
+    assert.match(out.explanation, /significantly higher/);
+
+    // The SUSPECTED rung (20 * 0.5 = 10) is named with its actual contribution —
+    // not silently dropped because it is not 'confirmed'.
+    assert.match(
+      out.explanation,
+      /suspected exploitation \(\+10\)/,
+      "suspected AE must be enumerated as 'suspected exploitation (+10)', not omitted",
+    );
+    // blast_radius is a first-class driver and lists its clamped contribution.
+    assert.match(
+      out.explanation,
+      /blast radius \(\+/,
+      "a positive blast_radius must appear as 'blast radius (+N)'",
+    );
+    // The exact clamped magnitude for blast_radius 25 (<= the 30 ceiling) is +25.
+    assert.match(out.explanation, /blast radius \(\+25\)/);
+  });
+
+  test("compare() enumerates an UNKNOWN active_exploitation (+5) rung, not only 'confirmed'", () => {
+    // The 'unknown' rung resolves to 20 * 0.25 = 5 — another rung the
+    // confirmed-only enumeration dropped. Pin it lands as "unknown exploitation (+5)".
+    const entry = {
+      cve_id: "CVE-TEST-DRIVE-UNK",
+      cvss_score: 3.0, // cvssEquivalent 30
+      rwep_score: 60, // delta = 30 (> 10)
+      active_exploitation: "unknown",
+      rwep_factors: { blast_radius: 20 },
+    };
+    const out = s.compare("CVE-TEST-DRIVE-UNK", { "CVE-TEST-DRIVE-UNK": entry });
+    assert.equal(out.delta, 30);
+    assert.match(
+      out.explanation,
+      /unknown exploitation \(\+5\)/,
+      "unknown AE must be enumerated as 'unknown exploitation (+5)'",
+    );
+    assert.match(out.explanation, /blast radius \(\+20\)/);
+  });
+
+  test("compare() with blast as the ONLY driver enumerates it (no dangling 'driving delta: .')", () => {
+    // delta>10 driven solely by blast_radius — no KEV, PoC, AI, or AE signal.
+    // The list must name blast radius, never emit an empty "Factors driving
+    // delta: ." with nothing after the colon.
+    const entry = {
+      cve_id: "CVE-TEST-DRIVE-BLAST",
+      cvss_score: 2.0, // cvssEquivalent 20
+      rwep_score: 50, // delta = 30 (> 10)
+      active_exploitation: "none", // no AE driver
+      cisa_kev: false,
+      poc_available: false,
+      ai_discovered: false,
+      ai_assisted_weaponization: false,
+      rwep_factors: { blast_radius: 30 },
+    };
+    const out = s.compare("CVE-TEST-DRIVE-BLAST", { "CVE-TEST-DRIVE-BLAST": entry });
+    assert.equal(out.delta, 30);
+    assert.match(out.explanation, /blast radius \(\+30\)/);
+
+    // The text between "driving delta: " and the closing sentence must be
+    // non-empty — a dangling list would leave it blank.
+    const m = out.explanation.match(/driving delta:\s*(.+?)\.\s+Framework patch SLAs/);
+    assert.ok(m, "the driving-factors clause must be present and terminated");
+    assert.ok(
+      m[1] && m[1].trim().length > 0,
+      `the enumerated driver text must be non-empty, got: ${JSON.stringify(m && m[1])}`,
+    );
+    // Specifically it must NOT be a bare empty list (the dangling-"." regression).
+    assert.equal(
+      /Factors driving delta:\s*\./.test(out.explanation),
+      false,
+      "must never emit a dangling 'Factors driving delta: .' with no driver",
+    );
+  });
+
+  test("compare() never leaves a dangling driver list even when NO factor is enumerable (structural fallback)", () => {
+    // delta>10 from a stored rwep_score with an empty factor bag and no flags:
+    // there is literally nothing to enumerate, so the structural fallback string
+    // must fill the list rather than leaving "driving delta: ." dangling.
+    const entry = {
+      cve_id: "CVE-TEST-DRIVE-EMPTY",
+      cvss_score: 2.0, // cvssEquivalent 20
+      rwep_score: 50, // delta = 30 (> 10)
+      active_exploitation: "none",
+      cisa_kev: false,
+      poc_available: false,
+      ai_discovered: false,
+      ai_assisted_weaponization: false,
+      patch_required_reboot: false,
+      reboot_required: false,
+      rwep_factors: { blast_radius: 0 },
+    };
+    const out = s.compare("CVE-TEST-DRIVE-EMPTY", { "CVE-TEST-DRIVE-EMPTY": entry });
+    assert.equal(out.delta, 30);
+    assert.match(
+      out.explanation,
+      /structural RWEP factors/,
+      "an un-enumerable positive delta must name the structural fallback, not dangle",
+    );
+    assert.equal(
+      /Factors driving delta:\s*\./.test(out.explanation),
+      false,
+      "the structural fallback must not collapse to a dangling 'driving delta: .'",
+    );
   });
 });

@@ -209,4 +209,12 @@ require("node:test").describe("check-test-subjects detector fixes (round-2 hunt)
     const nonReq = r.reverse.find((x) => /^(alias:|data|cli|vendor:|repo:|aggregate:|fn:|workflow)/.test(x.kind));
     if (nonReq) assert.ok(!r.reverseRequired.includes(nonReq), "a non-required reverse entry is excluded from reverseRequired");
   });
+  test("deriveSubjects derives playbook-primitive subjects — zero would throw (absent-input false-pass guard, mirrors the CVE guard)", () => {
+    let pb = 0; for (const k of m.deriveSubjects().values()) if (k === "playbook-primitive") pb++;
+    assert.ok(pb > 0, `expected >0 playbook-primitive subjects (an empty/unreadable data/playbooks must throw, not derive zero); got ${pb}`);
+  });
+  test("deriveSubjects derives source-module subjects — zero would throw (absent-input false-pass guard)", () => {
+    let mod = 0; for (const k of m.deriveSubjects().values()) if (typeof k === "string" && k.startsWith("module:")) mod++;
+    assert.ok(mod > 10, `expected the source tree's module subjects (an unreadable lib/orchestrator/scripts/bin must throw, not derive zero); got ${mod}`);
+  });
 });

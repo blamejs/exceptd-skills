@@ -564,6 +564,17 @@ const CLASSES = [
 ];
 
 function main() {
+  // Fail closed if the scan universe is empty. Each detector scopes to a subset
+  // of these roots and silently finds no hits when its root list is
+  // unreadable/empty — so a wholesale missing source tree would make every
+  // class report "clean" and the gate pass without scanning anything (the
+  // absent-input false-pass class). Refuse to call zero-files-scanned "clean".
+  const universe = filesUnder(["bin/exceptd.js", "lib", "orchestrator", "scripts"]);
+  if (universe.length === 0) {
+    console.error("[check-codebase-patterns] FAIL — zero source files found under bin/lib/orchestrator/scripts; refusing to report clean without scanning anything.");
+    process.exitCode = 1;
+    return;
+  }
   let hardFail = 0;
   let warnTotal = 0;
   let n = 0;

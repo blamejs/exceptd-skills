@@ -134,3 +134,91 @@ test("readFileSync(fd) invariant: full content for a multi-chunk file, size cap 
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+
+// ---- routed from collectors-ai-api-vendor-fp-attestation ----
+require("node:test").describe("collectors-ai-api-vendor-fp-attestation", () => {
+const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();
+/**
+ * tests/collectors-ai-api-vendor-fp-attestation.test.js
+ *
+ * Regression coverage for a present-but-empty attestation that vanished a real
+ * cleartext-key hit for half the supported vendors. The ai-api collector's
+ * AI_KEY_VALUE_RE table (which cleartextFpIndices uses to capture the exported
+ * value and evaluate the false_positive_checks_required entries) only carried
+ * value regexes for openai/anthropic/huggingface. An azure/google/cohere-only
+ * dotfile therefore produced NO captured value, cleartextFpIndices returned an
+ * EMPTY attestation set, and the runner — seeing the indicator fire with no
+ * __fp_checks attestation — downgraded the real cleartext-key hit to
+ * inconclusive. The indicator surfaced from collect() then silently vanished
+ * after run() for azure/google/cohere.
+ *
+ * The fix adds azure/google/cohere value regexes (the value IS the entropy body
+ * since these vendors carry no `sk-`/`hf_` prefix), so a single azure/google
+ * export now yields `cleartext-api-key-in-dotfile`:"hit" AND the populated
+ * `__fp_checks` attestation {0:true,1:true,2:true} — placeholder[0], canonical
+ * path[1], and the 30-char entropy floor[2] are all satisfied for a high-entropy
+ * key on a canonical home rc path. Asserting the attestation CONTENT (not just
+ * its presence) is the point: an empty `{}` would still be "present" but is the
+ * exact shape that triggered the downgrade.
+ */
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const os = require("node:os");
+
+const ROOT = path.join(__dirname, "..");
+const aiApi = require(path.join(ROOT, "lib", "collectors", "ai-api.js"));
+
+// Collect against an isolated $HOME whose .bashrc carries a single cleartext
+// export. The collector reads the canonical home dotfiles relative to env.HOME.
+function collectWithBashrc(rcLine) {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "ai-fp-"));
+  try {
+    fs.writeFileSync(path.join(home, ".bashrc"), rcLine);
+    return aiApi.collect({ env: { HOME: home } }).signal_overrides;
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+}
+
+test("ai-api: azure cleartext key emits hit + populated {0,1,2} __fp_checks attestation (not empty)", () => {
+  const ov = collectWithBashrc(
+    'export AZURE_OPENAI_KEY="a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"\n'
+  );
+  assert.equal(
+    ov["cleartext-api-key-in-dotfile"],
+    "hit",
+    "an AZURE_OPENAI_KEY cleartext export must flip the indicator to hit"
+  );
+  assert.deepEqual(
+    ov["cleartext-api-key-in-dotfile__fp_checks"],
+    { "0": true, "1": true, "2": true },
+    "the azure value regex must let cleartextFpIndices attest all three deterministic FP checks — an empty {} here re-introduces the runner downgrade"
+  );
+});
+
+test("ai-api: google cleartext key emits hit + populated {0,1,2} __fp_checks attestation (not empty)", () => {
+  const ov = collectWithBashrc(
+    'export GOOGLE_API_KEY="AIzaSyA1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q"\n'
+  );
+  assert.equal(
+    ov["cleartext-api-key-in-dotfile"],
+    "hit",
+    "a GOOGLE_API_KEY cleartext export must flip the indicator to hit"
+  );
+  assert.deepEqual(
+    ov["cleartext-api-key-in-dotfile__fp_checks"],
+    { "0": true, "1": true, "2": true },
+    "the google value regex must let cleartextFpIndices attest all three deterministic FP checks — an empty {} here re-introduces the runner downgrade"
+  );
+});
+;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
+  for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
+  __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });
+  __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
+    const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
+}
+});

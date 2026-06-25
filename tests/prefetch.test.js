@@ -196,6 +196,81 @@ test('prefetch exits cleanly with no libuv assertion (Win + Node 25 regression)'
     `stderr must not contain UV_HANDLE_CLOSING — got ${JSON.stringify(r.stderr)}`);
 });
 
+// ---------------------------------------------------------------------------
+// exitCodeForResult: transient (rate-limit/timeout) vs hard (404/parse) error
+// classification. A best-effort cache warm must not hard-fail the whole
+// scheduled refresh (and skip the auto-PR) just because an upstream throttled
+// a subset of fetches — those are deferred to the next run. Only hard errors
+// gate the exit code; a fully-dead source still fails regardless of class.
+// ---------------------------------------------------------------------------
+test('prefetch exitCodeForResult: transient-only errors over budget still exit 0', () => {
+  const { exitCodeForResult } = require('../lib/prefetch.js');
+  // The exact shape that hard-failed the scheduled refresh: 176 NVD 429/timeout
+  // errors against a --max-errors 50 budget, but NVD still landed entries.
+  const result = {
+    fetched: 717, skipped_fresh: 0, errors: 176, errors_transient: 176, errors_hard: 0,
+    by_source: {
+      nvd: { fetched: 600, skipped_fresh: 0, errors: 176, errors_transient: 176, errors_hard: 0 },
+      kev: { fetched: 1, skipped_fresh: 0, errors: 0, errors_transient: 0, errors_hard: 0 },
+    },
+  };
+  assert.equal(exitCodeForResult(result, { maxErrors: 50 }), 0,
+    'transient-only throttling must not fail the warm even when it exceeds the budget');
+});
+
+test('prefetch exitCodeForResult: a single hard error still exits 1 at the strict default budget', () => {
+  const { exitCodeForResult } = require('../lib/prefetch.js');
+  const result = {
+    fetched: 5, skipped_fresh: 0, errors: 1, errors_transient: 0, errors_hard: 1,
+    by_source: { nvd: { fetched: 5, skipped_fresh: 0, errors: 1, errors_transient: 0, errors_hard: 1 } },
+  };
+  assert.equal(exitCodeForResult(result, { maxErrors: 0 }), 1,
+    'a hard (non-retryable) error must still fail under the default strict budget');
+});
+
+test('prefetch exitCodeForResult: a fully-dead source exits 1 even when transient-only', () => {
+  const { exitCodeForResult } = require('../lib/prefetch.js');
+  // NVD 429s every single request: 0 fetched, 0 fresh, transient errors only.
+  // A feed that returned NOTHING is unreachable and must fail regardless of
+  // class or budget — it's not "throttled a subset", it's blocked entirely.
+  const result = {
+    fetched: 0, skipped_fresh: 0, errors: 3, errors_transient: 3, errors_hard: 0,
+    by_source: { nvd: { fetched: 0, skipped_fresh: 0, errors: 3, errors_transient: 3, errors_hard: 0 } },
+  };
+  assert.equal(exitCodeForResult(result, { maxErrors: 50 }), 1,
+    'a source that landed nothing must fail even if every error was transient');
+});
+
+test('prefetch exitCodeForResult: hard errors within budget pass alongside many transient', () => {
+  const { exitCodeForResult } = require('../lib/prefetch.js');
+  const result = {
+    fetched: 100, skipped_fresh: 0, errors: 60, errors_transient: 58, errors_hard: 2,
+    by_source: { nvd: { fetched: 100, skipped_fresh: 0, errors: 60, errors_transient: 58, errors_hard: 2 } },
+  };
+  assert.equal(exitCodeForResult(result, { maxErrors: 50 }), 0,
+    'only hard errors count toward the budget; 2 hard <= 50 passes');
+});
+
+test('prefetch exitCodeForResult: bare {errors} result (no split) preserves strict back-compat', () => {
+  const { exitCodeForResult } = require('../lib/prefetch.js');
+  // A result built without errors_hard treats every error as hard (the prior
+  // contract), so existing callers/tests are unaffected.
+  const bare = { fetched: 10, skipped_fresh: 0, errors: 3, by_source: { nvd: { fetched: 10, skipped_fresh: 0, errors: 3 } } };
+  assert.equal(exitCodeForResult(bare, { maxErrors: 0 }), 1, 'no-split + budget 0 => fail (back-compat)');
+  assert.equal(exitCodeForResult(bare, { maxErrors: 5 }), 0, 'no-split + budget 5 => pass (back-compat)');
+});
+
+test('prefetch formatSummary: names the transient/hard split when present', () => {
+  const { formatSummary } = require('../lib/prefetch.js');
+  const result = {
+    fetched: 717, skipped_fresh: 0, errors: 176, errors_transient: 176, errors_hard: 0,
+    by_source: { nvd: { fetched: 600, skipped_fresh: 0, errors: 176, errors_transient: 176, errors_hard: 0 } },
+  };
+  const line = formatSummary(result);
+  assert.match(line, /176 transient\/throttled, 0 hard/,
+    'summary must surface the throttled count so a large error count is not read as a silent data failure');
+});
+
 // ===========================================================================
 // Source: cli-flag-and-envelope-hardening.test.js — prefetch unknown-flag
 // rejection (F3). Offline via --no-network; the rejection fires before any
@@ -222,6 +297,39 @@ test('prefetch exits cleanly with no libuv assertion (Win + Node 25 regression)'
     assert.match(r.stdout, /prefetch summary:/);
   });
 }
+
+
+// ---------------------------------------------------------------------------
+// EXCEPTD_AIR_GAP=1 must suppress egress on the programmatic prefetch() export,
+// not just the CLI path. parseArgs binds EXCEPTD_AIR_GAP for `node prefetch.js`,
+// but a direct `require('lib/prefetch.js').prefetch({...})` call bypasses
+// parseArgs — so the air-gap switch is re-bound inside prefetch() itself. A
+// programmatic call under air-gap must resolve via the no-network dry-run path
+// (fetched:0) and must NOT throw a network error.
+// ---------------------------------------------------------------------------
+require("node:test").describe("prefetch() honors EXCEPTD_AIR_GAP (programmatic export)", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const path = require("node:path");
+  const ROOT = path.resolve(__dirname, "..");
+
+  test("programmatic prefetch({source:kev}) does not egress under EXCEPTD_AIR_GAP=1", async () => {
+    process.env.EXCEPTD_AIR_GAP = "1";
+    let r;
+    try {
+      r = await require(path.join(ROOT, "lib", "prefetch.js")).prefetch({ source: "kev", quiet: true });
+    } finally {
+      delete process.env.EXCEPTD_AIR_GAP;
+    }
+    // Dry-run / no-network path: zero fetches, no network error thrown.
+    assert.ok(r && typeof r === "object", "prefetch() must resolve with a result object");
+    assert.equal(r.fetched, 0,
+      "EXCEPTD_AIR_GAP=1 must route prefetch() through the no-network dry-run path (fetched:0)");
+    assert.equal(typeof r.errors, "number");
+    assert.equal(r.errors, 0,
+      "the air-gap dry-run must not record any fetch errors (no egress attempted)");
+  });
+});
 
 
 // ---- routed from operator-bugs ----

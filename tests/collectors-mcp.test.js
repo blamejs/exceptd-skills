@@ -40,3 +40,35 @@ test('mcp collector attests any-ai-coding-assistant-installed from a config OR a
   const bare = mkfx();
   assert.equal('any-ai-coding-assistant-installed' in mcp.collect({ env: { HOME: bare, USERPROFILE: bare } }).precondition_checks, false);
 });
+
+test('mcp collector flags a single-token "pip install <pkg>==X.Y.Z" launch command as pinned-without-integrity, but not a bare "pip install <pkg>"', () => {
+  // A single-token launch command carries the whole pip invocation in one
+  // token (`sh -c "pip install some-mcp==1.2.3"`). The `==version` pin with
+  // no integrity is the python analog of an unhashed npm `pkg@version`; it
+  // must surface mcp-version-without-integrity = "hit". A previous dead
+  // `pip install` continue-clause skipped the `==version` check for exactly
+  // this shape.
+  const pinned = mkfx();
+  fs.mkdirSync(path.join(pinned, '.cursor'), { recursive: true });
+  fs.writeFileSync(
+    path.join(pinned, '.cursor', 'mcp.json'),
+    JSON.stringify({ mcpServers: { foo: { command: 'sh', args: ['-c', 'pip install some-mcp==1.2.3'] } } }),
+  );
+  assert.equal(
+    mcp.collect({ env: { HOME: pinned, USERPROFILE: pinned } }).signal_overrides['mcp-version-without-integrity'],
+    'hit',
+  );
+
+  // Negative: a benign `pip install requests` (no ==version pin) cannot match
+  // the pin regex, so the signal must stay "miss" — not flag every pip call.
+  const benign = mkfx();
+  fs.mkdirSync(path.join(benign, '.cursor'), { recursive: true });
+  fs.writeFileSync(
+    path.join(benign, '.cursor', 'mcp.json'),
+    JSON.stringify({ mcpServers: { foo: { command: 'sh', args: ['-c', 'pip install requests'] } } }),
+  );
+  assert.equal(
+    mcp.collect({ env: { HOME: benign, USERPROFILE: benign } }).signal_overrides['mcp-version-without-integrity'],
+    'miss',
+  );
+});

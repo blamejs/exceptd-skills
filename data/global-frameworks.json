@@ -256,6 +256,7 @@
     "frameworks": {
       "ASD_ISM": {
         "full_name": "Australian Signals Directorate Information Security Manual",
+        "catalog_aliases": ["au-ism", "AU ISM", "ACSC ISM", "Australian Government Information Security Manual"],
         "authority": "Australian Signals Directorate (ASD)",
         "source": "https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/ism",
         "effective_date": "Monthly updates",
