@@ -202,7 +202,11 @@ test("ai-api: azure cleartext key emits hit + populated {0,1,2} __fp_checks atte
 
 test("ai-api: google cleartext key emits hit + populated {0,1,2} __fp_checks attestation (not empty)", () => {
   const ov = collectWithBashrc(
-    'export GOOGLE_API_KEY="AIzaSyA1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q"\n'
+    // Synthetic high-entropy value WITHOUT the real "AIzaSy" Google-key prefix:
+    // the collector only requires GOOGLE_API_KEY=<20+ chars>, so a non-prefixed
+    // value exercises the same path without a test fixture that looks like a
+    // live credential to secret scanners.
+    'export GOOGLE_API_KEY="7Hq2Wp9Kx4Tz6Rn1Yb3Vc8Df5Gj0Lm2Qs4Uw"\n'
   );
   assert.equal(
     ov["cleartext-api-key-in-dotfile"],
