@@ -159,6 +159,23 @@ test('#7 byFramework resolves framework_meta via the short key (ASD_ISM)', () =>
   assert.equal(r.framework_meta._region, 'AU');
 });
 
+test('#7 byFramework gap set is consistent across a framework\'s aliases (gaps resolve like framework_meta)', () => {
+  // The gap filter must resolve the framework's full label set, not a literal
+  // id match — otherwise a call by short key returns framework_meta but a gap
+  // list inconsistent with it. au-ism and ASD_ISM are the same framework, so
+  // both must surface the same gap_count.
+  const viaAlias = xref.byFramework('au-ism');
+  const viaKey = xref.byFramework('ASD_ISM');
+  assert.ok(viaKey.gap_count > 0 && viaAlias.gap_count > 0, 'both must surface gaps');
+  assert.equal(viaKey.gap_count, viaAlias.gap_count,
+    'the short key and a catalog alias for the same framework must yield the same gap set');
+  // And resolution must not over-match a different framework: GDPR resolves to
+  // GDPR, not the AU framework's gaps.
+  const gdpr = xref.byFramework('GDPR');
+  assert.equal(gdpr.framework_meta && gdpr.framework_meta._framework_key, 'GDPR');
+  assert.notEqual(gdpr.gap_count, viaKey.gap_count, 'GDPR must not collapse into the AU-ISM gap set');
+});
+
 test.describe("ask-routing-and-recipe-cleanup", () => {
   const xrefMod = require("../lib/cross-ref-api.js");
 

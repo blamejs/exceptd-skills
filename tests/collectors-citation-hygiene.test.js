@@ -74,31 +74,9 @@ test("citation-hygiene: rejected-or-disputed-cve is record-level — only CVE-20
       .join(" • ");
   }
 
-  // Record-level reject/dispute check, replicating the (now-internal) collector
-  // logic: a reject/dispute/withdrawn word only counts when it refers to THIS
-  // CVE's own record — not an adjacent DIFFERENT CVE, and not a "disputed"
-  // qualified by a scoring/coordination/disclosure/attribution context word.
-  function recordRejectedOrDisputed(n, self) {
-    if (!n) return false;
-    const S = String(self || "").toUpperCase();
-    const re = /\b(reject(?:ed|s|ion)?|disputed?|withdrawn)\b/gi;
-    const Q =
-      /\b(cvss|scoring|score|severity|coordination|disclosure|methodolog\w*|attribution|naming|assignment|priorit\w*)\b/i;
-    let m;
-    while ((m = re.exec(n)) !== null) {
-      const w = m[1].toLowerCase();
-      const b = n.slice(Math.max(0, m.index - 60), m.index);
-      const a = n.slice(re.lastIndex, re.lastIndex + 60);
-      const adj = (b + " " + a).match(/CVE-\d{4}-\d{4,}/gi) || [];
-      if (adj.some((c) => c.toUpperCase() !== S)) continue;
-      if (w.startsWith("disput")) {
-        const lt = b.trim().split(/[\s-]+/).slice(-3).join(" ");
-        if (Q.test(lt)) continue;
-      }
-      return true;
-    }
-    return false;
-  }
+  // The REAL exported collector function — not a replica — so this test tracks
+  // the collector's actual record-level reject/dispute logic.
+  const recordRejectedOrDisputed = citationCollector.recordRejectedOrDisputed;
 
   const flagged = Object.keys(cat).filter((id) =>
     recordRejectedOrDisputed(note(cat[id]), id),
@@ -129,4 +107,19 @@ test("citation-hygiene: rejected-or-disputed-cve is record-level — only CVE-20
       `${id} must NOT be flagged as record-level rejected/disputed`,
     );
   }
+});
+
+test("citation-hygiene: a record rejected AS A DUPLICATE of another CVE stays flagged (replacement target ≠ subject)", () => {
+  const rec = citationCollector.recordRejectedOrDisputed;
+  // THIS record is the rejected one; the other CVE is the replacement target.
+  assert.equal(rec("This record was REJECTED as a duplicate of CVE-2025-99999.", "CVE-2025-00001"), true,
+    "rejected-as-a-duplicate-of names the replacement, but THIS record is the rejected one");
+  assert.equal(rec("Withdrawn; superseded by CVE-2030-11111.", "CVE-2030-00002"), true,
+    "superseded-by also leaves THIS record as the withdrawn one");
+  // But a DIFFERENT CVE that is itself the rejected subject still suppresses.
+  assert.equal(rec("CVE-2025-66478 has been rejected by NVD.", "CVE-2025-55182"), false,
+    "a different CVE that is the rejection subject is about THAT record, not this one");
+  // And a CVSS scoring dispute is still not a record rejection.
+  assert.equal(rec("Carries a documented CVSS scoring dispute.", "CVE-2024-50050"), false,
+    "a CVSS scoring dispute is a severity disagreement, not a record rejection");
 });
