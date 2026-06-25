@@ -8,8 +8,10 @@
  * The publish path is split into two jobs with disjoint permission scopes:
  *   - publish-npm carries id-token:write (OIDC provenance) but NOT
  *     contents:write.
- *   - publish-github-release carries contents:write (release-asset upload)
- *     but NOT id-token:write, and is sequenced after publish-npm.
+ *   - publish-github-release grants NO workflow write — it creates the Release
+ *     with a per-run, scoped GitHub App installation token, so its workflow
+ *     permission is contents:read; it carries no id-token:write and is
+ *     sequenced after publish-npm.
  *
  * This file pins that job split and the least-privilege permission scoping
  * so a refactor can't silently re-merge the jobs or broaden a token.
@@ -63,13 +65,25 @@ test('A: publish-npm job carries id-token:write but NOT contents:write', () => {
     'publish-npm must NOT declare contents:write (job-split contract)');
 });
 
-test('A: publish-github-release job carries contents:write but NOT id-token:write', () => {
+test('A: publish-github-release uses a scoped App token, not a workflow contents:write', () => {
   const yml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'release.yml'), 'utf8');
   const block = extractJobBlock(yml, 'publish-github-release');
   assert.ok(block, 'publish-github-release job block not parseable');
-  assert.match(block, PERM_DECL('contents', 'write'));
+  // The workflow grants NO write — the Release is created with a per-run GitHub
+  // App installation token, so the job permission is read-only (the avoidable
+  // contents:write was removed to clear the Scorecard Token-Permissions finding).
+  assert.match(block, PERM_DECL('contents', 'read'));
+  assert.ok(!PERM_DECL('contents', 'write').test(block),
+    'publish-github-release must NOT declare a workflow contents:write (the App token supplies the write)');
   assert.ok(!PERM_DECL('id-token', 'write').test(block),
     'publish-github-release must NOT declare id-token:write (job-split contract)');
+  // It mints the scoped App token and passes it to action-gh-release.
+  assert.match(block, /create-github-app-token@/,
+    'publish-github-release must mint a scoped GitHub App token');
+  assert.match(block, /permission-contents:\s*write/,
+    'the minted App token must request contents:write for the release');
+  assert.match(block, /token:\s*\$\{\{\s*steps\.app-token\.outputs\.token\s*\}\}/,
+    'action-gh-release must use the minted App token, not the default GITHUB_TOKEN');
 });
 
 test('A: publish-github-release depends on publish-npm (sequenced)', () => {

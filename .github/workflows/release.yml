@@ -273,7 +273,7 @@ jobs:
           npm publish --access public --provenance
 
   publish-github-release:
-    name: Create GitHub Release (contents:write isolated)
+    name: Create GitHub Release (App-token, no workflow write)
     runs-on: ubuntu-latest
     # Sequenced after publish-npm so the GitHub Release only fires when
     # npm publish succeeded. Releases pointing at a tag whose npm publish
@@ -283,10 +283,13 @@ jobs:
     needs: [validate, publish-npm]
     if: ${{ github.event_name == 'push' || inputs.dry_run != 'true' }}
     permissions:
-      # contents:write ONLY. No id-token:write. This job cannot sign an
-      # npm provenance attestation. Its blast radius is "create a
-      # GitHub Release" — visible but bounded.
-      contents: write
+      # No workflow-level write. The GitHub Release is created with a scoped,
+      # per-run GitHub App installation token (minted below) that carries
+      # contents:write at the App level, so the workflow's GITHUB_TOKEN stays
+      # read-only — closing the Scorecard Token-Permissions finding while the
+      # release-creation capability is unchanged. Still no id-token:write, so
+      # this job cannot sign an npm provenance attestation.
+      contents: read
 
     steps:
       - name: Checkout (for CHANGELOG extraction only)
@@ -320,9 +323,22 @@ jobs:
             echo 'RELEASE_NOTES_EOF'
           } >> "$GITHUB_OUTPUT"
 
+      - name: Mint a scoped GitHub App token for the release
+        id: app-token
+        # Same App (exceptd-refresh-bot) refresh.yml uses for PR creation. The
+        # minted token is per-run, repo-scoped, expires with the job, and carries
+        # ONLY contents:write — so the workflow grants no write and the Scorecard
+        # Token-Permissions finding clears, with the release capability unchanged.
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
+        with:
+          client-id: ${{ secrets.REFRESH_APP_CLIENT_ID }}
+          private-key: ${{ secrets.REFRESH_APP_PRIVATE_KEY }}
+          permission-contents: write
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b  # v3.0.1
         with:
+          token: ${{ steps.app-token.outputs.token }}
           tag_name: ${{ needs.validate.outputs.tag }}
           name: ${{ needs.validate.outputs.tag }}
           body: ${{ steps.changelog.outputs.body }}
