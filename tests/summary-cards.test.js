@@ -108,6 +108,69 @@ test("card shape + threat-context excerpt skips leading bold metadata; counts mi
   assert.deepEqual(out.skills.bravo.handoff_targets, []);
 });
 
+test("handoff_targets are bounded to the Hand-Off section, not scanned to EOF", () => {
+  const root = mkroot();
+  // `bravo` is named in the Hand-Off section (a real target). `charlie` is
+  // named only in a LATER section after the next H2. The old EOF-slice picked
+  // up charlie; the fence-aware section-bounded slice must not.
+  const body = [
+    "# Alpha",
+    "",
+    "## Hand-Off",
+    "",
+    "Escalate to `bravo` for deeper analysis.",
+    "",
+    "## See Also",
+    "",
+    "Unrelated reference to `charlie` that is not a hand-off target.",
+    "",
+  ].join("\n");
+  writeSkill(root, "skills/alpha/skill.md", body);
+  writeSkill(root, "skills/bravo/skill.md", "# Bravo\n\nbody\n");
+  writeSkill(root, "skills/charlie/skill.md", "# Charlie\n\nbody\n");
+  const skills = [
+    { name: "alpha", path: "skills/alpha/skill.md", description: "a" },
+    { name: "bravo", path: "skills/bravo/skill.md", description: "b" },
+    { name: "charlie", path: "skills/charlie/skill.md", description: "c" },
+  ];
+
+  const out = buildSummaryCards({ root, manifest: {}, skills });
+  const targets = out.skills.alpha.handoff_targets;
+  assert.ok(Array.isArray(targets), "handoff_targets must be an array");
+  // Exact set: only the in-section target, charlie (post-section) excluded.
+  assert.deepEqual(targets, ["bravo"], "only in-Hand-Off-section targets are returned");
+  assert.equal(targets.includes("charlie"), false,
+    "a sibling named after the next H2 must not be treated as a hand-off target");
+});
+
+test("Hand-Off header inside a fenced code block is not treated as a section", () => {
+  const root = mkroot();
+  // The only `## Hand-Off` line lives inside a fence — it is not a real H2, so
+  // there is no Hand-Off section and `bravo` named below must not be collected.
+  const body = [
+    "# Alpha",
+    "",
+    "## Threat Context",
+    "",
+    "```md",
+    "## Hand-Off",
+    "Escalate to `bravo`.",
+    "```",
+    "Real prose with no genuine hand-off section.",
+    "",
+  ].join("\n");
+  writeSkill(root, "skills/alpha/skill.md", body);
+  writeSkill(root, "skills/bravo/skill.md", "# Bravo\n\nbody\n");
+  const skills = [
+    { name: "alpha", path: "skills/alpha/skill.md", description: "a" },
+    { name: "bravo", path: "skills/bravo/skill.md", description: "b" },
+  ];
+
+  const out = buildSummaryCards({ root, manifest: {}, skills });
+  assert.deepEqual(out.skills.alpha.handoff_targets, [],
+    "a fenced ## Hand-Off is not a real section boundary");
+});
+
 test("a `## ` line inside a fenced code block is not a section boundary", () => {
   const root = mkroot();
   const body = [

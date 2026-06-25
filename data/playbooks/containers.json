@@ -43,7 +43,7 @@
       },
       {
         "playbook_id": "sbom",
-        "condition": "container-image-layers.length > 0"
+        "condition": "container-image-layers > 0"
       }
     ]
   },
@@ -795,7 +795,7 @@
           "action": "page_on_call"
         },
         {
-          "condition": "k8s-cluster-admin-binding fired AND target_namespace not in infrastructure_namespaces",
+          "condition": "k8s-cluster-admin-binding == true AND target-namespace-outside-infra-allowlist == true",
           "action": "raise_severity"
         },
         {

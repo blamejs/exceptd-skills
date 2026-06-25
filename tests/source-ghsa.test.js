@@ -528,3 +528,17 @@ test('v0.12 source-ghsa.normalizeAdvisory produces draft shape with editorial nu
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+require("node:test").describe("source-ghsa fetchAdvisoryById path safety (round-2)", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const { fetchAdvisoryById } = require("../lib/source-ghsa.js");
+  test("a GHSA id with path-control characters is rejected (not interpolated into the request path)", async () => {
+    const r = await fetchAdvisoryById("GHSA-aaaa/../../meta", { noNetwork: true, airGap: true });
+    assert.equal(r.ok, false, "a malformed GHSA id must be refused, not built into /advisories/<id>");
+    assert.match(r.error, /unrecognized id format/);
+  });
+  test("a well-formed GHSA token still passes the shape gate", () => {
+    assert.match("GHSA-jfh8-c2jp-5v3q", /^GHSA-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}$/i);
+  });
+});

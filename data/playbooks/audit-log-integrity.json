@@ -448,11 +448,11 @@
       ],
       "escalation_criteria": [
         {
-          "condition": "A single compromised identity can rewrite/delete the system-of-record trail undetected",
+          "condition": "audit-log-deletable-by-writing-identity == true AND (audit-hash-chain-not-verified == true OR audit-log-not-signed-or-key-colocated == true)",
           "action": "raise_severity"
         },
         {
-          "condition": "Records under legal hold are reachable by the retention purge",
+          "condition": "legal-hold-not-blocking-purge == true",
           "action": "trigger_playbook"
         }
       ]
@@ -463,7 +463,7 @@
           "id": "verify-chain-and-sign-off-host",
           "description": "Verify the audit hash chain on every read/replay/export and fail closed on a break; sign chain checkpoints with a key held by a separate identity / KMS / HSM, not the log-writing process.",
           "preconditions": [
-            "operator controls the audit subsystem"
+            "operator_controls_audit_subsystem == true"
           ],
           "priority": 1,
           "for_signals": [

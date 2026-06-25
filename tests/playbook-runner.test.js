@@ -2192,6 +2192,59 @@ describe('condition mini-language (evalCondition)', () => {
     assert.equal(evalCondition('rwep >= 90', { rwep: 50 }), false);
   });
 
+  it('ordering against a duration literal (24h) normalizes both sides to hours, not lexicographic/NaN', () => {
+    // kernel.json's raise_severity escalation is `reboot_window > 24h`. The RHS
+    // coercion only converts a BARE numeric, so `24h` stayed a string. Pre-fix a
+    // numeric LHS compared `48 > '24h'` → `48 > NaN` → false (a 48h window
+    // silently failed to escalate), and a string LHS compared lexicographically
+    // `'6h' > '24h'` → `'6' > '2'` → true (a 6h window WRONGLY escalated).
+    const cond = 'reboot_window > 24h';
+    // 48 hours (bare number) > 24h → escalates. Pre-fix: false.
+    assert.equal(evalCondition(cond, { reboot_window: 48 }), true);
+    assert.strictEqual(evalCondition(cond, { reboot_window: 48 }), true);
+    // '6h' < 24h → does NOT escalate. Pre-fix: true (lexicographic inversion).
+    assert.equal(evalCondition(cond, { reboot_window: '6h' }), false);
+    assert.strictEqual(evalCondition(cond, { reboot_window: '6h' }), false);
+    // '100h' > 24h → escalates.
+    assert.equal(evalCondition(cond, { reboot_window: '100h' }), true);
+    // exactly 24h is not strictly greater.
+    assert.equal(evalCondition(cond, { reboot_window: '24h' }), false);
+    // cross-unit: 2 days == 48h > 24h → escalates (same unit family after norm).
+    assert.equal(evalCondition(cond, { reboot_window: '2d' }), true);
+    // 30 minutes is far below 24h.
+    assert.equal(evalCondition(cond, { reboot_window: '30min' }), false);
+  });
+
+  it('the full kernel reboot_window escalation condition fires for a 48h window and not a 6h window', () => {
+    const cond = 'rwep >= 90 AND patch_available == true AND livepatch_active == false AND reboot_window > 24h';
+    const base = { rwep: 95, patch_available: true, livepatch_active: false };
+    assert.equal(evalCondition(cond, { ...base, reboot_window: 48 }), true);
+    assert.equal(evalCondition(cond, { ...base, reboot_window: '6h' }), false);
+  });
+
+  it('a degraded ordering of two non-numeric, non-severity, non-duration strings surfaces condition_type_mismatch', () => {
+    const errs = [];
+    // 'theater' > 'foo' is lexicographically true but semantically meaningless —
+    // the comparison silently degraded with no diagnostic pre-fix.
+    const r = evalCondition('a > b', { a: 'theater', b: 'foo', _runErrors: errs });
+    assert.equal(typeof r, 'boolean');
+    assert.equal(errs.length, 1);
+    assert.equal(errs[0].kind, 'condition_type_mismatch');
+    assert.equal(errs[0].condition, 'a > b');
+  });
+
+  it('a duration-vs-duration ordering does NOT surface condition_type_mismatch', () => {
+    const errs = [];
+    assert.equal(evalCondition('reboot_window > 24h', { reboot_window: '6h', _runErrors: errs }), false);
+    assert.equal(errs.filter((e) => e.kind === 'condition_type_mismatch').length, 0);
+  });
+
+  it('a numeric ordering does NOT surface condition_type_mismatch', () => {
+    const errs = [];
+    assert.equal(evalCondition('rwep >= 90', { rwep: 100, _runErrors: errs }), true);
+    assert.equal(errs.filter((e) => e.kind === 'condition_type_mismatch').length, 0);
+  });
+
   it('`contains` is accepted as a synonym for `includes`', () => {
     assert.equal(evalCondition('scope.targets contains named-remote', { scope: { targets: ['named-remote'] } }), true);
     assert.equal(evalCondition('scope.targets includes named-remote', { scope: { targets: ['named-remote'] } }), true);
@@ -3214,6 +3267,286 @@ describe('run() — bundles, top_finding, collector_warnings, remediation select
   });
 });
 
+describe('round-3: dead-condition rewrites, validate engine-ctx, evidence-hash, feeds_into', () => {
+  let runner;
+  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+  const dir0 = (id) => runner.loadPlaybook(id).directives[0].id;
+
+  // --- #45a: rewritten escalation_criteria FIRE (were dead prose) ---
+  it('audit-log-integrity raise_severity fires on the rewritten indicator-id condition', () => {
+    const d = dir0('audit-log-integrity');
+    const det = runner.detect('audit-log-integrity', d, {});
+    const an = runner.analyze('audit-log-integrity', d, det, {
+      'audit-log-deletable-by-writing-identity': true,
+      'audit-hash-chain-not-verified': true,
+    });
+    const fired = an.escalations.find(e => e.action === 'raise_severity');
+    assert.ok(fired, 'rewritten raise_severity escalation must fire (was dead prose)');
+    assert.match(fired.condition, /audit-log-deletable-by-writing-identity == true/);
+  });
+
+  it('decompression-dos trigger_playbook fires on zip-slip == true (was prose)', () => {
+    const d = dir0('decompression-dos');
+    const det = runner.detect('decompression-dos', d, {});
+    const an = runner.analyze('decompression-dos', d, det, { 'zip-slip-path-traversal': true });
+    assert.ok(an.escalations.some(e => e.condition === 'zip-slip-path-traversal == true'),
+      'zip-slip escalation must fire');
+  });
+
+  it('multitenancy-isolation cross-tenant escalation fires on any one tenant-isolation indicator', () => {
+    const d = dir0('multitenancy-isolation');
+    const det = runner.detect('multitenancy-isolation', d, {});
+    const an = runner.analyze('multitenancy-isolation', d, det, { 'query-not-scoped-by-tenant': true });
+    assert.ok(an.escalations.some(e => /query-not-scoped-by-tenant == true/.test(e.condition)),
+      'OR-chain escalation must fire on a single fired indicator');
+  });
+
+  it('every shipped escalation/feeds_into/precondition condition parses (no condition_unparsed) — atom-level', () => {
+    // Class guard mirroring the validate-playbooks parse-gate. Atomize each
+    // condition (split top-level OR then AND, strip parens) and parse-check each
+    // LEAF — checking the whole condition once would miss a dead sub-clause
+    // hidden behind a short-circuiting AND/OR (evalCondition's .every/.some stop
+    // at the first false/true). A coincidence-passing whole-condition check is
+    // worse than none.
+    const { _evalCondition } = runner;
+    const splitTop = (expr, sep) => {
+      const parts = []; const needle = ' ' + sep + ' '; let depth = 0, buf = '', i = 0, q = null;
+      while (i < expr.length) {
+        const ch = expr[i];
+        if (q) { if (ch === '\\' && i + 1 < expr.length) { buf += ch + expr[i + 1]; i += 2; continue; } if (ch === q) q = null; buf += ch; i++; continue; }
+        if (ch === "'" || ch === '"') { q = ch; buf += ch; i++; continue; }
+        if (ch === '(') { depth++; buf += ch; i++; continue; }
+        if (ch === ')') { depth--; buf += ch; i++; continue; }
+        if (depth === 0 && expr.startsWith(needle, i)) { parts.push(buf.trim()); buf = ''; i += needle.length; continue; }
+        buf += ch; i++;
+      }
+      parts.push(buf.trim()); return parts;
+    };
+    const strip = (e) => { e = e.trim(); while (e.startsWith('(') && e.endsWith(')')) { let d = 0, ok = true; for (let i = 0; i < e.length; i++) { if (e[i] === '(') d++; else if (e[i] === ')') { d--; if (d === 0 && i < e.length - 1) { ok = false; break; } } } if (ok) e = e.slice(1, -1).trim(); else break; } return e; };
+    const atomize = (cond) => { const out = []; (function rec(e) { e = strip(e); const o = splitTop(e, 'OR'); if (o.length > 1) { o.forEach(rec); return; } const a = splitTop(e, 'AND'); if (a.length > 1) { a.forEach(rec); return; } out.push(e); })(cond); return out; };
+    const pbDir = REAL_PLAYBOOK_DIR;
+    const dead = [];
+    for (const f of fs.readdirSync(pbDir).filter(x => x.endsWith('.json'))) {
+      const pb = JSON.parse(fs.readFileSync(path.join(pbDir, f), 'utf8'));
+      const conds = [];
+      for (const ec of (pb.phases.analyze.escalation_criteria || [])) if (ec && typeof ec.condition === 'string') conds.push(ec.condition);
+      for (const fi of (pb._meta.feeds_into || [])) if (fi && typeof fi.condition === 'string') conds.push(fi.condition);
+      for (const rp of (pb.phases.validate.remediation_paths || [])) for (const pc of (rp.preconditions || [])) if (typeof pc === 'string') conds.push(pc);
+      for (const c of conds) {
+        for (const atom of atomize(c)) {
+          const re = [];
+          _evalCondition(atom, { _runErrors: re }, { _runErrors: re });
+          if (re.some(e => e && e.kind === 'condition_unparsed')) dead.push(`${f}: atom "${atom}"  in:  ${c}`);
+        }
+      }
+    }
+    assert.deepEqual(dead, [], `unparseable (dead) condition atoms found:\n${dead.join('\n')}`);
+  });
+
+  // --- fired-indicator mirror: indicator-gated conditions resolve on the collector path ---
+  it('an indicator-gated escalation fires from a detect HIT (signal_overrides), not only when re-submitted under signals', () => {
+    // The collector / AI evidence path delivers indicator hits as
+    // signal_overrides (which detect reads); the escalation context spreads
+    // `signals`. Without mirroring fired indicators, `<indicator-id> == true`
+    // escalations stayed dead on the real path even when the indicator detected.
+    const d = dir0('library-author');
+    const det = runner.detect('library-author', d, {
+      signal_overrides: { 'no-security-md': 'hit', 'no-security-txt': 'hit' },
+    });
+    const hits = (det.indicators || []).filter(i => i.verdict === 'hit').map(i => i.id);
+    assert.ok(hits.includes('no-security-md') && hits.includes('no-security-txt'),
+      'both indicators must register as detect hits');
+    // product_is_public is host-asserted finding context (no indicator) → signals.
+    // Crucially, the two indicator ids are NOT in signals — only signal_overrides.
+    const an = runner.analyze('library-author', d, det, { product_is_public: true });
+    const fired = an.escalations.find(e => /no-security-md == true AND no-security-txt == true/.test(e.condition));
+    assert.ok(fired, 'the indicator-gated escalation must fire from the detect hits alone (collector path)');
+  });
+
+  it('an operator can still suppress a mirrored indicator by submitting it false under signals', () => {
+    const d = dir0('library-author');
+    const det = runner.detect('library-author', d, {
+      signal_overrides: { 'no-security-md': 'hit', 'no-security-txt': 'hit' },
+    });
+    // signals override the mirrored fired-indicator truth (lowest precedence).
+    const an = runner.analyze('library-author', d, det, { product_is_public: true, 'no-security-md': false });
+    const fired = an.escalations.find(e => /no-security-md == true AND no-security-txt == true/.test(e.condition));
+    assert.ok(!fired, 'a signals-submitted false must override the mirrored detect hit');
+  });
+
+  // --- #45d/#7: validate() precondition context exposes engine-computed roots ---
+  it('validate() resolves the engine-computed `analyze` root in a remediation precondition', () => {
+    const tmp = tmpDir('validate-engine-ctx');
+    try {
+      const pb = synthPlaybook({
+        _meta: { id: 'synth-engine-ctx' },
+        phases: {
+          detect: { indicators: [{ id: 'sig-a', type: 'config_value', value: 'x', description: 'x', confidence: 'high', deterministic: true }] },
+          validate: {
+            remediation_paths: [
+              { id: 'engine-gated', priority: 1, description: 'x', steps: ['x'], for_signals: ['sig-a'], preconditions: ["analyze.classification == 'detected'"] },
+            ],
+            validation_tests: [], evidence_requirements: [], regression_trigger: [],
+          },
+        },
+      });
+      writePlaybook(tmp, 'synth-engine-ctx', pb);
+      const r = freshRunner(tmp);
+      const det = r.detect('synth-engine-ctx', 'default', { signal_overrides: { 'sig-a': 'hit' } });
+      const an = r.analyze('synth-engine-ctx', 'default', det, {});
+      const v = r.validate('synth-engine-ctx', 'default', an, {});
+      const path = v.remediation_options_considered.find(c => c.id === 'engine-gated');
+      assert.ok(path, 'remediation path considered');
+      assert.equal(an.classification, 'detected');
+      assert.equal(path.all_satisfied, true,
+        'precondition gating on the engine-computed analyze.classification must now be satisfiable');
+    } finally {
+      runner = freshRunner(REAL_PLAYBOOK_DIR);
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('validate() leaves the engine-gated precondition UNsatisfied when the engine value differs', () => {
+    const tmp = tmpDir('validate-engine-ctx-neg');
+    try {
+      const pb = synthPlaybook({
+        _meta: { id: 'synth-engine-neg' },
+        phases: {
+          detect: { indicators: [{ id: 'sig-a', type: 'config_value', value: 'x', description: 'x', confidence: 'high', deterministic: true }] },
+          validate: {
+            remediation_paths: [
+              { id: 'engine-gated', priority: 1, description: 'x', steps: ['x'], for_signals: ['sig-a'], preconditions: ["analyze.classification == 'detected'"] },
+            ],
+            validation_tests: [], evidence_requirements: [], regression_trigger: [],
+          },
+        },
+      });
+      writePlaybook(tmp, 'synth-engine-neg', pb);
+      const r = freshRunner(tmp);
+      const det = r.detect('synth-engine-neg', 'default', {}); // nothing fired → not 'detected'
+      const an = r.analyze('synth-engine-neg', 'default', det, {});
+      const v = r.validate('synth-engine-neg', 'default', an, {});
+      const path = v.remediation_options_considered.find(c => c.id === 'engine-gated');
+      assert.notEqual(an.classification, 'detected');
+      assert.equal(path.all_satisfied, false, 'precondition must evaluate, not be vacuously true');
+    } finally {
+      runner = freshRunner(REAL_PLAYBOOK_DIR);
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  // --- #45d/#6: evidence_hash ignores render-only _bundle_formats, tracks real evidence ---
+  it('evidence_hash is stable across the render-only _bundle_formats signal', () => {
+    const PRE = { precondition_checks: { 'linux-platform': true, 'uname-available': true } };
+    const base = runner.run('kernel', 'all-catalogued-kernel-cves', { signals: { 'kver-in-affected-range': true } }, PRE);
+    const withFmt = runner.run('kernel', 'all-catalogued-kernel-cves', { signals: { 'kver-in-affected-range': true, _bundle_formats: ['sarif', 'openvex'] } }, PRE);
+    assert.match(base.evidence_hash, /^[0-9a-f]{64}$/);
+    assert.equal(base.evidence_hash, withFmt.evidence_hash,
+      'choosing an output bundle format must not change the evidence identity');
+  });
+
+  it('evidence_hash of a render-only-signals submission equals a no-signals submission', () => {
+    // A submission whose ONLY signal is the render directive _bundle_formats
+    // must hash identically to a submission with no signals at all — otherwise
+    // the digest records `{signals:{}}` vs no-signals and drifts on --format.
+    const PRE = { precondition_checks: { 'linux-platform': true, 'uname-available': true } };
+    const noSignals = runner.run('kernel', 'all-catalogued-kernel-cves', {}, PRE);
+    const renderOnly = runner.run('kernel', 'all-catalogued-kernel-cves', { signals: { _bundle_formats: ['sarif'] } }, PRE);
+    const emptyBag = runner.run('kernel', 'all-catalogued-kernel-cves', { signals: {} }, PRE);
+    assert.equal(noSignals.evidence_hash, renderOnly.evidence_hash,
+      'a render-only (_bundle_formats) signal bag must not change the evidence hash');
+    assert.equal(noSignals.evidence_hash, emptyBag.evidence_hash,
+      'an empty signals bag must hash like no signals');
+  });
+
+  it('evidence_hash still changes on a real evidence change AND on a posture-affecting vex_filter', () => {
+    const PRE = { precondition_checks: { 'linux-platform': true, 'uname-available': true } };
+    const base = runner.run('kernel', 'all-catalogued-kernel-cves', { signals: { 'kver-in-affected-range': true } }, PRE);
+    const moreEvidence = runner.run('kernel', 'all-catalogued-kernel-cves', { signals: { 'kver-in-affected-range': true, 'unpriv-userns-enabled': true } }, PRE);
+    const vex = runner.run('kernel', 'all-catalogued-kernel-cves', { signals: { 'kver-in-affected-range': true, vex_filter: ['CVE-2024-0001'] } }, PRE);
+    assert.notEqual(base.evidence_hash, moreEvidence.evidence_hash, 'a new signal must change the hash');
+    assert.notEqual(base.evidence_hash, vex.evidence_hash, 'a VEX disposition is posture-affecting evidence and must change the hash');
+  });
+
+  // --- #45d: containers -> sbom feeds_into is live (was rooted at a look-artifact id) ---
+  it('containers -> sbom feeds_into chains when container-image-layers > 0', () => {
+    const PRE = { operator_consent: { explicit: true }, precondition_checks: { 'linux-platform': true } };
+    let chained = null;
+    for (const d of runner.loadPlaybook('containers').directives.map(x => x.id)) {
+      let r;
+      try { r = runner.run('containers', d, { signals: { 'container-image-layers': 7, 'dockerfile-from-latest': true }, signal_overrides: { 'dockerfile-from-latest': true } }, PRE); }
+      catch { continue; }
+      if (r && r.phases && r.phases.close && Array.isArray(r.phases.close.feeds_into)) { chained = r.phases.close.feeds_into; if (chained.includes('sbom')) break; }
+    }
+    assert.ok(chained && chained.includes('sbom'),
+      'containers must chain to sbom when image layers are present (feeds_into was dead at container-image-layers.length)');
+  });
+});
+
+describe('round-5: output/binding resolution (interpolation, SARIF locations, CSAF product binding)', () => {
+  let runner;
+  before(() => { runner = freshRunner(REAL_PLAYBOOK_DIR); });
+  const PRE = { forceStale: true, operator_consent: { explicit: true }, precondition_checks: { 'linux-platform': true, 'uname-available': true } };
+
+  it('exception render tracks unresolved ${placeholder} tokens as missing_interpolation_vars + a runtime_error', () => {
+    const out = runner.run('kernel', 'all-catalogued-kernel-cves', { signals: { remediation_blocked: true } }, PRE);
+    const ex = out.phases.close.exception;
+    assert.ok(ex, 'exception should be generated when the trigger fires');
+    assert.ok(Array.isArray(ex.missing_interpolation_vars), 'exception must carry missing_interpolation_vars');
+    assert.ok(ex.missing_interpolation_vars.length >= 1, 'operator-fill template vars are unresolved on a bare run');
+    // The auditor language carries the <MISSING:..> literals AND the gap is observable.
+    assert.match(ex.auditor_ready_language, /<MISSING:/);
+    const re = (out.phases.analyze.runtime_errors || []).find(e => e.kind === 'exception_unresolved_placeholders');
+    assert.ok(re, 'an exception_unresolved_placeholders runtime_error must surface the gap');
+  });
+
+  it('SARIF finding-class results always carry a location (logicalLocations fallback for prose-source playbooks)', () => {
+    // secrets describes its look-artifact sources in prose/globs, so the physical
+    // location heuristic returns null; the result must still be located so GitHub
+    // Code Scanning does not drop it.
+    const out = runner.run('secrets', 'full-repo-secret-scan',
+      { signals: { _bundle_formats: ['sarif'] }, signal_overrides: { 'aws-access-key-id': 'hit' } },
+      { operator_consent: { explicit: true }, precondition_checks: { 'linux-platform': true, 'uname-available': true } });
+    const sarif = out.phases.close.evidence_package.bundles_by_format.sarif;
+    const findings = sarif.runs[0].results.filter(r => r.properties && (r.properties.kind === 'indicator_hit' || r.properties.kind === 'cve_match'));
+    assert.ok(findings.length >= 1, 'secrets should emit at least one finding-class result');
+    for (const r of findings) {
+      assert.ok(Array.isArray(r.locations) && r.locations.length >= 1, `result ${r.ruleId} must carry a location`);
+      const loc = r.locations[0];
+      assert.ok(loc.physicalLocation || (Array.isArray(loc.logicalLocations) && loc.logicalLocations.length), 'physical or logical location');
+    }
+  });
+
+  it('CSAF per-CVE CSAFPID branch leaves are bound into product_status.known_affected', () => {
+    const out = runner.run('kernel', 'all-catalogued-kernel-cves',
+      { signals: { _bundle_formats: ['csaf-2.0'], 'CVE-2026-31431': true, 'CVE-2026-43284': true } },
+      { ...PRE, operator: 'https://x.example', publisherNamespace: 'https://x.example' });
+    const csaf = out.phases.close.evidence_package.bundles_by_format['csaf-2.0'];
+    const leafPids = new Set();
+    (function walk(b) { for (const x of (b || [])) { if (x.product && x.product.product_id) leafPids.add(x.product.product_id); if (x.branches) walk(x.branches); } })(csaf.product_tree.branches);
+    assert.ok(leafPids.size >= 1, 'kernel CVEs carry affected_versions → CSAFPID leaves exist');
+    const referenced = new Set();
+    for (const v of (csaf.vulnerabilities || [])) {
+      const ps = v.product_status || {};
+      [...(ps.known_affected || []), ...(ps.fixed || [])].forEach(p => { if (/^CSAFPID-/.test(p)) referenced.add(p); });
+    }
+    for (const pid of leafPids) assert.ok(referenced.has(pid), `branch leaf ${pid} must be referenced from a vulnerability product_status`);
+  });
+
+  it('CSAF VEX-fixed product_status.fixed does NOT list affected-version CSAFPID leaves', () => {
+    // The CSAFPID leaves are parsed from affected_versions (vulnerable ranges),
+    // so they must never appear under `fixed` — only the synthetic target product.
+    const out = runner.run('kernel', 'all-catalogued-kernel-cves',
+      { signals: { _bundle_formats: ['csaf-2.0'], 'CVE-2026-31431': true, vex_fixed: ['CVE-2026-31431'] } },
+      { ...PRE, operator: 'https://x.example', publisherNamespace: 'https://x.example' });
+    const csaf = out.phases.close.evidence_package.bundles_by_format['csaf-2.0'];
+    const fixedVuln = (csaf.vulnerabilities || []).find(v => v.product_status && Array.isArray(v.product_status.fixed));
+    assert.ok(fixedVuln, 'a VEX-fixed CVE should produce a product_status.fixed entry');
+    assert.ok(!fixedVuln.product_status.fixed.some(p => /^CSAFPID-/.test(p)),
+      'affected-version CSAFPID leaves must not be mislabeled under fixed');
+  });
+});
+
 test.describe("reconciliation-fixes", () => {
   test('worstActiveExploitation ranks `theoretical` between none and unknown (worst-of holds)', () => {
     // P1: the rank table omitted `theoretical`, so `?? -1` lost to the -1 start —
@@ -4081,9 +4414,19 @@ describe('CSAF 2.0 — B5 (product_tree mandatory for security_advisory)', () =>
 
   it('every vulnerability references product_tree via product_status', () => {
     assert.ok(bundle.vulnerabilities.length > 0);
+    // A product_id is defined in the product_tree via EITHER full_product_names[]
+    // OR a branches[] leaf's product.product_id (both are valid CSAF definition
+    // sites). The per-version CSAFPID-N leaves bound into product_status live in
+    // branches, so collect product ids from both.
     const knownProductIds = new Set(
       bundle.product_tree.full_product_names.map(p => p.product_id)
     );
+    (function walk(branches) {
+      for (const b of (branches || [])) {
+        if (b.product && b.product.product_id) knownProductIds.add(b.product.product_id);
+        if (b.branches) walk(b.branches);
+      }
+    })(bundle.product_tree.branches);
     for (const v of bundle.vulnerabilities) {
       assert.ok(v.product_status, `vulnerability missing product_status: ${JSON.stringify(v).slice(0, 80)}`);
       const refIds = [

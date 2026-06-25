@@ -4339,12 +4339,19 @@ function readEvidenceDir(dir, verb) {
           extra: { entry: f, resolved_to: realEntry },
         };
       }
-      bundle[pbId] = JSON.parse(raw);
+      // Apply the SAME object-shape guard the single-file / stdin path uses
+      // (asEvidenceObject): a `<pb>.json` that parses to an array, scalar, or
+      // null is not a valid evidence document. Without this an mis-shaped entry
+      // was bound verbatim and ran downstream as empty evidence, yielding a
+      // false-clean `not_detected` PASS at exit 0 — the exact hole the
+      // single-file guard closes.
+      bundle[pbId] = asEvidenceObject(JSON.parse(raw));
     } catch (e) {
-      // A refusal object thrown by JSON.parse / readFileSync lands here; surface
-      // it with the entry name. (The explicit refusals above return directly and
-      // never reach this catch.)
-      return { ok: false, error: `${verb}: failed to read --evidence-dir entry ${f}: ${e.message}`, extra: null };
+      // A JSON parse error or the asEvidenceObject shape refusal lands here;
+      // surface it with the entry name so the operator sees the real reason
+      // (e.g. "evidence must be a JSON object"). The explicit symlink/junction
+      // refusals above return directly and never reach this catch.
+      return { ok: false, error: `${verb}: --evidence-dir entry ${f}: ${e.message}`, extra: { entry: f } };
     } finally {
       try { fs.closeSync(efd); } catch { /* already closed / invalid fd */ }
     }
@@ -6547,6 +6554,39 @@ function submissionHasData(submission) {
     || nonEmpty(submission.signal_overrides)
     || nonEmpty(submission.observations);
 }
+// attest diff compares artifacts by map key. normalizeSubmission keys
+// flat-shape artifacts by the operator-chosen OBSERVATION key (obs-kver, x1, an
+// array index, …), NOT by the stable indicator id the observation targeted — so
+// two attestations with identical (indicator, value) evidence under different
+// observation keys diffed as all-added/all-removed (unchanged_count 0), while the
+// correctly-keyed signal_override_diff on the same comparison showed the true
+// unchanged result. Re-key the artifact map by the stable indicator id (recovered
+// from normalizeSubmission's _signal_origins, which maps indicator -> obs-key)
+// before diffing, falling back to the original key when an observation carries no
+// indicator binding. Diff-only — does NOT touch normalizeSubmission's map or the
+// evidence_hash.
+function rekeyArtifactsByStableId(artifacts, signalOrigins) {
+  if (!artifacts || !signalOrigins || typeof signalOrigins !== "object") return artifacts || {};
+  const obsKeyToIndicator = {};
+  for (const [indicatorId, obsKey] of Object.entries(signalOrigins)) {
+    if (typeof obsKey === "string") obsKeyToIndicator[obsKey] = indicatorId;
+  }
+  const originalKeys = new Set(Object.keys(artifacts));
+  const out = {};
+  for (const [k, v] of Object.entries(artifacts)) {
+    const mapped = obsKeyToIndicator[k];
+    // Re-key to the stable indicator id ONLY when it won't drop an artifact: the
+    // indicator id must not already be a DISTINCT original artifact key, and must
+    // not have been claimed by an earlier re-keyed entry. On any such collision,
+    // keep the original key so no artifact is silently overwritten / lost from
+    // the diff (two observations sharing one indicator, or an artifact key that
+    // already equals an indicator id).
+    const stable = (mapped && mapped !== k && !originalKeys.has(mapped)
+      && !Object.prototype.hasOwnProperty.call(out, mapped)) ? mapped : k;
+    out[stable] = v;
+  }
+  return out;
+}
 function normalizedArtifacts(submission, runner, playbookId, applyEmptyFallback = true) {
   if (!submission || typeof submission !== "object") {
     return applyEmptyFallback ? (_playbookArtifactCatalog(runner, playbookId) || {}) : {};
@@ -6561,7 +6601,9 @@ function normalizedArtifacts(submission, runner, playbookId, applyEmptyFallback 
         const pb = runner.loadPlaybook ? runner.loadPlaybook(playbookId) : null;
         if (pb) {
           const norm = runner.normalizeSubmission({ observations: submission.observations }, pb);
-          if (norm && norm.artifacts && Object.keys(norm.artifacts).length > 0) return norm.artifacts;
+          if (norm && norm.artifacts && Object.keys(norm.artifacts).length > 0) {
+            return rekeyArtifactsByStableId(norm.artifacts, norm._signal_origins);
+          }
         }
       } catch { /* fall through */ }
     }
@@ -9159,6 +9201,22 @@ function cmdCi(runner, args, runOpts, pretty) {
   let clockStartedFail = false;
   let clockStartedReasons = [];
 
+  // Thread the requested bundle output format into each per-playbook run so
+  // close() actually BUILDS it. `ci --format sarif|openvex|csaf` reads each
+  // result's evidence_package.bundles_by_format[fmt] below; the runner only
+  // builds the playbook's declared PRIMARY bundle_format unless the operator
+  // seeds signals._bundle_formats. Without this, any playbook whose primary
+  // format differs from the request emitted no bundle for that format and the
+  // aggregated `ci --format sarif/openvex` array dropped it (.filter(Boolean)),
+  // so the output was a silent empty array. Mapping mirrors the read at the
+  // emit site: csaf → csaf-2.0; sarif/openvex pass through. (_bundle_formats is
+  // a `_`-prefixed render directive, so it is excluded from evidence_hash and
+  // does not perturb attest/reattest.)
+  let ciFormatRaw = args.format;
+  if (Array.isArray(ciFormatRaw)) ciFormatRaw = ciFormatRaw[0];
+  const ciBundleFormat = (ciFormatRaw === 'csaf' || ciFormatRaw === 'csaf-2.0') ? 'csaf-2.0'
+    : (ciFormatRaw === 'sarif' || ciFormatRaw === 'openvex') ? ciFormatRaw : null;
+
   for (const id of ids) {
     // defense-in-depth — validate id even though the catalog-iter
     // upstream is trusted. A corrupt catalog returning a malformed id would
@@ -9179,6 +9237,16 @@ function cmdCi(runner, args, runOpts, pretty) {
       continue;
     }
     const submission = bundle[id] || {};
+    if (ciBundleFormat) {
+      // Clone signals before injecting so the shared evidence bundle is not
+      // mutated; merge with any operator-supplied _bundle_formats.
+      const existing = Array.isArray(submission.signals && submission.signals._bundle_formats)
+        ? submission.signals._bundle_formats : [];
+      submission.signals = {
+        ...(submission.signals || {}),
+        _bundle_formats: existing.includes(ciBundleFormat) ? existing : [...existing, ciBundleFormat],
+      };
+    }
     const perOpts = { ...runOpts, session_id: sessionId };
     if (submission.precondition_checks) perOpts.precondition_checks = submission.precondition_checks;
     let result;

@@ -944,3 +944,19 @@ test('osvRequestOnce accepts an under-cap response normally (cap does not break 
     await new Promise((res) => server.close(res));
   }
 });
+
+require("node:test").describe("source-osv extractCvss highest-wins (round-2 HIGH)", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const { extractCvss } = require("../lib/source-osv.js");
+  const LO = "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L";
+  const HI = "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H";
+  test("keeps the highest same-version CVSS vector regardless of severity[] order", () => {
+    assert.equal(extractCvss({ severity: [{ score: HI }, { score: LO }] }).score, 9.8);
+    assert.equal(extractCvss({ severity: [{ score: LO }, { score: HI }] }).score, 9.8);
+  });
+  test("keeps the highest bare score regardless of order", () => {
+    assert.equal(extractCvss({ severity: [{ score: "5.0" }, { score: "9.8" }] }).score, 9.8);
+    assert.equal(extractCvss({ severity: [{ score: "9.8" }, { score: "5.0" }] }).score, 9.8);
+  });
+});

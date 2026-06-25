@@ -665,7 +665,7 @@
           "target_playbook": "cred-stores"
         },
         {
-          "condition": "orphan-privileged-process fired OR duplicate-uid-zero fired",
+          "condition": "orphan-privileged-process == true OR duplicate-uid-zero == true",
           "action": "trigger_playbook",
           "target_playbook": "kernel"
         },
@@ -740,7 +740,7 @@
           "id": "policy-exception",
           "description": "If a finding cannot be remediated within the compliance window, generate an auditor-ready exception with bounded compensating controls.",
           "preconditions": [
-            "remediation_paths[1..4] blocked OR time_to_remediate > obligation_window"
+            "prior_remediations_blocked == true OR time_to_remediate > obligation_window"
           ],
           "priority": 4,
           "compensating_controls": [

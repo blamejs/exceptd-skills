@@ -275,8 +275,13 @@ async function refreshRfc({ dry = false, _deps = {} } = {}) {
     const cur = cat[id];
     if (!cur) continue;
     let touched = false;
-    if (cur._auto_imported && cur.status !== RFC_STATUS_MAP[e.status]) {
-      cur.status = RFC_STATUS_MAP[e.status];
+    // Mirror the new-add path's `|| e.status` fallback: an upstream status
+    // outside RFC_STATUS_MAP must NOT write `undefined` (which would drop the
+    // status field on an existing curated row). Fall back to the raw upstream
+    // status, and only bump when the mapped value actually differs.
+    const mapped = RFC_STATUS_MAP[e.status] || e.status;
+    if (cur._auto_imported && mapped && cur.status !== mapped) {
+      cur.status = mapped;
       touched = true;
       statusBumped++;
     }
@@ -654,6 +659,15 @@ function backfillAtlas(cur, fresh) {
       if (!cur[key] && val) { cur[key] = val; touched = true; }
     }
   };
+  // Parity with backfillAttack: include the short description + tactic in the
+  // backfill set. Existing curated ATLAS rows often carry only {name} and need
+  // the short description + tactic too, not just description_full/platforms/etc.
+  fillIfEmpty("description", fresh.description);
+  // tactic: atlasEntryFromStix() emits a STRING for a single-tactic technique
+  // and an array for multi-tactic, so backfill both forms. fillIfEmpty only
+  // writes when cur is empty, so an existing (string OR array) tactic is never
+  // overwritten — the common single-tactic case is no longer left unhydrated.
+  fillIfEmpty("tactic", fresh.tactic);
   fillIfEmpty("description_full", fresh.description_full);
   fillIfEmpty("platforms", fresh.platforms);
   fillIfEmpty("detection", fresh.detection);
@@ -928,5 +942,8 @@ module.exports = {
   // Exported for regression tests: fetchUrl's status/redirect handling and
   // writeCatalog's atomicity are load-bearing fail-closed properties.
   fetchUrl,
-  writeCatalog
+  writeCatalog,
+  // Exported for regression tests: backfillAtlas must mirror backfillAttack's
+  // description + array-tactic backfill on curated rows.
+  backfillAtlas
 };

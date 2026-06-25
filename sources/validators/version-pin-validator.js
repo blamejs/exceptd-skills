@@ -7,8 +7,17 @@
  *
  *   - MITRE ATLAS:     GitHub releases (mitre-atlas/atlas-data)
  *   - MITRE ATT&CK:    GitHub releases (mitre-attack/attack-stix-data)
- *   - MITRE D3FEND:    GitHub releases (mitre-d3fend/d3fend-data)
- *   - MITRE CWE:       GitHub releases (mitre/cwe)
+ *
+ * MITRE D3FEND and MITRE CWE do NOT publish tagged GitHub releases — D3FEND
+ * ships its ontology from d3fend/d3fend-ontology untagged, and CWE distributes
+ * XML from cwe.mitre.org. Their pin currency is tracked on the upstream-check
+ * path (lib/upstream-check.js) against those canonical mitre.org endpoints, not
+ * via the GitHub releases API. They remain enumerated here for completeness but
+ * are flagged `github_releases: false`, so the GitHub-release check is skipped
+ * for them and they are reported as `tracked_elsewhere` rather than emitting a
+ * spurious `unreachable` (a release API call for a repo with no releases always
+ * fails). This keeps the live path checking the same two GitHub-release repos
+ * the cache path (pinsDiffFromCache) checks.
  *
  * Each check returns:
  *   { pin_name, local_version, latest_version, drift: bool, source_url, error? }
@@ -29,24 +38,35 @@ const PINS = [
     repo: "mitre-atlas/atlas-data",
     local_path_hint: "manifest.json — atlas_version",
     strip_v_prefix: true,
+    github_releases: true,
   },
   {
     pin_name: "attack_version",
     repo: "mitre-attack/attack-stix-data",
     local_path_hint: "manifest.json — attack_version",
     strip_v_prefix: true,
+    github_releases: true,
   },
   {
+    // D3FEND does not tag GitHub releases — currency is tracked via
+    // lib/upstream-check.js against the canonical mitre.org endpoint. Listed
+    // here for completeness; the GitHub-release check is skipped.
     pin_name: "d3fend_version",
     repo: "d3fend/d3fend-data",
     local_path_hint: "data/d3fend-catalog.json _meta.version",
     strip_v_prefix: true,
+    github_releases: false,
+    tracked_via: "lib/upstream-check.js (d3fend.mitre.org)",
   },
   {
+    // CWE distributes XML from cwe.mitre.org with no tagged GitHub releases —
+    // currency is tracked via lib/upstream-check.js. GitHub-release check skipped.
     pin_name: "cwe_version",
     repo: "mitre/cwe",
     local_path_hint: "data/cwe-catalog.json _meta.version",
     strip_v_prefix: true,
+    github_releases: false,
+    tracked_via: "lib/upstream-check.js (cwe.mitre.org)",
   },
 ];
 
@@ -113,6 +133,23 @@ async function checkAllPins(ctx) {
   const out = [];
   for (const pin of PINS) {
     const local = normalize(resolveLocalVersion(pin.pin_name, ctx), pin.strip_v_prefix);
+    // Pins whose upstream does not publish GitHub releases (D3FEND, CWE) have
+    // no release tag to compare against — calling the releases API would always
+    // fail and surface a spurious `unreachable`. Report them as tracked
+    // elsewhere (drift:null, no error) so the live path checks exactly the same
+    // GitHub-release repos as the cache path.
+    if (pin.github_releases === false) {
+      out.push({
+        pin_name: pin.pin_name,
+        local_version: local,
+        latest_version: null,
+        drift: null,
+        tracked_elsewhere: true,
+        tracked_via: pin.tracked_via || null,
+        local_path_hint: pin.local_path_hint,
+      });
+      continue;
+    }
     const release = await latestGithubRelease(pin.repo);
     if (release.error) {
       out.push({

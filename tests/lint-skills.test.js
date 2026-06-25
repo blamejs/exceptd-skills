@@ -802,6 +802,7 @@ const assert = require('node:assert/strict');
 const {
   schemaConstraintErrors,
   validateFrontmatter,
+  isStrictIsoCalendarDate,
   FRONTMATTER_SCHEMA,
   unquote,
 } = require('../lib/lint-skills.js');
@@ -882,6 +883,110 @@ test('unquote normalizes a quoted scalar followed by an inline comment', () => {
   assert.equal(unquote('"a # b"'), 'a # b');
   // A bare value with a hash is left intact (no quotes to anchor a comment).
   assert.equal(unquote('bare # value'), 'bare # value');
+});
+
+// Regression: a wrong-TYPED enum field must be flagged, not silently skipped.
+// The earlier `typeof value === 'string'` guard let a non-string discovery_mode
+// (an array from `discovery_mode: [standalone]`, or a number) bypass the enum
+// check entirely. Both must now surface a `must be a string` error.
+test('schemaConstraintErrors flags a non-string discovery_mode (array) instead of skipping', () => {
+  const errors = schemaConstraintErrors({ discovery_mode: ['standalone'] }, FRONTMATTER_SCHEMA);
+  assert.equal(Array.isArray(errors), true);
+  assert.equal(errors.length, 1);
+  assert.equal(typeof errors[0], 'string');
+  assert.match(errors[0], /frontmatter\.discovery_mode must be a string/);
+  assert.match(errors[0], /got array/);
+});
+
+test('schemaConstraintErrors flags a numeric discovery_mode instead of skipping', () => {
+  const errors = schemaConstraintErrors({ discovery_mode: 42 }, FRONTMATTER_SCHEMA);
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /frontmatter\.discovery_mode must be a string/);
+  assert.match(errors[0], /got number/);
+});
+
+test('validateFrontmatter surfaces the wrong-typed discovery_mode (array) violation', () => {
+  const fm = {
+    name: 'sample-skill',
+    version: '1.0.0',
+    description: 'a sufficiently long description',
+    triggers: ['do the thing'],
+    data_deps: [],
+    atlas_refs: [],
+    attack_refs: [],
+    framework_gaps: [],
+    last_threat_review: '2026-05-13',
+    discovery_mode: ['standalone'],
+  };
+  const { errors } = validateFrontmatter(fm, 'sample-skill');
+  assert.equal(
+    errors.some((e) => /frontmatter\.discovery_mode must be a string/.test(e)),
+    true,
+    `expected a wrong-type discovery_mode error; got ${JSON.stringify(errors)}`,
+  );
+});
+
+// Regression: last_threat_review must reject non-calendar dates that
+// Date.parse silently rolls over (2026-02-30 -> 2026-03-02, 2026-04-31 ->
+// 2026-05-01). A rollover date never existed, so accepting it would gate
+// staleness against a phantom date.
+test('isStrictIsoCalendarDate rejects rollover dates and accepts real ones', () => {
+  assert.equal(isStrictIsoCalendarDate('2026-02-30'), false);
+  assert.equal(isStrictIsoCalendarDate('2026-04-31'), false);
+  assert.equal(isStrictIsoCalendarDate('2026-13-99'), false);
+  assert.equal(isStrictIsoCalendarDate('2026-00-10'), false);
+  assert.equal(isStrictIsoCalendarDate('2026-06-00'), false);
+  // Real calendar dates, including a true leap day.
+  assert.equal(isStrictIsoCalendarDate('2026-06-15'), true);
+  assert.equal(isStrictIsoCalendarDate('2024-02-29'), true); // 2024 is a leap year
+  assert.equal(isStrictIsoCalendarDate('2026-02-28'), true);
+  // Non-leap-year Feb 29 must be rejected.
+  assert.equal(isStrictIsoCalendarDate('2026-02-29'), false);
+  // Shape failures.
+  assert.equal(isStrictIsoCalendarDate('2026-2-3'), false);
+  assert.equal(isStrictIsoCalendarDate('not-a-date'), false);
+});
+
+test('validateFrontmatter rejects a rollover last_threat_review (2026-02-30)', () => {
+  const base = {
+    name: 'sample-skill',
+    version: '1.0.0',
+    description: 'a sufficiently long description',
+    triggers: ['do the thing'],
+    data_deps: [],
+    atlas_refs: [],
+    attack_refs: [],
+    framework_gaps: [],
+  };
+  const { errors } = validateFrontmatter(
+    { ...base, last_threat_review: '2026-02-30' },
+    'sample-skill',
+  );
+  assert.equal(
+    errors.some((e) => /frontmatter\.last_threat_review "2026-02-30" is not a valid ISO date/.test(e)),
+    true,
+    `expected a non-calendar-date error; got ${JSON.stringify(errors)}`,
+  );
+});
+
+// Regression: the d3fend_refs schema pattern must accept the D3A-* and D3F-*
+// namespaces (195 of 468 shipped ids live there) and digit-bearing/multi-
+// segment ids, while still rejecting a junk id and lowercase.
+test('schemaConstraintErrors accepts D3A-/D3F- d3fend_refs and rejects junk', () => {
+  const good = schemaConstraintErrors(
+    { d3fend_refs: ['D3-EAL', 'D3A-AAD', 'D3F-UGPH'] },
+    FRONTMATTER_SCHEMA,
+  );
+  assert.deepEqual(good, [], `D3-/D3A-/D3F- ids must all be accepted; got ${JSON.stringify(good)}`);
+
+  const bad = schemaConstraintErrors(
+    { d3fend_refs: ['D3-', 'D3-eal'] },
+    FRONTMATTER_SCHEMA,
+  );
+  assert.equal(bad.length, 2);
+  assert.equal(bad.every((e) => typeof e === 'string'), true);
+  assert.equal(bad.some((e) => /d3fend_refs entry "D3-"/.test(e)), true);
+  assert.equal(bad.some((e) => /d3fend_refs entry "D3-eal"/.test(e)), true);
 });
 ;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
   for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);

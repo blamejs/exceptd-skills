@@ -430,11 +430,11 @@
       ],
       "escalation_criteria": [
         {
-          "condition": "Secrets/PII are logged without redaction, or a webhook sink reaches cloud metadata via SSRF",
+          "condition": "secrets-or-pii-logged-without-redaction == true OR webhook-log-sink-ssrf-unguarded == true",
           "action": "raise_severity"
         },
         {
-          "condition": "CR/LF log forging is possible on the audit sink incident response relies on",
+          "condition": "crlf-log-injection-unsanitized == true",
           "action": "trigger_playbook"
         }
       ]
@@ -445,7 +445,7 @@
           "id": "neutralize-and-redact",
           "description": "Neutralize CR/LF + control characters in interpolated values on every sink (or move to a structured-only format), and run a redaction pass that strips secrets/PII before any sink.",
           "preconditions": [
-            "operator controls the logging path"
+            "operator_controls_logging_path == true"
           ],
           "priority": 1,
           "for_signals": [

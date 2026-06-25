@@ -801,7 +801,7 @@
           "id": "board-level-acknowledgement",
           "description": "Where multiple framework-gap declarations cannot be closed within compliance windows: escalate to board-level acknowledgement of the GRC posture with documented framework-lag declaration and accepted residual risk.",
           "preconditions": [
-            "remediation_paths[1..5] cannot close all findings within compliance windows",
+            "prior_remediations_cannot_close_in_window == true",
             "board_acceptance_obtainable == true"
           ],
           "priority": 6,

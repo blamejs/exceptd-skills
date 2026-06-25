@@ -247,6 +247,41 @@ test('P1: framework-gap theater_risks counts entries with theater_test (not just
   assert.equal(report.summary.theater_risk_controls, report.theater_risks.length);
 });
 
+test('gapReport theater_risks honors the requested-framework filter (no cross-framework leak)', () => {
+  // "prompt injection" matches open theater-risk gaps across ~18 frameworks
+  // (DORA, EU AI Act, HIPAA, ISO 27001, PCI-DSS, OWASP, ...). Requesting ONE
+  // framework must scope theater_risks to that framework's controls only —
+  // pre-fix it was built from the unfiltered scenario set and leaked every
+  // framework's theater controls regardless of what the operator asked for.
+  const r = gapReport(['NIST SP 800-53 Rev 5'], 'prompt injection', controlGaps, cveCatalog, { allFrameworks: false });
+
+  assert.ok(Array.isArray(r.theater_risks), 'theater_risks must be an array');
+  // Exactly the NIST framework's single matching theater control survives.
+  assert.equal(r.theater_risks.length, 1, `expected 1 scoped theater risk, got ${r.theater_risks.length}`);
+  // Every surviving entry must belong to the requested framework — assert the
+  // value, not mere presence.
+  const frameworksSeen = [...new Set(r.theater_risks.map(t => t.framework))];
+  assert.deepEqual(frameworksSeen, ['NIST SP 800-53 Rev 5'],
+    `theater_risks leaked non-requested frameworks: ${JSON.stringify(frameworksSeen)}`);
+  assert.equal(r.theater_risks[0].control, 'NIST-800-53-AC-2');
+  assert.equal(typeof r.theater_risks[0].theater_test_present, 'boolean');
+  // The summary footer must agree with the scoped array length.
+  assert.equal(r.summary.theater_risk_controls, r.theater_risks.length);
+  assert.equal(r.summary.theater_risk_controls, 1);
+});
+
+test('gapReport theater_risks with allFrameworks counts every scenario-relevant theater control', () => {
+  // Guard the other direction: the `all` path must still surface the full
+  // cross-framework theater set, so the scoping fix can't accidentally shrink
+  // the all-frameworks report.
+  const r = gapReport(['all'], 'prompt injection', controlGaps, cveCatalog, { allFrameworks: true });
+  assert.ok(Array.isArray(r.theater_risks));
+  const frameworksSeen = new Set(r.theater_risks.map(t => t.framework));
+  assert.ok(frameworksSeen.size > 1,
+    `allFrameworks theater_risks must span many frameworks; got ${frameworksSeen.size}`);
+  assert.equal(r.summary.theater_risk_controls, r.theater_risks.length);
+});
+
 // ---------------------------------------------------------------------------
 // data/framework-control-gaps.json — Hard Rule #6 theater_test coverage.
 // Every entry in the framework-gap data catalog MUST carry a populated

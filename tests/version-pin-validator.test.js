@@ -82,19 +82,21 @@ test('PINS enumerates the four expected catalog pins with the required fields', 
 
 // --- match / drift ----------------------------------------------------------
 
-test('reports no drift when every upstream tag matches the local pin', async () => {
+test('reports no drift when every GitHub-release upstream tag matches the local pin', async () => {
+  // Only atlas + attack publish GitHub releases and are fetched; cwe + d3fend
+  // are tracked elsewhere and must NOT be fetched (no route provided for them).
   const restore = stubFetch({
     [REPOS.atlas]: withNoise('v2026.05'),
     [REPOS.attack]: withNoise('v19.1'),
-    [REPOS.d3fend]: withNoise('v1.5.0'),
-    [REPOS.cwe]: withNoise('v4.18'),
   });
   try {
     const out = await checkAllPins(ctx());
     assert.equal(out.length, 4);
-    for (const r of out) {
+    const ghPins = out.filter(r => r.pin_name === 'atlas_version' || r.pin_name === 'attack_version');
+    for (const r of ghPins) {
       assert.equal(r.drift, false, `${r.pin_name} should not drift (local ${r.local_version} vs latest ${r.latest_version})`);
       assert.equal(r.unreachable, undefined);
+      assert.equal(r.tracked_elsewhere, undefined);
     }
     const atlas = out.find(r => r.pin_name === 'atlas_version');
     assert.equal(atlas.local_version, '2026.05');
@@ -102,6 +104,47 @@ test('reports no drift when every upstream tag matches the local pin', async () 
   } finally {
     restore();
   }
+});
+
+// --- non-GitHub-release pins (CWE, D3FEND): tracked elsewhere, never fetched
+// Regression for: PINS listed mitre/cwe + d3fend/d3fend-data, which publish no
+// GitHub releases, so the live path fired a doomed releases API call and
+// surfaced two spurious `unreachable` errors the cache path never produced.
+// They must now be reported as tracked_elsewhere (drift:null, no error, no fetch).
+
+test('CWE and D3FEND pins are tracked elsewhere and never hit the GitHub releases API', async () => {
+  let fetched = false;
+  // Provide routes ONLY for the two GitHub-release repos. If checkAllPins tried
+  // to fetch cwe/d3fend, stubFetch would throw "unexpected fetch in test".
+  const restore = stubFetch({
+    [REPOS.atlas]: withNoise('v2026.05'),
+    [REPOS.attack]: withNoise('v19.1'),
+  });
+  const origFetch = global.fetch;
+  global.fetch = async (url) => { fetched = true; return origFetch(url); };
+  try {
+    const out = await checkAllPins(ctx({ cwe: '4.18', d3fend: '1.5.0' }));
+    const cwe = out.find(r => r.pin_name === 'cwe_version');
+    const d3 = out.find(r => r.pin_name === 'd3fend_version');
+
+    // Tracked-elsewhere shape — exact values AND types.
+    for (const r of [cwe, d3]) {
+      assert.equal(r.tracked_elsewhere, true);
+      assert.equal(r.drift, null, 'a non-release-publishing pin must not synthesize a drift signal');
+      assert.equal(r.latest_version, null);
+      assert.equal(r.unreachable, undefined, 'must NOT be reported as unreachable');
+      assert.equal(r.error, undefined, 'must carry no error — it is intentionally not compared here');
+      assert.equal(typeof r.tracked_via, 'string');
+      assert.match(r.tracked_via, /upstream-check\.js/);
+    }
+    // Local versions still resolve from their catalogs.
+    assert.equal(cwe.local_version, '4.18', 'cwe local comes from cweCatalog._meta.version');
+    assert.equal(d3.local_version, '1.5.0', 'd3fend local comes from d3fendCatalog._meta.version');
+  } finally {
+    global.fetch = origFetch;
+    restore();
+  }
+  assert.equal(fetched, true, 'the GitHub-release pins (atlas/attack) are still fetched');
 });
 
 test('reports drift when an upstream tag is newer than the local pin', async () => {
@@ -209,19 +252,18 @@ test('an empty release array (no stable release) is unreachable', async () => {
 
 test('a missing local pin resolves to null and drift is false (cannot compare)', async () => {
   // drift is `local != null && latest != null && local !== latest`. With a null
-  // local version the comparison is suppressed -> drift false.
+  // local version the comparison is suppressed -> drift false. Asserted against
+  // a GitHub-release pin (atlas), since cwe/d3fend are tracked elsewhere.
   const restore = stubFetch({
     [REPOS.atlas]: withNoise('v2026.05'),
     [REPOS.attack]: withNoise('v19.1'),
-    [REPOS.d3fend]: withNoise('v1.5.0'),
-    [REPOS.cwe]: withNoise('v4.18'),
   });
   try {
-    const out = await checkAllPins(ctx({ cwe: null })); // cweCatalog has no _meta.version
-    const cwe = out.find(r => r.pin_name === 'cwe_version');
-    assert.equal(cwe.local_version, null);
-    assert.equal(cwe.latest_version, '4.18');
-    assert.equal(cwe.drift, false, 'no local version means no drift signal, not a false positive');
+    const out = await checkAllPins(ctx({ atlas: null })); // manifest has no atlas_version
+    const atlas = out.find(r => r.pin_name === 'atlas_version');
+    assert.equal(atlas.local_version, null);
+    assert.equal(atlas.latest_version, '2026.05');
+    assert.equal(atlas.drift, false, 'no local version means no drift signal, not a false positive');
   } finally {
     restore();
   }
@@ -231,8 +273,6 @@ test('cwe and d3fend versions are read from their catalog _meta, atlas/attack fr
   const restore = stubFetch({
     [REPOS.atlas]: withNoise('v2026.05'),
     [REPOS.attack]: withNoise('v19.1'),
-    [REPOS.d3fend]: withNoise('v9.9.9'),
-    [REPOS.cwe]: withNoise('v9.9'),
   });
   try {
     const out = await checkAllPins(ctx({ cwe: '4.18', d3fend: '1.5.0' }));
@@ -240,9 +280,10 @@ test('cwe and d3fend versions are read from their catalog _meta, atlas/attack fr
     const d3 = out.find(r => r.pin_name === 'd3fend_version');
     assert.equal(cwe.local_version, '4.18', 'cwe local comes from cweCatalog._meta.version');
     assert.equal(d3.local_version, '1.5.0', 'd3fend local comes from d3fendCatalog._meta.version');
-    // Both drift against the mismatched upstream tags above.
-    assert.equal(cwe.drift, true);
-    assert.equal(d3.drift, true);
+    // Neither has a GitHub release to compare against — tracked elsewhere, so
+    // drift is null (no signal) rather than a synthesized true/false.
+    assert.equal(cwe.drift, null);
+    assert.equal(d3.drift, null);
   } finally {
     restore();
   }

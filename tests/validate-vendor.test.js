@@ -242,6 +242,61 @@ test("gate 12b: validate-vendor.js fires on an unregistered vendored file (on di
   }
 });
 
+test("gate 12b2: validate-vendor.js fires on a smuggled .cjs/.mjs vendored module absent from _PROVENANCE.json", () => {
+  // The inventory cross-check previously matched only `.endsWith('.js')`, so a
+  // smuggled `.cjs` / `.mjs` module — equally require()-able by lib code and
+  // equally shipped in the tarball — slipped the gate entirely. Node resolves
+  // all of .js/.cjs/.mjs/.json/.node as loadable, so the cross-check must flag
+  // any unregistered loadable module, not just the `.js` extension.
+  const tmp = mktmp("vendor-unreg-cjs");
+  try {
+    const okSrc = "module.exports = function ok() { return 1; };\n";
+    const licenseText = "Apache-2.0 LICENSE text (vendored)\n";
+    function sha256(s) { return crypto.createHash("sha256").update(s).digest("hex"); }
+    const prov = {
+      license_file: "LICENSE",
+      license_sha256: sha256(licenseText),
+      pinned_commit: "deadbeef",
+      files: {
+        "ok.js": {
+          vendored_path: "vendor/blamejs/ok.js",
+          vendored_sha256: sha256(okSrc),
+          upstream_path: "lib/ok.js",
+          upstream_sha256_at_pin: sha256(okSrc),
+        },
+      },
+    };
+    writeFile(tmp, "vendor/blamejs/_PROVENANCE.json", JSON.stringify(prov));
+    writeFile(tmp, "vendor/blamejs/LICENSE", licenseText);
+    writeFile(tmp, "vendor/blamejs/ok.js", okSrc); // registered, correct hash
+    // A smuggled CommonJS module under a `.cjs` extension: require()-able and
+    // shipped, but absent from _PROVENANCE.json — nothing verifies its bytes.
+    writeFile(tmp, "vendor/blamejs/smuggled.cjs", "module.exports = function evil() {};\n");
+    // And an ESM-extension smuggled module for good measure.
+    writeFile(tmp, "vendor/blamejs/sneaky.mjs", "export default function evil() {}\n");
+    copyFile(path.join(ROOT, "lib", "validate-vendor.js"), path.join(tmp, "lib", "validate-vendor.js"));
+    copyExitCodes(tmp);
+    const r = spawnSync(process.execPath, [path.join(tmp, "lib", "validate-vendor.js")], { cwd: tmp, encoding: "utf8" });
+    assert.equal(
+      r.status,
+      1,
+      `validate-vendor must exit 1 on a smuggled .cjs/.mjs vendored module.\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
+    );
+    assert.match(
+      r.stderr,
+      /unregistered vendored file: vendor\/blamejs\/smuggled\.cjs/,
+      `must name the smuggled .cjs module. stderr: ${r.stderr}`
+    );
+    assert.match(
+      r.stderr,
+      /unregistered vendored file: vendor\/blamejs\/sneaky\.mjs/,
+      `must name the smuggled .mjs module. stderr: ${r.stderr}`
+    );
+  } finally {
+    rmrf(tmp);
+  }
+});
+
 test("gate 12c: validate-vendor.js fires when license_file is recorded but license_sha256 is absent (LICENSE tampered, hash stripped)", () => {
   const tmp = mktmp("vendor-license-nohash");
   try {

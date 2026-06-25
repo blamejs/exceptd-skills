@@ -420,3 +420,42 @@ require("node:test").describe("check-codebase-patterns brace + regex helpers", (
     for (const c of ["a", "$", "(", "x"]) assert.equal(isStaticRegexFirstChar(c), false, c);
   });
 });
+
+require("node:test").describe("hand-rolled-sql detector (forward injection guard)", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const p = require("../scripts/check-codebase-patterns.js");
+  test("the matchers flag a SQL driver import + statement/clause construction, not benign requires", () => {
+    assert.ok(p.SQL_DRIVER_IMPORT.test('const db = require("better-sqlite3")("x.db")'));
+    assert.ok(p.SQL_DRIVER_IMPORT.test('const { Pool } = require("pg")'));
+    assert.ok(!p.SQL_DRIVER_IMPORT.test('const path = require("node:path")'));
+    assert.ok(p.SQL_STMT_START.test('const q = "SELECT * FROM t WHERE id=" + id'));
+    assert.ok(p.SQL_STMT_START.test('db.exec("DELETE FROM sessions")'));
+    assert.ok(p.SQL_CLAUSE_FRAG.test('q = base + " WHERE id=" + id'));   // leading-+ concat
+    assert.ok(p.SQL_CLAUSE_FRAG.test('q = " WHERE id=" + id'));          // trailing-+ concat
+  });
+  test("detector is inert on the real tree — no DB driver is imported, so prose like 'Update keys/…' is never flagged", () => {
+    // Gates on the SQL-driver import: a SQL-looking string in a file with no
+    // driver executes nothing, so remediation prose ("Update keys/EXPECTED_…")
+    // must not be a hit. If the file gate were dropped this would fail.
+    assert.deepEqual(p.detectHandRolledSql(), []);
+  });
+});
+
+require("node:test").describe("hand-rolled-sql matcher gaps (round-2 hunt: F20 subpath, F21 embedded quote)", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const p = require("../scripts/check-codebase-patterns.js");
+  test("F20: a subpath driver import (mysql2/promise, drizzle-orm/node-postgres, pg/lib) arms the gate", () => {
+    assert.ok(p.SQL_DRIVER_IMPORT.test('const m = require("mysql2/promise")'));
+    assert.ok(p.SQL_DRIVER_IMPORT.test('const { drizzle } = require("drizzle-orm/node-postgres")'));
+    assert.ok(p.SQL_DRIVER_IMPORT.test('import { Client } from "pg/lib/client"'));
+    assert.ok(p.SQL_DRIVER_IMPORT.test('require("pg")'), "bare driver still matches");
+    assert.ok(!p.SQL_DRIVER_IMPORT.test('require("node:path")'), "a benign subpath-free non-driver does not arm the gate");
+  });
+  test("F21: a concatenated clause with an embedded SQL string-quote is flagged (trailing-+ form)", () => {
+    assert.ok(p.SQL_CLAUSE_FRAG.test('q = base + " WHERE name = \'x\' " + id'), "embedded quote inside the clause must not defeat the trailing-+ match");
+    assert.ok(p.SQL_CLAUSE_FRAG.test('q = " WHERE id=" + id'), "plain trailing-+ still matches");
+    assert.ok(p.SQL_CLAUSE_FRAG.test('q = base + " WHERE id=" + id'), "leading-+ still matches");
+  });
+});

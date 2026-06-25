@@ -96,6 +96,70 @@ test('#40 real CLI `scan --air-gap --json` suppresses the probe with EXCEPTD_AIR
 });
 
 
+// --- mcpScan: a null/non-object server entry must not drop sibling findings ---
+
+test('mcpScan tolerates a null server entry — sibling server still scans, no global parse error', async () => {
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const prevHome = process.env.HOME;
+  const prevUserProfile = process.env.USERPROFILE;
+  delete require.cache[require.resolve('../orchestrator/scanner.js')];
+  let tmp;
+  try {
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'exceptd-mcp-'));
+    // Point the homedir-derived MCP config lookup at our tempdir for every
+    // platform (os.homedir reads HOME on POSIX, USERPROFILE on Windows).
+    process.env.HOME = tmp;
+    process.env.USERPROFILE = tmp;
+
+    // claude-code looks at <home>/.claude/settings.json.
+    fs.mkdirSync(path.join(tmp, '.claude'), { recursive: true });
+    const config = {
+      mcpServers: {
+        // A malformed (null) server entry sitting next to a valid one. Pre-fix
+        // the null deref (server.signature) threw inside the per-server loop,
+        // the outer catch swallowed it, and the WHOLE file became a single
+        // mcp_config_parse_error — losing the valid sibling's finding.
+        broken: null,
+        good: { command: 'npx', args: ['some-mcp-server@1.2.3'], signature: 'sig' },
+      },
+    };
+    fs.writeFileSync(path.join(tmp, '.claude', 'settings.json'), JSON.stringify(config));
+
+    const { scanDomain } = require('../orchestrator/scanner.js');
+    const findings = await scanDomain('mcp');
+
+    // The valid sibling must still produce its detection finding.
+    const good = findings.find(
+      (f) => f.signal === 'mcp_server_detected' && f.server_name === 'good',
+    );
+    assert.ok(good, 'the valid sibling server must still produce an mcp_server_detected finding');
+    assert.equal(typeof good.server_name, 'string');
+    assert.equal(good.server_name, 'good');
+
+    // The null entry surfaces as a per-server malformed marker, not a global error.
+    const malformed = findings.find(
+      (f) => f.signal === 'mcp_server_malformed' && f.server_name === 'broken',
+    );
+    assert.ok(malformed, 'the null server entry must surface as mcp_server_malformed');
+    assert.equal(malformed.server_name, 'broken');
+    assert.equal(malformed.severity, 'low');
+    assert.equal(malformed.skill_hint, 'mcp-agent-trust');
+
+    // And crucially: the whole file did NOT collapse into a single parse error.
+    const parseError = findings.find((f) => f.signal === 'mcp_config_parse_error');
+    assert.equal(parseError, undefined, 'a null server entry must NOT trigger a whole-file parse error');
+  } finally {
+    if (prevHome === undefined) delete process.env.HOME;
+    else process.env.HOME = prevHome;
+    if (prevUserProfile === undefined) delete process.env.USERPROFILE;
+    else process.env.USERPROFILE = prevUserProfile;
+    if (tmp) fs.rmSync(tmp, { recursive: true, force: true });
+    delete require.cache[require.resolve('../orchestrator/scanner.js')];
+  }
+});
+
+
 // ---- routed from dispatch-collector-scoring-fixes ----
 require("node:test").describe("dispatch-collector-scoring-fixes", () => {
 const __t = require("node:test"); const __preEnv = Object.assign({}, process.env); const __preCwd = process.cwd();

@@ -631,6 +631,96 @@ test('T P1-3: prefetch tmp-then-lock pattern leaves no orphan payload when lock 
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('T P1-5: prefetch final write must not resurrect entries pruned by a concurrent run', async () => {
+  // Regression for the "final saveIndex(idx) resurrects stale entries" bug.
+  //
+  // The run loads a start-of-run snapshot (`idx`). Each fetched entry is
+  // persisted to the on-disk index under lock DURING the run. At end of run
+  // the old code did `saveIndex(cacheDir, idx)`, which merged the WHOLE
+  // start-of-run snapshot back onto the on-disk index — resurrecting any
+  // entry a concurrent run had pruned between our snapshot and now. The fix
+  // replaces the final write with a lock-scoped generated_at bump that
+  // touches nothing else.
+  //
+  // We reproduce the exact sequence and assert (a) the pruned entry stays
+  // pruned and (b) generated_at is advanced. We also assert that the OLD
+  // path (saveIndex(dir, snapshot)) WOULD have resurrected it — so the test
+  // fails if someone reverts the final write back to the snapshot merge.
+  const { _internal } = require('../lib/prefetch.js');
+  const { withIndexLock, saveIndex, loadIndex } = _internal;
+  const dir = tmpDir('t-p1-5');
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    const idxPath = path.join(dir, '_index.json');
+
+    // On-disk index at the moment our run STARTS: two entries.
+    fs.writeFileSync(idxPath, JSON.stringify({
+      entries: {
+        'kev/CVE-2026-0001': { fetched_at: '2026-06-01T00:00:00.000Z' },
+        'kev/CVE-2026-0002': { fetched_at: '2026-06-01T00:00:00.000Z' },
+      },
+      generated_at: '2026-06-01T00:00:00.000Z',
+    }, null, 2) + '\n');
+
+    // Our run loads its start-of-run snapshot (mirrors lib/prefetch.js
+    // `const idx = loadIndex(opts.cacheDir)`).
+    const snapshot = loadIndex(dir);
+    assert.ok(snapshot.entries['kev/CVE-2026-0002'],
+      'precondition: snapshot must contain the entry that will be pruned');
+
+    // A CONCURRENT run prunes CVE-2026-0002 from the on-disk index under
+    // lock (e.g. a delisted/superseded id) while our run is mid-flight.
+    await withIndexLock(dir, (current) => {
+      delete current.entries['kev/CVE-2026-0002'];
+      return current;
+    });
+    const afterPrune = JSON.parse(fs.readFileSync(idxPath, 'utf8'));
+    assert.equal(afterPrune.entries['kev/CVE-2026-0002'], undefined,
+      'precondition: concurrent run must have pruned the entry on disk');
+
+    // --- The FIXED final-write path (what lib/prefetch.js now does). ---
+    await withIndexLock(dir, (current) => {
+      current.generated_at = new Date().toISOString();
+      return current;
+    });
+    const fixed = JSON.parse(fs.readFileSync(idxPath, 'utf8'));
+    assert.equal(typeof fixed.generated_at, 'string',
+      'generated_at must be a string after the final bump');
+    assert.notEqual(fixed.generated_at, '2026-06-01T00:00:00.000Z',
+      'final write must advance generated_at');
+    assert.equal(fixed.entries['kev/CVE-2026-0002'], undefined,
+      'fixed final write MUST NOT resurrect the pruned entry');
+    assert.ok(fixed.entries['kev/CVE-2026-0001'],
+      'fixed final write must leave surviving entries intact');
+
+    // --- Prove the OLD path would have resurrected it (guards against a
+    //     revert to saveIndex(cacheDir, snapshot)). ---
+    await saveIndex(dir, snapshot);
+    const reverted = JSON.parse(fs.readFileSync(idxPath, 'utf8'));
+    assert.ok(reverted.entries['kev/CVE-2026-0002'],
+      'sanity: the old saveIndex(snapshot) path DOES resurrect — the bug we fixed');
+
+    // --- Bind the assertion to the production call site. The final write
+    //     in prefetch() (the block after `await queue.drain();`, before the
+    //     `signIndex(` call) must NOT re-merge the snapshot via
+    //     saveIndex(...); it must bump generated_at under withIndexLock.
+    const src = fs.readFileSync(path.join(ROOT, 'lib', 'prefetch.js'), 'utf8');
+    const drainIdx = src.indexOf('await queue.drain();');
+    const signIdx = src.indexOf('signIndex(opts.cacheDir)');
+    assert.ok(drainIdx >= 0 && signIdx > drainIdx,
+      'expected the final-write block between queue.drain() and signIndex()');
+    const finalBlock = src.slice(drainIdx, signIdx);
+    assert.equal(/\bsaveIndex\s*\(/.test(finalBlock), false,
+      'final write must NOT call saveIndex() — that re-merges the stale snapshot');
+    assert.ok(/withIndexLock\s*\([^)]*opts\.cacheDir/.test(finalBlock),
+      'final write must bump generated_at under withIndexLock');
+    assert.ok(/generated_at\s*=/.test(finalBlock),
+      'final write must set generated_at');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
 ;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
   for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
   __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });

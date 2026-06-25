@@ -34,7 +34,7 @@
     },
     "worker-pool.js": {
       "vendored_path": "vendor/blamejs/worker-pool.js",
-      "vendored_sha256": "fa9814c2d18db221a2dc552cf2a5047467d87a2590cbc9d64b8a0a340e545b55",
+      "vendored_sha256": "948549d82e481f241e5babb6bdddd27bf7148fb8ed1c389b9f2f7ad035e4e56b",
       "upstream_path": "lib/worker-pool.js",
       "upstream_sha256_at_pin": "262f99e9cc3d4a8f4eba9ad3e28401e8a1f47f78040afa63c9b17eb998437171",
       "stripped": [
@@ -50,7 +50,8 @@
         "worker recycle on uncaught error / timeout / exit"
       ],
       "exceptd_deltas": [
-        "scriptPath validator rejects Windows UNC + extended-path prefixes (\\\\?\\, \\\\.\\, \\\\<server>\\) — defense-in-depth against worker-spawn from network shares on win32 platforms"
+        "scriptPath validator rejects Windows UNC + extended-path prefixes (\\\\?\\, \\\\.\\, \\\\<server>\\) — defense-in-depth against worker-spawn from network shares on win32 platforms",
+        "_onWorkerExit respawn branch: call _maybeResolveDrain() after _drainQueue() so drain() settles when a worker recycles with an empty queue (the no-respawn branch already did; the respawn branch could hang pending drain waiters)."
       ]
     },
     "codepoint-class.js": {

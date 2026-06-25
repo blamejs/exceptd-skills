@@ -161,6 +161,100 @@ test("validator detects dangling _meta.feeds_into playbook_id (warning, not erro
   }
 });
 
+test("parse-gate rejects an unparseable escalation / feeds_into / precondition condition (hard error)", () => {
+  // Each of the three locations the runner threads through evalCondition must
+  // reject a condition the evaluator cannot parse — prose / bare-token /
+  // unimplemented-syntax conditions return false for every input and silently
+  // disable the escalation / chain / precondition they gate. Before the gate,
+  // these passed validation (the validator never ran the real evaluator).
+  const ctx = loadContext();
+  const playbooks = loadPlaybooks();
+  const playbookIds = new Set(
+    playbooks.filter((p) => p.data).map((p) => p.data._meta.id),
+  );
+  const good = JSON.parse(
+    JSON.stringify(playbooks.find((p) => p.data._meta.id === "kernel").data),
+  );
+  good.phases.analyze.escalation_criteria.push({
+    condition: "A single compromised identity can rewrite the system-of-record trail",
+    action: "raise_severity",
+  });
+  good._meta.feeds_into.push({ playbook_id: "sbom", condition: "when the package is bad and stuff" });
+  good.phases.validate.remediation_paths[0].preconditions.push("operator controls the subsystem");
+
+  const findings = checkCrossRefs(good, ctx, playbookIds);
+  const parseErrs = findings.filter(
+    (f) => f.severity === "error" && /not parseable by the runner's evalCondition/.test(f.message),
+  );
+  assert.equal(
+    parseErrs.length,
+    3,
+    `expected 3 parse-gate errors (escalation + feeds_into + precondition); got ${parseErrs.length}:\n` +
+      findings.map((f) => `  ${f.severity}: ${f.message}`).join("\n"),
+  );
+});
+
+test("parse-gate catches a dead sub-clause hidden behind a short-circuiting AND/OR", () => {
+  // evalCondition evaluates AND via .every / OR via .some, which SHORT-CIRCUIT:
+  // a dead (unparseable) second clause behind a leading clause that resolves
+  // false (AND) or true (OR) in the empty validation context is never reached,
+  // so checking the whole condition once would miss it. The gate must atomize
+  // and parse-check each leaf. Leading clause is false with no signals
+  // (blast_radius_score is null), so the dead prose atom only surfaces if each
+  // atom is checked independently.
+  const ctx = loadContext();
+  const playbooks = loadPlaybooks();
+  const playbookIds = new Set(
+    playbooks.filter((p) => p.data).map((p) => p.data._meta.id),
+  );
+  const good = JSON.parse(
+    JSON.stringify(playbooks.find((p) => p.data._meta.id === "kernel").data),
+  );
+  good.phases.analyze.escalation_criteria.push({
+    condition: "blast_radius_score >= 3 AND any deterministic indicator fires",
+    action: "raise_severity",
+  });
+  // An OR whose FIRST atom is always-true would short-circuit the dead second.
+  good.phases.analyze.escalation_criteria.push({
+    condition: "rwep >= 0 OR a citation looks wrong",
+    action: "raise_severity",
+  });
+  const findings = checkCrossRefs(good, ctx, playbookIds);
+  const parseErrs = findings.filter(
+    (f) => f.severity === "error" && /not parseable by the runner's evalCondition/.test(f.message),
+  );
+  assert.equal(
+    parseErrs.length,
+    2,
+    `both short-circuit-hidden dead sub-clauses must be caught; got ${parseErrs.length}:\n` +
+      findings.map((f) => `  ${f.severity}: ${f.message}`).join("\n"),
+  );
+});
+
+test("parse-gate accepts the rewritten mini-language conditions (kernel passes clean)", () => {
+  // The shipped kernel playbook (and its rewritten conditions) must produce
+  // zero parse-gate errors — a guard that the gate is not over-firing on valid
+  // mini-language (paren groups, any/all quantifiers, matches, IN, hyphenated
+  // indicator tokens).
+  const ctx = loadContext();
+  const playbooks = loadPlaybooks();
+  const playbookIds = new Set(
+    playbooks.filter((p) => p.data).map((p) => p.data._meta.id),
+  );
+  for (const pb of playbooks.filter((p) => p.data)) {
+    const findings = checkCrossRefs(pb.data, ctx, playbookIds);
+    const parseErrs = findings.filter(
+      (f) => f.severity === "error" && /not parseable by the runner's evalCondition/.test(f.message),
+    );
+    assert.deepEqual(
+      parseErrs,
+      [],
+      `${pb.data._meta.id}: a shipped condition must not trip the parse-gate:\n` +
+        parseErrs.map((f) => `  ${f.message}`).join("\n"),
+    );
+  }
+});
+
 test("validator detects rwep_threshold ordering violation (hard error)", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "validate-playbooks-rwep-"));
   try {
@@ -492,6 +586,112 @@ test("finding 6: d3fend_ref not matching ^D3-[A-Z]+$ → schema pattern error", 
     /domain\.d3fend_refs.*pattern/.test(f.message),
   );
   assert.deepEqual(clean, [], "an uppercase D3- key must match the pattern");
+});
+
+test("directive phase_overrides partial rwep_threshold range check is per-key (out-of-range single key → error)", () => {
+  // A directive's phase_overrides.direct.rwep_threshold is a partial fragment
+  // the runner deep-merges; the schema does not re-validate it against the full
+  // {escalate,monitor,close} required triple. An out-of-range SINGLE key must
+  // still be caught — previously the whole range check was gated on all three
+  // being present, so a one-key override shipped unchecked.
+  const { ctx, ids } = ctxAndIds();
+
+  // Over-100 escalate, supplied alone.
+  const over = goodKernel();
+  over.directives = [
+    {
+      id: "synthetic-directive",
+      applies_to: {},
+      phase_overrides: { direct: { rwep_threshold: { escalate: 150 } } },
+    },
+  ];
+  const overFindings = checkCrossRefs(over, ctx, ids);
+  const overMatched = overFindings.filter((f) =>
+    /phase_overrides\.direct\.rwep_threshold\.escalate: 150 outside 0\.\.100/.test(
+      f.message,
+    ),
+  );
+  assert.equal(overMatched.length, 1, "exactly one out-of-range escalate error");
+  assert.equal(overMatched[0].severity, "error");
+
+  // Negative close, supplied alone.
+  const under = goodKernel();
+  under.directives = [
+    {
+      id: "synthetic-directive",
+      applies_to: {},
+      phase_overrides: { direct: { rwep_threshold: { close: -5 } } },
+    },
+  ];
+  const underMatched = checkCrossRefs(under, ctx, ids).filter((f) =>
+    /phase_overrides\.direct\.rwep_threshold\.close: -5 outside 0\.\.100/.test(
+      f.message,
+    ),
+  );
+  assert.equal(underMatched.length, 1, "exactly one out-of-range close error");
+  assert.equal(underMatched[0].severity, "error");
+
+  // Good form: a single in-range key produces no range finding.
+  const good = goodKernel();
+  good.directives = [
+    {
+      id: "synthetic-directive",
+      applies_to: {},
+      phase_overrides: { direct: { rwep_threshold: { escalate: 80 } } },
+    },
+  ];
+  const clean = checkCrossRefs(good, ctx, ids).filter((f) =>
+    /rwep_threshold\.\w+: .* outside 0\.\.100/.test(f.message),
+  );
+  assert.deepEqual(clean, [], "an in-range single-key override must be silent");
+});
+
+test("format:date rejects impossible calendar dates (2026-02-30, 2026-13-40)", () => {
+  // The format:date branch must reuse a strict calendar check, not just the
+  // YYYY-MM-DD shape — new Date('2026-02-30T00:00:00Z') rolls over to March 2
+  // and would otherwise pass the shape-only test.
+  const dateSchema = { type: "string", format: "date" };
+
+  for (const bad of ["2026-02-30", "2026-13-40", "2025-02-29", "2026-04-31"]) {
+    const findings = validate(bad, dateSchema, "x", "x");
+    const matched = findings.filter((f) =>
+      /is not an ISO date \(YYYY-MM-DD\)/.test(f.message),
+    );
+    assert.equal(matched.length, 1, `expected one date error for ${bad}`);
+    assert.equal(matched[0].severity, "error", `${bad} must be an error`);
+  }
+
+  // Legitimate calendar dates (incl. a real leap day) still pass.
+  for (const ok of ["2024-02-29", "2026-12-31", "2026-05-13"]) {
+    const findings = validate(ok, dateSchema, "x", "x").filter((f) =>
+      /is not an ISO date/.test(f.message),
+    );
+    assert.deepEqual(findings, [], `${ok} is a valid calendar date and must pass`);
+  }
+});
+
+test("format:date impossible last_threat_review surfaces a validator error on a real playbook", () => {
+  // End-to-end through the full schema walk: an impossible _meta.last_threat_review
+  // must produce an error-severity finding (it is a format:date field).
+  const pb = goodKernel();
+  pb._meta.last_threat_review = "2026-02-30";
+  const findings = validate(pb, SCHEMA, "playbook", "synthetic");
+  const matched = findings.filter(
+    (f) =>
+      /_meta\.last_threat_review/.test(f.message) &&
+      /is not an ISO date/.test(f.message),
+  );
+  assert.equal(matched.length, 1, "exactly one last_threat_review date error");
+  assert.equal(matched[0].severity, "error");
+
+  // Control: the shipped value is a valid date and produces no such error.
+  const good = goodKernel();
+  const clean = validate(good, SCHEMA, "playbook", "synthetic").filter(
+    (f) =>
+      /_meta\.last_threat_review/.test(f.message) &&
+      /is not an ISO date/.test(f.message),
+  );
+  assert.deepEqual(clean, [], "the shipped last_threat_review date must validate");
 });
 
 test("obligationKey synthesizes the composite jurisdiction key", () => {

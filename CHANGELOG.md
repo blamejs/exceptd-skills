@@ -1,5 +1,57 @@
 # Changelog
 
+## 0.18.16 — 2026-06-22
+
+A correctness pass on the evidence-output and attestation surfaces.
+
+SARIF finding results always carry a location now. A result with no `locations` is silently dropped by GitHub Code Scanning; previously only playbooks whose look-artifact sources happened to be bare file paths got one, so most playbooks' (prose/glob/command sources) findings were emitted location-less and disappeared from the alerts list. Each finding without a concrete file now carries a rule-scoped logical location, keeping it visible and attributable; a physical file location is still used whenever the agent supplied one.
+
+`attest diff` no longer reports identical evidence as changed. The artifact diff was keyed by the operator-chosen observation key rather than the indicator the observation targeted, so two attestations with the same finding under different observation keys (a different collector run, the array vs object evidence shape, reordered observations) showed every artifact as added-and-removed with zero unchanged. The diff is now keyed by the stable indicator id, so identical evidence compares as unchanged.
+
+Risk-acceptance exception language now reports its unresolved placeholders. The auditor-ready exception text is filled from operator-supplied values that a standard run does not pre-stage, so it could ship literal `<MISSING:…>` tokens; the exception now carries a `missing_interpolation_vars` list (and surfaces a runtime error) naming exactly which values still need filling, matching the notification-draft behavior.
+
+CSAF advisories bind their per-version affected products. The product tree's per-version product entries were defined but never referenced from any vulnerability, so a dashboard correlating affected products to the tree saw only the generic synthetic product; each CVE's version entries are now bound into its `product_status`.
+
+## 0.18.15 — 2026-06-22
+
+Indicator-gated escalations and playbook chains now fire when their indicators are detected. An escalation or `feeds_into` written as `<indicator-id> == true` (the catalog's standard form) resolved only when that id was also passed as a raw signal; the normal scan path delivers detections separately, so on a real `exceptd collect <playbook>` these escalations and downstream chains stayed silent even when the indicator was found. Fired indicators are now bound into the escalation, chain, and remediation-precondition contexts, so a detection drives the condition that gates on it. An operator can still override a specific indicator, and engine-computed values still take precedence.
+
+Six more compound escalations now fire. Each combined a working clause (`rwep >= 90`, `blast_radius_score >= 4`, a theater verdict) with a second clause written in prose or shorthand the engine cannot evaluate; because the working clause came first and evaluation stopped at the first clause that resolved, the dead second clause went unnoticed. The compound conditions are now fully expressed in the condition language and gate on the playbook's real indicators.
+
+The validator's condition gate now checks every sub-clause of an AND/OR condition independently, so a dead clause hidden behind a clause that happens to resolve first can no longer ship.
+
+## 0.18.14 — 2026-06-22
+
+Severity escalations, downstream-playbook chaining, and remediation-path preconditions now fire as authored across the playbook catalog. A number of these conditions had been written as free-text English or in a shorthand the engine does not evaluate, so they returned false for every input and silently never triggered — a raise-severity rule, a `feeds_into` chain into a deeper playbook, or a remediation precondition that looked active but never fired. Every such condition is now expressed in the engine's condition language and verified to evaluate against the indicators it gates on.
+
+The playbook validator now runs each escalation, `feeds_into`, and remediation precondition through the real evaluator and rejects any condition it cannot parse, so one that would be dead at runtime fails validation instead of shipping.
+
+`ci --format sarif` and `ci --format openvex` now emit the requested bundle for every scanned playbook. Previously only a playbook whose declared primary format already matched the request contributed a document, so the aggregated output was frequently an empty array.
+
+`evidence_hash` is no longer perturbed by the chosen output format, so attesting and reattesting the same evidence with a different `--format` yields the same hash; a supplied VEX disposition still changes the hash, because it changes which CVEs are in scope.
+
+Remediation-path preconditions can now reference the engine-computed finding — RWEP, severity, matched CVEs, blast-radius score, and compliance-theater verdict — so a precondition gated on one of those is evaluated rather than treated as unmet. The containers playbook chains into the SBOM playbook when container image layers are present.
+
+## 0.18.13 — 2026-06-22
+
+A correctness + robustness pass across the upstream data parsers, the validators, and the prefetch/feed paths.
+
+The OSV advisory importer keeps the HIGHEST CVSS vector and score when a record carries multiple same-version severity entries (e.g. an NVD base score alongside a CNA/vendor score), instead of whichever appeared first in the array — a 9.8 critical no longer imports as a 5.3 medium purely because of upstream array order, which previously also flipped the derived KEV-pending / active-exploitation / severity-word fields. The RSS/Atom feed tokenizer strips HTML in a single linear pass, so a malformed or hostile feed body with many unclosed `<` can no longer stall the refresh worker (the previous regex was quadratic on attacker-controlled text). An Atom `<link>` carrying element text is now selected by its `rel` the same way the attribute form is, so a non-`alternate` link cannot override the canonical `alternate`. `refresh --advisory <ghsa-id>` validates the full `GHSA-xxxx-xxxx-xxxx` token shape and URL-encodes it before building the request path.
+
+The playbook validator range-checks a partial `phase_overrides.direct.rwep_threshold` override and rejects an impossible calendar date (`2026-02-30`); the CVE-catalog validator reports an absent reference catalog as unvalidatable for ALL five reference families instead of flagging every `atlas_ref`/`cwe_ref` as unresolved; the RFC validator skips non-IETF references (CSAF, ISO) rather than reporting them as permanent drift; the version-pin validator no longer probes the two upstreams that publish no GitHub releases (reported as tracked elsewhere); the vendor inventory cross-check covers `.cjs`/`.mjs`/`.json`, not only `.js`; the package size-budget gate fails closed when `npm pack` omits the size field; and the disputed-CVE check reports the real local status. The skill linter flags a wrong-typed enum value and rejects an impossible `last_threat_review`, and the `d3fend_refs` frontmatter pattern accepts the `D3A-`/`D3F-` id families. `upstream-check` reports a clear error rather than `ok:true` with an undefined version when a fixture lacks dist-tags, and a non-parseable publish date yields a clear value instead of `NaN`. The prefetch index no longer resurrects entries a concurrent run pruned, `ttp-mapper` ignores inherited object keys, and the EPSS lookup returns not-found for an absent CVE instead of the first row.
+
+## 0.18.12 — 2026-06-22
+
+A correctness pass across the CLI, the engine, scoring, the collectors, framework-gap reporting, signature verification, and the CWE-chain index.
+
+`ci`/`run --evidence-dir` now refuses a `<playbook>.json` entry that is not a JSON object (an array, scalar, or null) with the same object-shape error the single-file and stdin paths use, instead of binding it as empty evidence and reporting a clean `not_detected` PASS at exit 0 — a mis-shaped per-playbook submission no longer produces a false-clean gate result.
+
+`verifyManifestSignature` consults the `keys/EXPECTED_FINGERPRINT` key pin before the missing-signature path, so a swapped `keys/public.pem` whose `manifest_signature` was stripped is rejected through the library API rather than treated as a benign legacy state. Escalation and `feeds_into` ordering comparisons against a duration literal — e.g. the kernel playbook's `reboot_window > 24h` raise-severity chain — normalize both sides to hours and compare numerically instead of lexicographically (so a 48-hour window escalates and a 6-hour window does not); an ordering comparison that degrades to two non-numeric, non-duration strings now surfaces a `condition_type_mismatch` diagnostic instead of evaluating silently.
+
+`compare()`'s factor explanation lists the reboot (+5) driver whenever a reboot is required, regardless of live-patch availability, matching the score it actually computes; and a post-weight RWEP block that stores `active_exploitation` as a status string is read as a post-weight block (its weighted factors, including the AI factor, are no longer dropped or mis-flagged as a mixed shape).
+
+The secrets collector's `ssh-key-bad-perms` posture and the credential-store AWS doc-fixture demotion no longer false-positive on checked-in test-path fixtures or a duplicate profile name. A single-framework `framework-gap` report scopes its theater-risk list and matching-gap count to the requested framework instead of leaking controls from frameworks the operator did not ask about. `rfc --check` no longer falsely matches an unrelated title when the claimed title repeats a token. The CWE-chains index excludes auto-imported draft CVEs, matching the by-CVE half's curated-truth invariant. A null or non-object MCP server entry (config scan) or dispatch finding is skipped with a clear marker rather than dropping the file's other findings or throwing an opaque error.
+
 ## 0.18.11 — 2026-06-22
 
 Regenerates the CycloneDX SBOM (`sbom.cdx.json`) so its recorded hash for `CHANGELOG.md` matches the shipped file.

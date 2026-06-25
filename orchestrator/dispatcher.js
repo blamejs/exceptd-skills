@@ -66,6 +66,14 @@ function dispatch(findings) {
   const seen = new Set();
 
   for (const finding of findings) {
+    // Per-element type guard, consistent with the top-level array guard above.
+    // A null / non-object / array element would otherwise deref its way into
+    // matchFinding (finding.skill_hint / finding.domain) and throw an opaque
+    // TypeError ("Cannot read properties of null"). Refuse loudly with a named
+    // error so the failure is attributable to the bad element, not buried.
+    if (finding === null || typeof finding !== 'object' || Array.isArray(finding)) {
+      throw new TypeError('dispatch: each finding must be a non-null object');
+    }
     const matched = matchFinding(finding, manifest.skills);
 
     if (matched.length === 0) {

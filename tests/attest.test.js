@@ -144,6 +144,27 @@ describe('attest-diff-asymmetric-catalog-stub', () => {
         `signal total_compared must be 1, not the 13-indicator catalog; got ${sd.total_compared}`);
     });
 
+  test('identical (indicator,value) evidence under different observation keys diffs as unchanged (stable-id re-key)',
+    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem to produce a signed attestation' },
+    () => {
+      // The artifact diff is re-keyed by the stable indicator id, not the
+      // operator-chosen observation key. Two attestations whose security content
+      // is identical (same indicator + same value) but whose flat-shape
+      // observation keys differ must NOT report all-added/all-removed.
+      const a = 'asym-rk-a-' + Date.now();
+      const b = 'asym-rk-b-' + Date.now();
+      const obsA = { observations: { 'obs-key-alpha': { indicator: 'aws-access-key-id', result: 'hit', value: 'AKIASAMEVALUE' } }, verdict: { classification: 'detected' } };
+      const obsB = { observations: { 'totally-different-key': { indicator: 'aws-access-key-id', result: 'hit', value: 'AKIASAMEVALUE' } }, verdict: { classification: 'detected' } };
+      makeSession(a, obsA);
+      makeSession(b, obsB);
+      const r = cli(['attest', 'diff', a, '--against', b, '--json', '--force-replay']);
+      assert.equal(r.status, 0, `diff must exit 0; stderr=${r.stderr.slice(0, 300)}`);
+      const ad = lastJson(r.stdout).artifact_diff || {};
+      assert.equal(ad.unchanged_count, 1, `identical evidence under different obs keys must be unchanged; got ${JSON.stringify(ad)}`);
+      assert.deepEqual([...(ad.added || []), ...(ad.removed || []), ...(ad.changed || [])], [],
+        'no artifact should be reported added/removed/changed for identical (indicator,value) evidence');
+    });
+
   test('empty-vs-empty still uses the catalog stub uniformly (all-unchanged baseline preserved)',
     { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem to produce a signed attestation' },
     () => {

@@ -964,6 +964,124 @@ test('scoreCustom honors the reboot alias identically — the property scoring.v
     'validate() must recompute with the reboot alias, not patch_required_reboot alone');
 });
 
+// ==========================================================================
+// compare() explanation must mirror scoreCustom's rebootFactor exactly — the
+// +5 reboot driver is added whenever a reboot is required, REGARDLESS of
+// live_patch_available. Gating the driver on !live_patch_available made the
+// enumerated factors sum to less than the delta on entries that both require a
+// reboot and have a live patch available.
+// ==========================================================================
+
+test('compare() explanation includes the reboot driver even when live_patch_available is true, and factors sum to the delta', () => {
+  // CVE-2026-31431 (Copy Fail): rwep 90, cvss 7.8 (equiv 78), delta 12, and the
+  // entry has reboot_required(via patch_required_reboot) AND
+  // live_patch_available:true. Pre-fix the reboot driver was suppressed, so the
+  // enumerated factors summed to 80 (90 - 10 reboot) while the delta was 12.
+  const r = compare('CVE-2026-31431', catalog);
+  assert.equal(r.delta, 12);
+  assert.match(r.explanation, /significantly higher/);
+  // The reboot driver MUST be present in the enumerated factors.
+  assert.match(r.explanation, /reboot required \(\+5\)/,
+    'reboot driver must be listed even when live_patch_available is true');
+
+  // Parse every "(+N)" / "(-N)" magnitude out of the explanation and confirm
+  // their signed sum equals the stored delta. This is the load-bearing
+  // invariant: the enumerated drivers must account for the whole divergence.
+  const e = catalog['CVE-2026-31431'];
+  assert.equal(e.live_patch_available, true, 'fixture must have live_patch_available:true');
+  assert.equal(e.patch_required_reboot, true, 'fixture must require a reboot');
+  // Match each "(+N" / "(-N" magnitude. The AI driver renders as
+  // "(+15 weaponization)" so the closing paren is not adjacent to the digits —
+  // anchor on the opening paren only.
+  const magnitudes = [...r.explanation.matchAll(/\(([+-]\d+)/g)].map((m) => Number(m[1]));
+  // Drivers in the "significantly higher" arm are the positive contributors the
+  // delta is built from: cisa_kev +25, poc +20, ai +15, confirmed AE +20,
+  // reboot +5 => 85; cvssEquivalent already subtracted via the 90 vs 78 framing.
+  // Assert the reboot +5 is among them and the enumerated sum is the full
+  // positive-driver total (85), not 80 (which is what dropping reboot produced).
+  assert.ok(magnitudes.includes(5), 'the +5 reboot magnitude must be enumerated');
+  const enumeratedSum = magnitudes.reduce((a, b) => a + b, 0);
+  assert.equal(typeof enumeratedSum, 'number');
+  assert.equal(enumeratedSum, 85,
+    'enumerated drivers must sum to 85 (incl. reboot +5); pre-fix they summed to 80');
+});
+
+// ==========================================================================
+// deriveRwepFromFactors: a Shape-B (post-weight) block that ALSO carries a
+// string active_exploitation must NOT be misrouted to scoreCustom (which does
+// not read the post-weight ai_factor key), dropping the +15 AI weight.
+// ==========================================================================
+
+test('deriveRwepFromFactors keeps ai_factor for a Shape-B block with a string active_exploitation', () => {
+  // Shape B post-weight integers + a string active_exploitation status.
+  // Pre-fix: the string 'confirmed' tripped hasBooleanOrLadder -> routed to
+  // scoreCustom -> ai_factor:15 (a post-weight key scoreCustom ignores) dropped.
+  const shapeB = {
+    cisa_kev: 25,
+    poc_available: 20,
+    ai_factor: 15,
+    active_exploitation: 'confirmed', // string status alongside post-weight ints
+    blast_radius: 10,
+  };
+  const score = deriveRwepFromFactors(shapeB);
+  assert.equal(typeof score, 'number');
+  // Post-weight sum: 25 + 20 + 15 + 10 = 70 (the string AE is skipped in the
+  // sum; the post-weight integer contribution it represents is not double-added).
+  assert.equal(score, 70, 'ai_factor (+15) must be preserved — Shape-B routing, not scoreCustom');
+
+  // Proof of the +15: the same block without ai_factor scores exactly 15 less.
+  const withoutAi = deriveRwepFromFactors({
+    cisa_kev: 25,
+    poc_available: 20,
+    active_exploitation: 'confirmed',
+    blast_radius: 10,
+  });
+  assert.equal(withoutAi, 55);
+  assert.equal(score - withoutAi, 15, 'the ai_factor must contribute its full +15, not be dropped');
+});
+
+// ==========================================================================
+// detectFactorShape: a Shape-B block carrying a string active_exploitation must
+// validate as Shape B, NOT 'mixed'. The string AE form is valid in both shapes.
+// ==========================================================================
+
+test('detectFactorShape returns B (not mixed) for a Shape-B block with a string active_exploitation', () => {
+  // Build a minimally-complete Shape-B catalog entry whose rwep_factors store
+  // post-weight integers AND a string active_exploitation. Pre-fix the string
+  // tripped sawBool, producing a 'mixed' verdict and a validate() error.
+  const entry = {
+    cve_id: 'CVE-TEST-SHAPEB-STR-AE',
+    rwep_score: 70,
+    cvss_score: 7.0,
+    active_exploitation: 'confirmed',
+    cisa_kev: true,
+    poc_available: true,
+    ai_discovered: false,
+    ai_assisted_weaponization: true,
+    patch_available: false,
+    live_patch_available: false,
+    patch_required_reboot: false,
+    type: 'LPE',
+    cvss_vector: 'x',
+    affected: 'x',
+    poc_description: 'present',
+    live_patch_tools: [],
+    atlas_refs: [], attack_refs: [],
+    source_verified: '2026-01-01', verification_sources: [], last_updated: '2026-01-01',
+    rwep_factors: {
+      cisa_kev: 25,
+      poc_available: 20,
+      ai_factor: 15,
+      active_exploitation: 'confirmed', // string status in a post-weight block
+      blast_radius: 0,
+    },
+  };
+  // No 'mixed' shape error from validate().
+  const errs = validate({ 'CVE-TEST-SHAPEB-STR-AE': entry }).filter((e) => /mixes Shape A/.test(e));
+  assert.deepEqual(errs, [],
+    'a Shape-B block with a string active_exploitation must not be flagged as mixed-shape');
+});
+
 
 // ---- routed from catalog-data-integrity ----
 require("node:test").describe("catalog-data-integrity", () => {
@@ -1008,4 +1126,22 @@ test("the RWEP active_exploitation ladder defines 'theoretical' explicitly", () 
   __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
+});
+
+require("node:test").describe("scoring: active-exploitation-only Shape A bag (codex P2 round-2)", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const s = require("../lib/scoring.js");
+  test("deriveRwepFromFactors routes an active_exploitation-only raw bag to scoreCustom, not the Shape-B sum that drops the ladder", () => {
+    // hasPostWeightInt is false (no boolean-named integer >=5), so this is Shape A
+    // and must score via scoreCustom (active_exploitation 'confirmed' = +20). The
+    // Shape-B sum would skip the string and under-score it.
+    const ae = s.deriveRwepFromFactors({ active_exploitation: "confirmed", blast_radius: 10 });
+    assert.equal(ae, 30, `active_exploitation 'confirmed' (+20) + blast_radius 10 must score 30, not ~10; got ${ae}`);
+  });
+  test("a Shape-B post-weight block with a string active_exploitation still sums its weighted factors (F4 preserved)", () => {
+    const withAi = s.deriveRwepFromFactors({ cisa_kev: 25, ai_factor: 15, active_exploitation: "confirmed", blast_radius: 0 });
+    const noAi = s.deriveRwepFromFactors({ cisa_kev: 25, active_exploitation: "confirmed", blast_radius: 0 });
+    assert.equal(withAi - noAi, 15, "the post-weight ai_factor must be summed, not dropped");
+  });
 });

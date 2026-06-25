@@ -121,6 +121,46 @@ test('buildKevDraftEntry pulls EPSS score when payload provided', () => {
   assert.equal(entry.epss_date, '2026-05-12');
 });
 
+test('buildKevDraftEntry does NOT misattribute a different CVE\'s EPSS when the requested id is absent', () => {
+  // The EPSS payload's only row is for a DIFFERENT CVE than the one being
+  // imported. Pre-fix `extractEpss` fell back to data[0] and wrote the wrong
+  // CVE's score (0.99) under the discovered id. The draft must instead keep
+  // null EPSS fields — the same null-mechanical-field behavior as when no
+  // cache exists.
+  const kev = { cveID: 'CVE-2026-77777' };
+  const epssPayload = { data: [{ cve: 'CVE-2000-0001', epss: '0.99', percentile: '0.999', date: '2026-01-01' }] };
+  const entry = buildKevDraftEntry(kev, null, epssPayload);
+  assert.strictEqual(entry.epss_score, null, 'epss_score must be null when payload has no row for the requested CVE');
+  assert.strictEqual(entry.epss_percentile, null, 'epss_percentile must be null on id mismatch');
+  assert.strictEqual(entry.epss_date, null, 'epss_date must be null on id mismatch');
+});
+
+test('buildKevDraftEntry does NOT misattribute when payload has multiple non-matching rows', () => {
+  const kev = { cveID: 'CVE-2026-77778' };
+  const epssPayload = { data: [
+    { cve: 'CVE-2000-0001', epss: '0.5', percentile: '0.6', date: '2026-01-01' },
+    { cve: 'CVE-2000-0002', epss: '0.7', percentile: '0.8', date: '2026-01-02' },
+  ] };
+  const entry = buildKevDraftEntry(kev, null, epssPayload);
+  assert.strictEqual(entry.epss_score, null);
+  assert.strictEqual(entry.epss_percentile, null);
+  assert.strictEqual(entry.epss_date, null);
+});
+
+test('buildKevDraftEntry still pulls the matching EPSS row from a multi-row payload', () => {
+  // Guard against an overcorrection: the correct row must still be selected
+  // by id even when other CVEs share the payload.
+  const kev = { cveID: 'CVE-2026-77779' };
+  const epssPayload = { data: [
+    { cve: 'CVE-2000-0001', epss: '0.10', percentile: '0.20', date: '2026-01-01' },
+    { cve: 'CVE-2026-77779', epss: '0.91', percentile: '0.98', date: '2026-05-12' },
+  ] };
+  const entry = buildKevDraftEntry(kev, null, epssPayload);
+  assert.strictEqual(entry.epss_score, 0.91);
+  assert.strictEqual(entry.epss_percentile, 0.98);
+  assert.strictEqual(entry.epss_date, '2026-05-12');
+});
+
 test('discoverNewKev returns empty when cache missing', () => {
   const ctx = { cveCatalog: loadLocalCves(), cacheDir: fs.mkdtempSync(path.join(os.tmpdir(), 'kev-disc-')) };
   try {

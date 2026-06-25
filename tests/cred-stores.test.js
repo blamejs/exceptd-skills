@@ -139,6 +139,27 @@ test("aws-static-key-present demotes the AWS-published doc-fixture key (FP[0])",
   }
 });
 
+test("aws-static-key-present is NOT demoted by an earlier duplicate-name block holding the doc-fixture key", () => {
+  // Two [default] blocks: the first holds the AWS doc-fixture key, the second
+  // a real AKIA key. The demotion must key off the EXACT live key value (the
+  // last-occurrence/real key, matching SDK precedence), not the first
+  // name-matching block — otherwise the example key in the first block
+  // silently demotes the real credential under the same name.
+  const home = mkHome();
+  try {
+    writeFile(home, ".aws/credentials",
+      "[default]\naws_access_key_id = AKIAIOSFODNN7EXAMPLE\naws_secret_access_key = x\n" +
+      "[default]\naws_access_key_id = AKIA1234567890ABCDEF\naws_secret_access_key = y\n");
+    const r = collectAt(home);
+    assert.equal(r.signal_overrides["aws-static-key-present"], "hit",
+      "the live (last-occurrence) real key must fire even though an earlier duplicate block holds the example key");
+    // The FP attestation still rides along on the hit.
+    assert.deepEqual(r.signal_overrides["aws-static-key-present__fp_checks"], { "0": true, "2": true });
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+
 test("aws-static-key-present demotes a break-glass profile name (FP[2])", () => {
   const home = mkHome();
   try {

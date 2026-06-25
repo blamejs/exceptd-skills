@@ -67,6 +67,20 @@ test('#30 legitimate partial "Key words for use in RFCs" matches RFC-2119', () =
   assert.equal(titleMatches('Key words for use in RFCs', RFC2119_TITLE), true);
 });
 
+test('#30 a repeated-token claim does NOT inflate the containment ratio into a false match', () => {
+  // "security security security security" has 4 tokens but only ONE distinct
+  // token ("security"), which appears once in a 4-token title. The pre-fix
+  // ratio counted non-distinct claim tokens (4/4 = 1.0 >= 0.8) and falsely
+  // MATCHED an unrelated title. The fix counts distinct claim tokens present in
+  // the title (1/4 = 0.25 < 0.8) -> no match.
+  const repeated = 'security security security security';
+  const unrelated = 'Transport Layer Security Protocol';
+  assert.equal(titleMatches(repeated, unrelated), false);
+  // A genuine out-of-order claim covering the strong majority of the title
+  // still matches: 4 distinct tokens, all present, 4/4 = 1.0 >= 0.8.
+  assert.equal(titleMatches('Protocol Security Transport Layer', unrelated), true);
+});
+
 test('#30 rfc CLI: --check "TLS" against the DTLS index entry yields title_match:false and exit 2', () => {
   // Drive the real CLI against a fixture RFC index whose entry is a DTLS spec.
   const dir = makeIsolatedDir('k30-cli-');
@@ -280,6 +294,20 @@ test('#30 "Transport Layer Security" DOES match the TLS 1.3 title (run preceded 
 
 test('#30 legitimate partial "Key words for use in RFCs" matches RFC-2119', () => {
   assert.equal(titleMatches('Key words for use in RFCs', RFC2119_TITLE), true);
+});
+
+test('#30 a repeated-token claim does NOT inflate the containment ratio into a false match', () => {
+  // "security security security security" has 4 tokens but only ONE distinct
+  // token ("security"), which appears once in a 4-token title. The pre-fix
+  // ratio counted non-distinct claim tokens (4/4 = 1.0 >= 0.8) and falsely
+  // MATCHED an unrelated title. The fix counts distinct claim tokens present in
+  // the title (1/4 = 0.25 < 0.8) -> no match.
+  const repeated = 'security security security security';
+  const unrelated = 'Transport Layer Security Protocol';
+  assert.equal(titleMatches(repeated, unrelated), false);
+  // A genuine out-of-order claim covering the strong majority of the title
+  // still matches: 4 distinct tokens, all present, 4/4 = 1.0 >= 0.8.
+  assert.equal(titleMatches('Protocol Security Transport Layer', unrelated), true);
 });
 
 test('#30 rfc CLI: --check "TLS" against the DTLS index entry yields title_match:false and exit 2', () => {

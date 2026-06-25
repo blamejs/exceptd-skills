@@ -3666,3 +3666,31 @@ test.describe('cli-output-envelope-shape', () => {
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+require("node:test").describe("readEvidenceDir object-shape guard (false-clean PASS class)", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs"), os = require("node:os"), path = require("node:path");
+  const hcli = require("../bin/exceptd.js");
+  for (const [label, body] of [["array", "[1,2,3]"], ["null", "null"], ["scalar", "42"]]) {
+    test(`--evidence-dir refuses a ${label} <pb>.json entry (not a JSON object) instead of running it as empty evidence`, () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), "evd-shape-"));
+      try {
+        fs.writeFileSync(path.join(dir, "secrets.json"), body, "utf8");
+        const r = hcli._readEvidenceDir(dir, "ci");
+        assert.equal(r.ok, false, `a ${label} entry must be refused, not bound as empty evidence`);
+        assert.match(r.error, /evidence must be a JSON object/);
+        assert.equal(r.extra.entry, "secrets.json");
+      } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+    });
+  }
+  test("--evidence-dir still accepts a well-formed object entry", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "evd-ok-"));
+    try {
+      fs.writeFileSync(path.join(dir, "secrets.json"), JSON.stringify({ signal_overrides: { x: "hit" } }), "utf8");
+      const r = hcli._readEvidenceDir(dir, "ci");
+      assert.equal(r.ok, true);
+      assert.deepEqual(r.bundle.secrets, { signal_overrides: { x: "hit" } });
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  });
+});

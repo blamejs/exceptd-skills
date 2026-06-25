@@ -467,11 +467,11 @@
       ],
       "escalation_criteria": [
         {
-          "condition": "A single authenticated user can access another tenant's data on a production app",
+          "condition": "tenant-id-trusted-from-client == true OR query-not-scoped-by-tenant == true OR row-policy-bypassable-by-role-context == true OR cross-tenant-cache-or-queue-key-collision == true",
           "action": "raise_severity"
         },
         {
-          "condition": "A single client can deny service to all tenants via an uncapped asymmetric DoS",
+          "condition": "http2-rapid-reset-uncapped == true OR no-per-tenant-rate-or-byte-quota == true OR unbounded-resource-allocation-per-request == true",
           "action": "trigger_playbook"
         }
       ]
@@ -482,7 +482,7 @@
           "id": "bind-tenant-and-enforce-rls",
           "description": "Derive the tenant id from the authenticated principal (never trust a client-supplied id), and enforce tenant scoping at the data layer via row-level security under a NON-bypass request role so a forgotten predicate cannot leak.",
           "preconditions": [
-            "operator controls the data layer"
+            "operator_controls_data_layer == true"
           ],
           "priority": 1,
           "for_signals": [
