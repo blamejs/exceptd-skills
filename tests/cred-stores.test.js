@@ -187,6 +187,53 @@ test("aws-static-key-present misses on an SSO/federated profile (has sso_session
   }
 });
 
+test("aws-static-key-present hits on a static AKIA key carried ALONGSIDE a role_arn (role_arn is NOT federation)", () => {
+  // A source_profile/assume-role setup where the profile carries BOTH a static
+  // aws_access_key_id (AKIA*) AND a role_arn: the static key IS the long-lived
+  // IAM-user credential that bootstraps the assumed role — a genuine static-key
+  // exposure. role_arn must NOT be treated as a federation marker (only
+  // sso_session / credential_process are), or the present IAM-user key is
+  // silently suppressed.
+  const home = mkHome();
+  try {
+    writeFile(home, ".aws/credentials",
+      "[prod]\naws_access_key_id = AKIAIOSFODNN7EXAMPLE2\naws_secret_access_key = abc\n" +
+      "role_arn = arn:aws:iam::123:role/x\nsource_profile = base\n");
+    const r = collectAt(home);
+    assert.equal(r.signal_overrides["aws-static-key-present"], "hit",
+      "a static AKIA key alongside a role_arn is still a static-key hit");
+    // The hit rides with the deterministic FP-check attestation (doc-fixture
+    // demotion [0] + break-glass pattern [2]); AKIAIOSFODNN7EXAMPLE2 is not the
+    // published example key so it is not demoted.
+    assert.deepEqual(r.signal_overrides["aws-static-key-present__fp_checks"], { "0": true, "2": true });
+    // The profile is counted as a static profile, not a federated one.
+    assert.match(r.artifacts["aws-credentials"].value, /1 static profile/);
+    assert.match(r.artifacts["aws-credentials"].value, /0 federated/);
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("aws-static-key-present misses on a PURE assume-role profile (role_arn + source_profile, no aws_access_key_id)", () => {
+  // The negative companion: a profile that delegates entirely to an assumed
+  // role and carries no own access key has no long-lived static credential.
+  // The hasKey gate (aws_access_key_id present) keeps it out of the static set.
+  const home = mkHome();
+  try {
+    writeFile(home, ".aws/credentials",
+      "[delegate]\nrole_arn = arn:aws:iam::123:role/x\nsource_profile = base\n");
+    const r = collectAt(home);
+    assert.equal(r.signal_overrides["aws-static-key-present"], "miss",
+      "a pure assume-role profile carries no static access key and must not flip the indicator");
+    // No static profile recorded for a key-less assume-role block.
+    assert.match(r.artifacts["aws-credentials"].value, /0 static profile/);
+    // No FP attestation is attached when the indicator does not hit.
+    assert.ok(!("aws-static-key-present__fp_checks" in r.signal_overrides));
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+
 // ---------------------------------------------------------------------------
 // kube-static-token — static token hits; exec-provider abstains
 // ---------------------------------------------------------------------------

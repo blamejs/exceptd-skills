@@ -412,3 +412,51 @@ test("orphan-privileged-process stays unflipped when PID 1's exe is unreadable (
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+// ---------------------------------------------------------------------------
+// exec-allowed precondition attestation. The runtime playbook declares an
+// `exec-allowed` precondition (on_fail=halt) the runner cannot mechanically
+// resolve, so the collector must attest it — otherwise the canonical
+// `collect runtime | run runtime` pipe halted at preflight even with valid
+// evidence. The collector reads its inventory directly via fs (execs nothing),
+// so it attests exec-allowed once it reaches at least one inventory source.
+// ---------------------------------------------------------------------------
+
+test("attests exec-allowed: true once an inventory source is readable", () => {
+  const root = mkTree();
+  try {
+    const passwd = w(root, "passwd", "root:x:0:0:root:/root:/bin/bash\n");
+    const P = {
+      sudoers: absent(root, "sudoers"),
+      sudoersD: absent(root, "sudoersd"),
+      passwd,
+      trustedPaths: [absent(root, "tp")],
+      procRoot: absent(root, "proc"),
+    };
+    const r = runLinux(root, P);
+    assert.ok("exec-allowed" in r.precondition_checks,
+      "the exec-allowed precondition must be attested (it was entirely absent before — halting the collect|run pipe)");
+    assert.equal(r.precondition_checks["exec-allowed"], true,
+      "a readable inventory source (passwd) satisfies the read-only-inventory intent");
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("exec-allowed: false on a fully-masked scope (no inventory source readable)", () => {
+  const root = mkTree();
+  try {
+    const P = {
+      sudoers: absent(root, "sudoers"),
+      sudoersD: absent(root, "sudoersd"),
+      passwd: absent(root, "passwd"),
+      trustedPaths: [absent(root, "tp")],
+      procRoot: absent(root, "proc"),
+    };
+    const r = runLinux(root, P);
+    assert.equal(r.precondition_checks["exec-allowed"], false,
+      "a scope where nothing is readable reports exec-allowed false (gated on readability)");
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});

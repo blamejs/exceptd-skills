@@ -542,3 +542,94 @@ require("node:test").describe("source-ghsa fetchAdvisoryById path safety (round-
     assert.match("GHSA-jfh8-c2jp-5v3q", /^GHSA-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}$/i);
   });
 });
+
+// ---------------------------------------------------------------------------
+// FIELD_DROPPED_WATCH set + buildDiff separate new/field-dropped counting
+// ---------------------------------------------------------------------------
+require("node:test").describe("source-ghsa FIELD_DROPPED_WATCH + buildDiff count split", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const os = require("node:os");
+  const ROOT = path.resolve(__dirname, "..");
+  const ghsa = require(path.join(ROOT, "lib", "source-ghsa.js"));
+
+  test("FIELD_DROPPED_WATCH is exactly [cvss_score, cisa_kev_pending] — editorial fields removed", () => {
+    assert.deepEqual(
+      ghsa.FIELD_DROPPED_WATCH,
+      ["cvss_score", "cisa_kev_pending"],
+      "watch set must contain only the upstream-sourced fields, in order",
+    );
+    // The editorial fields (curated by hand, never upstream-sourced) must NOT
+    // be watched — watching them flagged a false field_dropped on every
+    // curated re-import.
+    for (const editorial of ["ai_discovered", "poc_available", "active_exploitation"]) {
+      assert.equal(
+        ghsa.FIELD_DROPPED_WATCH.includes(editorial),
+        false,
+        `${editorial} is editorial-only and must NOT be in FIELD_DROPPED_WATCH`,
+      );
+    }
+  });
+
+  test("buildDiff summary counts new entries and field-dropped regressions SEPARATELY", async () => {
+    // One advisory whose upstream cvss.score is garbage (normalizes to a null
+    // cvss_score), and an existing catalog entry that previously had a
+    // populated cvss_score. That seam produces a `field_dropped` diff and
+    // zero `_new_entry` diffs — so the summary must report "0 new CVE ID(s)"
+    // and "1 field-dropped regression(s)", proving the two are no longer
+    // conflated under diffs.length.
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "exceptd-ghsa-fdrop-"));
+    const fp = path.join(tmp, "dropped.json");
+    fs.writeFileSync(fp, JSON.stringify([
+      {
+        ghsa_id: "GHSA-drop-drop-drop",
+        cve_id: "CVE-2026-77001",
+        summary: "upstream cvss.score went unparseable on re-import",
+        severity: "high",
+        cvss: { score: "not-a-number", vector_string: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N" },
+        vulnerabilities: [],
+        published_at: "2026-05-13T00:00:00Z",
+        references: [],
+      },
+    ]));
+    process.env.EXCEPTD_GHSA_FIXTURE = fp;
+    try {
+      const r = await ghsa.buildDiff({
+        cveCatalog: {
+          // Pre-existing curated entry with a populated cvss_score that the
+          // garbage re-import will drop to null.
+          "CVE-2026-77001": { cvss_score: 7.5, cisa_kev_pending: false },
+        },
+      });
+      assert.equal(r.status, "ok");
+      const newCount = r.diffs.filter((d) => d.field === "_new_entry").length;
+      const droppedCount = r.diffs.filter((d) => d.variant === "field_dropped").length;
+      assert.equal(newCount, 0, "no advisory was a brand-new CVE id");
+      assert.equal(droppedCount, 1, "the dropped cvss_score must produce one field_dropped diff");
+      // The summary must report the two counts separately, NOT label the
+      // field-dropped diff as a "new CVE ID".
+      assert.match(r.summary, /0 new CVE ID\(s\)/,
+        "field-dropped regressions must NOT be counted as new CVE IDs");
+      assert.match(r.summary, /1 field-dropped regression\(s\)/,
+        "field-dropped count must be reported separately");
+    } finally {
+      delete process.env.EXCEPTD_GHSA_FIXTURE;
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  test("buildDiff summary source template uses separate newCount/droppedCount, not diffs.length", () => {
+    // Source-structure guard: the summary string must be built from
+    // field==='_new_entry' (newCount) and variant==='field_dropped'
+    // (droppedCount) filters, never from diffs.length for the "new" count.
+    const src = fs.readFileSync(path.join(ROOT, "lib", "source-ghsa.js"), "utf8");
+    assert.match(src, /d\.field === "_new_entry"/,
+      "buildDiff must derive newCount from the _new_entry field");
+    assert.match(src, /d\.variant === "field_dropped"/,
+      "buildDiff must derive droppedCount from the field_dropped variant");
+    assert.doesNotMatch(src, /\$\{diffs\.length\} new CVE ID/,
+      "the 'new CVE ID' count must NOT come from diffs.length (would include field_dropped)");
+  });
+});

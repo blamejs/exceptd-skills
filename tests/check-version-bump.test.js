@@ -15,7 +15,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 
-const { classifyBump, checkBump, changelogVersions } =
+const { classifyBump, checkBump, changelogVersions, determinePrevious } =
   require(path.resolve(__dirname, '..', 'scripts', 'check-version-bump.js'));
 
 test('classifyBump distinguishes patch / minor / major / none / downgrade', () => {
@@ -90,6 +90,40 @@ test('the first release (no previous version) passes', () => {
 test('changelogVersions extracts headings in document order', () => {
   const md = '# Changelog\n\n## 0.19.0 — 2026-06-14\n\nstuff\n\n## 0.18.2 — 2026-06-13\n\nmore\n';
   assert.deepEqual(changelogVersions(md), ['0.19.0', '0.18.2']);
+});
+
+// The cadence gate must FAIL CLOSED when it cannot determine the previous
+// version. Previously main() swallowed a CHANGELOG read error to '' so
+// versions=[] -> prev=null -> checkBump's initial-release pass authorized ANY
+// bump (incl. an unapproved major). determinePrevious is the fail-closed guard.
+test('determinePrevious fails closed when CHANGELOG is unreadable (null text)', () => {
+  const r = determinePrevious(null, '0.18.17');
+  assert.equal(r.ok, false, 'an unreadable CHANGELOG must fail the gate, not pass as "initial release"');
+});
+
+test('determinePrevious fails closed on a CHANGELOG with no version headings', () => {
+  const r = determinePrevious('# Changelog\n\nsome prose, no headings\n', '0.18.17');
+  assert.equal(r.ok, false, 'a heading-less CHANGELOG cannot determine cadence — fail closed');
+});
+
+test('determinePrevious yields the prior version for a normal CHANGELOG', () => {
+  const r = determinePrevious('## 0.18.17\n\nx\n\n## 0.18.16\n\ny\n', '0.18.17');
+  assert.equal(r.ok, true);
+  assert.equal(r.prev, '0.18.16');
+});
+
+test('determinePrevious allows a genuine first release (sole heading == cur, prev=null)', () => {
+  const r = determinePrevious('## 0.1.0\n\nfirst\n', '0.1.0');
+  assert.equal(r.ok, true);
+  assert.equal(r.prev, null, 'a real first release has its own heading and resolves prev=null with ok:true');
+});
+
+test('an unauthorized major cannot sail through via a missing CHANGELOG', () => {
+  // The exact false-pass shape: read failed (text=null) while package.json
+  // jumped to a major. The gate must refuse to even reach checkBump's
+  // initial-release pass.
+  const prevRes = determinePrevious(null, '5.0.0');
+  assert.equal(prevRes.ok, false, 'no previous-version context => fail closed, never the initial-release pass');
 });
 ;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
   for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);

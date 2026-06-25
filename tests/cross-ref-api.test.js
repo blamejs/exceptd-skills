@@ -129,6 +129,53 @@ test('#13 byCwe/byTtp/bySkill exclude _auto_imported drafts but keep curated CVE
   }
 });
 
+// ---------------------------------------------------------------------------
+// #7 byFramework resolves framework_meta from the region-nested
+// global-frameworks.json — a flat global[frameworkId] lookup always returned
+// null, so framework_meta was universally null. The resolver now walks
+// regions[*].frameworks[*] and matches by short key, full_name, or
+// catalog_aliases.
+// ---------------------------------------------------------------------------
+
+test('#7 byFramework resolves framework_meta via a catalog alias (au-ism)', () => {
+  const r = xref.byFramework('au-ism');
+  assert.ok(r.gap_count > 0, 'au-ism must surface its framework-control gaps');
+  assert.equal(r.gap_count, r.gaps.length, 'gap_count must match the gaps array length');
+  assert.notEqual(r.framework_meta, null, 'framework_meta must no longer be null for a known framework');
+  assert.equal(typeof r.framework_meta, 'object');
+  assert.equal(r.framework_meta._framework_key, 'ASD_ISM',
+    'alias au-ism must resolve to the ASD_ISM short key');
+  assert.equal(r.framework_meta._region, 'AU',
+    'ASD_ISM must be annotated with its AU region');
+});
+
+test('#7 byFramework resolves framework_meta via the short key (ASD_ISM)', () => {
+  const r = xref.byFramework('ASD_ISM');
+  assert.ok(r.gap_count > 0, 'ASD_ISM must surface its framework-control gaps');
+  assert.equal(r.gap_count, r.gaps.length, 'gap_count must match the gaps array length');
+  assert.notEqual(r.framework_meta, null, 'framework_meta must resolve non-null for the short key');
+  assert.equal(typeof r.framework_meta, 'object');
+  assert.equal(r.framework_meta._framework_key, 'ASD_ISM');
+  assert.equal(r.framework_meta._region, 'AU');
+});
+
+test('#7 byFramework gap set is consistent across a framework\'s aliases (gaps resolve like framework_meta)', () => {
+  // The gap filter must resolve the framework's full label set, not a literal
+  // id match — otherwise a call by short key returns framework_meta but a gap
+  // list inconsistent with it. au-ism and ASD_ISM are the same framework, so
+  // both must surface the same gap_count.
+  const viaAlias = xref.byFramework('au-ism');
+  const viaKey = xref.byFramework('ASD_ISM');
+  assert.ok(viaKey.gap_count > 0 && viaAlias.gap_count > 0, 'both must surface gaps');
+  assert.equal(viaKey.gap_count, viaAlias.gap_count,
+    'the short key and a catalog alias for the same framework must yield the same gap set');
+  // And resolution must not over-match a different framework: GDPR resolves to
+  // GDPR, not the AU framework's gaps.
+  const gdpr = xref.byFramework('GDPR');
+  assert.equal(gdpr.framework_meta && gdpr.framework_meta._framework_key, 'GDPR');
+  assert.notEqual(gdpr.gap_count, viaKey.gap_count, 'GDPR must not collapse into the AU-ISM gap set');
+});
+
 test.describe("ask-routing-and-recipe-cleanup", () => {
   const xrefMod = require("../lib/cross-ref-api.js");
 

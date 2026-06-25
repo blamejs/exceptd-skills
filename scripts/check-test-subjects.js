@@ -91,7 +91,13 @@ function deriveSubjects() {
   try { const cat = JSON.parse(read("data/cve-catalog.json")); for (const k of Object.keys(cat)) if (k !== "_meta") { add(k.toLowerCase(), "cve-primitive"); cveDerived++; } }
   catch (e) { throw new Error("check-test-subjects: cannot read/parse data/cve-catalog.json — refusing to derive subjects (reverse coverage would falsely pass with no CVE coverage): " + e.message); }
   if (cveDerived === 0) throw new Error("check-test-subjects: data/cve-catalog.json yielded zero CVE entries — refusing to let reverse coverage pass with no CVE coverage.");
-  for (const e of ls("data/playbooks")) if (e.isFile() && e.name.endsWith(".json")) { const b = e.name.replace(/\.json$/, ""); add(b, "playbook-primitive"); add("playbook-" + b, "alias:playbook"); }
+  // Playbook-primitive subjects. Mirror the CVE-catalog guard above: an
+  // unreadable / empty data/playbooks must NOT silently derive zero playbook
+  // subjects — that lets the reverse-coverage gate pass with no playbook
+  // coverage (the same absent-input false-pass class). Fail loud instead.
+  let pbDerived = 0;
+  for (const e of ls("data/playbooks")) if (e.isFile() && e.name.endsWith(".json")) { const b = e.name.replace(/\.json$/, ""); add(b, "playbook-primitive"); add("playbook-" + b, "alias:playbook"); pbDerived++; }
+  if (pbDerived === 0) throw new Error("check-test-subjects: data/playbooks/ yielded zero playbooks — refusing to let reverse coverage pass with no playbook coverage.");
   // workflows
   for (const e of ls(".github/workflows")) if (/\.ya?ml$/.test(e.name)) { const b = e.name.replace(/\.ya?ml$/, ""); add(b, "workflow"); add(b + "-workflow", "workflow"); }
 
@@ -110,6 +116,15 @@ function deriveSubjects() {
   add("playbooks", "aggregate:data/playbooks");
   add("workflows", "aggregate:.github/workflows");
   add("governance", "repo:governance-files"); // LICENSE/NOTICE/FUNDING/CoC/gitignore/gitleaks presence + integrity
+  // Module-subject floor. The source walk over lib/orchestrator/scripts/bin
+  // uses ls(), which returns [] on a read failure — so an unreadable source
+  // tree would derive zero reverse-required module subjects and let the gate
+  // pass with no module coverage (the absent-input false-pass class, same as
+  // the CVE/playbook guards). The repo always has dozens of modules; zero is an
+  // anomaly. Fail loud.
+  let moduleCount = 0;
+  for (const kind of subjects.values()) if (typeof kind === "string" && kind.startsWith("module:")) moduleCount++;
+  if (moduleCount === 0) throw new Error("check-test-subjects: zero source-module subjects derived (lib/orchestrator/scripts/bin unreadable?) — refusing to let reverse coverage pass with no module coverage.");
   return subjects;
 }
 

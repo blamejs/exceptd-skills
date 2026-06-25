@@ -215,6 +215,23 @@ test('#11 lagScore does not over-match a short key against another framework', (
   assert.equal(fg.lagScore('EU_CRA', controlGaps, globalFrameworks).breakdown.framework_specific_gaps, 1);
 });
 
+test('#11 lagScore resolves ASD_ISM via data-driven catalog_aliases', () => {
+  // ASD_ISM's catalog labels diverged from the global-frameworks full_name,
+  // so neither the short key nor the display string matched literally and the
+  // framework reported framework_specific_gaps:0 (framework_resolved_but_zero_gaps
+  // would have been true). The data-driven catalog_aliases now bridge the
+  // divergent labels back to the framework, surfacing all 5 open ISM gaps.
+  const r = fg.lagScore('ASD_ISM', controlGaps, globalFrameworks);
+  assert.equal(typeof r.breakdown.framework_specific_gaps, 'number');
+  assert.equal(r.breakdown.framework_specific_gaps, 5,
+    'ASD_ISM must surface all 5 open ISM gaps via catalog_aliases');
+  // Resolving to a non-zero count proves the framework was matched, not that
+  // it resolved to an empty bucket — pin the explicit flag so a regression
+  // that resolves-but-finds-nothing trips here.
+  assert.equal(r.breakdown.framework_resolved_but_zero_gaps, false,
+    'ASD_ISM must resolve to its real gaps, not an empty-bucket zero');
+});
+
 // ---------------------------------------------------------------------------
 // gapReport theater_risks counts entries with theater_test (not just the
 // legacy theater_pattern field).

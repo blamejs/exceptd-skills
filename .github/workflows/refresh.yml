@@ -130,15 +130,19 @@ jobs:
         # reads.
         #
         # --max-errors 50: the cache warm fans out hundreds (daily) to ~9.7k
-        # (Monday) per-CVE/per-RFC fetches against rate-limited public APIs,
-        # so a few transient per-entry errors (counted only after the job
-        # queue exhausts its retries) are expected and must not fail the whole
-        # refresh — the downstream dry-run reads whatever landed and treats a
-        # miss as a non-fatal "missing entry". A larger error count signals a
-        # systemic upstream outage and still fails the step, as does any single
-        # feed that returns nothing at all (so a dead KEV feed can't be silently
-        # skipped). The per-source error breakdown lands in the prefetch summary
-        # so a recurring dead source is visible in the log.
+        # (Monday) per-CVE/per-RFC fetches against rate-limited public APIs.
+        # prefetch classifies each post-retry error: TRANSIENT ones (HTTP
+        # 429/5xx/timeout — the upstream throttling us) never fail the run on
+        # their own and are deferred to the next scheduled tick; only HARD
+        # errors (404/parse/etc.) count against this budget. So a daily NVD
+        # rate-limit on a subset of CVEs no longer hard-fails the whole refresh
+        # and skips the auto-PR — the downstream dry-run reads whatever landed
+        # and treats a throttled miss as a non-fatal "missing entry". 50 hard
+        # errors still signals a real data problem and fails the step, as does
+        # any single feed that returns NOTHING at all (so a fully-blocked KEV
+        # or NVD feed can't be silently skipped). The per-source error breakdown
+        # plus the transient/hard split land in the prefetch summary so a
+        # recurring dead source is visible in the log.
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

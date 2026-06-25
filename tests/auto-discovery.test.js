@@ -92,9 +92,12 @@ test('buildKevDraftEntry produces a complete schema entry from minimal KEV input
 
 test('buildKevDraftEntry pulls CVSS from NVD payload when present', () => {
   const kev = { cveID: 'CVE-2026-88888', vulnerabilityName: 'X' };
+  // extractNvdMetrics resolves the NVD record by id, not by position, so the
+  // payload's cve.id must match the KEV id being imported.
   const nvdPayload = {
     vulnerabilities: [{
       cve: {
+        id: 'CVE-2026-88888',
         metrics: {
           cvssMetricV31: [{
             type: 'Primary',
@@ -110,6 +113,64 @@ test('buildKevDraftEntry pulls CVSS from NVD payload when present', () => {
   assert.equal(entry.cvss_score, 9.8);
   assert.equal(entry.cvss_vector, 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H');
   assert.deepEqual(entry.cwe_refs, ['CWE-787']);
+});
+
+test('buildKevDraftEntry does NOT misattribute a different CVE\'s NVD metrics when vulnerabilities[0] is a foreign id', () => {
+  // FIX #11/#12: extractNvdMetrics matches the NVD record by id, not position.
+  // Pre-fix the blanket vulnerabilities[0] fallback wrote a DIFFERENT CVE's
+  // CVSS / CWE / description under the requested id when a mis-keyed cache row
+  // landed in the payload. The first (and only) record here is for a foreign
+  // CVE, so the draft must keep null CVSS / vector and empty CWE refs — never
+  // absorb the 9.8 / CWE-787 that belong to CVE-9999-0001.
+  const kev = { cveID: 'CVE-1111-2222', vulnerabilityName: 'X' };
+  const nvdPayload = {
+    vulnerabilities: [{
+      cve: {
+        id: 'CVE-9999-0001',
+        metrics: {
+          cvssMetricV31: [{
+            type: 'Primary',
+            cvssData: { baseScore: 9.8, vectorString: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H' },
+          }],
+        },
+        descriptions: [{ lang: 'en', value: 'Foreign CVE description' }],
+        weaknesses: [{ description: [{ value: 'CWE-787' }] }],
+      },
+    }],
+  };
+  const entry = buildKevDraftEntry(kev, nvdPayload, null);
+  assert.strictEqual(entry.cvss_score, null, 'a foreign CVE\'s 9.8 must NOT be attributed to CVE-1111-2222');
+  assert.strictEqual(entry.cvss_vector, null, 'a foreign CVE\'s vector must NOT be attributed');
+  assert.deepEqual(entry.cwe_refs, [], 'a foreign CVE\'s CWE refs must NOT be attributed');
+});
+
+test('buildKevDraftEntry selects the matching NVD record by id from a multi-record payload', () => {
+  // The id match must still pick the correct record even when a foreign record
+  // precedes it in vulnerabilities[] (the overcorrection guard: id-match must
+  // not drop legitimate metrics).
+  const kev = { cveID: 'CVE-1111-3333', vulnerabilityName: 'X' };
+  const nvdPayload = {
+    vulnerabilities: [
+      {
+        cve: {
+          id: 'CVE-9999-0001',
+          metrics: { cvssMetricV31: [{ type: 'Primary', cvssData: { baseScore: 1.0, vectorString: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N' } }] },
+          weaknesses: [{ description: [{ value: 'CWE-200' }] }],
+        },
+      },
+      {
+        cve: {
+          id: 'CVE-1111-3333',
+          metrics: { cvssMetricV31: [{ type: 'Primary', cvssData: { baseScore: 9.8, vectorString: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H' } }] },
+          weaknesses: [{ description: [{ value: 'CWE-787' }] }],
+        },
+      },
+    ],
+  };
+  const entry = buildKevDraftEntry(kev, nvdPayload, null);
+  assert.equal(entry.cvss_score, 9.8, 'the id-matched record (9.8) wins, not vulnerabilities[0] (1.0)');
+  assert.equal(entry.cvss_vector, 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H');
+  assert.deepEqual(entry.cwe_refs, ['CWE-787'], 'the id-matched record\'s CWE refs are used');
 });
 
 test('buildKevDraftEntry pulls EPSS score when payload provided', () => {
@@ -437,6 +498,9 @@ test_describe('refresh-discovery-cache-integrity', () => {
   const NVD_PAYLOAD = {
     vulnerabilities: [{
       cve: {
+        // extractNvdMetrics resolves the record by id; the sidecar must carry
+        // the discovered CVE's id or the (correctly-indexed) metrics won't bind.
+        id: 'CVE-2099-40001',
         descriptions: [{ lang: 'en', value: 'real description' }],
         metrics: {
           cvssMetricV31: [{

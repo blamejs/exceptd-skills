@@ -458,4 +458,12 @@ require("node:test").describe("hand-rolled-sql matcher gaps (round-2 hunt: F20 s
     assert.ok(p.SQL_CLAUSE_FRAG.test('q = " WHERE id=" + id'), "plain trailing-+ still matches");
     assert.ok(p.SQL_CLAUSE_FRAG.test('q = base + " WHERE id=" + id'), "leading-+ still matches");
   });
+  test("the scan universe is non-empty — the gate must not report clean without scanning anything", () => {
+    // main() fails closed when filesUnder([...]) is empty (the absent-input
+    // false-pass class). Assert the trigger condition is reachable (a missing
+    // root yields []) AND that the real roots yield a non-trivial universe.
+    assert.equal(p.filesUnder(["does-not-exist-xyz"]).length, 0, "a missing root yields an empty list (the guard's trigger)");
+    assert.ok(p.filesUnder(["bin/exceptd.js", "lib", "orchestrator", "scripts"]).length > 20,
+      "the real source roots must yield a substantial scan universe");
+  });
 });
