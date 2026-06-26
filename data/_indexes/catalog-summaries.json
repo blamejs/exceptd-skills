@@ -53,7 +53,7 @@
       "path": "data/cve-catalog.json",
       "purpose": "Per-CVE record (CVSS, EPSS, CISA KEV, RWEP, AI-discovery, vendor advisories, framework gaps, ATLAS/ATT&CK mappings). Cross-validated against NVD + CISA KEV + FIRST EPSS via validate-cves.",
       "schema_version": "1.0.0",
-      "last_updated": "2026-06-01",
+      "last_updated": "2026-06-26",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -62,7 +62,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 459,
+      "entry_count": 479,
       "sample_keys": [
         "CVE-2022-23812",
         "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM",
