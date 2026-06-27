@@ -27,7 +27,49 @@ const path = require("node:path");
 
 const ROOT = path.join(__dirname, "..");
 const AGENTS = path.join(ROOT, "AGENTS.md");
-const COLLECTOR_DIR = path.join(ROOT, "lib", "collectors");
+// EXCEPTD_COLLECTOR_DIR lets the test suite point the gate at a throwaway
+// tempdir so the require-throw / no-collect behaviours can be exercised
+// WITHOUT writing a fixture into the real lib/collectors/ (a process-killed
+// run that left one there used to poison every collector-enumerating test).
+const COLLECTOR_DIR = process.env.EXCEPTD_COLLECTOR_DIR
+  ? path.resolve(process.env.EXCEPTD_COLLECTOR_DIR)
+  : path.join(ROOT, "lib", "collectors");
+
+// A real shipped collector is named [a-z0-9-]+.js — the AGENTS.md enumeration
+// regex (`lib/collectors/([a-z0-9-]+\.js)`) cannot even reference an
+// underscore-prefixed file. So a `__`-prefixed file is never a collector:
+// it is test scaffolding or a stray artifact. Skip it everywhere the gate
+// builds the real-collector set so a leaked fixture cannot poison the count,
+// the enumeration cross-check, or the load-error scan.
+function isReservedFixture(f) {
+  return f.startsWith("__");
+}
+
+// Classify every <dir>/*.js into collectors (require succeeds + exports
+// collect()), helpers (require succeeds, no collect() — silently excluded),
+// and load-errors (require throws — surfaced, never silently dropped).
+// Exported so the test suite can drive it against a tempdir.
+function classifyCollectors(dir) {
+  const jsFiles = fs.readdirSync(dir)
+    .filter((f) => f.endsWith(".js") && !isReservedFixture(f))
+    .sort();
+  const collectorFiles = [];
+  const loadErrors = [];
+  for (const f of jsFiles) {
+    let mod;
+    try {
+      mod = require(path.join(dir, f));
+    } catch (e) {
+      loadErrors.push(`lib/collectors/${f}: ${e.message.split("\n")[0]}`);
+      continue;
+    }
+    if (typeof mod.collect === "function") {
+      collectorFiles.push(`lib/collectors/${f}`);
+    }
+  }
+  collectorFiles.sort();
+  return { collectorFiles, loadErrors };
+}
 
 const WORD_TO_NUMBER = {
   one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7,
@@ -54,15 +96,6 @@ function main() {
     return;
   }
 
-  let jsFiles;
-  try {
-    jsFiles = fs.readdirSync(COLLECTOR_DIR).filter(f => f.endsWith(".js")).sort();
-  } catch (e) {
-    console.error(`[check-agents-md-collectors] cannot read ${COLLECTOR_DIR}: ${e.message}`);
-    process.exitCode = 2;
-    return;
-  }
-
   // Classify every lib/collectors/*.js into exactly one of three buckets:
   //   - collector:  require() succeeds AND exports a collect() function
   //                 (counted; must appear in the AGENTS.md enumeration).
@@ -75,21 +108,14 @@ function main() {
   //                 count and the enumeration cross-check, so a file that
   //                 still ships in the tarball passes the gate undetected.
   //                 Surface it as a parse error (exit 2) naming the file.
-  const collectorFiles = [];
-  const loadErrors = [];
-  for (const f of jsFiles) {
-    let mod;
-    try {
-      mod = require(path.join(COLLECTOR_DIR, f));
-    } catch (e) {
-      loadErrors.push(`lib/collectors/${f}: ${e.message.split("\n")[0]}`);
-      continue;
-    }
-    if (typeof mod.collect === "function") {
-      collectorFiles.push(`lib/collectors/${f}`);
-    }
+  let collectorFiles, loadErrors;
+  try {
+    ({ collectorFiles, loadErrors } = classifyCollectors(COLLECTOR_DIR));
+  } catch (e) {
+    console.error(`[check-agents-md-collectors] cannot read ${COLLECTOR_DIR}: ${e.message}`);
+    process.exitCode = 2;
+    return;
   }
-  collectorFiles.sort();
 
   if (loadErrors.length > 0) {
     console.error(
@@ -146,4 +172,8 @@ function main() {
   }
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = { classifyCollectors, isReservedFixture };

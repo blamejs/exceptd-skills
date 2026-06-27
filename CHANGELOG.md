@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.19 — 2026-06-26
+
+Internal: the collector-enumeration gate and the collector tests now treat `__`-prefixed files under `lib/collectors/` as reserved scaffolding and skip them, since a real collector is always named `[a-z0-9-]+.js`. The gate's load-error/helper classification is also exercised against a throwaway directory rather than the shipped one, so a test run interrupted mid-fixture can no longer leave a stray module that fails subsequent local runs.
+
 ## 0.18.18 — 2026-06-26
 
 Twenty CISA-KEV-listed, actively-exploited CVEs are now in the catalog (459 → 479). Each is curated to the full bar: verified NVD CVSS and CWE, MITRE ATT&CK technique mapping, behavioral indicators of compromise, global-first framework-control-gap analysis (NIST 800-53, ISO 27001:2022, EU NIS2, UK CAF, AU Essential Eight), an RWEP score, and a paired zero-day lesson.

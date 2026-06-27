@@ -58,9 +58,13 @@ function allPreconditions(playbook) {
 }
 
 // Every collector under lib/collectors that maps to a shipped playbook.
+// `__`-prefixed files are a reserved test-fixture/scaffolding prefix (no real
+// collector uses it — the AGENTS.md enumeration regex is [a-z0-9-]+), so they
+// are excluded here too; this keeps a stray fixture from ever poisoning the
+// mapping/attestation checks.
 const COLLECTOR_FILES = fs
   .readdirSync(path.join(ROOT, "lib", "collectors"))
-  .filter((f) => f.endsWith(".js") && f !== "README.md" && f !== "scan-excludes.js");
+  .filter((f) => f.endsWith(".js") && !f.startsWith("__") && f !== "README.md" && f !== "scan-excludes.js");
 
 // Collectors whose FP-gated indicators have NO deterministic FP-check index a
 // stdlib collector can satisfy (every required check is network reachability,
