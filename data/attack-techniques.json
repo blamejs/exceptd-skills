@@ -199,6 +199,7 @@
       "Discovery"
     ],
     "cve_refs": [
+      "CVE-2025-24054",
       "CVE-2025-30202"
     ]
   },
@@ -283,6 +284,7 @@
       "CVE-2023-33538",
       "CVE-2023-39780",
       "CVE-2023-43654",
+      "CVE-2023-44221",
       "CVE-2023-44467",
       "CVE-2023-48022",
       "CVE-2023-6016",
@@ -308,6 +310,7 @@
       "CVE-2024-50050",
       "CVE-2024-5565",
       "CVE-2024-56145",
+      "CVE-2024-58136",
       "CVE-2024-6047",
       "CVE-2024-8069",
       "CVE-2025-10035",
@@ -317,6 +320,7 @@
       "CVE-2025-11953",
       "CVE-2025-1550",
       "CVE-2025-1753",
+      "CVE-2025-1976",
       "CVE-2025-20281",
       "CVE-2025-20337",
       "CVE-2025-23254",
@@ -363,6 +367,7 @@
       "CVE-2025-64328",
       "CVE-2025-64496",
       "CVE-2025-66644",
+      "CVE-2025-67038",
       "CVE-2025-68613",
       "CVE-2025-68645",
       "CVE-2025-68664",
@@ -374,6 +379,7 @@
       "CVE-2025-9377",
       "CVE-2026-0766",
       "CVE-2026-10520",
+      "CVE-2026-12569",
       "CVE-2026-1281",
       "CVE-2026-1340",
       "CVE-2026-1731",
@@ -406,6 +412,7 @@
       "CVE-2026-33017",
       "CVE-2026-34159",
       "CVE-2026-34197",
+      "CVE-2026-34910",
       "CVE-2026-39884",
       "CVE-2026-39987",
       "CVE-2026-40933",
@@ -539,6 +546,7 @@
       "CVE-2024-0769",
       "CVE-2024-8068",
       "CVE-2025-10725",
+      "CVE-2025-1976",
       "CVE-2025-21479",
       "CVE-2025-21480",
       "CVE-2025-22224",
@@ -582,6 +590,7 @@
       "CVE-2026-46300",
       "CVE-2026-46333",
       "CVE-2026-48172",
+      "CVE-2026-54420",
       "CVE-2026-6973"
     ],
     "description_full": "Adversaries may exploit software vulnerabilities in an attempt to elevate privileges. Exploitation of a software vulnerability occurs when an adversary takes advantage of a programming error in a program, service, or within the operating system software or kernel itself to execute adversary-controlled code. Security constructs such as permission levels will often hinder access to information and use of certain techniques, so adversaries will likely need to perform privilege escalation to include use of software exploitation to circumvent those restrictions. When initially gaining access to a system, an adversary may be operating within a lower privileged process which will prevent them from accessing certain resources on the system. Vulnerabilities may exist, usually in operating system components and software commonly running at higher permissions, that can be exploited to gain higher levels of access on the system. This could enable someone to move from unprivileged or user level permissions to SYSTEM or root permissions depending on the component that is vulnerable. This could also enable an adversary to move from a virtualized environment, such as within a virtual machine or container, onto the underlying host. This may be a necessary step for an adversary compromising an endpoint system that has been properly configured and limits other privilege escalation methods. Adversaries may bring a signed vulnerable driver onto a compromised machine so that they can exploit the vulnerability to execute code in kernel mode. This process is sometimes referred to as Bring Your Own Vulnerable Driver (BYOVD).(Citation: ESET InvisiMole June 2020)(Citation: Unit42 AcidBox June 2020) Adversaries may include the vulnerable driver with files delivered during Initial Access or download it to a compromised system via [Ingress Tool Transfer](https://attack.mitre.org/techniques/T1105) or [Lateral Tool Transfer](https://attack.mitre.org/techniques/T1570).",
@@ -667,6 +676,7 @@
       "CVE-2026-1603",
       "CVE-2026-20127",
       "CVE-2026-20182",
+      "CVE-2026-20253",
       "CVE-2026-21858",
       "CVE-2026-22769",
       "CVE-2026-23760",
@@ -674,6 +684,7 @@
       "CVE-2026-24423",
       "CVE-2026-24858",
       "CVE-2026-33825",
+      "CVE-2026-34908",
       "CVE-2026-35273",
       "CVE-2026-39884",
       "CVE-2026-41940",
@@ -1032,6 +1043,7 @@
       "CVE-2023-39780",
       "CVE-2023-43654",
       "CVE-2023-43791",
+      "CVE-2023-44221",
       "CVE-2023-47117",
       "CVE-2023-48022",
       "CVE-2023-50224",
@@ -1064,6 +1076,7 @@
       "CVE-2024-31462",
       "CVE-2024-37032",
       "CVE-2024-37079",
+      "CVE-2024-38475",
       "CVE-2024-39722",
       "CVE-2024-42009",
       "CVE-2024-42478",
@@ -1075,6 +1088,7 @@
       "CVE-2024-56145",
       "CVE-2024-57726",
       "CVE-2024-57728",
+      "CVE-2024-58136",
       "CVE-2024-6047",
       "CVE-2024-6587",
       "CVE-2024-7399",
@@ -1125,15 +1139,18 @@
       "CVE-2025-32756",
       "CVE-2025-32975",
       "CVE-2025-34026",
+      "CVE-2025-34028",
       "CVE-2025-34291",
       "CVE-2025-3466",
       "CVE-2025-35939",
       "CVE-2025-37164",
+      "CVE-2025-3928",
       "CVE-2025-3935",
       "CVE-2025-4008",
       "CVE-2025-40536",
       "CVE-2025-40551",
       "CVE-2025-40602",
+      "CVE-2025-42599",
       "CVE-2025-42999",
       "CVE-2025-4427",
       "CVE-2025-4428",
@@ -1187,6 +1204,7 @@
       "CVE-2025-6543",
       "CVE-2025-66376",
       "CVE-2025-66644",
+      "CVE-2025-67038",
       "CVE-2025-67818",
       "CVE-2025-68461",
       "CVE-2025-68613",
@@ -1204,6 +1222,7 @@
       "CVE-2026-0300",
       "CVE-2026-0766",
       "CVE-2026-10520",
+      "CVE-2026-12569",
       "CVE-2026-1281",
       "CVE-2026-1340",
       "CVE-2026-1603",
@@ -1215,6 +1234,9 @@
       "CVE-2026-20131",
       "CVE-2026-20133",
       "CVE-2026-20182",
+      "CVE-2026-20230",
+      "CVE-2026-20253",
+      "CVE-2026-20262",
       "CVE-2026-20963",
       "CVE-2026-21525",
       "CVE-2026-21643",
@@ -1251,6 +1273,9 @@
       "CVE-2026-33017",
       "CVE-2026-34159",
       "CVE-2026-34197",
+      "CVE-2026-34908",
+      "CVE-2026-34909",
+      "CVE-2026-34910",
       "CVE-2026-35273",
       "CVE-2026-35616",
       "CVE-2026-39987",
@@ -1264,6 +1289,7 @@
       "CVE-2026-42945",
       "CVE-2026-45247",
       "CVE-2026-45829",
+      "CVE-2026-48907",
       "CVE-2026-50751",
       "CVE-2026-5760",
       "CVE-2026-6973",
@@ -1448,8 +1474,11 @@
       "CVE-2025-27363",
       "CVE-2025-30397",
       "CVE-2025-30400",
+      "CVE-2025-31200",
+      "CVE-2025-31201",
       "CVE-2025-31277",
       "CVE-2025-33053",
+      "CVE-2025-42599",
       "CVE-2025-43200",
       "CVE-2025-43300",
       "CVE-2025-43510",
@@ -2020,7 +2049,8 @@
     "cve_refs": [
       "CVE-2011-0411",
       "CVE-2021-33515",
-      "CVE-2021-38371"
+      "CVE-2021-38371",
+      "CVE-2025-24054"
     ]
   },
   "T1562.001": {
@@ -2860,6 +2890,7 @@
     "version": "v19",
     "cve_refs": [
       "CVE-2023-48022",
+      "CVE-2026-34910",
       "MAL-2024-PYPI-ULTRALYTICS-XMRIG"
     ],
     "description_full": "Adversaries may leverage the resources of co-opted systems to complete resource-intensive tasks, which may impact system and/or hosted service availability. Resource hijacking may take a number of different forms. For example, adversaries may: * Leverage compute resources in order to mine cryptocurrency * Sell network bandwidth to proxy networks * Generate SMS traffic for profit * Abuse cloud-based messaging services to send large quantities of spam messages In some cases, adversaries may leverage multiple types of Resource Hijacking at once.(Citation: Sysdig Cryptojacking Proxyjacking 2023)",
@@ -3905,8 +3936,12 @@
       "CVE-2023-6038",
       "CVE-2024-1561",
       "CVE-2024-24591",
+      "CVE-2024-38475",
       "CVE-2024-39722",
-      "CVE-2026-34926"
+      "CVE-2026-20262",
+      "CVE-2026-34909",
+      "CVE-2026-34926",
+      "CVE-2026-54420"
     ]
   },
   "T1087": {
@@ -4542,7 +4577,10 @@
       "Windows"
     ],
     "stix_id": "attack-pattern--b77cf5f3-6060-475d-bd60-40ccbf28fdc2",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2025-24054"
+    ]
   },
   "T1197": {
     "id": "T1197",
@@ -4761,6 +4799,7 @@
     "stix_id": "attack-pattern--fe926152-f431-4baf-956c-4ad3cb0bf23b",
     "is_subtechnique": false,
     "cve_refs": [
+      "CVE-2025-31201",
       "CVE-2026-21509",
       "CVE-2026-21510",
       "CVE-2026-21513",
@@ -10896,6 +10935,7 @@
     "_auto_imported": true,
     "_intake_method": "mitre-attack-stix",
     "cve_refs": [
+      "CVE-2025-31200",
       "CVE-2025-33053",
       "CVE-2025-48384"
     ]
@@ -12281,10 +12321,14 @@
       "CVE-2024-7694",
       "CVE-2025-2749",
       "CVE-2025-31324",
+      "CVE-2025-34028",
+      "CVE-2025-3928",
       "CVE-2025-47729",
       "CVE-2025-49704",
       "CVE-2025-52691",
-      "CVE-2025-53770"
+      "CVE-2025-53770",
+      "CVE-2026-12569",
+      "CVE-2026-48907"
     ]
   },
   "T1505.004": {

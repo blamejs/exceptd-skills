@@ -54,9 +54,11 @@
       "CVE-2025-20393",
       "CVE-2025-54236",
       "CVE-2025-6558",
+      "CVE-2026-12569",
       "CVE-2026-21858",
       "CVE-2026-32201",
       "CVE-2026-34197",
+      "CVE-2026-34910",
       "CVE-2026-6973"
     ],
     "framework_controls_partially_addressing": [
@@ -113,13 +115,16 @@
       "CVE-2024-7399",
       "CVE-2025-2749",
       "CVE-2025-27920",
+      "CVE-2025-34028",
       "CVE-2025-4632",
       "CVE-2025-51480",
       "CVE-2025-6218",
       "CVE-2025-67818",
       "CVE-2025-8110",
+      "CVE-2026-20262",
       "CVE-2026-22218",
       "CVE-2026-25592",
+      "CVE-2026-34909",
       "CVE-2026-34926"
     ],
     "framework_controls_partially_addressing": [
@@ -211,6 +216,7 @@
     "evidence_cves": [
       "CVE-2014-6278",
       "CVE-2023-39780",
+      "CVE-2023-44221",
       "CVE-2023-6019",
       "CVE-2024-11120",
       "CVE-2024-12987",
@@ -218,6 +224,7 @@
       "CVE-2025-11953",
       "CVE-2025-12686",
       "CVE-2025-1753",
+      "CVE-2025-1976",
       "CVE-2025-48703",
       "CVE-2025-54136",
       "CVE-2025-54948",
@@ -238,6 +245,7 @@
       "CVE-2026-30623",
       "CVE-2026-30624",
       "CVE-2026-30625",
+      "CVE-2026-34910",
       "CVE-2026-39987",
       "CVE-2026-40933",
       "CVE-2026-42271"
@@ -411,6 +419,7 @@
       "CVE-2024-56145",
       "CVE-2025-11837",
       "CVE-2025-1550",
+      "CVE-2025-1976",
       "CVE-2025-32432",
       "CVE-2025-3248",
       "CVE-2025-33236",
@@ -425,6 +434,7 @@
       "CVE-2025-61882",
       "CVE-2025-6204",
       "CVE-2025-62848",
+      "CVE-2025-67038",
       "CVE-2025-8875",
       "CVE-2025-8876",
       "CVE-2026-0766",
@@ -690,7 +700,9 @@
       "CVE-2025-31125",
       "CVE-2025-33073",
       "CVE-2025-59230",
-      "CVE-2026-35616"
+      "CVE-2026-34908",
+      "CVE-2026-35616",
+      "CVE-2026-48907"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-3",
@@ -787,10 +799,12 @@
       "CVE-2020-24363",
       "CVE-2025-32433",
       "CVE-2025-3248",
+      "CVE-2025-34028",
       "CVE-2025-4008",
       "CVE-2025-49596",
       "CVE-2025-61757",
       "CVE-2026-0300",
+      "CVE-2026-20253",
       "CVE-2026-24423",
       "CVE-2026-26190",
       "CVE-2026-33017",
@@ -1312,6 +1326,7 @@
       "CVE-2024-7694",
       "CVE-2025-2749",
       "CVE-2025-31324",
+      "CVE-2025-3928",
       "CVE-2025-52691",
       "CVE-2026-21877"
     ],
@@ -1410,6 +1425,7 @@
       "CVE-2025-68664",
       "CVE-2025-68665",
       "CVE-2025-8747",
+      "CVE-2026-12569",
       "CVE-2026-20131",
       "CVE-2026-20963",
       "CVE-2026-3059",
@@ -1954,6 +1970,7 @@
       "CVE-2025-25297",
       "CVE-2025-56520",
       "CVE-2025-61884",
+      "CVE-2026-20230",
       "CVE-2026-22219"
     ],
     "framework_controls_partially_addressing": [
@@ -2384,6 +2401,7 @@
       "CVE-2008-4250",
       "CVE-2014-3931",
       "CVE-2025-14174",
+      "CVE-2025-31200",
       "CVE-2025-31277",
       "CVE-2025-6543",
       "CVE-2025-6965",
@@ -2433,6 +2451,7 @@
       "CVE-2025-0282",
       "CVE-2025-20352",
       "CVE-2025-22457",
+      "CVE-2025-42599",
       "CVE-2025-53521"
     ],
     "last_verified": "2026-05-18",
@@ -2869,6 +2888,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2025-24054",
       "CVE-2025-33053"
     ],
     "last_verified": "2026-05-18",
@@ -4669,6 +4689,7 @@
     ],
     "skills_referencing": [],
     "evidence_cves": [
+      "CVE-2024-38475",
       "CVE-2026-20245"
     ],
     "framework_controls_partially_addressing": [],
@@ -4739,5 +4760,88 @@
     "real_requirement": "Complete, deny-by-default comparison logic that enumerates every distinguishing factor for a security decision; security filters must fail closed on any unmatched factor rather than forwarding the default case.",
     "lag_notes": "Frameworks specify that filtering exist (SC-7 boundary protection) but not that comparison logic be complete and fail-closed across all factors. Partial-match forwarding passes a control review while leaving an access-control bypass.",
     "last_verified": "2026-06-13"
+  },
+  "CWE-1220": {
+    "id": "CWE-1220",
+    "name": "Insufficient Granularity of Access Control",
+    "abstraction": "Base",
+    "category": "Access Control",
+    "description": "The product implements access controls via a policy or other feature with the intention to disable or restrict accesses, but the access-control granularity is too coarse, so a protected resource can be reached at a finer level than the policy distinguishes. Cited by NVD for the Apple RPAC pointer-authentication bypass (CVE-2025-31201), where the protection's granularity was insufficient to stop an arbitrary read/write primitive.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-1",
+      "CAPEC-180"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2025-31201"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-AC-3",
+      "ISO-27001-2022-A.5.15",
+      "NIST-800-53-AC-6"
+    ],
+    "real_requirement": "Access-control boundaries enforced at the granularity of the protected resource, not a coarser policy unit; hardware/firmware protection mechanisms (e.g. pointer authentication) must cover every reachable primitive, not a representative subset.",
+    "lag_notes": "AC-3 attests that an authorization framework exists; CWE-1220 is specifically about the framework's resolution being too coarse to stop the exploited path — compliance does not measure granularity.",
+    "last_verified": "2026-06-26"
+  },
+  "CWE-61": {
+    "id": "CWE-61",
+    "name": "UNIX Symbolic Link (Symlink) Following",
+    "abstraction": "Variant",
+    "category": "Path Resolution",
+    "description": "The product, when opening a file or directory, does not sufficiently account for the file being a symbolic link that resolves to a target outside of the intended control sphere, so an attacker who controls the link can cause the product to read or write a file it should not. A child of CWE-59 (improper link resolution). Cited by NVD for the LiteSpeed cPanel plugin symlink-following flaw (CVE-2026-54420).",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-27",
+      "CAPEC-76"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2026-54420"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-AC-6",
+      "ISO-27001-2022-A.8.3"
+    ],
+    "real_requirement": "Resolve and validate the final target of any link before opening it; on shared-tenant hosts, refuse to follow links that cross account/control-sphere boundaries (O_NOFOLLOW, post-resolution path checks, per-tenant chroot).",
+    "lag_notes": "File-permission controls assume the path names the intended object; a symlink defeats that assumption at resolution time, which a permissions audit does not exercise.",
+    "last_verified": "2026-06-26"
+  },
+  "CWE-424": {
+    "id": "CWE-424",
+    "name": "Improper Protection of Alternate Path",
+    "abstraction": "Class",
+    "category": "Access Control",
+    "description": "The product does not sufficiently protect all of the possible paths that a user can take to access restricted functionality or a resource, so an alternate route reaches what the primary route guards. A protection-mechanism failure (related to CWE-693). Cited by NVD for the Yii framework alternate-path bypass that leads to remote code execution (CVE-2024-58136).",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-127",
+      "CAPEC-19"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2024-58136"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-AC-3",
+      "NIST-800-53-SC-7",
+      "ISO-27001-2022-A.8.8"
+    ],
+    "real_requirement": "Enumerate and apply the same authorization and input-validation checks to every code path that reaches a protected resource, including framework-internal alternate routes; deny-by-default for any path not explicitly modeled.",
+    "lag_notes": "An access-control audit typically tests the documented path; CWE-424 is about the undocumented alternate path that the same audit never exercises.",
+    "last_verified": "2026-06-26"
   }
 }
