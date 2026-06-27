@@ -322,7 +322,7 @@
       "artifact": "data/cwe-catalog.json",
       "path": "data/cwe-catalog.json",
       "schema_version": "1.0.0",
-      "entry_count": 181
+      "entry_count": 184
     },
     {
       "date": "2026-06-01",
