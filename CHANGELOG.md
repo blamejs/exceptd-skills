@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.18.18 — 2026-06-26
+
+Twenty CISA-KEV-listed, actively-exploited CVEs are now in the catalog (459 → 479). Each is curated to the full bar: verified NVD CVSS and CWE, MITRE ATT&CK technique mapping, behavioral indicators of compromise, global-first framework-control-gap analysis (NIST 800-53, ISO 27001:2022, EU NIS2, UK CAF, AU Essential Eight), an RWEP score, and a paired zero-day lesson.
+
+The additions cover current edge- and enterprise-exploitation activity: the Apple CoreAudio and pointer-authentication-bypass zero-days from the mid-2025 targeted-spyware chain (CVE-2025-31200, CVE-2025-31201); the Windows NTLM hash-disclosure flaw (CVE-2025-24054); the Commvault Command Center and Web Server RCEs (CVE-2025-34028, CVE-2025-3928); the SonicWall SMA100 command injection (CVE-2023-44221); the Apache HTTP Server mod_rewrite output-escaping flaw (CVE-2024-38475); the Yii framework alternate-path RCE (CVE-2024-58136); the Cisco Unified CM SSRF-to-root and Catalyst SD-WAN Manager traversal (CVE-2026-20230, CVE-2026-20262); the Splunk Enterprise missing-authentication RCE (CVE-2026-20253); the Ubiquiti UniFi OS access-control, path-traversal, and command-injection chain behind the azsxd botnet (CVE-2026-34908, CVE-2026-34909, CVE-2026-34910); and the Lantronix EDS5000 OT device-server, Broadcom Brocade Fabric OS, Qualitia Active! Mail, Joomla Content Editor, LiteSpeed cPanel plugin, and PTC Windchill/FlexPLM flaws.
+
 ## 0.18.17 — 2026-06-24
 
 A correctness pass across the upstream-refresh pipeline, the credential and MCP collectors, scoring and framework analysis, attestation hashing, and the release gates.
