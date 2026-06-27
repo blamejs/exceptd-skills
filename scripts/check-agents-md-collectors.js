@@ -176,4 +176,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { classifyCollectors, isReservedFixture };
+module.exports = { classifyCollectors };
