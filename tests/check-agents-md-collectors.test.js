@@ -63,6 +63,27 @@ function withTempCollectorDir(files, fn) {
   }
 }
 
+// Spawn the gate against a tempdir. The dir override is honored only with the
+// explicit test-only switch — the same switch the gate requires so a stray
+// EXCEPTD_COLLECTOR_DIR can never redirect a real predeploy/CI run.
+function runGateOnDir(dir) {
+  return runGate({ EXCEPTD_COLLECTOR_DIR_TESTONLY: '1', EXCEPTD_COLLECTOR_DIR: dir });
+}
+
+test('the dir override is ignored without the explicit test-only switch', () => {
+  // EXCEPTD_COLLECTOR_DIR alone (no _TESTONLY=1) must NOT redirect the gate —
+  // it validates the real lib/collectors/ and stays green, so a stray env var
+  // can't mask missing/broken real collectors.
+  withTempCollectorDir(
+    { 'broken-collector.js': '"use strict";\nthrow new Error("must not be reached");\n' },
+    (dir) => {
+      const r = runGate({ EXCEPTD_COLLECTOR_DIR: dir });
+      assert.equal(r.status, 0, `override without the test-only switch must be ignored; stderr: ${r.stderr}`);
+      assert.match(r.stdout, /collectors enumerated correctly/);
+    }
+  );
+});
+
 // Strip comments + string literals so the static assertion matches only
 // EXECUTABLE code — the explanatory comment in the fixed script names the
 // removed silent-catch by description, and that prose must not trip the guard.
@@ -99,7 +120,7 @@ test('a collector whose require() throws fails the gate with exit 2, not a silen
   withTempCollectorDir(
     { 'broken-collector.js': '"use strict";\nthrow new Error("simulated load-time failure");\nmodule.exports = { collect() {} };\n' },
     (dir) => {
-    const r = runGate({ EXCEPTD_COLLECTOR_DIR: dir });
+    const r = runGateOnDir(dir);
     // EXACT code: a require-time failure is a parse error (exit 2), not drift
     // (1) and never a silent pass (0). Asserting the exact code is what the
     // anti-coincidence rule requires.
@@ -117,7 +138,22 @@ test('a collector whose require() throws fails the gate with exit 2, not a silen
   );
 });
 
-test('a __-prefixed file is ignored entirely so a leaked test fixture cannot poison the gate', () => {
+test('the gate FORBIDS a reserved-prefix fixture in its collectors dir (exit 2, named), so a leak cannot ship', () => {
+  // P2 leak-guard: a `__`-prefixed file in the validated collectors dir is
+  // stray scaffolding that lib/-wholesale publishing would otherwise pack.
+  // The gate must hard-fail and name it, distinct from a "cannot load" error.
+  withTempCollectorDir(
+    { '__leaked_fixture.js': '"use strict";\nthrow new Error("a leaked test fixture must not ship");\n' },
+    (dir) => {
+      const r = runGateOnDir(dir);
+      assert.equal(r.status, 2, `a reserved-prefix fixture must fail the gate (exit 2); stderr: ${r.stderr}`);
+      assert.match(r.stderr, /reserved-prefix file/);
+      assert.match(r.stderr, /__leaked_fixture\.js/);
+    }
+  );
+});
+
+test('a __-prefixed file is ignored by classifyCollectors so a leaked fixture cannot poison enumeration', () => {
   // The reserved-prefix guard: even a THROWING __ fixture (the exact shape a
   // process-killed run used to leave in lib/collectors/) is skipped, never a
   // load error, and never counted — only the real collector is.

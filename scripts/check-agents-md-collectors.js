@@ -27,22 +27,38 @@ const path = require("node:path");
 
 const ROOT = path.join(__dirname, "..");
 const AGENTS = path.join(ROOT, "AGENTS.md");
-// EXCEPTD_COLLECTOR_DIR lets the test suite point the gate at a throwaway
-// tempdir so the require-throw / no-collect behaviours can be exercised
-// WITHOUT writing a fixture into the real lib/collectors/ (a process-killed
-// run that left one there used to poison every collector-enumerating test).
-const COLLECTOR_DIR = process.env.EXCEPTD_COLLECTOR_DIR
-  ? path.resolve(process.env.EXCEPTD_COLLECTOR_DIR)
-  : path.join(ROOT, "lib", "collectors");
+const REAL_COLLECTOR_DIR = path.join(ROOT, "lib", "collectors");
+// EXCEPTD_COLLECTOR_DIR lets the test suite drive the gate against a throwaway
+// tempdir (so the require-throw / leaked-fixture behaviours are exercised
+// without writing into the real lib/collectors/). It is honored ONLY when the
+// explicit test-only switch EXCEPTD_COLLECTOR_DIR_TESTONLY=1 is also set, so a
+// stray env var in CI or a developer shell can never point the release gate at
+// an alternate directory and let missing/broken real collectors pass.
+const COLLECTOR_DIR =
+  process.env.EXCEPTD_COLLECTOR_DIR_TESTONLY === "1" && process.env.EXCEPTD_COLLECTOR_DIR
+    ? path.resolve(process.env.EXCEPTD_COLLECTOR_DIR)
+    : REAL_COLLECTOR_DIR;
 
 // A real shipped collector is named [a-z0-9-]+.js — the AGENTS.md enumeration
 // regex (`lib/collectors/([a-z0-9-]+\.js)`) cannot even reference an
 // underscore-prefixed file. So a `__`-prefixed file is never a collector:
-// it is test scaffolding or a stray artifact. Skip it everywhere the gate
-// builds the real-collector set so a leaked fixture cannot poison the count,
-// the enumeration cross-check, or the load-error scan.
+// it is test scaffolding or a stray artifact. classifyCollectors SKIPS it so a
+// leaked fixture cannot poison the count/enumeration/load-error scan; the gate
+// separately FORBIDS it (see findReservedFixtures) so a leaked fixture cannot
+// silently ship in the wholesale-published lib/ tree either.
 function isReservedFixture(f) {
   return f.startsWith("__");
+}
+
+// Reserved-prefix .js files present in `dir`. These are test scaffolding and
+// must never ship; the gate fails hard if any are found in the directory it
+// validates.
+function findReservedFixtures(dir) {
+  try {
+    return fs.readdirSync(dir).filter((f) => f.endsWith(".js") && isReservedFixture(f));
+  } catch {
+    return [];
+  }
 }
 
 // Classify every <dir>/*.js into collectors (require succeeds + exports
@@ -88,6 +104,20 @@ function ok(msg) {
 }
 
 function main() {
+  // Leak-guard (P2: forbid leaked reserved fixtures before packing). A
+  // `__`-prefixed file in the collectors dir is stray test scaffolding;
+  // because lib/ is published wholesale, a leaked one would otherwise ship.
+  // Fail hard, naming the file, so the release path deletes it.
+  const stray = findReservedFixtures(COLLECTOR_DIR);
+  if (stray.length > 0) {
+    console.error(
+      `[check-agents-md-collectors] reserved-prefix file(s) must not ship from lib/collectors/ ` +
+      `- delete the stray test scaffolding: ${stray.join(", ")}`
+    );
+    process.exitCode = 2;
+    return;
+  }
+
   let agents;
   try { agents = fs.readFileSync(AGENTS, "utf8"); }
   catch (e) {
