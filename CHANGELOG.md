@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.18.20 — 2026-06-28
+
+Twenty more CISA-KEV-listed, actively-exploited CVEs are now in the catalog (479 → 499), each curated to the full bar: verified NVD CVSS and CWE, MITRE ATT&CK mapping, behavioral indicators of compromise, global-first framework-control-gap analysis (NIST 800-53, ISO 27001:2022, EU NIS2, UK CAF, AU Essential Eight), an RWEP score, and a paired zero-day lesson. Five weakness classes the new entries reference were added to the CWE catalog (184 → 189): hard-coded cryptographic key (CWE-321), path equivalence (CWE-44) and incorrectly-resolved names (CWE-706), absolute path traversal (CWE-36), and improper isolation (CWE-653).
+
+The additions center on the March-2025 Windows kernel cluster — the Common Log File System use-after-free exploited as a ransomware privilege-escalation zero-day (CVE-2025-29824), the NTFS and Fast FAT crafted-VHD flaws (CVE-2025-24984, CVE-2025-24985, CVE-2025-24991, CVE-2025-24993), and the Win32k use-after-free (CVE-2025-24983) — plus the Chrome Mojo sandbox escape used in targeted espionage (CVE-2025-2783), the Apache Tomcat partial-PUT deserialization RCE (CVE-2025-24813), Fortinet FortiOS/FortiProxy authentication bypass (CVE-2025-24472), Juniper Junos improper isolation (CVE-2025-21590), Cisco Smart Licensing Utility static credentials (CVE-2024-20439), the SonicWall SMA100 command injection behind the OVERSTEP backdoor (CVE-2021-20035), the Linux kernel USB-audio flaws used in mobile-forensic extraction (CVE-2024-53150, CVE-2024-53197), and Gladinet CentreStack, Sitecore, SAP NetWeaver, NAKIVO, and Edimax flaws.
+
 ## 0.18.19 — 2026-06-26
 
 Internal: the collector-enumeration gate and the collector tests now treat `__`-prefixed files under `lib/collectors/` as reserved scaffolding and skip them, since a real collector is always named `[a-z0-9-]+.js`. The gate's load-error/helper classification is also exercised against a throwaway directory rather than the shipped one, so a test run interrupted mid-fixture can no longer leave a stray module that fails subsequent local runs.
