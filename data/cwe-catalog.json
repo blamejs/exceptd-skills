@@ -96,6 +96,7 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2017-12637",
       "CVE-2019-5418",
       "CVE-2021-43798",
       "CVE-2023-38950",
@@ -215,6 +216,7 @@
     ],
     "evidence_cves": [
       "CVE-2014-6278",
+      "CVE-2021-20035",
       "CVE-2023-39780",
       "CVE-2023-44221",
       "CVE-2023-6019",
@@ -223,6 +225,7 @@
       "CVE-2024-6047",
       "CVE-2025-11953",
       "CVE-2025-12686",
+      "CVE-2025-1316",
       "CVE-2025-1753",
       "CVE-2025-1976",
       "CVE-2025-48703",
@@ -513,6 +516,8 @@
     "evidence_cves": [
       "CVE-2023-36424",
       "CVE-2024-42478",
+      "CVE-2024-53150",
+      "CVE-2025-24991",
       "CVE-2025-48633",
       "CVE-2025-5419",
       "CVE-2025-5777",
@@ -1247,7 +1252,9 @@
       "CVE-2020-9715",
       "CVE-2023-41974",
       "CVE-2023-43000",
+      "CVE-2025-24983",
       "CVE-2025-27038",
+      "CVE-2025-29824",
       "CVE-2025-30400",
       "CVE-2025-32701",
       "CVE-2025-32709",
@@ -1395,6 +1402,8 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2019-9874",
+      "CVE-2019-9875",
       "CVE-2022-1471",
       "CVE-2023-21529",
       "CVE-2024-11392",
@@ -1409,6 +1418,7 @@
       "CVE-2025-10164",
       "CVE-2025-23254",
       "CVE-2025-24016",
+      "CVE-2025-24813",
       "CVE-2025-26399",
       "CVE-2025-27520",
       "CVE-2025-30165",
@@ -1710,6 +1720,7 @@
       "CVE-2024-21762",
       "CVE-2024-37079",
       "CVE-2024-42479",
+      "CVE-2024-53197",
       "CVE-2025-0282",
       "CVE-2025-14174",
       "CVE-2025-14733",
@@ -1765,7 +1776,9 @@
     ],
     "evidence_cves": [
       "CVE-2019-6693",
+      "CVE-2024-20439",
       "CVE-2025-14611",
+      "CVE-2025-30406",
       "CVE-2026-22769"
     ],
     "framework_controls_partially_addressing": [
@@ -2473,6 +2486,7 @@
     "evidence_cves": [
       "CVE-2018-14634",
       "CVE-2021-30952",
+      "CVE-2025-24985",
       "CVE-2025-48595",
       "CVE-2026-21385",
       "CVE-2026-24214"
@@ -2572,6 +2586,7 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2024-1709",
+      "CVE-2025-24472",
       "CVE-2025-2746",
       "CVE-2025-2747",
       "CVE-2025-34026",
@@ -2930,6 +2945,8 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2009-3459",
+      "CVE-2025-24985",
+      "CVE-2025-24993",
       "CVE-2025-32706",
       "CVE-2026-22778"
     ],
@@ -3372,6 +3389,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2025-2783",
       "CVE-2025-64496"
     ],
     "last_verified": "2026-05-19",
@@ -3430,7 +3448,9 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2025-24984"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
@@ -4733,6 +4753,7 @@
     ],
     "skills_referencing": [],
     "evidence_cves": [
+      "CVE-2024-20439",
       "CVE-2025-47729"
     ],
     "framework_controls_partially_addressing": [],
@@ -4843,5 +4864,139 @@
     "real_requirement": "Enumerate and apply the same authorization and input-validation checks to every code path that reaches a protected resource, including framework-internal alternate routes; deny-by-default for any path not explicitly modeled.",
     "lag_notes": "An access-control audit typically tests the documented path; CWE-424 is about the undocumented alternate path that the same audit never exercises.",
     "last_verified": "2026-06-26"
+  },
+  "CWE-321": {
+    "id": "CWE-321",
+    "name": "Use of Hard-coded Cryptographic Key",
+    "abstraction": "Variant",
+    "category": "Cryptographic Issues",
+    "description": "The product uses a hard-coded cryptographic key, so anyone with access to the product (or its source/binaries) can derive the key and forge or decrypt protected data. Cited by NVD for the Gladinet CentreStack/Triofox flaw (CVE-2025-30406) where a hard-coded ASP.NET machineKey let attackers forge ViewState payloads into RCE.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-20",
+      "CAPEC-97"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2025-30406"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SC-12",
+      "ISO-27001-2022-A.8.24",
+      "PCI-DSS-4.0-3.5"
+    ],
+    "real_requirement": "Cryptographic keys are generated per-deployment from a secure source, never shipped in code or default config; key material is stored in a secrets manager/HSM and rotated on a defined schedule.",
+    "lag_notes": "A crypto-policy audit confirms that encryption is used; CWE-321 is about the key being shared across every install, which the policy's existence does not detect.",
+    "last_verified": "2026-06-28"
+  },
+  "CWE-706": {
+    "id": "CWE-706",
+    "name": "Use of Incorrectly-Resolved Name or Reference",
+    "abstraction": "Class",
+    "category": "Path Resolution",
+    "description": "The product uses a name or reference to access a resource, but does not resolve it to the intended target, so an attacker-influenced name reaches a different resource than the access checks assumed. Parent of path-equivalence weaknesses; cited by NVD for the Apache Tomcat partial-PUT path-equivalence flaw (CVE-2025-24813).",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-3",
+      "CAPEC-165"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2025-24813"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-10",
+      "ISO-27001-2022-A.8.28"
+    ],
+    "real_requirement": "Canonicalize every name/path to its absolute resolved form before any authorization or existence check, and re-check after resolution; reject names whose resolved target differs from the requested one.",
+    "lag_notes": "Input-validation controls test the requested name; CWE-706 is about the gap between the requested name and what it actually resolves to, which the same control does not exercise.",
+    "last_verified": "2026-06-28"
+  },
+  "CWE-44": {
+    "id": "CWE-44",
+    "name": "Path Equivalence: 'file.name' (Internal Dot)",
+    "abstraction": "Base",
+    "category": "Path Resolution",
+    "description": "The product treats two distinct path spellings (e.g. with internal dots, trailing dots, or alternate separators) as the same or different targets inconsistently, so an attacker reaches a protected resource via an equivalent spelling the access check did not anticipate. A child of CWE-706; cited by NVD for the Tomcat partial-PUT chain (CVE-2025-24813).",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-3"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2025-24813"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-10",
+      "ISO-27001-2022-A.8.28"
+    ],
+    "real_requirement": "Normalize path spellings (dots, separators, case, encoding) to a single canonical form before mapping a request to a file or servlet, and apply the same normalization the runtime uses to dispatch the request.",
+    "lag_notes": "A path-traversal test that only tries `../` misses equivalence spellings; CWE-44 is the class of equivalent names the dispatcher and the access check disagree on.",
+    "last_verified": "2026-06-28"
+  },
+  "CWE-36": {
+    "id": "CWE-36",
+    "name": "Absolute Path Traversal",
+    "abstraction": "Base",
+    "category": "Path Resolution",
+    "description": "The product uses an attacker-controlled path that begins with an absolute root (e.g. /etc/passwd or C:\\), reaching a file outside the intended directory without needing `../` sequences. A child of CWE-22; cited by NVD for the NAKIVO Backup & Replication arbitrary-file-read flaw (CVE-2024-48248).",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-597"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2024-48248"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-AC-3",
+      "ISO-27001-2022-A.8.3"
+    ],
+    "real_requirement": "Reject absolute paths outright for user-supplied file references; resolve against a fixed base directory and confirm the canonical result stays within it before opening.",
+    "lag_notes": "A relative-traversal filter that strips `../` does nothing against an absolute path; CWE-36 is the absolute-root variant the same filter ignores.",
+    "last_verified": "2026-06-28"
+  },
+  "CWE-653": {
+    "id": "CWE-653",
+    "name": "Improper Isolation or Compartmentalization",
+    "abstraction": "Class",
+    "category": "Access Control",
+    "description": "The product does not properly separate components with different trust or privilege, so a compromise of one reaches another that should have been isolated. Cited by NVD for the Juniper Junos OS flaw (CVE-2025-21590) used by the UNC3886 espionage actor to run code outside the intended sandbox.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-233"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2025-21590"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SC-3",
+      "NIST-800-53-AC-6",
+      "ISO-27001-2022-A.8.22"
+    ],
+    "real_requirement": "Enforce strong boundaries between trust domains (process/container/VM/privilege separation), deny cross-domain primitives by default, and audit the actual reachability between compartments rather than the documented design.",
+    "lag_notes": "An architecture review attests that compartments exist; CWE-653 is about a real primitive that crosses them, which a design review on paper does not test.",
+    "last_verified": "2026-06-28"
   }
 }
