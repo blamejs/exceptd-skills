@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.1.0",
-    "last_updated": "2026-06-01",
+    "last_updated": "2026-07-03",
     "last_threat_review": "2026-05-17",
     "purpose": "Zero-day learning loop output. Each entry maps a CVE to: attack vector, defense chain analysis, framework coverage, new control requirements generated, and exposure scoring. v1.1.0 (2026-05-15): every entry now carries ai_discovered_zeroday boolean + ai_discovery_source enum + ai_discovery_date + ai_assist_factor ladder, per AGENTS.md Hard Rule #7.",
     "note": "Never delete entries. Closed gaps are marked status: closed. History is data.",
@@ -17,7 +17,7 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "entry_count": 499
+    "entry_count": 519
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -28842,6 +28842,1106 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2026-45659": {
+    "name": "Microsoft SharePoint Server Deserialization of Untrusted Data Vulnerability",
+    "lesson_date": "2026-07-03",
+    "attack_vector": {
+      "description": "Deserialization of untrusted data in Microsoft Office SharePoint allows an authorized attacker to execute code over a network. CISA KEV-listed 2026-07-01 (due 2026-07-04) with confirmed in-the-wild exploitation.",
+      "privileges_required": "low (authenticated user)",
+      "complexity": "low — KEV-listed and actively exploited; treat as weaponized.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization for this CVE."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor fix on the KEV emergency clock (due 2026-07-04); until it lands, restrict reachability to the affected surface and apply the documented vendor mitigations.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "The patch (or, for EoL products, decommissioning) is necessary; the compensating controls are what hold during the window before it is applied."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitor for the IOCs recorded on the catalog entry — SharePoint Server process spawning an unexpected child (cmd.exe/powershell.exe/sh/webshell interpreter) shortly after an inbound request, indicating code execution through the vulnerable endpoint.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the exposure window and catches post-exploitation when patching lags."
+      },
+      "response": {
+        "what_would_have_worked": "Patch or isolate exploited hosts, hunt for the follow-on payload/web shell/backdoor, and review for lateral movement and credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class commonly leaves persistence a bare patch does not remediate."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The routine 30-day flaw-remediation SLA is far longer than the in-the-wild exploitation window for this KEV-listed rce on Microsoft SharePoint Server; CISA set a 2026-07-04 due date, so the operationally-meaningful clock is days, not the standard patch cycle."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.8 leaves \"appropriate timescales\" undefined; for an actively-exploited rce on Microsoft SharePoint Server the timescale must collapse to the CISA due date (2026-07-04) rather than the organization's normal vulnerability-management cadence."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential Eight patch maturity is scored on cadence, not on KEV-anchored emergency response; a compliant maturity-level-2 org on its normal cycle remains exposed to this rce on Microsoft SharePoint Server until its next window."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 55,
+      "basis": "Audited organizations on a normal patch cadence remain exposed to this KEV-listed rce on Microsoft SharePoint Server until the emergency fix is applied; routine-cycle compliance does not satisfy the KEV due date (2026-07-04).",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_disclosure",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2026-48558": {
+    "name": "SimpleHelp Authentication Bypass Vulnerability",
+    "lesson_date": "2026-07-03",
+    "attack_vector": {
+      "description": "SimpleHelp versions 5.5.15 and prior and 6.0 pre-release versions contain an authentication bypass vulnerability in the OIDC authentication flow. When OIDC authentication is configured, identity tokens submitted during login are accepted without verifying their cryptographic signature. In a vulnerable configuration, a remote, unauthenticated attacker can submit a forged token containing arbitrary identity claims to obtain a fully authenticated technician session. In some configurations, this may also allow bypass of multi-factor authentication. No user interaction is required. CISA KEV-listed 2026-06-29 (due 2026-07-02) with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated)",
+      "complexity": "low — KEV-listed and actively exploited; treat as weaponized.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization for this CVE."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor fix on the KEV emergency clock (due 2026-07-02); until it lands, restrict reachability to the affected surface and apply the documented vendor mitigations.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "The patch (or, for EoL products, decommissioning) is necessary; the compensating controls are what hold during the window before it is applied."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitor for the IOCs recorded on the catalog entry — Successful authenticated actions on SimpleHelp from a session that never completed a legitimate credential/MFA challenge, indicating an authentication or authorization bypass.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the exposure window and catches post-exploitation when patching lags."
+      },
+      "response": {
+        "what_would_have_worked": "Patch or isolate exploited hosts, hunt for the follow-on payload/web shell/backdoor, and review for lateral movement and credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class commonly leaves persistence a bare patch does not remediate."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The routine 30-day flaw-remediation SLA is far longer than the in-the-wild exploitation window for this KEV-listed auth bypass on SimpleHelp SimpleHelp; CISA set a 2026-07-02 due date, so the operationally-meaningful clock is days, not the standard patch cycle."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.8 leaves \"appropriate timescales\" undefined; for an actively-exploited auth bypass on SimpleHelp SimpleHelp the timescale must collapse to the CISA due date (2026-07-02) rather than the organization's normal vulnerability-management cadence."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential Eight patch maturity is scored on cadence, not on KEV-anchored emergency response; a compliant maturity-level-2 org on its normal cycle remains exposed to this auth bypass on SimpleHelp SimpleHelp until its next window."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 55,
+      "basis": "Audited organizations on a normal patch cadence remain exposed to this KEV-listed auth bypass on SimpleHelp Authentication Bypass until the emergency fix is applied; routine-cycle compliance does not satisfy the KEV due date (2026-07-02).",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-26633": {
+    "name": "Microsoft Windows Management Console (MMC) Improper Neutralization Vulnerability",
+    "lesson_date": "2026-07-03",
+    "attack_vector": {
+      "description": "Improper neutralization in Microsoft Management Console allows an unauthorized attacker to bypass a security feature locally. CISA KEV-listed 2025-03-11 (due 2025-04-01) with confirmed in-the-wild exploitation.",
+      "privileges_required": "local access, none (unauthenticated)",
+      "complexity": "low — KEV-listed and actively exploited; treat as weaponized.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization for this CVE."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor fix on the KEV emergency clock (due 2025-04-01); until it lands, restrict reachability to the affected surface and apply the documented vendor mitigations.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "The patch (or, for EoL products, decommissioning) is necessary; the compensating controls are what hold during the window before it is applied."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitor for the IOCs recorded on the catalog entry — A low-privileged process on the host gaining SYSTEM/root or bypassing a security control immediately after loading a crafted object/file, indicating local privilege escalation.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the exposure window and catches post-exploitation when patching lags."
+      },
+      "response": {
+        "what_would_have_worked": "Patch or isolate exploited hosts, hunt for the follow-on payload/web shell/backdoor, and review for lateral movement and credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class commonly leaves persistence a bare patch does not remediate."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The routine 30-day flaw-remediation SLA is far longer than the in-the-wild exploitation window for this KEV-listed security feature bypass on Microsoft Windows; CISA set a 2025-04-01 due date, so the operationally-meaningful clock is days, not the standard patch cycle."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.8 leaves \"appropriate timescales\" undefined; for an actively-exploited security feature bypass on Microsoft Windows the timescale must collapse to the CISA due date (2025-04-01) rather than the organization's normal vulnerability-management cadence."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential Eight patch maturity is scored on cadence, not on KEV-anchored emergency response; a compliant maturity-level-2 org on its normal cycle remains exposed to this security feature bypass on Microsoft Windows until its next window."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 65,
+      "basis": "Audited organizations on a normal patch cadence remain exposed to this KEV-listed security feature bypass on Microsoft Windows Management until the emergency fix is applied; routine-cycle compliance does not satisfy the KEV due date (2025-04-01).",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_disclosure",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2024-13161": {
+    "name": "Ivanti Endpoint Manager (EPM) Absolute Path Traversal Vulnerability (GetHashForSingleFile)",
+    "lesson_date": "2026-07-03",
+    "attack_vector": {
+      "description": "Absolute path traversal in Ivanti EPM before the 2024 January-2025 Security Update and 2022 SU6 January-2025 Security Update allows a remote unauthenticated attacker to leak sensitive information. CISA KEV-listed 2025-03-10 (due 2025-03-31) with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated)",
+      "complexity": "low — KEV-listed and actively exploited; treat as weaponized.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization for this CVE."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor fix on the KEV emergency clock (due 2025-03-31); until it lands, restrict reachability to the affected surface and apply the documented vendor mitigations.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "The patch (or, for EoL products, decommissioning) is necessary; the compensating controls are what hold during the window before it is applied."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitor for the IOCs recorded on the catalog entry — Outbound SMB/HTTP/file-read requests originating from the Endpoint Manager (EPM) service account to attacker-controlled or unexpected destinations, indicating coerced authentication or arbitrary file read.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the exposure window and catches post-exploitation when patching lags."
+      },
+      "response": {
+        "what_would_have_worked": "Patch or isolate exploited hosts, hunt for the follow-on payload/web shell/backdoor, and review for lateral movement and credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class commonly leaves persistence a bare patch does not remediate."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The routine 30-day flaw-remediation SLA is far longer than the in-the-wild exploitation window for this KEV-listed credential coercion on Ivanti Endpoint Manager (EPM); CISA set a 2025-03-31 due date, so the operationally-meaningful clock is days, not the standard patch cycle."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.8 leaves \"appropriate timescales\" undefined; for an actively-exploited credential coercion on Ivanti Endpoint Manager (EPM) the timescale must collapse to the CISA due date (2025-03-31) rather than the organization's normal vulnerability-management cadence."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential Eight patch maturity is scored on cadence, not on KEV-anchored emergency response; a compliant maturity-level-2 org on its normal cycle remains exposed to this credential coercion on Ivanti Endpoint Manager (EPM) until its next window."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 60,
+      "basis": "Audited organizations on a normal patch cadence remain exposed to this KEV-listed credential coercion on Ivanti Endpoint Manager until the emergency fix is applied; routine-cycle compliance does not satisfy the KEV due date (2025-03-31).",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2024-13160": {
+    "name": "Ivanti Endpoint Manager (EPM) Absolute Path Traversal Vulnerability (GetHashForWildcard)",
+    "lesson_date": "2026-07-03",
+    "attack_vector": {
+      "description": "Absolute path traversal in Ivanti EPM before the 2024 January-2025 Security Update and 2022 SU6 January-2025 Security Update allows a remote unauthenticated attacker to leak sensitive information. CISA KEV-listed 2025-03-10 (due 2025-03-31) with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated)",
+      "complexity": "low — KEV-listed and actively exploited; treat as weaponized.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization for this CVE."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor fix on the KEV emergency clock (due 2025-03-31); until it lands, restrict reachability to the affected surface and apply the documented vendor mitigations.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "The patch (or, for EoL products, decommissioning) is necessary; the compensating controls are what hold during the window before it is applied."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitor for the IOCs recorded on the catalog entry — Outbound SMB/HTTP/file-read requests originating from the Endpoint Manager (EPM) service account to attacker-controlled or unexpected destinations, indicating coerced authentication or arbitrary file read.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the exposure window and catches post-exploitation when patching lags."
+      },
+      "response": {
+        "what_would_have_worked": "Patch or isolate exploited hosts, hunt for the follow-on payload/web shell/backdoor, and review for lateral movement and credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class commonly leaves persistence a bare patch does not remediate."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The routine 30-day flaw-remediation SLA is far longer than the in-the-wild exploitation window for this KEV-listed credential coercion on Ivanti Endpoint Manager (EPM); CISA set a 2025-03-31 due date, so the operationally-meaningful clock is days, not the standard patch cycle."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.8 leaves \"appropriate timescales\" undefined; for an actively-exploited credential coercion on Ivanti Endpoint Manager (EPM) the timescale must collapse to the CISA due date (2025-03-31) rather than the organization's normal vulnerability-management cadence."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential Eight patch maturity is scored on cadence, not on KEV-anchored emergency response; a compliant maturity-level-2 org on its normal cycle remains exposed to this credential coercion on Ivanti Endpoint Manager (EPM) until its next window."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 60,
+      "basis": "Audited organizations on a normal patch cadence remain exposed to this KEV-listed credential coercion on Ivanti Endpoint Manager until the emergency fix is applied; routine-cycle compliance does not satisfy the KEV due date (2025-03-31).",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2024-13159": {
+    "name": "Ivanti Endpoint Manager (EPM) Absolute Path Traversal Vulnerability (GetHashForWildcardRecursive)",
+    "lesson_date": "2026-07-03",
+    "attack_vector": {
+      "description": "Absolute path traversal in Ivanti EPM before the 2024 January-2025 Security Update and 2022 SU6 January-2025 Security Update allows a remote unauthenticated attacker to leak sensitive information. CISA KEV-listed 2025-03-10 (due 2025-03-31) with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated)",
+      "complexity": "low — KEV-listed and actively exploited; treat as weaponized.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization for this CVE."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor fix on the KEV emergency clock (due 2025-03-31); until it lands, restrict reachability to the affected surface and apply the documented vendor mitigations.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "The patch (or, for EoL products, decommissioning) is necessary; the compensating controls are what hold during the window before it is applied."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitor for the IOCs recorded on the catalog entry — Outbound SMB/HTTP/file-read requests originating from the Endpoint Manager (EPM) service account to attacker-controlled or unexpected destinations, indicating coerced authentication or arbitrary file read.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the exposure window and catches post-exploitation when patching lags."
+      },
+      "response": {
+        "what_would_have_worked": "Patch or isolate exploited hosts, hunt for the follow-on payload/web shell/backdoor, and review for lateral movement and credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class commonly leaves persistence a bare patch does not remediate."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The routine 30-day flaw-remediation SLA is far longer than the in-the-wild exploitation window for this KEV-listed credential coercion on Ivanti Endpoint Manager (EPM); CISA set a 2025-03-31 due date, so the operationally-meaningful clock is days, not the standard patch cycle."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.8 leaves \"appropriate timescales\" undefined; for an actively-exploited credential coercion on Ivanti Endpoint Manager (EPM) the timescale must collapse to the CISA due date (2025-03-31) rather than the organization's normal vulnerability-management cadence."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential Eight patch maturity is scored on cadence, not on KEV-anchored emergency response; a compliant maturity-level-2 org on its normal cycle remains exposed to this credential coercion on Ivanti Endpoint Manager (EPM) until its next window."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 60,
+      "basis": "Audited organizations on a normal patch cadence remain exposed to this KEV-listed credential coercion on Ivanti Endpoint Manager until the emergency fix is applied; routine-cycle compliance does not satisfy the KEV due date (2025-03-31).",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2024-57968": {
+    "name": "Advantive VeraCore Unrestricted File Upload Vulnerability",
+    "lesson_date": "2026-07-03",
+    "attack_vector": {
+      "description": "Advantive VeraCore before 2024.4.2.1 allows remote authenticated users to upload files to unintended folders (e.g., ones that are accessible during web browsing by other users). upload.aspx can be used for this. CISA KEV-listed 2025-03-10 (due 2025-03-31) with confirmed in-the-wild exploitation.",
+      "privileges_required": "low (authenticated user)",
+      "complexity": "low — KEV-listed and actively exploited; treat as weaponized.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization for this CVE."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor fix on the KEV emergency clock (due 2025-03-31); until it lands, restrict reachability to the affected surface and apply the documented vendor mitigations.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "The patch (or, for EoL products, decommissioning) is necessary; the compensating controls are what hold during the window before it is applied."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitor for the IOCs recorded on the catalog entry — VeraCore process spawning an unexpected child (cmd.exe/powershell.exe/sh/webshell interpreter) shortly after an inbound request, indicating code execution through the vulnerable endpoint.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the exposure window and catches post-exploitation when patching lags."
+      },
+      "response": {
+        "what_would_have_worked": "Patch or isolate exploited hosts, hunt for the follow-on payload/web shell/backdoor, and review for lateral movement and credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class commonly leaves persistence a bare patch does not remediate."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The routine 30-day flaw-remediation SLA is far longer than the in-the-wild exploitation window for this KEV-listed rce on Advantive VeraCore; CISA set a 2025-03-31 due date, so the operationally-meaningful clock is days, not the standard patch cycle."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.8 leaves \"appropriate timescales\" undefined; for an actively-exploited rce on Advantive VeraCore the timescale must collapse to the CISA due date (2025-03-31) rather than the organization's normal vulnerability-management cadence."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential Eight patch maturity is scored on cadence, not on KEV-anchored emergency response; a compliant maturity-level-2 org on its normal cycle remains exposed to this rce on Advantive VeraCore until its next window."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 55,
+      "basis": "Audited organizations on a normal patch cadence remain exposed to this KEV-listed rce on Advantive VeraCore Unrestricted until the emergency fix is applied; routine-cycle compliance does not satisfy the KEV due date (2025-03-31).",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-25181": {
+    "name": " Advantive VeraCore SQL Injection Vulnerability",
+    "lesson_date": "2026-07-03",
+    "attack_vector": {
+      "description": "A SQL injection vulnerability in timeoutWarning.asp in Advantive VeraCore through 2025.1.0 allows remote attackers to execute arbitrary SQL commands via the PmSess1 parameter. CISA KEV-listed 2025-03-10 (due 2025-03-31) with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated)",
+      "complexity": "low — KEV-listed and actively exploited; treat as weaponized.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization for this CVE."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor fix on the KEV emergency clock (due 2025-03-31); until it lands, restrict reachability to the affected surface and apply the documented vendor mitigations.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "The patch (or, for EoL products, decommissioning) is necessary; the compensating controls are what hold during the window before it is applied."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitor for the IOCs recorded on the catalog entry — VeraCore process spawning an unexpected child (cmd.exe/powershell.exe/sh/webshell interpreter) shortly after an inbound request, indicating code execution through the vulnerable endpoint.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the exposure window and catches post-exploitation when patching lags."
+      },
+      "response": {
+        "what_would_have_worked": "Patch or isolate exploited hosts, hunt for the follow-on payload/web shell/backdoor, and review for lateral movement and credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class commonly leaves persistence a bare patch does not remediate."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The routine 30-day flaw-remediation SLA is far longer than the in-the-wild exploitation window for this KEV-listed sql injection on Advantive VeraCore; CISA set a 2025-03-31 due date, so the operationally-meaningful clock is days, not the standard patch cycle."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.8 leaves \"appropriate timescales\" undefined; for an actively-exploited sql injection on Advantive VeraCore the timescale must collapse to the CISA due date (2025-03-31) rather than the organization's normal vulnerability-management cadence."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential Eight patch maturity is scored on cadence, not on KEV-anchored emergency response; a compliant maturity-level-2 org on its normal cycle remains exposed to this sql injection on Advantive VeraCore until its next window."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 60,
+      "basis": "Audited organizations on a normal patch cadence remain exposed to this KEV-listed sql injection on  Advantive VeraCore until the emergency fix is applied; routine-cycle compliance does not satisfy the KEV due date (2025-03-31).",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2024-50302": {
+    "name": "Linux Kernel Use of Uninitialized Resource Vulnerability",
+    "lesson_date": "2026-07-03",
+    "attack_vector": {
+      "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nHID: core: zero-initialize the report buffer\n\nSince the report buffer is used by all kinds of drivers in various ways, let's\nzero-initialize it during allocation to make sure that it can't be ever used\nto leak kernel memory via specially-crafted report. CISA KEV-listed 2025-03-04 (due 2025-03-25) with confirmed in-the-wild exploitation.",
+      "privileges_required": "local access, low (authenticated user)",
+      "complexity": "high — KEV-listed and actively exploited; treat as weaponized.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization for this CVE."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor fix on the KEV emergency clock (due 2025-03-25); until it lands, restrict reachability to the affected surface and apply the documented vendor mitigations.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "The patch (or, for EoL products, decommissioning) is necessary; the compensating controls are what hold during the window before it is applied."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitor for the IOCs recorded on the catalog entry — Outbound SMB/HTTP/file-read requests originating from the Kernel service account to attacker-controlled or unexpected destinations, indicating coerced authentication or arbitrary file read.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the exposure window and catches post-exploitation when patching lags."
+      },
+      "response": {
+        "what_would_have_worked": "Patch or isolate exploited hosts, hunt for the follow-on payload/web shell/backdoor, and review for lateral movement and credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class commonly leaves persistence a bare patch does not remediate."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The routine 30-day flaw-remediation SLA is far longer than the in-the-wild exploitation window for this KEV-listed information disclosure on Linux Kernel; CISA set a 2025-03-25 due date, so the operationally-meaningful clock is days, not the standard patch cycle."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.8 leaves \"appropriate timescales\" undefined; for an actively-exploited information disclosure on Linux Kernel the timescale must collapse to the CISA due date (2025-03-25) rather than the organization's normal vulnerability-management cadence."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential Eight patch maturity is scored on cadence, not on KEV-anchored emergency response; a compliant maturity-level-2 org on its normal cycle remains exposed to this information disclosure on Linux Kernel until its next window."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 55,
+      "basis": "Audited organizations on a normal patch cadence remain exposed to this KEV-listed information disclosure on Linux Kernel Use until the emergency fix is applied; routine-cycle compliance does not satisfy the KEV due date (2025-03-25).",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2024-4885": {
+    "name": "Progress WhatsUp Gold Path Traversal Vulnerability",
+    "lesson_date": "2026-07-03",
+    "attack_vector": {
+      "description": "In WhatsUp Gold versions released before 2023.1.3, an unauthenticated Remote Code Execution vulnerability in Progress WhatsUpGold.  The \n\nWhatsUp.ExportUtilities.Export.GetFileWithoutZip\n\n\n\n allows execution of commands with iisapppool\\nmconsole privileges. CISA KEV-listed 2025-03-03 (due 2025-03-24) with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated)",
+      "complexity": "low — KEV-listed and actively exploited; treat as weaponized.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization for this CVE."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor fix on the KEV emergency clock (due 2025-03-24); until it lands, restrict reachability to the affected surface and apply the documented vendor mitigations.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "The patch (or, for EoL products, decommissioning) is necessary; the compensating controls are what hold during the window before it is applied."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitor for the IOCs recorded on the catalog entry — WhatsUp Gold process spawning an unexpected child (cmd.exe/powershell.exe/sh/webshell interpreter) shortly after an inbound request, indicating code execution through the vulnerable endpoint.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the exposure window and catches post-exploitation when patching lags."
+      },
+      "response": {
+        "what_would_have_worked": "Patch or isolate exploited hosts, hunt for the follow-on payload/web shell/backdoor, and review for lateral movement and credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class commonly leaves persistence a bare patch does not remediate."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The routine 30-day flaw-remediation SLA is far longer than the in-the-wild exploitation window for this KEV-listed rce on Progress WhatsUp Gold; CISA set a 2025-03-24 due date, so the operationally-meaningful clock is days, not the standard patch cycle."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.8 leaves \"appropriate timescales\" undefined; for an actively-exploited rce on Progress WhatsUp Gold the timescale must collapse to the CISA due date (2025-03-24) rather than the organization's normal vulnerability-management cadence."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential Eight patch maturity is scored on cadence, not on KEV-anchored emergency response; a compliant maturity-level-2 org on its normal cycle remains exposed to this rce on Progress WhatsUp Gold until its next window."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 60,
+      "basis": "Audited organizations on a normal patch cadence remain exposed to this KEV-listed rce on Progress WhatsUp Gold until the emergency fix is applied; routine-cycle compliance does not satisfy the KEV due date (2025-03-24).",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2018-8639": {
+    "name": "Microsoft Windows Win32k Improper Resource Shutdown or Release Vulnerability",
+    "lesson_date": "2026-07-03",
+    "attack_vector": {
+      "description": "An elevation of privilege vulnerability exists in Windows when the Win32k component fails to properly handle objects in memory, aka \"Win32k Elevation of Privilege Vulnerability.\" This affects Windows 7, Windows Server 2012 R2, Windows RT 8.1, Windows Server 2008, Windows Server 2019, Windows Server 2012, Windows 8.1, Windows Server 2016, Windows Server 2008 R2, Windows 10, Windows 10 Servers. This CVE ID is unique from CVE-2018-8641. CISA KEV-listed 2025-03-03 (due 2025-03-24) with confirmed in-the-wild exploitation.",
+      "privileges_required": "local access, low (authenticated user)",
+      "complexity": "medium — KEV-listed and actively exploited; treat as weaponized.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization for this CVE."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor fix on the KEV emergency clock (due 2025-03-24); until it lands, restrict reachability to the affected surface and apply the documented vendor mitigations.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "The patch (or, for EoL products, decommissioning) is necessary; the compensating controls are what hold during the window before it is applied."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitor for the IOCs recorded on the catalog entry — A low-privileged process on the host gaining SYSTEM/root or bypassing a security control immediately after loading a crafted object/file, indicating local privilege escalation.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the exposure window and catches post-exploitation when patching lags."
+      },
+      "response": {
+        "what_would_have_worked": "Patch or isolate exploited hosts, hunt for the follow-on payload/web shell/backdoor, and review for lateral movement and credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class commonly leaves persistence a bare patch does not remediate."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The routine 30-day flaw-remediation SLA is far longer than the in-the-wild exploitation window for this KEV-listed lpe on Microsoft Windows; CISA set a 2025-03-24 due date, so the operationally-meaningful clock is days, not the standard patch cycle."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.8 leaves \"appropriate timescales\" undefined; for an actively-exploited lpe on Microsoft Windows the timescale must collapse to the CISA due date (2025-03-24) rather than the organization's normal vulnerability-management cadence."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential Eight patch maturity is scored on cadence, not on KEV-anchored emergency response; a compliant maturity-level-2 org on its normal cycle remains exposed to this lpe on Microsoft Windows until its next window."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 65,
+      "basis": "Audited organizations on a normal patch cadence remain exposed to this KEV-listed lpe on Microsoft Windows Win32k until the emergency fix is applied; routine-cycle compliance does not satisfy the KEV due date (2025-03-24).",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "unknown",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2022-43769": {
+    "name": "Hitachi Vantara Pentaho BA Server Special Element Injection Vulnerability",
+    "lesson_date": "2026-07-03",
+    "attack_vector": {
+      "description": "Hitachi Vantara Pentaho Business Analytics Server prior to versions 9.4.0.1 and 9.3.0.2, including 8.3.x allow certain web services to set property values which contain Spring templates that are interpreted downstream. CISA KEV-listed 2025-03-03 (due 2025-03-24) with confirmed in-the-wild exploitation.",
+      "privileges_required": "low (authenticated user)",
+      "complexity": "low — KEV-listed and actively exploited; treat as weaponized.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization for this CVE."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor fix on the KEV emergency clock (due 2025-03-24); until it lands, restrict reachability to the affected surface and apply the documented vendor mitigations.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "The patch (or, for EoL products, decommissioning) is necessary; the compensating controls are what hold during the window before it is applied."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitor for the IOCs recorded on the catalog entry — Pentaho Business Analytics (BA) Server process spawning an unexpected child (cmd.exe/powershell.exe/sh/webshell interpreter) shortly after an inbound request, indicating code execution through the vulnerable endpoint.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the exposure window and catches post-exploitation when patching lags."
+      },
+      "response": {
+        "what_would_have_worked": "Patch or isolate exploited hosts, hunt for the follow-on payload/web shell/backdoor, and review for lateral movement and credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class commonly leaves persistence a bare patch does not remediate."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The routine 30-day flaw-remediation SLA is far longer than the in-the-wild exploitation window for this KEV-listed rce on Hitachi Vantara Pentaho Business Analytics (BA) Server; CISA set a 2025-03-24 due date, so the operationally-meaningful clock is days, not the standard patch cycle."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.8 leaves \"appropriate timescales\" undefined; for an actively-exploited rce on Hitachi Vantara Pentaho Business Analytics (BA) Server the timescale must collapse to the CISA due date (2025-03-24) rather than the organization's normal vulnerability-management cadence."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential Eight patch maturity is scored on cadence, not on KEV-anchored emergency response; a compliant maturity-level-2 org on its normal cycle remains exposed to this rce on Hitachi Vantara Pentaho Business Analytics (BA) Server until its next window."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 60,
+      "basis": "Audited organizations on a normal patch cadence remain exposed to this KEV-listed rce on Hitachi Vantara Pentaho until the emergency fix is applied; routine-cycle compliance does not satisfy the KEV due date (2025-03-24).",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2022-43939": {
+    "name": "Hitachi Vantara Pentaho BA Server Authorization Bypass Vulnerability",
+    "lesson_date": "2026-07-03",
+    "attack_vector": {
+      "description": "Hitachi Vantara Pentaho Business Analytics Server versions before 9.4.0.1 and 9.3.0.2, including 8.3.x contain security restrictions using non-canonical URLs which can be circumvented. CISA KEV-listed 2025-03-03 (due 2025-03-24) with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated)",
+      "complexity": "low — KEV-listed and actively exploited; treat as weaponized.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization for this CVE."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor fix on the KEV emergency clock (due 2025-03-24); until it lands, restrict reachability to the affected surface and apply the documented vendor mitigations.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "The patch (or, for EoL products, decommissioning) is necessary; the compensating controls are what hold during the window before it is applied."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitor for the IOCs recorded on the catalog entry — Successful authenticated actions on Pentaho Business Analytics (BA) Server from a session that never completed a legitimate credential/MFA challenge, indicating an authentication or authorization bypass.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the exposure window and catches post-exploitation when patching lags."
+      },
+      "response": {
+        "what_would_have_worked": "Patch or isolate exploited hosts, hunt for the follow-on payload/web shell/backdoor, and review for lateral movement and credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class commonly leaves persistence a bare patch does not remediate."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The routine 30-day flaw-remediation SLA is far longer than the in-the-wild exploitation window for this KEV-listed authorization bypass on Hitachi Vantara Pentaho Business Analytics (BA) Server; CISA set a 2025-03-24 due date, so the operationally-meaningful clock is days, not the standard patch cycle."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.8 leaves \"appropriate timescales\" undefined; for an actively-exploited authorization bypass on Hitachi Vantara Pentaho Business Analytics (BA) Server the timescale must collapse to the CISA due date (2025-03-24) rather than the organization's normal vulnerability-management cadence."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential Eight patch maturity is scored on cadence, not on KEV-anchored emergency response; a compliant maturity-level-2 org on its normal cycle remains exposed to this authorization bypass on Hitachi Vantara Pentaho Business Analytics (BA) Server until its next window."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 60,
+      "basis": "Audited organizations on a normal patch cadence remain exposed to this KEV-listed authorization bypass on Hitachi Vantara Pentaho until the emergency fix is applied; routine-cycle compliance does not satisfy the KEV due date (2025-03-24).",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2023-20118": {
+    "name": "Cisco Small Business RV Series Routers Command Injection Vulnerability",
+    "lesson_date": "2026-07-03",
+    "attack_vector": {
+      "description": "A vulnerability in the web-based management interface of Cisco Small Business Routers RV016, RV042, RV042G, RV082, RV320, and RV325 Routers could allow an authenticated, remote attacker to execute arbitrary commands on an affected device.\r\n\r This vulnerability is due to improper validation of user input within incoming HTTP packets. An attacker could exploit this vulnerability by sending a crafted HTTP request to the web-based management interface. A successful exploit could allow the attacker to gain root-level privileges and access unauthorized data. To exploit this vulnerability, an attacker would need to have valid administrative credentials on the affected device.\r\n\r Cisco has not and will not release software updates that address this vulnerability.   However, administrators may disable the affected feature as described in the Workarounds [\"#workarounds\"] section.\r\n\r  {{value}} [\"%7b%7bvalue%7d%7d\"])}]] CISA KEV-listed 2025-03-03 (due 2025-03-24) with confirmed in-the-wild exploitation.",
+      "privileges_required": "high (privileged/administrative account)",
+      "complexity": "medium — KEV-listed and actively exploited; treat as weaponized.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization for this CVE."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "No vendor patch exists (end-of-life product): isolate or decommission the affected surface and apply compensating network controls on the KEV emergency clock (due 2025-03-24).",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "The patch (or, for EoL products, decommissioning) is necessary; the compensating controls are what hold during the window before it is applied."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitor for the IOCs recorded on the catalog entry — Small Business RV Series Routers process spawning an unexpected child (cmd.exe/powershell.exe/sh/webshell interpreter) shortly after an inbound request, indicating code execution through the vulnerable endpoint.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the exposure window and catches post-exploitation when patching lags."
+      },
+      "response": {
+        "what_would_have_worked": "Patch or isolate exploited hosts, hunt for the follow-on payload/web shell/backdoor, and review for lateral movement and credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class commonly leaves persistence a bare patch does not remediate."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The routine 30-day flaw-remediation SLA is far longer than the in-the-wild exploitation window for this KEV-listed command injection on Cisco Small Business RV Series Routers; no vendor patch exists (end-of-life product); the CISA 2025-03-24 due date demands compensating controls or decommissioning, not a patch cycle."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.8 leaves \"appropriate timescales\" undefined; for an actively-exploited command injection on Cisco Small Business RV Series Routers the timescale must collapse to the CISA due date (2025-03-24) rather than the organization's normal vulnerability-management cadence."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential Eight patch maturity is scored on cadence, not on KEV-anchored emergency response; a compliant maturity-level-2 org on its normal cycle remains exposed to this command injection on Cisco Small Business RV Series Routers until its next window."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 65,
+      "basis": "Audited organizations on a normal patch cadence remain exposed to this KEV-listed command injection on Cisco Small Business until the emergency fix is applied; routine-cycle compliance does not satisfy the KEV due date (2025-03-24).",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2023-34192": {
+    "name": "Synacor Zimbra Collaboration Suite (ZCS) Cross-Site Scripting (XSS) Vulnerability",
+    "lesson_date": "2026-07-03",
+    "attack_vector": {
+      "description": "Cross Site Scripting vulnerability in Zimbra ZCS v.8.8.15 allows a remote authenticated attacker to execute arbitrary code via a crafted script to the /h/autoSaveDraft function. CISA KEV-listed 2025-02-25 (due 2025-03-18) with confirmed in-the-wild exploitation.",
+      "privileges_required": "low (authenticated user)",
+      "complexity": "medium — KEV-listed and actively exploited; treat as weaponized.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization for this CVE."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor fix on the KEV emergency clock (due 2025-03-18); until it lands, restrict reachability to the affected surface and apply the documented vendor mitigations.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "The patch (or, for EoL products, decommissioning) is necessary; the compensating controls are what hold during the window before it is applied."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitor for the IOCs recorded on the catalog entry — Zimbra Collaboration Suite (ZCS) webmail/app rendering attacker-supplied script in another user's authenticated session, followed by session-token exfiltration to an external host.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the exposure window and catches post-exploitation when patching lags."
+      },
+      "response": {
+        "what_would_have_worked": "Patch or isolate exploited hosts, hunt for the follow-on payload/web shell/backdoor, and review for lateral movement and credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class commonly leaves persistence a bare patch does not remediate."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The routine 30-day flaw-remediation SLA is far longer than the in-the-wild exploitation window for this KEV-listed xss on Synacor Zimbra Collaboration Suite (ZCS); CISA set a 2025-03-18 due date, so the operationally-meaningful clock is days, not the standard patch cycle."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.8 leaves \"appropriate timescales\" undefined; for an actively-exploited xss on Synacor Zimbra Collaboration Suite (ZCS) the timescale must collapse to the CISA due date (2025-03-18) rather than the organization's normal vulnerability-management cadence."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential Eight patch maturity is scored on cadence, not on KEV-anchored emergency response; a compliant maturity-level-2 org on its normal cycle remains exposed to this xss on Synacor Zimbra Collaboration Suite (ZCS) until its next window."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 55,
+      "basis": "Audited organizations on a normal patch cadence remain exposed to this KEV-listed xss on Synacor Zimbra Collaboration until the emergency fix is applied; routine-cycle compliance does not satisfy the KEV due date (2025-03-18).",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2024-49035": {
+    "name": "Microsoft Partner Center Improper Access Control Vulnerability",
+    "lesson_date": "2026-07-03",
+    "attack_vector": {
+      "description": "An improper access control vulnerability in Partner.Microsoft.com allows an a unauthenticated attacker to elevate privileges over a network. CISA KEV-listed 2025-02-25 (due 2025-03-18) with confirmed in-the-wild exploitation.",
+      "privileges_required": "low (authenticated user)",
+      "complexity": "low — KEV-listed and actively exploited; treat as weaponized.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization for this CVE."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor fix on the KEV emergency clock (due 2025-03-18); until it lands, restrict reachability to the affected surface and apply the documented vendor mitigations.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "The patch (or, for EoL products, decommissioning) is necessary; the compensating controls are what hold during the window before it is applied."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitor for the IOCs recorded on the catalog entry — A low-privileged process on the host gaining SYSTEM/root or bypassing a security control immediately after loading a crafted object/file, indicating local privilege escalation.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the exposure window and catches post-exploitation when patching lags."
+      },
+      "response": {
+        "what_would_have_worked": "Patch or isolate exploited hosts, hunt for the follow-on payload/web shell/backdoor, and review for lateral movement and credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class commonly leaves persistence a bare patch does not remediate."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The routine 30-day flaw-remediation SLA is far longer than the in-the-wild exploitation window for this KEV-listed privilege escalation on Microsoft Partner Center; CISA set a 2025-03-18 due date, so the operationally-meaningful clock is days, not the standard patch cycle."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.8 leaves \"appropriate timescales\" undefined; for an actively-exploited privilege escalation on Microsoft Partner Center the timescale must collapse to the CISA due date (2025-03-18) rather than the organization's normal vulnerability-management cadence."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential Eight patch maturity is scored on cadence, not on KEV-anchored emergency response; a compliant maturity-level-2 org on its normal cycle remains exposed to this privilege escalation on Microsoft Partner Center until its next window."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 55,
+      "basis": "Audited organizations on a normal patch cadence remain exposed to this KEV-listed privilege escalation on Microsoft Partner Center until the emergency fix is applied; routine-cycle compliance does not satisfy the KEV due date (2025-03-18).",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_disclosure",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2024-20953": {
+    "name": "Oracle Agile Product Lifecycle Management (PLM) Deserialization Vulnerability",
+    "lesson_date": "2026-07-03",
+    "attack_vector": {
+      "description": "Vulnerability in the Oracle Agile PLM product of Oracle Supply Chain (component: Export).   The supported version that is affected is 9.3.6. Easily exploitable vulnerability allows low privileged attacker with network access via HTTP to compromise Oracle Agile PLM.  Successful attacks of this vulnerability can result in takeover of Oracle Agile PLM. CVSS 3.1 Base Score 8.8 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H). CISA KEV-listed 2025-02-24 (due 2025-03-17) with confirmed in-the-wild exploitation.",
+      "privileges_required": "low (authenticated user)",
+      "complexity": "low — KEV-listed and actively exploited; treat as weaponized.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization for this CVE."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor fix on the KEV emergency clock (due 2025-03-17); until it lands, restrict reachability to the affected surface and apply the documented vendor mitigations.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "The patch (or, for EoL products, decommissioning) is necessary; the compensating controls are what hold during the window before it is applied."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitor for the IOCs recorded on the catalog entry — Agile Product Lifecycle Management (PLM) process spawning an unexpected child (cmd.exe/powershell.exe/sh/webshell interpreter) shortly after an inbound request, indicating code execution through the vulnerable endpoint.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the exposure window and catches post-exploitation when patching lags."
+      },
+      "response": {
+        "what_would_have_worked": "Patch or isolate exploited hosts, hunt for the follow-on payload/web shell/backdoor, and review for lateral movement and credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class commonly leaves persistence a bare patch does not remediate."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The routine 30-day flaw-remediation SLA is far longer than the in-the-wild exploitation window for this KEV-listed rce on Oracle Agile Product Lifecycle Management (PLM); CISA set a 2025-03-17 due date, so the operationally-meaningful clock is days, not the standard patch cycle."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.8 leaves \"appropriate timescales\" undefined; for an actively-exploited rce on Oracle Agile Product Lifecycle Management (PLM) the timescale must collapse to the CISA due date (2025-03-17) rather than the organization's normal vulnerability-management cadence."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential Eight patch maturity is scored on cadence, not on KEV-anchored emergency response; a compliant maturity-level-2 org on its normal cycle remains exposed to this rce on Oracle Agile Product Lifecycle Management (PLM) until its next window."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 55,
+      "basis": "Audited organizations on a normal patch cadence remain exposed to this KEV-listed rce on Oracle Agile Product until the emergency fix is applied; routine-cycle compliance does not satisfy the KEV due date (2025-03-17).",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2017-3066": {
+    "name": "Adobe ColdFusion Deserialization Vulnerability",
+    "lesson_date": "2026-07-03",
+    "attack_vector": {
+      "description": "Adobe ColdFusion 2016 Update 3 and earlier, ColdFusion 11 update 11 and earlier, ColdFusion 10 Update 22 and earlier have a Java deserialization vulnerability in the Apache BlazeDS library. Successful exploitation could lead to arbitrary code execution. CISA KEV-listed 2025-02-24 (due 2025-03-17) with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated)",
+      "complexity": "low — KEV-listed and actively exploited; treat as weaponized.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization for this CVE."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor fix on the KEV emergency clock (due 2025-03-17); until it lands, restrict reachability to the affected surface and apply the documented vendor mitigations.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "The patch (or, for EoL products, decommissioning) is necessary; the compensating controls are what hold during the window before it is applied."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitor for the IOCs recorded on the catalog entry — ColdFusion process spawning an unexpected child (cmd.exe/powershell.exe/sh/webshell interpreter) shortly after an inbound request, indicating code execution through the vulnerable endpoint.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the exposure window and catches post-exploitation when patching lags."
+      },
+      "response": {
+        "what_would_have_worked": "Patch or isolate exploited hosts, hunt for the follow-on payload/web shell/backdoor, and review for lateral movement and credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class commonly leaves persistence a bare patch does not remediate."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The routine 30-day flaw-remediation SLA is far longer than the in-the-wild exploitation window for this KEV-listed rce on Adobe ColdFusion; CISA set a 2025-03-17 due date, so the operationally-meaningful clock is days, not the standard patch cycle."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.8 leaves \"appropriate timescales\" undefined; for an actively-exploited rce on Adobe ColdFusion the timescale must collapse to the CISA due date (2025-03-17) rather than the organization's normal vulnerability-management cadence."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential Eight patch maturity is scored on cadence, not on KEV-anchored emergency response; a compliant maturity-level-2 org on its normal cycle remains exposed to this rce on Adobe ColdFusion until its next window."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 60,
+      "basis": "Audited organizations on a normal patch cadence remain exposed to this KEV-listed rce on Adobe ColdFusion Deserialization until the emergency fix is applied; routine-cycle compliance does not satisfy the KEV due date (2025-03-17).",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-24989": {
+    "name": "Microsoft Power Pages Improper Access Control Vulnerability",
+    "lesson_date": "2026-07-03",
+    "attack_vector": {
+      "description": "An improper access control vulnerability in Power Pages allows an unauthorized attacker to elevate privileges over a network potentially bypassing the user registration control.\nThis vulnerability has already been mitigated in the service and all affected customers have been notified. This update addressed the registration control bypass. Affected customers have been given instructions on reviewing their sites for potential exploitation and clean up methods. If you've not been notified this vulnerability does not affect you. CISA KEV-listed 2025-02-21 (due 2025-03-14) with confirmed in-the-wild exploitation.",
+      "privileges_required": "none (unauthenticated)",
+      "complexity": "low — KEV-listed and actively exploited; treat as weaponized.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization for this CVE."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor fix on the KEV emergency clock (due 2025-03-14); until it lands, restrict reachability to the affected surface and apply the documented vendor mitigations.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "The patch (or, for EoL products, decommissioning) is necessary; the compensating controls are what hold during the window before it is applied."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitor for the IOCs recorded on the catalog entry — Successful authenticated actions on Power Pages from a session that never completed a legitimate credential/MFA challenge, indicating an authentication or authorization bypass.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the exposure window and catches post-exploitation when patching lags."
+      },
+      "response": {
+        "what_would_have_worked": "Patch or isolate exploited hosts, hunt for the follow-on payload/web shell/backdoor, and review for lateral movement and credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class commonly leaves persistence a bare patch does not remediate."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The routine 30-day flaw-remediation SLA is far longer than the in-the-wild exploitation window for this KEV-listed improper access control on Microsoft Power Pages; CISA set a 2025-03-14 due date, so the operationally-meaningful clock is days, not the standard patch cycle."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.8 leaves \"appropriate timescales\" undefined; for an actively-exploited improper access control on Microsoft Power Pages the timescale must collapse to the CISA due date (2025-03-14) rather than the organization's normal vulnerability-management cadence."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential Eight patch maturity is scored on cadence, not on KEV-anchored emergency response; a compliant maturity-level-2 org on its normal cycle remains exposed to this improper access control on Microsoft Power Pages until its next window."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 55,
+      "basis": "Audited organizations on a normal patch cadence remain exposed to this KEV-listed improper access control on Microsoft Power Pages until the emergency fix is applied; routine-cycle compliance does not satisfy the KEV due date (2025-03-14).",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_disclosure",
+    "ai_assist_factor": "none"
+  },
+  "CVE-2025-0111": {
+    "name": "Palo Alto Networks PAN-OS File Read Vulnerability",
+    "lesson_date": "2026-07-03",
+    "attack_vector": {
+      "description": "An authenticated file read vulnerability in the Palo Alto Networks PAN-OS software enables an authenticated attacker with network access to the management web interface to read files on the PAN-OS filesystem that are readable by the “nobody” user.\n\nYou can greatly reduce the risk of this issue by restricting access to the management web interface to only trusted internal IP addresses according to our recommended  best practices deployment guidelines https://live.paloaltonetworks.com/t5/community-blogs/tips-amp-tricks-how-to-secure-the-management-access-of-your-palo/ba-p/464431 .\n\n\n\nThis issue does not affect Cloud NGFW or Prisma Access software. CISA KEV-listed 2025-02-20 (due 2025-03-13) with confirmed in-the-wild exploitation.",
+      "privileges_required": "low (authenticated user)",
+      "complexity": "medium — KEV-listed and actively exploited; treat as weaponized.",
+      "ai_factor": "No AI involvement documented in discovery or weaponization for this CVE."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the vendor fix on the KEV emergency clock (due 2025-03-13); until it lands, restrict reachability to the affected surface and apply the documented vendor mitigations.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation)",
+        "adequacy": "The patch (or, for EoL products, decommissioning) is necessary; the compensating controls are what hold during the window before it is applied."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitor for the IOCs recorded on the catalog entry — Outbound SMB/HTTP/file-read requests originating from the PAN-OS service account to attacker-controlled or unexpected destinations, indicating coerced authentication or arbitrary file read.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Backstops the exposure window and catches post-exploitation when patching lags."
+      },
+      "response": {
+        "what_would_have_worked": "Patch or isolate exploited hosts, hunt for the follow-on payload/web shell/backdoor, and review for lateral movement and credential theft.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 IR-4",
+        "adequacy": "Mandatory; exploitation of this class commonly leaves persistence a bare patch does not remediate."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The routine 30-day flaw-remediation SLA is far longer than the in-the-wild exploitation window for this KEV-listed information disclosure on Palo Alto Networks PAN-OS; CISA set a 2025-03-13 due date, so the operationally-meaningful clock is days, not the standard patch cycle."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.8 leaves \"appropriate timescales\" undefined; for an actively-exploited information disclosure on Palo Alto Networks PAN-OS the timescale must collapse to the CISA due date (2025-03-13) rather than the organization's normal vulnerability-management cadence."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential Eight patch maturity is scored on cadence, not on KEV-anchored emergency response; a compliant maturity-level-2 org on its normal cycle remains exposed to this information disclosure on Palo Alto Networks PAN-OS until its next window."
+      }
+    },
+    "compliance_exposure_score": {
+      "percent_audit_passing_orgs_still_exposed": 65,
+      "basis": "Audited organizations on a normal patch cadence remain exposed to this KEV-listed information disclosure on Palo Alto Networks until the emergency fix is applied; routine-cycle compliance does not satisfy the KEV due date (2025-03-13).",
+      "theater_pattern": "patch_management"
+    },
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_disclosure",
     "ai_assist_factor": "none"
   }
 }

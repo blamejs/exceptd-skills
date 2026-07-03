@@ -79,7 +79,7 @@ This skill is meta — it does not pin to a single TTP class. The learning loop 
 | Input Catalog | Role in the Learning Loop |
 |---|---|
 | `data/cve-catalog.json` | The CVE-level corpus: each entry is a candidate lesson input. New entries trigger a new loop run. |
-| `data/atlas-ttps.json` (MITRE ATLAS v2026.05) | The AI/ML TTP taxonomy. Attack-vector extraction maps the CVE's mechanism to an ATLAS ID (e.g., AML.T0096 for SesameOp AI-as-C2). |
+| `data/atlas-ttps.json` (MITRE ATLAS v2026.06) | The AI/ML TTP taxonomy. Attack-vector extraction maps the CVE's mechanism to an ATLAS ID (e.g., AML.T0096 for SesameOp AI-as-C2). |
 | `data/framework-control-gaps.json` | The control-gap corpus. Framework-coverage assessment writes into this file via new entries or `status` updates. |
 | `data/zeroday-lessons.json` | The output corpus. Each completed loop produces one entry here — the durable artifact of the lesson. |
 
@@ -369,7 +369,7 @@ Run through each applicable framework:
 - CIS Controls v8 (which control?)
 - ASD Essential 8 (which mitigation?)
 - ISO 27001:2022 (which control?)
-- MITRE ATLAS v2026.05 (which TTP? Is it covered?)
+- MITRE ATLAS v2026.06 (which TTP? Is it covered?)
 
 For each: Covered (adequate) / Covered (insufficient) / Missing entirely
 

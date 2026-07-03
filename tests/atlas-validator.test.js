@@ -48,7 +48,7 @@ function stubFetch(routes) {
 // The repo's real pinned ATLAS value (manifest.json.atlas_version). The
 // validator reads this from disk; we assert against it so the pinned-read
 // path is genuinely exercised rather than mocked away.
-const REPO_PINNED = require('../manifest.json').atlas_version; // e.g. "2026.05"
+const REPO_PINNED = require('../manifest.json').atlas_version; // e.g. "2026.06"
 
 test('reports match when the upstream github tag equals the repo pin', async () => {
   const restore = stubFetch({ gh: jsonRes({ tag_name: `v${REPO_PINNED}` }), raw: null });

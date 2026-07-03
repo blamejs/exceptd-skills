@@ -452,7 +452,7 @@ The divergences above are surfaced against US, EU, UK, AU and ISO 27001:2022 —
 
 ## TTP Mapping
 
-Per-tier TTP coverage is cumulative: Practical includes MVP's coverage plus additions; Overkill includes both plus additions. Source-of-truth: `data/atlas-ttps.json` (MITRE ATLAS v2026.05) and ATT&CK references in `data/cve-catalog.json`.
+Per-tier TTP coverage is cumulative: Practical includes MVP's coverage plus additions; Overkill includes both plus additions. Source-of-truth: `data/atlas-ttps.json` (MITRE ATLAS v2026.06) and ATT&CK references in `data/cve-catalog.json`.
 
 | Tier | Must cover | TTP | Source | Tier-specific control element |
 |---|---|---|---|---|

@@ -25,7 +25,7 @@ Changes to the following paths require maintainer review per `.github/CODEOWNERS
 
 - `/data/` and `/data/*.json` — all intelligence catalogs, including:
   - `/data/cve-catalog.json` — CVE metadata and RWEP scores
-  - `/data/atlas-ttps.json` — MITRE ATLAS v2026.05 TTPs
+  - `/data/atlas-ttps.json` — MITRE ATLAS v2026.06 TTPs
   - `/data/framework-control-gaps.json` — per-control gap analysis
   - `/data/global-frameworks.json` — multi-jurisdiction framework registry
   - `/data/zeroday-lessons.json` — zero-day learning loop entries

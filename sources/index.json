@@ -235,8 +235,8 @@
       "url": "https://atlas.mitre.org",
       "techniques_url": "https://atlas.mitre.org/techniques/{TTP_ID}",
       "changelog_url": "https://atlas.mitre.org/resources/changelog",
-      "current_version": "2026.05",
-      "version_date": "2026-05-27",
+      "current_version": "2026.06",
+      "version_date": "2026-06-30",
       "fields": ["atlas_refs", "ttp_name", "ttp_description", "tactic"],
       "update_frequency": "monthly"
     },

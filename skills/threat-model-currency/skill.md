@@ -199,14 +199,14 @@ This skill produces a currency score and a specific update roadmap. Currency is 
 
 ---
 
-### Class 13: MITRE ATLAS v2026.05 Coverage
+### Class 13: MITRE ATLAS v2026.06 Coverage
 
-**2026 reality:** MITRE ATLAS (May 2026, v2026.05) is the primary AI threat framework. Most SOC detection engineering programs are built on ATT&CK, not ATLAS. AI-specific TTPs have zero detection coverage in ATT&CK-only programs.
+**2026 reality:** MITRE ATLAS (June 2026, v2026.06) is the primary AI threat framework. Most SOC detection engineering programs are built on ATT&CK, not ATLAS. AI-specific TTPs have zero detection coverage in ATT&CK-only programs.
 
 **Currency check questions:**
-- Is MITRE ATLAS v2026.05 incorporated into the threat model?
+- Is MITRE ATLAS v2026.06 incorporated into the threat model?
 - Are ATLAS TTPs mapped to detection controls?
-- What is the current ATLAS version in use? (Current: 2026.05, May 2026)
+- What is the current ATLAS version in use? (Current: 2026.06, June 2026)
 
 **If unchecked:** AI-specific threat techniques are not covered by the detection architecture. The SOC has no alerts for ATLAS TTPs.
 
@@ -263,7 +263,7 @@ The recurring failure across all of the above: every framework treats threat mod
 
 ## TTP Mapping
 
-The 14-class checklist above *is* the TTP map. Each class is a coverage requirement against the canonical sources of truth: `data/atlas-ttps.json` (MITRE ATLAS v2026.05) and the ATT&CK techniques referenced in `data/cve-catalog.json`. A current threat model must address — explicitly or by reasoned exclusion — every TTP below.
+The 14-class checklist above *is* the TTP map. Each class is a coverage requirement against the canonical sources of truth: `data/atlas-ttps.json` (MITRE ATLAS v2026.06) and the ATT&CK techniques referenced in `data/cve-catalog.json`. A current threat model must address — explicitly or by reasoned exclusion — every TTP below.
 
 | Class | Primary TTP | Catalog source | Gap if absent |
 |---|---|---|---|
@@ -400,14 +400,14 @@ The skill produces a structured Threat Model Currency Assessment that scores the
 | 10 | Model Poisoning | 0/1/2 | |
 | 11 | AI-Speed Reconnaissance | 0/1/2 | |
 | 12 | AI-Generated Credential Phishing | 0/1/2 | |
-| 13 | MITRE ATLAS v2026.05 Coverage | 0/1/2 | |
+| 13 | MITRE ATLAS v2026.06 Coverage | 0/1/2 | |
 | 14 | Post-Quantum Adversary Timeline | 0/1/2 | |
 
 ### Priority Update Roadmap
 [Ordered by current exposure risk: specific additions for each gap]
 
 ### ATLAS Version Check
-Current reference: MITRE ATLAS v2026.05 (May 2026)
+Current reference: MITRE ATLAS v2026.06 (May 2026)
 Threat model references: [version cited in document]
 Gap: [if different]
 ```

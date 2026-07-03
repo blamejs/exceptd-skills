@@ -108,9 +108,9 @@ function walkFiles(rootDir, predicate) {
 test('README — every ATLAS version mention equals live atlas-ttps._meta.atlas_version', () => {
   const live = atlas._meta.atlas_version;
   const patterns = [
-    /MITRE[%\s]*20?ATLAS[-\s]*v(\d+\.\d+\.\d+)/g,
-    /MITRE ATLAS v(\d+\.\d+\.\d+)/g,
-    /ATLAS v(\d+\.\d+\.\d+)/g,
+    /MITRE[%\s]*20?ATLAS[-\s]*v(\d+\.\d+(?:\.\d+)?)/g,
+    /MITRE ATLAS v(\d+\.\d+(?:\.\d+)?)/g,
+    /ATLAS v(\d+\.\d+(?:\.\d+)?)/g,
   ];
   const allMismatches = [];
   for (const p of patterns) {
@@ -130,9 +130,9 @@ test('README — every ATLAS version mention equals live atlas-ttps._meta.atlas_
 test('ARCHITECTURE.md — every ATLAS version mention equals live atlas-ttps._meta.atlas_version', () => {
   const live = atlas._meta.atlas_version;
   const patterns = [
-    /MITRE ATLAS v(\d+\.\d+\.\d+)/g,
-    /ATLAS v(\d+\.\d+\.\d+)/g,
-    /"atlas_version":\s*"(\d+\.\d+\.\d+)"/g,
+    /MITRE ATLAS v(\d+\.\d+(?:\.\d+)?)/g,
+    /ATLAS v(\d+\.\d+(?:\.\d+)?)/g,
+    /"atlas_version":\s*"(\d+\.\d+(?:\.\d+)?)"/g,
   ];
   const allMismatches = [];
   for (const p of patterns) {
@@ -158,8 +158,8 @@ test('Skill bodies + indexes + builder scripts — ATLAS version matches live pi
 
   // Patterns that introduce an ATLAS version mention.
   const patterns = [
-    /MITRE ATLAS v(\d+\.\d+\.\d+)/g,
-    /ATLAS v(\d+\.\d+\.\d+)/g,
+    /MITRE ATLAS v(\d+\.\d+(?:\.\d+)?)/g,
+    /ATLAS v(\d+\.\d+(?:\.\d+)?)/g,
   ];
 
   const mismatches = [];

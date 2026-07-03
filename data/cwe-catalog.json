@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "last_updated": "2026-06-01",
+    "last_updated": "2026-07-03",
     "cwe_version": "4.20",
     "cwe_version_release_date": "2026-04-30",
     "source": "https://cwe.mitre.org",
@@ -112,6 +112,7 @@
       "CVE-2024-31462",
       "CVE-2024-37032",
       "CVE-2024-39722",
+      "CVE-2024-4885",
       "CVE-2024-57728",
       "CVE-2024-7399",
       "CVE-2025-2749",
@@ -165,6 +166,7 @@
       "CVE-2016-10033",
       "CVE-2020-25079",
       "CVE-2021-33515",
+      "CVE-2023-20118",
       "CVE-2023-33538",
       "CVE-2024-12450",
       "CVE-2024-5565",
@@ -286,6 +288,7 @@
     ],
     "evidence_cves": [
       "CVE-2021-26829",
+      "CVE-2023-34192",
       "CVE-2023-6571",
       "CVE-2024-11182",
       "CVE-2024-27132",
@@ -362,6 +365,7 @@
     ],
     "evidence_cves": [
       "CVE-2024-43468",
+      "CVE-2025-25181",
       "CVE-2025-25257",
       "CVE-2025-57819",
       "CVE-2026-21643",
@@ -410,6 +414,7 @@
       "CVE-2013-3918",
       "CVE-2017-1000353",
       "CVE-2020-25078",
+      "CVE-2022-43769",
       "CVE-2022-48503",
       "CVE-2023-44467",
       "CVE-2023-6016",
@@ -666,6 +671,7 @@
       "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2021-43226",
       "CVE-2024-21626",
+      "CVE-2024-49035",
       "CVE-2024-8068",
       "CVE-2025-48543",
       "CVE-2025-48572",
@@ -702,6 +708,7 @@
     ],
     "evidence_cves": [
       "CVE-2025-12480",
+      "CVE-2025-24989",
       "CVE-2025-31125",
       "CVE-2025-33073",
       "CVE-2025-59230",
@@ -1329,6 +1336,7 @@
     "evidence_cves": [
       "CVE-2018-4063",
       "CVE-2021-26828",
+      "CVE-2024-57968",
       "CVE-2024-7399",
       "CVE-2024-7694",
       "CVE-2025-2749",
@@ -1402,6 +1410,7 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2017-3066",
       "CVE-2019-9874",
       "CVE-2019-9875",
       "CVE-2022-1471",
@@ -1409,6 +1418,7 @@
       "CVE-2024-11392",
       "CVE-2024-11393",
       "CVE-2024-11394",
+      "CVE-2024-20953",
       "CVE-2024-24590",
       "CVE-2024-37052",
       "CVE-2024-37060",
@@ -1441,7 +1451,8 @@
       "CVE-2026-3059",
       "CVE-2026-3060",
       "CVE-2026-31229",
-      "CVE-2026-45247"
+      "CVE-2026-45247",
+      "CVE-2026-45659"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -2634,7 +2645,8 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
-      "CVE-2025-59718"
+      "CVE-2025-59718",
+      "CVE-2026-48558"
     ],
     "last_verified": "2026-05-18",
     "notes": "Added v0.13.17 KEV bulk-import.",
@@ -2903,6 +2915,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2025-0111",
       "CVE-2025-24054",
       "CVE-2025-33053"
     ],
@@ -2924,6 +2937,7 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2021-38371",
+      "CVE-2022-43769",
       "CVE-2025-20281",
       "CVE-2025-20337"
     ],
@@ -3994,7 +4008,9 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2024-50302"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
@@ -4962,6 +4978,9 @@
     ],
     "skills_referencing": [],
     "evidence_cves": [
+      "CVE-2024-13159",
+      "CVE-2024-13160",
+      "CVE-2024-13161",
       "CVE-2024-48248"
     ],
     "framework_controls_partially_addressing": [
@@ -4998,5 +5017,75 @@
     "real_requirement": "Enforce strong boundaries between trust domains (process/container/VM/privilege separation), deny cross-domain primitives by default, and audit the actual reachability between compartments rather than the documented design.",
     "lag_notes": "An architecture review attests that compartments exist; CWE-653 is about a real primitive that crosses them, which a design review on paper does not test.",
     "last_verified": "2026-06-28"
+  },
+  "CWE-707": {
+    "id": "CWE-707",
+    "name": "Improper Neutralization",
+    "abstraction": "Pillar",
+    "category": "Injection",
+    "description": "The product does not ensure or incorrectly ensures that structured messages or data are well-formed and that certain security properties are met before being read from an upstream component or sent to a downstream component. Parent class of the injection weaknesses; CVE-2025-26633's MMC/MSC 'EvilTwin' console-file substitution bypasses the Microsoft Management Console security boundary by improperly neutralizing a crafted .msc file loaded from an en-US MUIPath directory.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2025-26633"
+    ]
+  },
+  "CWE-404": {
+    "id": "CWE-404",
+    "name": "Improper Resource Shutdown or Release",
+    "abstraction": "Class",
+    "category": "Resource Management",
+    "description": "The product does not release or incorrectly releases a resource before it is made available for re-use, enabling use-after-free and related memory-safety failures. CVE-2018-8639 is a Win32k kernel use-after-free (improper resource release) that a local low-privileged user leverages for arbitrary kernel-mode code execution and SYSTEM elevation.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-1003"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2018-8639"
+    ]
+  },
+  "CWE-647": {
+    "id": "CWE-647",
+    "name": "Use of Non-Canonical URL Paths for Authorization Decisions",
+    "abstraction": "Base",
+    "category": "Authorization",
+    "description": "The product makes authorization decisions based on the assumption that a requested URL is canonical, so a crafted non-canonical URL can bypass the authorization check. CVE-2022-43939's Pentaho BA Server authorization bypass accepts non-canonical URLs (a permissive suffix match) to reach protected endpoints unauthenticated, and is chained with the special-element-injection CVE-2022-43769 for pre-auth RCE.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-1003"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2022-43939"
+    ]
+  },
+  "CWE-610": {
+    "id": "CWE-610",
+    "name": "Externally Controlled Reference to a Resource in Another Sphere",
+    "abstraction": "Class",
+    "category": "Resource Control",
+    "description": "The product uses an externally controlled name or reference that resolves to a resource outside the intended control sphere — the parent class of server-side request forgery and external control of a filename or path. CVE-2025-0111's PAN-OS authenticated arbitrary file read lets a management-interface request reference filesystem paths readable by the 'nobody' user that sit outside the intended web-interface sphere, and is chained with the CVE-2025-0108 auth bypass to read config and credential material unauthenticated.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2025-0111"
+    ]
   }
 }
