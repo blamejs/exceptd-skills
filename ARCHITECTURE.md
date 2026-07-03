@@ -36,7 +36,7 @@ data_deps:
   - cve-catalog.json          # files in data/ this skill reads
   - atlas-ttps.json
 atlas_refs:
-  - AML.T0043                 # MITRE ATLAS v2026.05 TTP IDs
+  - AML.T0043                 # MITRE ATLAS v2026.06 TTP IDs
   - AML.T0054
 attack_refs:
   - T1068                     # MITRE ATT&CK TTP IDs
@@ -124,7 +124,7 @@ Schema per entry:
   "AML.T0043": {
     "name": "Craft Adversarial Data",
     "tactic": "ML Attack Staging",
-    "atlas_version": "2026.05",
+    "atlas_version": "2026.06",
     "description": "...",
     "framework_coverage": {
       "NIST-800-53": {"covered": false, "nearest_control": null, "gap_description": "..."},
@@ -176,7 +176,7 @@ Tracks PoC status, weaponization stage, and AI-assist factor per CVE. Updated wh
 
 ### `data/cwe-catalog.json`
 
-189 CWE entries pinned to **CWE v4.20**. Covers the Top 25 Most Dangerous Software Weaknesses (2024 release) plus AI- and supply-chain-relevant weakness classes (prompt-injection-as-trust-boundary failure, training data integrity, dependency confusion, untrusted artifact ingestion). Each entry records root-cause description, common consequences, mitigation patterns, and the CVEs in `cve-catalog.json` that instantiate the weakness. Skills cite CWE IDs in `cwe_refs` to anchor a finding to a stable weakness taxonomy rather than to a single CVE; the CWE provides the durable root-cause lens that survives across exploit generations.
+193 CWE entries pinned to **CWE v4.20**. Covers the Top 25 Most Dangerous Software Weaknesses (2024 release) plus AI- and supply-chain-relevant weakness classes (prompt-injection-as-trust-boundary failure, training data integrity, dependency confusion, untrusted artifact ingestion). Each entry records root-cause description, common consequences, mitigation patterns, and the CVEs in `cve-catalog.json` that instantiate the weakness. Skills cite CWE IDs in `cwe_refs` to anchor a finding to a stable weakness taxonomy rather than to a single CVE; the CWE provides the durable root-cause lens that survives across exploit generations.
 
 `_meta.cwe_version` pins the version; on a CWE release, audit IDs for renames or deprecations, bump `last_threat_review` on affected skills, and update `_meta`.
 
@@ -204,7 +204,7 @@ RWEP (Real-World Exploit Priority) scoring engine.
 
 - `score(cveId)` — Return RWEP score for a CVE in the catalog
 - `scoreCustom(factors)` — Score a custom factor set (for CVEs not yet in catalog)
-- `validate()` — Schema validation: check all skill data_deps resolve, all CVE entries are complete, all ATLAS refs are valid v2026.05 IDs
+- `validate()` — Schema validation: check all skill data_deps resolve, all CVE entries are complete, all ATLAS refs are valid v2026.06 IDs
 - `compare(cveId)` — Return CVSS vs. RWEP comparison with explanation of the delta
 
 RWEP factor weights:

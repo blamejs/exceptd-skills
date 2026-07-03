@@ -51,7 +51,7 @@ When a framework update closes a gap:
 2. Complete all frontmatter fields — no empty arrays for `data_deps`, `atlas_refs`, or `framework_gaps` unless genuinely not applicable (document why in a comment).
 3. Complete all required body sections (see ARCHITECTURE.md).
 4. Ensure all CVE references are in `data/cve-catalog.json`.
-5. Ensure all ATLAS refs are valid v2026.05 IDs.
+5. Ensure all ATLAS refs are valid v2026.06 IDs.
 6. Ensure all framework control IDs are in `data/framework-control-gaps.json`.
 7. Register in `manifest.json`.
 8. Add an entry to CHANGELOG.md.

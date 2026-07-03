@@ -24,7 +24,7 @@ All skills pull from `data/`. Do not hallucinate CVE data — read from `data/cv
 ```
 data/
   cve-catalog.json          — CVE metadata with RWEP scores
-  atlas-ttps.json           — MITRE ATLAS v2026.05 TTPs with gap flags
+  atlas-ttps.json           — MITRE ATLAS v2026.06 TTPs with gap flags
   framework-control-gaps.json — Per-control gap analysis
   exploit-availability.json — PoC status and weaponization tracking
   global-frameworks.json    — 14-jurisdiction framework registry
