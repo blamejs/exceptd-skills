@@ -31,6 +31,9 @@ test('buildKevDraftEntry with nvd+epss present populates mechanical fields via c
         },
         descriptions: [{ lang: 'en', value: 'An authentication bypass in PAN-OS management web interface.' }],
         weaknesses: [{ description: [{ value: 'CWE-306' }] }],
+        references: [
+          { url: 'https://security.paloaltonetworks.com/CVE-2025-0108', tags: ['Vendor Advisory'] },
+        ],
       },
     }],
   };
@@ -50,7 +53,10 @@ test('buildKevDraftEntry with nvd+epss present populates mechanical fields via c
   assert.strictEqual(entry.cisa_kev, true);
   assert.strictEqual(entry.cisa_kev_date, '2025-02-18');
   assert.strictEqual(entry.cisa_kev_due_date, '2025-03-11');
+  // Real vendor advisory flows through from the NVD "Vendor Advisory"-tagged
+  // reference; NVD itself is never synthesized as a vendor advisory.
   assert.ok(Array.isArray(entry.vendor_advisories) && entry.vendor_advisories.length >= 1);
+  assert.ok(!entry.vendor_advisories.some(a => a.vendor === 'NVD'));
 
   // Conservative pre-curation defaults must NOT be overridden by the
   // mechanical derivation — a nightly draft must not over-claim before a
@@ -69,4 +75,50 @@ test('buildKevDraftEntry with nvd+epss present populates mechanical fields via c
   assert.strictEqual(typeof entry.rwep_score, 'number');
   const sum = Object.values(entry.rwep_factors).reduce((a, b) => a + b, 0);
   assert.strictEqual(sum, entry.rwep_score);
+});
+
+test('buildKevDraftEntry populates vendor_advisories from a real NVD Vendor Advisory-tagged reference', () => {
+  const kev = { cveID: 'CVE-2025-1234', vulnerabilityName: 'X', vendorProject: 'Acme' };
+  const nvdPayload = {
+    vulnerabilities: [{
+      cve: {
+        id: 'CVE-2025-1234',
+        metrics: { cvssMetricV31: [{ type: 'Primary', cvssData: { baseScore: 9.1, vectorString: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H' } }] },
+        weaknesses: [{ description: [{ value: 'CWE-79' }] }],
+        references: [
+          { url: 'https://acme.example/security/CVE-2025-1234', tags: ['Vendor Advisory'] },
+          { url: 'https://blog.example/writeup', tags: ['Third Party Advisory'] },
+        ],
+      },
+    }],
+  };
+  const entry = ad.buildKevDraftEntry(kev, nvdPayload, null);
+  assert.strictEqual(entry.vendor_advisories.length, 1);
+  assert.strictEqual(entry.vendor_advisories[0].url, 'https://acme.example/security/CVE-2025-1234');
+  assert.strictEqual(entry.vendor_advisories[0].vendor, 'Acme');
+  // NVD is never synthesized as a vendor advisory — it belongs to
+  // verification_sources, so the cisa_kev-but-no-advisory gap detector stays
+  // meaningful.
+  assert.ok(!entry.vendor_advisories.some(a => a.vendor === 'NVD'));
+});
+
+test('buildKevDraftEntry leaves vendor_advisories empty when NVD refs carry no Vendor Advisory tag', () => {
+  const kev = { cveID: 'CVE-2025-5678', vulnerabilityName: 'Y', vendorProject: 'Acme' };
+  const nvdPayload = {
+    vulnerabilities: [{
+      cve: {
+        id: 'CVE-2025-5678',
+        metrics: { cvssMetricV31: [{ type: 'Primary', cvssData: { baseScore: 7.5, vectorString: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H' } }] },
+        weaknesses: [{ description: [{ value: 'CWE-400' }] }],
+        references: [
+          { url: 'https://blog.example/writeup', tags: ['Third Party Advisory'] },
+          { url: 'https://news.example/story', tags: [] },
+        ],
+      },
+    }],
+  };
+  const entry = ad.buildKevDraftEntry(kev, nvdPayload, null);
+  // Empty is the honest signal — a curator still needs to attach the real
+  // advisory, and the gap detector must be able to fire on this entry.
+  assert.deepStrictEqual(entry.vendor_advisories, []);
 });
