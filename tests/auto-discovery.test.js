@@ -267,8 +267,11 @@ test('discoverNewKev caps at DEFAULT_CAP and reports spilled count', () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'kev-disc-'));
   try {
     fs.mkdirSync(path.join(tmp, 'kev'), { recursive: true });
-    // 25 brand-new entries
-    const vulnerabilities = Array.from({ length: 25 }, (_, i) => ({
+    // DEFAULT_CAP + 5 brand-new entries — scaled off DEFAULT_CAP (rather than
+    // a hardcoded 25) so the "spills past the cap" assertion stays meaningful
+    // regardless of what the cap is currently set to.
+    const total = DEFAULT_CAP + 5;
+    const vulnerabilities = Array.from({ length: total }, (_, i) => ({
       cveID: `CVE-2026-9${String(1000 + i).padStart(4, '0')}`,
       dateAdded: `2026-05-${String((i % 28) + 1).padStart(2, '0')}`,
       vulnerabilityName: `Synthetic ${i}`,
