@@ -718,10 +718,13 @@ function main() {
     // data slice without requiring a full package upgrade.
     effectiveCmd = "refresh-network";
     effectiveRest = rest.filter(a => a !== "--network");
-  } else if (cmd === "refresh" && rest.includes("--curate")) {
+  } else if (cmd === "refresh" && (rest.includes("--curate") || rest.includes("--curate-batch"))) {
     // v0.12.0: --curate <CVE-ID> emits editorial questions + ranked
     // candidates (atlas/attack/cwe/framework) for a draft catalog entry.
     // Operator or AI assistant fills the null editorial fields.
+    // --curate-batch <facts+judgments files> assembles + writes many
+    // gate-passing entries in one shot; cve-curation.js's cli() branches
+    // to lib/cve-batch.js when it sees the flag.
     effectiveCmd = "refresh-curate";
     effectiveRest = rest;
   }

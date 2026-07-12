@@ -63,6 +63,12 @@ Desktop.ini
 secrets/
 credentials/
 
+# Local-only working docs — design scratch, specs, and plans live here and are
+# not operator-facing. Kept out of the repo explicitly (not only via a machine's
+# global ignore) so a fresh clone or a contributor without that global config
+# can't accidentally commit them.
+docs/
+
 # Python (for any tooling)
 __pycache__/
 *.py[cod]
