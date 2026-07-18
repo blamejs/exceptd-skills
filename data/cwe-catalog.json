@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "last_updated": "2026-07-03",
+    "last_updated": "2026-07-18",
     "cwe_version": "4.20",
     "cwe_version_release_date": "2026-04-30",
     "source": "https://cwe.mitre.org",
@@ -48,9 +48,13 @@
       "fuzz-testing-strategy"
     ],
     "evidence_cves": [
+      "CVE-2016-3714",
       "CVE-2022-1471",
       "CVE-2024-21413",
+      "CVE-2024-30040",
       "CVE-2024-3154",
+      "CVE-2024-3400",
+      "CVE-2024-38189",
       "CVE-2025-10164",
       "CVE-2025-20393",
       "CVE-2025-54236",
@@ -100,6 +104,8 @@
       "CVE-2017-12637",
       "CVE-2019-16278",
       "CVE-2019-5418",
+      "CVE-2021-20123",
+      "CVE-2021-20124",
       "CVE-2021-26086",
       "CVE-2021-41277",
       "CVE-2021-43798",
@@ -113,8 +119,11 @@
       "CVE-2024-13059",
       "CVE-2024-1561",
       "CVE-2024-1708",
+      "CVE-2024-23897",
       "CVE-2024-24591",
+      "CVE-2024-28995",
       "CVE-2024-31462",
+      "CVE-2024-32113",
       "CVE-2024-37032",
       "CVE-2024-39722",
       "CVE-2024-41713",
@@ -122,6 +131,7 @@
       "CVE-2024-55550",
       "CVE-2024-57727",
       "CVE-2024-57728",
+      "CVE-2024-7262",
       "CVE-2024-7399",
       "CVE-2024-8963",
       "CVE-2025-2749",
@@ -180,6 +190,8 @@
       "CVE-2023-33538",
       "CVE-2024-12356",
       "CVE-2024-12450",
+      "CVE-2024-3273",
+      "CVE-2024-3400",
       "CVE-2024-5565",
       "CVE-2024-55956",
       "CVE-2024-9380",
@@ -231,26 +243,32 @@
     ],
     "evidence_cves": [
       "CVE-2014-6278",
+      "CVE-2017-3506",
       "CVE-2018-14933",
       "CVE-2018-9276",
       "CVE-2019-11001",
+      "CVE-2019-7256",
       "CVE-2020-15415",
       "CVE-2021-20035",
       "CVE-2021-40407",
       "CVE-2023-25280",
       "CVE-2023-39780",
+      "CVE-2023-43208",
       "CVE-2023-44221",
       "CVE-2023-6019",
       "CVE-2024-11120",
       "CVE-2024-1212",
       "CVE-2024-12686",
       "CVE-2024-12987",
+      "CVE-2024-20399",
       "CVE-2024-40890",
       "CVE-2024-40891",
       "CVE-2024-45519",
+      "CVE-2024-4577",
       "CVE-2024-50603",
       "CVE-2024-51378",
       "CVE-2024-6047",
+      "CVE-2024-8190",
       "CVE-2024-8957",
       "CVE-2024-9380",
       "CVE-2024-9463",
@@ -273,6 +291,7 @@
       "CVE-2026-1731",
       "CVE-2026-22252",
       "CVE-2026-22688",
+      "CVE-2026-25089",
       "CVE-2026-25108",
       "CVE-2026-26015",
       "CVE-2026-30616",
@@ -281,6 +300,7 @@
       "CVE-2026-30624",
       "CVE-2026-30625",
       "CVE-2026-34910",
+      "CVE-2026-39808",
       "CVE-2026-39987",
       "CVE-2026-40933",
       "CVE-2026-42271"
@@ -319,6 +339,7 @@
     "evidence_cves": [
       "CVE-2014-2120",
       "CVE-2020-11023",
+      "CVE-2020-13965",
       "CVE-2021-26829",
       "CVE-2023-34192",
       "CVE-2023-6571",
@@ -401,8 +422,10 @@
     ],
     "evidence_cves": [
       "CVE-2020-29574",
+      "CVE-2023-48788",
       "CVE-2024-29824",
       "CVE-2024-43468",
+      "CVE-2024-6670",
       "CVE-2024-9379",
       "CVE-2024-9465",
       "CVE-2025-25181",
@@ -454,14 +477,21 @@
       "CVE-2013-3918",
       "CVE-2017-1000353",
       "CVE-2020-25078",
+      "CVE-2021-44529",
+      "CVE-2022-24816",
       "CVE-2022-43769",
       "CVE-2022-48503",
+      "CVE-2023-24955",
       "CVE-2023-44467",
       "CVE-2023-6016",
       "CVE-2024-12366",
+      "CVE-2024-20359",
       "CVE-2024-21513",
       "CVE-2024-21576",
+      "CVE-2024-23692",
       "CVE-2024-27132",
+      "CVE-2024-36401",
+      "CVE-2024-4040",
       "CVE-2024-4889",
       "CVE-2024-5565",
       "CVE-2024-56145",
@@ -490,6 +520,7 @@
       "CVE-2026-0766",
       "CVE-2026-1281",
       "CVE-2026-1340",
+      "CVE-2026-15410",
       "CVE-2026-20045",
       "CVE-2026-21877",
       "CVE-2026-25592",
@@ -613,6 +644,7 @@
       "CVE-2023-43791",
       "CVE-2023-47117",
       "CVE-2024-21182",
+      "CVE-2024-24919",
       "CVE-2024-40635",
       "CVE-2025-31125",
       "CVE-2026-20133",
@@ -713,15 +745,20 @@
     ],
     "evidence_cves": [
       "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
+      "CVE-2013-0643",
       "CVE-2021-43226",
+      "CVE-2022-38028",
       "CVE-2024-21626",
+      "CVE-2024-26169",
+      "CVE-2024-38014",
       "CVE-2024-49035",
       "CVE-2024-8068",
       "CVE-2025-48543",
       "CVE-2025-48572",
       "CVE-2025-62849",
       "CVE-2026-21533",
-      "CVE-2026-41091"
+      "CVE-2026-41091",
+      "CVE-2026-46817"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-6",
@@ -752,6 +789,8 @@
     ],
     "evidence_cves": [
       "CVE-2024-20767",
+      "CVE-2024-27348",
+      "CVE-2024-40766",
       "CVE-2025-12480",
       "CVE-2025-24989",
       "CVE-2025-31125",
@@ -809,11 +848,14 @@
       "CVE-2019-19006",
       "CVE-2020-10148",
       "CVE-2021-32030",
+      "CVE-2021-33044",
+      "CVE-2021-33045",
       "CVE-2022-0492",
       "CVE-2023-27351",
       "CVE-2023-28461",
       "CVE-2024-12776",
       "CVE-2024-1709",
+      "CVE-2024-37085",
       "CVE-2024-49039",
       "CVE-2024-53704",
       "CVE-2024-7593",
@@ -824,6 +866,7 @@
       "CVE-2025-64513",
       "CVE-2026-20127",
       "CVE-2026-20182",
+      "CVE-2026-46817",
       "CVE-2026-50751"
     ],
     "framework_controls_partially_addressing": [
@@ -882,7 +925,9 @@
       "CVE-2026-33017",
       "CVE-2026-35273",
       "CVE-2026-39987",
-      "CVE-2026-41940"
+      "CVE-2026-41940",
+      "CVE-2026-46817",
+      "CVE-2026-56164"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-IA-2",
@@ -1213,6 +1258,8 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2008-4128",
+      "CVE-2014-100005",
       "CVE-2023-2533",
       "CVE-2025-34291",
       "CVE-2025-49596"
@@ -1316,10 +1363,18 @@
     "evidence_cves": [
       "CVE-2010-0249",
       "CVE-2010-0806",
+      "CVE-2012-4792",
       "CVE-2020-9715",
+      "CVE-2022-2586",
       "CVE-2023-41974",
       "CVE-2023-43000",
+      "CVE-2024-1086",
+      "CVE-2024-36971",
+      "CVE-2024-38107",
+      "CVE-2024-38193",
       "CVE-2024-43047",
+      "CVE-2024-4610",
+      "CVE-2024-4671",
       "CVE-2024-9680",
       "CVE-2025-21334",
       "CVE-2025-21335",
@@ -1402,6 +1457,7 @@
     "evidence_cves": [
       "CVE-2018-4063",
       "CVE-2021-26828",
+      "CVE-2024-39717",
       "CVE-2024-50623",
       "CVE-2024-57968",
       "CVE-2024-7399",
@@ -1482,17 +1538,24 @@
     ],
     "evidence_cves": [
       "CVE-2017-3066",
+      "CVE-2018-0824",
       "CVE-2019-0344",
       "CVE-2019-9874",
       "CVE-2019-9875",
+      "CVE-2020-0618",
+      "CVE-2020-14644",
       "CVE-2020-2883",
+      "CVE-2021-31196",
       "CVE-2022-1471",
+      "CVE-2022-21445",
       "CVE-2023-21529",
+      "CVE-2023-43208",
       "CVE-2024-11392",
       "CVE-2024-11393",
       "CVE-2024-11394",
       "CVE-2024-20953",
       "CVE-2024-24590",
+      "CVE-2024-28986",
       "CVE-2024-37052",
       "CVE-2024-37060",
       "CVE-2024-38094",
@@ -1529,7 +1592,8 @@
       "CVE-2026-3060",
       "CVE-2026-31229",
       "CVE-2026-45247",
-      "CVE-2026-45659"
+      "CVE-2026-45659",
+      "CVE-2026-58644"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -1560,6 +1624,7 @@
     "evidence_cves": [
       "CVE-2022-23812",
       "CVE-2024-3094",
+      "CVE-2024-4978",
       "CVE-2025-30066",
       "CVE-2025-30154",
       "CVE-2025-54313",
@@ -1803,15 +1868,19 @@
     ],
     "evidence_cves": [
       "CVE-2009-1537",
+      "CVE-2013-0648",
       "CVE-2021-22555",
       "CVE-2023-3519",
       "CVE-2024-21762",
+      "CVE-2024-30051",
       "CVE-2024-37079",
       "CVE-2024-38812",
       "CVE-2024-42479",
       "CVE-2024-44308",
+      "CVE-2024-4761",
       "CVE-2024-53104",
       "CVE-2024-53197",
+      "CVE-2024-7965",
       "CVE-2025-0282",
       "CVE-2025-14174",
       "CVE-2025-14733",
@@ -1870,6 +1939,7 @@
       "CVE-2021-44207",
       "CVE-2024-20439",
       "CVE-2024-28987",
+      "CVE-2024-3272",
       "CVE-2025-14611",
       "CVE-2025-30406",
       "CVE-2026-22769"
@@ -1992,7 +2062,9 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2021-40655",
       "CVE-2024-21287",
+      "CVE-2024-38856",
       "CVE-2025-21479",
       "CVE-2025-21480",
       "CVE-2025-24200",
@@ -2078,6 +2150,7 @@
       "CVE-2025-25297",
       "CVE-2025-56520",
       "CVE-2025-61884",
+      "CVE-2026-15409",
       "CVE-2026-20230",
       "CVE-2026-22219"
     ],
@@ -2383,6 +2456,10 @@
     ],
     "evidence_cves": [
       "BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND",
+      "CVE-2024-29988",
+      "CVE-2024-38213",
+      "CVE-2024-38217",
+      "CVE-2024-38226",
       "CVE-2025-0411",
       "CVE-2025-3466",
       "CVE-2025-40536",
@@ -2469,6 +2546,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2024-36401",
       "CVE-2025-24893",
       "CVE-2025-64496",
       "CVE-2026-33017"
@@ -2510,7 +2588,9 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2008-4250",
+      "CVE-2013-0648",
       "CVE-2014-3931",
+      "CVE-2017-1000253",
       "CVE-2025-14174",
       "CVE-2025-31200",
       "CVE-2025-31277",
@@ -2585,6 +2665,8 @@
     "evidence_cves": [
       "CVE-2018-14634",
       "CVE-2021-30952",
+      "CVE-2022-0185",
+      "CVE-2024-38080",
       "CVE-2025-24985",
       "CVE-2025-48595",
       "CVE-2026-21385",
@@ -2780,6 +2862,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2020-17519",
       "CVE-2025-11371"
     ],
     "last_verified": "2026-05-18",
@@ -2800,6 +2883,7 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2023-45727",
+      "CVE-2024-34102",
       "CVE-2025-2775",
       "CVE-2025-2776",
       "CVE-2025-58360"
@@ -2906,6 +2990,10 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2024-38178",
+      "CVE-2024-4947",
+      "CVE-2024-5274",
+      "CVE-2024-7971",
       "CVE-2025-10585",
       "CVE-2025-13223",
       "CVE-2025-30397",
@@ -3052,6 +3140,7 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2009-3459",
+      "CVE-2024-30051",
       "CVE-2024-38812",
       "CVE-2024-49138",
       "CVE-2025-21333",
@@ -3117,6 +3206,7 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2023-50224",
+      "CVE-2024-4358",
       "CVE-2024-54085"
     ],
     "last_verified": "2026-05-18",
@@ -3463,7 +3553,10 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2024-38112",
+      "CVE-2024-43461"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
@@ -3785,6 +3878,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2023-7028",
       "CVE-2024-12776",
       "CVE-2025-1796"
     ],
@@ -3882,7 +3976,9 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2024-5217"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
@@ -3941,7 +4037,9 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2024-29748"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
@@ -4093,7 +4191,9 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2024-20353"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
@@ -4113,6 +4213,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2024-29745",
       "CVE-2024-50302"
     ],
     "last_verified": "2026-05-19",
@@ -4534,7 +4635,9 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2024-4879"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
@@ -4629,7 +4732,9 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2023-45249"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
@@ -4723,6 +4828,7 @@
     ],
     "skills_referencing": [],
     "evidence_cves": [
+      "CVE-2024-37085",
       "CVE-2025-31161"
     ],
     "framework_controls_partially_addressing": [
@@ -4919,7 +5025,8 @@
     ],
     "skills_referencing": [],
     "evidence_cves": [
-      "CVE-2025-31201"
+      "CVE-2025-31201",
+      "CVE-2026-56155"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-3",
@@ -5353,5 +5460,379 @@
     "real_requirement": "Enforce authorization server-side on every restricted resource (not just linked entry points); default-deny unmapped routes; do not rely on the absence of a UI link or on client-side gating to protect admin/internal endpoints.",
     "lag_notes": "Access-control controls check linked paths; forced-browsing to unlinked-but-reachable endpoints is a common blind spot.",
     "last_verified": "2026-07-11"
+  },
+  "CWE-27": {
+    "id": "CWE-27",
+    "name": "Path Traversal: 'dir/../../filename'",
+    "abstraction": "Variant",
+    "category": "Path Traversal",
+    "description": "The product uses external input to build a pathname intended to be within a restricted directory but fails to neutralize multiple internal '../' sequences, which can resolve to a location outside that directory. Bypasses protections that strip only a single '../'.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2024-23897"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-10",
+      "ISO-27001-2022-A.8.28",
+      "NIST-800-53-AC-3"
+    ],
+    "real_requirement": "Canonicalize the resolved path and confine it to an allowlisted base directory, rejecting any request whose normalized target escapes the root — do not filter traversal sequences by pattern before normalization.",
+    "lag_notes": "Input-validation controls treat path handling as a syntactic filtering problem; none mandate post-canonicalization containment, so a denylist of \"../\" sequences passes the control while multi-encoding bypasses it.",
+    "last_verified": "2026-07-18"
+  },
+  "CWE-80": {
+    "id": "CWE-80",
+    "name": "Improper Neutralization of Script-Related HTML Tags in a Web Page (Basic XSS)",
+    "abstraction": "Variant",
+    "category": "Injection",
+    "description": "The product does not neutralize, or incorrectly neutralizes, special characters such as '<', '>', and '&' that can be interpreted as web-scripting elements when passed to a downstream component that processes web pages, enabling basic cross-site scripting.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-18",
+      "CAPEC-32",
+      "CAPEC-86",
+      "CAPEC-193"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2020-13965"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-10",
+      "ISO-27001-2022-A.8.28",
+      "PCI-DSS-4.0-6.2.4"
+    ],
+    "real_requirement": "Apply context-aware output encoding at every sink where user data reaches HTML, plus a restrictive Content-Security-Policy; never reflect script-capable tags unencoded.",
+    "lag_notes": "Frameworks require \"input validation\" but the actual cross-site-scripting defense is output-context encoding, which no control operationalizes — validated input still renders as active markup.",
+    "last_verified": "2026-07-18"
+  },
+  "CWE-184": {
+    "id": "CWE-184",
+    "name": "Incomplete List of Disallowed Inputs",
+    "abstraction": "Base",
+    "category": "Improper Input Validation",
+    "description": "A protection mechanism relies on a denylist of inputs (or input properties) that must be blocked or neutralized before further processing, but the list is incomplete, allowing disallowed inputs to slip through.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-120",
+      "CAPEC-3",
+      "CAPEC-43",
+      "CAPEC-71"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2024-5217"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-10",
+      "ISO-27001-2022-A.8.28"
+    ],
+    "real_requirement": "Validate against an allowlist of known-good inputs (deny-by-default) rather than enumerating disallowed values, which is structurally incomplete.",
+    "lag_notes": "SI-10 endorses input validation generically and is satisfied by a denylist; frameworks do not prohibit denylist-based validation even though it is provably incomplete against novel encodings.",
+    "last_verified": "2026-07-18"
+  },
+  "CWE-191": {
+    "id": "CWE-191",
+    "name": "Integer Underflow (Wrap or Wraparound)",
+    "abstraction": "Base",
+    "category": "Memory Safety",
+    "description": "The product subtracts one value from another such that the result is less than the minimum allowable integer value, producing an incorrect (wrapped) result. Applies to both signed and unsigned cases.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2014-0497",
+      "CVE-2022-0185"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-16",
+      "NIST-800-53-SI-10"
+    ],
+    "real_requirement": "Use checked arithmetic and validate size/index computations before allocation or indexing, or adopt a memory-safe language that traps underflow.",
+    "lag_notes": "Memory-protection controls target execution of injected code (DEP/ASLR), not the arithmetic-boundary logic that produces an under-read/under-write; the underflow itself sits below the control layer.",
+    "last_verified": "2026-07-18"
+  },
+  "CWE-203": {
+    "id": "CWE-203",
+    "name": "Observable Discrepancy",
+    "abstraction": "Base",
+    "category": "Information Exposure",
+    "description": "The product behaves differently or returns different responses under different circumstances in a way observable to an unauthorized actor, exposing information the actor can use to infer protected state.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-189"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2024-39891"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SC-7",
+      "ISO-27001-2022-A.8.12"
+    ],
+    "real_requirement": "Make success and failure paths observationally identical — constant-time comparisons and uniform responses/timing so an attacker cannot distinguish states through side effects.",
+    "lag_notes": "Frameworks protect confidentiality of data at rest and in transit but say nothing about observable discrepancies (timing, error, or response differences) that leak state through a side channel.",
+    "last_verified": "2026-07-18"
+  },
+  "CWE-276": {
+    "id": "CWE-276",
+    "name": "Incorrect Default Permissions",
+    "abstraction": "Base",
+    "category": "Access Control",
+    "description": "During installation, file permissions are set to defaults that allow anyone to read or modify those files, exposing them to unauthorized access or tampering.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-1",
+      "CAPEC-81",
+      "CAPEC-127"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2022-22948"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-AC-6",
+      "NIST-800-53-CM-6",
+      "ISO-27001-2022-A.8.9"
+    ],
+    "real_requirement": "Ship least-privilege default permissions enforced at install and provisioning time, not left to operator hardening after deployment.",
+    "lag_notes": "Configuration-management controls exist but do not mandate secure-by-default permission baselines in shipped software, so an insecure factory default satisfies the control until an operator notices.",
+    "last_verified": "2026-07-18"
+  },
+  "CWE-280": {
+    "id": "CWE-280",
+    "name": "Improper Handling of Insufficient Permissions or Privileges",
+    "abstraction": "Base",
+    "category": "Access Control",
+    "description": "The product does not handle, or incorrectly handles, the case where it has insufficient privileges to access a resource or functionality, which can drive it down unexpected code paths and leave it in an invalid state.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2024-29748"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-AC-6",
+      "NIST-800-53-AC-3"
+    ],
+    "real_requirement": "Fail closed when a permission or privilege check errors or returns insufficient rights; never fall through to a default-permit or elevated code path.",
+    "lag_notes": "Access-control controls specify who may do what but not the failure-handling path when the check itself errors, which is where the mishandling grants unintended access.",
+    "last_verified": "2026-07-18"
+  },
+  "CWE-358": {
+    "id": "CWE-358",
+    "name": "Improperly Implemented Security Check for Standard",
+    "abstraction": "Base",
+    "category": "Improper Input Validation",
+    "description": "The product does not implement, or incorrectly implements, one or more security-relevant checks specified by the design of a standardized algorithm, protocol, or technique.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2024-7965"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SC-13",
+      "NIST-800-53-IA-2"
+    ],
+    "real_requirement": "Implement every step of a standard security check to spec — full certificate chain, hostname, and revocation validation, or complete protocol state checks — and verify with conformance tests.",
+    "lag_notes": "Controls require \"use approved cryptography/standards\" but not conformance testing of each security-check step, so a partial or short-circuited implementation still claims standard compliance.",
+    "last_verified": "2026-07-18"
+  },
+  "CWE-415": {
+    "id": "CWE-415",
+    "name": "Double Free",
+    "abstraction": "Variant",
+    "category": "Memory Safety",
+    "description": "The product calls free() twice on the same memory address, which can corrupt memory management structures and lead to crashes or exploitable memory corruption.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2014-0502"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-16",
+      "NIST-800-53-SI-2"
+    ],
+    "real_requirement": "Enforce allocator discipline — null pointers after free, single-ownership semantics — or use a memory-safe language; double-free is exploitable for allocator metadata corruption.",
+    "lag_notes": "SI-16 memory protection is an exploit-mitigation layer, not allocator correctness; no framework mandates memory-safe languages, so the underlying lifecycle bug is out of scope for the control.",
+    "last_verified": "2026-07-18"
+  },
+  "CWE-591": {
+    "id": "CWE-591",
+    "name": "Sensitive Data Storage in Improperly Locked Memory",
+    "abstraction": "Variant",
+    "category": "Memory Safety",
+    "description": "The product stores sensitive data in memory that is not locked, or is incorrectly locked, so the virtual memory manager may write it to on-disk swap files, making it more accessible to external actors.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2024-38106"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SC-28",
+      "ISO-27001-2022-A.8.24"
+    ],
+    "real_requirement": "Pin secret-bearing memory (mlock/VirtualLock) so key material and credentials cannot be paged to disk, and zeroize promptly after use.",
+    "lag_notes": "Data-at-rest controls cover disk and database encryption but not in-memory page-locking of secrets, so a swapped page writing plaintext keys to the pagefile passes the control unremarked.",
+    "last_verified": "2026-07-18"
+  },
+  "CWE-645": {
+    "id": "CWE-645",
+    "name": "Overly Restrictive Account Lockout Mechanism",
+    "abstraction": "Base",
+    "category": "Authentication",
+    "description": "The product's account-lockout protection is too easily triggered, letting attackers deny service to legitimate users by deliberately causing their accounts to be locked out.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-2"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2023-4346"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-AC-2",
+      "ISO-27001-2022-A.5.17"
+    ],
+    "real_requirement": "Use graduated rate-limiting and backoff rather than a lockout mechanism whose restrictiveness lets a remote attacker trigger denial of service or whose weakness undermines the intended protection.",
+    "lag_notes": "Authentication controls mandate lockout thresholds as purely protective and ignore the availability or bypass consequences of a mechanism that is mis-scoped, so the control is met while the mechanism is the vulnerability.",
+    "last_verified": "2026-07-18"
+  },
+  "CWE-670": {
+    "id": "CWE-670",
+    "name": "Always-Incorrect Control Flow Implementation",
+    "abstraction": "Class",
+    "category": "Logic Error",
+    "description": "The code contains a control-flow path that does not reflect the algorithm it is intended to implement, producing incorrect behavior whenever that path is taken.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2024-32896"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-218-PS.1",
+      "NIST-800-53-SI-2"
+    ],
+    "real_requirement": "Verify security-relevant control flow with tests that exercise each decision branch, so an always-taken or always-skipped path is caught before release.",
+    "lag_notes": "Secure-SDLC controls require testing but not branch or decision coverage of security-critical control flow, so an always-incorrect branch ships past a green test suite that never exercised it.",
+    "last_verified": "2026-07-18"
+  },
+  "CWE-783": {
+    "id": "CWE-783",
+    "name": "Operator Precedence Logic Error",
+    "abstraction": "Base",
+    "category": "Logic Error",
+    "description": "The product uses an expression in which operator precedence causes the wrong logic to be evaluated, yielding incorrect results.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2024-32896"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-218-PS.1",
+      "NIST-800-53-SI-2"
+    ],
+    "real_requirement": "Parenthesize security-relevant expressions explicitly and run static analysis that flags precedence ambiguity, so an unintended evaluation order cannot silently weaken a check.",
+    "lag_notes": "Frameworks require code review but do not require static-analysis rules for operator-precedence defects, which are invisible in review and only manifest as a logic bug at runtime.",
+    "last_verified": "2026-07-18"
+  },
+  "CWE-1336": {
+    "id": "CWE-1336",
+    "name": "Improper Neutralization of Special Elements Used in a Template Engine",
+    "abstraction": "Base",
+    "category": "Injection",
+    "description": "The product feeds externally-influenced input to a template engine but fails to neutralize special elements or syntax that the engine can interpret as template expressions or code directives, enabling server-side template injection.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2024-23692",
+      "CVE-2024-4040"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-10",
+      "ISO-27001-2022-A.8.28",
+      "PCI-DSS-4.0-6.2.4"
+    ],
+    "real_requirement": "Never render user input as template source; use logic-less or sandboxed templating so injected template syntax cannot reach the evaluation engine and achieve server-side code execution.",
+    "lag_notes": "Injection controls call out SQL, OS-command, and LDAP but not server-side template injection; generic input validation does not stop template syntax from being evaluated by the engine.",
+    "last_verified": "2026-07-18"
   }
 }
