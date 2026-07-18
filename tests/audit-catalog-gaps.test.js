@@ -277,8 +277,10 @@ test("shipped catalogs: missing-context budget is enforced per catalog (no silen
     // no-orphaned-controls rule forbids. The count rises as such lessons are
     // added for newly-curated CVEs (e.g. legacy client-side browser/reader RCEs
     // whose defense is patch + end-of-life-retirement + Protected View/ASR, not
-    // a novel control). Raised to the current actual when that happens.
-    "zeroday-lessons": { new_control_requirements: 429 }
+    // a novel control). Raised to the current actual when that happens — the
+    // latest KEV curation batch added 100 such lessons (patch + existing
+    // hardening as the remediation), taking the count from 429 to 529.
+    "zeroday-lessons": { new_control_requirements: 529 }
   };
   const findings = {};
   for (const key of Object.keys(MOD.SPEC)) {
