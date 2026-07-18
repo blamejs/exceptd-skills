@@ -6,6 +6,12 @@ on:
     - cron: '0 9 * * 1'
   workflow_dispatch:
 
+# Top-level minimum-scope default. The currency job below re-declares the
+# issues:write it needs to file/refresh the currency-report issue; every
+# other token capability defaults to read here.
+permissions:
+  contents: read
+
 jobs:
   currency:
     name: Run currency report
