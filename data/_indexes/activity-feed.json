@@ -8,6 +8,14 @@
     {
       "date": "2026-07-18",
       "type": "catalog_update",
+      "artifact": "data/cve-catalog.json",
+      "path": "data/cve-catalog.json",
+      "schema_version": "1.0.0",
+      "entry_count": 719
+    },
+    {
+      "date": "2026-07-18",
+      "type": "catalog_update",
       "artifact": "data/cwe-catalog.json",
       "path": "data/cwe-catalog.json",
       "schema_version": "1.0.0",
@@ -323,14 +331,6 @@
       "artifact": "privacy-consent-ops",
       "path": "skills/privacy-consent-ops/skill.md",
       "note": "Privacy, consent, and sanctions operational integrity for mid-2026 — confusable/homoglyph normalization before sanctions screening, integrity-bound and re-validated consent records, evidence-gated and downstream-propagated DSR erasure, and ROPA reconciliation against actual processing"
-    },
-    {
-      "date": "2026-06-01",
-      "type": "catalog_update",
-      "artifact": "data/cve-catalog.json",
-      "path": "data/cve-catalog.json",
-      "schema_version": "1.0.0",
-      "entry_count": 719
     },
     {
       "date": "2026-05-27",
