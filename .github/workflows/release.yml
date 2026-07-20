@@ -68,7 +68,7 @@ jobs:
           ref: ${{ inputs.tag || github.ref }}
 
       - name: Set up Node 24
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
           # Pin the exact patch ci.yml and docker/test.Dockerfile pin so the
           # gates here and the published-artifact build run the same Node a
@@ -227,7 +227,7 @@ jobs:
           ref: ${{ inputs.tag || github.ref }}
 
       - name: Set up Node 24 + npm provenance support
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
           # Same exact patch as ci.yml / docker/test.Dockerfile — the publish
           # path must not build the tarball on a different Node than the gates
@@ -336,7 +336,7 @@ jobs:
           permission-contents: write
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b  # v3.0.1
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228  # v3.0.2
         with:
           token: ${{ steps.app-token.outputs.token }}
           tag_name: ${{ needs.validate.outputs.tag }}
