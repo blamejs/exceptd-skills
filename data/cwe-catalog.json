@@ -50,6 +50,10 @@
     "evidence_cves": [
       "CVE-2016-3714",
       "CVE-2022-1471",
+      "CVE-2023-22515",
+      "CVE-2023-36563",
+      "CVE-2023-36761",
+      "CVE-2023-41061",
       "CVE-2024-21413",
       "CVE-2024-30040",
       "CVE-2024-3154",
@@ -110,7 +114,9 @@
       "CVE-2021-41277",
       "CVE-2021-43798",
       "CVE-2023-38950",
+      "CVE-2023-41266",
       "CVE-2023-43472",
+      "CVE-2023-47246",
       "CVE-2023-51449",
       "CVE-2023-6021",
       "CVE-2024-0129",
@@ -183,13 +189,17 @@
     ],
     "evidence_cves": [
       "CVE-2011-0411",
+      "CVE-2014-8361",
       "CVE-2016-10033",
+      "CVE-2016-20017",
       "CVE-2020-25079",
       "CVE-2021-33515",
+      "CVE-2023-1671",
       "CVE-2023-20118",
       "CVE-2023-33538",
       "CVE-2024-12356",
       "CVE-2024-12450",
+      "CVE-2024-21887",
       "CVE-2024-3273",
       "CVE-2024-3400",
       "CVE-2024-5565",
@@ -244,17 +254,22 @@
     "evidence_cves": [
       "CVE-2014-6278",
       "CVE-2017-3506",
+      "CVE-2017-6884",
       "CVE-2018-14933",
       "CVE-2018-9276",
       "CVE-2019-11001",
       "CVE-2019-7256",
       "CVE-2020-15415",
       "CVE-2021-20035",
+      "CVE-2021-36380",
       "CVE-2021-40407",
+      "CVE-2023-20273",
       "CVE-2023-25280",
       "CVE-2023-39780",
       "CVE-2023-43208",
       "CVE-2023-44221",
+      "CVE-2023-47565",
+      "CVE-2023-49897",
       "CVE-2023-6019",
       "CVE-2024-11120",
       "CVE-2024-1212",
@@ -342,6 +357,8 @@
       "CVE-2020-13965",
       "CVE-2021-26829",
       "CVE-2023-34192",
+      "CVE-2023-43770",
+      "CVE-2023-5631",
       "CVE-2023-6571",
       "CVE-2024-11182",
       "CVE-2024-27132",
@@ -422,6 +439,7 @@
     ],
     "evidence_cves": [
       "CVE-2020-29574",
+      "CVE-2023-46748",
       "CVE-2023-48788",
       "CVE-2024-29824",
       "CVE-2024-43468",
@@ -476,16 +494,23 @@
       "CVE-2011-3402",
       "CVE-2013-3918",
       "CVE-2017-1000353",
+      "CVE-2018-14667",
       "CVE-2020-25078",
+      "CVE-2021-3129",
       "CVE-2021-44529",
       "CVE-2022-24816",
       "CVE-2022-43769",
       "CVE-2022-48503",
       "CVE-2023-24955",
+      "CVE-2023-33246",
+      "CVE-2023-41179",
       "CVE-2023-44467",
       "CVE-2023-6016",
+      "CVE-2023-6548",
+      "CVE-2023-7101",
       "CVE-2024-12366",
       "CVE-2024-20359",
+      "CVE-2024-21351",
       "CVE-2024-21513",
       "CVE-2024-21576",
       "CVE-2024-23692",
@@ -593,6 +618,8 @@
     ],
     "evidence_cves": [
       "CVE-2023-36424",
+      "CVE-2023-42916",
+      "CVE-2024-0519",
       "CVE-2024-42478",
       "CVE-2024-53150",
       "CVE-2025-24991",
@@ -640,9 +667,12 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2020-3259",
       "CVE-2021-41277",
+      "CVE-2023-21237",
       "CVE-2023-43791",
       "CVE-2023-47117",
+      "CVE-2023-49103",
       "CVE-2024-21182",
       "CVE-2024-24919",
       "CVE-2024-40635",
@@ -748,6 +778,9 @@
       "CVE-2013-0643",
       "CVE-2021-43226",
       "CVE-2022-38028",
+      "CVE-2023-28434",
+      "CVE-2023-35674",
+      "CVE-2023-42824",
       "CVE-2024-21626",
       "CVE-2024-26169",
       "CVE-2024-38014",
@@ -788,6 +821,7 @@
       "idp-incident-response"
     ],
     "evidence_cves": [
+      "CVE-2023-23752",
       "CVE-2024-20767",
       "CVE-2024-27348",
       "CVE-2024-40766",
@@ -853,8 +887,11 @@
       "CVE-2022-0492",
       "CVE-2023-27351",
       "CVE-2023-28461",
+      "CVE-2023-35082",
+      "CVE-2023-46805",
       "CVE-2024-12776",
       "CVE-2024-1709",
+      "CVE-2024-21410",
       "CVE-2024-37085",
       "CVE-2024-49039",
       "CVE-2024-53704",
@@ -905,6 +942,11 @@
       "CVE-2020-24363",
       "CVE-2022-23227",
       "CVE-2023-28461",
+      "CVE-2023-36846",
+      "CVE-2023-36847",
+      "CVE-2023-36851",
+      "CVE-2023-42793",
+      "CVE-2023-46747",
       "CVE-2024-0012",
       "CVE-2024-11680",
       "CVE-2024-47575",
@@ -1220,6 +1262,7 @@
       "privacy-consent-ops"
     ],
     "evidence_cves": [
+      "CVE-2023-38831",
       "CVE-2023-51764",
       "CVE-2023-51765",
       "CVE-2023-51766",
@@ -1365,8 +1408,13 @@
       "CVE-2010-0806",
       "CVE-2012-4792",
       "CVE-2020-9715",
+      "CVE-2022-22071",
       "CVE-2022-2586",
+      "CVE-2023-21608",
+      "CVE-2023-33063",
+      "CVE-2023-36802",
       "CVE-2023-41974",
+      "CVE-2023-4211",
       "CVE-2023-43000",
       "CVE-2024-1086",
       "CVE-2024-36971",
@@ -1539,17 +1587,23 @@
     "evidence_cves": [
       "CVE-2017-3066",
       "CVE-2018-0824",
+      "CVE-2018-15133",
       "CVE-2019-0344",
       "CVE-2019-9874",
       "CVE-2019-9875",
       "CVE-2020-0618",
       "CVE-2020-14644",
+      "CVE-2020-2551",
       "CVE-2020-2883",
       "CVE-2021-31196",
       "CVE-2022-1471",
       "CVE-2022-21445",
       "CVE-2023-21529",
+      "CVE-2023-29300",
+      "CVE-2023-38203",
+      "CVE-2023-40044",
       "CVE-2023-43208",
+      "CVE-2023-46604",
       "CVE-2024-11392",
       "CVE-2024-11393",
       "CVE-2024-11394",
@@ -1870,8 +1924,21 @@
       "CVE-2009-1537",
       "CVE-2013-0648",
       "CVE-2021-22555",
+      "CVE-2023-20109",
+      "CVE-2023-26369",
+      "CVE-2023-34048",
       "CVE-2023-3519",
+      "CVE-2023-36036",
+      "CVE-2023-41990",
+      "CVE-2023-42917",
+      "CVE-2023-4863",
+      "CVE-2023-4911",
+      "CVE-2023-5217",
+      "CVE-2023-7024",
+      "CVE-2024-0519",
       "CVE-2024-21762",
+      "CVE-2024-23225",
+      "CVE-2024-23296",
       "CVE-2024-30051",
       "CVE-2024-37079",
       "CVE-2024-38812",
@@ -1937,6 +2004,7 @@
     "evidence_cves": [
       "CVE-2019-6693",
       "CVE-2021-44207",
+      "CVE-2023-6448",
       "CVE-2024-20439",
       "CVE-2024-28987",
       "CVE-2024-3272",
@@ -2063,6 +2131,8 @@
     ],
     "evidence_cves": [
       "CVE-2021-40655",
+      "CVE-2023-20269",
+      "CVE-2023-22518",
       "CVE-2024-21287",
       "CVE-2024-38856",
       "CVE-2025-21479",
@@ -2142,10 +2212,12 @@
       "CVE-2021-22175",
       "CVE-2021-39935",
       "CVE-2022-36551",
+      "CVE-2023-41763",
       "CVE-2023-43654",
       "CVE-2023-48022",
       "CVE-2023-51449",
       "CVE-2024-12450",
+      "CVE-2024-21893",
       "CVE-2024-6587",
       "CVE-2025-25297",
       "CVE-2025-56520",
@@ -2234,6 +2306,8 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2023-27524",
+      "CVE-2023-6448",
       "CVE-2024-2912",
       "CVE-2025-48927"
     ],
@@ -2408,6 +2482,7 @@
     ],
     "evidence_cves": [
       "CVE-2020-17103-REREGRESSION-2026",
+      "CVE-2022-48618",
       "CVE-2024-0132",
       "CVE-2024-30088"
     ],
@@ -2456,6 +2531,9 @@
     ],
     "evidence_cves": [
       "BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND",
+      "CVE-2023-36025",
+      "CVE-2023-36584",
+      "CVE-2024-21412",
       "CVE-2024-29988",
       "CVE-2024-38213",
       "CVE-2024-38217",
@@ -2546,6 +2624,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2023-7101",
       "CVE-2024-36401",
       "CVE-2025-24893",
       "CVE-2025-64496",
@@ -2591,6 +2670,10 @@
       "CVE-2013-0648",
       "CVE-2014-3931",
       "CVE-2017-1000253",
+      "CVE-2023-33106",
+      "CVE-2023-36033",
+      "CVE-2023-4966",
+      "CVE-2023-6549",
       "CVE-2025-14174",
       "CVE-2025-31200",
       "CVE-2025-31277",
@@ -2620,6 +2703,7 @@
     "evidence_cves": [
       "CVE-2020-15069",
       "CVE-2022-37055",
+      "CVE-2023-41064",
       "CVE-2025-20333",
       "CVE-2025-43520"
     ],
@@ -2666,6 +2750,8 @@
       "CVE-2018-14634",
       "CVE-2021-30952",
       "CVE-2022-0185",
+      "CVE-2023-33107",
+      "CVE-2023-6345",
       "CVE-2024-38080",
       "CVE-2025-24985",
       "CVE-2025-48595",
@@ -2767,7 +2853,11 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2023-20269",
+      "CVE-2023-42793",
+      "CVE-2023-46747",
       "CVE-2024-1709",
+      "CVE-2024-27198",
       "CVE-2024-55591",
       "CVE-2025-24472",
       "CVE-2025-2746",
@@ -2970,6 +3060,9 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2023-29360",
+      "CVE-2023-36033",
+      "CVE-2024-21338",
       "CVE-2024-35250",
       "CVE-2025-24990"
     ],
@@ -2990,6 +3083,8 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2023-4762",
+      "CVE-2024-23222",
       "CVE-2024-38178",
       "CVE-2024-4947",
       "CVE-2024-5274",
@@ -3119,6 +3214,7 @@
     "evidence_cves": [
       "CVE-2021-38371",
       "CVE-2022-43769",
+      "CVE-2023-22527",
       "CVE-2025-20281",
       "CVE-2025-20337"
     ],
@@ -3140,6 +3236,8 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2009-3459",
+      "CVE-2023-36036",
+      "CVE-2023-4911",
       "CVE-2024-30051",
       "CVE-2024-38812",
       "CVE-2024-49138",
@@ -3249,6 +3347,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2023-20198",
       "CVE-2025-54309"
     ],
     "last_verified": "2026-05-18",
@@ -3325,6 +3424,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2023-29552",
       "CVE-2023-44487",
       "CVE-2023-50868",
       "CVE-2026-24215",
@@ -3533,6 +3633,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2023-41265",
       "CVE-2023-48365"
     ],
     "last_verified": "2026-05-19",
@@ -4017,6 +4118,8 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2023-41992",
+      "CVE-2023-41993",
       "CVE-2024-3393"
     ],
     "last_verified": "2026-05-19",
@@ -5423,6 +5526,7 @@
     ],
     "skills_referencing": [],
     "evidence_cves": [
+      "CVE-2023-29357",
       "CVE-2024-7593"
     ],
     "framework_controls_partially_addressing": [
@@ -5721,6 +5825,7 @@
     "related_attack_patterns_capec": [],
     "skills_referencing": [],
     "evidence_cves": [
+      "CVE-2023-28229",
       "CVE-2024-38106"
     ],
     "framework_controls_partially_addressing": [
@@ -5834,5 +5939,139 @@
     "real_requirement": "Never render user input as template source; use logic-less or sandboxed templating so injected template syntax cannot reach the evaluation engine and achieve server-side code execution.",
     "lag_notes": "Injection controls call out SQL, OS-command, and LDAP but not server-side template injection; generic input validation does not stop template syntax from being evaluated by the engine.",
     "last_verified": "2026-07-18"
+  },
+  "CWE-295": {
+    "id": "CWE-295",
+    "name": "Improper Certificate Validation",
+    "abstraction": "Base",
+    "category": "Cryptography",
+    "description": "The product does not validate, or incorrectly validates, a certificate, allowing an attacker to spoof a trusted endpoint or machine-in-the-middle a TLS session. Management-plane and SSLVPN appliances that negotiate TLS but skip hostname or chain verification are the recurring real-world case.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-459",
+      "CAPEC-475"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2023-41991"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SC-8",
+      "NIST-800-53-SC-23",
+      "ISO-27001-2022-A.8.24"
+    ],
+    "real_requirement": "Full X.509 chain validation with hostname verification and revocation checking (OCSP stapling / short-lived certificates) on every TLS client; certificate pinning for machine-to-machine and mobile clients. A validation bypass \"for compatibility\" must fail closed, not open.",
+    "lag_notes": "SC-8/SC-23 mandate transmission confidentiality but do not operationalize how certificates are validated; a product that negotiates TLS yet skips hostname/chain verification is nominally \"encrypted\" while remaining trivially machine-in-the-middle-able. No control names certificate-validation-failure as a distinct defect.",
+    "last_verified": "2026-07-21"
+  },
+  "CWE-351": {
+    "id": "CWE-351",
+    "name": "Insufficient Type Distinction",
+    "abstraction": "Base",
+    "category": "Validation",
+    "description": "The product does not properly distinguish between different types of elements, causing it to treat one type as another — for example opening or executing a different file than the name or extension shown to the user. Archive and document handlers that render a spoofed name are the canonical abuse.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2023-38831"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-10",
+      "NIST-800-53-SI-3",
+      "ISO-27001-2022-A.8.28"
+    ],
+    "real_requirement": "Content-based type identification (magic bytes / parser-verified structure) rather than name- or extension-based dispatch; render and execution decisions must derive from the verified type, and archive extractors must not let a display name diverge from the file actually opened.",
+    "lag_notes": "Input-validation controls check that a field is well-formed, not that the type the product infers matches the type it acts on. The archive name/extension-spoof class (CVE-2023-38831) passes syntactic validation while the handler opens a different file than the one shown.",
+    "last_verified": "2026-07-21"
+  },
+  "CWE-473": {
+    "id": "CWE-473",
+    "name": "PHP External Variable Modification",
+    "abstraction": "Variant",
+    "category": "Validation",
+    "description": "A PHP application does not protect internal variables against modification from external sources such as query parameters, POST data, or cookies (register_globals-style behavior or unsafe extract()/import_request_variables), letting an attacker overwrite trusted state. Chained into appliance J-Web RCE.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-77"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2023-36844",
+      "CVE-2023-36845"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-10",
+      "NIST-800-53-CM-7",
+      "ISO-27001-2022-A.8.28"
+    ],
+    "real_requirement": "Explicit allowlist-based request-variable binding — never populate internal state directly from request superglobals; disable register_globals-equivalent behavior; treat any endpoint that assigns from $_GET/$_POST/$_COOKIE into arbitrary variable names as an injection sink.",
+    "lag_notes": "Framework input-validation controls do not model PHP-specific variable-injection semantics; a Juniper J-Web-class chain (CVE-2023-36844/36845) modifies an appfw/PHP variable through an upload, which SI-10 does not recognize as a validation boundary.",
+    "last_verified": "2026-07-21"
+  },
+  "CWE-703": {
+    "id": "CWE-703",
+    "name": "Improper Check or Handling of Exceptional Conditions",
+    "abstraction": "Class",
+    "category": "Error Handling",
+    "description": "The product does not properly anticipate or handle exceptional conditions that rarely occur during normal operation, leading to crashes, resource exhaustion, or an insecure fallback state. A parent class for many memory-safety and denial-of-service defects.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2022-22265"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-11",
+      "NIST-800-53-SI-10",
+      "ISO-27001-2022-A.8.28"
+    ],
+    "real_requirement": "Fail-closed error handling with explicit checks on every fallible operation (allocation, parse, syscall return, decode); fuzz coverage of malformed and boundary inputs so exceptional paths are exercised before shipping, not in production.",
+    "lag_notes": "SI-11 addresses error messages (do not leak internals) but not the security consequences of unhandled exceptional conditions; a missing check that yields an insecure default or a crash-to-DoS is out of scope for the control as written.",
+    "last_verified": "2026-07-21"
+  },
+  "CWE-823": {
+    "id": "CWE-823",
+    "name": "Use of Out-of-range Pointer Offset",
+    "abstraction": "Base",
+    "category": "Memory Safety",
+    "description": "The product performs pointer arithmetic on a valid pointer but uses an offset that can point outside the intended range of valid memory, so a subsequent read or write lands out of bounds. A precursor to OOB read/write and, when the offset is attacker-influenced, to code execution — common in baseband/DSP and multimedia parsers.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-129"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2023-33106"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-16",
+      "NIST-800-53-SI-10",
+      "ISO-27001-2022-A.8.28"
+    ],
+    "real_requirement": "Memory-safe languages or bounds-checked pointer arithmetic; hardware memory tagging (MTE) and guard pages where native code is unavoidable. Treat the same as CWE-787/125 — an out-of-range-offset read is the enabler for a chained OOB-write RCE, not merely an information leak.",
+    "lag_notes": "Frameworks fold pointer-offset defects into generic \"memory protection\" (SI-16) without recognizing out-of-range-offset as the arithmetic root cause that mitigations like ASLR do not prevent; baseband/DSP CVEs (e.g. CVE-2023-33106) are exploited before any OS-level mitigation applies.",
+    "last_verified": "2026-07-21"
   }
 }
