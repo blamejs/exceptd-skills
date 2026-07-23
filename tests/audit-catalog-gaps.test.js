@@ -283,8 +283,12 @@ test("shipped catalogs: missing-context budget is enforced per catalog (no silen
     // download/archive provenance, mobile zero-click hardening, vulnerable-
     // driver blocklisting, EOL decommission, framework default-secret
     // detection); the remaining 90 reuse existing controls (patch + hardening),
-    // taking the count from 529 to 619.
-    "zeroday-lessons": { new_control_requirements: 619 }
+    // taking the count from 529 to 619. The four-CVE currency batch that
+    // followed (the WordPress wp2shell chain, Langflow validate/code RCE, and
+    // the DD-WRT UPnP overflow) all map to existing controls — patch/upgrade,
+    // endpoint-exposure removal, and UPnP/firmware hygiene — so none carry a
+    // new_control_requirements entry, taking the count from 619 to 623.
+    "zeroday-lessons": { new_control_requirements: 623 }
   };
   const findings = {};
   for (const key of Object.keys(MOD.SPEC)) {

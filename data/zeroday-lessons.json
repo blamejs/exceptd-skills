@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.1.0",
-    "last_updated": "2026-07-03",
+    "last_updated": "2026-07-22",
     "last_threat_review": "2026-05-17",
     "purpose": "Zero-day learning loop output. Each entry maps a CVE to: attack vector, defense chain analysis, framework coverage, new control requirements generated, and exposure scoring. v1.1.0 (2026-05-15): every entry now carries ai_discovered_zeroday boolean + ai_discovery_source enum + ai_discovery_date + ai_assist_factor ladder, per AGENTS.md Hard Rule #7.",
     "note": "Never delete entries. Closed gaps are marked status: closed. History is data.",
@@ -17,7 +17,7 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "entry_count": 819
+    "entry_count": 823
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -43403,5 +43403,233 @@
         ]
       }
     ]
+  },
+  "CVE-2026-60137": {
+    "name": "WordPress Core SQL Injection Vulnerability",
+    "lesson_date": "2026-07-21",
+    "attack_vector": {
+      "description": "A SQL injection in WP_Query’s author__not_in parameter, reachable unauthenticated only when chained with CVE-2026-63030’s REST batch-route desynchronization, forms the data-access half of the wp2shell pre-auth RCE chain against default WordPress installs.",
+      "privileges_required": "none (unauthenticated when chained via the REST batch endpoint)",
+      "complexity": "high standalone (needs a plugin/theme to forward untrusted input), low as part of the wp2shell chain",
+      "ai_factor": "Not AI-discovered — responsibly disclosed by TF1T, dtro, haongo. No AI involvement documented."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to 6.8.6 / 6.9.5 / 7.0.2 immediately, and WAF-block /wp-json/batch/v1 so the SQLi cannot be smuggled unauthenticated",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2026-07-21, due 2026-08-04)",
+        "adequacy": "Patch closes the SQLi, but any pre-patch internet-facing install must be treated as potentially compromised (audit for rogue admin accounts and plugins)."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on unauthenticated /wp-json/batch/v1 traffic and anomalous WP_Query execution referencing author__not_in",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Detection catches the injection attempt but the chain can complete in a single request before response."
+      },
+      "response": {
+        "what_would_have_worked": "Remove unknown admin accounts and plugins, rotate secrets/salts, and review the database for tampering",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Because the chain yields RCE, response must assume full-site compromise, not just a data-read."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A 30-day flaw-remediation SLA is far slower than the observed window: public wp2shell exploitation followed the 2026-07-17 release within days, so a periodic patch cycle cannot close the SQLi half of the chain before mass compromise."
+      },
+      "NIS2-Art21-vulnerability-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Coordinated vulnerability-management expectations do not compel the emergency, same-week patching a KEV-listed pre-auth RCE chain on internet-facing CMS demands, nor the WAF blocking of /wp-json/batch/v1 that actually breaks the chain."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "System-security expectations do not by themselves require validating that plugin/theme code never forwards untrusted input into WP_Query parameters like author__not_in, which is the reachability precondition this SQLi exploits."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential-Eight patch maturity (48h internet-facing) still trails the same-week exploitation, and app-hardening controls do not address that this SQLi becomes unauthenticated only when combined with a separate Core routing flaw."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Periodic technical-vulnerability management does not compel the input-validation review of the WP_Query surface that would prevent untrusted data reaching author__not_in in the first place."
+      }
+    }
+  },
+  "CVE-2026-63030": {
+    "name": "WordPress Core Interpretation Conflict Vulnerability",
+    "lesson_date": "2026-07-21",
+    "attack_vector": {
+      "description": "An interpretation conflict in the WordPress REST batch endpoint desynchronizes handler dispatch, letting an unauthenticated attacker bypass validation, smuggle the CVE-2026-60137 SQLi, forge an administrator, and upload a malicious plugin for RCE on default installs (wp2shell).",
+      "privileges_required": "none (unauthenticated, network-reachable REST endpoint)",
+      "complexity": "low — unauthenticated request chain, reliable public PoC",
+      "ai_factor": "Not AI-discovered — reported by Adam Kues (Assetnote / Searchlight Cyber). No AI involvement documented."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to 6.9.5 / 7.0.2 immediately; interim, WAF-block /wp-json/batch/v1 to break the route-confusion",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2026-07-21, accelerated 3-day due date 2026-07-24)",
+        "adequacy": "Patch removes the dispatch confusion, but the 3-day deadline reflects that default installs were being mass-exploited; pre-patch servers must be treated as compromised."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on unauthenticated batch requests followed by new admin accounts or plugin uploads",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The single-request chain can forge an admin and drop a plugin before monitoring reacts."
+      },
+      "response": {
+        "what_would_have_worked": "Remove rogue admins and plugins, rotate all secrets, and rebuild from known-good if a shell was planted",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "RCE on a CMS is a full-host compromise; response must extend to everything the web user can reach."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 30-day flaw-remediation SLA is defeated by an accelerated 3-day KEV deadline: this pre-auth RCE was exploited in the wild within days of disclosure, so any periodic patch cadence leaves default installs owned before the ticket is even triaged."
+      },
+      "NIS2-Art21-incident-handling": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Incident-handling requirements assume detection of a breach, but an unauthenticated single-request chain that forges an admin and drops a plugin can complete before any monitoring fires; the control does not mandate the WAF virtual-patch of /wp-json/batch/v1 that actually blocks it pre-patch."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "System-security expectations do not by themselves require removing or authenticating the REST batch endpoint whose handler-dispatch confusion is the entire vulnerability, leaving default internet-facing installs reachable unauthenticated."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential-Eight 48h patch maturity for internet-facing systems still trails the same-week mass exploitation, and does not address that the flaw yields code execution on a DEFAULT install with no plugins, config, or credentials required."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Periodic technical-vulnerability management cannot compel the emergency out-of-band upgrade to 6.9.5 / 7.0.2 that a KEV-listed unauthenticated RCE with a 3-day remediation window demands."
+      }
+    }
+  },
+  "CVE-2026-0770": {
+    "name": "Langflow Inclusion of Functionality from Untrusted Control Sphere Vulnerability",
+    "lesson_date": "2026-07-21",
+    "attack_vector": {
+      "description": "An unauthenticated POST to Langflow’s /api/v1/validate/code reaches exec() with an exec_globals context exposing importlib and builtins, giving remote code execution as the Langflow process (root in default containers); observed exploitation steals AWS credentials and cloud metadata.",
+      "privileges_required": "none (unauthenticated, network-reachable endpoint)",
+      "complexity": "low — single crafted HTTP request, multiple public PoCs",
+      "ai_factor": "Not AI-discovered — reported by Trend Research via ZDI. The affected product is an LLM/agent framework, but the flaw is a conventional web-app RCE, not a model-level attack."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Remove or authenticate the /api/v1/validate/code endpoint and network-isolate Langflow (do not expose port 7860 to untrusted networks)",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2026-07-21, due 2026-07-24)",
+        "adequacy": "GitHub’s advisory records no patched version, so patching alone is not an option — the effective control is removing exposure and isolating the service."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on unauthenticated POSTs to /api/v1/validate/code and on Langflow spawning subprocesses or reaching cloud-metadata (169.254.169.254)",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Detection catches exploitation attempts but the single-request RCE executes before a response."
+      },
+      "response": {
+        "what_would_have_worked": "Rotate any AWS/cloud credentials and secrets reachable from the host, rebuild the container, and audit for second-stage malware",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Because exploitation harvested cloud credentials, response must extend to every credential the compromised host could reach."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A flaw-remediation SLA is moot when GitHub’s advisory records no patched version: SI-2 assumes a vendor fix exists to apply, but this KEV-listed RCE had no confirmed fixed release, so the only real control is removing the exposed /api/v1/validate/code surface, which SI-2 does not compel."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Network-security measures do not by default require isolating an internal AI-development tool like Langflow from untrusted networks, yet unauthenticated internet exposure of port 7860 is exactly what turns this into mass-scanned root RCE."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "System-security expectations do not mandate treating an LLM-app framework as a code-execution service that must never accept untrusted input to an eval/exec endpoint, which is the design flaw the exec_globals context exposes."
+      },
+      "AU-Essential-8-App-Hardening": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Application-hardening guidance is written for browsers/office suites and does not address disabling or authenticating a code-validation endpoint that evaluates attacker Python; Essential-Eight patch maturity is also unusable here because no confirmed patched version exists."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Technical-vulnerability management cannot drive a patch that the vendor has not shipped; without a fixed release it does not compel the compensating network isolation and endpoint removal that actually stop exploitation of this unauthenticated exec() surface."
+      }
+    }
+  },
+  "CVE-2021-27137": {
+    "name": "DD-WRT Stack-Based Buffer Overflow Vulnerability",
+    "lesson_date": "2026-07-21",
+    "attack_vector": {
+      "description": "An unauthenticated UDP M-SEARCH to SSDP/1900 with an oversized ST header overflows a 128-byte stack buffer in DD-WRT’s UPnP handler via unbounded strcpy, enabling code execution; weaponized in 2026 by the Gafgyt/C0XMO botnet to recruit routers as DDoS bots.",
+      "privileges_required": "none (unauthenticated) — requires UPnP enabled (non-default) and network reachability to UDP/1900",
+      "complexity": "high — non-default UPnP precondition and typically LAN-facing unless WAN-exposed",
+      "ai_factor": "Not AI-discovered — reported in 2021 by Selim Enes Karaduman via SSD. No AI involvement documented."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Flash a DD-WRT build at or after change set 45724 (patched since 2021) and disable UPnP / block UDP/1900 at the WAN edge",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2026-07-21, due 2026-07-24)",
+        "adequacy": "The fix has existed for five years; the gap is firmware-lifecycle management on unmanaged edge devices, not the availability of a patch."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on oversized SSDP datagrams to UDP/1900 and on routers beaconing to botnet C2 or generating flood traffic",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Consumer/SOHO routers rarely have monitoring, so compromise is usually noticed only via downstream DDoS."
+      },
+      "response": {
+        "what_would_have_worked": "Reflash to a patched build, factory-reset, disable UPnP, and rotate device credentials",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "A botnet-recruited router should be treated as fully untrusted until reflashed to a fixed build."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A patch has existed since 2021 (changeset 45724), so SI-2 remediation should have closed this long ago; its 2026 KEV listing shows SI-2 without an enforced end-of-support/asset-refresh policy leaves abandoned consumer/SOHO firmware exploitable years after the fix shipped."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Network-security requirements do not by themselves compel disabling UPnP or blocking UDP/1900 at the WAN edge, which is the control that removes unauthenticated reach to the vulnerable SSDP handler on internet-exposed DD-WRT devices."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "System-security expectations rarely extend to embedded router firmware lifecycle, so unmanaged DD-WRT/Buffalo devices running change set 45723 or prior persist unpatched and get recruited into botnets."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential-Eight patch maturity is written for OS/application estates and does not model consumer/SOHO router firmware, so devices no one treats as patchable assets remain vulnerable to a five-year-old overflow now weaponized by the C0XMO botnet."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Technical-vulnerability management depends on an asset inventory that enumerates the firmware build; embedded UPnP services on edge routers are routinely outside that inventory, so the fixed changeset is never applied."
+      }
+    }
   }
 }

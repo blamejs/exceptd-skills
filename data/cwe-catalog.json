@@ -451,6 +451,7 @@
       "CVE-2025-57819",
       "CVE-2026-21643",
       "CVE-2026-42208",
+      "CVE-2026-60137",
       "CVE-2026-9082"
     ],
     "framework_controls_partially_addressing": [
@@ -2043,6 +2044,7 @@
       "CVE-2025-32463",
       "CVE-2025-54136",
       "CVE-2025-64496",
+      "CVE-2026-0770",
       "MAL-2026-MOIKA-DEPCONFUSION",
       "MAL-2026-NODE-IPC-STEALER",
       "MAL-2026-SHAI-HULUD-OSS",
@@ -2724,6 +2726,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2021-27137",
       "CVE-2025-0282",
       "CVE-2025-20352",
       "CVE-2025-22457",
@@ -3367,7 +3370,8 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
-      "CVE-2025-48384"
+      "CVE-2025-48384",
+      "CVE-2026-63030"
     ],
     "last_verified": "2026-05-18",
     "notes": "Added v0.13.17 KEV bulk-import round 2."
