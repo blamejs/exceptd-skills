@@ -539,6 +539,7 @@
       "CVE-2026-48282",
       "CVE-2026-5760",
       "CVE-2026-58644",
+      "CVE-2026-63030",
       "CVE-2026-6973"
     ],
     "description_full": "Adversaries may abuse command and script interpreters to execute commands, scripts, or binaries. These interfaces and languages provide ways of interacting with computer systems and are a common feature across many different platforms. Most systems come with some built-in command-line interface and scripting capabilities, for example, macOS and Linux distributions include some flavor of [Unix Shell](https://attack.mitre.org/techniques/T1059/004) while Windows installations include the [Windows Command Shell](https://attack.mitre.org/techniques/T1059/003) and [PowerShell](https://attack.mitre.org/techniques/T1059/001). There are also cross-platform interpreters such as [Python](https://attack.mitre.org/techniques/T1059/006), as well as those commonly associated with client applications such as [JavaScript](https://attack.mitre.org/techniques/T1059/007) and [Visual Basic](https://attack.mitre.org/techniques/T1059/005). Adversaries may abuse these technologies in various ways as a means of executing arbitrary commands. Commands and scripts can be embedded in [Initial Access](https://attack.mitre.org/tactics/TA0001) payloads delivered to victims as lure documents or as secondary payloads downloaded from an existing C2. Adversaries may also execute commands through interactive terminals/shells, as well as utilize various [Remote Services](https://attack.mitre.org/techniques/T1021) in order to achieve remote Execution.(Citation: Powershell Remote Commands)(Citation: Cisco IOS Software Integrity Assurance - Command History)(Citation: Remote Shell Execution in Python)",
@@ -589,6 +590,7 @@
       "CVE-2024-5565",
       "CVE-2025-3248",
       "CVE-2025-49844",
+      "CVE-2026-0770",
       "CVE-2026-31230",
       "CVE-2026-33017",
       "MAL-2026-3083"
@@ -1249,6 +1251,9 @@
     "description": "Adversaries may create a local account to maintain access to victim systems.",
     "tactic": [
       "Persistence"
+    ],
+    "cve_refs": [
+      "CVE-2026-63030"
     ]
   },
   "T1190": {
@@ -1315,6 +1320,7 @@
       "CVE-2021-26086",
       "CVE-2021-26828",
       "CVE-2021-26829",
+      "CVE-2021-27137",
       "CVE-2021-31196",
       "CVE-2021-3129",
       "CVE-2021-32030",
@@ -1668,6 +1674,7 @@
       "CVE-2026-0257",
       "CVE-2026-0300",
       "CVE-2026-0766",
+      "CVE-2026-0770",
       "CVE-2026-10520",
       "CVE-2026-12569",
       "CVE-2026-1281",
@@ -1754,6 +1761,8 @@
       "CVE-2026-56291",
       "CVE-2026-5760",
       "CVE-2026-58644",
+      "CVE-2026-60137",
+      "CVE-2026-63030",
       "CVE-2026-6973",
       "CVE-2026-7473",
       "CVE-2026-7482",
@@ -2089,7 +2098,8 @@
       "CVE-2026-20133",
       "CVE-2026-21858",
       "CVE-2026-22218",
-      "CVE-2026-41950"
+      "CVE-2026-41950",
+      "CVE-2026-60137"
     ]
   },
   "T1485": {
@@ -2427,6 +2437,7 @@
       "CVE-2024-48248",
       "CVE-2024-6587",
       "CVE-2025-21085",
+      "CVE-2026-0770",
       "CVE-2026-30615",
       "MAL-2026-3083",
       "MAL-2026-MOIKA-DEPCONFUSION",
@@ -2487,6 +2498,9 @@
     "description": "Adversaries may attempt to access the Cloud Instance Metadata API to collect credentials and other sensitive data.",
     "tactic": [
       "Credential Access"
+    ],
+    "cve_refs": [
+      "CVE-2026-0770"
     ]
   },
   "T1552.007": {
@@ -3482,6 +3496,7 @@
     "name": "Network Denial of Service",
     "version": "v19",
     "cve_refs": [
+      "CVE-2021-27137",
       "CVE-2023-44487",
       "CVE-2023-50387",
       "CVE-2023-50868",
@@ -5429,6 +5444,7 @@
     "is_subtechnique": false,
     "cve_refs": [
       "CVE-2008-4250",
+      "CVE-2021-27137",
       "CVE-2023-34048",
       "CVE-2024-12356",
       "CVE-2024-38812",
@@ -13044,7 +13060,8 @@
       "CVE-2026-48939",
       "CVE-2026-56290",
       "CVE-2026-56291",
-      "CVE-2026-58644"
+      "CVE-2026-58644",
+      "CVE-2026-63030"
     ]
   },
   "T1505.004": {
