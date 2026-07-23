@@ -278,9 +278,13 @@ test("shipped catalogs: missing-context budget is enforced per catalog (no silen
     // added for newly-curated CVEs (e.g. legacy client-side browser/reader RCEs
     // whose defense is patch + end-of-life-retirement + Protected View/ASR, not
     // a novel control). Raised to the current actual when that happens — the
-    // latest KEV curation batch added 100 such lessons (patch + existing
-    // hardening as the remediation), taking the count from 429 to 529.
-    "zeroday-lessons": { new_control_requirements: 529 }
+    // latest KEV curation batch added 100 lessons, 10 of which carry a
+    // new_control_requirements entry (OT default-credential elimination,
+    // download/archive provenance, mobile zero-click hardening, vulnerable-
+    // driver blocklisting, EOL decommission, framework default-secret
+    // detection); the remaining 90 reuse existing controls (patch + hardening),
+    // taking the count from 529 to 619.
+    "zeroday-lessons": { new_control_requirements: 619 }
   };
   const findings = {};
   for (const key of Object.keys(MOD.SPEC)) {
