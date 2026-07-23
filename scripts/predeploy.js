@@ -212,6 +212,17 @@ const GATES = [
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
   {
+    // Global-first framework-gap coverage gate (AGENTS.md Hard Rule #5).
+    // Every curated CVE must declare a framework_control_gaps statement for
+    // all five jurisdiction buckets (NIST, EU, UK, AU, ISO). Drafts are
+    // exempt. Prevents a US-centric subset from shipping in the offline
+    // catalog's framework-gap output for multi-jurisdiction operators.
+    name: "Framework-gap jurisdiction coverage (Hard Rule #5)",
+    command: process.execPath,
+    args: [path.join(ROOT, "scripts", "check-framework-gap-coverage.js")],
+    ciJobName: "Data integrity (catalog + manifest snapshot)",
+  },
+  {
     // Version-tag drift gate. Compares the tracked tree against a
     // baseline snapshot of pre-existing `// vX.Y.Z` comments and
     // `*-vX_Y_Z.test.js` filenames. Fails on NEW additions outside
