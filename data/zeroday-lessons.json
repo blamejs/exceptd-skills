@@ -43407,6 +43407,10 @@
   "CVE-2026-60137": {
     "name": "WordPress Core SQL Injection Vulnerability",
     "lesson_date": "2026-07-21",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-07-17",
+    "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A SQL injection in WP_Query’s author__not_in parameter, reachable unauthenticated only when chained with CVE-2026-63030’s REST batch-route desynchronization, forms the data-access half of the wp2shell pre-auth RCE chain against default WordPress installs.",
       "privileges_required": "none (unauthenticated when chained via the REST batch endpoint)",
@@ -43464,6 +43468,10 @@
   "CVE-2026-63030": {
     "name": "WordPress Core Interpretation Conflict Vulnerability",
     "lesson_date": "2026-07-21",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-07-17",
+    "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An interpretation conflict in the WordPress REST batch endpoint desynchronizes handler dispatch, letting an unauthenticated attacker bypass validation, smuggle the CVE-2026-60137 SQLi, forge an administrator, and upload a malicious plugin for RCE on default installs (wp2shell).",
       "privileges_required": "none (unauthenticated, network-reachable REST endpoint)",
@@ -43521,6 +43529,10 @@
   "CVE-2026-0770": {
     "name": "Langflow Inclusion of Functionality from Untrusted Control Sphere Vulnerability",
     "lesson_date": "2026-07-21",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-01-09",
+    "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An unauthenticated POST to Langflow’s /api/v1/validate/code reaches exec() with an exec_globals context exposing importlib and builtins, giving remote code execution as the Langflow process (root in default containers); observed exploitation steals AWS credentials and cloud metadata.",
       "privileges_required": "none (unauthenticated, network-reachable endpoint)",
@@ -43578,6 +43590,10 @@
   "CVE-2021-27137": {
     "name": "DD-WRT Stack-Based Buffer Overflow Vulnerability",
     "lesson_date": "2026-07-21",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-03-24",
+    "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An unauthenticated UDP M-SEARCH to SSDP/1900 with an oversized ST header overflows a 128-byte stack buffer in DD-WRT’s UPnP handler via unbounded strcpy, enabling code execution; weaponized in 2026 by the Gafgyt/C0XMO botnet to recruit routers as DDoS bots.",
       "privileges_required": "none (unauthenticated) — requires UPnP enabled (non-default) and network reachability to UDP/1900",
