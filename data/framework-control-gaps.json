@@ -7199,6 +7199,7 @@
       "CVE-2025-12480",
       "CVE-2025-12686",
       "CVE-2025-14611",
+      "CVE-2025-14847",
       "CVE-2025-21085",
       "CVE-2025-21333",
       "CVE-2025-21334",
@@ -9045,6 +9046,7 @@
       "CVE-2026-31230",
       "CVE-2026-48027",
       "CVE-2026-8398",
+      "MAL-2025-PYPI-COLORAMA-SOLANA-STEALER",
       "MAL-2026-MOIKA-DEPCONFUSION",
       "MAL-2026-NODE-IPC-STEALER",
       "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER",
@@ -9438,6 +9440,7 @@
     "status": "open",
     "opened_date": "2026-05-18",
     "evidence_cves": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY",
       "CVE-2008-4128",
       "CVE-2008-4250",
       "CVE-2010-0806",

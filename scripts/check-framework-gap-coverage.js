@@ -42,11 +42,12 @@ const REQUIRED = ['NIST', 'EU', 'UK', 'AU', 'ISO'];
 
 function bucketOf(key) {
   if (/^NIST/i.test(key)) return 'NIST';
-  // EU regulatory family: NIS2, DORA, GDPR, and any EU- prefixed control
-  // (EU-AI-Act, EU-CRA Cyber Resilience Act, EU-GDPR-*). Catches every EU
-  // instrument the catalog uses so an entry covered by EU-CRA or EU-GDPR is
-  // not falsely flagged as EU-missing.
-  if (/^(NIS2|DORA|GDPR|EU-)/i.test(key)) return 'EU';
+  // EU bucket is the security-regulation family AGENTS.md Hard Rule #5 names:
+  // NIS2, DORA, the EU AI Act, and the EU Cyber Resilience Act. GDPR / EU-GDPR
+  // (data-protection) is NOT sufficient on its own — an entry mapped only to
+  // GDPR still owes NIS2/DORA/EU-AI coverage, so GDPR does not satisfy this
+  // bucket. Note EU-AI / EU-CRA match here; EU-GDPR deliberately does not.
+  if (/^(NIS2|DORA|EU-AI|EU-CRA)/i.test(key)) return 'EU';
   if (/^UK-CAF/i.test(key)) return 'UK';
   if (/^(AU-Essential-?8|AU-ISM|Essential-?8)/i.test(key)) return 'AU';
   if (/^ISO-?27001/i.test(key)) return 'ISO';

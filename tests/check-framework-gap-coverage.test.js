@@ -68,6 +68,19 @@ test("FAIL: an entry missing a bucket exits 1 and names it", () => {
   assert.match(r.stdout, /CVE-2024-0002: missing AU/);
 });
 
+test("EU bucket requires NIS2/DORA/EU-AI — GDPR alone does not satisfy it", () => {
+  // AGENTS.md Hard Rule #5 names EU coverage as NIS2/DORA/EU AI Act; GDPR
+  // (data-protection) mapped alone still leaves the required EU security-
+  // regulation gap, so the gate must flag it as EU-missing.
+  const gdprOnly = { ...FULL_GAPS };
+  delete gdprOnly["NIS2-Art21-patch-management"];
+  gdprOnly["GDPR-Art32"] = "gdpr data-protection gap";
+  const p = writeFixture({ _meta: {}, "CVE-2024-0004": { framework_control_gaps: gdprOnly } });
+  const r = run(p);
+  assert.equal(r.status, 1, "GDPR-only must not satisfy the EU bucket");
+  assert.match(r.stdout, /CVE-2024-0004: missing EU/);
+});
+
 test("draft exemption: a partial _auto_imported entry does not fail the gate", () => {
   const partial = { ...FULL_GAPS };
   delete partial["UK-CAF-B4"];
