@@ -6,12 +6,12 @@
   },
   "events": [
     {
-      "date": "2026-07-22",
+      "date": "2026-07-24",
       "type": "catalog_update",
       "artifact": "data/cve-catalog.json",
       "path": "data/cve-catalog.json",
       "schema_version": "1.0.0",
-      "entry_count": 823
+      "entry_count": 923
     },
     {
       "date": "2026-07-22",
