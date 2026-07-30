@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:17a665c7-0250-4aa5-a6f8-3fc5f08db9f8",
+  "serialNumber": "urn:uuid:dd200121-20f6-4e8d-8379-7ffcbc8b7f77",
   "version": 1,
   "metadata": {
-    "timestamp": "2038-07-29T08:56:39.000Z",
+    "timestamp": "2143-07-25T05:16:17.000Z",
     "tools": [
       {
         "vendor": "blamejs",
@@ -17,7 +17,7 @@
       "type": "application",
       "name": "@blamejs/exceptd-skills",
       "version": "0.18.26",
-      "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 51 skills, 11 catalogs (823 CVEs / 218 CWEs / 805 ATT&CK + ICS / 170 ATLAS / 468 D3FEND / 8888 RFCs), 35 jurisdictions, 10-class catalog gap detector + budget gate, real XML parser + canonical-form diff + content-pattern regression detection, Ed25519-signed.",
+      "description": "AI security skills grounded in mid-2026 threat reality, not stale framework documentation. 51 skills, 11 catalogs (923 CVEs / 218 CWEs / 805 ATT&CK + ICS / 170 ATLAS / 468 D3FEND / 8888 RFCs), 35 jurisdictions, 10-class catalog gap detector + budget gate, real XML parser + canonical-form diff + content-pattern regression detection, Ed25519-signed.",
       "licenses": [
         {
           "license": {
@@ -29,7 +29,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "3e96aad34572b9d0bd661caddf3365a2381b47204d75450962dd869573164841"
+          "content": "6110a9ec521ce93ee42057752b3f5d75c90bc544b10814eb36412d6c871e92bf"
         }
       ],
       "externalReferences": [
@@ -326,11 +326,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "662031d56c6ab7364328176339ae8f474c6312f288ca3d5154c8c31c7f5c86dd"
+          "content": "d8ac58f4fa66786aa77b14e908c051d1a7fc792cb870ba44ca70c17b70e3a95b"
         },
         {
           "alg": "SHA3-512",
-          "content": "ff261e1f0b867a25162d45d54a4ae078a131af011364dcc5894244a1f5a3bd1c804ce08389d695638fd60501b4f62b8f2227edbfbc949db80e6abecc6f42e863"
+          "content": "92801c23e59674b320aa2c3aa90b3c09eb5a8eb0e4f7cef6360bdb9de0af6df31ba41a744d1c5e542a71079032c0c54ac269b61edf8f9b074409c59b665fce87"
         }
       ]
     },
