@@ -288,7 +288,14 @@ test("shipped catalogs: missing-context budget is enforced per catalog (no silen
     // the DD-WRT UPnP overflow) all map to existing controls — patch/upgrade,
     // endpoint-exposure removal, and UPnP/firmware hygiene — so none carry a
     // new_control_requirements entry, taking the count from 619 to 623.
-    "zeroday-lessons": { new_control_requirements: 623 }
+    // The subsequent one-hundred-CVE currency batch backfilling the 2023-era
+    // CISA-KEV additions (file-transfer, email-security, and enterprise-edge
+    // mass-exploitation plus client and mobile zero-days) all remediate through
+    // existing controls — perimeter/edge patch SLAs, network segmentation,
+    // endpoint and application hardening, mobile/kernel driver hardening, and
+    // end-of-life retirement — so none carry a new_control_requirements entry,
+    // taking the count from 623 to 723.
+    "zeroday-lessons": { new_control_requirements: 723 }
   };
   const findings = {};
   for (const key of Object.keys(MOD.SPEC)) {
