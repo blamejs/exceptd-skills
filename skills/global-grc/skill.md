@@ -18,12 +18,27 @@ triggers:
   - global compliance
 data_deps:
   - atlas-ttps.json
+  - d3fend-catalog.json
   - exploit-availability.json
   - framework-control-gaps.json
   - global-frameworks.json
 atlas_refs: []
 attack_refs: []
 framework_gaps: []
+d3fend_refs:
+  - D3-EAL
+  - D3-EFA
+  - D3-FAPA
+  - D3-FE
+  - D3-IOPR
+  - D3-KBPI
+  - D3-MENCR
+  - D3-MFA
+  - D3-NI
+  - D3-NTA
+  - D3-OTF
+  - D3-SCA
+  - D3-CSPP
 last_threat_review: "2026-08-05"
 ---
 
@@ -159,7 +174,7 @@ Art. 9 requires identifying reasonably foreseeable misuse. For any high-risk AI 
 **Manufacturer reporting obligations (Art. 14) — apply from 2026-09-11:**
 - Actively exploited vulnerabilities and severe incidents affecting the security of a product with digital elements must be reported: **24-hour** early warning, **72-hour** full notification, final report within **14 days** of a corrective measure becoming available (actively exploited vulnerability) or **one month** (severe incident).
 - Filed once through the CRA Single Reporting Platform to the CSIRT of the manufacturer's main establishment; ENISA receives it simultaneously.
-- The statutory trigger is *active exploitation*, which maps directly onto CISA KEV / public-PoC state. A manufacturer whose product embeds a KEV-listed component is on a 24-hour clock. The Annex I product requirements themselves apply from 2027-12-11.
+- The statutory trigger is *actively exploited* — Art. 14(1) covers a vulnerability the manufacturer becomes aware of being actively exploited in its product. Test it against `active_exploitation: confirmed` for a version of the product the manufacturer actually ships, not against proof-of-concept availability. A public PoC is exploit *capability*, not exploitation, and does not start the clock; KEV listing is strong evidence of active exploitation but is scoped to CISA's own affected-product determination, so it still needs applicability confirmed against the manufacturer's shipped versions. The catalog tracks `poc_available`, `cisa_kev` and `active_exploitation` as separate fields precisely because collapsing them here would tell a manufacturer a statutory clock is running when it is not. The Annex I product requirements themselves apply from 2027-12-11.
 
 **CRA relevance to 2026 threats:**
 - MCP servers distributed as software products fall under CRA if sold to EU market
@@ -550,7 +565,7 @@ Per-jurisdiction breach- and incident-notification clocks. When a KEV-listed exp
 | EU | NIS2 Art. 23 | Significant incident | Awareness | 24h early warning / 72h notification / 1 month final | Early-warning trigger fires immediately on confirmed PoC affecting deployed asset |
 | EU | DORA Art. 19 | Major ICT-related incident | Classification | 4h initial / 72h intermediate / 1 month final | 4h clock is unforgiving; KEV+PoC events likely auto-classify as major |
 | EU | EU AI Act Art. 73 (high-risk providers; applies from 2027-12-02 Annex III / 2028-08-02 Annex I) | Serious incident for high-risk AI | Provider awareness / establishment of a causal link | 2 days for widespread infringement or a serious incident under Art. 3(49)(b) (critical-infrastructure disruption); 10 days for death of a person; 15 days default | KEV-class exploit chain in a high-risk AI deployment triggers the 2/10/15 cascade once the obligation applies |
-| EU | EU CRA Art. 14 (manufacturers, from 2026-09-11) | Actively exploited vulnerability / severe incident in a product with digital elements | Manufacturer awareness | 24h early warning / 72h notification / 14 days after a corrective measure (1 month for severe incidents) | This clock *is* the KEV+PoC clock — active exploitation is the statutory trigger, not an aggravating factor |
+| EU | EU CRA Art. 14 (manufacturers, from 2026-09-11) | Actively exploited vulnerability / severe incident in a product with digital elements | Manufacturer awareness of active exploitation | 24h early warning / 72h notification / 14 days after a corrective measure (1 month for severe incidents) | Active exploitation is the statutory trigger itself, not an aggravating factor — but it is `active_exploitation: confirmed` against a shipped version, not PoC availability. A public PoC does not start this clock; a KEV listing does once product applicability is confirmed |
 | UK | UK GDPR | Personal-data breach | Awareness | 72h to ICO | Same as GDPR |
 | AU | Notifiable Data Breaches | Eligible data breach | Awareness | "As soon as practicable" — typically interpreted ≤ 30 days | Active KEV exploitation collapses "practicable" to hours |
 | SG | PDPA | Notifiable data breach | Awareness | 3 days to PDPC | Same |

@@ -34,6 +34,7 @@ rfc_refs:
   - RFC-9180
   - RFC-9420
   - RFC-9794
+  - RFC-9954
   - RFC-8032
   - RFC-9106
 forward_watch:
@@ -53,7 +54,7 @@ cwe_refs:
 d3fend_refs:
   - D3-FE
   - D3-MENCR
-last_threat_review: "2026-06-10"
+last_threat_review: "2026-08-05"
 ---
 
 # PQC-First Mentality
@@ -127,7 +128,7 @@ PQC migration is the clearest example of why a global-first lens matters: the la
 
 ### IETF Tracking — The IETF Lag IS the Framework Lag for PQC
 
-FIPS 203/204/205 are NIST publications, but the operational PQC migration story is IETF-tracked. TLS 1.3 (RFC 8446) is not PQC-ready on its own; hybrid groups arrive via `draft-ietf-tls-ecdhe-mlkem` and the general `draft-ietf-tls-hybrid-design` framework. Both are drafts as of mid-2026. HPKE (RFC 9180, classical-only today) is the substrate for TLS ECH and MLS (RFC 9420); PQC composition for HPKE is being worked at IETF CFRG. Terminology pins on RFC 9794 (Terminology for PQC, September 2025). EdDSA (RFC 8032) — what exceptd uses for skill integrity signing — is not PQC-safe; SLH-DSA / ML-DSA migration applies here too. Compliance frameworks (NIST 800-53 SC-13, ISO 27001:2022 A.8.24, PCI DSS 4.0 §4.2.1, NIS2 Art. 21) do not yet require any specific RFC or draft. CNSA 2.0 requires PQC migration by 2030 but does not specify which IETF profile. See `data/rfc-references.json` for the tracked entries.
+FIPS 203/204/205 are NIST publications, but the operational PQC migration story is IETF-tracked. TLS 1.3 (RFC 8446) is not PQC-ready on its own; hybrid groups arrive via `draft-ietf-tls-ecdhe-mlkem` and the general hybrid-design framework, which was published as RFC 9954 (Informational, July 2026). `draft-ietf-tls-ecdhe-mlkem` — the Standards-Track profile that names the concrete groups — is still a draft; the two were never status-synchronized, so the construction being an RFC does not make the named groups standardised. HPKE (RFC 9180, classical-only today) is the substrate for TLS ECH and MLS (RFC 9420); PQC composition for HPKE is being worked at IETF CFRG. Terminology pins on RFC 9794 (Terminology for PQC, September 2025). EdDSA (RFC 8032) — what exceptd uses for skill integrity signing — is not PQC-safe; SLH-DSA / ML-DSA migration applies here too. Compliance frameworks (NIST 800-53 SC-13, ISO 27001:2022 A.8.24, PCI DSS 4.0 §4.2.1, NIS2 Art. 21) do not yet require any specific RFC or draft. CNSA 2.0 requires PQC migration by 2030 but does not specify which IETF profile. See `data/rfc-references.json` for the tracked entries.
 
 ---
 

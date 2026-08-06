@@ -15,9 +15,24 @@
     {
       "date": "2026-08-05",
       "type": "skill_review",
+      "artifact": "pqc-first",
+      "path": "skills/pqc-first/skill.md",
+      "note": "Post-quantum cryptography first mentality — hard version gates, algorithm sunset tracking, loopback learning for NIST/IETF standards evolution"
+    },
+    {
+      "date": "2026-08-05",
+      "type": "skill_review",
       "artifact": "security-maturity-tiers",
       "path": "skills/security-maturity-tiers/skill.md",
       "note": "Three-tier implementation roadmap — MVP you can ship today, practical best practices useable now, overkill gold standard for defense-in-depth"
+    },
+    {
+      "date": "2026-08-05",
+      "type": "catalog_update",
+      "artifact": "data/rfc-references.json",
+      "path": "data/rfc-references.json",
+      "schema_version": "1.0.0",
+      "entry_count": 8889
     },
     {
       "date": "2026-07-30",
@@ -120,13 +135,6 @@
       "artifact": "zeroday-gap-learn",
       "path": "skills/zeroday-gap-learn/skill.md",
       "note": "Run the zero-day learning loop — CVE to attack vector to control gap to framework gap to new control requirement"
-    },
-    {
-      "date": "2026-06-10",
-      "type": "skill_review",
-      "artifact": "pqc-first",
-      "path": "skills/pqc-first/skill.md",
-      "note": "Post-quantum cryptography first mentality — hard version gates, algorithm sunset tracking, loopback learning for NIST/IETF standards evolution"
     },
     {
       "date": "2026-06-10",
@@ -345,14 +353,6 @@
       "artifact": "privacy-consent-ops",
       "path": "skills/privacy-consent-ops/skill.md",
       "note": "Privacy, consent, and sanctions operational integrity for mid-2026 — confusable/homoglyph normalization before sanctions screening, integrity-bound and re-validated consent records, evidence-gated and downstream-propagated DSR erasure, and ROPA reconciliation against actual processing"
-    },
-    {
-      "date": "2026-05-27",
-      "type": "catalog_update",
-      "artifact": "data/rfc-references.json",
-      "path": "data/rfc-references.json",
-      "schema_version": "1.0.0",
-      "entry_count": 8888
     },
     {
       "date": "2026-05-19",

@@ -3,8 +3,8 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1766319,
-    "total_approx_tokens": 441587,
+    "total_chars": 1767897,
+    "total_approx_tokens": 441982,
     "skill_count": 51
   },
   "skills": {
@@ -650,10 +650,10 @@
     },
     "global-grc": {
       "path": "skills/global-grc/skill.md",
-      "bytes": 57165,
-      "chars": 56883,
-      "lines": 647,
-      "approx_tokens": 14221,
+      "bytes": 58154,
+      "chars": 57870,
+      "lines": 662,
+      "approx_tokens": 14468,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -662,9 +662,9 @@
           "approx_tokens": 107
         },
         "framework-registry-mid-2026-currency": {
-          "bytes": 25996,
-          "chars": 25858,
-          "approx_tokens": 6465
+          "bytes": 26614,
+          "chars": 26474,
+          "approx_tokens": 6619
         },
         "universal-gaps-no-jurisdiction-covers-these": {
           "bytes": 1104,
@@ -697,9 +697,9 @@
           "approx_tokens": 575
         },
         "exploit-availability-matrix": {
-          "bytes": 3647,
-          "chars": 3633,
-          "approx_tokens": 908
+          "bytes": 3834,
+          "chars": 3820,
+          "approx_tokens": 955
         },
         "compliance-theater-check": {
           "bytes": 2697,
@@ -785,10 +785,10 @@
     },
     "pqc-first": {
       "path": "skills/pqc-first/skill.md",
-      "bytes": 38036,
-      "chars": 37866,
-      "lines": 572,
-      "approx_tokens": 9467,
+      "bytes": 38292,
+      "chars": 38118,
+      "lines": 573,
+      "approx_tokens": 9530,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -797,9 +797,9 @@
           "approx_tokens": 652
         },
         "framework-lag-declaration": {
-          "bytes": 7919,
-          "chars": 7895,
-          "approx_tokens": 1974
+          "bytes": 8162,
+          "chars": 8134,
+          "approx_tokens": 2034
         },
         "ttp-mapping": {
           "bytes": 2120,
@@ -945,10 +945,10 @@
     },
     "security-maturity-tiers": {
       "path": "skills/security-maturity-tiers/skill.md",
-      "bytes": 36995,
-      "chars": 36795,
-      "lines": 522,
-      "approx_tokens": 9199,
+      "bytes": 37336,
+      "chars": 37134,
+      "lines": 540,
+      "approx_tokens": 9284,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -972,9 +972,9 @@
           "approx_tokens": 1082
         },
         "domain-ai-attack-surface": {
-          "bytes": 3317,
-          "chars": 3289,
-          "approx_tokens": 822
+          "bytes": 3426,
+          "chars": 3396,
+          "approx_tokens": 849
         },
         "domain-cryptography-pqc": {
           "bytes": 2257,

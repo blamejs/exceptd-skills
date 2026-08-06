@@ -260689,7 +260689,8 @@
         "RFC-9180",
         "RFC-9420",
         "RFC-9458",
-        "RFC-9794"
+        "RFC-9794",
+        "RFC-9954"
       ]
     }
   },
@@ -285462,7 +285463,8 @@
         "RFC-9180",
         "RFC-9420",
         "RFC-9458",
-        "RFC-9794"
+        "RFC-9794",
+        "RFC-9954"
       ]
     }
   },
@@ -289572,7 +289574,8 @@
         "RFC-9180",
         "RFC-9420",
         "RFC-9458",
-        "RFC-9794"
+        "RFC-9794",
+        "RFC-9954"
       ]
     }
   },
@@ -295681,7 +295684,8 @@
         "RFC-9180",
         "RFC-9420",
         "RFC-9458",
-        "RFC-9794"
+        "RFC-9794",
+        "RFC-9954"
       ]
     }
   },
@@ -363044,7 +363048,8 @@
         "RFC-9421",
         "RFC-9458",
         "RFC-9700",
-        "RFC-9794"
+        "RFC-9794",
+        "RFC-9954"
       ]
     }
   },
@@ -363725,7 +363730,8 @@
         "RFC-9421",
         "RFC-9458",
         "RFC-9700",
-        "RFC-9794"
+        "RFC-9794",
+        "RFC-9954"
       ]
     }
   },
@@ -368981,7 +368987,8 @@
         "RFC-9421",
         "RFC-9458",
         "RFC-9700",
-        "RFC-9794"
+        "RFC-9794",
+        "RFC-9954"
       ]
     }
   },
@@ -369570,7 +369577,8 @@
         "RFC-9421",
         "RFC-9458",
         "RFC-9700",
-        "RFC-9794"
+        "RFC-9794",
+        "RFC-9954"
       ]
     }
   },
@@ -513504,7 +513512,8 @@
         "RFC-9421",
         "RFC-9458",
         "RFC-9700",
-        "RFC-9794"
+        "RFC-9794",
+        "RFC-9954"
       ]
     }
   },
@@ -520368,7 +520377,8 @@
         "RFC-9421",
         "RFC-9458",
         "RFC-9700",
-        "RFC-9794"
+        "RFC-9794",
+        "RFC-9954"
       ]
     }
   },
@@ -557700,6 +557710,11 @@
           "id": "RFC-9794",
           "title": "Terminology for Post-Quantum Cryptography",
           "status": "Informational"
+        },
+        {
+          "id": "RFC-9954",
+          "title": "Hybrid Key Exchange in TLS 1.3",
+          "status": "Informational"
         }
       ],
       "dlp_refs": []
@@ -576244,14 +576259,39 @@
           "tactic": "Harden"
         },
         {
+          "id": "D3-EFA",
+          "name": "Executable File Analysis",
+          "tactic": "Detect"
+        },
+        {
           "id": "D3-EHB",
           "name": "Executable Hashbased Allowlist",
           "tactic": "Harden"
         },
         {
+          "id": "D3-FAPA",
+          "name": "File Access Pattern Analysis",
+          "tactic": "Detect"
+        },
+        {
           "id": "D3-IOPR",
           "name": "Input/Output Profiling Resource",
           "tactic": "Detect"
+        },
+        {
+          "id": "D3-ITF",
+          "name": "Inbound Traffic Filtering",
+          "tactic": "Defensive"
+        },
+        {
+          "id": "D3-KBPI",
+          "name": "Kernel-Based Process Isolation",
+          "tactic": "Isolate"
+        },
+        {
+          "id": "D3-MENCR",
+          "name": "Message Encryption",
+          "tactic": "Harden"
         },
         {
           "id": "D3-MFA",
@@ -576274,9 +576314,19 @@
           "tactic": "Model"
         },
         {
+          "id": "D3-OTF",
+          "name": "Outbound Traffic Filtering",
+          "tactic": "Defensive"
+        },
+        {
           "id": "D3-PSEP",
           "name": "Process Segment Execution Prevention",
           "tactic": "Harden"
+        },
+        {
+          "id": "D3-SCA",
+          "name": "System Call Analysis",
+          "tactic": "Detect"
         }
       ],
       "rfc_refs": [
@@ -576324,6 +576374,11 @@
           "id": "RFC-9700",
           "title": "Best Current Practice for OAuth 2.0 Security",
           "status": "Best Current Practice"
+        },
+        {
+          "id": "RFC-9954",
+          "title": "Hybrid Key Exchange in TLS 1.3",
+          "status": "Informational"
         }
       ],
       "dlp_refs": []

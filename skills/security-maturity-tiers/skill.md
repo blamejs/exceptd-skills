@@ -18,9 +18,27 @@ triggers:
 data_deps:
   - atlas-ttps.json
   - cve-catalog.json
+  - d3fend-catalog.json
+  - rfc-references.json
 atlas_refs: []
 attack_refs: []
 framework_gaps: []
+d3fend_refs:
+  - D3-CSPP
+  - D3-EAL
+  - D3-EFA
+  - D3-FAPA
+  - D3-IOPR
+  - D3-ITF
+  - D3-KBPI
+  - D3-MENCR
+  - D3-MFA
+  - D3-NI
+  - D3-NTA
+  - D3-OTF
+  - D3-SCA
+rfc_refs:
+  - RFC-9954
 forward_watch:
   - New attack classes that change MVP requirements (especially zero-interaction RCE)
   - Framework updates that change minimum compliance baselines
@@ -201,9 +219,9 @@ It outputs Tier 1 (MVP), Tier 2 (Practical), Tier 3 (Overkill) for that domain �
 
 5. **Treat the AI assistant's output like untrusted input** — don't run AI-suggested shell commands without reading them first.
 
-6. **Inventory self-hosted LLM application infrastructure** (today, under an hour) — LLM gateways and proxies, and flow builders. For each instance record: reachable from the internet? authentication enforced on every endpoint? version current? Any internet-reachable instance goes behind authenticated ingress or off the public network today. This product class has produced repeated KEV-listed pre-authentication RCE against default deployments, so an unauthenticated instance is an immediate MVP failure, not a Tier 2 refinement.
+6. **Inventory self-hosted LLM application infrastructure** (today, under an hour) — LLM gateways and proxies, and flow builders. For each instance record: reachable from the internet? authentication enforced on every endpoint? version current? Any instance reachable from the internet without authentication is remediated today — either put it behind authenticated ingress or take it off the public network. This product class has produced repeated KEV-listed pre-authentication RCE against default deployments, so an unauthenticated internet-reachable instance is an immediate MVP failure, not a Tier 2 refinement.
 
-**Tier 1 is done when:** You know what MCP servers are installed, versions are pinned, no self-hosted LLM gateway or flow builder is reachable from the internet, and you're reading AI-suggested commands before executing.
+**Tier 1 is done when:** You know what MCP servers are installed, versions are pinned, no self-hosted LLM gateway or flow builder is reachable from the internet without authentication, and you're reading AI-suggested commands before executing.
 
 ---
 

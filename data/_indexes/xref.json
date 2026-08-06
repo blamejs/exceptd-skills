@@ -300,11 +300,13 @@
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "fuzz-testing-strategy",
+      "global-grc",
       "kernel-lpe-triage",
       "mcp-agent-trust",
       "mlops-security",
       "sector-energy",
       "sector-federal-government",
+      "security-maturity-tiers",
       "supply-chain-integrity",
       "webapp-security"
     ],
@@ -340,6 +342,7 @@
       "dlp-gap-analysis",
       "email-security-anti-phishing",
       "fuzz-testing-strategy",
+      "global-grc",
       "idp-incident-response",
       "incident-response-playbook",
       "mlops-security",
@@ -348,6 +351,7 @@
       "sector-financial",
       "sector-healthcare",
       "sector-telecom",
+      "security-maturity-tiers",
       "webapp-security"
     ],
     "D3-NTA": [
@@ -360,6 +364,7 @@
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "email-security-anti-phishing",
+      "global-grc",
       "idp-incident-response",
       "incident-response-playbook",
       "rag-pipeline-security",
@@ -367,12 +372,15 @@
       "sector-energy",
       "sector-financial",
       "sector-telecom",
+      "security-maturity-tiers",
       "webapp-security"
     ],
     "D3-FAPA": [
       "ai-attack-surface",
       "defensive-countermeasure-mapping",
-      "rag-pipeline-security"
+      "global-grc",
+      "rag-pipeline-security",
+      "security-maturity-tiers"
     ],
     "D3-CSPP": [
       "age-gates-child-safety",
@@ -383,12 +391,14 @@
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "email-security-anti-phishing",
+      "global-grc",
       "identity-assurance",
       "incident-response-playbook",
       "mcp-agent-trust",
       "rag-pipeline-security",
       "ransomware-response",
       "sector-healthcare",
+      "security-maturity-tiers",
       "webapp-security"
     ],
     "D3-CAA": [
@@ -420,11 +430,13 @@
       "cloud-iam-incident",
       "defensive-countermeasure-mapping",
       "email-security-anti-phishing",
+      "global-grc",
       "identity-assurance",
       "idp-incident-response",
       "mcp-agent-trust",
       "sector-financial",
       "sector-healthcare",
+      "security-maturity-tiers",
       "webapp-security"
     ],
     "D3-FCR": [
@@ -442,8 +454,10 @@
       "ai-c2-detection",
       "container-runtime-security",
       "defensive-countermeasure-mapping",
+      "global-grc",
       "sector-energy",
-      "sector-telecom"
+      "sector-telecom",
+      "security-maturity-tiers"
     ],
     "D3-NTPM": [
       "ai-c2-detection",
@@ -454,13 +468,35 @@
       "sector-energy",
       "sector-telecom"
     ],
+    "D3-EFA": [
+      "global-grc",
+      "security-maturity-tiers"
+    ],
     "D3-FE": [
       "defensive-countermeasure-mapping",
+      "global-grc",
       "pqc-first"
+    ],
+    "D3-KBPI": [
+      "global-grc",
+      "security-maturity-tiers"
     ],
     "D3-MENCR": [
       "defensive-countermeasure-mapping",
-      "pqc-first"
+      "global-grc",
+      "pqc-first",
+      "security-maturity-tiers"
+    ],
+    "D3-OTF": [
+      "global-grc",
+      "security-maturity-tiers"
+    ],
+    "D3-SCA": [
+      "global-grc",
+      "security-maturity-tiers"
+    ],
+    "D3-ITF": [
+      "security-maturity-tiers"
     ],
     "D3-RPA": [
       "defensive-countermeasure-mapping",
@@ -1318,6 +1354,10 @@
     ],
     "RFC-9794": [
       "pqc-first"
+    ],
+    "RFC-9954": [
+      "pqc-first",
+      "security-maturity-tiers"
     ],
     "RFC-8032": [
       "container-runtime-security",
