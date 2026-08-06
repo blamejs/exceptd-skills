@@ -7209,9 +7209,13 @@ function cmdDoctor(runner, args, runOpts, pretty) {
         }
       }
       if (parsed && Array.isArray(parsed.currency_report)) {
-        const stale = parsed.currency_report.filter(s => s.action_required || s.currency_label !== "current");
-        const critical = parsed.currency_report.filter(s => s.currency_score !== undefined && s.currency_score < 50);
-        const ok = stale.length === 0 && !parsed.action_required;
+        // Severity tracks the scoring model's own tiers; see
+        // lib/currency-severity.js for why the drift tier warns instead of
+        // failing. Extracted so the tier boundary is testable without a
+        // manifest whose dates move under the test.
+        const { classifyCurrency } = require(path.join(PKG_ROOT, "lib", "currency-severity.js"));
+        const { ok, severity, stale, drifting, actionable, critical } =
+          classifyCurrency(parsed.currency_report, parsed.action_required);
         // Audit 3 B.7: surface the freshest + stalest last_threat_review
         // so operators can answer "is my data stale?" without parsing the
         // full report. Falls back gracefully when the upstream report
@@ -7223,8 +7227,14 @@ function cmdDoctor(runner, args, runOpts, pretty) {
         const minDaysSince = dates.length ? Math.floor((Date.now() - new Date(dates[0]).getTime()) / 86400000) : null;
         checks.currency = {
           ok,
+          // Drift with nothing past its review window is advisory: bucket it
+          // as a warning so `all_green:false` still surfaces it while the
+          // exit code stays 0 (same contract the registry check uses).
+          ...(severity ? { severity } : {}),
           total_skills: parsed.currency_report.length,
           stale_skills: stale.map(s => s.skill),
+          drifting_skills: drifting.map(s => s.skill),
+          action_required_skills: actionable.map(s => s.skill),
           critical_stale: critical.map(s => s.skill),
           critical_count: parsed.critical_count || 0,
           oldest_last_threat_review: dates[0] || null,
@@ -7956,11 +7966,18 @@ function cmdDoctor(runner, args, runOpts, pretty) {
       ? `skill signatures verified (${c.skills_passed ?? "?"}/${c.skills_total ?? "?"})`
       : `skill signatures FAILED (exit=${c.exit_code ?? "?"})`
   );
-  mark(checks.currency, c =>
-    c.ok
-      ? `skill currency: all green (${c.total_skills ?? "?"} skills)`
-      : `skill currency: ${c.stale_skills?.length || "?"} stale, ${c.critical_count ?? 0} critical`
-  );
+  mark(checks.currency, c => {
+    // Three states, not two: the drift tier renders under a [!! warn] icon,
+    // so "all green" here would contradict the icon the way the signing
+    // check's text once did.
+    if (c.ok && c.severity === "warn") {
+      const n = c.drifting_skills?.length ?? "?";
+      const names = (c.drifting_skills || []).join(", ");
+      return `skill currency: ${n} approaching review window${names ? ` (${names})` : ""}, 0 past it`;
+    }
+    if (c.ok) return `skill currency: all green (${c.total_skills ?? "?"} skills)`;
+    return `skill currency: ${c.action_required_skills?.length ?? c.stale_skills?.length ?? "?"} past review window, ${c.critical_count ?? 0} critical`;
+  });
   mark(checks.cves, c => {
     if (!c.ok) return `CVE catalog FAILED (exit=${c.exit_code ?? "?"})`;
     const total = c.total ?? "?";

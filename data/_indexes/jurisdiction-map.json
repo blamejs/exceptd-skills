@@ -494,6 +494,7 @@
       "compliance-theater",
       "container-runtime-security",
       "coordinated-vuln-disclosure",
+      "global-grc",
       "incident-response-playbook",
       "pqc-first",
       "researcher",
@@ -502,9 +503,10 @@
       "sector-financial",
       "sector-healthcare",
       "sector-telecom",
+      "security-maturity-tiers",
       "skill-update-loop"
     ],
     "example_excerpts": {},
-    "skill_count": 14
+    "skill_count": 16
   }
 }
