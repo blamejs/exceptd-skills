@@ -186,8 +186,8 @@
     },
     {
       "skill": "global-grc",
-      "last_threat_review": "2026-05-01",
-      "days_since_review": 14,
+      "last_threat_review": "2026-08-05",
+      "days_since_review": -82,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 0,
@@ -393,8 +393,8 @@
     },
     {
       "skill": "security-maturity-tiers",
-      "last_threat_review": "2026-05-01",
-      "days_since_review": 14,
+      "last_threat_review": "2026-08-05",
+      "days_since_review": -82,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 4,

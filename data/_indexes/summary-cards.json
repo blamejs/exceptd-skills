@@ -462,7 +462,7 @@
       "cwe_count": 0,
       "d3fend_count": 0,
       "rfc_count": 0,
-      "last_threat_review": "2026-05-01",
+      "last_threat_review": "2026-08-05",
       "path": "skills/global-grc/skill.md",
       "handoff_targets": []
     },
@@ -577,7 +577,7 @@
       "cwe_count": 1,
       "d3fend_count": 0,
       "rfc_count": 0,
-      "last_threat_review": "2026-05-01",
+      "last_threat_review": "2026-08-05",
       "path": "skills/security-maturity-tiers/skill.md",
       "handoff_targets": []
     },

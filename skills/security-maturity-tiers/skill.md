@@ -26,7 +26,7 @@ forward_watch:
   - Framework updates that change minimum compliance baselines
   - New tooling that makes higher tiers more accessible
   - PQC tooling maturity shifting overkill to practical
-last_threat_review: "2026-05-01"
+last_threat_review: "2026-08-05"
 ---
 
 # Security Maturity Tiers
@@ -118,7 +118,7 @@ It outputs Tier 1 (MVP), Tier 2 (Practical), Tier 3 (Overkill) for that domain �
 1. **Fleet-wide vulnerability scanning** (automated, continuous)
    - Wazuh, Tenable, Qualys, or equivalent
    - Daily scans cross-referenced against NVD
-   - Alert on: any CISA KEV unpatched after 48h
+   - Alert on: any KEV-listed CVE on a publicly exposed asset unremediated after 48h. The US federal ceiling is now 3 days plus forensic triage for the KEV + publicly-exposed + automatable + total-control combination — CISA BOD 26-04 replaced the uniform KEV due dates of BOD 22-01 with risk-tiered ones.
 
 2. **Live patching fleet management**
    - Canonical Livepatch / Red Hat Insights (manages live patch deployment across fleet)
@@ -201,7 +201,9 @@ It outputs Tier 1 (MVP), Tier 2 (Practical), Tier 3 (Overkill) for that domain �
 
 5. **Treat the AI assistant's output like untrusted input** — don't run AI-suggested shell commands without reading them first.
 
-**Tier 1 is done when:** You know what MCP servers are installed, versions are pinned, and you're reading AI-suggested commands before executing.
+6. **Inventory self-hosted LLM application infrastructure** (today, under an hour) — LLM gateways and proxies, and flow builders. For each instance record: reachable from the internet? authentication enforced on every endpoint? version current? Any internet-reachable instance goes behind authenticated ingress or off the public network today. This product class has produced repeated KEV-listed pre-authentication RCE against default deployments, so an unauthenticated instance is an immediate MVP failure, not a Tier 2 refinement.
+
+**Tier 1 is done when:** You know what MCP servers are installed, versions are pinned, no self-hosted LLM gateway or flow builder is reachable from the internet, and you're reading AI-suggested commands before executing.
 
 ---
 
@@ -242,7 +244,7 @@ It outputs Tier 1 (MVP), Tier 2 (Practical), Tier 3 (Overkill) for that domain �
 
 ### Tier 2 — Practical
 
-1. **Enable X25519+ML-KEM-768 hybrid in TLS** for all systems handling HNDL-exposed data
+1. **Enable X25519+ML-KEM-768 hybrid in TLS** for all systems handling HNDL-exposed data. Hybrid key exchange is specified in RFC 9954, and X25519MLKEM768 is offered by default from OpenSSL 3.5 onward — on current libraries this is a version upgrade plus a config assertion, not a migration project.
    ```
    # OpenSSL 3.5+ server config
    Curves = X25519MLKEM768:X25519:P-384
@@ -418,7 +420,7 @@ This is the same principle as blamejs's "no-MVP" rule applied to security: bette
 
 The 2026 threat baseline forces an MVP that would have looked like a Practical tier in 2022. The cardinal observed change: attacker capability now compresses the time from disclosure to reliable exploitation to hours for an entire class of vulnerabilities, and AI-mediated attack surfaces (prompt injection, MCP supply chain, AI-API C2) sit outside the perimeter and identity controls every framework relies on. The implications by tier:
 
-- **MVP for any org touching AI APIs or AI coding agents** must include: SDK-level prompt and response logging that captures full request/response bodies (without it, the SC-7 boundary gap means AI-mediated C2 like SesameOp / AML.T0096 is invisible to the SOC); Ed25519-signed deployable artifacts (the closest practical analogue to the integrity verification that EU CRA Annex I will compel for the EU market from 2026-09-11); and KEV-class CVE monitoring with RWEP-anchored SLAs (see `lib/scoring.js`), not CVSS-anchored ones — CVE-2026-31431 is CVSS 7.8 (High, not Critical) but RWEP 90 because KEV+deterministic+AI-discovered+broad blast radius dominate the actual risk.
+- **MVP for any org touching AI APIs or AI coding agents** must include: SDK-level prompt and response logging that captures full request/response bodies (without it, the SC-7 boundary gap means AI-mediated C2 like SesameOp / AML.T0096 is invisible to the SOC); Ed25519-signed deployable artifacts (the closest practical analogue to the integrity verification that EU CRA Annex I compels for the EU market from 2027-12-11); an actively-exploited-vulnerability reporting path that can meet EU CRA Art. 14 from 2026-09-11 — 24h early warning to the coordinating CSIRT and ENISA, 72h vulnerability notification — for any product with digital elements placed on the EU market; and KEV-class CVE monitoring with RWEP-anchored SLAs (see `lib/scoring.js`), not CVSS-anchored ones — CVE-2026-31431 is CVSS 7.8 (High, not Critical) but RWEP 90 because KEV+deterministic+AI-discovered+broad blast radius dominate the actual risk.
 - **Practical** assumes MVP is in place and adds the operational instrumentation that converts point-in-time controls into continuously verified ones: fleet-wide patch visibility for KEV-class with measured live-patch SLA, organisational MCP allowlist with provenance attestation, AI-API behavioral baselines per service identity, ephemeral-aware asset inventory.
 - **Overkill** assumes Practical can still be bypassed by an AI-accelerated adversary: per-invocation capability tokens for AI agents, sandboxed MCP execution, eBPF runtime detection (Tetragon/Falco), continuous adversarial testing of AI surfaces in CI, immutable infrastructure that closes the patch-debt window entirely.
 
@@ -438,13 +440,14 @@ Each tier diverges from at least one widely-cited framework control because the 
 | MVP | EU NIS2 Art. 21(2)(f) (vulnerability handling) | "Policies/procedures to assess vulnerability handling measures" | Concrete RWEP-anchored SLA published as policy | "Procedures to assess" is meta-control, not a control |
 | MVP | UK Cyber Essentials | High-risk patches within 14 days | Same divergence — 14 days insufficient for KEV-class deterministic LPE | Better than NIST but still loses to AI-accelerated weaponization |
 | MVP | AU ASD ISM-1623 / Essential 8 ML3 | 48h patch when exploit exists | Aligned at the framework level; tier adds live-patch capability requirement | Closest national framework alignment globally; still no live-patch mandate |
+| MVP | CISA BOD 26-04 (Prioritizing Security Updates Based on Risk) | Urgency set by four decision points — asset exposure, KEV status, exploit automation, technical impact — 3 days at the top band, "fix on system upgrade" at the bottom | RWEP-indexed SLA with the live patch verified within hours for KEV-listed deterministic LPE | Closest framework alignment to risk-indexed remediation to date, but the top band is still 3 days, there is no live-patch requirement, and it binds only US federal civilian agencies |
 | Practical | ISO 27001:2022 A.5.9 (Inventory of information and other associated assets) | Point-in-time CMDB / asset register | Ephemeral-aware inventory snapshots (continuous, container/serverless-native) | Point-in-time CMDB misses ephemeral workloads; Practical Tier requires an inventory that reflects actual workload existence within minutes, not days |
 | Practical | NIST 800-53 CM-8 (System component inventory) | Documented inventory, updated periodically | Same divergence — continuous, attestation-based inventory | CM-8 cadence is multi-day at best; AI-speed reconnaissance (36,000 probes/sec) requires continuous attack-surface awareness |
 | Practical | EU DORA Art. 8 (ICT risk identification) | "On an ongoing basis" | Same — continuous, with explicit AI/MCP categories | "Ongoing" undefined; the tier defines it as < 1h staleness for production assets |
 | Practical | NIST 800-53 SC-7 (Boundary Protection) | Perimeter and internal boundary protection | Add AI-API egress logging and behavioral baselining | SC-7 is perimeter-centric; AI-API egress is internal-trusted traffic that hides AML.T0096 (LLM C2) |
 | Overkill | NIST 800-53 AC-6 (Least privilege) | Privilege minimisation for principals | Per-invocation capability tokens for AI agents | AC-6 controls principal permissions; AI agents need per-call scoped capabilities the framework does not contemplate |
 | Overkill | ISO 27001:2022 A.8.31 (Separation of development, test, production) | Environment separation | Add: sandboxed MCP servers with seccomp+netns enforcement | A.8.31 does not contemplate developer-installed AI tool plugins as a privilege-bearing execution surface |
-| Overkill | EU AI Act Art. 15 (Cybersecurity for high-risk AI) | "Appropriate level" of cybersecurity | Continuous adversarial testing of AI surfaces in CI | "Appropriate" is interpretive; the tier operationalises it |
+| Overkill | EU AI Act Art. 15 (Cybersecurity for high-risk AI) | "Appropriate level" of cybersecurity; applies to Annex III high-risk systems from 2027-12-02 and Annex I embedded systems from 2028-08-02 | Continuous adversarial testing of AI surfaces in CI | "Appropriate" is interpretive, and the obligation does not bind for another 16–24 months while the attack surface is live today; the tier operationalises it now |
 
 The divergences above are surfaced against US, EU, UK, AU and ISO 27001:2022 — every tier's framework lag declaration is global by construction.
 
@@ -469,6 +472,35 @@ Per-tier TTP coverage is cumulative: Practical includes MVP's coverage plus addi
 | Overkill | Craft Adversarial Data (RAG/general) | AML.T0043 | atlas-ttps.json | Vector-store access controls + retrieval-anomaly monitoring |
 
 The full canonical truth set is `data/atlas-ttps.json` (all `AML.T*` keys excluding `_meta`) union the `attack_refs` field of every entry in `data/cve-catalog.json`. The tiered selection above is the minimum coverage; orgs in regulated verticals (finance, health, critical infrastructure) typically push Overkill items into Practical based on threat-model output.
+
+---
+
+## Defensive Countermeasure Mapping
+
+D3FEND references from `data/d3fend-catalog.json`. This skill prescribes a roadmap shape rather than domain controls, so the mapping below is tiered the way the roadmap is: each row pairs the TTP a tier must cover with the D3FEND technique that closes it and the downstream skill that owns the implementation detail. Coverage is cumulative — Practical inherits MVP's techniques, Overkill inherits both.
+
+| Tier | Offensive TTP | D3FEND ID | Defensive technique | Owning downstream skill |
+|---|---|---|---|---|
+| MVP | T1068 (Exploitation for Privilege Escalation) | `D3-KBPI` + `D3-SCA` | Kernel-Based Process Isolation + System Call Analysis | `kernel-lpe-triage` |
+| MVP | AML.T0051 / AML.T0054 (Prompt Injection / Jailbreak) | `D3-IOPR` | Input/Output Profiling | `ai-attack-surface` |
+| MVP | AML.T0010 (ML Supply Chain Compromise — MCP) | `D3-EAL` | Executable Allowlisting (tool allowlist + version pinning) | `mcp-agent-trust` |
+| MVP | T1190 (Exploit Public-Facing Application — self-hosted LLM infrastructure) | `D3-NI` + `D3-ITF` | Network Isolation + Inbound Traffic Filtering | `webapp-security` + `ai-attack-surface` |
+| Practical | T1190 (Exploit Public-Facing Application) | `D3-ITF` + `D3-NI` | Inbound Traffic Filtering + Network Isolation | `attack-surface-pentest` |
+| Practical | AML.T0017 (Discover ML Model Ontology) | `D3-CSPP` | Client-server Payload Profiling (inference-API rate and shape monitoring) | `ai-attack-surface` |
+| Practical | AML.T0020 (Poison Training Data) | `D3-FAPA` | File Access Pattern Analysis (training-pipeline integrity) | `mlops-security` |
+| Practical | AML.T0016 (Develop Capabilities — AI-assisted weaponization) | `D3-CSPP` + `D3-MFA` | Client-server Payload Profiling + Multi-factor Authentication (passkey class) | `email-security-anti-phishing` + `identity-assurance` |
+| Practical | Harvest-now-decrypt-later (T1040, T1557) | `D3-MENCR` | Message Encryption (PQC-hybrid KEM per RFC 9954) | `pqc-first` |
+| Overkill | AML.T0096 (LLM Integration Abuse — C2) | `D3-NTA` + `D3-OTF` | Network Traffic Analysis + Outbound Traffic Filtering | `ai-c2-detection` |
+| Overkill | AML.T0018 (Backdoor ML Model) | `D3-EFA` + `D3-FAPA` | Executable File Analysis (model signing) + File Access Pattern Analysis | `mlops-security` |
+| Overkill | AML.T0043 (Craft Adversarial Data — RAG) | `D3-IOPR` + `D3-FAPA` | Input/Output Profiling + File Access Pattern Analysis (vector-store access control) | `rag-pipeline-security` |
+
+**Defense-in-depth posture:** the tiers are the defence-in-depth axis. A tier is complete only when every technique at that tier *and every tier below it* is deployed — this is the cardinal rule of the skill expressed in D3FEND terms. An org running `D3-NTA` for AI-C2 detection while `D3-KBPI` is absent has an Overkill technique guarding a host that a deterministic LPE owns outright, which is precisely the half-implemented-Tier-3 anti-pattern.
+
+**Least-privilege scope:** each downstream skill is authoritative for principal-class scoping. The tier model adds one constraint of its own: a technique introduced at MVP must be deployable without a privileged agent identity, or it does not belong at MVP. `D3-EAL` as a client-side tool allowlist qualifies; a fleet-wide allowlisting service does not, and belongs at Practical.
+
+**Zero-trust posture:** tier placement is set by the attack surface, not by network position. The MVP `D3-NI` + `D3-ITF` row exists because a self-hosted LLM gateway on an "internal" network is reachable by anything that reaches that network, and this product class has produced repeated pre-authentication RCE against default deployments — an internal-network assumption is not a control.
+
+**AI-pipeline applicability:** every `AML.*` row applies to AI workloads specifically, and none of them has a binding regulatory mandate in any jurisdiction (see `global-grc`). Their tier placement is therefore threat-driven rather than compliance-driven, which is why an org that builds its roadmap from framework requirements alone lands at Tier 1 with the entire AI attack surface uncovered.
 
 ---
 

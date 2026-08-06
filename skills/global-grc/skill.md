@@ -24,7 +24,7 @@ data_deps:
 atlas_refs: []
 attack_refs: []
 framework_gaps: []
-last_threat_review: "2026-05-01"
+last_threat_review: "2026-08-05"
 ---
 
 # Global GRC Assessment
@@ -113,10 +113,20 @@ Art. 32 is intentionally technology-neutral. For 2026 threat reality, DPAs (part
 
 ---
 
-#### EU AI Act (2024/1689) — Fully Applicable August 2026
+#### EU AI Act (2024/1689, amended by Regulation (EU) 2026/1744) — staged application through 2028
+
+**Application timeline** (Art. 113 as amended by the Digital Omnibus on AI, in force 2026-07-27):
+- 2025-02-02 — Chapters I–II: prohibitions (Art. 5) and AI literacy
+- 2025-08-02 — GPAI model obligations (Chapter V), governance, penalties regime
+- 2026-08-02 — general application date: Art. 50 transparency obligations bind, and the Commission / AI Office holds supervision and enforcement powers over GPAI model providers
+- 2026-12-02 — new Art. 5(1)(ba)/(bb) prohibitions; Art. 50(2) compliance deadline for systems placed on the market before 2026-08-02
+- **2027-12-02 — Chapter III Sections 1–3 (high-risk requirements, including Art. 9 risk management and Art. 15 cybersecurity) for Annex III / Art. 6(2) systems**
+- **2028-08-02 — Chapter III Sections 1–3 for Annex I / Art. 6(1) product-embedded systems**
+
+The high-risk obligations below are therefore 16 months (Annex III) to 24 months (Annex I) away. Do not scope remediation against an August 2026 high-risk deadline — and do not read the deferral as a withdrawal, because the attack surface those obligations address is live now.
 
 **Risk tiers for AI systems:**
-- **Unacceptable risk** (Art. 5): Prohibited (social scoring, real-time biometric identification in public, etc.)
+- **Unacceptable risk** (Art. 5): Prohibited (social scoring, real-time remote biometric identification in publicly accessible spaces for law enforcement, etc.). Two prohibitions added by Regulation (EU) 2026/1744 apply from 2026-12-02: Art. 5(1)(ba), AI systems generating or manipulating non-consensual intimate imagery of an identifiable person; Art. 5(1)(bb), AI systems generating or manipulating child sexual abuse material within the meaning of Directive 2011/93/EU. Unlike the Chapter III deferral these are near-term, and they carry Art. 99 penalties.
 - **High risk** (Annex III): Critical infrastructure, biometric, employment, education, law enforcement, etc.
 - **Limited risk** (Art. 50): Transparency obligations (chatbots must disclose they're AI)
 - **Minimal risk**: No specific requirements
@@ -145,6 +155,11 @@ Art. 9 requires identifying reasonably foreseeable misuse. For any high-risk AI 
 - Confidentiality, integrity, and availability protections
 - Limited attack surface
 - Security updates for the support lifetime
+
+**Manufacturer reporting obligations (Art. 14) — apply from 2026-09-11:**
+- Actively exploited vulnerabilities and severe incidents affecting the security of a product with digital elements must be reported: **24-hour** early warning, **72-hour** full notification, final report within **14 days** of a corrective measure becoming available (actively exploited vulnerability) or **one month** (severe incident).
+- Filed once through the CRA Single Reporting Platform to the CSIRT of the manufacturer's main establishment; ENISA receives it simultaneously.
+- The statutory trigger is *active exploitation*, which maps directly onto CISA KEV / public-PoC state. A manufacturer whose product embeds a KEV-listed component is on a 24-hour clock. The Annex I product requirements themselves apply from 2027-12-11.
 
 **CRA relevance to 2026 threats:**
 - MCP servers distributed as software products fall under CRA if sold to EU market
@@ -181,7 +196,15 @@ Art. 9 requires identifying reasonably foreseeable misuse. For any high-risk AI 
 
 **CAF strength vs. 2026:** CAF Principle B6 (Vulnerability Management) and C1 (Security Monitoring) are principle-based, allowing more flexibility than control-based frameworks. An assessor applying CAF B6 can reasonably require CISA KEV-aligned response times. CAF C1 can be interpreted to require AI API behavioral monitoring.
 
-**CAF gap:** The principle-based approach requires assessors to interpret current threats into each principle. There is no NCSC-published CAF guidance specifically for AI attack surfaces as of mid-2026.
+**CAF currency (v4.0):** v4.0 is the current version and closed part of this gap. NCSC added a section on developing and maintaining software used in essential services securely, and improved AI-risk coverage across the framework. Principle B4 System Security now carries assessable automated-decision-making outcomes: B4.a requires designed restrictions preventing actions by automated decision-making technologies that could adversely affect the systems supporting an essential function, and B4.b requires their operation to be well understood and their decisions replicable. B4 cites ETSI *Securing Artificial Intelligence (SAI): Baseline Cyber Security Requirements for AI Models and Systems* as an external resource.
+
+**Residual CAF gap:** the outcomes are framed around "automated decision-making technologies", not around LLM-specific attack surfaces. No contributing outcome names prompt injection, MCP/agent tool trust boundaries, RAG pipeline integrity, or AI-as-C2, and the principle-based approach still leaves currency of interpretation to the individual assessor.
+
+#### Cyber Security and Resilience (Network and Information Systems) Bill — not yet in force
+
+Introduced to the House of Commons on 2025-11-12; through Lords stages during July 2026, with no Royal Assent as of 2026-08-05. It reforms the Network and Information Systems Regulations 2018 and is the UK's answer to the NIS2 divergence created at EU exit. Commencement is phased — some measures on or shortly after Royal Assent, others by secondary legislation.
+
+**Scoping consequence today:** a UK-regulated entity's obligations still flow from NIS 2018 plus sector regulators applying CAF v4.0. Do not model NIS2-equivalent duties into a UK gap analysis until commencement. Watch for the Royal Assent date, the commencement regulations, and whether the resulting incident-reporting clocks displace UK GDPR's 72h as the binding UK timeline.
 
 ---
 
@@ -221,6 +244,14 @@ Requires financial entities to maintain information security capabilities commen
 
 **CPS 234 + AI:** No specific guidance for AI/ML systems. "Commensurate with threats" requires current threat awareness — a CPS 234-compliant entity should be assessing AI attack surfaces as part of threat landscape monitoring.
 
+#### SOCI Act — Enhanced Critical Infrastructure Risk Management Program Rules 2026
+
+The Security of Critical Infrastructure Legislation Amendment (Enhanced Critical Infrastructure Risk Management Program) Rules 2026 (F2026L00701) were registered 2026-06-09, amending the CIRMP Rules (LIN 23/006) 2023. Enhanced CIRMP obligations apply to nine critical asset classes (broadcasting, DNS, electricity, energy market operators, freight infrastructure, freight services, gas, liquid fuel, water).
+
+**What is new:** s.10A requires a documented system or process for mapping the supply chain covering major suppliers and critical components — the most specific supply-chain-mapping obligation in this registry. s.8A(2)(b) makes unmitigated legacy, unsupported or obsolete technology an addressed hazard. s.9A addresses personnel hazards and access management.
+
+**Gap:** the instrument does not name artificial intelligence, machine learning, model providers or agent tooling. Australia therefore has a mandatory supplier-mapping obligation an assessor can reasonably extend to AI plugins and MCP servers, but no text requiring it.
+
 ---
 
 ### Singapore
@@ -259,7 +290,9 @@ Japan's national cybersecurity framework closely mirrors NIST CSF with adaptatio
 
 **Key gaps for 2026:** Japanese frameworks lag US equivalents by 12–18 months in AI-specific guidance. The METI AI Governance Guidelines (2023) address AI ethics and governance but not AI attack surfaces. No equivalent to EU AI Act security requirements in Japanese law as of mid-2026.
 
-**Active Cyber Defense Law (2024):** Japan enacted limited offensive cyber capability legislation — relevant for understanding Japan's cyber threat posture and incident response coordination.
+**Active cyber defence legislation (2025):** the Act on Prevention of Damage Caused by Unauthorised Acts against Critical Electronic Computers (Act No. 42 of 2025) and its implementing Act (No. 43 of 2025) passed the Diet on 2025-05-16 and were promulgated on 2025-05-23; commencement is phased by cabinet order. Relevant for understanding Japan's cyber posture, government access to communications information, and critical-infrastructure incident-response coordination — not a control framework in itself.
+
+**APPI amendment (promulgated 2026-07-17):** the Act partially amending the Act on the Protection of Personal Information passed the Diet on 2026-07-10 and was promulgated on 2026-07-17, commencing on a date set by cabinet order within two years; implementing ordinances and guidelines are pending. Headline changes: PPC power to impose surcharges where unlawful handling produced financial gain, an expanded suspension-of-use right covering personal information containing biometric data, and relaxed consent rules for third-party provision for statistical purposes. Nothing in it addresses AI attack surfaces — Japan's AI-security gap is unchanged — but the enforcement ceiling for a personal-data leak moves from guidance-and-order to monetary penalty once the commencement order is made.
 
 ---
 
@@ -299,9 +332,19 @@ Japan's national cybersecurity framework closely mirrors NIST CSF with adaptatio
 
 **B-10 + AI:** No specific AI guidance as of mid-2026. "Technology risk" is interpreted broadly enough to include AI systems. OSFI published draft AI guidance for consultation in 2025 — final guidance expected late 2026.
 
-#### Bill C-27 / CPPA (Consumer Privacy Protection Act) — Proposed
+#### Bill C-36 — Protecting Privacy and Consumer Data Act (proposed; supersedes the former Bill C-27 / CPPA)
 
-Not yet in force as of mid-2026 (legislative delay). When enacted: 72-hour breach notification, $25M or 5% of global revenue penalties.
+Bill C-27 (44th Parliament) did not pass. The current federal privacy bill is C-36 (45-1), first reading 2026-06-15, at second reading in the House of Commons. Nothing in it is in force. PIPEDA remains the operative federal private-sector privacy statute, with breach notification to the OPC "as soon as feasible" where there is a real risk of significant harm. Verify penalty and notification figures against the C-36 text before relying on them — the former C-27 numbers ($25M or 5%, 72 hours) do not carry over automatically.
+
+#### Critical Cyber Systems Protection Act (CCSPA) — enacted by Bill C-8, Royal Assent 2026-06-15
+
+**Scope:** designated operators of the vital services and vital systems listed in Schedule 1, by operator class in Schedule 2 (regulators include the Minister of Industry, the Minister of Transport, OSFI, the Bank of Canada, the Canadian Nuclear Safety Commission and the Canadian Energy Regulator). Schedules and regulations are set by the Governor in Council.
+
+**Key obligations:** establish and implement a cyber security programme; mitigate supply-chain and third-party product/service risks; report a cyber security incident affecting a critical cyber system to the Communications Security Establishment within a period prescribed by regulation, not to exceed 72 hours, then immediately notify the appropriate regulator and provide a copy; comply with cyber security directions.
+
+**Status:** the CCSPA comes into force by order in council — obligations bind once proclaimed and the regulations and schedules are made.
+
+**CCSPA + AI:** no AI-specific requirement. The supply-chain provision is product/service-generic and does not name AI tooling, model providers or MCP servers.
 
 ---
 
@@ -326,7 +369,7 @@ Not yet in force as of mid-2026 (legislative delay). When enacted: 72-hour breac
 
 #### CSA Cloud Controls Matrix (CCM) v4
 
-**17 domains, 197 control specifications.** Cloud-specific but applicable to any cloud-native or cloud-using organization.
+**17 domains, 207 control specifications (CCM v4.1, released 2026-01-27, superseding v4.0.x).** Cloud-specific but applicable to any cloud-native or cloud-using organization. v4.1 adds net-new controls in domains including Logging and Monitoring and Security Incident Management; the AI control surface remains in the separate AI Controls Matrix rather than in CCM core.
 
 **AI relevance:**
 - AIS domain (Application & Interface Security) covers some AI risk areas
@@ -367,6 +410,32 @@ These gaps exist across all 14 jurisdictions and both global standards:
 
 ---
 
+## Defensive Countermeasure Mapping
+
+D3FEND references from `data/d3fend-catalog.json`. This skill produces jurisdictional gap findings, not control prescriptions — its subject is which regulator requires what, and the answer for every row in the Universal Gaps table above is "none". A gap that no framework mandates still has a defensive technique that closes it; the mapping below routes each universal gap to that technique and to the downstream skill that owns the implementation guidance. Operators converting a gap into a remediation plan consume the cited downstream skill rather than reading the D3FEND ID in isolation, because that skill carries the AI-pipeline applicability notes, least-privilege scoping, and deployment posture.
+
+| Universal gap | Offensive TTP class | D3FEND ID | Defensive technique | Owning downstream skill |
+|---|---|---|---|---|
+| Prompt injection as access-control failure | AML.T0051 (LLM Prompt Injection) | `D3-IOPR` + `D3-CSPP` | Input/Output Profiling + Client-server Payload Profiling | `ai-attack-surface` |
+| MCP/agent tool trust boundaries | AML.T0010 (ML Supply Chain Compromise) | `D3-EAL` + `D3-EFA` | Executable Allowlisting + Executable File Analysis | `mcp-agent-trust` |
+| AI pipeline integrity (model versioning + behavioural regression) | AML.T0018 (Backdoor ML Model), AML.T0020 (Poison Training Data) | `D3-FAPA` + `D3-EFA` | File Access Pattern Analysis + Executable File Analysis | `mlops-security` |
+| AI-as-C2 detection | AML.T0096 (LLM Integration Abuse — C2) | `D3-NTA` + `D3-OTF` | Network Traffic Analysis + Outbound Traffic Filtering | `ai-c2-detection` |
+| Live kernel patching as required capability | T1068 (Exploitation for Privilege Escalation) | `D3-KBPI` + `D3-SCA` | Kernel-Based Process Isolation + System Call Analysis | `kernel-lpe-triage` |
+| CISA KEV-indexed patch SLAs | T1190 (Exploit Public-Facing Application) | `D3-NI` | Network Isolation for the unpatched window | `exploit-scoring` + `kernel-lpe-triage` |
+| AI-generated phishing detection update requirement | T1566 (Phishing), AML.T0016 (Develop Capabilities) | `D3-MFA` + `D3-CSPP` | Multi-factor Authentication (passkey class) + Client-server Payload Profiling | `email-security-anti-phishing` |
+| RAG pipeline security | AML.T0051, AML.T0020 | `D3-IOPR` + `D3-FAPA` | Input/Output Profiling + File Access Pattern Analysis | `rag-pipeline-security` |
+| Post-quantum cryptography migration mandate | T1040 (Network Sniffing), T1557 (Adversary-in-the-Middle) — harvest-now-decrypt-later | `D3-MENCR` + `D3-FE` | Message Encryption (PQC-hybrid KEM) + File Encryption (PQC-wrapped envelope) | `pqc-first` |
+
+**Defense-in-depth posture:** a jurisdictional gap finding from this skill closes only when the downstream skill's technique is deployed and tested — never when a policy document cites the regulation. Because no jurisdiction mandates any row above, there is no compliance-driven forcing function for these controls: an org that implements only what a regulator can cite will have none of them. That is the entire operational point of the Universal Gaps table, and the reason each row must carry a routing target.
+
+**Least-privilege scope:** the downstream-skill citation is the boundary. This skill does not re-scope D3FEND techniques per principal class; that scoping is owned by the cited downstream skill's own Defensive Countermeasure Mapping section, which is authoritative for principal-class breakdowns (human operator ≠ agent identity ≠ MCP server ≠ model-serving process).
+
+**Zero-trust posture:** jurisdiction is not a trust boundary. An entity established in a Member State that has not yet notified NIS2 transposition, or operating under a framework whose AI obligations are deferred to 2027–2028, faces the same attacker as one in the strictest jurisdiction. Scope controls to the threat, then map the jurisdictional obligation onto them — never the reverse, which produces a control set shaped by the weakest applicable regulator.
+
+**AI-pipeline applicability:** every row whose TTP class is `AML.*` applies to AI workloads specifically and has no jurisdictional mandate anywhere in this registry until EU AI Act Art. 15 applies (2027-12-02 Annex III, 2028-08-02 Annex I). UK NCSC CAF v4.0 B4.a/B4.b is the only in-force obligation touching any of them, and only for automated decision-making — not for prompt injection, tool trust, RAG integrity, or AI-as-C2.
+
+---
+
 ## Notification Timeline Summary
 
 | Jurisdiction | Framework | Notification Trigger | Timeline |
@@ -374,6 +443,7 @@ These gaps exist across all 14 jurisdictions and both global standards:
 | EU | GDPR | Personal data breach | 72h to SA |
 | EU | NIS2 | Significant incident | 24h early warning, 72h notification |
 | EU | DORA | Major ICT-related incident | 4h initial, 72h intermediate, 1 month final |
+| EU | CRA (manufacturer reporting, from 2026-09-11) | Actively exploited vulnerability or severe incident in a product with digital elements | 24h early warning, 72h notification, 14 days final |
 | UK | GDPR/UK DPA | Personal data breach | 72h to ICO |
 | AU | Notifiable Data Breaches | Eligible data breach | ASAP (no fixed window), practicable |
 | SG | PDPA | Data breach | 3 days to PDPC |
@@ -383,6 +453,7 @@ These gaps exist across all 14 jurisdictions and both global standards:
 | IN | SEBI | Cyber incident | 6 hours |
 | CA | PIPEDA | Real risk of significant harm | Asap to OPC |
 | CA | OSFI B-10 | High/critical tech/cyber incident | 24 hours |
+| CA | CCSPA (Bill C-8) | Cyber security incident affecting a critical cyber system | ≤72h to CSE (period set by regulation), then immediate notice to the regulator — binds on order in council |
 | Global | ISO 27001 | No notification requirement | Framework-only |
 
 ---
@@ -391,9 +462,9 @@ These gaps exist across all 14 jurisdictions and both global standards:
 
 US-only GRC posture is structurally incomplete for any organisation operating across EU, UK, AU, SG, IN, JP, or CA in mid-2026. The following regulatory instruments are in force or about to be, and have no direct US-framework equivalent:
 
-- **NIS2 Directive (EU 2022/2555)** — transposition deadline 2024-10-17; enforcement now active across all 27 Member States. Imposes obligations on essential and important entities that NIST CSF / SOC 2 do not mirror, including: 24-hour early-warning notification, mandatory MFA, supply-chain security including AI-tool plugins, board-level accountability with personal liability for senior management.
+- **NIS2 Directive (EU 2022/2555)** — transposition deadline 2024-10-17; transposition is still incomplete. The Commission issued reasoned opinions to 19 Member States on 2025-05-07 and on 2026-07-08 referred Ireland, Spain, France and the Netherlands to the CJEU for failing to notify transposing measures. Scope an entity by its Member State of establishment rather than by the directive text — obligations bite through national law, and in the referred Member States that law is not yet notified. Imposes obligations on essential and important entities that NIST CSF / SOC 2 do not mirror, including: 24-hour early-warning notification, mandatory MFA, supply-chain security including AI-tool plugins, board-level accountability with personal liability for senior management.
 - **DORA (EU 2022/2554)** — fully applicable 2025-01-17. Imposes a 4-hour initial incident notification, mandatory Threat-Led Penetration Testing (TLPT) for significant financial entities, and direct ESA oversight of Critical Third-Party Providers (CTPs). LLM API providers used by EU financial entities are candidate CTPs.
-- **EU AI Act (Regulation 2024/1689)** — staged application; full application 2026-08-02 (less than three months from this skill's review date). High-risk AI systems must operate under Art. 9 risk management, Art. 15 cybersecurity, and post-market monitoring. No NIST or SOC 2 control maps to Art. 15 cybersecurity requirements for AI systems.
+- **EU AI Act (Regulation 2024/1689, amended by Regulation (EU) 2026/1744)** — staged application. The general application date passed on 2026-08-02: Art. 50 transparency obligations now bind and the Commission / AI Office now supervises GPAI model providers. The high-risk obligations — Art. 9 risk management, Art. 15 cybersecurity, post-market monitoring — were deferred by the Digital Omnibus on AI to 2027-12-02 for Annex III systems and 2028-08-02 for Annex I product-embedded systems. No NIST or SOC 2 control maps to Art. 15 cybersecurity requirements for AI systems, and the deferral widens that gap rather than closing it: no binding AI-cybersecurity obligation is in force in any jurisdiction until December 2027.
 - **EU Cyber Resilience Act (Regulation 2024/2847)** — phased application; reporting obligations apply from 2026-09-11, full obligations from 2027-12-11. "Products with digital elements" placed on the EU market — including MCP servers, AI agent tooling, IoT — must satisfy Annex I essential cybersecurity requirements with vendor liability for the support lifetime.
 - **CERT-In Directions (India, 2022)** — 6-hour breach notification, mandatory log retention in-jurisdiction. No US framework imposes a comparable timeline.
 - **MAS TRM (Singapore)** and **CSA CCoP (Singapore CII)** — 1-hour critical-incident notification for CCoP CII, 14-day patch SLA. Stricter than any US framework.
@@ -414,7 +485,7 @@ Every applicable framework has at least one structural gap against mid-2026 thre
 | EU | DORA Art. 28–30 (ICT third-party risk) | Register of information for ICT third-party arrangements is mandated but there is no unified attestation regime yet; CTP designation for LLM/AI API providers is being clarified through ESA Joint Committee guidance. |
 | EU | EU AI Act Art. 9 / Art. 15 (high-risk AI risk management and cybersecurity) | Transparency-obligation enforcement is left to Member-State competent authorities. As of mid-2026 the operational test of "appropriate level of accuracy, robustness, and cybersecurity" is being interpreted differently in DE, FR, IT, NL — uniform enforcement is not yet observed. |
 | EU | EU CRA Annex I | "No known exploitable vulnerabilities" is a strict obligation but the conformity-assessment regime is new; market-surveillance authorities have limited tooling to test against ATLAS or KEV catalogs. |
-| UK | NCSC CAF Principles A–D | Principle-based, deliberately not prescriptive. Currency of interpretation depends on the individual assessor. No NCSC-published AI-attack-surface guidance integrated into CAF as of mid-2026. |
+| UK | NCSC CAF v4.0 Principles A–D | Principle-based, deliberately not prescriptive; currency of interpretation depends on the individual assessor. v4.0 added secure software development/maintenance coverage and automated-decision-making outcomes under B4.a/B4.b, plus an ETSI Securing AI reference — the first AI-relevant content in any UK regulatory assessment framework. Still no contributing outcome naming prompt injection, MCP/agent tool trust, RAG pipeline integrity, or AI-as-C2. |
 | UK | Cyber Essentials Plus | 14-day high-risk patch SLA — better than NIST but still insufficient for KEV-class deterministic LPE. No AI-tool coverage. |
 | AU | ASD ISM-1623 / Essential 8 ML3 | 48-hour patch window for known-exploit vulnerabilities is the best operational standard in any national framework — but does not mandate live-patching capability and has no AI-pipeline controls. |
 | AU | APRA CPS 234 | "Commensurate with vulnerabilities and threats" — requires the regulated entity to keep its own threat catalog current. No CPS 234 controls mention AI surfaces explicitly. |
@@ -426,7 +497,7 @@ Every applicable framework has at least one structural gap against mid-2026 thre
 | Global | CSA CCM v4 AIS / STA | AIS controls predate the LLM/MCP attack surface; STA covers supply chain but not AI-plugin trust boundaries. AI Controls supplement (2025) is not yet integrated into CCM v4 core. |
 | US (for contrast) | NIST 800-53 SI-2, AC-2, SC-7 | 30-day patch window; no prompt-injection control; perimeter-centric SC-7 boundary protection misses AI-API egress. Cited here only to show parity with the global frameworks — US controls are not adequate either. |
 
-Universal lag: every jurisdiction except Australia (ISM-1623) lacks an operationally testable patch-SLA for KEV-class deterministic LPE. Every jurisdiction lacks AI-pipeline-integrity controls in force as of mid-2026; the EU AI Act will be the first when Art. 15 becomes operationally enforced.
+Universal lag: every jurisdiction except Australia (ISM-1623) lacks an operationally testable patch-SLA for KEV-class deterministic LPE. Every jurisdiction lacks AI-pipeline-integrity controls in force as of mid-2026. The EU AI Act will be the first, but not until Art. 15 applies — 2027-12-02 for Annex III systems, 2028-08-02 for Annex I — following the Digital Omnibus deferral. The UK is marginally ahead in practice: NCSC CAF v4.0 B4.a/B4.b carry automated-decision-making outcomes a regulator can assess today, though they are not AI-pipeline-integrity controls in the full sense.
 
 **Expanded jurisdictional coverage (per `data/global-frameworks.json`).** The EU/UK/AU/ISO baseline is no longer sufficient — the catalog tracks 21+ jurisdictions and the cross-border data-flow obligations are where most of the operational lag now lives:
 
@@ -454,7 +525,7 @@ A summary of the multi-jurisdiction control surface vs. the high-priority TTPs f
 
 | TTP | ATLAS / ATT&CK ID | Jurisdiction with most specific obligation | Jurisdictions with no mapped control |
 |---|---|---|---|
-| Prompt injection | AML.T0051 | EU AI Act Art. 15 (interpretive, post 2026-08-02) | US (NIST/SOC2), UK CAF, AU ISM, SG TRM, IN CERT-In, JP, CA |
+| Prompt injection | AML.T0051 | EU AI Act Art. 15 (interpretive; not applicable until 2027-12-02 Annex III / 2028-08-02 Annex I). UK CAF v4.0 B4.a/B4.b is the only obligation in force today, and only for automated decision-making | US (NIST/SOC2), AU ISM, SG TRM, IN CERT-In, JP, CA — and the EU until the deferred dates |
 | ML supply chain (MCP, models) | AML.T0010 | EU CRA Annex I (post 2026-09-11 reporting) | All others — supply-chain controls do not name AI plugins |
 | LLM C2 abuse (SesameOp) | AML.T0096 | None | All — no jurisdiction has a control for AI-API as C2 |
 | Poison Training Data | AML.T0020 | EU AI Act Art. 10 (data and data governance for high-risk AI) | All others |
@@ -478,7 +549,8 @@ Per-jurisdiction breach- and incident-notification clocks. When a KEV-listed exp
 | EU | GDPR Art. 33 | Personal-data breach | Awareness | 72h to SA | Same legal clock; practical detection-to-classification window shrinks with confirmed active exploitation |
 | EU | NIS2 Art. 23 | Significant incident | Awareness | 24h early warning / 72h notification / 1 month final | Early-warning trigger fires immediately on confirmed PoC affecting deployed asset |
 | EU | DORA Art. 19 | Major ICT-related incident | Classification | 4h initial / 72h intermediate / 1 month final | 4h clock is unforgiving; KEV+PoC events likely auto-classify as major |
-| EU | EU AI Act Art. 73 (post 2026-08-02) | Serious incident for high-risk AI | Provider awareness | 15 days for serious incidents; 10 days for widespread infringement; 2 days for serious incidents involving deceased person | KEV-class exploit chain in a high-risk AI deployment triggers the 2/10/15 cascade |
+| EU | EU AI Act Art. 73 (high-risk providers; applies from 2027-12-02 Annex III / 2028-08-02 Annex I) | Serious incident for high-risk AI | Provider awareness / establishment of a causal link | 2 days for widespread infringement or a serious incident under Art. 3(49)(b) (critical-infrastructure disruption); 10 days for death of a person; 15 days default | KEV-class exploit chain in a high-risk AI deployment triggers the 2/10/15 cascade once the obligation applies |
+| EU | EU CRA Art. 14 (manufacturers, from 2026-09-11) | Actively exploited vulnerability / severe incident in a product with digital elements | Manufacturer awareness | 24h early warning / 72h notification / 14 days after a corrective measure (1 month for severe incidents) | This clock *is* the KEV+PoC clock — active exploitation is the statutory trigger, not an aggravating factor |
 | UK | UK GDPR | Personal-data breach | Awareness | 72h to ICO | Same as GDPR |
 | AU | Notifiable Data Breaches | Eligible data breach | Awareness | "As soon as practicable" — typically interpreted ≤ 30 days | Active KEV exploitation collapses "practicable" to hours |
 | SG | PDPA | Notifiable data breach | Awareness | 3 days to PDPC | Same |
@@ -491,7 +563,7 @@ Per-jurisdiction breach- and incident-notification clocks. When a KEV-listed exp
 | CA | PIPEDA | Real risk of significant harm | Awareness | As soon as feasible | Same |
 | Global | ISO 27001 | n/a — framework only | n/a | Framework imposes no notification obligation | n/a |
 
-Operational implication: an organisation subject to MAS Notice 644, CSA CCoP, CERT-In, and DORA simultaneously has a 1-hour effective notification floor — the tightest applicable clock governs. A single "we notify within 72h" runbook fails three of those four obligations.
+Operational implication: an organisation subject to MAS Notice 644, CSA CCoP, CERT-In, and DORA simultaneously has a 1-hour effective notification floor — the tightest applicable clock governs. A single "we notify within 72h" runbook fails three of those four obligations. From 2026-09-11 an org that also manufactures a product with digital elements for the EU market carries a parallel 24-hour product-side vulnerability clock that most IR runbooks do not model at all.
 
 Refer to `data/exploit-availability.json` for per-CVE PoC and KEV state; the matrix above tightens whenever any catalog entry's `active_exploitation` is `confirmed` or `cisa_kev` is `true`.
 
@@ -503,11 +575,13 @@ The single most reliable test for global-GRC theater:
 
 > "Open your incident-response runbook. For each jurisdiction your organisation is subject to — EU (NIS2, DORA, GDPR, EU AI Act), UK, AU, SG (MAS, CSA), IN (CERT-In, SEBI), JP, CA — show the per-jurisdiction notification clock with the clock-start trigger documented. A single global '72-hour notification' policy fails this test by definition for any org subject to DORA (4h), MAS Notice 644 (1h critical), CSA CCoP (2h), CERT-In (6h), or NIS2 (24h early warning). If your runbook does not list jurisdiction-specific clocks with trigger criteria, the global-GRC compliance claim is theatre — you do not have operational notification capability for at least one jurisdiction you are subject to."
 
-Two follow-up tests:
+Three follow-up tests:
 
 > "Your DORA Art. 28 register of information for ICT third-party arrangements: does it include the LLM/AI API providers your business lines use? If `provider=openai` or `provider=anthropic` or `provider=google-cloud-vertex-ai` is absent and any business line uses these providers, the register is incomplete. ESA Joint Committee guidance on CTP designation for AI providers is evolving — your register must include them now and be updated as the CTP designation crystallises."
 
-> "Your EU AI Act readiness for 2026-08-02 full application: identify every system in your inventory that would be a high-risk AI system under Annex III. For each, show the Art. 9 risk management documentation and the Art. 15 cybersecurity controls (including resilience to prompt injection per the Commission's Q&A). If the inventory does not exist or shows zero high-risk systems despite the org operating AI in employment, education, law enforcement, critical infrastructure, biometric, or essential-services contexts, the readiness claim is theatre — you have not classified your own systems against the regulation that takes full effect in under three months."
+> "Your EU AI Act Art. 50 transparency compliance, live since 2026-08-02: for every deployed system that interacts with humans, generates synthetic audio/image/video/text, or performs emotion recognition or biometric categorisation, show the disclosure to the user and the machine-readable marking of generated content. Systems placed on the market before 2026-08-02 have until 2026-12-02 to meet Art. 50(2). If you cannot produce the marking implementation, the transparency claim is theatre — this obligation is enforceable now, not in 2027."
+
+> "Your EU AI Act high-risk readiness against the deferred deadlines: identify every system in your inventory that would be a high-risk AI system under Annex III (obligations from 2027-12-02) or Annex I (from 2028-08-02). For each, show the Art. 9 risk management documentation and the Art. 15 cybersecurity controls (including resilience to prompt injection per the Commission's Q&A). If the inventory does not exist or shows zero high-risk systems despite the org operating AI in employment, education, law enforcement, critical infrastructure, biometric, or essential-services contexts, the readiness claim is theatre. A deferral is not a withdrawal: an org that stood its AI Act programme down when Regulation (EU) 2026/1744 landed will re-enter the same gap in 2027 with the same absent inventory, while the attack surface stays live throughout."
 
 ---
 
