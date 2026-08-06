@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "last_updated": "2026-05-27",
+    "last_updated": "2026-08-05",
     "note": "IETF RFCs and Internet-Drafts that exceptd skills depend on. RFCs are the layer beneath compliance frameworks: a control like 'TLS 1.3 required' implicitly references RFC 8446; a 'use strong KEM' control depends on whatever draft-ietf-tls-ecdhe-mlkem settles into. Frameworks lag RFCs; RFCs lag attacker innovation. This catalog tracks both kinds of lag.",
     "status_values": [
       "Internet Standard",
@@ -1337,12 +1337,15 @@
     "status": "Informational",
     "tracker": "https://datatracker.ietf.org/doc/draft-ietf-tls-hybrid-design/",
     "relevance": "General-purpose hybrid-KEM design that the ecdhe-mlkem draft instantiates. Operators evaluating the migration story should read both.",
-    "lag_notes": "IESG-approved (draft-16) for publication as an Informational RFC and in the RFC Editor queue as of mid-2026; RFC number not yet assigned. No longer status-synchronized with draft-ietf-tls-ecdhe-mlkem, which remains an active Standards-Track draft.",
+    "lag_notes": "Published as RFC 9954 (Informational, July 2026) — cite RFC-9954 rather than this draft for the hybrid construction. Retained so existing references resolve. Never status-synchronized with draft-ietf-tls-ecdhe-mlkem, which remains an active Standards-Track draft.",
     "skills_referencing": [
       "pqc-first"
     ],
-    "last_verified": "2026-05-24",
-    "abstract": "IETF Internet-Draft (TLS WG) — design rationale and security analysis for hybrid post-quantum + classical TLS 1.3 handshakes. Defines the wire format, key-derivation chain, and downgrade-resistance properties for hybrid key-exchange. Cited by RFC 9763 (ML-KEM in TLS 1.3) + RFC 9764 (ML-DSA in TLS 1.3) as the architectural foundation."
+    "last_verified": "2026-08-05",
+    "abstract": "IETF Internet-Draft (TLS WG) — design rationale and security analysis for hybrid post-quantum + classical TLS 1.3 handshakes. Defines the wire format, key-derivation chain, and downgrade-resistance properties for hybrid key-exchange. Cited by RFC 9763 (ML-KEM in TLS 1.3) + RFC 9764 (ML-DSA in TLS 1.3) as the architectural foundation.",
+    "replaced_by": [
+      "RFC-9954"
+    ]
   },
   "ISO-29147": {
     "number": null,
@@ -291829,5 +291832,21 @@
     "last_verified": "2026-05-27",
     "_auto_imported": true,
     "_intake_method": "ietf-rfc-index"
+  },
+  "RFC-9954": {
+    "number": 9954,
+    "title": "Hybrid Key Exchange in TLS 1.3",
+    "status": "Informational",
+    "published": "2026-07",
+    "errata_count": 0,
+    "tracker": "https://www.rfc-editor.org/info/rfc9954",
+    "relevance": "Publishes the concatenation-based hybrid key-exchange construction for TLS 1.3 that the PQC migration story depends on. Gives operators a citable standard for X25519MLKEM768 rather than a moving draft, which matters for a control an auditor has to verify.",
+    "lag_notes": "Informational, not Standards Track — it specifies the construction, not a mandate. No compliance framework requires it (NIST 800-53 SC-13, ISO 27001:2022 A.8.24, PCI DSS 4.0 4.2.1 and NIS2 Art. 21 name no IETF profile), and CNSA 2.0 sets a 2030 deadline without pinning one. Supersedes draft-ietf-tls-hybrid-design; draft-ietf-tls-ecdhe-mlkem remains a separate Standards-Track draft and is NOT covered by this RFC.",
+    "skills_referencing": [
+      "pqc-first",
+      "security-maturity-tiers"
+    ],
+    "last_verified": "2026-08-05",
+    "abstract": "Defines hybrid key exchange for TLS 1.3 — negotiating multiple key-exchange algorithms as a single named group and concatenating their shared secrets, so the session stays secure while at least one component algorithm is unbroken. The construction underpinning X25519MLKEM768 and the harvest-now-decrypt-later defence."
   }
 }

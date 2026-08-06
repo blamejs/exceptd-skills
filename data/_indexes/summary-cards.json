@@ -448,7 +448,21 @@
       "produces": "The skill produces a structured Global GRC Assessment that rolls compliance findings across the org's jurisdictional footprint — EU (NIS2, DORA, EU AI Act, CRA), UK (CAF, Cyber Essentials), AU (ISM, Essential 8, APRA CPS 234), ISO 27001:2022 / 42001:2023, NIST, and the expanded set tracked in `data/global-frameworks.json`. The shape below is consumed downstream by `framework-gap-analysis` (which produces per-jurisdiction Framework Lag Declarations), by `policy-exception-gen` (for cross-jurisdictional exception language), and by CSAF-style auditor evidence bundles. Preserve the per-jurisdiction ...",
       "key_xrefs": {
         "cwe_refs": [],
-        "d3fend_refs": [],
+        "d3fend_refs": [
+          "D3-EAL",
+          "D3-EFA",
+          "D3-FAPA",
+          "D3-FE",
+          "D3-IOPR",
+          "D3-KBPI",
+          "D3-MENCR",
+          "D3-MFA",
+          "D3-NI",
+          "D3-NTA",
+          "D3-OTF",
+          "D3-SCA",
+          "D3-CSPP"
+        ],
         "framework_gaps": [],
         "atlas_refs": [],
         "attack_refs": [],
@@ -460,9 +474,9 @@
       "attack_count": 0,
       "framework_gap_count": 0,
       "cwe_count": 0,
-      "d3fend_count": 0,
+      "d3fend_count": 13,
       "rfc_count": 0,
-      "last_threat_review": "2026-05-01",
+      "last_threat_review": "2026-08-05",
       "path": "skills/global-grc/skill.md",
       "handoff_targets": []
     },
@@ -515,6 +529,7 @@
           "RFC-9180",
           "RFC-9420",
           "RFC-9794",
+          "RFC-9954",
           "RFC-8032",
           "RFC-9106"
         ],
@@ -526,8 +541,8 @@
       "framework_gap_count": 2,
       "cwe_count": 1,
       "d3fend_count": 2,
-      "rfc_count": 8,
-      "last_threat_review": "2026-06-10",
+      "rfc_count": 9,
+      "last_threat_review": "2026-08-05",
       "path": "skills/pqc-first/skill.md",
       "handoff_targets": []
     },
@@ -563,11 +578,27 @@
         "cwe_refs": [
           "CWE-1188"
         ],
-        "d3fend_refs": [],
+        "d3fend_refs": [
+          "D3-CSPP",
+          "D3-EAL",
+          "D3-EFA",
+          "D3-FAPA",
+          "D3-IOPR",
+          "D3-ITF",
+          "D3-KBPI",
+          "D3-MENCR",
+          "D3-MFA",
+          "D3-NI",
+          "D3-NTA",
+          "D3-OTF",
+          "D3-SCA"
+        ],
         "framework_gaps": [],
         "atlas_refs": [],
         "attack_refs": [],
-        "rfc_refs": [],
+        "rfc_refs": [
+          "RFC-9954"
+        ],
         "dlp_refs": []
       },
       "trigger_count": 12,
@@ -575,9 +606,9 @@
       "attack_count": 0,
       "framework_gap_count": 0,
       "cwe_count": 1,
-      "d3fend_count": 0,
-      "rfc_count": 0,
-      "last_threat_review": "2026-05-01",
+      "d3fend_count": 13,
+      "rfc_count": 1,
+      "last_threat_review": "2026-08-05",
       "path": "skills/security-maturity-tiers/skill.md",
       "handoff_targets": []
     },

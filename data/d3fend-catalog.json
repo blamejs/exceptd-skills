@@ -58,11 +58,13 @@
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "fuzz-testing-strategy",
+      "global-grc",
       "kernel-lpe-triage",
       "mcp-agent-trust",
       "mlops-security",
       "sector-energy",
       "sector-federal-government",
+      "security-maturity-tiers",
       "supply-chain-integrity",
       "webapp-security"
     ],
@@ -301,7 +303,9 @@
     ],
     "skills_referencing": [
       "defensive-countermeasure-mapping",
-      "pqc-first"
+      "global-grc",
+      "pqc-first",
+      "security-maturity-tiers"
     ],
     "implementation_examples": [
       "TLS 1.3 with hybrid X25519MLKEM768 key exchange (RFC 9794-class drafts)",
@@ -339,6 +343,7 @@
     ],
     "skills_referencing": [
       "defensive-countermeasure-mapping",
+      "global-grc",
       "pqc-first"
     ],
     "implementation_examples": [
@@ -427,11 +432,13 @@
       "cloud-iam-incident",
       "defensive-countermeasure-mapping",
       "email-security-anti-phishing",
+      "global-grc",
       "identity-assurance",
       "idp-incident-response",
       "mcp-agent-trust",
       "sector-financial",
       "sector-healthcare",
+      "security-maturity-tiers",
       "webapp-security"
     ],
     "implementation_examples": [
@@ -562,6 +569,7 @@
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "email-security-anti-phishing",
+      "global-grc",
       "idp-incident-response",
       "incident-response-playbook",
       "rag-pipeline-security",
@@ -569,6 +577,7 @@
       "sector-energy",
       "sector-financial",
       "sector-telecom",
+      "security-maturity-tiers",
       "webapp-security"
     ],
     "implementation_examples": [
@@ -666,12 +675,14 @@
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "email-security-anti-phishing",
+      "global-grc",
       "identity-assurance",
       "incident-response-playbook",
       "mcp-agent-trust",
       "rag-pipeline-security",
       "ransomware-response",
       "sector-healthcare",
+      "security-maturity-tiers",
       "webapp-security"
     ],
     "implementation_examples": [
@@ -722,6 +733,7 @@
       "dlp-gap-analysis",
       "email-security-anti-phishing",
       "fuzz-testing-strategy",
+      "global-grc",
       "idp-incident-response",
       "incident-response-playbook",
       "mlops-security",
@@ -730,6 +742,7 @@
       "sector-financial",
       "sector-healthcare",
       "sector-telecom",
+      "security-maturity-tiers",
       "webapp-security"
     ],
     "implementation_examples": [
@@ -810,7 +823,9 @@
     "skills_referencing": [
       "ai-attack-surface",
       "defensive-countermeasure-mapping",
-      "rag-pipeline-security"
+      "global-grc",
+      "rag-pipeline-security",
+      "security-maturity-tiers"
     ],
     "implementation_examples": [
       "auditd FIM with behavioral rules",
@@ -850,8 +865,10 @@
       "ai-c2-detection",
       "container-runtime-security",
       "defensive-countermeasure-mapping",
+      "global-grc",
       "sector-energy",
-      "sector-telecom"
+      "sector-telecom",
+      "security-maturity-tiers"
     ],
     "implementation_examples": [
       "VPC egress allowlists with no default internet route",
@@ -1128,7 +1145,10 @@
       "cgroup",
       "LSM Profile"
     ],
-    "skills_referencing": [],
+    "skills_referencing": [
+      "global-grc",
+      "security-maturity-tiers"
+    ],
     "implementation_examples": [
       "SELinux / AppArmor confinement profiles per workload",
       "Linux user namespaces + capability dropping (CAP_SYS_ADMIN removed)",
@@ -1163,7 +1183,10 @@
       "System Call",
       "Process Behavior"
     ],
-    "skills_referencing": [],
+    "skills_referencing": [
+      "global-grc",
+      "security-maturity-tiers"
+    ],
     "implementation_examples": [
       "Linux auditd with syscall rules (ausearch -k privesc)",
       "Falco runtime rules on suspicious syscall sequences",
@@ -1240,7 +1263,10 @@
       "Firmware",
       "OS Image"
     ],
-    "skills_referencing": [],
+    "skills_referencing": [
+      "global-grc",
+      "security-maturity-tiers"
+    ],
     "implementation_examples": [
       "YARA",
       "PEStudio / PEiD",
@@ -3005,7 +3031,10 @@
     "reference_url": "https://d3fend.mitre.org/technique/D3-ITF/",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-d3fend-owl"
+    "_intake_method": "mitre-d3fend-owl",
+    "skills_referencing": [
+      "security-maturity-tiers"
+    ]
   },
   "D3-JFAPA": {
     "id": "D3-JFAPA",
@@ -3682,7 +3711,11 @@
     "reference_url": "https://d3fend.mitre.org/technique/D3-OTF/",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-d3fend-owl"
+    "_intake_method": "mitre-d3fend-owl",
+    "skills_referencing": [
+      "global-grc",
+      "security-maturity-tiers"
+    ]
   },
   "D3-OTP": {
     "id": "D3-OTP",

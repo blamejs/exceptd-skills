@@ -138,8 +138,24 @@ const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'u
 
 const STALENESS_DAYS = 30;
 
-function daysBetween(a, b) {
-  const ms = Math.abs(new Date(a).getTime() - new Date(b).getTime());
+/**
+ * Days by which `review` predates `anchor`. Negative when the skill was
+ * reviewed more recently than the anchor.
+ *
+ * Deliberately signed rather than absolute. The lie this window exists to
+ * catch is one-directional — a manifest claiming a review date fresher than
+ * the skills it covers. A skill reviewed MORE recently than the anchor cannot
+ * make the manifest overstate currency; it only means that skill was picked up
+ * in a rolling review after the last corpus-wide pass. An absolute difference
+ * forbade that, which made per-skill review impossible: refreshing one skill
+ * without refreshing all 51 always failed, so the only passing move was to
+ * bump every skill together — the fictional corpus-wide bump this window's own
+ * design note set out to avoid. It also disagreed with the consumer:
+ * scripts/builders/stale-content.js flags a skill only when it predates the
+ * anchor, and ignores a negative age.
+ */
+function daysOlderThan(review, anchor) {
+  const ms = new Date(anchor).getTime() - new Date(review).getTime();
   return Math.floor(ms / 86400000);
 }
 
@@ -154,7 +170,7 @@ test(`every skill.last_threat_review is within ${STALENESS_DAYS} days of manifes
       stale.push({ id: skill.id || skill.name, last_threat_review: null });
       continue;
     }
-    const days = daysBetween(ltr, anchor);
+    const days = daysOlderThan(ltr, anchor);
     if (days > STALENESS_DAYS) {
       stale.push({ id: skill.id || skill.name, last_threat_review: ltr, days_stale: days });
     }
@@ -164,6 +180,31 @@ test(`every skill.last_threat_review is within ${STALENESS_DAYS} days of manifes
     [],
     `${stale.length} skills exceed the ${STALENESS_DAYS}-day staleness window vs manifest.threat_review_date=${anchor}: ${JSON.stringify(stale.slice(0, 5), null, 2)}`,
   );
+});
+
+// The window is one-sided by design. These pin BOTH directions against exact
+// day counts, so neither the loosened side (a fresher skill must pass) nor the
+// enforced side (an older skill must still fail) can drift unnoticed.
+test(`the staleness window is one-sided: a skill fresher than the anchor passes at any distance`, () => {
+  // A rolling review lands a skill well past the anchor. Under the previous
+  // absolute difference this was indistinguishable from a skill 82 days stale.
+  assert.equal(daysOlderThan('2026-08-05', '2026-05-15'), -82);
+  assert.equal(daysOlderThan('2026-08-05', '2026-05-15') > STALENESS_DAYS, false);
+  // Even a year fresher is not a staleness finding.
+  assert.equal(daysOlderThan('2027-05-15', '2026-05-15') > STALENESS_DAYS, false);
+});
+
+test(`the staleness window still fails a skill older than the anchor by more than ${STALENESS_DAYS} days`, () => {
+  // Exactly at the boundary passes; one day past it fails. Exact day counts,
+  // not a relational spot-check, so an off-by-one in the window is caught.
+  assert.equal(daysOlderThan('2026-04-15', '2026-05-15'), 30);
+  assert.equal(daysOlderThan('2026-04-15', '2026-05-15') > STALENESS_DAYS, false);
+  assert.equal(daysOlderThan('2026-04-14', '2026-05-15'), 31);
+  assert.equal(daysOlderThan('2026-04-14', '2026-05-15') > STALENESS_DAYS, true);
+  // The lie the window exists to catch: manifest claims today, skills last
+  // touched two months ago.
+  assert.equal(daysOlderThan('2026-03-15', '2026-05-15'), 61);
+  assert.equal(daysOlderThan('2026-03-15', '2026-05-15') > STALENESS_DAYS, true);
 });
 ;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
   for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
