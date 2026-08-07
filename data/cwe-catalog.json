@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "last_updated": "2026-07-30",
+    "last_updated": "2026-08-06",
     "cwe_version": "4.20",
     "cwe_version_release_date": "2026-04-30",
     "source": "https://cwe.mitre.org",
@@ -48,10 +48,17 @@
       "fuzz-testing-strategy"
     ],
     "evidence_cves": [
+      "CVE-2010-2568",
+      "CVE-2013-6282",
+      "CVE-2015-2291",
       "CVE-2016-3714",
       "CVE-2021-25489",
       "CVE-2022-1471",
+      "CVE-2022-2856",
+      "CVE-2022-3075",
+      "CVE-2022-47966",
       "CVE-2023-22515",
+      "CVE-2023-22952",
       "CVE-2023-23397",
       "CVE-2023-2868",
       "CVE-2023-36563",
@@ -109,14 +116,20 @@
     ],
     "evidence_cves": [
       "CVE-2017-12637",
+      "CVE-2018-18809",
+      "CVE-2018-5430",
       "CVE-2019-16278",
       "CVE-2019-5418",
+      "CVE-2020-36193",
       "CVE-2021-20123",
       "CVE-2021-20124",
       "CVE-2021-26086",
       "CVE-2021-41277",
       "CVE-2021-43798",
+      "CVE-2022-26352",
+      "CVE-2022-26500",
       "CVE-2022-41328",
+      "CVE-2022-41352",
       "CVE-2023-32315",
       "CVE-2023-35081",
       "CVE-2023-38950",
@@ -201,6 +214,7 @@
       "CVE-2020-25079",
       "CVE-2021-27878",
       "CVE-2021-33515",
+      "CVE-2022-40765",
       "CVE-2023-1389",
       "CVE-2023-1671",
       "CVE-2023-20118",
@@ -267,6 +281,7 @@
       "CVE-2017-3506",
       "CVE-2017-6884",
       "CVE-2018-14933",
+      "CVE-2018-6530",
       "CVE-2018-9276",
       "CVE-2019-11001",
       "CVE-2019-17621",
@@ -277,7 +292,13 @@
       "CVE-2021-20035",
       "CVE-2021-36380",
       "CVE-2021-40407",
+      "CVE-2022-26258",
+      "CVE-2022-28810",
       "CVE-2022-29303",
+      "CVE-2022-33891",
+      "CVE-2022-36804",
+      "CVE-2022-44877",
+      "CVE-2022-46169",
       "CVE-2023-20273",
       "CVE-2023-25280",
       "CVE-2023-27992",
@@ -424,6 +445,7 @@
     "skills_referencing": [],
     "evidence_cves": [
       "CVE-2016-10033",
+      "CVE-2022-36804",
       "CVE-2024-41710",
       "CVE-2026-24061",
       "CVE-2026-30623",
@@ -525,9 +547,13 @@
       "CVE-2021-3129",
       "CVE-2021-39144",
       "CVE-2021-44529",
+      "CVE-2022-22963",
       "CVE-2022-24816",
+      "CVE-2022-3236",
+      "CVE-2022-41223",
       "CVE-2022-43769",
       "CVE-2022-48503",
+      "CVE-2023-22952",
       "CVE-2023-24955",
       "CVE-2023-25717",
       "CVE-2023-29492",
@@ -584,6 +610,7 @@
       "CVE-2026-45829",
       "CVE-2026-5760",
       "CVE-2026-6973",
+      "CVE-2026-9198",
       "MAL-2026-3083",
       "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
@@ -700,7 +727,10 @@
     "evidence_cves": [
       "CVE-2015-5317",
       "CVE-2016-6415",
+      "CVE-2017-5521",
+      "CVE-2018-5430",
       "CVE-2020-3259",
+      "CVE-2021-25369",
       "CVE-2021-41277",
       "CVE-2023-21237",
       "CVE-2023-28432",
@@ -813,6 +843,7 @@
       "CVE-2013-0643",
       "CVE-2016-0165",
       "CVE-2019-1388",
+      "CVE-2021-25337",
       "CVE-2021-43226",
       "CVE-2022-38028",
       "CVE-2023-28434",
@@ -931,7 +962,9 @@
       "CVE-2021-32030",
       "CVE-2021-33044",
       "CVE-2021-33045",
+      "CVE-2021-39226",
       "CVE-2022-0492",
+      "CVE-2022-40684",
       "CVE-2023-20867",
       "CVE-2023-27351",
       "CVE-2023-28461",
@@ -990,8 +1023,12 @@
     "evidence_cves": [
       "CVE-2018-19410",
       "CVE-2020-24363",
+      "CVE-2021-35587",
       "CVE-2021-39144",
+      "CVE-2022-21587",
       "CVE-2022-23227",
+      "CVE-2022-24990",
+      "CVE-2022-26501",
       "CVE-2023-21839",
       "CVE-2023-27532",
       "CVE-2023-28461",
@@ -1076,7 +1113,9 @@
       "CAPEC-37"
     ],
     "skills_referencing": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2011-4723"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SC-28",
       "ISO-27001-2022-A.8.24",
@@ -1387,6 +1426,7 @@
       "self-update-integrity"
     ],
     "evidence_cves": [
+      "CVE-2022-40139",
       "CVE-2026-32202"
     ],
     "framework_controls_partially_addressing": [
@@ -1467,6 +1507,7 @@
       "CVE-2016-9079",
       "CVE-2019-8526",
       "CVE-2020-9715",
+      "CVE-2021-25370",
       "CVE-2021-25394",
       "CVE-2021-29256",
       "CVE-2022-22071",
@@ -1475,6 +1516,7 @@
       "CVE-2022-38181",
       "CVE-2023-0266",
       "CVE-2023-21608",
+      "CVE-2023-21674",
       "CVE-2023-28205",
       "CVE-2023-29336",
       "CVE-2023-32373",
@@ -1571,6 +1613,7 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2017-11357",
       "CVE-2018-4063",
       "CVE-2021-26828",
       "CVE-2024-39717",
@@ -1657,6 +1700,7 @@
       "CVE-2017-3066",
       "CVE-2018-0824",
       "CVE-2018-15133",
+      "CVE-2018-2628",
       "CVE-2019-0344",
       "CVE-2019-9874",
       "CVE-2019-9875",
@@ -1664,11 +1708,17 @@
       "CVE-2020-14644",
       "CVE-2020-2551",
       "CVE-2020-2883",
+      "CVE-2020-5741",
+      "CVE-2021-31010",
       "CVE-2021-31196",
       "CVE-2021-39144",
       "CVE-2022-1471",
       "CVE-2022-21445",
       "CVE-2022-31199",
+      "CVE-2022-35405",
+      "CVE-2022-41082",
+      "CVE-2022-47986",
+      "CVE-2023-0669",
       "CVE-2023-21529",
       "CVE-2023-21839",
       "CVE-2023-26359",
@@ -1902,7 +1952,8 @@
     "evidence_cves": [
       "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND",
-      "BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY"
+      "BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY",
+      "CVE-2018-13374"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-3",
@@ -2001,7 +2052,20 @@
       "CVE-2021-22555",
       "CVE-2021-25372",
       "CVE-2021-30900",
+      "CVE-2021-38406",
+      "CVE-2022-2294",
+      "CVE-2022-32893",
+      "CVE-2022-32894",
+      "CVE-2022-32917",
+      "CVE-2022-37969",
+      "CVE-2022-41073",
+      "CVE-2022-41125",
+      "CVE-2022-41128",
+      "CVE-2022-4135",
+      "CVE-2022-42475",
+      "CVE-2022-42827",
       "CVE-2023-20109",
+      "CVE-2023-23376",
       "CVE-2023-26369",
       "CVE-2023-27997",
       "CVE-2023-28206",
@@ -2086,6 +2150,7 @@
     "evidence_cves": [
       "CVE-2019-6693",
       "CVE-2021-44207",
+      "CVE-2022-28810",
       "CVE-2023-6448",
       "CVE-2024-20439",
       "CVE-2024-28987",
@@ -2166,6 +2231,7 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2021-39226",
       "CVE-2022-0492",
       "CVE-2023-48022",
       "CVE-2023-52163",
@@ -2213,9 +2279,13 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2021-3493",
       "CVE-2021-3560",
       "CVE-2021-40655",
+      "CVE-2022-41091",
+      "CVE-2022-46169",
       "CVE-2023-20269",
+      "CVE-2023-21715",
       "CVE-2023-22518",
       "CVE-2023-24880",
       "CVE-2023-38035",
@@ -2298,6 +2368,8 @@
       "CVE-2021-22175",
       "CVE-2021-39935",
       "CVE-2022-36551",
+      "CVE-2022-41040",
+      "CVE-2022-41080",
       "CVE-2023-41763",
       "CVE-2023-43654",
       "CVE-2023-48022",
@@ -2392,6 +2464,7 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2022-24706",
       "CVE-2023-27524",
       "CVE-2023-6448",
       "CVE-2024-2912",
@@ -2618,6 +2691,7 @@
     ],
     "evidence_cves": [
       "BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND",
+      "CVE-2020-9934",
       "CVE-2023-32049",
       "CVE-2023-36025",
       "CVE-2023-36584",
@@ -2690,6 +2764,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2020-36193",
       "CVE-2023-36874",
       "CVE-2025-21391",
       "CVE-2025-48384",
@@ -2760,6 +2835,7 @@
       "CVE-2014-3931",
       "CVE-2017-1000253",
       "CVE-2017-6742",
+      "CVE-2018-7445",
       "CVE-2022-22706",
       "CVE-2023-33106",
       "CVE-2023-36033",
@@ -2817,6 +2893,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2013-2597",
       "CVE-2021-27137",
       "CVE-2025-0282",
       "CVE-2025-20352",
@@ -2841,10 +2918,13 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2011-1823",
+      "CVE-2013-2596",
       "CVE-2018-14634",
       "CVE-2021-30952",
       "CVE-2022-0185",
       "CVE-2023-2136",
+      "CVE-2023-21823",
       "CVE-2023-32434",
       "CVE-2023-33107",
       "CVE-2023-6345",
@@ -2962,6 +3042,8 @@
       "CVE-2025-4427",
       "CVE-2025-57819",
       "CVE-2026-1603",
+      "CVE-2026-18556",
+      "CVE-2026-18577",
       "CVE-2026-23760",
       "CVE-2026-24206",
       "CVE-2026-24207",
@@ -3134,7 +3216,8 @@
     "evidence_cves": [
       "CVE-2019-9621",
       "CVE-2026-21509",
-      "CVE-2026-21514"
+      "CVE-2026-21514",
+      "CVE-2026-34486"
     ],
     "last_verified": "2026-05-18",
     "notes": "Added v0.13.17 KEV bulk-import.",
@@ -3179,7 +3262,12 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2022-3723",
+      "CVE-2022-41033",
+      "CVE-2022-4262",
+      "CVE-2022-42856",
       "CVE-2023-2033",
+      "CVE-2023-23529",
       "CVE-2023-3079",
       "CVE-2023-32439",
       "CVE-2023-4762",
@@ -3311,8 +3399,11 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2020-28949",
       "CVE-2021-38371",
+      "CVE-2022-35914",
       "CVE-2022-43769",
+      "CVE-2022-46169",
       "CVE-2023-22527",
       "CVE-2025-20281",
       "CVE-2025-20337"
@@ -3335,6 +3426,7 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2009-3459",
+      "CVE-2023-23376",
       "CVE-2023-27997",
       "CVE-2023-28252",
       "CVE-2023-36036",
@@ -3404,6 +3496,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2022-24112",
       "CVE-2023-50224",
       "CVE-2024-4358",
       "CVE-2024-54085"
@@ -3697,6 +3790,9 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2010-2568",
+      "CVE-2020-3153",
+      "CVE-2020-3433",
       "MAL-2026-MOIKA-DEPCONFUSION"
     ],
     "last_verified": "2026-05-19",
@@ -3737,6 +3833,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2022-22536",
       "CVE-2023-41265",
       "CVE-2023-48365"
     ],
@@ -4106,7 +4203,9 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2022-40139"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
@@ -4203,7 +4302,9 @@
       "CWE-2000"
     ],
     "related_weaknesses": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2018-19322"
+    ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
     "_auto_imported": true,
@@ -4247,6 +4348,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2022-44698",
       "CVE-2024-29748"
     ],
     "last_verified": "2026-05-19",
@@ -4482,7 +4584,8 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
-      "CVE-2021-45046"
+      "CVE-2021-45046",
+      "CVE-2022-22963"
     ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
@@ -5512,6 +5615,7 @@
     "related_attack_patterns_capec": [],
     "skills_referencing": [],
     "evidence_cves": [
+      "CVE-2022-27593",
       "CVE-2025-0111"
     ]
   },
@@ -6071,6 +6175,7 @@
     ],
     "skills_referencing": [],
     "evidence_cves": [
+      "CVE-2022-26923",
       "CVE-2023-20963",
       "CVE-2023-41991"
     ],
@@ -6150,6 +6255,7 @@
     "related_attack_patterns_capec": [],
     "skills_referencing": [],
     "evidence_cves": [
+      "CVE-2021-25370",
       "CVE-2021-25372",
       "CVE-2022-22265"
     ],
@@ -6248,5 +6354,361 @@
     "real_requirement": "Replay-resistant authentication (channel binding, per-message nonces/timestamps, signed challenge-response) and blocking outbound authentication to untrusted hosts, so a captured authenticator cannot be relayed — password rotation and account lockout do not address a protocol that accepts a replayed credential.",
     "lag_notes": "IA-2 identification-and-authentication and A.5.15 access-control assume the authenticator is secret; they do not mandate the channel binding or egress control that stops a coerced NTLM authentication from being relayed, which is the actual exploited path.",
     "last_verified": "2026-07-29"
+  },
+  "CWE-197": {
+    "id": "CWE-197",
+    "name": "Numeric Truncation Error",
+    "abstraction": "Base",
+    "category": "Numeric Errors",
+    "description": "A primitive is cast to a primitive of smaller size and the high-order bits are lost in the conversion, so the resulting value no longer equals the original. When the truncated value is then used as a length, an index or a loop bound, the code operates on a size the caller never intended — the classic route from an attacker-supplied 64-bit length to a small allocation followed by a full-size copy.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-1305",
+      "CWE-1340"
+    ],
+    "related_attack_patterns_capec": [],
+    "evidence_cves": [
+      "CVE-2022-42475"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-10",
+      "NIST-800-53-SI-16",
+      "ISO-27001-2022-A.8.28"
+    ],
+    "real_requirement": "Truncation is a property of the type system, not of input validation: SI-10 validates the value a caller supplies, but the loss happens after validation when the checked 64-bit quantity is narrowed. Closing it requires compiler-enforced conversion checks (-fsanitize=implicit-conversion, Rust's TryFrom over `as`) and a rule that no width-narrowing cast may reach an allocation size or an index without an explicit range check at the cast site.",
+    "lag_notes": "Every framework in scope treats this as an input-validation control, which is the wrong layer — the value that reaches the allocator passed validation and was corrupted afterwards. No control in NIST 800-53, ISO 27001:2022 or the Essential Eight asks whether narrowing conversions are checked at all.",
+    "last_verified": "2026-08-06"
+  },
+  "CWE-259": {
+    "id": "CWE-259",
+    "name": "Use of Hard-coded Password",
+    "abstraction": "Variant",
+    "category": "Credentials Management",
+    "description": "The product ships a password embedded in its own code or configuration and uses it for inbound authentication or for outbound connections to another component. Because the credential is identical on every installation, recovering it once from a single device, firmware image or decompiled binary yields access to the entire installed base, and an operator cannot revoke it without a vendor fix.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-1008",
+      "CWE-1305",
+      "CWE-1340"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-191",
+      "CAPEC-70"
+    ],
+    "evidence_cves": [
+      "CVE-2026-20316"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-IA-5",
+      "NIST-800-53-CM-6",
+      "ISO-27001-2022-A.5.17",
+      "NIS2-Art21-access-control"
+    ],
+    "real_requirement": "IA-5 authenticator management governs credentials the operator controls; a password compiled into the vendor's binary is outside that boundary entirely — there is no rotation interval, no complexity policy and no revocation path an operator can exercise. The real requirement is a procurement and attestation control: vendors must attest that no static shared secret exists in shipped firmware, and buyers must be able to verify it by extracting and scanning the image.",
+    "lag_notes": "Credential-management controls are written for credentials the operator issues. A hard-coded vendor password satisfies none of their preconditions and is invisible to every password-policy audit, so an environment can pass IA-5 and A.5.17 in full while every appliance on the network shares one unchangeable password.",
+    "last_verified": "2026-08-06"
+  },
+  "CWE-270": {
+    "id": "CWE-270",
+    "name": "Privilege Context Switching Error",
+    "abstraction": "Base",
+    "category": "Privilege Management",
+    "description": "The product fails to manage privileges correctly while moving between contexts with different privilege levels or spheres of control. The dangerous shape is a partial transition: some component of the security context is switched and another is not, so an operation that appears to run as the unprivileged caller still carries privileged state — the pattern behind namespace and impersonation escapes where a capability set or a device map survives a context change.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-699",
+      "CWE-1008"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-17",
+      "CAPEC-30",
+      "CAPEC-35"
+    ],
+    "evidence_cves": [
+      "CVE-2021-3493"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-AC-6",
+      "NIST-800-53-AC-3",
+      "ISO-27001-2022-A.8.2",
+      "UK-CAF-B2"
+    ],
+    "real_requirement": "Least privilege assumes the privilege boundary holds; this weakness is the boundary itself failing mid-transition, so AC-6 cannot detect or contain it. What is required is kernel-level enforcement that a context switch is atomic across every element of the security context — credentials, capability set, namespace, device map — plus unprivileged-namespace restrictions (kernel.unprivileged_userns_clone=0, sysctl-enforced) where the product exposes one.",
+    "lag_notes": "Privileged-access controls are written about who holds privilege, never about whether a transition between privilege contexts is atomic. An environment with textbook AC-6 and A.8.2 implementation is fully exposed, because the exploit begins from an ordinary unprivileged account by design.",
+    "last_verified": "2026-08-06"
+  },
+  "CWE-311": {
+    "id": "CWE-311",
+    "name": "Missing Encryption of Sensitive Data",
+    "abstraction": "Class",
+    "category": "Cryptography",
+    "description": "The product stores or transmits sensitive information without encrypting it. The recurring failure is not an absent cipher suite but a path that bypasses one — a management channel, a replication link or an internal API that predates the product's TLS support and stays in cleartext by default while the operator-facing configuration reports encryption as enabled.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-1003",
+      "CWE-1008"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-157",
+      "CAPEC-158",
+      "CAPEC-204",
+      "CAPEC-31",
+      "CAPEC-37",
+      "CAPEC-383",
+      "CAPEC-384",
+      "CAPEC-385"
+    ],
+    "evidence_cves": [
+      "CVE-2026-34486"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SC-8",
+      "NIST-800-53-SC-28",
+      "ISO-27001-2022-A.8.24",
+      "NIS2-Art21-cryptography",
+      "AU-Essential-8-Restrict-Admin"
+    ],
+    "real_requirement": "SC-8 and A.8.24 are satisfied by a policy that says traffic is encrypted; neither requires evidence that every listener actually negotiates it. The test that distinguishes paper compliance from the real control is an on-the-wire one: enumerate the product's listening ports, capture each channel and confirm no plaintext credential or session token appears — including the internal and clustering channels the vendor documentation treats as trusted.",
+    "lag_notes": "Cryptography controls are audited from configuration, and configuration reports the channels the product chose to expose. A cleartext internal channel is invisible to that audit, which is why this class keeps surfacing in products whose operators hold a current certification.",
+    "last_verified": "2026-08-06"
+  },
+  "CWE-406": {
+    "id": "CWE-406",
+    "name": "Insufficient Control of Network Message Volume (Network Amplification)",
+    "abstraction": "Class",
+    "category": "Network",
+    "description": "The product does not adequately monitor or bound the volume of traffic it transmits, so an actor can induce it to emit far more traffic than the request warranted. Exploitation costs the attacker almost nothing and spends the victim's egress bandwidth and reputation: the vulnerable host becomes the reflector, and the traffic that reaches the target carries the reflector's own source address.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-490",
+      "CAPEC-486"
+    ],
+    "evidence_cves": [
+      "CVE-2022-0028"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SC-5",
+      "NIST-800-53-SC-7",
+      "ISO-27001-2022-A.8.20",
+      "NIS2-Art21-business-continuity",
+      "UK-CAF-B4"
+    ],
+    "real_requirement": "SC-5 denial-of-service protection is written to keep an organisation's own services available; it says nothing about the organisation becoming the source of someone else's outage. The control that matters here is egress-side: per-source rate limiting on any service that answers more bytes than it receives, BCP 38 anti-spoofing filtering at the network edge, and monitoring that alerts on outbound volume asymmetry rather than inbound.",
+    "lag_notes": "Availability controls across NIST, ISO and NIS2 are uniformly inbound-facing. An organisation whose appliance is reflecting an attack suffers no availability impact of its own, so nothing in its control set fires — the harm lands entirely on a third party and is detected only when an upstream provider complains.",
+    "last_verified": "2026-08-06"
+  },
+  "CWE-664": {
+    "id": "CWE-664",
+    "name": "Improper Control of a Resource Through its Lifetime",
+    "abstraction": "Pillar",
+    "category": "Resource Management",
+    "description": "The product does not maintain correct control over a resource across creation, use and release. As a Pillar it is the root of the use-after-free, double-free, uninitialised-use and session-lifetime families; CNAs reach for it when the concrete lifecycle error is known to be real but the vendor has not published the detail needed to name a Base weakness.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-196",
+      "CAPEC-21",
+      "CAPEC-60",
+      "CAPEC-61",
+      "CAPEC-62"
+    ],
+    "evidence_cves": [
+      "CVE-2022-27518"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-2",
+      "NIST-800-53-SC-4",
+      "ISO-27001-2022-A.8.28",
+      "ISO-27001-2022-A.5.15"
+    ],
+    "real_requirement": "A Pillar-level assignment carries an operational cost the frameworks do not price: with no Base weakness named, defenders cannot pattern-match the flaw against their own code or build a targeted detection, so remediation collapses to 'apply the vendor patch'. The requirement is disclosure quality — CNAs publishing a lifecycle bug should name the concrete weakness once exploitation has ceased, so downstream variant analysis becomes possible.",
+    "lag_notes": "Vulnerability-management controls measure time-to-patch and are indifferent to whether the advisory says anything useful. An entry mapped only at Pillar level passes every A.8.8 and SI-2 process check while leaving defenders unable to hunt for the same pattern in adjacent code.",
+    "last_verified": "2026-08-06"
+  },
+  "CWE-824": {
+    "id": "CWE-824",
+    "name": "Access of Uninitialized Pointer",
+    "abstraction": "Base",
+    "category": "Memory Safety",
+    "description": "The product reads or writes through a pointer that was never initialised. The stored value is whatever the allocation happened to contain, so the access lands at an address the developer never chose — a read or write to arbitrary memory, or, when the pointer is used for an indirect call, transfer of control to an address an attacker who can shape the surrounding allocation gets to pick.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-699",
+      "CWE-1003",
+      "CWE-1305",
+      "CWE-1340"
+    ],
+    "related_attack_patterns_capec": [],
+    "evidence_cves": [
+      "CVE-2022-21971"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-16",
+      "NIST-800-53-SI-2",
+      "ISO-27001-2022-A.8.28",
+      "UK-CAF-B4"
+    ],
+    "real_requirement": "SI-16 memory protection is read as 'enable the platform mitigations', and this weakness defeats that reading: ASLR does not help when the stale value is a heap address the attacker groomed, and Control Flow Guard constrains an indirect call only to valid call targets, not to the intended one. What closes it is memory-safe language adoption for new code plus MSAN/UBSAN in continuous fuzzing for legacy C, where an uninitialised read is caught at test time rather than exploited at runtime.",
+    "lag_notes": "Memory-protection controls enumerate mitigations rather than requiring the class of bug be absent, so a fully hardened build with every mitigation enabled remains exploitable. No framework in scope requires uninitialised-memory sanitizers in the build pipeline.",
+    "last_verified": "2026-08-06"
+  },
+  "CWE-1285": {
+    "id": "CWE-1285",
+    "name": "Improper Validation of Specified Index, Position, or Offset in Input",
+    "abstraction": "Base",
+    "category": "Validation",
+    "description": "The product accepts an index, position or offset from input and uses it to select an element without confirming it falls inside the target structure. Signed inputs make it worse: validating only the upper bound leaves a negative value to index below the start of the array, which is how several kernel privilege escalations turned an ordinary syscall argument into an arbitrary write.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-699"
+    ],
+    "related_attack_patterns_capec": [],
+    "evidence_cves": [
+      "CVE-2013-2094"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-10",
+      "NIST-800-53-SI-16",
+      "ISO-27001-2022-A.8.28",
+      "AU-ISM-1546"
+    ],
+    "real_requirement": "SI-10 input validation is the control operators point at, and it is satisfied by a bounds check — including a check that only tests one end of the range. The requirement that actually holds is a two-sided one enforced structurally: index types that cannot be negative, checked indexing in the language rather than in the developer's memory, and fuzzing that drives negative and boundary values into every syscall and API argument used as an index.",
+    "lag_notes": "Framework input-validation language never distinguishes a complete bounds check from a partial one, so code with a validated-but-one-sided index passes review and audit. The signed-index variant in particular has recurred across a decade of kernel CVEs without any control set naming it.",
+    "last_verified": "2026-08-06"
+  },
+  "CWE-441": {
+    "id": "CWE-441",
+    "name": "Unintended Proxy or Intermediary (Confused Deputy)",
+    "abstraction": "Class",
+    "category": "Access Control",
+    "description": "The product forwards a request from an upstream caller to an external actor without preserving the original source, so the request arrives carrying the product's own identity and reach rather than the caller's. Anything the product is trusted to do becomes reachable by whoever can get a request into it — the confused-deputy shape behind server-side request forgery, and behind internal servlets that will fetch or return whatever an unauthenticated caller names.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-1008",
+      "CWE-1194"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-219",
+      "CAPEC-465"
+    ],
+    "evidence_cves": [
+      "CVE-2022-36537"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-AC-4",
+      "NIST-800-53-SC-7",
+      "ISO-27001-2022-A.8.22",
+      "NIS2-Art21-network-security"
+    ],
+    "real_requirement": "Boundary controls decide what may cross the perimeter, and the deputy is already inside it — AC-4 and SC-7 see a request the trusted component itself originated. What is required is identity propagation across the hop: the downstream component must authorise the ORIGINAL principal rather than the intermediary, and any component permitted to make outbound requests on a caller's behalf needs an explicit destination allowlist rather than a filter on where the request appears to come from.",
+    "lag_notes": "Every network-boundary control in scope reasons about source and destination addresses. A confused deputy changes neither: the traffic is the trusted component making a request it is allowed to make. Segmentation, egress filtering and flow-control policy can all be fully implemented and none of them fires.",
+    "last_verified": "2026-08-06"
+  },
+  "CWE-274": {
+    "id": "CWE-274",
+    "name": "Improper Handling of Insufficient Privileges",
+    "abstraction": "Base",
+    "category": "Privilege Management",
+    "description": "The product does not correctly handle the case where it lacks the privilege to complete an operation. The security-relevant shape is a failure that is silently tolerated: a labelling, logging or marking step is denied, the product proceeds as though it had succeeded, and the artifact it produces is missing the protection the operator believes is attached to it.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-699",
+      "CWE-1008"
+    ],
+    "related_attack_patterns_capec": [],
+    "evidence_cves": [
+      "CVE-2022-41049"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-11",
+      "NIST-800-53-AC-3",
+      "ISO-27001-2022-A.8.28",
+      "UK-CAF-B4"
+    ],
+    "real_requirement": "SI-11 asks that errors be handled, which a swallowed permission failure technically satisfies. The requirement that matters is fail-closed semantics on any operation that applies a security marking: if the marking cannot be written, the operation depending on it must not report success, and the failure must reach the operator rather than be absorbed.",
+    "lag_notes": "Error-handling controls are audited for whether errors are caught, never for what the code does after catching one. A product that catches an access-denied result and continues passes every review while producing output that silently lacks its security attribute.",
+    "last_verified": "2026-08-06"
+  },
+  "CWE-138": {
+    "id": "CWE-138",
+    "name": "Improper Neutralization of Special Elements",
+    "abstraction": "Class",
+    "category": "Injection",
+    "description": "The product accepts input from an upstream component and passes it downstream without neutralizing elements the downstream component reads as control syntax rather than data. It is the parent shape of the injection family: the bytes are inert where they are validated and become syntax where they are used, so a value that passed one component's check changes meaning inside the next.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-1008"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-105",
+      "CAPEC-15",
+      "CAPEC-34"
+    ],
+    "evidence_cves": [
+      "CVE-2022-26352"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-10",
+      "NIST-800-53-SI-15",
+      "ISO-27001-2022-A.8.28",
+      "AU-ISM-1546"
+    ],
+    "real_requirement": "SI-10 validates input against the format the receiving component expects, which is the wrong boundary — the reinterpretation happens at the next hop. The requirement is contextual output encoding at each boundary the value crosses, plus parser-level separation of data from control (parameterised APIs, structured builders) so a value can never be promoted to syntax by concatenation.",
+    "lag_notes": "Framework language treats input validation as a single gate at the system edge. Multi-hop products re-interpret the same value under several grammars, and no control in NIST, ISO or the ISM asks for an encoding decision at each of those transitions.",
+    "last_verified": "2026-08-06"
+  },
+  "CWE-782": {
+    "id": "CWE-782",
+    "name": "Exposed IOCTL with Insufficient Access Control",
+    "abstraction": "Variant",
+    "category": "Access Control",
+    "description": "A driver exposes privileged functionality through an IOCTL without enforcing access control on the caller. Where the exposed primitive is a physical-memory or MSR read/write, any process able to open the device gets a kernel read-write primitive with no memory-safety bug involved anywhere — the basis of bring-your-own-vulnerable-driver, in which a signed driver is installed deliberately for the primitive it hands out.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000",
+      "CWE-1008"
+    ],
+    "related_attack_patterns_capec": [],
+    "evidence_cves": [
+      "CVE-2018-19320",
+      "CVE-2018-19321",
+      "CVE-2018-19323"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-7",
+      "NIST-800-53-CM-7",
+      "ISO-27001-2022-A.8.19",
+      "AU-Essential-8-App-Control",
+      "UK-CAF-B4"
+    ],
+    "real_requirement": "Software-integrity and application-control policy answer whether a driver is validly signed, and a vulnerable driver is: the vendor signed it, the signature verifies, and code integrity admits it. What closes this is a blocklist enforced in the kernel — the Microsoft vulnerable-driver blocklist with HVCI, or an equivalent allowlist of driver hashes — together with a rule that a driver exposing a privilege-boundary IOCTL must itself check the caller's identity.",
+    "lag_notes": "Application control and integrity verification are written around provenance, not capability. Every framework in scope passes a correctly signed driver that hands arbitrary physical-memory access to any local process, and none requires enumerating what a loaded driver exposes.",
+    "last_verified": "2026-08-06"
   }
 }
