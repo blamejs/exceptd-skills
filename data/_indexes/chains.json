@@ -852,7 +852,7 @@
     "rwep": 75,
     "cvss": 9.1,
     "cisa_kev": true,
-    "epss_score": 0.12685,
+    "epss_score": 0.71391,
     "epss_percentile": 0.95846,
     "referencing_skills": [
       "rag-pipeline-security",
@@ -1293,7 +1293,7 @@
     "rwep": 81,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.57101,
+    "epss_score": 0.7576,
     "epss_percentile": 0.98975,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -5842,7 +5842,7 @@
     "rwep": 62,
     "cvss": 6.1,
     "cisa_kev": true,
-    "epss_score": 0.54538,
+    "epss_score": 0.46709,
     "epss_percentile": 0.98914,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -58621,7 +58621,7 @@
     "rwep": 79,
     "cvss": 7.8,
     "cisa_kev": true,
-    "epss_score": 0.51865,
+    "epss_score": 0.5981,
     "epss_percentile": 0.98833,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -73032,7 +73032,7 @@
     "cvss": 7.8,
     "cisa_kev": true,
     "epss_score": 0.01145,
-    "epss_percentile": 0.63213,
+    "epss_percentile": 0.68748,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -119188,7 +119188,7 @@
     "cvss": 9.8,
     "cisa_kev": true,
     "epss_score": 0.01296,
-    "epss_percentile": 0.67106,
+    "epss_percentile": 0.92595,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-c2-detection",
@@ -119761,7 +119761,7 @@
     "rwep": 57,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.23393,
+    "epss_score": 0.73603,
     "epss_percentile": 0.97528,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -120335,7 +120335,7 @@
     "rwep": 79,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.48668,
+    "epss_score": 0.9121,
     "epss_percentile": 0.9874,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -120909,8 +120909,8 @@
     "rwep": 53,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.01045,
-    "epss_percentile": 0.60266,
+    "epss_score": 0.13309,
+    "epss_percentile": 0.96017,
     "referencing_skills": [
       "kernel-lpe-triage",
       "rag-pipeline-security",
@@ -122183,7 +122183,7 @@
     "cvss": 7.8,
     "cisa_kev": true,
     "epss_score": 0.00379,
-    "epss_percentile": 0.30157,
+    "epss_percentile": 0.81904,
     "referencing_skills": [
       "kernel-lpe-triage",
       "rag-pipeline-security",
@@ -122738,8 +122738,8 @@
     "rwep": 61,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.05601,
-    "epss_percentile": 0.92028,
+    "epss_score": 0.22439,
+    "epss_percentile": 0.97464,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-c2-detection",
@@ -123191,8 +123191,8 @@
     "rwep": 61,
     "cvss": 10,
     "cisa_kev": true,
-    "epss_score": 0.01266,
-    "epss_percentile": 0.66447,
+    "epss_score": 0.7844,
+    "epss_percentile": 0.99541,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-c2-detection",
@@ -123659,8 +123659,8 @@
     "rwep": 56,
     "cvss": 7.2,
     "cisa_kev": true,
-    "epss_score": 0.01486,
-    "epss_percentile": 0.71117,
+    "epss_score": 0.76347,
+    "epss_percentile": 0.99488,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-attack-surface",
@@ -124294,7 +124294,7 @@
     "rwep": 70,
     "cvss": 4.3,
     "cisa_kev": true,
-    "epss_score": 0.23857,
+    "epss_score": 0.32953,
     "epss_percentile": 0.97573,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -183370,8 +183370,8 @@
     "rwep": 65,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.00836,
-    "epss_percentile": 0.53473,
+    "epss_score": 0.76066,
+    "epss_percentile": 0.99484,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -183866,8 +183866,8 @@
     "rwep": 63,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.01505,
-    "epss_percentile": 0.71365,
+    "epss_score": 0.24347,
+    "epss_percentile": 0.97649,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-attack-surface",
@@ -184666,8 +184666,8 @@
     "rwep": 62,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.02912,
-    "epss_percentile": 0.85373,
+    "epss_score": 0.83254,
+    "epss_percentile": 0.9965,
     "referencing_skills": [
       "kernel-lpe-triage",
       "mcp-agent-trust",
@@ -185367,8 +185367,8 @@
     "rwep": 65,
     "cvss": 8.4,
     "cisa_kev": true,
-    "epss_score": 0.00467,
-    "epss_percentile": 0.37303,
+    "epss_score": 0.29052,
+    "epss_percentile": 0.97978,
     "referencing_skills": [
       "kernel-lpe-triage",
       "rag-pipeline-security",
@@ -185919,8 +185919,8 @@
     "rwep": 68,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.01569,
-    "epss_percentile": 0.72455,
+    "epss_score": 0.8813,
+    "epss_percentile": 0.99751,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -186415,7 +186415,7 @@
     "rwep": 74,
     "cvss": 10,
     "cisa_kev": true,
-    "epss_score": 0.28583,
+    "epss_score": 0.99197,
     "epss_percentile": 0.97907,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -230962,7 +230962,7 @@
     "rwep": 50,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.32568,
+    "epss_score": 0.23184,
     "epss_percentile": 0.98139,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -235123,7 +235123,7 @@
     "rwep": 81,
     "cvss": 7.8,
     "cisa_kev": true,
-    "epss_score": 0.60954,
+    "epss_score": 0.66571,
     "epss_percentile": 0.99047,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -240211,7 +240211,7 @@
     "rwep": 59,
     "cvss": 8.8,
     "cisa_kev": true,
-    "epss_score": 0.03219,
+    "epss_score": 0.0912,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -240706,7 +240706,7 @@
     "rwep": 50,
     "cvss": 10,
     "cisa_kev": true,
-    "epss_score": 0.0116,
+    "epss_score": 0.11484,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -252221,7 +252221,7 @@
     "rwep": 85,
     "cvss": 9,
     "cisa_kev": true,
-    "epss_score": 0.94129,
+    "epss_score": 0.99971,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -252716,7 +252716,7 @@
     "rwep": 83,
     "cvss": 9,
     "cisa_kev": true,
-    "epss_score": 0.58941,
+    "epss_score": 0.9999,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -253211,7 +253211,7 @@
     "rwep": 78,
     "cvss": 10,
     "cisa_kev": true,
-    "epss_score": 0.3151,
+    "epss_score": 0.99512,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -253706,7 +253706,7 @@
     "rwep": 76,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.88937,
+    "epss_score": 0.99947,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -254201,7 +254201,7 @@
     "rwep": 78,
     "cvss": 8.6,
     "cisa_kev": true,
-    "epss_score": 0.9183,
+    "epss_score": 0.72391,
     "referencing_skills": [
       "ai-attack-surface",
       "mcp-agent-trust",
@@ -254952,7 +254952,7 @@
     "rwep": 72,
     "cvss": 8.6,
     "cisa_kev": true,
-    "epss_score": 0.34556,
+    "epss_score": 0.02296,
     "referencing_skills": [
       "ai-attack-surface",
       "mcp-agent-trust",
@@ -256528,7 +256528,7 @@
     "cvss": 7.8,
     "cisa_kev": false,
     "epss_score": 0.046,
-    "epss_percentile": 0.893,
+    "epss_percentile": 0.83629,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-attack-surface",
@@ -257363,8 +257363,8 @@
     "rwep": 35,
     "cvss": 8,
     "cisa_kev": false,
-    "epss_score": 0.14,
-    "epss_percentile": 0.86,
+    "epss_score": 0.00281,
+    "epss_percentile": 0.20281,
     "referencing_skills": [
       "ai-attack-surface",
       "mcp-agent-trust",
@@ -258125,8 +258125,8 @@
     "rwep": 90,
     "cvss": 7.8,
     "cisa_kev": true,
-    "epss_score": 0.0257,
-    "epss_percentile": 0.8569,
+    "epss_score": 0.99907,
+    "epss_percentile": 0.99967,
     "referencing_skills": [
       "kernel-lpe-triage",
       "exploit-scoring",
@@ -258628,7 +258628,7 @@
     "cvss": 8.3,
     "cisa_kev": false,
     "epss_score": 0.00039,
-    "epss_percentile": 0.11727,
+    "epss_percentile": 0.17333,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-attack-surface",
@@ -259414,7 +259414,7 @@
     "rwep": 65,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.37368,
+    "epss_score": 0.8942,
     "epss_percentile": 0.9722,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -260124,8 +260124,8 @@
     "rwep": 53,
     "cvss": 8.8,
     "cisa_kev": false,
-    "epss_score": 0.00007,
-    "epss_percentile": 0.0051,
+    "epss_score": 0.93235,
+    "epss_percentile": 0.99826,
     "referencing_skills": [
       "kernel-lpe-triage",
       "pqc-first",
@@ -260699,8 +260699,8 @@
     "rwep": 47,
     "cvss": 7.6,
     "cisa_kev": false,
-    "epss_score": 0.0001,
-    "epss_percentile": 0.0115,
+    "epss_score": 0.92855,
+    "epss_percentile": 0.9982,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -261192,11 +261192,11 @@
   },
   "CVE-2026-45321": {
     "name": "Mini Shai-Hulud TanStack npm worm",
-    "rwep": 45,
+    "rwep": 70,
     "cvss": 9.6,
-    "cisa_kev": false,
+    "cisa_kev": true,
     "epss_score": 0.00039,
-    "epss_percentile": 0.1179,
+    "epss_percentile": 0.8199,
     "referencing_skills": [
       "kernel-lpe-triage",
       "mcp-agent-trust",
@@ -263173,7 +263173,7 @@
     "rwep": 80,
     "cvss": 8.6,
     "cisa_kev": true,
-    "epss_score": 0.65,
+    "epss_score": 0.18087,
     "referencing_skills": [
       "kernel-lpe-triage",
       "coordinated-vuln-disclosure",
@@ -264849,7 +264849,7 @@
     "rwep": 35,
     "cvss": 7.5,
     "cisa_kev": false,
-    "epss_score": 0.014,
+    "epss_score": 0.36582,
     "referencing_skills": [
       "ai-attack-surface",
       "rag-pipeline-security",
@@ -266772,7 +266772,7 @@
     "rwep": 65,
     "cvss": 10,
     "cisa_kev": true,
-    "epss_score": 0.5,
+    "epss_score": 0.90272,
     "referencing_skills": [
       "rag-pipeline-security",
       "identity-assurance",
@@ -285048,9 +285048,9 @@
   },
   "CVE-2025-14847": {
     "name": "MongoDB Server zlib Heap-Memory Disclosure ('MongoBleed')",
-    "rwep": 47,
+    "rwep": 72,
     "cvss": 7.5,
-    "cisa_kev": false,
+    "cisa_kev": true,
     "referencing_skills": [
       "kernel-lpe-triage",
       "pqc-first",
@@ -496958,7 +496958,7 @@
     "rwep": 19,
     "cvss": 7.1,
     "cisa_kev": false,
-    "epss_score": 0.00044,
+    "epss_score": 0.08845,
     "referencing_skills": [
       "ai-attack-surface",
       "compliance-theater",
@@ -500526,7 +500526,7 @@
     "rwep": 31,
     "cvss": 10,
     "cisa_kev": false,
-    "epss_score": 0.06939,
+    "epss_score": 0.71647,
     "referencing_skills": [
       "ai-attack-surface",
       "compliance-theater",
@@ -501096,7 +501096,7 @@
     "rwep": 27,
     "cvss": 9.9,
     "cisa_kev": false,
-    "epss_score": 0.00035,
+    "epss_score": 0.12901,
     "referencing_skills": [
       "ai-attack-surface",
       "compliance-theater",
@@ -503609,7 +503609,7 @@
     "rwep": 29,
     "cvss": 9.9,
     "cisa_kev": false,
-    "epss_score": 0.10735,
+    "epss_score": 0.05258,
     "referencing_skills": [
       "ai-attack-surface",
       "compliance-theater",
@@ -523564,7 +523564,7 @@
     "rwep": 79,
     "cvss": 10,
     "cisa_kev": true,
-    "epss_score": 0.02269,
+    "epss_score": 0.62767,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-c2-detection",
@@ -524137,7 +524137,7 @@
     "rwep": 79,
     "cvss": 10,
     "cisa_kev": true,
-    "epss_score": 0.0086,
+    "epss_score": 0.61906,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-c2-detection",
@@ -525205,7 +525205,7 @@
     "rwep": 70,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.80425,
+    "epss_score": 0.55914,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -526195,7 +526195,7 @@
     "rwep": 77,
     "cvss": 6.5,
     "cisa_kev": true,
-    "epss_score": 0.01741,
+    "epss_score": 0.28171,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-c2-detection",
@@ -527758,7 +527758,7 @@
     "rwep": 76,
     "cvss": 9.1,
     "cisa_kev": true,
-    "epss_score": 0.9393,
+    "epss_score": 0.99957,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -530389,7 +530389,7 @@
     "rwep": 81,
     "cvss": 6.5,
     "cisa_kev": true,
-    "epss_score": 0.1193,
+    "epss_score": 0.58974,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -541018,7 +541018,7 @@
     "rwep": 57,
     "cvss": 4.6,
     "cisa_kev": true,
-    "epss_score": 0.163,
+    "epss_score": 0.01831,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -542008,7 +542008,7 @@
     "rwep": 78,
     "cvss": 5.9,
     "cisa_kev": true,
-    "epss_score": 0.20395,
+    "epss_score": 0.79029,
     "epss_percentile": 0.97219,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -542504,7 +542504,7 @@
     "rwep": 79,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.38599,
+    "epss_score": 0.98417,
     "epss_percentile": 0.98425,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -544072,7 +544072,7 @@
     "rwep": 70,
     "cvss": 8.1,
     "cisa_kev": true,
-    "epss_score": 0.10809,
+    "epss_score": 0.16488,
     "epss_percentile": 0.95377,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -544561,6 +544561,1706 @@
         "RFC-7296",
         "RFC-9116"
       ]
+    }
+  },
+  "CVE-2026-63077": {
+    "name": "JetBrains TeamCity Deserialization of Untrusted Data Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.0101,
+    "epss_percentile": 0.59783,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-18556": {
+    "name": "N-able N-central Authentication Bypass Using an Alternate Path or Channel Vulnerability",
+    "rwep": 75,
+    "cvss": 8.2,
+    "cisa_kev": true,
+    "epss_score": 0.00492,
+    "epss_percentile": 0.39646,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-34486": {
+    "name": "Apache Tomcat Missing Encryption of Sensitive Data Vulnerability",
+    "rwep": 75,
+    "cvss": 7.5,
+    "cisa_kev": true,
+    "epss_score": 0.79938,
+    "epss_percentile": 0.99574,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-9198": {
+    "name": "IBM Langflow Code Injection Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.17053,
+    "epss_percentile": 0.96774,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-18577": {
+    "name": "N-able N-central Authentication Bypass Using an Alternate Path or Channel Vulnerability",
+    "rwep": 75,
+    "cvss": 8.2,
+    "cisa_kev": true,
+    "epss_score": 0.04103,
+    "epss_percentile": 0.89769,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-20316": {
+    "name": "Cisco Secure Firewall Management Center Use of Hard-coded Password Vulnerability",
+    "rwep": 75,
+    "cvss": 5.3,
+    "cisa_kev": true,
+    "epss_score": 0.00788,
+    "epss_percentile": 0.52736,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-5741": {
+    "name": "Plex Media Server Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.2,
+    "cisa_kev": true,
+    "epss_score": 0.72936,
+    "epss_percentile": 0.99399,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-28810": {
+    "name": "Zoho ManageEngine ADSelfService Plus Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 6.8,
+    "cisa_kev": true,
+    "epss_score": 0.70966,
+    "epss_percentile": 0.9934,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-33891": {
+    "name": "Apache Spark Command Injection Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.93076,
+    "epss_percentile": 0.99824,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-35914": {
+    "name": "Teclib GLPI Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.99696,
+    "epss_percentile": 0.9995,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-36537": {
+    "name": "ZK Framework AuUploader Unspecified Vulnerability",
+    "rwep": 75,
+    "cvss": 7.5,
+    "cisa_kev": true,
+    "epss_score": 0.95335,
+    "epss_percentile": 0.99858,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-47986": {
+    "name": "IBM Aspera Faspex Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.99968,
+    "epss_percentile": 0.99977,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-41223": {
+    "name": "Mitel MiVoice Connect Code Injection Vulnerability",
+    "rwep": 75,
+    "cvss": 6.8,
+    "cisa_kev": true,
+    "epss_score": 0.10571,
+    "epss_percentile": 0.95335,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-40765": {
+    "name": "Mitel MiVoice Connect Command Injection Vulnerability",
+    "rwep": 75,
+    "cvss": 6.8,
+    "cisa_kev": true,
+    "epss_score": 0.10481,
+    "epss_percentile": 0.95305,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-46169": {
+    "name": "Cacti Command Injection Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.99826,
+    "epss_percentile": 0.99959,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2023-21715": {
+    "name": "Microsoft Office Publisher Security Feature Bypass Vulnerability",
+    "rwep": 75,
+    "cvss": 7.3,
+    "cisa_kev": true,
+    "epss_score": 0.12011,
+    "epss_percentile": 0.95723,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2023-23376": {
+    "name": "Microsoft Windows Common Log File System (CLFS) Driver Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.10853,
+    "epss_percentile": 0.95417,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2023-23529": {
+    "name": "Apple Multiple Products WebKit Type Confusion Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.09502,
+    "epss_percentile": 0.94957,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2023-21823": {
+    "name": "Microsoft Windows Graphic Component Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.05563,
+    "epss_percentile": 0.92092,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2015-2291": {
+    "name": "Intel Ethernet Diagnostics Driver for Windows Denial-of-Service Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.09011,
+    "epss_percentile": 0.94761,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-24990": {
+    "name": "TerraMaster OS Remote Command Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.5,
+    "cisa_kev": true,
+    "epss_score": 0.83546,
+    "epss_percentile": 0.99658,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2023-0669": {
+    "name": "Fortra GoAnywhere MFT Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.2,
+    "cisa_kev": true,
+    "epss_score": 0.99999,
+    "epss_percentile": 0.99996,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-21587": {
+    "name": "Oracle E-Business Suite Unspecified Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.98342,
+    "epss_percentile": 0.99913,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2023-22952": {
+    "name": "Multiple SugarCRM Products Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.80274,
+    "epss_percentile": 0.99581,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2017-11357": {
+    "name": "Telerik UI for ASP.NET AJAX Insecure Direct Object Reference Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.75709,
+    "epss_percentile": 0.99473,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-47966": {
+    "name": "Zoho ManageEngine Multiple Products Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.99753,
+    "epss_percentile": 0.99954,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-44877": {
+    "name": "CWP Control Web Panel OS Command Injection Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.99995,
+    "epss_percentile": 0.99987,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-41080": {
+    "name": "Microsoft Exchange Server Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.77326,
+    "epss_percentile": 0.9951,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2023-21674": {
+    "name": "Microsoft Windows Advanced Local Procedure Call (ALPC) Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.41806,
+    "epss_percentile": 0.98553,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2018-5430": {
+    "name": "TIBCO JasperReports Server Information Disclosure Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.48753,
+    "epss_percentile": 0.98761,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2018-18809": {
+    "name": "TIBCO JasperReports Library Directory Traversal Vulnerability",
+    "rwep": 75,
+    "cvss": 6.5,
+    "cisa_kev": true,
+    "epss_score": 0.79064,
+    "epss_percentile": 0.9956,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-42856": {
+    "name": "Apple iOS Type Confusion Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.08523,
+    "epss_percentile": 0.94507,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-42475": {
+    "name": "Fortinet FortiOS Heap-Based Buffer Overflow Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.99474,
+    "epss_percentile": 0.9994,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-44698": {
+    "name": "Microsoft Defender SmartScreen Security Feature Bypass Vulnerability",
+    "rwep": 75,
+    "cvss": 5.4,
+    "cisa_kev": true,
+    "epss_score": 0.76267,
+    "epss_percentile": 0.99488,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-27518": {
+    "name": "Citrix Application Delivery Controller (ADC) and Gateway Authentication Bypass Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.06875,
+    "epss_percentile": 0.93411,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-26500": {
+    "name": "Veeam Backup & Replication Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.05828,
+    "epss_percentile": 0.9243,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-26501": {
+    "name": "Veeam Backup & Replication Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.04104,
+    "epss_percentile": 0.89771,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-4262": {
+    "name": "Google Chromium V8 Type Confusion Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.15466,
+    "epss_percentile": 0.96473,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-35587": {
+    "name": "Oracle Fusion Middleware Unspecified Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.96284,
+    "epss_percentile": 0.99874,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-4135": {
+    "name": "Google Chromium GPU Heap Buffer Overflow Vulnerability",
+    "rwep": 75,
+    "cvss": 9.6,
+    "cisa_kev": true,
+    "epss_score": 0.31864,
+    "epss_percentile": 0.98132,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-41049": {
+    "name": "Microsoft Windows Mark of the Web (MOTW) Security Feature Bypass Vulnerability",
+    "rwep": 75,
+    "cvss": 5.4,
+    "cisa_kev": true,
+    "epss_score": 0.02482,
+    "epss_percentile": 0.83029,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-41091": {
+    "name": "Microsoft Windows Mark of the Web (MOTW) Security Feature Bypass Vulnerability",
+    "rwep": 75,
+    "cvss": 5.4,
+    "cisa_kev": true,
+    "epss_score": 0.01986,
+    "epss_percentile": 0.78657,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-41073": {
+    "name": "Microsoft Windows Print Spooler Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.02389,
+    "epss_percentile": 0.82345,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-41125": {
+    "name": "Microsoft Windows CNG Key Isolation Service Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.03021,
+    "epss_percentile": 0.86151,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-41128": {
+    "name": "Microsoft Windows Scripting Languages Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.24623,
+    "epss_percentile": 0.97673,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-25337": {
+    "name": "Samsung Mobile Devices Improper Access Control Vulnerability",
+    "rwep": 75,
+    "cvss": 7.1,
+    "cisa_kev": true,
+    "epss_score": 0.02831,
+    "epss_percentile": 0.85257,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-25369": {
+    "name": "Samsung Mobile Devices Improper Access Control Vulnerability",
+    "rwep": 75,
+    "cvss": 5.5,
+    "cisa_kev": true,
+    "epss_score": 0.01121,
+    "epss_percentile": 0.63072,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-25370": {
+    "name": "Samsung Mobile Devices Memory Corruption Vulnerability",
+    "rwep": 75,
+    "cvss": 4.4,
+    "cisa_kev": true,
+    "epss_score": 0.0089,
+    "epss_percentile": 0.55941,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-3723": {
+    "name": "Google Chromium V8 Type Confusion Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.07857,
+    "epss_percentile": 0.94113,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-42827": {
+    "name": "Apple iOS and iPadOS Out-of-Bounds Write Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.01136,
+    "epss_percentile": 0.63441,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-3433": {
+    "name": "Cisco AnyConnect Secure Mobility Client for Windows DLL Hijacking Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.10049,
+    "epss_percentile": 0.95157,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-3153": {
+    "name": "Cisco AnyConnect Secure Mobility Client for Windows Uncontrolled Search Path Vulnerability",
+    "rwep": 75,
+    "cvss": 6.5,
+    "cisa_kev": true,
+    "epss_score": 0.27451,
+    "epss_percentile": 0.97874,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2018-19323": {
+    "name": "GIGABYTE Multiple Products Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.08523,
+    "epss_percentile": 0.94508,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2018-19322": {
+    "name": "GIGABYTE Multiple Products Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.01872,
+    "epss_percentile": 0.77329,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2018-19321": {
+    "name": "GIGABYTE Multiple Products Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.03671,
+    "epss_percentile": 0.88571,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2018-19320": {
+    "name": "GIGABYTE Multiple Products Unspecified Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.03597,
+    "epss_percentile": 0.88324,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-41352": {
+    "name": "Synacor Zimbra Collaboration Suite (ZCS) Arbitrary File Upload Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.95478,
+    "epss_percentile": 0.99862,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-3493": {
+    "name": "Linux Kernel Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.49166,
+    "epss_percentile": 0.98769,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-40684": {
+    "name": "Fortinet Multiple Products Authentication Bypass Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.99984,
+    "epss_percentile": 0.99982,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-41033": {
+    "name": "Microsoft Windows COM+ Event System Service Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.01811,
+    "epss_percentile": 0.76515,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-41082": {
+    "name": "Microsoft Exchange Server Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 8,
+    "cisa_kev": true,
+    "epss_score": 0.9997,
+    "epss_percentile": 0.99978,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-41040": {
+    "name": "Microsoft Exchange Server Server-Side Request Forgery Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.99956,
+    "epss_percentile": 0.99975,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-36804": {
+    "name": "Atlassian Bitbucket Server and Data Center Command Injection Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.99077,
+    "epss_percentile": 0.99928,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-3236": {
+    "name": "Sophos Firewall Code Injection Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.98905,
+    "epss_percentile": 0.99923,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-35405": {
+    "name": "Zoho ManageEngine Multiple Products Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.9994,
+    "epss_percentile": 0.99971,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-40139": {
+    "name": "Trend Micro Apex One and Apex One as a Service Improper Validation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.2,
+    "cisa_kev": true,
+    "epss_score": 0.02837,
+    "epss_percentile": 0.85289,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2013-6282": {
+    "name": "Linux Kernel Improper Input Validation Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.39711,
+    "epss_percentile": 0.98482,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2013-2597": {
+    "name": "Code Aurora ACDB Audio Driver Stack-based Buffer Overflow Vulnerability",
+    "rwep": 75,
+    "cvss": 8.4,
+    "cisa_kev": true,
+    "epss_score": 0.01516,
+    "epss_percentile": 0.72068,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2013-2596": {
+    "name": "Linux Kernel Integer Overflow Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.03373,
+    "epss_percentile": 0.87593,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2013-2094": {
+    "name": "Linux Kernel Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 8.4,
+    "cisa_kev": true,
+    "epss_score": 0.47709,
+    "epss_percentile": 0.98732,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2010-2568": {
+    "name": "Microsoft Windows Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.91324,
+    "epss_percentile": 0.99802,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-37969": {
+    "name": "Microsoft Windows Common Log File System (CLFS) Driver Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.28275,
+    "epss_percentile": 0.97931,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-32917": {
+    "name": "Apple iOS, iPadOS, and macOS Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.05603,
+    "epss_percentile": 0.92149,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-3075": {
+    "name": "Google Chromium Mojo Insufficient Data Validation Vulnerability",
+    "rwep": 75,
+    "cvss": 9.6,
+    "cisa_kev": true,
+    "epss_score": 0.0568,
+    "epss_percentile": 0.92244,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-27593": {
+    "name": "QNAP Photo Station Externally Controlled Reference Vulnerability",
+    "rwep": 75,
+    "cvss": 9.1,
+    "cisa_kev": true,
+    "epss_score": 0.87908,
+    "epss_percentile": 0.99748,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-26258": {
+    "name": "D-Link DIR-820L Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.79813,
+    "epss_percentile": 0.99571,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-9934": {
+    "name": "Apple iOS, iPadOS, and macOS Input Validation Vulnerability",
+    "rwep": 75,
+    "cvss": 5.5,
+    "cisa_kev": true,
+    "epss_score": 0.03208,
+    "epss_percentile": 0.86938,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2018-7445": {
+    "name": "MikroTik RouterOS Stack-Based Buffer Overflow Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.61018,
+    "epss_percentile": 0.99069,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2018-6530": {
+    "name": "D-Link Multiple Routers OS Command Injection Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.96682,
+    "epss_percentile": 0.9988,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2018-2628": {
+    "name": "Oracle WebLogic Server Unspecified Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.99448,
+    "epss_percentile": 0.99939,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2018-13374": {
+    "name": "Fortinet FortiOS and FortiADC Improper Access Control Vulnerability",
+    "rwep": 75,
+    "cvss": 4.3,
+    "cisa_kev": true,
+    "epss_score": 0.38088,
+    "epss_percentile": 0.98413,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2017-5521": {
+    "name": "NETGEAR Multiple Devices Exposure of Sensitive Information Vulnerability",
+    "rwep": 75,
+    "cvss": 8.1,
+    "cisa_kev": true,
+    "epss_score": 0.89353,
+    "epss_percentile": 0.99769,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2011-4723": {
+    "name": "D-Link DIR-300 Router Cleartext Storage of a Password Vulnerability",
+    "rwep": 75,
+    "cvss": 5.7,
+    "cisa_kev": true,
+    "epss_score": 0.02981,
+    "epss_percentile": 0.85977,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2011-1823": {
+    "name": "Android OS Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.41634,
+    "epss_percentile": 0.98549,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-26352": {
+    "name": "dotCMS Unrestricted Upload of File Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.91079,
+    "epss_percentile": 0.99799,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-24706": {
+    "name": "Apache CouchDB Insecure Default Initialization of Resource Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.92414,
+    "epss_percentile": 0.99815,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-24112": {
+    "name": "Apache APISIX Authentication Bypass Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.96001,
+    "epss_percentile": 0.99869,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-22963": {
+    "name": "VMware Tanzu Spring Cloud Function Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.99939,
+    "epss_percentile": 0.99971,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-2294": {
+    "name": "WebRTC Heap Buffer Overflow Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.70461,
+    "epss_percentile": 0.99327,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-39226": {
+    "name": "Grafana Authentication Bypass Vulnerability",
+    "rwep": 75,
+    "cvss": 7.3,
+    "cisa_kev": true,
+    "epss_score": 0.99933,
+    "epss_percentile": 0.99969,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-38406": {
+    "name": "Delta Electronics DOPSoft 2 Improper Input Validation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.77892,
+    "epss_percentile": 0.99527,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-31010": {
+    "name": "Apple iOS, macOS, watchOS Sandbox Bypass Vulnerability",
+    "rwep": 75,
+    "cvss": 7.5,
+    "cisa_kev": true,
+    "epss_score": 0.03673,
+    "epss_percentile": 0.8858,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-36193": {
+    "name": "PEAR Archive_Tar Improper Link Resolution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.5,
+    "cisa_kev": true,
+    "epss_score": 0.70595,
+    "epss_percentile": 0.9933,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-28949": {
+    "name": "PEAR Archive_Tar Deserialization of Untrusted Data Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.84554,
+    "epss_percentile": 0.9968,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-0028": {
+    "name": "Palo Alto Networks PAN-OS Reflected Amplification Denial-of-Service Vulnerability",
+    "rwep": 75,
+    "cvss": 8.6,
+    "cisa_kev": true,
+    "epss_score": 0.02126,
+    "epss_percentile": 0.80134,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-22536": {
+    "name": "SAP Multiple Products HTTP Request Smuggling Vulnerability",
+    "rwep": 75,
+    "cvss": 10,
+    "cisa_kev": true,
+    "epss_score": 0.97945,
+    "epss_percentile": 0.99905,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-32894": {
+    "name": "Apple iOS and macOS Out-of-Bounds Write Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.03286,
+    "epss_percentile": 0.87266,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-32893": {
+    "name": "Apple iOS and macOS Out-of-Bounds Write Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.09864,
+    "epss_percentile": 0.95094,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-2856": {
+    "name": "Google Chromium Intents Insufficient Input Validation Vulnerability",
+    "rwep": 75,
+    "cvss": 6.5,
+    "cisa_kev": true,
+    "epss_score": 0.0453,
+    "epss_percentile": 0.90626,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-26923": {
+    "name": "Microsoft Active Directory Domain Services Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.82989,
+    "epss_percentile": 0.99644,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
     }
   },
   "CWE-20": {
