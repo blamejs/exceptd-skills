@@ -113,16 +113,16 @@ Skills and playbooks read from `data/`. Authoritative catalog inventory:
 
 | File | Entries | Purpose |
 |------|---------|---------|
-| `cve-catalog.json` | 459 | CVEs with CVSS, RWEP score, EPSS estimates, CISA KEV flags, PoC and live-patch availability |
-| `atlas-ttps.json` | 170 | MITRE ATLAS v2026.06 (May 2026) techniques with framework gap flags |
-| `attack-techniques.json` | 805 | MITRE ATT&CK techniques with framework coverage mappings |
+| `cve-catalog.json` | 1025 | CVEs with CVSS, RWEP score, EPSS estimates, CISA KEV flags, PoC and live-patch availability |
+| `atlas-ttps.json` | 174 | MITRE ATLAS v2026.07 (August 2026) techniques with framework gap flags |
+| `attack-techniques.json` | 794 | MITRE ATT&CK techniques with framework coverage mappings |
 | `framework-control-gaps.json` | 194 | Framework control gap entries: designed-for vs. what each control misses |
 | `exploit-availability.json` | 28 | Per-CVE PoC locations, weaponization stage, AI-acceleration factor, live-patch status |
 | `global-frameworks.json` | 35 jurisdictions | Patch SLAs and notification windows across global regulatory regimes |
-| `zeroday-lessons.json` | 459 | Learning-loop entries: zero-day → attack vector → control gap → framework gap → new control |
-| `cwe-catalog.json` | 181 | CWE v4.20 entries (Top 25 2024 plus AI- and supply-chain-relevant weaknesses) |
+| `zeroday-lessons.json` | 1025 | Learning-loop entries: zero-day → attack vector → control gap → framework gap → new control |
+| `cwe-catalog.json` | 232 | CWE v4.20 entries (Top 25 2024 plus AI- and supply-chain-relevant weaknesses) |
 | `d3fend-catalog.json` | 468 | MITRE D3FEND v1.3.0 defensive techniques for offensive → defensive mapping |
-| `rfc-references.json` | 8888 | IETF RFC / Internet-Draft references with status, errata count, replaces / replaced-by, `last_verified` dates |
+| `rfc-references.json` | 8889 | IETF RFC / Internet-Draft references with status, errata count, replaces / replaced-by, `last_verified` dates |
 | `dlp-controls.json` | 22 | DLP control entries indexed by channel, classifier, surface, enforcement mode, evidence type |
 | `playbooks/` | 33 | Playbook specifications (see above) |
 | `_indexes/` | 17 derived files | Pre-computed indexes built by `npm run build-indexes` |

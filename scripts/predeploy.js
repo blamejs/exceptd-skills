@@ -223,6 +223,32 @@ const GATES = [
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
   {
+    // TTP reference-integrity gate. The two pinned MITRE catalogs define the
+    // techniques; every other file naming one is referring into them. MITRE
+    // retires and renumbers between releases, and a reference living outside
+    // the source catalogs is never dereferenced at runtime — so a stale id
+    // keeps rendering in operator output, pointing at a page that no longer
+    // resolves and leaving any control mapped to it orphaned (Hard Rule #4).
+    // Resolves against the pin rather than the network, so it can block.
+    name: "TTP reference integrity (no orphaned technique ids)",
+    command: process.execPath,
+    args: [path.join(ROOT, "scripts", "check-ttp-references.js")],
+    ciJobName: "Data integrity (catalog + manifest snapshot)",
+  },
+  {
+    // EPSS pair-consistency gate. A CVE's epss_score and epss_percentile come
+    // from the same daily publication, where the percentile is the score's
+    // rank — so sorting a publication's entries by score must sort them by
+    // percentile too. Refreshing one field without the other leaves an entry
+    // that passes every range and type check while ranking a CVE on a score
+    // that no longer supports it, which is precisely the input operators
+    // prioritise by. The ordering check catches that offline.
+    name: "EPSS score/percentile consistency",
+    command: process.execPath,
+    args: [path.join(ROOT, "scripts", "check-epss-consistency.js")],
+    ciJobName: "Data integrity (catalog + manifest snapshot)",
+  },
+  {
     // Version-tag drift gate. Compares the tracked tree against a
     // baseline snapshot of pre-existing `// vX.Y.Z` comments and
     // `*-vX_Y_Z.test.js` filenames. Fails on NEW additions outside

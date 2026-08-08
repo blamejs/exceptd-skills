@@ -159,7 +159,7 @@
       "MITRE-ATLAS-v5.1.0": {
         "covered": true,
         "adequate": "reference only",
-        "gap": "ATLAS documents the technique (AML.T0051/T0054) but no framework has implemented controls based on ATLAS"
+        "gap": "ATLAS documents the technique (AML.T0051/AML.T0054) but no framework has implemented controls based on ATLAS"
       }
     },
     "new_control_requirements": [
@@ -11173,7 +11173,7 @@
     "name": "Microsoft Defender Remote Denial of Service (Antimalware Platform)",
     "lesson_date": "2026-05-24",
     "attack_vector": {
-      "description": "Uncontrolled resource consumption (CWE-400) in the Microsoft Defender antimalware platform, reachable over the network without authentication, lets an attacker crash or hang Defender — remotely removing the host's AV/EDR coverage (defense impairment, ATT&CK T1562.001).",
+      "description": "Uncontrolled resource consumption (CWE-400) in the Microsoft Defender antimalware platform, reachable over the network without authentication, lets an attacker crash or hang Defender — remotely removing the host's AV/EDR coverage (defense impairment, ATT&CK T1685).",
       "privileges_required": "none — remote, unauthenticated (NVD AV:N / PR:N)",
       "complexity": "low (NVD AC:L); availability-only (C:N/I:N/A:H)",
       "ai_factor": "Not AI-discovered. The lesson: AV/EDR availability is itself a control, and its remote loss is a security event, not just an outage — a disable-able defender is an intrusion enabler. Surfaced by the CISA-KEV poller after the v0.13.17 bulk intake."

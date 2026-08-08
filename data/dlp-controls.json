@@ -909,7 +909,7 @@
     ],
     "attack_techniques_addressed": [
       "T1070",
-      "T1562"
+      "T1685"
     ],
     "framework_controls_partially_mapping": [
       "NIST-800-53-AU-2",

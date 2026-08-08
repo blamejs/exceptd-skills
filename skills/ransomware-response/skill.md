@@ -127,7 +127,7 @@ Cross-cutting gap: **no security framework treats the four ransomware-specific d
 | **T1078** | Valid Accounts | Initial access via credential reuse from infostealer markets; AD privilege chain mapping pre-encryption; lateral movement via valid accounts to broaden encryption scope. | Identification: anomalous sign-in UEBA, impossible-travel, infostealer-market evidence. Containment: account disable + session revocation + MFA re-enrollment. Eradication: krbtgt double-rotation, OAuth-grant audit, AD admin-group review. |
 | **T1059** | Command and Scripting Interpreter | Living-off-the-land via PowerShell, WMI, PsExec; Cobalt Strike Beacon / Sliver / Brute Ratel as C2 framework. | Identification: EDR script-block-logging, suspicious WMI invocations, JA3 fingerprints. Containment: EDR quarantine, egress block to C2 destinations. Eradication: artifact removal, persistence-mechanism cleanup. |
 
-Shadow Copy deletion and exfil-staging via Web Service align to the parent IR playbook's `T1486` and `T1567` entries; the parent's `AML.T0096 / T0017 / T0051` entries do not apply to ransomware-as-a-class but may apply if AI-system data is exfiltrated within the ransomware operation.
+Shadow Copy deletion and exfil-staging via Web Service align to the parent IR playbook's `T1486` and `T1567` entries; the parent's `AML.T0096 / AML.T0017 / AML.T0051` entries do not apply to ransomware-as-a-class but may apply if AI-system data is exfiltrated within the ransomware operation.
 
 ATLAS pinned to v2026.07 (August 2026). ATT&CK pinned to v19.2 (August 2026). Both are explicit version pins — never silently upgraded.
 

@@ -659,7 +659,7 @@
       "T1071.001",
       "T1041",
       "AML.T0096",
-      "AML.T0096.000",
+      "AML.T0096",
       "AML.T0051.001"
     ],
     "digital_artifacts_addressed": [
@@ -714,7 +714,7 @@
       "T1041",
       "AML.T0051",
       "AML.T0017",
-      "AML.T0017.001"
+      "AML.T0017"
     ],
     "digital_artifacts_addressed": [
       "Process",
@@ -1176,7 +1176,7 @@
     "counters_attack_techniques": [
       "T1055",
       "T1068",
-      "T1562",
+      "T1685",
       "T1106"
     ],
     "digital_artifacts_addressed": [
@@ -1214,7 +1214,7 @@
       "T1543",
       "T1547",
       "T1098",
-      "T1562.001"
+      "T1685"
     ],
     "digital_artifacts_addressed": [
       "System File",
@@ -1255,7 +1255,7 @@
       "T1505.003",
       "T1546.014",
       "AML.T0010",
-      "AML.T0019"
+      "AML.T0115.000"
     ],
     "digital_artifacts_addressed": [
       "Executable Binary",

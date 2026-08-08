@@ -853,7 +853,7 @@
     "cvss": 9.1,
     "cisa_kev": true,
     "epss_score": 0.71391,
-    "epss_percentile": 0.95846,
+    "epss_percentile": 0.99355,
     "referencing_skills": [
       "rag-pipeline-security",
       "identity-assurance",
@@ -1294,7 +1294,7 @@
     "cvss": 9.8,
     "cisa_kev": true,
     "epss_score": 0.7576,
-    "epss_percentile": 0.98975,
+    "epss_percentile": 0.99476,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -5843,7 +5843,7 @@
     "cvss": 6.1,
     "cisa_kev": true,
     "epss_score": 0.46709,
-    "epss_percentile": 0.98914,
+    "epss_percentile": 0.98708,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-attack-surface",
@@ -58622,7 +58622,7 @@
     "cvss": 7.8,
     "cisa_kev": true,
     "epss_score": 0.5981,
-    "epss_percentile": 0.98833,
+    "epss_percentile": 0.99044,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-attack-surface",
@@ -73031,7 +73031,7 @@
     "rwep": 61,
     "cvss": 7.8,
     "cisa_kev": true,
-    "epss_score": 0.01145,
+    "epss_score": 0.01347,
     "epss_percentile": 0.68783,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -119187,7 +119187,7 @@
     "rwep": 56,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.01296,
+    "epss_score": 0.05985,
     "epss_percentile": 0.92603,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -119762,7 +119762,7 @@
     "cvss": 9.8,
     "cisa_kev": true,
     "epss_score": 0.73603,
-    "epss_percentile": 0.97528,
+    "epss_percentile": 0.99418,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-c2-detection",
@@ -120336,7 +120336,7 @@
     "cvss": 9.8,
     "cisa_kev": true,
     "epss_score": 0.9121,
-    "epss_percentile": 0.9874,
+    "epss_percentile": 0.99801,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-c2-detection",
@@ -122182,7 +122182,7 @@
     "rwep": 57,
     "cvss": 7.8,
     "cisa_kev": true,
-    "epss_score": 0.00379,
+    "epss_score": 0.02333,
     "epss_percentile": 0.81925,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -124295,7 +124295,7 @@
     "cvss": 4.3,
     "cisa_kev": true,
     "epss_score": 0.32953,
-    "epss_percentile": 0.97573,
+    "epss_percentile": 0.98197,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-attack-surface",
@@ -186416,7 +186416,7 @@
     "cvss": 10,
     "cisa_kev": true,
     "epss_score": 0.99197,
-    "epss_percentile": 0.97907,
+    "epss_percentile": 0.99931,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-c2-detection",
@@ -230963,7 +230963,7 @@
     "cvss": 9.8,
     "cisa_kev": true,
     "epss_score": 0.23184,
-    "epss_percentile": 0.98139,
+    "epss_percentile": 0.97548,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-attack-surface",
@@ -235124,7 +235124,7 @@
     "cvss": 7.8,
     "cisa_kev": true,
     "epss_score": 0.66571,
-    "epss_percentile": 0.99047,
+    "epss_percentile": 0.99214,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-attack-surface",
@@ -240212,6 +240212,7 @@
     "cvss": 8.8,
     "cisa_kev": true,
     "epss_score": 0.0912,
+    "epss_percentile": 0.94809,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -240707,6 +240708,7 @@
     "cvss": 10,
     "cisa_kev": true,
     "epss_score": 0.11484,
+    "epss_percentile": 0.95595,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -241201,7 +241203,8 @@
     "rwep": 82,
     "cvss": 7,
     "cisa_kev": true,
-    "epss_score": 0.31894,
+    "epss_score": 0.30391,
+    "epss_percentile": 0.98055,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -241696,7 +241699,8 @@
     "rwep": 73,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.88518,
+    "epss_score": 0.89829,
+    "epss_percentile": 0.99779,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -242191,7 +242195,8 @@
     "rwep": 73,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.89738,
+    "epss_score": 0.91004,
+    "epss_percentile": 0.99798,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -242686,7 +242691,8 @@
     "rwep": 73,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.99762,
+    "epss_score": 0.99835,
+    "epss_percentile": 0.9996,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -243181,7 +243187,8 @@
     "rwep": 44,
     "cvss": 9.9,
     "cisa_kev": true,
-    "epss_score": 0.30477,
+    "epss_score": 0.32514,
+    "epss_percentile": 0.98173,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -243676,7 +243683,8 @@
     "rwep": 64,
     "cvss": 5.8,
     "cisa_kev": true,
-    "epss_score": 0.50557,
+    "epss_score": 0.50863,
+    "epss_percentile": 0.98819,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -244172,6 +244180,7 @@
     "cvss": 5.5,
     "cisa_kev": true,
     "epss_score": 0.00809,
+    "epss_percentile": 0.53493,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -244666,7 +244675,8 @@
     "rwep": 68,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.99288,
+    "epss_score": 0.99269,
+    "epss_percentile": 0.99932,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -245162,6 +245172,7 @@
     "cvss": 7.8,
     "cisa_kev": true,
     "epss_score": 0.22349,
+    "epss_percentile": 0.97458,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -245657,6 +245668,7 @@
     "cvss": 8.8,
     "cisa_kev": true,
     "epss_score": 0.9767,
+    "epss_percentile": 0.99898,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -246152,6 +246164,7 @@
     "cvss": 8.6,
     "cisa_kev": true,
     "epss_score": 0.92266,
+    "epss_percentile": 0.99814,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -246646,7 +246659,8 @@
     "rwep": 83,
     "cvss": 6.5,
     "cisa_kev": true,
-    "epss_score": 0.53827,
+    "epss_score": 0.54107,
+    "epss_percentile": 0.98908,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -247142,6 +247156,7 @@
     "cvss": 9,
     "cisa_kev": true,
     "epss_score": 0.77266,
+    "epss_percentile": 0.9951,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -247637,6 +247652,7 @@
     "cvss": 8.7,
     "cisa_kev": true,
     "epss_score": 0.01339,
+    "epss_percentile": 0.68604,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -248132,6 +248148,7 @@
     "cvss": 8.8,
     "cisa_kev": true,
     "epss_score": 0.03405,
+    "epss_percentile": 0.87721,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -248627,6 +248644,7 @@
     "cvss": 9.8,
     "cisa_kev": true,
     "epss_score": 0.90597,
+    "epss_percentile": 0.99792,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -249121,7 +249139,8 @@
     "rwep": 46,
     "cvss": 8.2,
     "cisa_kev": true,
-    "epss_score": 0.01659,
+    "epss_score": 0.01722,
+    "epss_percentile": 0.75323,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -249616,7 +249635,8 @@
     "rwep": 77,
     "cvss": 6.5,
     "cisa_kev": true,
-    "epss_score": 0.01862,
+    "epss_score": 0.01927,
+    "epss_percentile": 0.78015,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -252222,6 +252242,7 @@
     "cvss": 9,
     "cisa_kev": true,
     "epss_score": 0.99971,
+    "epss_percentile": 0.99979,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -252717,6 +252738,7 @@
     "cvss": 9,
     "cisa_kev": true,
     "epss_score": 0.9999,
+    "epss_percentile": 0.99985,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -253212,6 +253234,7 @@
     "cvss": 10,
     "cisa_kev": true,
     "epss_score": 0.99512,
+    "epss_percentile": 0.99941,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -253707,6 +253730,7 @@
     "cvss": 9.8,
     "cisa_kev": true,
     "epss_score": 0.99947,
+    "epss_percentile": 0.99974,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -254202,6 +254226,7 @@
     "cvss": 8.6,
     "cisa_kev": true,
     "epss_score": 0.72391,
+    "epss_percentile": 0.99383,
     "referencing_skills": [
       "ai-attack-surface",
       "mcp-agent-trust",
@@ -254953,6 +254978,7 @@
     "cvss": 8.6,
     "cisa_kev": true,
     "epss_score": 0.02296,
+    "epss_percentile": 0.81623,
     "referencing_skills": [
       "ai-attack-surface",
       "mcp-agent-trust",
@@ -256527,7 +256553,7 @@
     "rwep": 30,
     "cvss": 7.8,
     "cisa_kev": false,
-    "epss_score": 0.046,
+    "epss_score": 0.02568,
     "epss_percentile": 0.83649,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -258627,7 +258653,7 @@
     "rwep": 20,
     "cvss": 8.3,
     "cisa_kev": false,
-    "epss_score": 0.00039,
+    "epss_score": 0.00258,
     "epss_percentile": 0.1734,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -259415,7 +259441,7 @@
     "cvss": 9.8,
     "cisa_kev": true,
     "epss_score": 0.8942,
-    "epss_percentile": 0.9722,
+    "epss_percentile": 0.99771,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-attack-surface",
@@ -261195,7 +261221,7 @@
     "rwep": 70,
     "cvss": 9.6,
     "cisa_kev": true,
-    "epss_score": 0.00039,
+    "epss_score": 0.02342,
     "epss_percentile": 0.8201,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -263174,6 +263200,7 @@
     "cvss": 8.6,
     "cisa_kev": false,
     "epss_score": 0.18087,
+    "epss_percentile": 0.96913,
     "referencing_skills": [
       "kernel-lpe-triage",
       "coordinated-vuln-disclosure",
@@ -263486,7 +263513,8 @@
     "rwep": 45,
     "cvss": 10,
     "cisa_kev": false,
-    "epss_score": 0.86,
+    "epss_score": 0.85974,
+    "epss_percentile": 0.9971,
     "referencing_skills": [
       "kernel-lpe-triage",
       "mcp-agent-trust",
@@ -264122,7 +264150,8 @@
     "rwep": 30,
     "cvss": 8.1,
     "cisa_kev": false,
-    "epss_score": 0.012,
+    "epss_score": 0.01418,
+    "epss_percentile": 0.70262,
     "referencing_skills": [
       "ai-attack-surface",
       "mcp-agent-trust",
@@ -264850,6 +264879,7 @@
     "cvss": 7.5,
     "cisa_kev": false,
     "epss_score": 0.36582,
+    "epss_percentile": 0.98346,
     "referencing_skills": [
       "ai-attack-surface",
       "rag-pipeline-security",
@@ -265408,7 +265438,8 @@
     "rwep": 75,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.945,
+    "epss_score": 0.9198,
+    "epss_percentile": 0.9981,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-c2-detection",
@@ -265698,7 +265729,8 @@
     "rwep": 80,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.967,
+    "epss_score": 0.99715,
+    "epss_percentile": 0.99951,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -266193,7 +266225,8 @@
     "rwep": 75,
     "cvss": 10,
     "cisa_kev": true,
-    "epss_score": 0.973,
+    "epss_score": 0.99959,
+    "epss_percentile": 0.99976,
     "referencing_skills": [
       "kernel-lpe-triage",
       "rag-pipeline-security",
@@ -266773,6 +266806,7 @@
     "cvss": 10,
     "cisa_kev": true,
     "epss_score": 0.90272,
+    "epss_percentile": 0.99787,
     "referencing_skills": [
       "rag-pipeline-security",
       "identity-assurance",
@@ -267382,7 +267416,8 @@
     "rwep": 30,
     "cvss": 5.9,
     "cisa_kev": false,
-    "epss_score": 0.005,
+    "epss_score": 0.00282,
+    "epss_percentile": 0.20357,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-c2-detection",
@@ -268675,7 +268710,8 @@
     "rwep": 30,
     "cvss": 8.8,
     "cisa_kev": false,
-    "epss_score": 0.02,
+    "epss_score": 0.05952,
+    "epss_percentile": 0.92569,
     "referencing_skills": [
       "ai-attack-surface",
       "mcp-agent-trust",
@@ -269395,7 +269431,8 @@
     "rwep": 45,
     "cvss": 9.8,
     "cisa_kev": false,
-    "epss_score": 0.04,
+    "epss_score": 0.02762,
+    "epss_percentile": 0.84882,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -269890,7 +269927,8 @@
     "rwep": 40,
     "cvss": 9.8,
     "cisa_kev": false,
-    "epss_score": 0.03,
+    "epss_score": 0.00809,
+    "epss_percentile": 0.5349,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -270385,7 +270423,8 @@
     "rwep": 40,
     "cvss": 9.8,
     "cisa_kev": false,
-    "epss_score": 0.03,
+    "epss_score": 0.00853,
+    "epss_percentile": 0.54875,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -270880,7 +270919,8 @@
     "rwep": 35,
     "cvss": 8.8,
     "cisa_kev": false,
-    "epss_score": 0.02,
+    "epss_score": 0.00956,
+    "epss_percentile": 0.58102,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -271375,7 +271415,8 @@
     "rwep": 45,
     "cvss": 9.8,
     "cisa_kev": false,
-    "epss_score": 0.05,
+    "epss_score": 0.00605,
+    "epss_percentile": 0.45668,
     "referencing_skills": [
       "kernel-lpe-triage",
       "coordinated-vuln-disclosure",
@@ -271805,7 +271846,8 @@
     "rwep": 40,
     "cvss": 8,
     "cisa_kev": false,
-    "epss_score": 0.025,
+    "epss_score": 0.01463,
+    "epss_percentile": 0.71129,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-attack-surface",
@@ -495970,7 +496012,8 @@
     "rwep": 31,
     "cvss": 9.8,
     "cisa_kev": false,
-    "epss_score": 0.00984,
+    "epss_score": 0.01211,
+    "epss_percentile": 0.65582,
     "referencing_skills": [
       "ai-attack-surface",
       "compliance-theater",
@@ -496434,7 +496477,8 @@
     "rwep": 28,
     "cvss": 8.9,
     "cisa_kev": false,
-    "epss_score": 0.00125,
+    "epss_score": 0.00501,
+    "epss_percentile": 0.40192,
     "referencing_skills": [
       "ai-attack-surface",
       "compliance-theater",
@@ -496959,6 +497003,7 @@
     "cvss": 7.1,
     "cisa_kev": false,
     "epss_score": 0.08845,
+    "epss_percentile": 0.94693,
     "referencing_skills": [
       "ai-attack-surface",
       "compliance-theater",
@@ -497528,7 +497573,8 @@
     "rwep": 23,
     "cvss": 8.3,
     "cisa_kev": false,
-    "epss_score": 0.00052,
+    "epss_score": 0.04439,
+    "epss_percentile": 0.90482,
     "referencing_skills": [
       "ai-attack-surface",
       "compliance-theater",
@@ -497992,7 +498038,8 @@
     "rwep": 25,
     "cvss": 8.6,
     "cisa_kev": false,
-    "epss_score": 0.00066,
+    "epss_score": 0.00758,
+    "epss_percentile": 0.51784,
     "referencing_skills": [
       "ai-attack-surface",
       "mcp-agent-trust",
@@ -498712,7 +498759,8 @@
     "rwep": 23,
     "cvss": 8.8,
     "cisa_kev": false,
-    "epss_score": 0.00366,
+    "epss_score": 0.00578,
+    "epss_percentile": 0.44443,
     "referencing_skills": [
       "ai-attack-surface",
       "compliance-theater",
@@ -499282,7 +499330,8 @@
     "rwep": 25,
     "cvss": 7.3,
     "cisa_kev": false,
-    "epss_score": 0.00111,
+    "epss_score": 0.00376,
+    "epss_percentile": 0.30331,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-attack-surface",
@@ -499912,7 +499961,8 @@
     "rwep": 29,
     "cvss": 9.8,
     "cisa_kev": false,
-    "epss_score": 0.00353,
+    "epss_score": 0.00852,
+    "epss_percentile": 0.54808,
     "referencing_skills": [
       "ai-attack-surface",
       "compliance-theater",
@@ -500527,6 +500577,7 @@
     "cvss": 10,
     "cisa_kev": false,
     "epss_score": 0.71647,
+    "epss_percentile": 0.99361,
     "referencing_skills": [
       "ai-attack-surface",
       "compliance-theater",
@@ -501097,6 +501148,7 @@
     "cvss": 9.9,
     "cisa_kev": false,
     "epss_score": 0.12901,
+    "epss_percentile": 0.95926,
     "referencing_skills": [
       "ai-attack-surface",
       "compliance-theater",
@@ -501707,7 +501759,8 @@
     "rwep": 17,
     "cvss": 6.3,
     "cisa_kev": false,
-    "epss_score": 0.00245,
+    "epss_score": 0.0068,
+    "epss_percentile": 0.48987,
     "referencing_skills": [
       "ai-attack-surface",
       "compliance-theater",
@@ -502277,7 +502330,8 @@
     "rwep": 31,
     "cvss": 9.8,
     "cisa_kev": false,
-    "epss_score": 0.01945,
+    "epss_score": 0.01534,
+    "epss_percentile": 0.72419,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-attack-surface",
@@ -502943,7 +502997,8 @@
     "rwep": 31,
     "cvss": 9.8,
     "cisa_kev": false,
-    "epss_score": 0.01945,
+    "epss_score": 0.01158,
+    "epss_percentile": 0.64084,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-attack-surface",
@@ -503610,6 +503665,7 @@
     "cvss": 9.9,
     "cisa_kev": false,
     "epss_score": 0.05258,
+    "epss_percentile": 0.91758,
     "referencing_skills": [
       "ai-attack-surface",
       "compliance-theater",
@@ -523565,6 +523621,7 @@
     "cvss": 10,
     "cisa_kev": true,
     "epss_score": 0.62767,
+    "epss_percentile": 0.99116,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-c2-detection",
@@ -524138,6 +524195,7 @@
     "cvss": 10,
     "cisa_kev": true,
     "epss_score": 0.61906,
+    "epss_percentile": 0.99094,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-c2-detection",
@@ -524710,7 +524768,8 @@
     "rwep": 87,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.921,
+    "epss_score": 0.96939,
+    "epss_percentile": 0.99884,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -525206,6 +525265,7 @@
     "cvss": 9.8,
     "cisa_kev": true,
     "epss_score": 0.55914,
+    "epss_percentile": 0.98948,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -525700,7 +525760,8 @@
     "rwep": 68,
     "cvss": 8.5,
     "cisa_kev": true,
-    "epss_score": 0.01261,
+    "epss_score": 0.01439,
+    "epss_percentile": 0.70652,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -526196,6 +526257,7 @@
     "cvss": 6.5,
     "cisa_kev": true,
     "epss_score": 0.28171,
+    "epss_percentile": 0.97923,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-c2-detection",
@@ -526768,7 +526830,8 @@
     "rwep": 72,
     "cvss": 10,
     "cisa_kev": true,
-    "epss_score": 0.97157,
+    "epss_score": 0.97657,
+    "epss_percentile": 0.99897,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -527263,7 +527326,8 @@
     "rwep": 72,
     "cvss": 9,
     "cisa_kev": true,
-    "epss_score": 0.87714,
+    "epss_score": 0.84758,
+    "epss_percentile": 0.99687,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -527759,6 +527823,7 @@
     "cvss": 9.1,
     "cisa_kev": true,
     "epss_score": 0.99957,
+    "epss_percentile": 0.99975,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -528253,7 +528318,8 @@
     "rwep": 77,
     "cvss": 7.2,
     "cisa_kev": true,
-    "epss_score": 0.7493,
+    "epss_score": 0.74933,
+    "epss_percentile": 0.99458,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-c2-detection",
@@ -528826,7 +528892,8 @@
     "rwep": 75,
     "cvss": 6.7,
     "cisa_kev": true,
-    "epss_score": 0.00736,
+    "epss_score": 0.00784,
+    "epss_percentile": 0.52636,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-c2-detection",
@@ -529399,7 +529466,8 @@
     "rwep": 68,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.0302,
+    "epss_score": 0.03215,
+    "epss_percentile": 0.86999,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -529894,7 +529962,8 @@
     "rwep": 72,
     "cvss": 8.8,
     "cisa_kev": true,
-    "epss_score": 0.019,
+    "epss_score": 0.02089,
+    "epss_percentile": 0.79813,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -530390,6 +530459,7 @@
     "cvss": 6.5,
     "cisa_kev": true,
     "epss_score": 0.58616,
+    "epss_percentile": 0.99012,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -530884,7 +530954,8 @@
     "rwep": 81,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.1236,
+    "epss_score": 0.14652,
+    "epss_percentile": 0.96326,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -531379,7 +531450,8 @@
     "rwep": 81,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.21255,
+    "epss_score": 0.1966,
+    "epss_percentile": 0.97135,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -531874,7 +531946,8 @@
     "rwep": 57,
     "cvss": 6.5,
     "cisa_kev": true,
-    "epss_score": 0.0389,
+    "epss_score": 0.04181,
+    "epss_percentile": 0.89959,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-c2-detection",
@@ -532447,7 +532520,8 @@
     "rwep": 59,
     "cvss": 7.1,
     "cisa_kev": true,
-    "epss_score": 0.01325,
+    "epss_score": 0.01351,
+    "epss_percentile": 0.68889,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -532942,7 +533016,8 @@
     "rwep": 59,
     "cvss": 7.8,
     "cisa_kev": true,
-    "epss_score": 0.0356,
+    "epss_score": 0.03558,
+    "epss_percentile": 0.88216,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -533437,7 +533512,8 @@
     "rwep": 81,
     "cvss": 7.8,
     "cisa_kev": true,
-    "epss_score": 0.17982,
+    "epss_score": 0.13475,
+    "epss_percentile": 0.96071,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -533932,7 +534008,8 @@
     "rwep": 70,
     "cvss": 9,
     "cisa_kev": true,
-    "epss_score": 0.92727,
+    "epss_score": 0.93842,
+    "epss_percentile": 0.99835,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -534427,7 +534504,8 @@
     "rwep": 76,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.99945,
+    "epss_score": 0.99925,
+    "epss_percentile": 0.99968,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -534922,7 +535000,8 @@
     "rwep": 70,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.9201,
+    "epss_score": 0.92062,
+    "epss_percentile": 0.99811,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -535418,6 +535497,7 @@
     "cvss": 8.3,
     "cisa_kev": true,
     "epss_score": 0.08404,
+    "epss_percentile": 0.94445,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -535912,7 +535992,8 @@
     "rwep": 68,
     "cvss": 8.8,
     "cisa_kev": true,
-    "epss_score": 0.142,
+    "epss_score": 0.14154,
+    "epss_percentile": 0.96222,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -536408,6 +536489,7 @@
     "cvss": 9.8,
     "cisa_kev": true,
     "epss_score": 0.83857,
+    "epss_percentile": 0.99666,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -536902,7 +536984,8 @@
     "rwep": 70,
     "cvss": 7.5,
     "cisa_kev": true,
-    "epss_score": 0.94557,
+    "epss_score": 0.95111,
+    "epss_percentile": 0.99855,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -537397,7 +537480,8 @@
     "rwep": 70,
     "cvss": 8.6,
     "cisa_kev": true,
-    "epss_score": 0.93995,
+    "epss_score": 0.94265,
+    "epss_percentile": 0.99842,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -537892,7 +537976,8 @@
     "rwep": 85,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.7227,
+    "epss_score": 0.73036,
+    "epss_percentile": 0.99403,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -538387,7 +538472,8 @@
     "rwep": 59,
     "cvss": 8.1,
     "cisa_kev": true,
-    "epss_score": 0.02988,
+    "epss_score": 0.03342,
+    "epss_percentile": 0.87497,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-c2-detection",
@@ -538960,7 +539046,8 @@
     "rwep": 57,
     "cvss": 4.4,
     "cisa_kev": true,
-    "epss_score": 0.01657,
+    "epss_score": 0.01715,
+    "epss_percentile": 0.7523,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-c2-detection",
@@ -539533,7 +539620,8 @@
     "rwep": 61,
     "cvss": 7.8,
     "cisa_kev": true,
-    "epss_score": 0.02092,
+    "epss_score": 0.02173,
+    "epss_percentile": 0.80584,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -540028,7 +540116,8 @@
     "rwep": 59,
     "cvss": 5.5,
     "cisa_kev": true,
-    "epss_score": 0.01852,
+    "epss_score": 0.01995,
+    "epss_percentile": 0.78792,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -540523,7 +540612,8 @@
     "rwep": 79,
     "cvss": 7.8,
     "cisa_kev": true,
-    "epss_score": 0.03705,
+    "epss_score": 0.03846,
+    "epss_percentile": 0.89119,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -541019,6 +541109,7 @@
     "cvss": 4.6,
     "cisa_kev": true,
     "epss_score": 0.01972,
+    "epss_percentile": 0.78521,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -541513,7 +541604,8 @@
     "rwep": 59,
     "cvss": 7,
     "cisa_kev": true,
-    "epss_score": 0.01267,
+    "epss_score": 0.01348,
+    "epss_percentile": 0.68811,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -542009,7 +542101,7 @@
     "cvss": 5.9,
     "cisa_kev": true,
     "epss_score": 0.79029,
-    "epss_percentile": 0.97219,
+    "epss_percentile": 0.9956,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -542505,7 +542597,7 @@
     "cvss": 9.8,
     "cisa_kev": true,
     "epss_score": 0.98417,
-    "epss_percentile": 0.98425,
+    "epss_percentile": 0.99915,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-c2-detection",
@@ -544073,7 +544165,7 @@
     "cvss": 8.1,
     "cisa_kev": true,
     "epss_score": 0.16488,
-    "epss_percentile": 0.95377,
+    "epss_percentile": 0.9668,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -544568,7 +544660,7 @@
     "rwep": 52,
     "cvss": 8.2,
     "cisa_kev": true,
-    "epss_score": 0.0027,
+    "epss_score": 0.00492,
     "epss_percentile": 0.39697,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -545078,7 +545170,7 @@
     "cvss": 7.5,
     "cisa_kev": true,
     "epss_score": 0.8116,
-    "epss_percentile": 0.9858,
+    "epss_percentile": 0.99598,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-attack-surface",
@@ -546566,7 +546658,7 @@
     "rwep": 52,
     "cvss": 8.2,
     "cisa_kev": true,
-    "epss_score": 0.02529,
+    "epss_score": 0.04103,
     "epss_percentile": 0.89781,
     "referencing_skills": [
       "kernel-lpe-triage",

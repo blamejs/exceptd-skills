@@ -11,13 +11,13 @@
 # Local bootstrap marker — image runs bootstrap fresh.
 .bootstrap-complete
 
-# VCS — gitleaks tests need .git history when explicitly enabled,
-# but the default predeploy target doesn't. The gitleaks Docker target
-# overrides this exclusion if/when it's added.
-.git/
-.gitignore
-.gitattributes
-.gitleaks.toml
+# VCS metadata is INCLUDED on purpose. Several gates ask git which files are
+# tracked, which are ignored, and what changed against the base; without the
+# repository they cannot answer, and a gate that cannot answer either skips or
+# — worse — treats every local-only file as shipped. Excluding .git/ made this
+# harness quietly diverge from the CI it exists to reproduce. It costs ~33 MB of
+# build context, which is the right trade for gates that mean the same thing in
+# both places.
 
 # Node + tool state.
 node_modules/
@@ -50,9 +50,40 @@ Desktop.ini
 *.njsproj
 *.sln
 
-# Sandbox / agent state that lives outside the repo proper.
-.claude/
-.cursorrules
+# Dotfiles and local state — catch-all first, then re-admit repo content. This
+# mirrors .gitignore's own structure, and for the same reason: naming individual
+# tools here would bake one contributor's setup into a shared file, and the list
+# would go stale the moment anyone adopted a different one.
+#
+# Docker has no user-level ignore file — only this path is consulted — so the
+# catch-all is the only way to keep session and agent state out of the build
+# context and the image layers without enumerating it. Anything excluded through
+# a contributor's own global gitignore is covered here by shape, not by name.
+#
+# The negations below are exactly the dot-prefixed paths tracked in git, so the
+# rule is "repo content is admitted, local state is not" rather than a list
+# someone has to remember to extend. tests/governance.test.js asserts every one
+# of them exists, and the suite runs inside this image — dropping any would fail
+# the harness rather than fail quietly. .keys/ is deliberately NOT re-admitted:
+# it is untracked and holds the private signing key.
+.*
+!.cursorrules
+!.dockerignore
+!.gitattributes
+!.github
+!.gitignore
+!.gitleaks.toml
+!.npmrc
+!.nvmrc
+!.windsurfrules
+
+# Repo-generated local state that is not dot-prefixed.
+refresh-report.json
+
+# Atomic-write orphans. The plain `*.tmp` rule below misses the
+# `<name>.tmp.<pid>.<rand>` form the writers actually leave behind when a
+# process dies mid-write.
+*.tmp.*
 
 # Python tooling artifacts.
 __pycache__/
