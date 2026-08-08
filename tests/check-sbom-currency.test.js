@@ -70,7 +70,11 @@ function buildRootTree(extraFiles /* { rel: content } */, opts = {}) {
 
   // file: components for whichever files we want represented (default: only the
   // base set, deliberately omitting any extra so the completeness gate fires).
-  const componentRels = opts.componentRels || ['manifest.json', 'lib/a.js', 'README.md'];
+  // package.json is in every component set below because npm ships it whether
+  // or not `files` names it, so the completeness check expects a component for
+  // it in any target tree. Leaving it out would make these fixtures fail for a
+  // reason none of them is about.
+  const componentRels = opts.componentRels || ['manifest.json', 'lib/a.js', 'package.json', 'README.md'];
   const fileComps = componentRels.map((rel) => {
     const buf = fs.readFileSync(path.join(root, rel));
     return {
@@ -113,7 +117,7 @@ test('#27 a target-only shipped file (absent from source) with no file: componen
     { 'lib/target-only.js': "console.log('target only');\n" },
     {
       pkgFiles: ['manifest.json', 'lib', 'README.md'],
-      componentRels: ['manifest.json', 'lib/a.js', 'README.md'], // omit target-only.js
+      componentRels: ['manifest.json', 'lib/a.js', 'package.json', 'README.md'], // omit target-only.js
     },
   );
   try {
@@ -133,7 +137,7 @@ test('#27 a complete --root target (every shipped file has a component) does NOT
     { 'lib/target-only.js': "console.log('target only');\n" },
     {
       pkgFiles: ['manifest.json', 'lib', 'README.md'],
-      componentRels: ['manifest.json', 'lib/a.js', 'lib/target-only.js', 'README.md'],
+      componentRels: ['manifest.json', 'lib/a.js', 'lib/target-only.js', 'package.json', 'README.md'],
     },
   );
   try {
@@ -736,7 +740,11 @@ function buildRootTree(extraFiles /* { rel: content } */, opts = {}) {
 
   // file: components for whichever files we want represented (default: only the
   // base set, deliberately omitting any extra so the completeness gate fires).
-  const componentRels = opts.componentRels || ['manifest.json', 'lib/a.js', 'README.md'];
+  // package.json is in every component set below because npm ships it whether
+  // or not `files` names it, so the completeness check expects a component for
+  // it in any target tree. Leaving it out would make these fixtures fail for a
+  // reason none of them is about.
+  const componentRels = opts.componentRels || ['manifest.json', 'lib/a.js', 'package.json', 'README.md'];
   const fileComps = componentRels.map((rel) => {
     const buf = fs.readFileSync(path.join(root, rel));
     return {
@@ -779,7 +787,7 @@ test('#27 a target-only shipped file (absent from source) with no file: componen
     { 'lib/target-only.js': "console.log('target only');\n" },
     {
       pkgFiles: ['manifest.json', 'lib', 'README.md'],
-      componentRels: ['manifest.json', 'lib/a.js', 'README.md'], // omit target-only.js
+      componentRels: ['manifest.json', 'lib/a.js', 'package.json', 'README.md'], // omit target-only.js
     },
   );
   try {
@@ -799,7 +807,7 @@ test('#27 a complete --root target (every shipped file has a component) does NOT
     { 'lib/target-only.js': "console.log('target only');\n" },
     {
       pkgFiles: ['manifest.json', 'lib', 'README.md'],
-      componentRels: ['manifest.json', 'lib/a.js', 'lib/target-only.js', 'README.md'],
+      componentRels: ['manifest.json', 'lib/a.js', 'lib/target-only.js', 'package.json', 'README.md'],
     },
   );
   try {

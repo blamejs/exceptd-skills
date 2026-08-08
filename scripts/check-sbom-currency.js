@@ -59,6 +59,10 @@ function catalogEntryCount(dataDir, file) {
 // emits one for.
 const SBOM_SELF_EXCLUDED = new Set(["sbom.cdx.json"]);
 const SBOM_DERIVABLE_PREFIXES = ["data/_indexes/"];
+// Mirrors refresh-sbom's ALWAYS_SHIPPED: npm adds package.json to every tarball
+// without it appearing in `files`, so the completeness check has to expect a
+// component for it the same way the generator now emits one.
+const SBOM_ALWAYS_SHIPPED = ["package.json", "sources/README.md"];
 
 function sbomIsDerivable(rel) {
   return SBOM_DERIVABLE_PREFIXES.some(
@@ -93,7 +97,7 @@ function walkFilesAbs(absDir) {
 // module-level root.
 function expandAllowlistAt(allowlist, root) {
   const abs = [];
-  for (const entry of allowlist) {
+  for (const entry of [...allowlist, ...SBOM_ALWAYS_SHIPPED]) {
     const full = path.join(root, entry);
     let stat;
     try { stat = fs.statSync(full); }

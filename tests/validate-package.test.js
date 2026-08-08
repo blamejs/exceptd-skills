@@ -329,3 +329,62 @@ test("gate 13b: validate-package.js fires when npm pack output omits a numeric s
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+require("node:test").describe("sbom covers the real tarball", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const { sbomCoverageIssues } = require("../lib/validate-package.js");
+
+  // A declared-exclusion SBOM shaped like the real one, minus the bulk.
+  const sbom = (names, uncovered) => ({
+    metadata: {
+      properties: uncovered
+        ? [{ name: "exceptd:integrity:uncovered:prefix", value: uncovered }]
+        : [],
+    },
+    components: names.map((n) => ({ "bom-ref": "file:" + n, type: "file", name: n })),
+  });
+
+  test("a shipped file with no component is reported", () => {
+    // The real defect: npm ships package.json without `files` naming it, so
+    // both the generator and its checker agreed it was not shipped.
+    const issues = sbomCoverageIssues(
+      ["lib/a.js", "package.json"],
+      sbom(["lib/a.js"])
+    );
+    assert.equal(issues.length, 1);
+    assert.match(issues[0], /package\.json/);
+    assert.match(issues[0], /ALWAYS_SHIPPED/, "the message must say how to fix it");
+  });
+
+  test("a fully covered tarball reports nothing", () => {
+    // Anti-coincidence for the case above: prove the check can return clean,
+    // otherwise a function that always reported would look like it worked.
+    const issues = sbomCoverageIssues(
+      ["lib/a.js", "package.json"],
+      sbom(["lib/a.js", "package.json"])
+    );
+    assert.deepEqual(issues, []);
+  });
+
+  test("the SBOM never has to hash itself", () => {
+    assert.deepEqual(sbomCoverageIssues(["sbom.cdx.json"], sbom([])), []);
+  });
+
+  test("a prefix the SBOM declares uncovered is accepted, one it does not is not", () => {
+    assert.deepEqual(
+      sbomCoverageIssues(["data/_indexes/xref.json"], sbom([], "data/_indexes/")),
+      []
+    );
+    const issues = sbomCoverageIssues(["data/_indexes/xref.json"], sbom([], "data/other/"));
+    assert.equal(issues.length, 1, "a non-matching declaration must not excuse the file");
+  });
+
+  test("an SBOM that declares no exclusions excuses nothing", () => {
+    // The absent-field-fails-open trap: with no property at all, the earlier
+    // shape of this logic would have had an empty prefix list that matched
+    // every path via startsWith("").
+    const issues = sbomCoverageIssues(["data/_indexes/xref.json"], sbom([]));
+    assert.equal(issues.length, 1);
+  });
+});

@@ -122,3 +122,34 @@ test("#46 cmdRelease selects the release.yml run by tag ref (headBranch==tag), n
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+require("node:test").describe("prepare cannot rebaseline a shrunken suite", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const path = require("node:path");
+
+  const SRC = fs.readFileSync(path.join(__dirname, "..", "scripts", "release.js"), "utf8");
+
+  test("the test-count gate runs before the baseline is refreshed", () => {
+    // --update-baseline writes whatever it observes. Calling it unconditionally
+    // meant a release that lost tests rebaselined DOWNWARD here, and the
+    // shrinkage gate later in `gates` then compared the new count against
+    // itself and passed. Releasing was the one path that disarmed the guard it
+    // most needed. Order is the whole fix, so order is what this asserts.
+    const check = SRC.indexOf('_run("node", ["scripts/check-test-count.js"]);');
+    const update = SRC.indexOf('_run("node", ["scripts/check-test-count.js", "--update-baseline"]);');
+    assert.ok(check > 0, "prepare must run the test-count gate");
+    assert.ok(update > 0, "prepare must still refresh the baseline to capture growth");
+    assert.ok(check < update, "the gate has to run BEFORE the refresh or it never sees a drop");
+  });
+
+  test("the bare gate call is not passed --update-baseline", () => {
+    // A test that only looked for both substrings would pass even if the first
+    // call carried the flag, which is the bug.
+    const line = SRC.split("\n").find(
+      (l) => l.includes("check-test-count.js") && !l.includes("--update-baseline")
+    );
+    assert.ok(line, "prepare must invoke the gate in checking mode");
+  });
+});
