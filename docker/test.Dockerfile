@@ -47,6 +47,14 @@ FROM node:24.19.0-alpine3.23@sha256:244cc2b53f46f9e876304391d17682b0ddae9ac33491
 # `node` is the upstream image's existing non-root user.
 WORKDIR /app
 
+# git is part of the surface under test, not a convenience. Several gates ask
+# git what the shipped surface is — which files are tracked, which are ignored,
+# what changed against the base — and without it they cannot answer. Silently
+# skipping them here would defeat the point of the harness: it exists to
+# reproduce CI, and CI always has git. Whatever they report in this image should
+# be what they report on a runner.
+RUN apk add --no-cache git
+
 # Copy package manifests first so `npm install` is cached when only
 # source files change. The repo declares zero runtime/dev deps today,
 # but the install layer stays so the cache exists if that changes.

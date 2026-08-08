@@ -215,7 +215,7 @@ The skill produces a Defensive Countermeasure Map per input (CVE ID, ATLAS / ATT
 Example: "CVE — Linux kernel LPE. Canonical: CVE-2026-31431 (Copy Fail)."
 
 ## Offensive technique set (input to D3FEND query)
-- <AML.T0001-or-similar / T0001-or-similar / CWE-<id> list, with one-line descriptions>
+- <AML.T####-or-similar / T####-or-similar / CWE-<id> list, with one-line descriptions>
 
 ## Defensive-coverage map
 | D3FEND ID | Name | Tactic (DiD layer) | Privilege scope | ZT posture | Deployed? | AI-pipeline applicable? | Framework controls partially mapped | Live-tunable? |

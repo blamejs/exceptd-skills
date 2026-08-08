@@ -44,9 +44,9 @@ Each rule below carries a **Forcing function** annotation declaring whether it i
 12. **External data version pinning** — Every reference to external data (MITRE ATLAS, MITRE ATT&CK, NIST frameworks, CISA KEV, IETF RFCs and Internet-Drafts) must pin to a specific version. When a new version is released: (a) audit for breaking changes (renamed TTPs, tactic-split moves, replaced RFCs, deprecated controls), (b) bump `last_threat_review` in all affected skills, (c) update `_meta` version fields in the relevant `data/*.json` file, (d) update `last_verified` on affected `data/rfc-references.json` entries, (e) never silently inherit version changes. Frameworks lag RFCs; RFCs lag attacker innovation — skills must track lag at every layer.
     *Forcing function:* `_meta` version fields are schema-required; reviewer-checked for cross-file version consistency.
 
-    **Pinned ATLAS version: v2026.07 (June 2026), Secure AI v2 layer (May 2026). Audit cadence: monthly** (ATLAS now ships monthly per CTID; the Secure AI v2 layered set and per-technique maturity classification are tracked separately in `data/atlas-ttps.json` via the `secure_ai_v2_layer` and `maturity` fields).
+    **Pinned ATLAS version: v2026.07 (released 2026-08-07), Secure AI v2 layer (May 2026). Audit cadence: monthly** (ATLAS now ships monthly per CTID; the Secure AI v2 layered set and per-technique maturity classification are tracked separately in `data/atlas-ttps.json` via the `secure_ai_v2_layer` and `maturity` fields).
 
-    **Pinned ATT&CK version: v19.2 (May 2026). Audit cadence: semi-annual** (April and October releases). v19 split Defense Evasion (TA0005) into Stealth (TA0005) and Defense Impairment (TA0112) — affected entries in `data/attack-techniques.json` carry `tactic_moved_from` for traceability. v18 introduced Detection Strategies (DSxxxx) as first-class objects; record applicable strategy IDs on entries where canonical strategies exist.
+    **Pinned ATT&CK version: v19.2 (released 2026-08-05). Audit cadence: semi-annual** (April and October releases). v19 split Defense Evasion (TA0005) into Stealth (TA0005) and Defense Impairment (TA0112) — affected entries in `data/attack-techniques.json` carry `tactic_moved_from` for traceability. v18 introduced Detection Strategies (DSxxxx) as first-class objects; record applicable strategy IDs on entries where canonical strategies exist.
 
     The IETF RFC / Internet-Draft catalog lives at `data/rfc-references.json`; each entry tracks status, errata count, replaces / replaced-by, and `last_verified`.
 
@@ -206,7 +206,7 @@ Wrong: adding a new CVE to `data/cve-catalog.json` without completing all requir
 Right: every new entry requires all fields defined in the CVE catalog schema. Partial entries fail the schema validation in `lib/scoring.js`.
 
 **DR-7: Stale ATLAS / ATT&CK version**
-Current pinned ATLAS version: **v2026.07 (June 2026)** with the **CTID Secure AI v2 layer (May 2026)**. ATLAS audit cadence is **monthly** (CTID now ships monthly). Current pinned ATT&CK version: **v19.2 (May 2026)**, semi-annual cadence (April + October). When either source updates: audit all TTP IDs for changes (including v19's Defense Evasion → Stealth / Defense Impairment split), bump `last_threat_review` in affected skills, update `_meta` version fields in `data/atlas-ttps.json` and `data/attack-techniques.json`. Never silently upgrade.
+Current pinned ATLAS version: **v2026.07 (released 2026-08-07)** with the **CTID Secure AI v2 layer (May 2026)**. ATLAS audit cadence is **monthly** (CTID now ships monthly). Current pinned ATT&CK version: **v19.2 (released 2026-08-05)**, semi-annual cadence (April + October). When either source updates: audit all TTP IDs for changes (including v19's Defense Evasion → Stealth / Defense Impairment split), bump `last_threat_review` in affected skills, update `_meta` version fields in `data/atlas-ttps.json` and `data/attack-techniques.json`. Never silently upgrade.
 
 **DR-8: Missing zero-day learning loop**
 Wrong: adding a new entry to `data/cve-catalog.json` without running the learning loop.

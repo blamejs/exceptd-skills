@@ -8,7 +8,7 @@
     "last_updated": "2026-08-08",
     "last_threat_review": "2026-08-08",
     "source": "https://atlas.mitre.org",
-    "note": "AI-relevant ATLAS TTPs with framework_gap field, curated as a subset of the full ATLAS matrix and pinned to v2026.07. ATLAS content follows a YYYY.MM calendar-versioning scheme; the CalVer scheme and the per-technique platform tags (Predictive AI, Generative AI, Agentic AI, Enterprise) were introduced in v2026.05. The v2026.05 → v2026.07 audit (AGENTS.md Hard Rule #12) confirmed the release is additive with NO technique-ID removals or renames, so every AML.T* id curated in this file remains valid. Upstream v2026.07 additionally published three new techniques — AML.T0113 (Steal Web Session Cookie), AML.T0091.001 (Use Alternate Authentication Material: Web Session Cookie), and AML.T0114 (AI Service Web Interface) — refreshed AML.T0054 (LLM Jailbreak), and shipped new case studies (EchoLeak zero-click prompt injection, AI-in-the-Middle C2 relays, Semantic Kernel RCE); these newly-published techniques are not yet ingested into this curated subset and are tracked as future-curation candidates (the subset intentionally trails the full matrix, e.g. 170 curated of the full ATLAS technique set). framework_gap: no framework has a control that addresses this TTP. secure_ai_v2_layer flags entries included in the CTID Secure AI v2 layered set (May 2026); maturity reflects CTID's technique-maturity classification (low / moderate / high).",
+    "note": "AI-relevant ATLAS TTPs with framework_gap field, curated as a subset of the full ATLAS matrix and pinned to v2026.07. ATLAS content follows a YYYY.MM calendar-versioning scheme; the CalVer scheme and the per-technique platform tags (Predictive AI, Generative AI, Agentic AI, Enterprise) were introduced in v2026.05. v2026.07 consolidated three separately-numbered publish-poisoned techniques — AML.T0019 (datasets), AML.T0058 (models) and AML.T0104 (agent tools) — under a single parent, AML.T0115 (Publish Poisoned AI Artifacts), with the artifact class recorded by sub-technique. Those three ids are retired upstream; entries carrying them here were re-keyed and declare a `supersedes` field so an operator holding older data can still join the two. v2026.07 also published AML.T0113 (Steal Web Session Cookie), AML.T0091.001 (Use Alternate Authentication Material: Web Session Cookie) and AML.T0114 (AI Service Web Interface), all three carried here, and refreshed AML.T0054 (LLM Jailbreak). This curated subset holds 174 techniques and intentionally trails the full matrix. framework_gap: no framework has a control that addresses this TTP. secure_ai_v2_layer flags entries included in the CTID Secure AI v2 layered set (May 2026); maturity reflects CTID's technique-maturity classification (low / moderate / high).",
     "tlp": "CLEAR",
     "source_confidence": {
       "scheme": "Admiralty (A-F + 1-6)",
@@ -2344,7 +2344,10 @@
       "ATLAS"
     ],
     "stix_id": "attack-pattern--dcbb91c4-3fcc-5c1b-b851-795600618124",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "subtechniques": [
+      "AML.T0091.001"
+    ]
   },
   "AML.T0092": {
     "id": "AML.T0092",
@@ -3622,7 +3625,9 @@
     "description": "Adversary publishes a poisoned AI artifact — a dataset, a model, or an agent tool — to a distribution channel where a victim will discover and consume it. ATLAS 2026.07 consolidated the three previously separate publish-poisoned techniques under this parent; the sub-techniques record which artifact class is published.",
     "supersedes": "AML.T0019, AML.T0058, AML.T0104",
     "cve_refs": [],
-    "exceptd_skills": []
+    "exceptd_skills": [],
+    "stix_id": "attack-pattern--625576d9-f6b7-556e-bfed-35828f8476e3",
+    "last_verified": "2026-08-08"
   },
   "AML.T0115.000": {
     "id": "AML.T0115.000",
@@ -3630,17 +3635,16 @@
     "tactic": "Resource Development",
     "description": "Adversaries may [Poison Training Data](/techniques/AML.T0020) and publish it to a public location.",
     "reference_url": "https://atlas.mitre.org/techniques/AML.T0115.000",
-    "last_verified": "2026-05-19",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
+    "last_verified": "2026-08-08",
     "description_full": "Adversaries may [Poison Training Data](/techniques/AML.T0020) and publish it to a public location. The poisoned dataset may be a novel dataset or a poisoned variant of an existing open source dataset. This data may be introduced to a victim system via [AI Supply Chain Compromise](/techniques/AML.T0010).",
     "platforms": [
       "ATLAS"
     ],
-    "stix_id": "attack-pattern--c38896b2-974c-5ed5-adeb-c2477b311353",
+    "stix_id": "attack-pattern--639ae26e-0aad-5969-ad81-a6ef134297c6",
     "is_subtechnique": true,
     "supersedes": "AML.T0019",
-    "parent_technique": "AML.T0115"
+    "parent_technique": "AML.T0115",
+    "superseded_stix_id": "attack-pattern--c38896b2-974c-5ed5-adeb-c2477b311353"
   },
   "AML.T0115.001": {
     "id": "AML.T0115.001",
@@ -3648,17 +3652,16 @@
     "tactic": "Resource Development",
     "description": "Adversaries may publish a poisoned model to a public location such as a model registry or code repository.",
     "reference_url": "https://atlas.mitre.org/techniques/AML.T0115.001",
-    "last_verified": "2026-05-19",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
+    "last_verified": "2026-08-08",
     "description_full": "Adversaries may publish a poisoned model to a public location such as a model registry or code repository. The poisoned model may be a novel model or a poisoned variant of an existing open-source model. This model may be introduced to a victim system via [AI Supply Chain Compromise](/techniques/AML.T0010).",
     "platforms": [
       "ATLAS"
     ],
-    "stix_id": "attack-pattern--d4c7f78e-4609-555c-a2eb-3d344dab3309",
+    "stix_id": "attack-pattern--28b3b5f8-fc35-5fd2-bc4b-b7d2cfec3110",
     "is_subtechnique": true,
     "supersedes": "AML.T0058",
-    "parent_technique": "AML.T0115"
+    "parent_technique": "AML.T0115",
+    "superseded_stix_id": "attack-pattern--d4c7f78e-4609-555c-a2eb-3d344dab3309"
   },
   "AML.T0115.002": {
     "id": "AML.T0115.002",
@@ -3682,18 +3685,59 @@
     "exceptd_skills": [],
     "secure_ai_v2_layer": true,
     "maturity": "high",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-08-08",
     "description_full": "Adversaries may create and publish poisoned AI agent tools. Poisoned tools may contain an [LLM Prompt Injection](/techniques/AML.T0051), which can lead to a variety of impacts. Tools may be published to open source version control repositories (e.g. GitHub, GitLab), to package registries (e.g. npm), or to repositories specifically designed for sharing tools (e.g. OpenClaw Hub). These registries may be largely unregulated and may contain many poisoned tools [\\[1\\]][1]. Tools may also be published as remotely hosted servers [\\[2\\]][2]. [1]: https://opensourcemalware.com/blog/clawdbot-skills-ganked-your-crypto [2]: https://mcpservers.org/remote-mcp-servers",
     "platforms": [
       "ATLAS"
     ],
     "reference_url": "https://atlas.mitre.org/techniques/AML.T0115.002",
-    "stix_id": "attack-pattern--04842d98-bb69-586e-9765-6ff1f56ef722",
+    "stix_id": "attack-pattern--75f2d288-ce6a-5f97-a79a-b621903b526a",
     "is_subtechnique": true,
     "cve_refs": [
       "CVE-2025-54136"
     ],
     "supersedes": "AML.T0104",
-    "parent_technique": "AML.T0115"
+    "parent_technique": "AML.T0115",
+    "superseded_stix_id": "attack-pattern--04842d98-bb69-586e-9765-6ff1f56ef722"
+  },
+  "AML.T0091.001": {
+    "id": "AML.T0091.001",
+    "name": "Use Alternate Authentication Material: Web Session Cookie",
+    "tactic": "lateral-movement",
+    "description": "Adversaries may use stolen web session cookies to authenticate to AI services and applications without needing the account's credentials or completing multi-factor authentication.",
+    "is_subtechnique": true,
+    "parent_technique": "AML.T0091",
+    "reference_url": "https://atlas.mitre.org/techniques/AML.T0091.001",
+    "stix_id": "attack-pattern--af720af7-083e-5229-9ef1-ac43b6a8f470",
+    "platforms": [
+      "ATLAS"
+    ],
+    "last_verified": "2026-08-08"
+  },
+  "AML.T0113": {
+    "id": "AML.T0113",
+    "name": "Steal Web Session Cookie",
+    "tactic": "Credential Access",
+    "description": "Adversaries may steal web application or service session cookies to gain authenticated access to AI services, bypassing the credential and multi-factor prompts the account is otherwise protected by.",
+    "is_subtechnique": false,
+    "reference_url": "https://atlas.mitre.org/techniques/AML.T0113",
+    "stix_id": "attack-pattern--bd255694-5675-50a3-b03e-c341bebd72f5",
+    "platforms": [
+      "ATLAS"
+    ],
+    "last_verified": "2026-08-08"
+  },
+  "AML.T0114": {
+    "id": "AML.T0114",
+    "name": "AI Service Web Interface",
+    "tactic": "Command and Control",
+    "description": "Adversaries may communicate with compromised systems by driving the web interface of a public AI assistant as a command-and-control relay — automating a browser or WebView rather than calling the provider's API, so the traffic resembles ordinary interactive use.",
+    "is_subtechnique": false,
+    "reference_url": "https://atlas.mitre.org/techniques/AML.T0114",
+    "stix_id": "attack-pattern--40a17734-3151-5082-a69d-9ec7c7edb5ce",
+    "platforms": [
+      "ATLAS"
+    ],
+    "last_verified": "2026-08-08"
   }
 }

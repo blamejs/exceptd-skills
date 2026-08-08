@@ -1,0 +1,126 @@
+"use strict";
+
+/**
+ * tests/check-epss-consistency.test.js
+ *
+ * Subject coverage for the scripts/check-epss-consistency.js predeploy gate.
+ * The gate proves, without network access, that each entry's epss_score and
+ * epss_percentile were taken from the same EPSS publication — the percentile is
+ * the score's rank within its day, so a cohort sorted by score must come out
+ * sorted by percentile.
+ *
+ *  - PASS contract (live): the shipped catalog exits 0;
+ *  - PASS contract (fixture): a consistent cohort exits 0;
+ *  - FAIL contract: a stale-percentile pair exits 1 and names both CVEs;
+ *  - rounding tolerance: a sub-1e-3 inversion is published rounding, not drift;
+ *  - half-populated pair: score without percentile fails and names the field;
+ *  - cohort isolation: entries from different dates are never compared;
+ *  - no-EPSS entries are ignored rather than treated as violations.
+ */
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const { spawnSync } = require("node:child_process");
+
+const ROOT = path.resolve(__dirname, "..");
+const SCRIPT = path.join(ROOT, "scripts", "check-epss-consistency.js");
+const { ROUNDING_TOLERANCE } = require(SCRIPT);
+
+function runGate(catalog) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "epss-gate-"));
+  const file = path.join(dir, "catalog.json");
+  try {
+    fs.writeFileSync(file, JSON.stringify(catalog, null, 2));
+    const r = spawnSync(process.execPath, [SCRIPT, file], { encoding: "utf8" });
+    return { status: r.status, out: `${r.stdout || ""}${r.stderr || ""}` };
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+function entry(score, percentile, date) {
+  return { epss_score: score, epss_percentile: percentile, epss_date: date };
+}
+
+test("the shipped catalog's EPSS pairs are internally consistent", () => {
+  const r = spawnSync(process.execPath, [SCRIPT], { encoding: "utf8" });
+  assert.equal(r.status, 0, `${r.stdout || ""}${r.stderr || ""}`);
+  assert.match(r.stdout, /every cohort ranks monotonically/);
+});
+
+test("a cohort whose percentiles track its scores passes", () => {
+  const r = runGate({
+    "CVE-2026-0001": entry(0.1, 0.5, "2026-08-07"),
+    "CVE-2026-0002": entry(0.4, 0.8, "2026-08-07"),
+    "CVE-2026-0003": entry(0.9, 0.99, "2026-08-07"),
+  });
+  assert.equal(r.status, 0, r.out);
+});
+
+test("a percentile left behind from an earlier publication fails and names both CVEs", () => {
+  // 0001 scores lower but ranks higher — impossible within one publication.
+  const r = runGate({
+    "CVE-2026-0001": entry(0.013, 0.926, "2026-08-07"),
+    "CVE-2026-0002": entry(0.5, 0.6, "2026-08-07"),
+  });
+  assert.equal(r.status, 1, r.out);
+  assert.match(r.out, /CVE-2026-0001/);
+  assert.match(r.out, /CVE-2026-0002/);
+  assert.match(r.out, /different publications/);
+});
+
+test("an inversion smaller than published rounding is not reported as drift", () => {
+  // EPSS publishes five decimals, so adjacent ranks can invert by a hair.
+  const r = runGate({
+    "CVE-2026-0001": entry(0.20001, 0.70002, "2026-08-07"),
+    "CVE-2026-0002": entry(0.20002, 0.70001, "2026-08-07"),
+  });
+  assert.equal(r.status, 0, r.out);
+});
+
+test("an inversion just past the tolerance IS reported", () => {
+  const gap = ROUNDING_TOLERANCE * 10;
+  const r = runGate({
+    "CVE-2026-0001": entry(0.2, 0.7, "2026-08-07"),
+    "CVE-2026-0002": entry(0.3, 0.7 - gap, "2026-08-07"),
+  });
+  assert.equal(r.status, 1, r.out);
+});
+
+test("a score written without its percentile fails and names the missing field", () => {
+  const r = runGate({
+    "CVE-2026-0001": { epss_score: 0.42, epss_date: "2026-08-07" },
+  });
+  assert.equal(r.status, 1, r.out);
+  assert.match(r.out, /epss_percentile/);
+  assert.match(r.out, /CVE-2026-0001/);
+});
+
+test("a percentile written without its score fails and names the missing field", () => {
+  const r = runGate({
+    "CVE-2026-0001": { epss_percentile: 0.42, epss_date: "2026-08-07" },
+  });
+  assert.equal(r.status, 1, r.out);
+  assert.match(r.out, /epss_score/);
+});
+
+test("entries from different publications are never compared against each other", () => {
+  // Across dates the whole distribution shifts, so this ordering is normal.
+  const r = runGate({
+    "CVE-2026-0001": entry(0.9, 0.99, "2026-08-07"),
+    "CVE-2026-0002": entry(0.1, 0.2, "2026-08-07"),
+    "CVE-2026-0003": entry(0.95, 0.5, "2026-01-01"),
+  });
+  assert.equal(r.status, 0, r.out);
+});
+
+test("entries carrying no EPSS data at all are ignored", () => {
+  const r = runGate({
+    "CVE-2026-0001": entry(0.1, 0.5, "2026-08-07"),
+    "CVE-2026-0002": { cvss_score: 9.8 },
+  });
+  assert.equal(r.status, 0, r.out);
+});

@@ -104,18 +104,32 @@ const COMMENT_EXEMPT = new Set([
 // need to name individual local-only files. Untracked-but-NOT-ignored files
 // ARE still scanned: a new file a contributor is about to commit is exactly
 // what the gate must catch. Computed via `git check-ignore` over the walked set.
+// Returns the ignored subset, or NULL when git cannot answer.
+//
+// "No path matched" and "the question could not be asked" are different
+// results and must not collapse into the same empty set. Without a repository
+// — a build context that omits .git/, or git not installed — an empty set
+// silently reclassifies every local-only file as part of the shipped surface,
+// so the gate reports violations in files a clone never contains. Returning
+// null lets the caller say it could not determine the surface instead of
+// asserting a wrong one.
 function gitIgnoredSet(relPaths) {
   if (!relPaths.length) return new Set();
   try {
     const out = execFileSync("git", ["check-ignore", "--stdin"], {
       cwd: ROOT, input: relPaths.join("\n"), encoding: "utf8", maxBuffer: 64 * 1024 * 1024,
+      stdio: ["pipe", "pipe", "pipe"],
     });
     return new Set(out.split(/\r?\n/).filter(Boolean));
   } catch (e) {
-    // `git check-ignore --stdin` exits 1 when NO path is ignored (not an
-    // error); any paths it did match are on stdout. Absent that, none ignored.
+    // Exit 1 with no stderr is git's way of saying "no path matched" — a real
+    // answer, and an empty set is correct. Anything else (git missing, not a
+    // repository, .git absent) means the question went unanswered.
+    const status = e && typeof e.status === "number" ? e.status : null;
+    const stderr = e && e.stderr ? String(e.stderr).trim() : "";
     const out = e && e.stdout ? String(e.stdout) : "";
-    return new Set(out.split(/\r?\n/).filter(Boolean));
+    if (status === 1 && !stderr) return new Set(out.split(/\r?\n/).filter(Boolean));
+    return null;
   }
 }
 
@@ -185,12 +199,16 @@ function countLineViolations(rel) {
 function scanCurrent() {
   const files = walk(ROOT);
   const ignored = gitIgnoredSet(files);
+  // Without git the shipped surface is unknowable: local-only files are
+  // indistinguishable from tracked ones, so any result would be a guess.
+  // Report that rather than emit findings the baseline cannot be compared to.
+  if (ignored === null) return { byFile: {}, filenameViolations: [], surfaceUnknown: true };
   const byFile = {};
   const filenameViolations = [];
   for (const rel of files) {
-    // Skip git-ignored, local-only files (a contributor's private working notes
-    // that `git clone` never ships). Untracked-but-not-ignored files are still
-    // scanned — a new file about to be committed is what the gate guards.
+    // Skip git-ignored, local-only files that `git clone` never ships.
+    // Untracked-but-not-ignored files are still scanned — a new file about to
+    // be committed is exactly what the gate guards.
     if (ignored.has(rel)) continue;
     if (FILENAME_VERSION_RE.test(rel)) filenameViolations.push(rel);
     const n = countLineViolations(rel);
@@ -228,6 +246,32 @@ function writeBaseline(current) {
 function main() {
   const wantUpdate = process.argv.includes("--update-baseline");
   const current = scanCurrent();
+
+  if (current.surfaceUnknown) {
+    // Never write a baseline from a scan that could not tell shipped files from
+    // local ones — that would bake the wrong surface in permanently.
+    //
+    // Automation is the one place this must not degrade to a skip. This gate
+    // runs inside predeploy, and predeploy guards the publish job, so a
+    // silently-skipped run there stops enforcing on exactly the path that
+    // ships. Locally — a container built without .git, a tarball inspection —
+    // skipping is the honest answer, because the shipped surface genuinely is
+    // not knowable there and failing would only punish the harness.
+    const inAutomation = process.env.CI === "true" || !!process.env.GITHUB_ACTIONS;
+    if (inAutomation) {
+      console.error("[check-version-tags] FAIL — no git repository available, so the shipped");
+      console.error("  surface cannot be determined. In automation this is a failure, not a skip:");
+      console.error("  this gate runs inside predeploy, which guards publishing. Ensure the job");
+      console.error("  checks out git metadata (actions/checkout provides it by default).");
+      process.exitCode = 2;
+      return;
+    }
+    console.error("[check-version-tags] SKIPPED — no git repository available, so the shipped");
+    console.error("  surface cannot be determined. This is not a pass; run it where git metadata");
+    console.error("  is present. In CI the same condition fails instead.");
+    process.exitCode = 0;
+    return;
+  }
 
   if (wantUpdate) {
     writeBaseline(current);

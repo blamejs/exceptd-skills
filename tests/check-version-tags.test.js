@@ -16,6 +16,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
+const os = require("node:os");
 
 const ROOT = path.join(__dirname, "..");
 const SCRIPT = path.join(ROOT, "scripts", "check-version-tags.js");
@@ -314,4 +315,60 @@ require("node:test").describe("check-version-tags scan exports", () => {
     assert.equal(typeof r.byFile, "object");
     assert.ok(Array.isArray(r.filenameViolations));
   });
+});
+
+// The scan needs git to tell shipped files from a contributor's local-only
+// ones. When git cannot answer, the surface is unknowable — and the two
+// reasonable responses differ by context. Locally (a container built without
+// .git) skipping is honest. In automation it must fail: this gate runs inside
+// predeploy, and predeploy guards the publish job, so a silent skip there would
+// stop enforcing on exactly the path that ships.
+function runWithoutGit(env) {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vtags-nogit-"));
+  for (const d of ["scripts", "lib", "data"]) {
+    fs.cpSync(path.join(ROOT, d), path.join(tmp, d), { recursive: true });
+  }
+  fs.copyFileSync(path.join(ROOT, "package.json"), path.join(tmp, "package.json"));
+  fs.mkdirSync(path.join(tmp, "tests"), { recursive: true });
+  // A local-only file carrying version stamps: the thing that must not be
+  // reported as a shipped-surface violation.
+  fs.writeFileSync(path.join(tmp, "LOCAL-NOTES.md"), "# scratch 0.18.1 and 0.19.0\n");
+  try {
+    return spawnSync(process.execPath, [path.join(tmp, "scripts", "check-version-tags.js")], {
+      cwd: tmp, encoding: "utf8", env: { ...process.env, CI: "", GITHUB_ACTIONS: "", ...env },
+    });
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+test("without git outside automation the scan skips rather than inventing violations", () => {
+  const r = runWithoutGit({});
+  assert.equal(r.status, 0, `expected a clean skip, got ${r.status}: ${r.stderr}`);
+  assert.match(r.stderr, /SKIPPED/, "the skip must be stated, not silent");
+  assert.doesNotMatch(r.stderr, /LOCAL-NOTES\.md/,
+    "a local-only file must never be reported as a shipped-surface violation");
+});
+
+test("without git IN automation the scan fails instead of skipping", () => {
+  for (const env of [{ CI: "true" }, { GITHUB_ACTIONS: "true" }]) {
+    const r = runWithoutGit(env);
+    // The exact code, not merely non-zero: a `notEqual(0)` here would also be
+    // satisfied by an unrelated crash, so it would keep passing even if this
+    // branch stopped working and something else started failing instead.
+    assert.equal(r.status, 2,
+      `an undeterminable surface must exit 2 in automation (env ${JSON.stringify(env)}) — this gate ` +
+      "runs inside predeploy, which guards publishing");
+    assert.match(r.stderr, /FAIL/);
+  }
+});
+
+test("a baseline is never written from a scan that could not see the surface", () => {
+  const src = fs.readFileSync(path.join(ROOT, "scripts", "check-version-tags.js"), "utf8");
+  const idx = src.indexOf("surfaceUnknown");
+  assert.ok(idx > 0, "the unknown-surface branch must exist");
+  // The unknown-surface branch has to return before the --update-baseline
+  // handler, or a skipped scan could overwrite the baseline with an empty one.
+  assert.ok(src.indexOf("surfaceUnknown", idx) < src.indexOf("wantUpdate", src.indexOf("function main")),
+    "the unknown-surface check must precede the baseline write");
 });
