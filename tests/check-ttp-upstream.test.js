@@ -110,3 +110,29 @@ test("the refresh workflow preserves the validator's exit code and stderr", () =
   assert.doesNotMatch(wf, /check-ttp-upstream\.js\s*\|\s*tee/,
     "piping straight into tee masks the exit code — redirect and capture $? instead");
 });
+
+test("a pinned version cannot steer the upstream request", () => {
+  // CodeQL flagged the pin flowing out of a catalog file into a fetch URL. The
+  // pins are repo-controlled, so this is not a live exploit path, but shape-
+  // checking costs nothing and converts a tampered or typo'd _meta into a clear
+  // error rather than a redirected request or a puzzling 404.
+  const { VERSION_SHAPES, assertPinShape } = require(SCRIPT);
+
+  assert.equal(VERSION_SHAPES.attack.test("19.2"), true, "the real pin must pass");
+  assert.equal(VERSION_SHAPES.atlas.test("2026.07"), true, "the real pin must pass");
+  assert.equal(VERSION_SHAPES.atlas.test("2025.11.2"), true, "ATLAS point releases must pass");
+
+  // Anything that could redirect the fetch is rejected before a request exists.
+  for (const bad of ["../../evil", "19.2/../../x", "v19.2", "19.2 ", "", "19.2\n", "..%2f", "19"]) {
+    assert.equal(VERSION_SHAPES.attack.test(bad), false, `attack pin ${JSON.stringify(bad)} must be rejected`);
+  }
+  for (const bad of ["../x", "2026.07/../..", "2026.7", "latest", "2026.07x"]) {
+    assert.equal(VERSION_SHAPES.atlas.test(bad), false, `atlas pin ${JSON.stringify(bad)} must be rejected`);
+  }
+
+  assert.equal(assertPinShape("attack", "19.2"), "19.2");
+  assert.throws(() => assertPinShape("attack", "../../evil"), /does not match/,
+    "a bad pin must throw before any URL is built");
+  assert.throws(() => assertPinShape("atlas", null), /does not match/,
+    "a missing pin must throw rather than stringify into a URL");
+});

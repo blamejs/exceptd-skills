@@ -40,6 +40,31 @@ function readJson(p) {
   return JSON.parse(fs.readFileSync(path.join(ROOT, p), "utf8"));
 }
 
+/**
+ * A pinned version read out of a catalog is file data, and it is about to be
+ * interpolated into an upstream URL. Constrain it to the exact shape each
+ * project publishes before it can reach a request, so a malformed or tampered
+ * `_meta` cannot steer the fetch — and so a typo'd pin fails here with a clear
+ * message instead of as a puzzling 404 later.
+ *
+ *   ATT&CK  semver-ish major.minor           19.2
+ *   ATLAS   CalVer YYYY.MM with optional .N  2026.07, 2025.11.2
+ */
+const VERSION_SHAPES = {
+  attack: /^\d{1,3}\.\d{1,3}$/,
+  atlas: /^\d{4}\.\d{2}(\.\d{1,2})?$/,
+};
+
+function assertPinShape(kind, value) {
+  if (typeof value !== "string" || !VERSION_SHAPES[kind].test(value)) {
+    throw new Error(
+      `${kind} pin ${JSON.stringify(value)} does not match ${VERSION_SHAPES[kind]} — ` +
+        `refusing to build an upstream URL from it`
+    );
+  }
+  return value;
+}
+
 async function fetchJson(url) {
   const res = await fetch(url, { headers: { "user-agent": UA } });
   if (!res.ok) throw new Error(`${res.status} ${url}`);
@@ -53,7 +78,8 @@ async function fetchText(url) {
 }
 
 /** Every ATT&CK technique id in the pinned release, with its revocation state. */
-async function liveAttack(version) {
+async function liveAttack(rawVersion) {
+  const version = encodeURIComponent(assertPinShape("attack", rawVersion));
   const out = new Map();
   for (const dom of ATTACK_DOMAINS) {
     const j = await fetchJson(
@@ -89,7 +115,8 @@ async function liveAttack(version) {
 }
 
 /** Every ATLAS id in the pinned content release. */
-async function liveAtlas(version) {
+async function liveAtlas(rawVersion) {
+  const version = encodeURIComponent(assertPinShape("atlas", rawVersion));
   const yaml = await fetchText(
     `https://raw.githubusercontent.com/mitre-atlas/atlas-data/v${version}/dist/v6/ATLAS-${version}.yaml`
   );
@@ -167,7 +194,9 @@ async function main() {
   process.exitCode = findings.length ? 1 : 0;
 }
 
-main().catch((err) => {
+if (require.main === module) main().catch((err) => {
   process.stderr.write(`[check-ttp-upstream] ERROR ${err && err.stack ? err.stack : err}\n`);
   process.exitCode = 2;
 });
+
+module.exports = { VERSION_SHAPES, assertPinShape };
