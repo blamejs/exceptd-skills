@@ -2,6 +2,7 @@
 .*
 !.gitignore
 !.gitattributes
+!.nvmrc
 !.gitleaks.toml
 !.cursorrules
 !.windsurfrules
