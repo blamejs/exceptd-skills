@@ -15,8 +15,21 @@
  * entry: both numbers are in range, both look like EPSS values, and nothing
  * downstream can tell they describe different days. The result is a CVE ranked
  * as top-decile urgency on a score that no longer supports it, which is exactly
- * the input the prioritisation model trusts most. Sorting the cohort surfaces
- * it immediately.
+ * the input the prioritisation model trusts most.
+ *
+ * What the ordering check does and does not establish. Monotonicity is a
+ * necessary condition, not a sufficient one: it catches a stale percentile that
+ * contradicts the new score's rank, which is what a partial refresh usually
+ * produces, but a stale value that happens to preserve the ordering passes.
+ * Proving two fields share a publication would require the fetched row, and
+ * that is not recoverable from the catalog offline. So this is a corruption
+ * detector, not a provenance proof — the provenance guarantee has to come from
+ * the write side, by fetching and writing score, percentile and date together.
+ *
+ * Three checks run:
+ *   - within each epss_date, sorting by score must sort by percentile;
+ *   - an entry carries both numeric fields or neither;
+ *   - epss_note, which is derived text, must restate the current fields.
  *
  * Entries are grouped by epss_date so each publication is checked against
  * itself; comparing across days is meaningless because the whole distribution
@@ -43,6 +56,22 @@ const ROUNDING_TOLERANCE = 1e-3;
 
 function loadCatalog(file) {
   return JSON.parse(fs.readFileSync(file, "utf8"));
+}
+
+function ordinal(n) {
+  const suffixes = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return `${n}${suffixes[(v - 20) % 10] || suffixes[v] || suffixes[0]}`;
+}
+
+/**
+ * The operator-readable restatement of an entry's EPSS fields. Entries carry it
+ * as `epss_note`, and it is derived, not authored — so it must be rebuilt
+ * whenever the numbers move.
+ */
+function renderNote(entry) {
+  const pct = Math.round(entry.epss_percentile * 100);
+  return `FIRST EPSS ${entry.epss_score} (${ordinal(pct)} percentile) as of ${entry.epss_date}.`;
 }
 
 /**
@@ -97,7 +126,8 @@ function inversions(rows) {
 }
 
 function check(catalogFile) {
-  const { groups, incomplete } = cohorts(loadCatalog(catalogFile));
+  const catalog = loadCatalog(catalogFile);
+  const { groups, incomplete } = cohorts(catalog);
   const failures = [];
 
   for (const [date, rows] of groups) {
@@ -113,6 +143,22 @@ function check(catalogFile) {
 
   for (const row of incomplete) {
     failures.push(`${row.id}: has one EPSS field but not ${row.missing} — write both together or neither`);
+  }
+
+  // The prose restatement drifts the same way the percentile does: a refresh
+  // moves the numbers and leaves the sentence describing the previous
+  // publication, so the entry states two different scores as of two different
+  // dates. It is derived text, so it can be checked exactly.
+  for (const [id, entry] of Object.entries(catalog)) {
+    if (typeof entry.epss_note !== "string") continue;
+    if (typeof entry.epss_score !== "number" || typeof entry.epss_percentile !== "number") continue;
+    const expected = renderNote(entry);
+    if (entry.epss_note !== expected) {
+      failures.push(
+        `${id}: epss_note reads ${JSON.stringify(entry.epss_note)} but the fields say ` +
+          `${JSON.stringify(expected)} — regenerate the note when the numbers move`
+      );
+    }
   }
 
   return { failures, cohortCount: groups.size, entryCount: [...groups.values()].reduce((n, r) => n + r.length, 0) };
@@ -140,4 +186,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { check, cohorts, inversions, ROUNDING_TOLERANCE };
+module.exports = { check, cohorts, inversions, renderNote, ROUNDING_TOLERANCE };

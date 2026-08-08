@@ -159,3 +159,36 @@ test("check() returns the failure list and the corpus size it examined", () => {
   assert.ok(live.entryCount > 500, `expected the shipped corpus, got ${live.entryCount}`);
   assert.ok(live.cohortCount >= 1);
 });
+
+test("a derived note left describing the previous publication is caught", () => {
+  const r = runGate({
+    "CVE-2026-0001": {
+      epss_score: 0.00501,
+      epss_percentile: 0.40192,
+      epss_date: "2026-08-08",
+      epss_note: "FIRST EPSS 0.00125 (31st percentile) as of 2026-05-26.",
+    },
+  });
+  assert.equal(r.status, 1, r.out);
+  assert.match(r.out, /epss_note/);
+  assert.match(r.out, /0\.00125/);
+});
+
+test("a note that restates the current fields passes", () => {
+  const { renderNote } = require(SCRIPT);
+  const e = { epss_score: 0.00501, epss_percentile: 0.40192, epss_date: "2026-08-08" };
+  const r = runGate({ "CVE-2026-0001": { ...e, epss_note: renderNote(e) } });
+  assert.equal(r.status, 0, r.out);
+});
+
+test("renderNote() picks the ordinal suffix the teens exception requires", () => {
+  const { renderNote } = require(SCRIPT);
+  const at = (p) => renderNote({ epss_score: 0.5, epss_percentile: p, epss_date: "2026-08-08" });
+  assert.match(at(0.11), /11th percentile/);
+  assert.match(at(0.12), /12th percentile/);
+  assert.match(at(0.13), /13th percentile/);
+  assert.match(at(0.21), /21st percentile/);
+  assert.match(at(0.22), /22nd percentile/);
+  assert.match(at(0.23), /23rd percentile/);
+  assert.match(at(0.4), /40th percentile/);
+});
