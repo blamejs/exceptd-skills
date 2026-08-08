@@ -67,6 +67,31 @@ test('refresh-external marks pins as report-only', () => {
   assert.equal(report.sources.pins.report_only, true);
 });
 
+// The advisory feeds surface every CVE seen across USN / RHSA / ZDI / CISA
+// that the catalog does not carry — thousands of them, and never zero, since
+// the catalog deliberately does not track every Ubuntu kernel CVE. The refresh
+// workflow counts only non-report_only sources toward `upsert_diffs` and gates
+// its apply step AND its whole open-pr job on that being non-zero, so an
+// unflagged advisories source pins the gate permanently open. The source's own
+// applyDiff is a no-op, but the flag is what the callers read.
+test('refresh-external marks advisories as report-only so it cannot pin the upsert gate open', () => {
+  const r = runDryRun(['--source', 'advisories']);
+  assert.equal(r.exitCode, 0);
+  const report = JSON.parse(fs.readFileSync(REPORT, 'utf8'));
+  assert.equal(report.sources.advisories.report_only, true);
+});
+
+test('only sources that can write the catalog count toward the upsert-diff gate', () => {
+  const { ALL_SOURCES } = require(path.join(ROOT, 'lib', 'refresh-external.js'));
+  const counted = Object.entries(ALL_SOURCES)
+    .filter(([, s]) => s.report_only !== true)
+    .map(([n]) => n)
+    .sort();
+  assert.deepEqual(counted, ['cve-regression-watcher', 'epss', 'ghsa', 'kev', 'nvd', 'osv', 'rfc'],
+    'a source whose applyDiff cannot write the catalog must declare report_only, or it inflates ' +
+    'upsert_diffs and makes the refresh workflow open a PR on every run regardless of real drift');
+});
+
 test('refresh-external rejects unknown --source values', () => {
   const r = runDryRun(['--source', 'made-up-thing']);
   assert.equal(r.exitCode, 2);
