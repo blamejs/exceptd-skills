@@ -1157,7 +1157,7 @@
     "T1110": [
       "identity-assurance"
     ],
-    "T0855": [
+    "T1692.001": [
       "ot-ics-security",
       "sector-energy"
     ],
@@ -1246,7 +1246,7 @@
       "log-injection-telemetry",
       "privacy-consent-ops"
     ],
-    "T1562.008": [
+    "T1685.002": [
       "audit-log-integrity"
     ],
     "T1574": [

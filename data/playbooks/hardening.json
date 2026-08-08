@@ -555,7 +555,7 @@
           "description": "Skeletal audit ruleset means none of the catalogued kernel LPE chains (sudoers tampering, execve under attacker-controlled paths, /etc/shadow read) leave a trail. Detection coverage for the very anti-patterns this playbook enumerates is missing.",
           "confidence": "high",
           "deterministic": false,
-          "attack_ref": "T1562.006"
+          "attack_ref": "T1685"
         },
         {
           "id": "umask-permissive",

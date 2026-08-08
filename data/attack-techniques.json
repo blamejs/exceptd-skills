@@ -1,10 +1,10 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "last_updated": "2026-06-10",
-    "last_threat_review": "2026-06-10",
-    "attack_version": "19.1",
-    "attack_version_date": "2026-05-12",
+    "last_updated": "2026-08-08",
+    "last_threat_review": "2026-08-08",
+    "attack_version": "19.2",
+    "attack_version_date": "2026-08-05",
     "tactic_split_note": "ATT&CK v19 split Defense Evasion (TA0005) into Stealth (TA0005) and Defense Impairment (TA0112). Entries here record their post-split tactic; entries whose tactic moved carry `tactic_moved_from: \"Defense Evasion\"` for traceability.",
     "detection_strategies_note": "ATT&CK v18 introduced Detection Strategies as first-class objects (691 strategies, 1739 analytics at v18 release). Entries reference applicable strategy IDs (DSxxxx) where the technique has canonical strategy coverage; absence does not imply lack of detection.",
     "source": "https://attack.mitre.org — MITRE ATT&CK Enterprise + ICS, v19.1 (May 2026). Only techniques currently referenced by shipped exceptd skills and playbooks. The full ATT&CK matrix is intentionally not duplicated here; this is a resolution catalog for cross-reference validation, not a substitute for attack.mitre.org. See `npm run refresh-attack-techniques` (v0.13.0+) for the full corpus.",
@@ -21,58 +21,6 @@
       "note": "Catalog must be rebuilt against the upstream ATT&CK release whenever MITRE publishes a new version. AGENTS.md external-data version-pinning rule requires the bump to be intentional, not silent. ATT&CK ships semi-annually (April + October); audit on each release for tactic moves, technique splits, and new Detection Strategies."
     }
   },
-  "T0001": {
-    "name": "Authority Spoof",
-    "version": "v19",
-    "_gap_skip": {
-      "fields": [
-        "tactic",
-        "description",
-        "platforms"
-      ],
-      "reason": "legacy MITRE ID not present in current Enterprise or ICS-attack STIX bundles; retained for operator-curated CVE cross-references that pre-date the modern technique IDs"
-    },
-    "description": "Legacy MITRE ATT&CK ID retained for backward-compat with operator-curated CVE cross-references. Not in current Enterprise / ICS-attack STIX bundles."
-  },
-  "T0017": {
-    "name": "Spearphishing Attachment (ICS)",
-    "version": "v19",
-    "_gap_skip": {
-      "fields": [
-        "tactic",
-        "description",
-        "platforms"
-      ],
-      "reason": "legacy MITRE ID not present in current Enterprise or ICS-attack STIX bundles; retained for operator-curated CVE cross-references that pre-date the modern technique IDs"
-    },
-    "description": "Legacy MITRE ATT&CK ID retained for backward-compat with operator-curated CVE cross-references. Not in current Enterprise / ICS-attack STIX bundles."
-  },
-  "T0051": {
-    "name": "Position Tampering",
-    "version": "v19",
-    "_gap_skip": {
-      "fields": [
-        "tactic",
-        "description",
-        "platforms"
-      ],
-      "reason": "legacy MITRE ID not present in current Enterprise or ICS-attack STIX bundles; retained for operator-curated CVE cross-references that pre-date the modern technique IDs"
-    },
-    "description": "Legacy MITRE ATT&CK ID retained for backward-compat with operator-curated CVE cross-references. Not in current Enterprise / ICS-attack STIX bundles."
-  },
-  "T0096": {
-    "name": "Remote System Discovery (ICS)",
-    "version": "v19",
-    "_gap_skip": {
-      "fields": [
-        "tactic",
-        "description",
-        "platforms"
-      ],
-      "reason": "legacy MITRE ID not present in current Enterprise or ICS-attack STIX bundles; retained for operator-curated CVE cross-references that pre-date the modern technique IDs"
-    },
-    "description": "Legacy MITRE ATT&CK ID retained for backward-compat with operator-curated CVE cross-references. Not in current Enterprise / ICS-attack STIX bundles."
-  },
   "T0853": {
     "name": "Scripting",
     "version": "v19",
@@ -87,19 +35,6 @@
     "reference_url": "https://attack.mitre.org/techniques/T0853",
     "stix_id": "attack-pattern--2dc2b567-8821-49f9-9045-8740f3d0b958",
     "last_verified": "2026-05-19"
-  },
-  "T0855": {
-    "name": "Unauthorized Command Message",
-    "version": "v19",
-    "_gap_skip": {
-      "fields": [
-        "tactic",
-        "description",
-        "platforms"
-      ],
-      "reason": "legacy MITRE ID not present in current Enterprise or ICS-attack STIX bundles; retained for operator-curated CVE cross-references that pre-date the modern technique IDs"
-    },
-    "description": "Legacy MITRE ATT&CK ID retained for backward-compat with operator-curated CVE cross-references. Not in current Enterprise / ICS-attack STIX bundles."
   },
   "T0867": {
     "name": "Lateral Tool Transfer",
@@ -2913,61 +2848,6 @@
       "CVE-2025-24054"
     ]
   },
-  "T1562.001": {
-    "name": "Impair Defenses: Disable or Modify Tools",
-    "version": "v19",
-    "tactic": "Defense Impairment",
-    "tactic_moved_from": "Defense Evasion",
-    "tactic_id": "TA0112",
-    "detection_strategies": [
-      "DS0017",
-      "DS0022"
-    ],
-    "cve_refs": [
-      "BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND",
-      "CVE-2015-2291",
-      "CVE-2018-19320",
-      "CVE-2022-42475",
-      "CVE-2022-47966",
-      "CVE-2026-45498"
-    ],
-    "description": "Adversaries may modify and/or disable security tools to avoid possible detection of their malware/tools and activities.",
-    "description_full": "Adversaries may modify and/or disable security tools to avoid possible detection of their malware/tools and activities. This may take many forms, such as killing security software processes or services, modifying / deleting Registry keys or configuration files so that tools do not operate properly, or other methods to interfere with security tools scanning or reporting information. Adversaries may also disable updates to prevent the latest security patches from reaching tools on victim systems.(Citation: SCADAfence_ransomware) Adversaries may trigger a denial-of-service attack via legitimate system processes. It has been previously observed that the Windows Time Travel Debugging (TTD) monitor driver can be used to initiate a debugging session for a security tool (e.g., an EDR) and render the tool non-functional. By hooking the debugger into the EDR process, all child processes from the EDR will be automatically suspended. The attacker can terminate any EDR helper processes (unprotected by Windows Protected Process Light) by abusing the Process Explorer driver. In combination this will halt any attempt to restart services and cause the tool to crash.(Citation: Cocomazzi FIN7 Reboot) Adversaries may also tamper with artifacts deployed and utilized by security tools. Security tools may make dynamic changes to system components in order to maintain visibility into specific events. For example, security products may load their own modules and/or modify those loaded by processes to facilitate data collection. Similar to [Indicator Blocking](https://attack.mitre.org/techniques/T1562/006), adversaries may unhook or otherwise modify these features added by tools (especially those that exist in userland or are otherwise potentially accessible to adversaries) to avoid detection.(Citation: OutFlank System Calls)(Citation: MDSec System Calls) For example, adversaries may abuse the Windows process mitigation policy to block certain endpoint detection and response (EDR) products from loading their user-mode code via DLLs. By spawning a process with the PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON attribute using API calls like UpdateProcThreadAttribute, adversaries may evade detection by endpoint security solutions that rely on DLLs that are not signed by Microsoft. Alternatively, they may add new directories to an EDR tool’s exclusion list, enabling them to hide malicious files via [File/Path Exclusions](https://attack.mitre.org/techniques/T1564/012).(Citation: BlackBerry WhisperGate 2022)(Citation: Google Cloud Threat Intelligence FIN13 2021) Adversaries may also focus on specific applications such as Sysmon. For example, the “Start” and “Enable” values in <code>HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\WMI\\Autologger\\EventLog-Microsoft-Windows-Sysmon-Operational</code> may be modified to tamper with and potentially disable Sysmon logging.(Citation: disable_win_evt_logging) On network devices, adversaries may attempt to skip digital signature verification checks by altering startup configuration files and effectively disabling firmware verification that typically occurs at boot.(Citation: Fortinet Zero-Day and Custom Malware Used by Suspected Chinese Actor in Espionage Operation)(Citation: Analysis of FG-IR-22-369) In cloud environments, tools disabled by adversaries may include cloud monitoring agents that report back to services such as AWS CloudWatch or Google Cloud Monitor. Furthermore, although defensive tools may have anti-tampering mechanisms, adversaries may abuse tools such as legitimate rootkit removal kits to impair and/or disable these tools.(Citation: chasing_avaddon_ransomware)(Citation: dharma_ransomware)(Citation: demystifying_ryuk)(Citation: doppelpaymer_crowdstrike) For example, adversaries have used tools such as GMER to find and shut down hidden processes and antivirus software on infected systems.(Citation: demystifying_ryuk) Additionally, adversaries may exploit legitimate drivers from anti-virus software to gain access to kernel space (i.e. [Exploitation for Privilege Escalation](https://attack.mitre.org/techniques/T1068)), which may lead to bypassing anti-tampering features.(Citation: avoslocker_ransomware)",
-    "platforms": [
-      "Containers",
-      "IaaS",
-      "Linux",
-      "macOS",
-      "Network Devices",
-      "Windows"
-    ],
-    "reference_url": "https://attack.mitre.org/techniques/T1562/001",
-    "stix_id": "attack-pattern--ac08589e-ee59-4935-8667-d845e38fe579",
-    "is_subtechnique": true,
-    "last_verified": "2026-05-19"
-  },
-  "T1562.006": {
-    "name": "Impair Defenses: Indicator Blocking",
-    "version": "v19",
-    "tactic": "Defense Impairment",
-    "tactic_moved_from": "Defense Evasion",
-    "tactic_id": "TA0112",
-    "detection_strategies": [
-      "DS0017"
-    ],
-    "description": "An adversary may attempt to block indicators or events typically captured by sensors from being gathered and analyzed.",
-    "description_full": "An adversary may attempt to block indicators or events typically captured by sensors from being gathered and analyzed. This could include maliciously redirecting(Citation: Microsoft Lamin Sept 2017) or even disabling host-based sensors, such as Event Tracing for Windows (ETW)(Citation: Microsoft About Event Tracing 2018), by tampering settings that control the collection and flow of event telemetry.(Citation: Medium Event Tracing Tampering 2018) These settings may be stored on the system in configuration files and/or in the Registry as well as being accessible via administrative utilities such as [PowerShell](https://attack.mitre.org/techniques/T1059/001) or [Windows Management Instrumentation](https://attack.mitre.org/techniques/T1047). For example, adversaries may modify the `File` value in <code>HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\EventLog\\Security</code> to hide their malicious actions in a new or different .evtx log file. This action does not require a system reboot and takes effect immediately.(Citation: disable_win_evt_logging) ETW interruption can be achieved multiple ways, however most directly by defining conditions using the [PowerShell](https://attack.mitre.org/techniques/T1059/001) <code>Set-EtwTraceProvider</code> cmdlet or by interfacing directly with the Registry to make alterations. In the case of network-based reporting of indicators, an adversary may block traffic associated with reporting to prevent central analysis. This may be accomplished by many means, such as stopping a local process responsible for forwarding telemetry and/or creating a host-based firewall rule to block traffic to specific hosts responsible for aggregating events, such as security information and event management (SIEM) products. In Linux environments, adversaries may disable or reconfigure log processing tools such as syslog or nxlog to inhibit detection and monitoring capabilities to facilitate follow on behaviors. (Citation: LemonDuck) ESXi also leverages syslog, which can be reconfigured via commands such as `esxcli system syslog config set` and `esxcli system syslog config reload`.(Citation: Google Cloud Threat Intelligence ESXi VIBs 2022)(Citation: Broadcom Configuring syslog on ESXi)",
-    "platforms": [
-      "Windows",
-      "macOS",
-      "Linux",
-      "ESXi"
-    ],
-    "reference_url": "https://attack.mitre.org/techniques/T1562/006",
-    "stix_id": "attack-pattern--74d2a63f-3c7b-4852-92da-02d8fbab16da",
-    "is_subtechnique": true,
-    "last_verified": "2026-05-19"
-  },
   "T1565": {
     "name": "Data Manipulation",
     "version": "v19",
@@ -3378,24 +3258,6 @@
     "last_verified": "2026-05-19",
     "description": "Adversaries may constrain execution or actions based on the presence of a mutex associated with malware."
   },
-  "T1480.003": {
-    "name": "Execution Guardrails: Mutex Lock",
-    "version": "v19",
-    "tactic": "Stealth",
-    "tactic_id": "TA0005",
-    "added_in": "v19",
-    "detection_strategies": [
-      "DS0009"
-    ],
-    "_gap_skip": {
-      "fields": [
-        "platforms",
-        "description"
-      ],
-      "reason": "Operator-added technique ID not yet present in published MITRE ATT&CK STIX bundle. Refresher cannot backfill; this is a forward-looking placeholder."
-    },
-    "description": "Operator-added technique ID not yet present in published MITRE ATT&CK STIX bundle; tracked here as a forward-looking placeholder. Refine when MITRE publishes."
-  },
   "T1059.013": {
     "name": "Command and Scripting Interpreter: Cloud API",
     "version": "v19",
@@ -3437,25 +3299,6 @@
     "is_subtechnique": true,
     "last_verified": "2026-05-19",
     "description": "Adversaries may patch, modify, or otherwise backdoor cloud authentication processes that are tied to on-premises user identities in order to bypass typical authentication mechanisms, access credentials, and enable persistent access to accounts."
-  },
-  "T1486.004": {
-    "name": "Data Encrypted for Impact: Data Theft Before Encryption",
-    "version": "v19",
-    "tactic": "Impact",
-    "added_in": "v19",
-    "detection_strategies": [
-      "DS0007",
-      "DS0011",
-      "DS0029"
-    ],
-    "_gap_skip": {
-      "fields": [
-        "platforms",
-        "description"
-      ],
-      "reason": "Operator-added technique ID not yet present in published MITRE ATT&CK STIX bundle. Refresher cannot backfill; this is a forward-looking placeholder."
-    },
-    "description": "Operator-added technique ID not yet present in published MITRE ATT&CK STIX bundle; tracked here as a forward-looking placeholder. Refine when MITRE publishes."
   },
   "T1682": {
     "name": "Query Public AI Services",
@@ -3517,7 +3360,15 @@
     "stix_id": "attack-pattern--bbde9781-60aa-4b8a-a911-895b0c1b3872",
     "is_subtechnique": false,
     "last_verified": "2026-05-19",
-    "description": "Adversaries may disable, degrade, or tamper with security tools or applications (e.g., endpoint detection and response (EDR) tools, intrusion detection systems (IDS), antivirus, logging agents, sensors, etc.) to impair or reduce visibility of defensive capabilities."
+    "description": "Adversaries may disable, degrade, or tamper with security tools or applications (e.g., endpoint detection and response (EDR) tools, intrusion detection systems (IDS), antivirus, logging agents, sensors, etc.) to impair or reduce visibility of defensive capabilities.",
+    "cve_refs": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND",
+      "CVE-2015-2291",
+      "CVE-2018-19320",
+      "CVE-2022-42475",
+      "CVE-2022-47966",
+      "CVE-2026-45498"
+    ]
   },
   "T1686": {
     "name": "Disable or Modify System Firewall",
@@ -3540,7 +3391,10 @@
     "stix_id": "attack-pattern--eec096b8-c207-43df-b6c1-11523861e452",
     "is_subtechnique": false,
     "last_verified": "2026-05-19",
-    "description": "Adversaries may disable or modify host-based or network firewalls to impair defensive mechanisms and enable further action."
+    "description": "Adversaries may disable or modify host-based or network firewalls to impair defensive mechanisms and enable further action.",
+    "cve_refs": [
+      "BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND"
+    ]
   },
   "T1687": {
     "name": "Exploitation for Defense Impairment",
@@ -3646,25 +3500,6 @@
     "tactic": [
       "Discovery"
     ]
-  },
-  "T1562.008": {
-    "name": "Impair Defenses: Disable or Modify Cloud Logs",
-    "version": "v19",
-    "description": "An adversary may disable or modify cloud logging capabilities and integrations to limit what data is collected on their activities and avoid detection.",
-    "tactic": [
-      "Stealth"
-    ],
-    "description_full": "An adversary may disable or modify cloud logging capabilities and integrations to limit what data is collected on their activities and avoid detection. Cloud environments allow for collection and analysis of audit and application logs that provide insight into what activities a user does within the environment. If an adversary has sufficient permissions, they can disable or modify logging to avoid detection of their activities. For example, in AWS an adversary may disable CloudWatch/CloudTrail integrations prior to conducting further malicious activity.(Citation: Following the CloudTrail: Generating strong AWS security signals with Sumo Logic) They may alternatively tamper with logging functionality – for example, by removing any associated SNS topics, disabling multi-region logging, or disabling settings that validate and/or encrypt log files.(Citation: AWS Update Trail)(Citation: Pacu Detection Disruption Module) In Office 365, an adversary may disable logging on mail collection activities for specific users by using the `Set-MailboxAuditBypassAssociation` cmdlet, by disabling M365 Advanced Auditing for the user, or by downgrading the user’s license from an Enterprise E5 to an Enterprise E3 license.(Citation: Dark Reading Microsoft 365 Attacks 2021)",
-    "platforms": [
-      "IaaS",
-      "SaaS",
-      "Office Suite",
-      "Identity Provider"
-    ],
-    "reference_url": "https://attack.mitre.org/techniques/T1562/008",
-    "stix_id": "attack-pattern--cacc40da-4c9e-462c-80d5-fd70a178b12d",
-    "is_subtechnique": true,
-    "last_verified": "2026-05-19"
   },
   "T1136.003": {
     "name": "Create Account: Cloud Account",
@@ -3987,30 +3822,6 @@
     "reference_url": "https://attack.mitre.org/techniques/T1606",
     "stix_id": "attack-pattern--94cb00a4-b295-4d06-aa2b-5653b9c1be9c",
     "is_subtechnique": false
-  },
-  "T1562.004": {
-    "id": "T1562.004",
-    "name": "Impair Defenses: Disable or Modify System Firewall",
-    "tactic": [
-      "Defense Evasion"
-    ],
-    "description": "Adversaries may disable or modify system firewalls in order to bypass controls limiting network usage. While the technique is named for system firewalls specifically, the parent T1562 (Impair Defenses) covers the broader class of defense impairment that includes silently degrading update channels and signature freshness — UnDefend belongs to this class even when the specific sub-technique is closer to T1562.001 (Disable or Modify Tools). T1562.004 retained as a secondary ref because the UnDefend chain leaves Windows Firewall update logs in a corrupted state alongside the Defender pipeline tampering.",
-    "last_verified": "2026-05-19",
-    "notes": "Added v0.13.17 to support BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND attack_refs. The dominant technique is T1562.001 (already in local catalog); T1562.004 is the secondary mapping for the firewall-state side-effects of UnDefend.",
-    "cve_refs": [
-      "BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND"
-    ],
-    "description_full": "Adversaries may disable or modify system firewalls in order to bypass controls limiting network usage. Changes could be disabling the entire mechanism as well as adding, deleting, or modifying particular rules. This can be done numerous ways depending on the operating system, including via command-line, editing Windows Registry keys, and Windows Control Panel. Modifying or disabling a system firewall may enable adversary C2 communications, lateral movement, and/or data exfiltration that would otherwise not be allowed. For example, adversaries may add a new firewall rule for a well-known protocol (such as RDP) using a non-traditional and potentially less securitized port (i.e. [Non-Standard Port](https://attack.mitre.org/techniques/T1571)).(Citation: change_rdp_port_conti) Adversaries may also modify host networking settings that indirectly manipulate system firewalls, such as interface bandwidth or network connection request thresholds.(Citation: Huntress BlackCat) Settings related to enabling abuse of various [Remote Services](https://attack.mitre.org/techniques/T1021) may also indirectly modify firewall rules. In ESXi, firewall rules may be modified directly via the esxcli command line interface (e.g., via `esxcli network firewall set`) or via the vCenter user interface.(Citation: Trellix Rnasomhouse 2024)(Citation: Broadcom ESXi Firewall)",
-    "platforms": [
-      "ESXi",
-      "Linux",
-      "macOS",
-      "Network Devices",
-      "Windows"
-    ],
-    "reference_url": "https://attack.mitre.org/techniques/T1562/004",
-    "stix_id": "attack-pattern--5372c5fe-f424-4def-bcd5-d3a8e770f07b",
-    "is_subtechnique": true
   },
   "T1592": {
     "id": "T1592",
@@ -19665,7 +19476,8 @@
     "stix_id": "attack-pattern--34ff60a3-a3f8-42e4-bed0-af9a2cb563d7",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": []
   },
   "T1685.003": {
     "id": "T1685.003",
@@ -20528,7 +20340,8 @@
         "platforms"
       ],
       "reason": "ICS-attack techniques do not carry a platforms field in MITRE STIX — they target the ICS matrix as a whole rather than specific OS/cloud platforms"
-    }
+    },
+    "cve_refs": []
   },
   "T0809": {
     "id": "T0809",

@@ -44,7 +44,7 @@
     "attack_refs": [
       "T1070",
       "T1565.001",
-      "T1562.008"
+      "T1685.002"
     ],
     "cve_refs": [],
     "cwe_refs": [
@@ -320,7 +320,7 @@
           "description": "Unwitnessed, unaudited break-glass access is the standing path to disable logging or tamper with the audit trail with legitimate-looking privilege.",
           "confidence": "medium",
           "deterministic": false,
-          "attack_ref": "T1562.008",
+          "attack_ref": "T1685.002",
           "false_positive_checks_required": [
             "Confirm break-glass requires dual control (or at minimum independent approval) AND every use raises an immediate audited alert to a separate party — single-actor, unalerted break-glass is the finding.",
             "A system with no privileged break-glass mechanism has no such path; not in scope."

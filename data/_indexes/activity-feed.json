@@ -8,6 +8,22 @@
     {
       "date": "2026-08-08",
       "type": "catalog_update",
+      "artifact": "data/atlas-ttps.json",
+      "path": "data/atlas-ttps.json",
+      "schema_version": "1.0.0",
+      "entry_count": 171
+    },
+    {
+      "date": "2026-08-08",
+      "type": "catalog_update",
+      "artifact": "data/attack-techniques.json",
+      "path": "data/attack-techniques.json",
+      "schema_version": "1.0.0",
+      "entry_count": 794
+    },
+    {
+      "date": "2026-08-08",
+      "type": "catalog_update",
       "artifact": "data/cve-catalog.json",
       "path": "data/cve-catalog.json",
       "schema_version": "1.0.0",
@@ -59,19 +75,11 @@
       "entry_count": 8889
     },
     {
-      "date": "2026-07-03",
-      "type": "catalog_update",
-      "artifact": "data/atlas-ttps.json",
-      "path": "data/atlas-ttps.json",
-      "schema_version": "1.0.0",
-      "entry_count": 170
-    },
-    {
       "date": "2026-06-10",
       "type": "skill_review",
       "artifact": "ai-attack-surface",
       "path": "skills/ai-attack-surface/skill.md",
-      "note": "Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v2026.06 with explicit framework gap flags"
+      "note": "Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v2026.07 with explicit framework gap flags"
     },
     {
       "date": "2026-06-10",
@@ -282,14 +290,6 @@
       "artifact": "age-gates-child-safety",
       "path": "skills/age-gates-child-safety/skill.md",
       "note": "Age-related gates and child online safety for mid-2026 — COPPA + CIPA + California AADC + GDPR Art. 8 + DSA Art. 28 + UK Online Safety Act + UK Children's Code + AU Online Safety Act + IN DPDPA child provisions + KOSA pending; age verification standards (IEEE 2089-2021, OpenID Connect age claims); AI product age policies"
-    },
-    {
-      "date": "2026-06-10",
-      "type": "catalog_update",
-      "artifact": "data/attack-techniques.json",
-      "path": "data/attack-techniques.json",
-      "schema_version": "1.0.0",
-      "entry_count": 805
     },
     {
       "date": "2026-06-02",

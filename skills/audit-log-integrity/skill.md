@@ -31,7 +31,7 @@ atlas_refs: []
 attack_refs:
   - T1070
   - T1565.001
-  - T1562.008
+  - T1685.002
 framework_gaps:
   - NIST-800-53-SI-2
   - ISO-27001-2022-A.8.15
@@ -57,7 +57,7 @@ Organisational logging controls require that events are recorded, protected, and
 
 ## TTP Mapping
 
-The audit-log integrity failures map to MITRE ATT&CK: **T1070 (Indicator Removal)** for deleting/rotating/truncating the trail, defeated by compliance-WORM + writer/custodian separation + honeytokens; **T1565.001 (Stored Data Manipulation)** for rewriting entries, defeated by verified hash-chaining + off-host signing; and **T1562.008 (Disable or Modify Cloud Logs / abuse of privileged access)** for break-glass misuse, defeated by dual control + independent alerting. The weakness classes are CWE-345 (insufficient verification of data authenticity — unverified chain), CWE-347 (improper signature verification — co-located/absent signing), CWE-284 (improper access control — governance-WORM, writer-can-delete), and CWE-778 (insufficient logging/detection — absent or untriaged honeytokens).
+The audit-log integrity failures map to MITRE ATT&CK: **T1070 (Indicator Removal)** for deleting/rotating/truncating the trail, defeated by compliance-WORM + writer/custodian separation + honeytokens; **T1565.001 (Stored Data Manipulation)** for rewriting entries, defeated by verified hash-chaining + off-host signing; and **T1685.002 (Disable or Modify Cloud Logs / abuse of privileged access)** for break-glass misuse, defeated by dual control + independent alerting. The weakness classes are CWE-345 (insufficient verification of data authenticity — unverified chain), CWE-347 (improper signature verification — co-located/absent signing), CWE-284 (improper access control — governance-WORM, writer-can-delete), and CWE-778 (insufficient logging/detection — absent or untriaged honeytokens).
 
 ## Exploit Availability Matrix
 
@@ -77,4 +77,4 @@ The recurring theater is "we log everything, so we have an audit trail," "our st
 
 ## Defensive Countermeasure Mapping
 
-Map findings to MITRE D3FEND: verified hash-chaining and off-host signing realise Message Authentication and Log Integrity (countering T1565.001); compliance-mode WORM and writer/custodian separation realise File Access Pattern Analysis and Access Modeling against deletion (countering T1070); dual-control + alerting on break-glass realises Administrative Account Monitoring (countering T1562.008); honeytokens realise Decoy Object / Connected Honeynet detection (high-fidelity evidence of the foraging access). Pair an external WORM/notary anchor with the on-host chain so even host compromise cannot rewrite history unobserved. The residual risk after these controls is multi-party collusion or compromise of the signing key / WORM authority itself, accepted at the CISO level with key-management oversight.
+Map findings to MITRE D3FEND: verified hash-chaining and off-host signing realise Message Authentication and Log Integrity (countering T1565.001); compliance-mode WORM and writer/custodian separation realise File Access Pattern Analysis and Access Modeling against deletion (countering T1070); dual-control + alerting on break-glass realises Administrative Account Monitoring (countering T1685.002); honeytokens realise Decoy Object / Connected Honeynet detection (high-fidelity evidence of the foraging access). Pair an external WORM/notary anchor with the on-host chain so even host compromise cannot rewrite history unobserved. The residual risk after these controls is multi-party collusion or compromise of the signing key / WORM authority itself, accepted at the CISO level with key-management oversight.

@@ -24,8 +24,8 @@ test('audit-log-integrity has the seven-phase contract + cloud-misconfig class',
   for (const ph of ['govern', 'direct', 'look', 'detect', 'analyze', 'validate', 'close']) assert.ok(PB.phases[ph], `phase ${ph}`);
 });
 
-test('domain maps to real ATT&CK (T1070/T1565.001/T1562.008) + present CWEs', () => {
-  for (const t of ['T1070', 'T1565.001', 'T1562.008']) assert.ok(PB.domain.attack_refs.includes(t), `attack_ref ${t}`);
+test('domain maps to real ATT&CK (T1070/T1565.001/T1685.002) + present CWEs', () => {
+  for (const t of ['T1070', 'T1565.001', 'T1685.002']) assert.ok(PB.domain.attack_refs.includes(t), `attack_ref ${t}`);
   for (const w of ['CWE-345', 'CWE-347', 'CWE-284', 'CWE-778']) assert.ok(PB.domain.cwe_refs.includes(w), `cwe ${w}`);
 });
 

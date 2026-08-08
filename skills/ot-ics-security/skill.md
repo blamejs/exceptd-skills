@@ -24,7 +24,7 @@ data_deps:
 atlas_refs:
   - AML.T0010
 attack_refs:
-  - T0855
+  - T1692.001
   - T0883
   - T1190
   - T1068
@@ -93,18 +93,18 @@ ATT&CK for ICS is a separate matrix from Enterprise. Many IT-rooted SOCs do not 
 | Surface | TTP | Matrix | Variant in mid-2026 | Gap Flag |
 |---|---|---|---|---|
 | Internet-exposed control-system asset | T0883 — Internet Accessible Device | ATT&CK for ICS | HMI/PLC reachable via Shodan/Censys; default-cred VNC; vendor remote-support tooling exposed | IEC 62443-3-3 SR 5.1 (network segmentation) presumes a perimeter that does not exist for vendor-mediated remote access |
-| Unauthorized control command | T0855 — Unauthorized Command Message | ATT&CK for ICS | Modbus/TCP, DNP3, S7, EtherNet/IP write to coil/register without authentication | CWE-306 (Missing Authentication) and CWE-287 (Improper Authentication) baked into protocols; IEC 62443-3-3 SR 1.1/1.2 (identification & authentication) cannot be enforced at L1 protocol layer |
+| Unauthorized control command | T1692.001 — Unauthorized Command Message | ATT&CK for ICS | Modbus/TCP, DNP3, S7, EtherNet/IP write to coil/register without authentication | CWE-306 (Missing Authentication) and CWE-287 (Improper Authentication) baked into protocols; IEC 62443-3-3 SR 1.1/1.2 (identification & authentication) cannot be enforced at L1 protocol layer |
 | Lateral movement within OT | T0867 — Lateral Tool Transfer | ATT&CK for ICS | Engineering workstation → HMI → PLC programming-software pivot | NIST 800-82r3 segmentation guidance does not specify L2/L1 micro-segmentation; AESCSF MIL-1 tolerates flat L2 |
 | OT scripting | T0853 — Scripting | ATT&CK for ICS | PowerShell on engineering workstation; vendor-tool macro; LLM-generated PLC code reviewed only by overworked engineer | No framework requires diff-review of AI-generated control logic |
 | IT-side initial access pivoting to OT | T1190 — Exploit Public-Facing Application | ATT&CK Enterprise | Historian (PI Vision), MES web UI, vendor remote-portal web app | NIST 800-53 SC-7 perimeter assumption does not address IT→OT pivot chain |
 | HMI host LPE | T1068 — Exploitation for Privilege Escalation | ATT&CK Enterprise | Windows 7/10 HMI host; un-rebootable; Copy Fail (CVE-2026-31431) on any Linux HMI; Print Spooler / win32k LPE family on Windows HMIs | IT patch SLAs (30 day) inapplicable to HMI hosts; no compensating-control baseline in NIST 800-82r3 |
 | Hard-coded / shared credentials | CWE-798 | CWE | Vendor default creds on PLC web UI; shared "operator" account across HMI fleet | IEC 62443-3-3 SR 1.5 (authenticator management) cannot land on devices that lack per-user accounts; NERC CIP-007-6 R5 password-management partially addresses but exempts cyber-asset classes lacking user-account features |
 | Firmware-image integrity | CWE-1037 (Processor Optimization Removal or Modification of Security-Critical Code) and CWE-345 family (insufficient verification of data authenticity, captured via cve-catalog supply-chain entries) | CWE | Unsigned firmware accepted by L1 device; vendor-side build pipeline compromise | NERC CIP-010 baseline-change management does not require firmware-image signature verification at install time |
-| AI-assistant prompt injection in HMI/engineering workflow | AML.T0010 — ML Supply Chain Compromise (closest existing ATLAS entry) | ATLAS v2026.06 | Crafted historian tag value or vendor PDF poisons context; LLM proposes unsafe setpoint or misleads operator | No ATT&CK for ICS technique for AI-mediated operator deception; no IEC 62443 control on AI conduit; NIST 800-82r3 silent |
+| AI-assistant prompt injection in HMI/engineering workflow | AML.T0010 — ML Supply Chain Compromise (closest existing ATLAS entry) | ATLAS v2026.07 | Crafted historian tag value or vendor PDF poisons context; LLM proposes unsafe setpoint or misleads operator | No ATT&CK for ICS technique for AI-mediated operator deception; no IEC 62443 control on AI conduit; NIST 800-82r3 silent |
 
-**Note on ATT&CK for ICS ID format.** ATT&CK for ICS uses `T0xxx` IDs (e.g., T0855, T0883, T0867). The linter regex `^T\d{4}(\.\d{3})?$` accepts this shape. For IT/OT convergence techniques (the IT side of the pivot), ATT&CK Enterprise IDs (T1190, T1068, T1078) are cited alongside.
+**Note on ATT&CK for ICS ID format.** ATT&CK for ICS uses `T0xxx` IDs (e.g., T1692.001, T0883, T0867). The linter regex `^T\d{4}(\.\d{3})?$` accepts this shape. For IT/OT convergence techniques (the IT side of the pivot), ATT&CK Enterprise IDs (T1190, T1068, T1078) are cited alongside.
 
-**Note on ATLAS coverage.** AML.T0010 (ML Supply Chain Compromise) is the closest current ATLAS v2026.06 mapping for AI-augmented-HMI threats; it does not specifically cover prompt-injection-as-operator-deception in a control room. This is a tracked ATLAS gap — see `forward_watch`.
+**Note on ATLAS coverage.** AML.T0010 (ML Supply Chain Compromise) is the closest current ATLAS v2026.07 mapping for AI-augmented-HMI threats; it does not specifically cover prompt-injection-as-operator-deception in a control room. This is a tracked ATLAS gap — see `forward_watch`.
 
 ---
 
