@@ -58445,13 +58445,14 @@
         ]
       },
       {
-        "id": "APPSERVER-REMOTING-PROTOCOL-RESTRICTION",
-        "name": "APPSERVER-REMOTING-PROTOCOL-RESTRICTION",
-        "description": "Application servers that expose binary remoting protocols (Oracle WebLogic T3/IIOP, and equivalents) must restrict those protocols to trusted hosts and apply vendor critical patch updates on an accelerated schedule when a remoting flaw is KEV-listed. Place T3/IIOP behind a connection filter (weblogic.security.net.ConnectionFilterImpl) or network ACLs so only known hosts can reach them, never expose the ports to untrusted networks, and apply the Oracle CPU bundle (with server restart) rather than deferring to the next quarterly window. The distinguishing test: from an untrusted network segment, attempt an unauthenticated T3/IIOP connection to a staging WebLogic instance and confirm it is refused at the connection filter before any data is served - a perimeter-firewall + quarterly-patch policy that still leaves T3/IIOP reachable from an internal untrusted segment leaves the unauthenticated data-access path open.",
-        "evidence": "CVE-2026-63077 — TeamCity's server-to-agent polling protocol is the equivalent remoting surface, and it was reachable unauthenticated from the internet: /app/agents/v1/register minted a session for a synthetic agent with no credentials, and /app/agents/v1/commands/error accepted the gadget chain on that session. Restricting the agent-polling endpoints to the known build-agent network and treating the KEV-listed remoting flaw as an accelerated-patch item (2025.11.7 / 2026.1.3, or the 2017.1+ patch plugin) is what closes the exposure; the 'scan'-prefixed rogue agents JetBrains named in its active-exploitation update are the evidence that untrusted hosts were reaching the protocol.",
+        "id": "NEW-CTRL-125",
+        "name": "SERVICE-INTERNAL-PROTOCOL-DESERIALIZATION-HARDENING",
+        "description": "A server product that exposes an internal coordination protocol — build-agent polling, cluster membership, node replication, management RPC — must not deserialize input arriving on it without both authenticating the peer and constraining the deserializer to an explicit allow-list of expected types, and the listener must be bound to the coordination network rather than to all interfaces. Default-permissive type handling in the serialization library counts as no allow-list at all. The distinguishing test: from an unauthenticated host on a segment that can reach the coordination port, send a serialized object of a type the protocol never legitimately carries and confirm the connection is refused or the type rejected before any object is constructed — a product whose internal protocol is documented as trusted, but which listens on 0.0.0.0 and accepts whatever the library will rehydrate, is exploitable by anyone who can reach the port.",
+        "evidence": "CVE-2026-63077 — TeamCity's agent-polling protocol accepts XML from an unauthenticated caller and hands it to an XStream instance still carrying the library's default type permissions, so a gadget chain writes a JSP polyglot into the webroot and runs as the build server. CVE-2026-34486 is the same shape one product over: the Tomcat cluster receiver forwarding a message whose decryption failed into an unfiltered ObjectInputStream. Both are internal coordination protocols the vendor documented as trusted and shipped listening to anyone who could reach the port.",
         "gap_closes": [
-          "AU-Essential-8-Patch",
-          "NIS2-Art21-supply-chain"
+          "NIST-800-53-SI-2",
+          "UK-CAF-B4",
+          "ISO-27001-2022-A.8.8"
         ]
       }
     ]
