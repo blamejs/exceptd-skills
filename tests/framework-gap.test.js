@@ -797,3 +797,67 @@ test('#11 lagScore does not over-match a short key against another framework', (
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+require("node:test").describe("new-control requirements reach the report", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const { gapReport } = require("../lib/framework-gap.js");
+  const controlGaps = require("../data/framework-control-gaps.json");
+  const cveCatalog = require("../data/cve-catalog.json");
+  const lessons = require("../data/zeroday-lessons.json");
+
+  // A CVE whose lesson records new controls. Resolved from the data rather than
+  // hard-coded, so curation churn cannot silently turn this into a test of an
+  // absent entry that passes because both sides are empty.
+  const withControls = Object.entries(lessons).find(
+    ([id, l]) => id.startsWith("CVE-") && Array.isArray(l.new_control_requirements) && l.new_control_requirements.length > 0
+  );
+
+  test("a CVE whose lesson records new controls reports them", () => {
+    assert.ok(withControls, "the lessons catalog must contain at least one entry with new_control_requirements");
+    const [cveId, lesson] = withControls;
+    const r = gapReport(["all"], cveId, controlGaps, cveCatalog, { allFrameworks: true, lessons });
+    assert.equal(r.new_control_requirements.length, lesson.new_control_requirements.length);
+    assert.equal(r.summary.new_control_requirements, lesson.new_control_requirements.length);
+    // Presence is not content: the entries must carry the real identifier and
+    // requirement text, not empty placeholders shaped like the right thing.
+    const first = r.new_control_requirements[0];
+    assert.equal(first.id, lesson.new_control_requirements[0].id);
+    assert.match(first.id, /^NEW-CTRL-/);
+    assert.ok(typeof first.requirement === "string" && first.requirement.length > 20,
+      "a control with no requirement text tells the operator nothing");
+  });
+
+  test("each new control names the framework controls it closes", () => {
+    // Without this the control reads as free-floating advice instead of an
+    // answer to one of the insufficient controls listed in the same report.
+    const [cveId] = withControls;
+    const r = gapReport(["all"], cveId, controlGaps, cveCatalog, { allFrameworks: true, lessons });
+    assert.ok(r.new_control_requirements.some((c) => Array.isArray(c.closes) && c.closes.length > 0),
+      "at least one new control must declare which framework gaps it closes");
+    for (const c of r.new_control_requirements) {
+      assert.ok(Array.isArray(c.closes), `${c.id} must expose closes[] as an array, got ${typeof c.closes}`);
+    }
+  });
+
+  test("a free-text scenario resolves to no new controls rather than guessing", () => {
+    // Anti-coincidence for the cases above: the field is CVE-keyed, so a prose
+    // scenario legitimately matches nothing. If this returned entries, the
+    // lookup would be matching something other than the CVE id.
+    const r = gapReport(["all"], "prompt injection", controlGaps, cveCatalog, { allFrameworks: true, lessons });
+    assert.deepEqual(r.new_control_requirements, []);
+    assert.equal(r.summary.new_control_requirements, 0);
+  });
+
+  test("omitting the lessons catalog degrades to an empty section, not a throw", () => {
+    // The parameter is optional so existing callers keep working; a missing
+    // catalog must not take the whole gap report down with it.
+    const [cveId] = withControls;
+    const r = gapReport(["all"], cveId, controlGaps, cveCatalog, { allFrameworks: true });
+    assert.deepEqual(r.new_control_requirements, []);
+    assert.equal(r.summary.new_control_requirements, 0);
+    // The rest of the report must still be populated — proving the empty
+    // section above is the lessons lookup, not a broken report.
+    assert.ok(Object.keys(r.frameworks).length > 0);
+  });
+});
