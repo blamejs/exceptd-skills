@@ -220,3 +220,44 @@ test("Tests matrix covers ubuntu, windows, macos", () => {
   assert.match(yaml, /windows-latest/);
   assert.match(yaml, /macos-latest/);
 });
+
+require("node:test").describe("gitleaks fallback currency", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const path = require("node:path");
+
+  const CI = fs.readFileSync(
+    path.join(__dirname, "..", ".github", "workflows", "ci.yml"),
+    "utf8"
+  );
+
+  test("the outage fallback pins a concrete gitleaks release", () => {
+    const m = CI.match(/GITLEAKS_FALLBACK: '([^']+)'/);
+    assert.ok(m, "the install step must declare a fallback version");
+    assert.match(m[1], /^\d+\.\d+\.\d+$/, "the fallback must be an exact release");
+  });
+
+  test("a fallback that has drifted behind the floating target warns", () => {
+    // Nothing compared the two, so the fallback sat nine releases behind the
+    // version every green run actually used. An API blip would then have
+    // scanned with that old ruleset and still reported success. Upstream's
+    // current release cannot be checked from a test without network, so pin
+    // the comparison instead: it is what makes the drift visible.
+    assert.match(
+      CI,
+      /if \[ "\$\{GITLEAKS_VERSION\}" != "\$\{GITLEAKS_FALLBACK\}" \]/,
+      "the resolver must compare the resolved release against the pinned fallback"
+    );
+    const warnLine = CI.split("\n").find(
+      (l) => l.includes("::warning::") && l.includes("GITLEAKS_FALLBACK pins")
+    );
+    assert.ok(warnLine, "the drift must surface as a warning naming both versions");
+  });
+
+  test("the resolver still falls back rather than failing the gate on an outage", () => {
+    // The drift warning must not have displaced the outage path.
+    assert.match(CI, /Could not resolve latest gitleaks release/);
+    assert.match(CI, /GITLEAKS_VERSION="\$\{GITLEAKS_FALLBACK\}"/);
+  });
+});

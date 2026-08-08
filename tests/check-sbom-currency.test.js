@@ -70,7 +70,11 @@ function buildRootTree(extraFiles /* { rel: content } */, opts = {}) {
 
   // file: components for whichever files we want represented (default: only the
   // base set, deliberately omitting any extra so the completeness gate fires).
-  const componentRels = opts.componentRels || ['manifest.json', 'lib/a.js', 'README.md'];
+  // package.json is in every component set below because npm ships it whether
+  // or not `files` names it, so the completeness check expects a component for
+  // it in any target tree. Leaving it out would make these fixtures fail for a
+  // reason none of them is about.
+  const componentRels = opts.componentRels || ['manifest.json', 'lib/a.js', 'package.json', 'README.md'];
   const fileComps = componentRels.map((rel) => {
     const buf = fs.readFileSync(path.join(root, rel));
     return {
@@ -113,7 +117,7 @@ test('#27 a target-only shipped file (absent from source) with no file: componen
     { 'lib/target-only.js': "console.log('target only');\n" },
     {
       pkgFiles: ['manifest.json', 'lib', 'README.md'],
-      componentRels: ['manifest.json', 'lib/a.js', 'README.md'], // omit target-only.js
+      componentRels: ['manifest.json', 'lib/a.js', 'package.json', 'README.md'], // omit target-only.js
     },
   );
   try {
@@ -133,7 +137,7 @@ test('#27 a complete --root target (every shipped file has a component) does NOT
     { 'lib/target-only.js': "console.log('target only');\n" },
     {
       pkgFiles: ['manifest.json', 'lib', 'README.md'],
-      componentRels: ['manifest.json', 'lib/a.js', 'lib/target-only.js', 'README.md'],
+      componentRels: ['manifest.json', 'lib/a.js', 'lib/target-only.js', 'package.json', 'README.md'],
     },
   );
   try {
@@ -187,6 +191,22 @@ test('#27 expandAllowlistAt walks the TARGET root, not the source repo, and appl
 // `files[]` expanded to concrete regular files, minus the SBOM self-
 // reference and the derivable index cache (those are excluded from the
 // per-file hash inventory there too).
+
+/* Needs a git repository, not merely the git binary. The Docker harness has the
+ * binary and no repository on purpose: .git/ stays out of the build context so a
+ * contributor history is never uploaded to a builder or baked into an image
+ * layer. Skipping states that; failing would report a defect in the tree that
+ * does not exist, and passing would claim a check that never ran. */
+const NO_GIT_REPO = (() => {
+  const r = require("node:child_process").spawnSync(
+    "git", ["rev-parse", "--is-inside-work-tree"],
+    { cwd: ROOT, encoding: "utf8" }
+  );
+  return r.status === 0 && String(r.stdout).trim() === "true"
+    ? false
+    : "no git repository in this tree (expected in the Docker harness, which excludes .git/ by design) — run the suite outside Docker to exercise this";
+})();
+
 const SELF_EXCLUDED = new Set(["sbom.cdx.json"]);
 const DERIVABLE_PREFIXES = ["data/_indexes/"];
 
@@ -246,7 +266,7 @@ function resolveAttrs(relPaths) {
   return attrs;
 }
 
-test("every byte-hashed shipped file is covered by an eol=lf .gitattributes rule", () => {
+test("every byte-hashed shipped file is covered by an eol=lf .gitattributes rule", { skip: NO_GIT_REPO }, () => {
   const files = shippedHashedFiles();
   // Anti-coincidence: the surface must be non-trivial, otherwise an empty
   // walk would make the assertion vacuously pass.
@@ -277,7 +297,7 @@ test("every byte-hashed shipped file is covered by an eol=lf .gitattributes rule
   );
 });
 
-test("git check-attr resolves a known-covered file to eol=lf (guard self-check)", () => {
+test("git check-attr resolves a known-covered file to eol=lf (guard self-check)", { skip: NO_GIT_REPO }, () => {
   // Proves the resolution mechanism actually reports `lf` rather than the
   // assertion passing because every value parsed as undefined.
   const attrs = resolveAttrs(["manifest.json"]);
@@ -736,7 +756,11 @@ function buildRootTree(extraFiles /* { rel: content } */, opts = {}) {
 
   // file: components for whichever files we want represented (default: only the
   // base set, deliberately omitting any extra so the completeness gate fires).
-  const componentRels = opts.componentRels || ['manifest.json', 'lib/a.js', 'README.md'];
+  // package.json is in every component set below because npm ships it whether
+  // or not `files` names it, so the completeness check expects a component for
+  // it in any target tree. Leaving it out would make these fixtures fail for a
+  // reason none of them is about.
+  const componentRels = opts.componentRels || ['manifest.json', 'lib/a.js', 'package.json', 'README.md'];
   const fileComps = componentRels.map((rel) => {
     const buf = fs.readFileSync(path.join(root, rel));
     return {
@@ -779,7 +803,7 @@ test('#27 a target-only shipped file (absent from source) with no file: componen
     { 'lib/target-only.js': "console.log('target only');\n" },
     {
       pkgFiles: ['manifest.json', 'lib', 'README.md'],
-      componentRels: ['manifest.json', 'lib/a.js', 'README.md'], // omit target-only.js
+      componentRels: ['manifest.json', 'lib/a.js', 'package.json', 'README.md'], // omit target-only.js
     },
   );
   try {
@@ -799,7 +823,7 @@ test('#27 a complete --root target (every shipped file has a component) does NOT
     { 'lib/target-only.js': "console.log('target only');\n" },
     {
       pkgFiles: ['manifest.json', 'lib', 'README.md'],
-      componentRels: ['manifest.json', 'lib/a.js', 'lib/target-only.js', 'README.md'],
+      componentRels: ['manifest.json', 'lib/a.js', 'lib/target-only.js', 'package.json', 'README.md'],
     },
   );
   try {

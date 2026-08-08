@@ -30,6 +30,17 @@ function read(p) {
   return fs.readFileSync(p, "utf8");
 }
 
+/* Asking git whether a path is tracked needs a repository, not just the git
+ * binary. The Docker harness has the binary and no repository on purpose:
+ * .git/ stays out of the build context so a contributor history is never
+ * uploaded to a builder or baked into an image layer. */
+const NO_GIT_REPO = (() => {
+  const r = spawnSync("git", ["rev-parse", "--is-inside-work-tree"], { cwd: ROOT, encoding: "utf8" });
+  return r.status === 0 && String(r.stdout).trim() === "true"
+    ? false
+    : "no git repository in this tree (expected in the Docker harness, which excludes .git/ by design) — run the suite outside Docker to exercise this";
+})();
+
 test("docker/test.Dockerfile exists and is non-empty", () => {
   assert.ok(fs.existsSync(DOCKERFILE), "docker/test.Dockerfile is required");
   assert.ok(fs.statSync(DOCKERFILE).size > 0, "docker/test.Dockerfile not empty");
@@ -162,21 +173,26 @@ test("Dockerfile Node version matches the CI workflow Node version", () => {
       `alongside ci.yml, release.yml and docker/test.Dockerfile.`
   );
 
-  // Fifth leg: .nvmrc, which is what `nvm use` reads in a fresh checkout. It
-  // must be TRACKED, not merely present locally — the repository ignores
-  // dotfiles by default, and an untracked .nvmrc silently reaches no
-  // contributor while the release notes claim it does.
+  // Fifth leg: .nvmrc, which is what `nvm use` reads in a fresh checkout.
   const nvmrcPath = path.join(ROOT, ".nvmrc");
   assert.ok(fs.existsSync(nvmrcPath), ".nvmrc must exist so `nvm use` selects the supported Node");
-  const tracked = spawnSync("git", ["ls-files", "--error-unmatch", ".nvmrc"], { cwd: ROOT, encoding: "utf8" });
-  assert.equal(tracked.status, 0,
-    ".nvmrc exists but is not tracked by git — the `.*` ignore rule swallows it, so a fresh " +
-      "checkout has no nvm pin. Add `!.nvmrc` to .gitignore and `git add -f .nvmrc`.");
   assert.equal(
     read(nvmrcPath).trim(),
     ciNode,
     `.nvmrc pins Node ${read(nvmrcPath).trim()} but the toolchain pins ${ciNode}.`
   );
+});
+
+test(".nvmrc is tracked, not merely present", { skip: NO_GIT_REPO }, () => {
+  // Present-on-disk is not the property that matters: the repository ignores
+  // dotfiles by default, so an untracked .nvmrc reaches no contributor while
+  // the release notes say it does. Asking git is the only way to tell, which
+  // is why this is separate from the version lockstep above — that comparison
+  // is worth running in the Docker harness, and this one cannot be.
+  const tracked = spawnSync("git", ["ls-files", "--error-unmatch", ".nvmrc"], { cwd: ROOT, encoding: "utf8" });
+  assert.equal(tracked.status, 0,
+    ".nvmrc exists but is not tracked by git — the `.*` ignore rule swallows it, so a fresh " +
+      "checkout has no nvm pin. Add `!.nvmrc` to .gitignore and `git add -f .nvmrc`.");
 });
 
 test("Dockerfile defines both predeploy and fresh-bootstrap targets", () => {

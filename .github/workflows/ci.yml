@@ -267,10 +267,14 @@ jobs:
           # floated (not SHA-pinned) because new rules catch new leak
           # patterns and pinning would silently miss them — Scorecard's
           # PinnedDependenciesID accepts comment-justified deliberate floats.
-          # Bump GITLEAKS_FALLBACK to the latest known release each time the
-          # workflow is touched so the fallback never drifts more than one
-          # release behind the floating-latest target.
-          GITLEAKS_FALLBACK: '8.21.2'
+          # The fallback has to stay close to the floating target, or the
+          # outage path quietly installs a scanner years older than the one
+          # every green run used. Keeping that true by comment alone did not
+          # work — it sat at 8.21.2 while upstream reached 8.30.1, so an API
+          # blip would have scanned with a nine-release-old ruleset and still
+          # reported success. The resolver below now compares the two and warns,
+          # so the drift is visible on the run that introduces it.
+          GITLEAKS_FALLBACK: '8.30.1'
         run: |
           set -uo pipefail
           # Tolerate a non-zero exit from the resolver pipeline so we can
@@ -283,6 +287,13 @@ jobs:
           if [ -z "${GITLEAKS_VERSION:-}" ]; then
             echo "::warning::Could not resolve latest gitleaks release from GitHub API (HTML error page or rate limit); falling back to v${GITLEAKS_FALLBACK}"
             GITLEAKS_VERSION="${GITLEAKS_FALLBACK}"
+          else
+            # Resolution worked, so we know the real latest. Nothing else ever
+            # compares it to the pinned fallback, which is how the fallback got
+            # nine releases stale without a single run complaining.
+            if [ "${GITLEAKS_VERSION}" != "${GITLEAKS_FALLBACK}" ]; then
+              echo "::warning::gitleaks latest is v${GITLEAKS_VERSION} but GITLEAKS_FALLBACK pins v${GITLEAKS_FALLBACK} — bump the fallback in .github/workflows/ci.yml so an API outage does not scan with a stale ruleset"
+            fi
           fi
           set -e
           echo "[gitleaks] resolved release: v${GITLEAKS_VERSION}"
