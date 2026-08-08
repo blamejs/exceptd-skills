@@ -294,7 +294,12 @@ test("shipped catalogs: missing-context budget is enforced per catalog (no silen
     // existing controls — perimeter/edge patch SLAs, network segmentation,
     // endpoint and application hardening, mobile/kernel driver hardening, and
     // end-of-life retirement — so none carry a new_control_requirements entry,
-    // taking the count from 623 to 723.
+    // taking the count from 623 to 723. This budget does not move for a batch
+    // whose lessons reuse an existing control: reuse still completes the chain,
+    // so the lesson references that control's stable id rather than omitting
+    // the field, and the count stays put. Raising it to absorb lessons that
+    // stop at framework coverage would convert the detector into an acceptance
+    // of incomplete learning loops.
     "zeroday-lessons": { new_control_requirements: 723 }
   };
   const findings = {};

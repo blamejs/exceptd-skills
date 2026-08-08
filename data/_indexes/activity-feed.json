@@ -6,6 +6,30 @@
   },
   "events": [
     {
+      "date": "2026-08-06",
+      "type": "catalog_update",
+      "artifact": "data/cve-catalog.json",
+      "path": "data/cve-catalog.json",
+      "schema_version": "1.0.0",
+      "entry_count": 1023
+    },
+    {
+      "date": "2026-08-06",
+      "type": "catalog_update",
+      "artifact": "data/cwe-catalog.json",
+      "path": "data/cwe-catalog.json",
+      "schema_version": "1.0.0",
+      "entry_count": 232
+    },
+    {
+      "date": "2026-08-06",
+      "type": "catalog_update",
+      "artifact": "data/zeroday-lessons.json",
+      "path": "data/zeroday-lessons.json",
+      "schema_version": "1.1.0",
+      "entry_count": 1023
+    },
+    {
       "date": "2026-08-05",
       "type": "skill_review",
       "artifact": "global-grc",
@@ -33,30 +57,6 @@
       "path": "data/rfc-references.json",
       "schema_version": "1.0.0",
       "entry_count": 8889
-    },
-    {
-      "date": "2026-07-30",
-      "type": "catalog_update",
-      "artifact": "data/cve-catalog.json",
-      "path": "data/cve-catalog.json",
-      "schema_version": "1.0.0",
-      "entry_count": 923
-    },
-    {
-      "date": "2026-07-30",
-      "type": "catalog_update",
-      "artifact": "data/cwe-catalog.json",
-      "path": "data/cwe-catalog.json",
-      "schema_version": "1.0.0",
-      "entry_count": 220
-    },
-    {
-      "date": "2026-07-22",
-      "type": "catalog_update",
-      "artifact": "data/zeroday-lessons.json",
-      "path": "data/zeroday-lessons.json",
-      "schema_version": "1.1.0",
-      "entry_count": 923
     },
     {
       "date": "2026-07-03",

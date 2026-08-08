@@ -319,6 +319,7 @@
       "CVE-2021-20035",
       "CVE-2021-31196",
       "CVE-2021-3129",
+      "CVE-2021-35587",
       "CVE-2021-36380",
       "CVE-2021-39144",
       "CVE-2021-40407",
@@ -326,12 +327,16 @@
       "CVE-2021-45046",
       "CVE-2022-1471",
       "CVE-2022-21445",
+      "CVE-2022-21587",
       "CVE-2022-24816",
       "CVE-2022-29303",
       "CVE-2022-31199",
       "CVE-2022-39197",
+      "CVE-2022-40765",
+      "CVE-2022-41223",
       "CVE-2022-41328",
       "CVE-2022-43769",
+      "CVE-2022-47986",
       "CVE-2023-1389",
       "CVE-2023-1671",
       "CVE-2023-20118",
@@ -585,6 +590,11 @@
     "name": "Command and Scripting Interpreter: PowerShell",
     "version": "v19",
     "cve_refs": [
+      "CVE-2022-35405",
+      "CVE-2022-41040",
+      "CVE-2022-41080",
+      "CVE-2022-41082",
+      "CVE-2022-47966",
       "CVE-2025-53773"
     ],
     "description_full": "Adversaries may abuse PowerShell commands and scripts for execution. PowerShell is a powerful interactive command-line interface and scripting environment included in the Windows operating system.(Citation: TechNet PowerShell) Adversaries can use PowerShell to perform a number of actions, including discovery of information and execution of code. Examples include the <code>Start-Process</code> cmdlet which can be used to run an executable and the <code>Invoke-Command</code> cmdlet which runs a command locally or on a remote computer (though administrator permissions are required to use PowerShell to connect to remote systems). PowerShell may also be used to download and run executables from the Internet, which can be executed from disk or in memory without touching disk. A number of PowerShell-based offensive testing tools are available, including [Empire](https://attack.mitre.org/software/S0363), [PowerSploit](https://attack.mitre.org/software/S0194), [PoshC2](https://attack.mitre.org/software/S0378), and PSAttack.(Citation: Github PSAttack) PowerShell commands/scripts can also be executed without directly invoking the <code>powershell.exe</code> binary through interfaces to PowerShell's underlying <code>System.Management.Automation</code> assembly DLL exposed through the .NET framework and Windows Common Language Interface (CLI).(Citation: Sixdub PowerPick Jan 2016)(Citation: SilentBreak Offensive PS Dec 2015)(Citation: Microsoft PSfromCsharp APR 2014)",
@@ -604,6 +614,8 @@
     "name": "Command and Scripting Interpreter: Python",
     "version": "v19",
     "cve_refs": [
+      "CVE-2020-5741",
+      "CVE-2022-44877",
       "CVE-2023-44467",
       "CVE-2024-12366",
       "CVE-2024-21513",
@@ -613,6 +625,7 @@
       "CVE-2026-0770",
       "CVE-2026-31230",
       "CVE-2026-33017",
+      "CVE-2026-9198",
       "MAL-2026-3083"
     ],
     "description_full": "Adversaries may abuse Python commands and scripts for execution. Python is a very popular scripting/programming language, with capabilities to perform many functions. Python can be executed interactively from the command-line (via the <code>python.exe</code> interpreter) or via scripts (.py) that can be written and distributed to different systems. Python code can also be compiled into binary executables.(Citation: Zscaler APT31 Covid-19 October 2020) Python comes with many built-in packages to interact with the underlying system, such as file operations and device I/O. Adversaries can use these libraries to download and execute commands or other scripts as well as perform various malicious behaviors.",
@@ -677,16 +690,30 @@
     "cve_refs": [
       "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "CVE-2010-3904",
+      "CVE-2011-1823",
+      "CVE-2013-2094",
+      "CVE-2013-2596",
+      "CVE-2013-2597",
+      "CVE-2013-6282",
       "CVE-2014-0196",
+      "CVE-2015-2291",
       "CVE-2016-0165",
       "CVE-2017-1000253",
       "CVE-2018-0824",
       "CVE-2018-14634",
+      "CVE-2018-19320",
+      "CVE-2018-19321",
+      "CVE-2018-19322",
+      "CVE-2018-19323",
       "CVE-2018-8639",
       "CVE-2019-1388",
       "CVE-2019-8526",
       "CVE-2020-17103-REREGRESSION-2026",
+      "CVE-2020-3153",
+      "CVE-2020-3433",
       "CVE-2021-22555",
+      "CVE-2021-25337",
+      "CVE-2021-25370",
       "CVE-2021-25371",
       "CVE-2021-25372",
       "CVE-2021-25394",
@@ -695,6 +722,8 @@
       "CVE-2021-29256",
       "CVE-2021-30900",
       "CVE-2021-30952",
+      "CVE-2021-31010",
+      "CVE-2021-3493",
       "CVE-2021-3560",
       "CVE-2021-43226",
       "CVE-2022-0185",
@@ -702,13 +731,28 @@
       "CVE-2022-22071",
       "CVE-2022-22265",
       "CVE-2022-22706",
+      "CVE-2022-2294",
       "CVE-2022-2586",
+      "CVE-2022-26923",
+      "CVE-2022-3075",
+      "CVE-2022-32894",
+      "CVE-2022-32917",
+      "CVE-2022-37969",
       "CVE-2022-38028",
       "CVE-2022-38181",
+      "CVE-2022-41033",
+      "CVE-2022-41073",
+      "CVE-2022-41080",
+      "CVE-2022-41125",
+      "CVE-2022-4135",
+      "CVE-2022-42827",
       "CVE-2022-48618",
       "CVE-2023-0266",
       "CVE-2023-0386",
       "CVE-2023-20963",
+      "CVE-2023-21674",
+      "CVE-2023-21823",
+      "CVE-2023-23376",
       "CVE-2023-25280",
       "CVE-2023-26083",
       "CVE-2023-28206",
@@ -809,6 +853,7 @@
       "CVE-2026-0300",
       "CVE-2026-20122",
       "CVE-2026-20245",
+      "CVE-2026-20316",
       "CVE-2026-20805",
       "CVE-2026-21385",
       "CVE-2026-21533",
@@ -871,9 +916,13 @@
     "version": "v19",
     "cve_refs": [
       "BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY",
+      "CVE-2011-4723",
       "CVE-2015-7755",
       "CVE-2016-7836",
+      "CVE-2017-5521",
       "CVE-2017-7921",
+      "CVE-2018-13374",
+      "CVE-2018-5430",
       "CVE-2018-9276",
       "CVE-2019-11001",
       "CVE-2019-19006",
@@ -891,6 +940,13 @@
       "CVE-2021-44207",
       "CVE-2022-22948",
       "CVE-2022-23227",
+      "CVE-2022-24990",
+      "CVE-2022-40139",
+      "CVE-2022-40765",
+      "CVE-2022-41040",
+      "CVE-2022-41080",
+      "CVE-2022-41082",
+      "CVE-2022-41223",
       "CVE-2022-43939",
       "CVE-2023-20109",
       "CVE-2023-20198",
@@ -1029,6 +1085,11 @@
     "name": "Valid Accounts: Default Accounts",
     "version": "v19",
     "cve_refs": [
+      "CVE-2022-24112",
+      "CVE-2022-24706",
+      "CVE-2022-28810",
+      "CVE-2026-18577",
+      "CVE-2026-20316",
       "CVE-2026-42208"
     ],
     "description_full": "Adversaries may obtain and abuse credentials of a default account as a means of gaining Initial Access, Persistence, Privilege Escalation, or Defense Evasion. Default accounts are those that are built-into an OS, such as the Guest or Administrator accounts on Windows systems. Default accounts also include default factory/provider set accounts on other types of systems, software, or devices, including the root user account in AWS, the root user account in ESXi, and the default service account in Kubernetes.(Citation: Microsoft Local Accounts Feb 2019)(Citation: AWS Root User)(Citation: Threat Matrix for Kubernetes) Default accounts are not limited to client machines; rather, they also include accounts that are preset for equipment such as network devices and computer applications, whether they are internal, open source, or commercial. Appliances that come preset with a username and password combination pose a serious threat to organizations that do not change it post installation, as they are easy targets for an adversary. Similarly, adversaries may also utilize publicly disclosed or stolen [Private Keys](https://attack.mitre.org/techniques/T1552/004) or credential materials to legitimately connect to remote environments via [Remote Services](https://attack.mitre.org/techniques/T1021).(Citation: Metasploit SSH Module) Default accounts may be created on a system after initial setup by connecting or integrating it with another application. For example, when an ESXi server is connected to a vCenter server, a default privileged account called `vpxuser` is created on the ESXi server. If a threat actor is able to compromise this account’s credentials (for example, via [Exploitation for Credential Access](https://attack.mitre.org/techniques/T1212) on the vCenter host), they will then have access to the ESXi server.(Citation: Google Cloud Threat Intelligence VMWare ESXi Zero-Day 2023)(Citation: Pentera vCenter Information Disclosure)",
@@ -1076,6 +1137,9 @@
       "Persistence",
       "Privilege Escalation",
       "Initial Access"
+    ],
+    "cve_refs": [
+      "CVE-2022-26923"
     ]
   },
   "T1078.003": {
@@ -1106,6 +1170,7 @@
     "name": "Valid Accounts: Cloud Accounts",
     "version": "v19",
     "cve_refs": [
+      "CVE-2023-22952",
       "CVE-2025-53767",
       "CVE-2025-55241",
       "CVE-2026-45321",
@@ -1259,6 +1324,7 @@
     "name": "External Remote Services",
     "version": "v19",
     "cve_refs": [
+      "CVE-2022-42475",
       "CVE-2023-27997",
       "CVE-2024-21762",
       "CVE-2025-0282",
@@ -1307,6 +1373,7 @@
       "Persistence"
     ],
     "cve_refs": [
+      "CVE-2022-40684",
       "CVE-2026-63030"
     ]
   },
@@ -1331,10 +1398,12 @@
       "CVE-2016-7836",
       "CVE-2016-8735",
       "CVE-2017-1000353",
+      "CVE-2017-11357",
       "CVE-2017-12637",
       "CVE-2017-18368",
       "CVE-2017-3066",
       "CVE-2017-3506",
+      "CVE-2017-5521",
       "CVE-2017-6742",
       "CVE-2017-6884",
       "CVE-2017-7494",
@@ -1342,8 +1411,13 @@
       "CVE-2018-14667",
       "CVE-2018-14933",
       "CVE-2018-15133",
+      "CVE-2018-18809",
       "CVE-2018-19410",
+      "CVE-2018-2628",
       "CVE-2018-4063",
+      "CVE-2018-5430",
+      "CVE-2018-6530",
+      "CVE-2018-7445",
       "CVE-2018-9276",
       "CVE-2019-0344",
       "CVE-2019-11001",
@@ -1371,9 +1445,12 @@
       "CVE-2020-25079",
       "CVE-2020-2551",
       "CVE-2020-2883",
+      "CVE-2020-28949",
       "CVE-2020-29574",
       "CVE-2020-3259",
       "CVE-2020-35730",
+      "CVE-2020-36193",
+      "CVE-2020-5741",
       "CVE-2020-7796",
       "CVE-2021-20035",
       "CVE-2021-20123",
@@ -1394,8 +1471,10 @@
       "CVE-2021-32030",
       "CVE-2021-33044",
       "CVE-2021-33045",
+      "CVE-2021-35587",
       "CVE-2021-36380",
       "CVE-2021-39144",
+      "CVE-2021-39226",
       "CVE-2021-39935",
       "CVE-2021-40407",
       "CVE-2021-40655",
@@ -1408,17 +1487,47 @@
       "CVE-2022-1471",
       "CVE-2022-20775",
       "CVE-2022-21445",
+      "CVE-2022-21587",
+      "CVE-2022-22536",
+      "CVE-2022-22963",
       "CVE-2022-23227",
+      "CVE-2022-24112",
+      "CVE-2022-24706",
       "CVE-2022-24816",
+      "CVE-2022-24990",
+      "CVE-2022-26258",
+      "CVE-2022-26352",
+      "CVE-2022-26500",
+      "CVE-2022-26501",
+      "CVE-2022-27518",
+      "CVE-2022-27593",
       "CVE-2022-27926",
+      "CVE-2022-28810",
       "CVE-2022-29303",
       "CVE-2022-31199",
+      "CVE-2022-3236",
+      "CVE-2022-33891",
+      "CVE-2022-35405",
+      "CVE-2022-35914",
+      "CVE-2022-36537",
       "CVE-2022-36551",
+      "CVE-2022-36804",
       "CVE-2022-37055",
       "CVE-2022-39197",
+      "CVE-2022-40684",
       "CVE-2022-40799",
+      "CVE-2022-41040",
+      "CVE-2022-41080",
+      "CVE-2022-41082",
+      "CVE-2022-41352",
+      "CVE-2022-42475",
       "CVE-2022-43769",
       "CVE-2022-43939",
+      "CVE-2022-44877",
+      "CVE-2022-46169",
+      "CVE-2022-47966",
+      "CVE-2022-47986",
+      "CVE-2023-0669",
       "CVE-2023-1389",
       "CVE-2023-1671",
       "CVE-2023-20109",
@@ -1432,6 +1541,7 @@
       "CVE-2023-22515",
       "CVE-2023-22518",
       "CVE-2023-22527",
+      "CVE-2023-22952",
       "CVE-2023-23752",
       "CVE-2023-24489",
       "CVE-2023-24955",
@@ -1787,6 +1897,8 @@
       "CVE-2026-16232",
       "CVE-2026-16812",
       "CVE-2026-1731",
+      "CVE-2026-18556",
+      "CVE-2026-18577",
       "CVE-2026-20045",
       "CVE-2026-20122",
       "CVE-2026-20127",
@@ -1797,6 +1909,7 @@
       "CVE-2026-20230",
       "CVE-2026-20253",
       "CVE-2026-20262",
+      "CVE-2026-20316",
       "CVE-2026-20963",
       "CVE-2026-21525",
       "CVE-2026-21643",
@@ -1834,6 +1947,7 @@
       "CVE-2026-33017",
       "CVE-2026-34159",
       "CVE-2026-34197",
+      "CVE-2026-34486",
       "CVE-2026-34908",
       "CVE-2026-34909",
       "CVE-2026-34910",
@@ -1872,6 +1986,7 @@
       "CVE-2026-7473",
       "CVE-2026-7482",
       "CVE-2026-9082",
+      "CVE-2026-9198",
       "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP"
     ],
     "description_full": "Adversaries may attempt to exploit a weakness in an Internet-facing host or system to initially access a network. The weakness in the system can be a software bug, a temporary glitch, or a misconfiguration. Exploited applications are often websites/web servers, but can also include databases (like SQL), standard services (like SMB or SSH), network device administration and management protocols (like SNMP and Smart Install), and any other system with Internet-accessible open sockets.(Citation: NVD CVE-2016-6662)(Citation: CIS Multiple SMB Vulnerabilities)(Citation: US-CERT TA18-106A Network Infrastructure Devices 2018)(Citation: Cisco Blog Legacy Device Attacks)(Citation: NVD CVE-2014-7169) On ESXi infrastructure, adversaries may exploit exposed OpenSLP services; they may alternatively exploit exposed VMware vCenter servers.(Citation: Recorded Future ESXiArgs Ransomware 2023)(Citation: Ars Technica VMWare Code Execution Vulnerability 2021) Depending on the flaw being exploited, this may also involve [Exploitation for Stealth](https://attack.mitre.org/techniques/T1211) or [Exploitation for Client Execution](https://attack.mitre.org/techniques/T1203). If an application is hosted on cloud-based infrastructure and/or is containerized, then exploiting it may lead to compromise of the underlying instance or container. This can allow an adversary a path to access the cloud or container APIs (e.g., via the [Cloud Instance Metadata API](https://attack.mitre.org/techniques/T1552/005)), exploit container host access via [Escape to Host](https://attack.mitre.org/techniques/T1611), or take advantage of weak identity and access management policies. Adversaries may also exploit edge network infrastructure and related appliances, specifically targeting devices that do not support robust host-based defenses.(Citation: Mandiant Fortinet Zero Day)(Citation: Wired Russia Cyberwar) For websites and databases, the OWASP top 10 and CWE top 25 highlight the most common web-based vulnerabilities.(Citation: OWASP Top 10)(Citation: CWE top 25)",
@@ -2035,6 +2150,7 @@
       "CVE-2009-3459",
       "CVE-2010-0249",
       "CVE-2010-0806",
+      "CVE-2010-2568",
       "CVE-2010-3765",
       "CVE-2010-3962",
       "CVE-2011-3402",
@@ -2051,13 +2167,25 @@
       "CVE-2020-9715",
       "CVE-2021-30900",
       "CVE-2021-30952",
+      "CVE-2021-38406",
+      "CVE-2022-21971",
+      "CVE-2022-2294",
       "CVE-2022-3038",
+      "CVE-2022-3075",
+      "CVE-2022-32893",
+      "CVE-2022-3723",
       "CVE-2022-38181",
+      "CVE-2022-41128",
+      "CVE-2022-4135",
+      "CVE-2022-4262",
+      "CVE-2022-42856",
       "CVE-2022-42948",
       "CVE-2022-48503",
       "CVE-2023-2033",
       "CVE-2023-2136",
       "CVE-2023-21608",
+      "CVE-2023-21823",
+      "CVE-2023-23529",
       "CVE-2023-26369",
       "CVE-2023-28204",
       "CVE-2023-28205",
@@ -2174,6 +2302,7 @@
     "name": "Exploitation for Credential Access",
     "version": "v19",
     "cve_refs": [
+      "CVE-2018-13374",
       "CVE-2023-23397",
       "CVE-2023-43791",
       "CVE-2024-21182",
@@ -2221,10 +2350,12 @@
     ],
     "cve_refs": [
       "CVE-2015-5317",
+      "CVE-2021-39226",
       "CVE-2021-44026",
       "CVE-2023-35078",
       "CVE-2024-12450",
       "CVE-2026-20133",
+      "CVE-2026-20316",
       "CVE-2026-21858",
       "CVE-2026-22218",
       "CVE-2026-41950",
@@ -2235,6 +2366,7 @@
     "name": "Data Destruction",
     "version": "v19",
     "cve_refs": [
+      "CVE-2021-39226",
       "CVE-2022-23812",
       "MAL-2026-SHAI-HULUD-OSS"
     ],
@@ -2278,6 +2410,12 @@
     "last_verified": "2026-05-19",
     "description": "Adversaries may encrypt data on target systems or on large numbers of systems in a network to interrupt availability to system and network resources.",
     "cve_refs": [
+      "CVE-2022-24990",
+      "CVE-2022-26500",
+      "CVE-2022-27593",
+      "CVE-2022-36537",
+      "CVE-2022-44698",
+      "CVE-2022-47986",
       "CVE-2023-28252",
       "CVE-2025-29824"
     ]
@@ -2302,6 +2440,7 @@
       "Persistence"
     ],
     "cve_refs": [
+      "CVE-2022-36537",
       "CVE-2026-8398"
     ]
   },
@@ -2456,6 +2595,7 @@
     "name": "Abuse Elevation Control Mechanism: Setuid and Setgid",
     "version": "v19",
     "cve_refs": [
+      "CVE-2011-1823",
       "CVE-2026-31431",
       "CVE-2026-31635",
       "CVE-2026-43284"
@@ -2567,6 +2707,10 @@
     "name": "Unsecured Credentials: Credentials In Files",
     "version": "v19",
     "cve_refs": [
+      "CVE-2011-4723",
+      "CVE-2018-18809",
+      "CVE-2018-5430",
+      "CVE-2023-22952",
       "CVE-2024-48248",
       "CVE-2024-6587",
       "CVE-2025-21085",
@@ -2656,6 +2800,8 @@
     "name": "Compromise Host Software Binary",
     "version": "v19",
     "cve_refs": [
+      "CVE-2022-27518",
+      "CVE-2022-42475",
       "CVE-2024-3094",
       "CVE-2025-11837",
       "CVE-2025-47729"
@@ -2695,6 +2841,10 @@
       "Credential Access"
     ],
     "cve_refs": [
+      "CVE-2018-13374",
+      "CVE-2022-26500",
+      "CVE-2022-26501",
+      "CVE-2022-35405",
       "CVE-2024-9379"
     ]
   },
@@ -2722,6 +2872,7 @@
     "last_verified": "2026-05-19",
     "description": "Adversaries may modify authentication mechanisms and processes to access user credentials or enable otherwise unwarranted access to accounts.",
     "cve_refs": [
+      "CVE-2021-35587",
       "CVE-2023-20867",
       "CVE-2024-12776",
       "CVE-2025-24472"
@@ -2750,6 +2901,7 @@
       "CVE-2011-0411",
       "CVE-2021-33515",
       "CVE-2021-38371",
+      "CVE-2022-22536",
       "CVE-2023-36761",
       "CVE-2024-13159",
       "CVE-2024-13160",
@@ -2770,6 +2922,10 @@
     ],
     "cve_refs": [
       "BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND",
+      "CVE-2015-2291",
+      "CVE-2018-19320",
+      "CVE-2022-42475",
+      "CVE-2022-47966",
       "CVE-2026-45498"
     ],
     "description": "Adversaries may modify and/or disable security tools to avoid possible detection of their malware/tools and activities.",
@@ -2832,6 +2988,7 @@
     "version": "v19",
     "cve_refs": [
       "CVE-2020-35730",
+      "CVE-2022-4262",
       "CVE-2023-35311",
       "CVE-2026-32202",
       "CVE-2026-42897"
@@ -2872,6 +3029,10 @@
       "Initial Access"
     ],
     "cve_refs": [
+      "CVE-2021-38406",
+      "CVE-2022-41049",
+      "CVE-2022-41091",
+      "CVE-2022-41128",
       "CVE-2023-36884"
     ]
   },
@@ -3006,6 +3167,7 @@
     "version": "v19",
     "cve_refs": [
       "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
+      "CVE-2021-25337",
       "CVE-2022-23748",
       "CVE-2024-7262",
       "CVE-2026-45321"
@@ -3041,6 +3203,9 @@
     "tactic": [
       "Stealth",
       "Execution"
+    ],
+    "cve_refs": [
+      "CVE-2020-3153"
     ]
   },
   "T1595": {
@@ -3149,6 +3314,7 @@
       "DS0029"
     ],
     "cve_refs": [
+      "CVE-2013-2094",
       "CVE-2022-0492",
       "CVE-2024-0132",
       "CVE-2024-21626",
@@ -3454,6 +3620,9 @@
     "description": "An adversary may attempt to discover infrastructure and resources that are available within an infrastructure-as-a-service (IaaS) environment.",
     "tactic": [
       "Discovery"
+    ],
+    "cve_refs": [
+      "CVE-2023-22952"
     ]
   },
   "T1538": {
@@ -3540,8 +3709,11 @@
     "name": "Data from Local System",
     "version": "v19",
     "cve_refs": [
+      "CVE-2020-9934",
       "CVE-2021-27876",
       "CVE-2021-41277",
+      "CVE-2022-36537",
+      "CVE-2023-0669",
       "CVE-2023-21237",
       "CVE-2023-36424",
       "CVE-2023-36563",
@@ -3586,8 +3758,18 @@
     "cve_refs": [
       "CVE-2013-3163",
       "CVE-2016-9079",
+      "CVE-2022-2294",
+      "CVE-2022-2856",
       "CVE-2022-3038",
+      "CVE-2022-3075",
+      "CVE-2022-32893",
+      "CVE-2022-3723",
+      "CVE-2022-4135",
+      "CVE-2022-4262",
+      "CVE-2022-42856",
+      "CVE-2022-44698",
       "CVE-2023-2033",
+      "CVE-2023-23529",
       "CVE-2023-28204",
       "CVE-2023-28205",
       "CVE-2023-3079",
@@ -3626,6 +3808,7 @@
     "name": "Resource Hijacking",
     "version": "v19",
     "cve_refs": [
+      "CVE-2022-47966",
       "CVE-2023-48022",
       "CVE-2026-34910",
       "MAL-2024-PYPI-ULTRALYTICS-XMRIG"
@@ -3653,6 +3836,7 @@
     "version": "v19",
     "cve_refs": [
       "CVE-2021-27137",
+      "CVE-2022-26258",
       "CVE-2023-44487",
       "CVE-2023-50387",
       "CVE-2023-50868",
@@ -3723,6 +3907,7 @@
     "name": "Steal Web Session Cookie",
     "version": "v19",
     "cve_refs": [
+      "CVE-2022-22536",
       "CVE-2023-34192",
       "CVE-2023-6571",
       "CVE-2024-11182",
@@ -3843,6 +4028,7 @@
       "CVE-2021-39935",
       "CVE-2021-43798",
       "CVE-2022-20775",
+      "CVE-2022-2294",
       "CVE-2023-38950",
       "CVE-2023-43472",
       "CVE-2024-1708",
@@ -4110,7 +4296,12 @@
       "Windows"
     ],
     "stix_id": "attack-pattern--0f20e3cb-245b-4a61-8a91-2d93f7cb0e9b",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2015-2291",
+      "CVE-2018-19320",
+      "CVE-2018-19323"
+    ]
   },
   "T1016": {
     "id": "T1016",
@@ -4360,7 +4551,11 @@
       "Windows"
     ],
     "stix_id": "attack-pattern--e3a12395-188d-4051-9a16-ea8e14d07b88",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2022-24706",
+      "CVE-2026-34486"
+    ]
   },
   "T1047": {
     "id": "T1047",
@@ -4576,7 +4771,10 @@
       "Windows"
     ],
     "stix_id": "attack-pattern--799ace7f-e227-4411-baa0-8868704f2a69",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2022-42475"
+    ]
   },
   "T1072": {
     "id": "T1072",
@@ -4602,6 +4800,10 @@
     "stix_id": "attack-pattern--92a78814-b191-47ca-909c-1ccfe3777414",
     "is_subtechnique": false,
     "cve_refs": [
+      "CVE-2022-36537",
+      "CVE-2022-40139",
+      "CVE-2026-18556",
+      "CVE-2026-18577",
       "CVE-2026-34926"
     ]
   },
@@ -4649,7 +4851,10 @@
       "Office Suite"
     ],
     "stix_id": "attack-pattern--246fd3c7-f5e3-466d-8787-4c13d9e3b61c",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2010-2568"
+    ]
   },
   "T1082": {
     "id": "T1082",
@@ -4699,6 +4904,7 @@
     "is_subtechnique": false,
     "cve_refs": [
       "CVE-2017-12637",
+      "CVE-2018-18809",
       "CVE-2020-17519",
       "CVE-2021-20123",
       "CVE-2021-20124",
@@ -4810,7 +5016,10 @@
       "Windows"
     ],
     "stix_id": "attack-pattern--3b744087-9945-4a6f-91e8-9dbceda417a4",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2010-2568"
+    ]
   },
   "T1092": {
     "id": "T1092",
@@ -4902,6 +5111,18 @@
     "is_subtechnique": false,
     "cve_refs": [
       "CVE-2014-0502",
+      "CVE-2017-11357",
+      "CVE-2022-21587",
+      "CVE-2022-22963",
+      "CVE-2022-26258",
+      "CVE-2022-26500",
+      "CVE-2022-26501",
+      "CVE-2022-40139",
+      "CVE-2022-44877",
+      "CVE-2022-46169",
+      "CVE-2022-47966",
+      "CVE-2022-47986",
+      "CVE-2023-0669",
       "CVE-2023-36025",
       "CVE-2023-41990",
       "CVE-2023-48365",
@@ -4912,7 +5133,9 @@
       "CVE-2024-50603",
       "CVE-2024-50623",
       "CVE-2024-55956",
-      "CVE-2024-9680"
+      "CVE-2024-9680",
+      "CVE-2026-34486",
+      "CVE-2026-9198"
     ]
   },
   "T1106": {
@@ -4996,7 +5219,10 @@
       "Windows"
     ],
     "stix_id": "attack-pattern--0259baeb-9f63-4c69-bf10-eb038c390688",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2020-9934"
+    ]
   },
   "T1114": {
     "id": "T1114",
@@ -5105,7 +5331,10 @@
       "Windows"
     ],
     "stix_id": "attack-pattern--1035cdf2-3e5f-446f-a7a7-e8f6d7925967",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2020-9934"
+    ]
   },
   "T1124": {
     "id": "T1124",
@@ -5149,7 +5378,10 @@
       "Windows"
     ],
     "stix_id": "attack-pattern--6faf650d-bf31-4eb4-802d-1000cf38efaf",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2020-9934"
+    ]
   },
   "T1127": {
     "id": "T1127",
@@ -5288,7 +5520,9 @@
     "cve_refs": [
       "CVE-2014-100005",
       "CVE-2018-19410",
+      "CVE-2021-35587",
       "CVE-2022-23227",
+      "CVE-2023-0669",
       "CVE-2023-20198",
       "CVE-2023-22515",
       "CVE-2023-22518",
@@ -5616,14 +5850,19 @@
       "CVE-2016-8735",
       "CVE-2017-6742",
       "CVE-2017-7494",
+      "CVE-2018-7445",
       "CVE-2021-27137",
       "CVE-2021-27877",
       "CVE-2021-27878",
+      "CVE-2022-26501",
+      "CVE-2022-40765",
+      "CVE-2022-41223",
       "CVE-2023-21839",
       "CVE-2023-34048",
       "CVE-2024-12356",
       "CVE-2024-38812",
-      "CVE-2024-38813"
+      "CVE-2024-38813",
+      "CVE-2026-34486"
     ]
   },
   "T1211": {
@@ -5650,9 +5889,16 @@
     "is_subtechnique": false,
     "cve_refs": [
       "CVE-2013-0643",
+      "CVE-2021-25369",
+      "CVE-2021-25370",
+      "CVE-2021-31010",
+      "CVE-2022-32894",
+      "CVE-2022-4135",
+      "CVE-2022-42827",
       "CVE-2022-48618",
       "CVE-2023-2136",
       "CVE-2023-21492",
+      "CVE-2023-21674",
       "CVE-2023-29298",
       "CVE-2023-36025",
       "CVE-2023-36584",
@@ -5757,7 +6003,11 @@
       "Windows"
     ],
     "stix_id": "attack-pattern--4061e78c-1284-44b4-9116-73e4ac3912f7",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2026-18556",
+      "CVE-2026-18577"
+    ]
   },
   "T1220": {
     "id": "T1220",
@@ -5795,7 +6045,10 @@
       "Windows"
     ],
     "stix_id": "attack-pattern--dc31fe1e-d722-49da-8f5f-92c7b5aff534",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2022-41128"
+    ]
   },
   "T1222": {
     "id": "T1222",
@@ -5927,7 +6180,10 @@
       "Windows"
     ],
     "stix_id": "attack-pattern--f5d8eed6-48a9-4cdf-a3d7-d1ffa99c3d2a",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2022-26501"
+    ]
   },
   "T1491": {
     "id": "T1491",
@@ -6277,7 +6533,10 @@
       "Windows"
     ],
     "stix_id": "attack-pattern--acd0ba37-7ba9-4cc5-ac61-796586cd856d",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2020-3433"
+    ]
   },
   "T1560": {
     "id": "T1560",
@@ -6429,7 +6688,11 @@
       "Windows"
     ],
     "stix_id": "attack-pattern--4fe28b27-b13c-453e-a386-c2ef362a573b",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2022-47966",
+      "CVE-2026-18577"
+    ]
   },
   "T1578": {
     "id": "T1578",
@@ -7078,7 +7341,10 @@
     "stix_id": "attack-pattern--7de1f7ac-5d0c-4c9c-8873-627202205331",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2022-26923"
+    ]
   },
   "T1650": {
     "id": "T1650",
@@ -7214,6 +7480,7 @@
     "_auto_imported": true,
     "_intake_method": "mitre-attack-stix",
     "cve_refs": [
+      "CVE-2021-25369",
       "CVE-2023-21492"
     ]
   },
@@ -7780,7 +8047,10 @@
     "stix_id": "attack-pattern--65f2d882-3f41-4d48-8a06-29af77ec9f90",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2022-41125"
+    ]
   },
   "T1003.002": {
     "id": "T1003.002",
@@ -7906,7 +8176,10 @@
     "stix_id": "attack-pattern--f303a39a-6255-4b89-aecc-18c4d8ca7163",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2022-26923"
+    ]
   },
   "T1003.007": {
     "id": "T1003.007",
@@ -8218,7 +8491,10 @@
     "stix_id": "attack-pattern--60d0c01d-e2bf-49dd-a453-f8a9c9fa6f65",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2022-41080"
+    ]
   },
   "T1021.007": {
     "id": "T1021.007",
@@ -8967,7 +9243,10 @@
     "stix_id": "attack-pattern--208884f1-7b83-4473-ac22-4e1cf6c41471",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2017-11357"
+    ]
   },
   "T1036.009": {
     "id": "T1036.009",
@@ -9773,7 +10052,10 @@
     "stix_id": "attack-pattern--09a60ea3-a8d1-4ae5-976e-5783248b72a4",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2020-5741"
+    ]
   },
   "T1056.002": {
     "id": "T1056.002",
@@ -9907,7 +10189,11 @@
     "stix_id": "attack-pattern--d1fcf083-a721-4223-aedf-bf8960798d62",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2018-2628",
+      "CVE-2022-28810"
+    ]
   },
   "T1059.004": {
     "id": "T1059.004",
@@ -9935,7 +10221,23 @@
     "stix_id": "attack-pattern--a9d4b653-6915-42af-98b2-5758c4ceee56",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2018-2628",
+      "CVE-2018-6530",
+      "CVE-2018-7445",
+      "CVE-2022-22963",
+      "CVE-2022-24112",
+      "CVE-2022-24990",
+      "CVE-2022-26258",
+      "CVE-2022-3236",
+      "CVE-2022-33891",
+      "CVE-2022-35914",
+      "CVE-2022-36804",
+      "CVE-2022-44877",
+      "CVE-2022-46169",
+      "CVE-2026-34486"
+    ]
   },
   "T1059.005": {
     "id": "T1059.005",
@@ -9962,7 +10264,10 @@
     "stix_id": "attack-pattern--dfd7cc1d-e1d8-4394-a198-97c4cab8aa67",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2023-21715"
+    ]
   },
   "T1059.008": {
     "id": "T1059.008",
@@ -10889,7 +11194,10 @@
     "stix_id": "attack-pattern--6b57dc31-b814-4a03-8706-28bc20d739c4",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2022-40684"
+    ]
   },
   "T1098.005": {
     "id": "T1098.005",
@@ -11391,7 +11699,11 @@
     "stix_id": "attack-pattern--86850eff-2729-40c3-b85e-c4af26da4a2d",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2022-37969",
+      "CVE-2023-23376"
+    ]
   },
   "T1134.002": {
     "id": "T1134.002",
@@ -11788,7 +12100,10 @@
     "_auto_imported": true,
     "_intake_method": "mitre-attack-stix",
     "cve_refs": [
-      "CVE-2022-27926"
+      "CVE-2022-27926",
+      "CVE-2022-2856",
+      "CVE-2022-4262",
+      "CVE-2022-42856"
     ]
   },
   "T1204.002": {
@@ -11818,7 +12133,16 @@
     "_auto_imported": true,
     "_intake_method": "mitre-attack-stix",
     "cve_refs": [
+      "CVE-2013-6282",
+      "CVE-2020-28949",
+      "CVE-2021-38406",
+      "CVE-2022-21971",
       "CVE-2022-23748",
+      "CVE-2022-41049",
+      "CVE-2022-41091",
+      "CVE-2022-41128",
+      "CVE-2022-44698",
+      "CVE-2023-21715",
       "CVE-2023-24880",
       "CVE-2023-32049",
       "CVE-2025-0411",
@@ -12043,7 +12367,10 @@
     "stix_id": "attack-pattern--cff94884-3b1c-4987-a70b-6d5643c621c3",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2022-36804"
+    ]
   },
   "T1213.004": {
     "id": "T1213.004",
@@ -12790,7 +13117,10 @@
     "stix_id": "attack-pattern--8c41090b-aa47-4331-986b-8c9a51a91103",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2022-27593"
+    ]
   },
   "T1491.002": {
     "id": "T1491.002",
@@ -12847,7 +13177,10 @@
     "stix_id": "attack-pattern--a718a0c8-5768-41a1-9958-a1cc3f995e99",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2022-24706"
+    ]
   },
   "T1496.002": {
     "id": "T1496.002",
@@ -13066,7 +13399,10 @@
     "stix_id": "attack-pattern--36b2a1d7-e09e-49bf-b45e-477076c2ec01",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2022-0028"
+    ]
   },
   "T1499.003": {
     "id": "T1499.003",
@@ -13205,10 +13541,21 @@
     "_intake_method": "mitre-attack-stix",
     "cve_refs": [
       "CVE-2014-2120",
+      "CVE-2017-11357",
       "CVE-2018-4063",
       "CVE-2020-14644",
+      "CVE-2020-28949",
+      "CVE-2020-36193",
       "CVE-2021-26828",
       "CVE-2021-31196",
+      "CVE-2022-21587",
+      "CVE-2022-26352",
+      "CVE-2022-41040",
+      "CVE-2022-41082",
+      "CVE-2022-41352",
+      "CVE-2022-47966",
+      "CVE-2023-0669",
+      "CVE-2023-22952",
       "CVE-2023-24489",
       "CVE-2023-26359",
       "CVE-2023-28461",
@@ -13598,7 +13945,16 @@
     "stix_id": "attack-pattern--2959d63f-73fd-46a1-abd2-109d7dcede32",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2015-2291",
+      "CVE-2018-19320",
+      "CVE-2018-19321",
+      "CVE-2018-19322",
+      "CVE-2018-19323",
+      "CVE-2022-2294",
+      "CVE-2026-18577"
+    ]
   },
   "T1543.004": {
     "id": "T1543.004",
@@ -14042,7 +14398,10 @@
     "stix_id": "attack-pattern--bc0f5e80-91c0-4e04-9fbb-e4e332c85dae",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2022-2294"
+    ]
   },
   "T1546.016": {
     "id": "T1546.016",
@@ -14285,7 +14644,13 @@
     "stix_id": "attack-pattern--a1b52199-c8c5-438a-9ded-656f1d0888c6",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2018-19320",
+      "CVE-2018-19321",
+      "CVE-2018-19322",
+      "CVE-2018-19323"
+    ]
   },
   "T1547.007": {
     "id": "T1547.007",
@@ -14598,7 +14963,10 @@
     "stix_id": "attack-pattern--e8a0a025-3601-4755-abfb-8d08283329fb",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2020-9934"
+    ]
   },
   "T1550.001": {
     "id": "T1550.001",
@@ -14627,7 +14995,10 @@
     "stix_id": "attack-pattern--f005e783-57d4-4837-88ad-dbe7faee1c51",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2026-9198"
+    ]
   },
   "T1550.002": {
     "id": "T1550.002",
@@ -14940,6 +15311,10 @@
     "_auto_imported": true,
     "_intake_method": "mitre-attack-stix",
     "cve_refs": [
+      "CVE-2022-41049",
+      "CVE-2022-41091",
+      "CVE-2022-44698",
+      "CVE-2023-21715",
       "CVE-2023-24880",
       "CVE-2023-32049",
       "CVE-2023-36884",
@@ -14971,7 +15346,11 @@
     "stix_id": "attack-pattern--565275d5-fcc3-4b66-b4e7-928e4cac6b8c",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2018-19320",
+      "CVE-2018-19321"
+    ]
   },
   "T1555.001": {
     "id": "T1555.001",
@@ -15613,7 +15992,10 @@
     "stix_id": "attack-pattern--2f6b4ed7-fef1-44ba-bcb8-1b4beb610b64",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2022-41033"
+    ]
   },
   "T1559.002": {
     "id": "T1559.002",
@@ -15663,7 +16045,10 @@
     "stix_id": "attack-pattern--8252f135-ed26-4ce1-ae61-f26e94429a19",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2021-31010"
+    ]
   },
   "T1560.001": {
     "id": "T1560.001",
@@ -16696,7 +17081,10 @@
     "_auto_imported": true,
     "_intake_method": "mitre-attack-stix",
     "cve_refs": [
-      "CVE-2012-1854"
+      "CVE-2012-1854",
+      "CVE-2020-3153",
+      "CVE-2020-3433",
+      "CVE-2022-41073"
     ]
   },
   "T1574.004": {
@@ -17463,7 +17851,13 @@
     "stix_id": "attack-pattern--149b477f-f364-4824-b1b5-aa1d56115869",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2011-4723",
+      "CVE-2017-5521",
+      "CVE-2018-6530",
+      "CVE-2018-7445"
+    ]
   },
   "T1585.001": {
     "id": "T1585.001",
@@ -17838,7 +18232,10 @@
     "stix_id": "attack-pattern--f4b843c1-7e92-4701-8fed-ce82f8be2636",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2022-41073"
+    ]
   },
   "T1588.006": {
     "id": "T1588.006",
@@ -18438,7 +18835,10 @@
     "stix_id": "attack-pattern--5502c4e9-24ef-4d5f-8ee9-9e906c2f82c4",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2022-0028"
+    ]
   },
   "T1595.003": {
     "id": "T1595.003",
@@ -18840,6 +19240,7 @@
     "_auto_imported": true,
     "_intake_method": "mitre-attack-stix",
     "cve_refs": [
+      "CVE-2022-27518",
       "CVE-2022-41328"
     ]
   },
@@ -18916,7 +19317,10 @@
     "stix_id": "attack-pattern--52759bf1-fe12-4052-ace6-c5b0cf7dd7fd",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2022-40684"
+    ]
   },
   "T1608.001": {
     "id": "T1608.001",
@@ -19016,7 +19420,10 @@
     "stix_id": "attack-pattern--31fe0ba2-62fd-4fd9-9293-4043d84f7fe9",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-attack-stix"
+    "_intake_method": "mitre-attack-stix",
+    "cve_refs": [
+      "CVE-2022-2294"
+    ]
   },
   "T1608.005": {
     "id": "T1608.005",
