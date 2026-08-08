@@ -201,12 +201,12 @@ This skill produces a currency score and a specific update roadmap. Currency is 
 
 ### Class 13: MITRE ATLAS v2026.07 Coverage
 
-**2026 reality:** MITRE ATLAS (June 2026, v2026.07) is the primary AI threat framework. Most SOC detection engineering programs are built on ATT&CK, not ATLAS. AI-specific TTPs have zero detection coverage in ATT&CK-only programs.
+**2026 reality:** MITRE ATLAS (August 2026, v2026.07) is the primary AI threat framework. Most SOC detection engineering programs are built on ATT&CK, not ATLAS. AI-specific TTPs have zero detection coverage in ATT&CK-only programs.
 
 **Currency check questions:**
 - Is MITRE ATLAS v2026.07 incorporated into the threat model?
 - Are ATLAS TTPs mapped to detection controls?
-- What is the current ATLAS version in use? (Current: 2026.06, June 2026)
+- What is the current ATLAS version in use? (Current: 2026.07, August 2026)
 
 **If unchecked:** AI-specific threat techniques are not covered by the detection architecture. The SOC has no alerts for ATLAS TTPs.
 

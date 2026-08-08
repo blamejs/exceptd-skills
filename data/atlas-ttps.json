@@ -3608,12 +3608,28 @@
     "stix_id": "attack-pattern--bd0fd9ca-cc30-542e-9c1a-de9f66c9455b",
     "is_subtechnique": true
   },
+  "AML.T0115": {
+    "id": "AML.T0115",
+    "name": "Publish Poisoned AI Artifacts",
+    "tactic": "Resource Development",
+    "is_subtechnique": false,
+    "subtechniques": [
+      "AML.T0115.000",
+      "AML.T0115.001",
+      "AML.T0115.002"
+    ],
+    "reference_url": "https://atlas.mitre.org/techniques/AML.T0115",
+    "description": "Adversary publishes a poisoned AI artifact — a dataset, a model, or an agent tool — to a distribution channel where a victim will discover and consume it. ATLAS 2026.07 consolidated the three previously separate publish-poisoned techniques under this parent; the sub-techniques record which artifact class is published.",
+    "supersedes": "AML.T0019, AML.T0058, AML.T0104",
+    "cve_refs": [],
+    "exceptd_skills": []
+  },
   "AML.T0115.000": {
     "id": "AML.T0115.000",
     "name": "Publish Poisoned AI Artifacts: Datasets",
     "tactic": "Resource Development",
     "description": "Adversaries may [Poison Training Data](/techniques/AML.T0020) and publish it to a public location.",
-    "reference_url": "https://atlas.mitre.org/techniques/AML.T0019",
+    "reference_url": "https://atlas.mitre.org/techniques/AML.T0115.000",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
@@ -3622,15 +3638,16 @@
       "ATLAS"
     ],
     "stix_id": "attack-pattern--c38896b2-974c-5ed5-adeb-c2477b311353",
-    "is_subtechnique": false,
-    "supersedes": "AML.T0019"
+    "is_subtechnique": true,
+    "supersedes": "AML.T0019",
+    "parent_technique": "AML.T0115"
   },
   "AML.T0115.001": {
     "id": "AML.T0115.001",
     "name": "Publish Poisoned AI Artifacts: Models",
     "tactic": "Resource Development",
     "description": "Adversaries may publish a poisoned model to a public location such as a model registry or code repository.",
-    "reference_url": "https://atlas.mitre.org/techniques/AML.T0058",
+    "reference_url": "https://atlas.mitre.org/techniques/AML.T0115.001",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
@@ -3639,19 +3656,15 @@
       "ATLAS"
     ],
     "stix_id": "attack-pattern--d4c7f78e-4609-555c-a2eb-3d344dab3309",
-    "is_subtechnique": false,
-    "supersedes": "AML.T0058"
+    "is_subtechnique": true,
+    "supersedes": "AML.T0058",
+    "parent_technique": "AML.T0115"
   },
   "AML.T0115.002": {
     "id": "AML.T0115.002",
     "name": "Publish Poisoned AI Artifacts: AI Agent Tools",
     "tactic": "Resource Development",
     "description": "Adversary publishes a poisoned AI agent tool — MCP server, plugin, function-calling package — to a registry where it will be discovered and installed by victim agents. Distinguished from T0010 (general supply-chain compromise) by being scoped to AI-agent tool registries and from T0053 (plugin compromise) by being the publishing step rather than the runtime trust failure.",
-    "subtechniques": [
-      "AML.T0104.000 — Typosquat publish to MCP registry",
-      "AML.T0104.001 — Compromised-account publish to agent-tool registry",
-      "AML.T0104.002 — Slow-poison via legitimate-tool update with later backdoor"
-    ],
     "real_world_instances": [
       "CVE-2026-30615 — Windsurf MCP zero-interaction RCE via published tool",
       "MCP registry typosquat campaigns 2025-2026"
@@ -3674,12 +3687,13 @@
     "platforms": [
       "ATLAS"
     ],
-    "reference_url": "https://atlas.mitre.org/techniques/AML.T0104",
+    "reference_url": "https://atlas.mitre.org/techniques/AML.T0115.002",
     "stix_id": "attack-pattern--04842d98-bb69-586e-9765-6ff1f56ef722",
-    "is_subtechnique": false,
+    "is_subtechnique": true,
     "cve_refs": [
       "CVE-2025-54136"
     ],
-    "supersedes": "AML.T0104"
+    "supersedes": "AML.T0104",
+    "parent_technique": "AML.T0115"
   }
 }

@@ -95,3 +95,18 @@ test("an entry that supersedes a retired id records what it replaced", () => {
       `${id} must record the id it superseded`);
   }
 });
+
+test("the refresh workflow preserves the validator's exit code and stderr", () => {
+  // The script fails closed, but the pipeline can undo that. `node … | tee`
+  // reports tee's status rather than the validator's, and capturing stdout
+  // alone drops the unreachable-upstream diagnostic entirely — so an outage
+  // would publish an empty summary and read as a clean run, which is the exact
+  // silent pass the validator exists to prevent.
+  const wf = fs.readFileSync(WORKFLOW, "utf8");
+  assert.match(wf, /node scripts\/check-ttp-upstream\.js[^\n]*2>&1/,
+    "the validator's stderr must be redirected into the captured log, not dropped");
+  assert.match(wf, /TTP_STATUS=\$\?/,
+    "the validator's own exit code must be captured immediately, not the pipe's");
+  assert.doesNotMatch(wf, /check-ttp-upstream\.js\s*\|\s*tee/,
+    "piping straight into tee masks the exit code — redirect and capture $? instead");
+});
