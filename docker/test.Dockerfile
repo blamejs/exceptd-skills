@@ -3,7 +3,7 @@
 # Test-harness image for exceptd-skills.
 #
 # This Dockerfile is NOT a release artifact. It exists so contributors
-# can reproduce the CI workflow's Linux + Node 24.16.0 LTS environment
+# can reproduce the CI workflow's Linux + Node 24.19.0 LTS environment
 # on their own machine before pushing. CI runs the same gates on
 # GitHub-hosted ubuntu/windows/macos runners; this image gives a fast
 # Linux signal without burning a CI cycle.
@@ -30,7 +30,7 @@
 #   npm run test:docker:fresh    → fresh-bootstrap target
 #
 # Why pinned image:
-#   node:24.16.0-alpine3.23 — pinned to the same Node version CI uses
+#   node:24.19.0-alpine3.23 — pinned to the same Node version CI uses
 #   in `.github/workflows/ci.yml`. A drift here lets a Node-version-
 #   sensitive bug pass local Docker and fail CI (or vice versa). The
 #   tag is additionally pinned by digest so a registry-side mutation
@@ -41,7 +41,7 @@
 #   `docker buildx imagetools inspect node:<new-tag>`).
 
 # ── base ───────────────────────────────────────────────────────────────────
-FROM node:24.16.0-alpine3.23@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14 AS base
+FROM node:24.19.0-alpine3.23@sha256:244cc2b53f46f9e876304391d17682b0ddae9ac33491f4857e25e35a36ba7995 AS base
 
 # Run as a non-root user to match GitHub Actions runner behavior.
 # `node` is the upstream image's existing non-root user.

@@ -1,0 +1,7 @@
+{
+  "version": "0.19.0",
+  "type": "minor",
+  "authorized_by": "maintainer",
+  "authorized_on": "2026-08-08",
+  "reason": "Raises the published engines.node floor from >=24.16.0 to >=24.19.0. Narrowing the supported runtime range is a consumer-compatibility change, so it takes a minor under the project cadence — the same call v0.18.0 made when it moved the floor onto the Node 24 LTS line. Installs on Node 24.16 through 24.18 will surface an npm engines warning until they upgrade."
+}

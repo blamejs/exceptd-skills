@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.19.0 — 2026-08-08
+
+The minimum supported Node.js is raised to 24.19.0 (`engines.node` is now `>=24.19.0`), the current Node 24 LTS patch. It carries roughly three months of runtime security fixes over the previous 24.16.0 floor, including OpenSSL 3.5.7 and the V8 patches released across 24.17, 24.18 and 24.19. Continuous integration, the release workflow, the daily-refresh and ATLAS-currency workflows, the `.nvmrc`, and the Docker reproduction harness all move to 24.19.0 together, and the harness base image is re-pinned to the 24.19.0-alpine3.23 manifest digest.
+
+Installs on Node 24.16 through 24.18 will surface an `engines` warning until the runtime is upgraded; nothing else about the package changes.
+
 ## 0.18.30 — 2026-08-08
 
 Three catalog entries claimed CISA KEV membership that CISA has never recorded, and each drew a 25-point RWEP premium from it. CVE-2024-21626 (runc "Leaky Vessels"), CVE-2024-3094 (the xz-utils backdoor) and CVE-2025-1094 (PostgreSQL psql SQL injection) are now recorded as not KEV-listed. CISA's own archived catalog for the dates the entries asserted contains none of them and carries no entry added on those dates at all, and the listing date and due date CVE-2025-1094 carried belong to CVE-2024-57727, the only vulnerability CISA added that day. The KEV catalog URL no longer appears in those entries' verification sources, and two `vendor: "CISA KEV"` advisory rows that recorded listings which never happened are gone. Exploitation status was re-decided on its own evidence rather than swept along: CVE-2024-21626 drops to none — it was found by Snyk Labs research, its only public exploit is that disclosure proof-of-concept, and no in-the-wild use is reported — while CVE-2025-1094 keeps confirmed, because Rapid7 documented its use in the BeyondTrust intrusions, chained with two flaws that genuinely are KEV-listed. Scores move 80 to 35, 70 to 45, and 77 to 52.
