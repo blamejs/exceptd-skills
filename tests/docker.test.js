@@ -17,6 +17,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const { spawnSync } = require("node:child_process");
 
 const ROOT = path.join(__dirname, "..");
 const DOCKERFILE = path.join(ROOT, "docker", "test.Dockerfile");
@@ -140,6 +141,42 @@ test("Dockerfile Node version matches the CI workflow Node version", () => {
         `Bump all three (ci.yml, docker/test.Dockerfile, release.yml) in the same commit.`
     );
   }
+
+  // Fourth leg: the PUBLISHED floor. engines.node is what consumers install
+  // against, and until this assertion existed the three legs above could all
+  // agree while the floor named a Node no gate ever ran — the package would
+  // claim support for a runtime nothing tested. The floor is a range, so only
+  // its lower bound is compared.
+  const pkg = JSON.parse(read(path.join(ROOT, "package.json")));
+  const engines = pkg.engines && pkg.engines.node;
+  assert.ok(typeof engines === "string" && engines.length > 0,
+    "package.json must declare engines.node");
+  const floorMatch = engines.match(/(\d+\.\d+\.\d+)/);
+  assert.ok(floorMatch,
+    `engines.node '${engines}' must name an exact major.minor.patch floor`);
+  assert.equal(
+    floorMatch[1],
+    ciNode,
+    `package.json engines.node floor is ${floorMatch[1]} but the toolchain pins Node ${ciNode}. ` +
+      `The published floor must be a runtime the gates actually ran on — bump engines.node ` +
+      `alongside ci.yml, release.yml and docker/test.Dockerfile.`
+  );
+
+  // Fifth leg: .nvmrc, which is what `nvm use` reads in a fresh checkout. It
+  // must be TRACKED, not merely present locally — the repository ignores
+  // dotfiles by default, and an untracked .nvmrc silently reaches no
+  // contributor while the release notes claim it does.
+  const nvmrcPath = path.join(ROOT, ".nvmrc");
+  assert.ok(fs.existsSync(nvmrcPath), ".nvmrc must exist so `nvm use` selects the supported Node");
+  const tracked = spawnSync("git", ["ls-files", "--error-unmatch", ".nvmrc"], { cwd: ROOT, encoding: "utf8" });
+  assert.equal(tracked.status, 0,
+    ".nvmrc exists but is not tracked by git — the `.*` ignore rule swallows it, so a fresh " +
+      "checkout has no nvm pin. Add `!.nvmrc` to .gitignore and `git add -f .nvmrc`.");
+  assert.equal(
+    read(nvmrcPath).trim(),
+    ciNode,
+    `.nvmrc pins Node ${read(nvmrcPath).trim()} but the toolchain pins ${ciNode}.`
+  );
 });
 
 test("Dockerfile defines both predeploy and fresh-bootstrap targets", () => {

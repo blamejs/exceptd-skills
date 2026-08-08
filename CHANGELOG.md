@@ -2,7 +2,7 @@
 
 ## 0.19.0 — 2026-08-08
 
-The minimum supported Node.js is raised to 24.19.0 (`engines.node` is now `>=24.19.0`), the current Node 24 LTS patch. It carries roughly three months of runtime security fixes over the previous 24.16.0 floor, including OpenSSL 3.5.7 and the V8 patches released across 24.17, 24.18 and 24.19. Continuous integration, the release workflow, the daily-refresh and ATLAS-currency workflows, the `.nvmrc`, and the Docker reproduction harness all move to 24.19.0 together, and the harness base image is re-pinned to the 24.19.0-alpine3.23 manifest digest.
+The minimum supported Node.js is raised to 24.19.0 (`engines.node` is now `>=24.19.0`), the current Node 24 LTS patch. It carries roughly three months of runtime security fixes over the previous 24.16.0 floor, including OpenSSL 3.5.7 and the V8 patches released across 24.17, 24.18 and 24.19. Continuous integration, the release workflow, the daily-refresh and ATLAS-currency workflows, and the Docker reproduction harness all move to 24.19.0 together, and the harness base image is re-pinned to the 24.19.0-alpine3.23 manifest digest. The `.nvmrc` that 0.18.0 described is now actually in the repository — it had been swallowed by the dotfile ignore rule and never tracked, so `nvm use` in a fresh checkout selected nothing. It is tracked and pinned to 24.19.0, and the lockstep test now covers both it and the published `engines.node` floor, neither of which any test compared against the toolchain before.
 
 Installs on Node 24.16 through 24.18 will surface an `engines` warning until the runtime is upgraded; nothing else about the package changes.
 
