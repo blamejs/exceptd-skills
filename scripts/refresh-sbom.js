@@ -12,9 +12,14 @@
  *   - bomFormat / specVersion        CycloneDX 1.6
  *   - serialNumber                   urn:uuid v4 derived from a stable
  *                                    hash of (project name + version +
- *                                    timestamp) so reruns produce a new
- *                                    UUID per refresh.
- *   - metadata.timestamp             ISO 8601 of generation
+ *                                    bundle digest), so identical content
+ *                                    reproduces the identical UUID and a
+ *                                    rerun that changed nothing is a no-op
+ *                                    rather than a spurious diff.
+ *   - metadata.timestamp             the release date this version's
+ *                                    CHANGELOG heading declares — NOT the
+ *                                    wall-clock moment of generation, which
+ *                                    would make the artifact irreproducible
  *   - metadata.tools                 this script itself, version pulled
  *                                    from package.json at refresh time
  *   - metadata.component             application entry for exceptd-skills,
@@ -145,13 +150,31 @@ const SELF_EXCLUDED = new Set(['sbom.cdx.json']);
  * side check for the cache. */
 const DERIVABLE_PREFIXES = ['data/_indexes/'];
 
+/* Files npm puts in every tarball regardless of the `files` allowlist.
+ * package.json is never listed in `files` (npm adds it unconditionally), so
+ * expanding the allowlist alone left the one file that declares the bin
+ * entrypoint, the engines floor and the dependency set outside the hashed
+ * inventory — the SBOM described 247 of the 268 files an operator receives and
+ * said nothing about the gap. It is not derivable and not self-referential, so
+ * nothing but the omission kept it out. README.md and LICENSE get the same
+ * unconditional treatment from npm but are already named in `files`, so a
+ * union covers the general rule without double-counting them. sources/README.md
+ * is here for the same reason: npm collects README files it finds, `files` never
+ * names that directory, and it shipped unhashed.
+ *
+ * This list is maintained by hand, which is only safe because something else
+ * checks it: lib/validate-package.js compares the real `npm pack` output against
+ * this SBOM, so a file npm decides to ship that is missing here fails a gate
+ * instead of shipping silently. */
+const ALWAYS_SHIPPED = ['package.json', 'sources/README.md'];
+
 function isDerivable(rel) {
   return DERIVABLE_PREFIXES.some((p) => rel === p.replace(/\/$/, '') || rel.startsWith(p));
 }
 
 function expandAllowlist(allowlist) {
   const abs = [];
-  for (const entry of allowlist) {
+  for (const entry of [...allowlist, ...ALWAYS_SHIPPED]) {
     const full = path.join(REPO_ROOT, entry);
     if (!fs.existsSync(full)) continue; // tolerate a stale entry; predeploy gate flags
     const stat = fs.statSync(full);
@@ -169,6 +192,38 @@ function expandAllowlist(allowlist) {
     .filter((r) => !isDerivable(r))
     .sort();
   return rel;
+}
+
+/* metadata.timestamp — the release date this version's CHANGELOG heading
+ * declares, as an ISO-8601 instant.
+ *
+ * The field has to be deterministic: the SBOM-currency gate compares the
+ * committed artifact against a freshly generated one, so a wall-clock value
+ * would differ on every run and the comparison could never mean anything.
+ * The previous approach kept determinism by folding the bundle hash into a
+ * date offset, but the offset was a full uint32 of SECONDS — a 136-year
+ * spread — so the field routinely landed a century or more in the future
+ * (the shipped value read 2147-11-20). Deterministic, and untrue: consumers
+ * that sort or age-check SBOMs read that as a real creation date.
+ *
+ * The CHANGELOG heading is both deterministic and true. Its format is already
+ * enforced by scripts/check-changelog-extract.js, which the release flow runs
+ * before this script, so the date is guaranteed present by the time a release
+ * regenerates the SBOM. Refusing is deliberate when it is absent — inventing a
+ * placeholder is what produced the 2147 date in the first place. */
+function releaseTimestamp(version) {
+  const changelogPath = path.join(REPO_ROOT, 'CHANGELOG.md');
+  const text = fs.readFileSync(changelogPath, 'utf8');
+  const escaped = version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const m = text.match(new RegExp('^## ' + escaped + ' [—-] (\\d{4}-\\d{2}-\\d{2})\\s*$', 'm'));
+  if (!m) {
+    throw new Error(
+      `refresh-sbom: CHANGELOG.md has no dated heading for ${version}. ` +
+      `Add "## ${version} — YYYY-MM-DD" before regenerating — metadata.timestamp ` +
+      `is the release date, and there is no honest value to fall back to.`,
+    );
+  }
+  return `${m[1]}T00:00:00.000Z`;
 }
 
 function toPosixRel(absPath) {
@@ -303,12 +358,7 @@ function buildSbom() {
   // time of a refresh should read the file's mtime or refresh-report.json.
   const seed = `${pkg.name}@${pkg.version}@${bundleSha}`;
   const serialNumber = 'urn:uuid:' + uuidV4FromSeed(seed);
-  // Synthetic ISO timestamp derived from the seed — preserves the
-  // CycloneDX 1.6 metadata.timestamp schema requirement (must be an
-  // ISO-8601 string) while remaining content-stable.
-  const seedHash = crypto.createHash('sha256').update(seed).digest();
-  const offsetSeconds = seedHash.readUInt32BE(0); // deterministic offset
-  const timestamp = new Date(Date.UTC(2026, 0, 1) + offsetSeconds * 1000).toISOString();
+  const timestamp = releaseTimestamp(pkg.version);
 
   const dataflowInput = catalogs
     .map((c) => `data/${c}`)
@@ -366,6 +416,22 @@ function buildSbom() {
           name: 'exceptd:integrity:method',
           value: 'Ed25519 per-skill (lib/sign.js)',
         },
+        // An operator verifying the bundle holds the SBOM, not this script.
+        // Without these two properties the only record of what the inventory
+        // deliberately omits was a source comment they never see, so a partial
+        // inventory was indistinguishable from a complete one. State the
+        // uncovered prefix and the check that covers it instead.
+        {
+          name: 'exceptd:integrity:uncovered:prefix',
+          value: DERIVABLE_PREFIXES.join(','),
+        },
+        {
+          name: 'exceptd:integrity:uncovered:rationale',
+          value:
+            'Regenerated by `npm run build-indexes` and mutated by the test suite, so a ' +
+            'pinned per-file hash would race any run between generation and verification. ' +
+            'Covered instead by the pre-computed-index freshness gate in `npm run predeploy`.',
+        },
         {
           name: 'exceptd:runtime:dependency:count',
           value: String(Object.keys(pkg.dependencies || {}).length),
@@ -409,4 +475,11 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { buildSbom, expandAllowlist, bundleDigest };
+module.exports = {
+  buildSbom,
+  expandAllowlist,
+  bundleDigest,
+  releaseTimestamp,
+  ALWAYS_SHIPPED,
+  DERIVABLE_PREFIXES,
+};

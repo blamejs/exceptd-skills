@@ -60,15 +60,20 @@ Desktop.ini
 # context and the image layers without enumerating it. Anything excluded through
 # a contributor's own global gitignore is covered here by shape, not by name.
 #
-# The negations below are exactly the dot-prefixed paths tracked in git, so the
-# rule is "repo content is admitted, local state is not" rather than a list
-# someone has to remember to extend. tests/governance.test.js asserts every one
-# of them exists, and the suite runs inside this image — dropping any would fail
-# the harness rather than fail quietly. .keys/ is deliberately NOT re-admitted:
-# it is untracked and holds the private signing key.
+# The negations below are the dot-prefixed repo content, so the rule is "repo
+# content is admitted, local state is not" rather than a list someone has to
+# remember to extend. tests/governance.test.js asserts the tracked ones exist,
+# and the suite runs inside this image — dropping any would fail the harness
+# rather than fail quietly. .keys/ is deliberately NOT re-admitted: it is
+# untracked and holds the private signing key.
+#
+# .git is re-admitted for the reason stated above: it is the only entry here
+# that is repository metadata rather than tracked content, and without it the
+# git-dependent gates cannot answer.
 .*
 !.cursorrules
 !.dockerignore
+!.git
 !.gitattributes
 !.github
 !.gitignore
@@ -92,6 +97,9 @@ __pycache__/
 .venv/
 venv/
 
-# Docker self-references (don't include the Dockerfile in its own context).
-docker/
-.dockerignore
+# docker/ and .dockerignore are NOT excluded. Keeping a Dockerfile out of its
+# own build context saves a few KB and reads tidy, but both are tracked repo
+# content that the governance gate requires to exist — so the image was the one
+# place they were missing, and the suite failed in here for a reason that could
+# never happen on a runner. Docker reads the Dockerfile through -f regardless of
+# the context, so nothing needed the exclusion.

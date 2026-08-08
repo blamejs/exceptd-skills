@@ -47,6 +47,16 @@ FROM node:24.19.0-alpine3.23@sha256:244cc2b53f46f9e876304391d17682b0ddae9ac33491
 # `node` is the upstream image's existing non-root user.
 WORKDIR /app
 
+# WORKDIR creates /app owned by root, while the COPY steps below land their
+# contents as `node`. Git compares the repository directory's owner against the
+# calling user and refuses to operate across that split ("detected dubious
+# ownership"), so every git-backed gate would fail for a reason that has nothing
+# to do with the code under test. Hand the directory to the user that runs the
+# suite — on a CI runner the checkout is owned by the invoking user too, which
+# is the state this image exists to reproduce. Setting `safe.directory` instead
+# would silence the warning while leaving the ownership genuinely mismatched.
+RUN chown node:node /app
+
 # git is part of the surface under test, not a convenience. Several gates ask
 # git what the shipped surface is — which files are tracked, which are ignored,
 # what changed against the base — and without it they cannot answer. Silently
@@ -66,6 +76,17 @@ RUN npm install --no-audit --no-fund
 COPY --chown=node:node . .
 
 USER node
+
+# Reduce the tree to what the repository tracks. A build context is whatever sits
+# in the working directory, which on a maintainer's machine includes files that
+# are untracked and ignored only by their personal global gitignore — a file this
+# image has no copy of. Those files therefore arrive looking like ordinary
+# project content, and gates that reason about the shipped surface count them as
+# shipped. CI checks out tracked content and nothing else, so match it. `-d`
+# without `-x` leaves anything the repo's own .gitignore covers, so the installed
+# node_modules survives. A new file being iterated on locally is kept by
+# `git add`, which is also what putting it in front of CI would require.
+RUN git clean -fd
 
 # ── predeploy ──────────────────────────────────────────────────────────────
 # Default target: run the gate sequence against the repo state in the

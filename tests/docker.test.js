@@ -351,3 +351,102 @@ test('package.json ships a docker run script for every documented target', () =>
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+require("node:test").describe("the build context matches a CI checkout", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const { spawnSync } = require("node:child_process");
+
+  const ROOT = path.join(__dirname, "..");
+  const ignoreLines = () =>
+    fs
+      .readFileSync(path.join(ROOT, ".dockerignore"), "utf8")
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l && !l.startsWith("#"));
+
+  test(".git is re-admitted past the dot-catch-all", () => {
+    // The catch-all excludes every dot-path, and .git was never negated back
+    // in, so the git-backed gates could not answer inside the image at all:
+    // check-attr, the ignored-file lookup, the diff against the base. The
+    // comment above the catch-all claimed the opposite, which is why it went
+    // unnoticed — the file described the intent, not the behavior.
+    const lines = ignoreLines();
+    assert.ok(lines.includes(".*"), "the dot-path catch-all must still be the rule");
+    assert.ok(lines.includes("!.git"), ".git must be negated back in after the catch-all");
+    assert.ok(
+      lines.indexOf("!.git") > lines.indexOf(".*"),
+      "the negation only counts if it comes after the pattern it undoes"
+    );
+  });
+
+  test("docker/ and .dockerignore stay in the context", () => {
+    // Both are tracked content the governance gate requires to exist, so
+    // excluding them failed the suite inside the image for a reason that could
+    // never occur on a runner.
+    const lines = ignoreLines();
+    assert.ok(!lines.includes("docker/"), "docker/ must not be excluded");
+    assert.ok(
+      !lines.includes(".dockerignore"),
+      ".dockerignore must not be re-excluded after being negated"
+    );
+  });
+
+  test("the image reduces the tree to tracked content", () => {
+    // A build context carries whatever sits in the working directory, so files
+    // that are untracked — and ignored only by a contributor's own global
+    // gitignore, which no image has — arrive looking like project content. The
+    // gates that reason about the shipped surface then count them as shipped.
+    // Pruning by tracked-ness keeps that out without naming anyone's tools;
+    // enumerating them in .dockerignore would bake one person's setup into a
+    // shared file and go stale the moment someone used a different one.
+    const df = fs.readFileSync(path.join(ROOT, "docker", "test.Dockerfile"), "utf8");
+    assert.match(df, /RUN git clean -fd/);
+    assert.ok(
+      !/git clean [^\n]*-[a-z]*x/.test(df),
+      "-x would also delete ignored paths, taking the installed node_modules with it"
+    );
+  });
+
+  test("every dot-path negation names something that exists", () => {
+    // A negation for a path that is gone is dead weight that reads as coverage.
+    for (const line of ignoreLines()) {
+      if (!line.startsWith("!.")) continue;
+      const rel = line.slice(1);
+      assert.ok(
+        fs.existsSync(path.join(ROOT, rel)),
+        `.dockerignore re-admits ${rel}, which does not exist`
+      );
+    }
+  });
+
+  test("the Dockerfile hands /app to the user that runs the suite", () => {
+    // WORKDIR creates /app as root while COPY lands its contents as node. Git
+    // refuses to work across that split, so every git-backed gate failed on
+    // ownership rather than on anything under test.
+    const df = fs.readFileSync(path.join(ROOT, "docker", "test.Dockerfile"), "utf8");
+    assert.match(df, /RUN chown node:node \/app/);
+    // Look at instructions only. The prose above that line names safe.directory
+    // to explain why it is the wrong fix, and a whole-file match would read
+    // that explanation as the thing it warns against.
+    const instructions = df
+      .split("\n")
+      .filter((l) => l.trim() && !l.trim().startsWith("#"));
+    assert.ok(
+      !instructions.some((l) => l.includes("safe.directory")),
+      "suppressing git's ownership warning would leave the mismatch in place"
+    );
+  });
+
+  test("the prune runs after the copy, or it prunes an empty directory", () => {
+    // Ordering is the whole behavior: cleaning before the sources land would
+    // succeed, report nothing, and leave every untracked file in place.
+    const df = fs.readFileSync(path.join(ROOT, "docker", "test.Dockerfile"), "utf8");
+    assert.ok(
+      df.indexOf("COPY --chown=node:node . .") < df.indexOf("RUN git clean -fd"),
+      "git clean must follow the COPY that brings the tree in"
+    );
+  });
+});
