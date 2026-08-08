@@ -24,6 +24,19 @@ const BASELINE = path.join(ROOT, "tests", ".version-tag-baseline.json");
 
 const { VERSION_TAG_RE } = require(SCRIPT);
 
+/* The scan asks git which files ship and which are local-only. The Docker
+ * harness has the git binary and no repository on purpose: .git/ stays out of
+ * the build context so a contributor history is never uploaded to a builder or
+ * baked into an image layer. Without a repository the scan skips by design, so
+ * the cases that assert a scan RESULT have nothing to assert against. */
+const NO_GIT_REPO = (() => {
+  const r = spawnSync("git", ["rev-parse", "--is-inside-work-tree"], { cwd: ROOT, encoding: "utf8" });
+  return r.status === 0 && String(r.stdout).trim() === "true"
+    ? false
+    : "no git repository in this tree (expected in the Docker harness, which excludes .git/ by design) — run the suite outside Docker to exercise this";
+})();
+
+
 test("baseline file exists and is well-formed JSON", () => {
   assert.ok(fs.existsSync(BASELINE), `expected baseline at ${path.relative(ROOT, BASELINE)}`);
   const body = JSON.parse(fs.readFileSync(BASELINE, "utf8"));
@@ -32,14 +45,14 @@ test("baseline file exists and is well-formed JSON", () => {
   assert.ok(typeof body.recorded_at === "string");
 });
 
-test("current tree has no new version-tag regressions vs. baseline", () => {
+test("current tree has no new version-tag regressions vs. baseline", { skip: NO_GIT_REPO }, () => {
   const r = spawnSync(process.execPath, [SCRIPT], { encoding: "utf8", cwd: ROOT });
   assert.equal(r.status, 0,
     `check must pass on the current tree; stdout: ${r.stdout.slice(0, 400)}; stderr: ${r.stderr.slice(0, 400)}`);
   assert.match(r.stdout, /\[check-version-tags\] ok/);
 });
 
-test("a synthetic new version-tag comment in an unsanctioned file is caught", () => {
+test("a synthetic new version-tag comment in an unsanctioned file is caught", { skip: NO_GIT_REPO }, () => {
   // Drop a fake .js file under scripts/ with a version-tagged comment.
   // The check must FAIL because this is a new file (not in the baseline)
   // carrying a tag. The filename must NOT be git-ignored (the gate skips
@@ -82,7 +95,7 @@ test('#26 VERSION_TAG_RE rejects an IPv4 address and a longer dotted-numeric run
   assert.equal(VERSION_TAG_RE.test('// build 0.18.9.42 nightly'), false);
 });
 
-test("a version literal inside a quoted string on a code line IS counted (whole-line contract)", () => {
+test("a version literal inside a quoted string on a code line IS counted (whole-line contract)", { skip: NO_GIT_REPO }, () => {
   // The scan is deliberately whole-line, not comment-only: a 0.x stamp inside a
   // shipped string literal (CLI --help text, error message, test fixture) is
   // operator-readable residue and must be caught the same as a `//` comment.

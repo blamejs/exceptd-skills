@@ -11,13 +11,17 @@
 # Local bootstrap marker — image runs bootstrap fresh.
 .bootstrap-complete
 
-# VCS metadata is INCLUDED on purpose. Several gates ask git which files are
-# tracked, which are ignored, and what changed against the base; without the
-# repository they cannot answer, and a gate that cannot answer either skips or
-# — worse — treats every local-only file as shipped. Excluding .git/ made this
-# harness quietly diverge from the CI it exists to reproduce. It costs ~33 MB of
-# build context, which is the right trade for gates that mean the same thing in
-# both places.
+# VCS metadata is EXCLUDED, by the `.*` rule below and with no negation. A build
+# context is uploaded whole — to a remote or shared builder in many setups — and
+# .git carries config (origin URLs sometimes hold credentials), reflogs and every
+# historical object. `COPY . .` then persists all of it in an image layer and the
+# build cache, where no later cleanup step can reach it. docker/README.md states
+# this to contributors as a guarantee about their local history.
+#
+# The cost is real and is accepted: gates that ask git which files are tracked,
+# which are ignored, or what changed against the base cannot answer in this
+# image, so they skip and say so. A skipped gate here is not a passing gate —
+# run the suite outside Docker, or read CI, for those.
 
 # Node + tool state.
 node_modules/
@@ -92,6 +96,9 @@ __pycache__/
 .venv/
 venv/
 
-# Docker self-references (don't include the Dockerfile in its own context).
-docker/
-.dockerignore
+# docker/ and .dockerignore are NOT excluded. Keeping a Dockerfile out of its
+# own build context saves a few KB and reads tidy, but both are tracked repo
+# content that the governance gate requires to exist — so the image was the one
+# place they were missing, and the suite failed in here for a reason that could
+# never happen on a runner. Docker reads the Dockerfile through -f regardless of
+# the context, so nothing needed the exclusion.

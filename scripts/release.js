@@ -295,8 +295,15 @@ function cmdPrepare(opts) {
   _ok("signed + indexes + snapshot + sbom regenerated");
 
   _section("test-count baseline");
-  // Growth is fine (the gate only fails on shrinkage), but refreshing keeps
-  // the canonical-count guard meaningful when a release adds test files.
+  // Check BEFORE refreshing. `--update-baseline` writes whatever it observes,
+  // so calling it unconditionally rebaselined a shrunken suite downward and the
+  // shrinkage gate — which runs later, in `gates` — then compared the new count
+  // against itself and passed. Releasing was the one path that disarmed the
+  // guard, which is the path it exists to guard. Run the gate first so a drop
+  // stops the release here; refresh only once it has agreed nothing was lost,
+  // which still captures growth. A deliberate removal is re-baselined by hand
+  // with the command the gate's own failure message prints.
+  _run("node", ["scripts/check-test-count.js"]);
   _run("node", ["scripts/check-test-count.js", "--update-baseline"]);
 
   _section("codebase-patterns currency (advisory)");

@@ -47,12 +47,21 @@ FROM node:24.19.0-alpine3.23@sha256:244cc2b53f46f9e876304391d17682b0ddae9ac33491
 # `node` is the upstream image's existing non-root user.
 WORKDIR /app
 
-# git is part of the surface under test, not a convenience. Several gates ask
-# git what the shipped surface is — which files are tracked, which are ignored,
-# what changed against the base — and without it they cannot answer. Silently
-# skipping them here would defeat the point of the harness: it exists to
-# reproduce CI, and CI always has git. Whatever they report in this image should
-# be what they report on a runner.
+# WORKDIR creates /app owned by root, while the COPY steps below land their
+# contents as `node` and the suite runs as `node`. Anything that writes into the
+# project directory — the vendor-refresh install path, atomic-write temp files —
+# then fails on permissions rather than on what it was testing. Hand the
+# directory to the user that runs the suite; a CI runner's checkout is owned by
+# the invoking user too, which is the state this image exists to reproduce.
+RUN chown node:node /app
+
+# The git binary, so the gates that shell out to it fail on a missing repository
+# rather than a missing executable — the two are different conditions and only
+# one of them is expected here. .git/ is deliberately not in the build context
+# (see .dockerignore), so git has no repository to answer about: the gates that
+# ask which files are tracked or ignored skip in this image and report that they
+# skipped. That is the accepted cost of not copying a contributor's history into
+# a build context, not an oversight to work around by admitting .git.
 RUN apk add --no-cache git
 
 # Copy package manifests first so `npm install` is cached when only

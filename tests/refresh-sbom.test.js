@@ -36,6 +36,22 @@ const { execFileSync } = require("node:child_process");
 
 const ROOT = path.join(__dirname, "..");
 
+/* These two cases resolve coverage through git's own attribute engine, so they
+ * need a repository — not merely the git binary. The Docker harness has the
+ * binary and no repository on purpose: .git/ stays out of the build context so a
+ * contributor's history is never uploaded to a builder or baked into an image
+ * layer. Skipping states that; failing would report a defect in the tree that
+ * does not exist, and passing would claim a check that never ran. */
+const NO_GIT_REPO = (() => {
+  const r = require("node:child_process").spawnSync(
+    "git", ["rev-parse", "--is-inside-work-tree"],
+    { cwd: ROOT, encoding: "utf8" }
+  );
+  return r.status === 0 && String(r.stdout).trim() === "true"
+    ? false
+    : "no git repository in this tree (expected in the Docker harness, which excludes .git/ by design) — run the suite outside Docker to exercise this";
+})();
+
 // Mirrors scripts/refresh-sbom.js: the shipped surface is package.json
 // `files[]` expanded to concrete regular files, minus the SBOM self-
 // reference and the derivable index cache (those are excluded from the
@@ -99,7 +115,7 @@ function resolveAttrs(relPaths) {
   return attrs;
 }
 
-test("every byte-hashed shipped file is covered by an eol=lf .gitattributes rule", () => {
+test("every byte-hashed shipped file is covered by an eol=lf .gitattributes rule", { skip: NO_GIT_REPO }, () => {
   const files = shippedHashedFiles();
   // Anti-coincidence: the surface must be non-trivial, otherwise an empty
   // walk would make the assertion vacuously pass.
@@ -130,7 +146,7 @@ test("every byte-hashed shipped file is covered by an eol=lf .gitattributes rule
   );
 });
 
-test("git check-attr resolves a known-covered file to eol=lf (guard self-check)", () => {
+test("git check-attr resolves a known-covered file to eol=lf (guard self-check)", { skip: NO_GIT_REPO }, () => {
   // Proves the resolution mechanism actually reports `lf` rather than the
   // assertion passing because every value parsed as undefined.
   const attrs = resolveAttrs(["manifest.json"]);
@@ -142,4 +158,89 @@ test("git check-attr resolves a known-covered file to eol=lf (guard self-check)"
   __t.after(() => { for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv); try { process.chdir(__preCwd); } catch (e) {}
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
+});
+
+require("node:test").describe("sbom metadata honesty", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const {
+    releaseTimestamp,
+    ALWAYS_SHIPPED,
+    DERIVABLE_PREFIXES,
+  } = require("../scripts/refresh-sbom.js");
+
+  const ROOT = path.join(__dirname, "..");
+  const readJson = (rel) => JSON.parse(fs.readFileSync(path.join(ROOT, rel), "utf8"));
+
+  test("metadata.timestamp is the CHANGELOG release date, not a synthesized future one", () => {
+    const pkg = readJson("package.json");
+    const changelog = fs.readFileSync(path.join(ROOT, "CHANGELOG.md"), "utf8");
+    // Read the date off the heading by hand rather than rebuilding the
+    // generator's pattern here — a second copy of the regex would drift, and
+    // this test would then be pinning its own expectation instead of the code's.
+    const heading = changelog
+      .split("\n")
+      .find((l) => l.startsWith(`## ${pkg.version} `));
+    assert.ok(heading, `CHANGELOG.md needs a heading for ${pkg.version}`);
+    const date = heading.trim().split(/\s+/).pop();
+    assert.match(date, /^\d{4}-\d{2}-\d{2}$/, `heading must end in an ISO date: ${heading}`);
+
+    const sbom = readJson("sbom.cdx.json");
+    assert.equal(sbom.metadata.timestamp, `${date}T00:00:00.000Z`);
+    assert.equal(releaseTimestamp(pkg.version), sbom.metadata.timestamp);
+  });
+
+  test("the shipped timestamp is a plausible date, not centuries out", () => {
+    // The bug this pins was not a crash: the field parsed fine and read
+    // 2147-11-20, because a uint32 of seconds was added to a 2026 anchor. An
+    // ISO-8601 check alone accepted it, so assert the VALUE is sane. The upper
+    // bound is loose on purpose — it only has to reject a century of drift.
+    const sbom = readJson("sbom.cdx.json");
+    const t = Date.parse(sbom.metadata.timestamp);
+    assert.ok(Number.isFinite(t), "metadata.timestamp must parse");
+    assert.ok(t >= Date.UTC(2024, 0, 1), `timestamp ${sbom.metadata.timestamp} predates the project`);
+    assert.ok(t <= Date.UTC(2100, 0, 1), `timestamp ${sbom.metadata.timestamp} is implausibly far in the future`);
+  });
+
+  test("releaseTimestamp refuses a version with no dated CHANGELOG heading", () => {
+    // Refusing matters more than the message: the previous code's willingness
+    // to synthesize a value when it had none is what shipped the 2147 date.
+    assert.throws(() => releaseTimestamp("no-such-version"), /no dated heading/);
+  });
+
+  test("package.json and sources/README.md are hashed even though `files` never names them", () => {
+    const pkg = readJson("package.json");
+    for (const rel of ALWAYS_SHIPPED) {
+      assert.ok(
+        !(pkg.files || []).includes(rel),
+        `${rel} is in package.json files[] — it no longer needs an ALWAYS_SHIPPED entry`
+      );
+    }
+    const sbom = readJson("sbom.cdx.json");
+    const hashed = new Map(
+      (sbom.components || [])
+        .filter((c) => String(c["bom-ref"] || "").startsWith("file:"))
+        .map((c) => [c.name, c])
+    );
+    for (const rel of ALWAYS_SHIPPED) {
+      const comp = hashed.get(rel);
+      assert.ok(comp, `${rel} ships in every tarball but has no file: component`);
+      // Presence is not coverage: assert the component carries a real digest.
+      const sha = (comp.hashes || []).find((h) => h.alg === "SHA-256");
+      assert.ok(sha && /^[a-f0-9]{64}$/.test(sha.content), `${rel} component has no SHA-256`);
+    }
+  });
+
+  test("the SBOM states which shipped paths it does not hash", () => {
+    // The rationale used to live only in the generator's source, so an operator
+    // holding the SBOM could not tell a partial inventory from a complete one.
+    const sbom = readJson("sbom.cdx.json");
+    const props = new Map((sbom.metadata.properties || []).map((p) => [p.name, p.value]));
+    assert.equal(props.get("exceptd:integrity:uncovered:prefix"), DERIVABLE_PREFIXES.join(","));
+    const why = props.get("exceptd:integrity:uncovered:rationale");
+    assert.ok(typeof why === "string" && why.length > 40, "the exclusion must carry a stated reason");
+    assert.match(why, /predeploy/, "the reason must name the check that covers the gap instead");
+  });
 });
