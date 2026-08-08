@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.19.4 — 2026-08-08
+
+`framework-gap` now reports the controls a CVE needs that no framework carries yet. The command already answered half the question — which existing controls are insufficient — and stopped there, so an operator learned which controls fall short without learning what belongs in their place. The catalog had recorded the answer for 302 CVEs since the zero-day learning loop began and no command read it, in either output mode. Each entry names the requirement, its evidence, and the specific framework controls it closes, so it attaches to the gaps listed above it rather than reading as free-standing advice. Both the human-readable report and `--json` carry it, and the summary line counts it.
+
+Coverage is partial and visibly so: roughly three hundred of the catalog's CVEs carry these controls today, so many scenarios will report none. A free-text scenario reports none by construction — the requirements are recorded per CVE.
+
 ## 0.19.3 — 2026-08-08
 
 The SBOM's creation timestamp is a real date. It has to be reproducible, or the currency gate could never compare a committed artifact against a freshly generated one, and that reproducibility had been bought by folding the bundle hash into a date offset. The offset spanned 136 years, so the field routinely landed a century out — the shipped value read `2147-11-20`. It is now the release date the changelog declares for that version, which is both reproducible and true. Tooling that sorts, ages or expiry-checks SBOMs will read a sane value for the first time.

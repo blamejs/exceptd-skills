@@ -194,10 +194,11 @@ Examples:
   }
 
   const root = path.join(__dirname, '..');
-  let controlGaps, cveCatalog;
+  let controlGaps, cveCatalog, lessons;
   try {
     controlGaps = JSON.parse(fs.readFileSync(path.join(root, 'data', 'framework-control-gaps.json'), 'utf8'));
     cveCatalog = JSON.parse(fs.readFileSync(path.join(root, 'data', 'cve-catalog.json'), 'utf8'));
+    lessons = JSON.parse(fs.readFileSync(path.join(root, 'data', 'zeroday-lessons.json'), 'utf8'));
   } catch (err) {
     // Honor --json on the catalog-read failure path too: a JSON consumer must
     // get the same structured ok:false envelope the other error exits emit.
@@ -254,7 +255,7 @@ Examples:
   const scenario = args[1];
 
   const allFrameworks = args[0].toLowerCase() === 'all';
-  const report = gapReport(requested, scenario, controlGaps, cveCatalog, { allFrameworks });
+  const report = gapReport(requested, scenario, controlGaps, cveCatalog, { allFrameworks, lessons });
   const theater = theaterCheck(controlGaps, cveCatalog);
 
   if (jsonOut) {
@@ -286,6 +287,18 @@ Examples:
     console.log();
   }
 
+  if (report.new_control_requirements.length > 0) {
+    console.log(`### New controls this CVE requires (no framework carries them) — ${report.new_control_requirements.length}`);
+    for (const c of report.new_control_requirements) {
+      const req = c.requirement || '';
+      console.log(`  - ${c.id} ${c.name}: ${req.length > 140 ? req.slice(0, 140) + '…' : req}`);
+      // Naming the gaps it closes is what separates this from generic advice —
+      // it ties the control back to the insufficient framework controls above.
+      if (c.closes.length) console.log(`    closes: ${c.closes.join(', ')}`);
+    }
+    console.log();
+  }
+
   if (report.theater_risks.length > 0) {
     console.log(`### Theater risk controls (compliant but exposed) — ${report.theater_risks.length}`);
     for (const t of report.theater_risks) {
@@ -294,7 +307,7 @@ Examples:
     console.log();
   }
 
-  console.log(`Summary: ${report.summary.total_gaps} matching gaps, ${report.summary.universal_gaps} universal, ${report.summary.theater_risk_controls} theater-risk controls`);
+  console.log(`Summary: ${report.summary.total_gaps} matching gaps, ${report.summary.universal_gaps} universal, ${report.summary.new_control_requirements} new controls required, ${report.summary.theater_risk_controls} theater-risk controls`);
 }
 
 // --- command implementations ---
