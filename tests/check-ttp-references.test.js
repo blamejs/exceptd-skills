@@ -76,3 +76,17 @@ test("the pinned catalogs are the definition source and are not scanned as refer
   assert.ok(known.has("AML.T0115"), "ATLAS ids missing from the known set");
   assert.ok(!known.has("_meta"), "_meta must not be treated as a technique id");
 });
+
+test("scan() reports which files name an id the pinned catalogs do not define", () => {
+  const { scan } = require(SCRIPT);
+  const live = scan();
+  assert.equal(live.unresolved.size, 0, `unresolved: ${[...live.unresolved.keys()].join(", ")}`);
+  assert.ok(live.knownCount > 900, `expected the pinned catalogs, got ${live.knownCount}`);
+});
+
+test("TTP_PATTERN is global, so a file with several references yields all of them", () => {
+  // Without the /g flag the scanner would report only the first id per file.
+  assert.ok(TTP_PATTERN.global, "the scanner relies on repeated exec() over each file");
+  const re = new RegExp(TTP_PATTERN.source, "g");
+  assert.deepEqual("T1059 and AML.T0115.000 and T1685".match(re), ["T1059", "AML.T0115.000", "T1685"]);
+});

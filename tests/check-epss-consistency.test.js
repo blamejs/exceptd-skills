@@ -124,3 +124,38 @@ test("entries carrying no EPSS data at all are ignored", () => {
   });
   assert.equal(r.status, 0, r.out);
 });
+
+test("cohorts() groups by publication date and separates half-populated pairs", () => {
+  const { cohorts } = require(SCRIPT);
+  const { groups, incomplete } = cohorts({
+    "CVE-2026-0001": entry(0.1, 0.5, "2026-08-07"),
+    "CVE-2026-0002": entry(0.2, 0.6, "2026-08-07"),
+    "CVE-2026-0003": entry(0.3, 0.7, "2026-01-01"),
+    "CVE-2026-0004": { epss_score: 0.4 },
+    "CVE-2026-0005": { cvss_score: 9.8 },
+  });
+  assert.equal(groups.size, 2);
+  assert.equal(groups.get("2026-08-07").length, 2);
+  assert.equal(groups.get("2026-01-01").length, 1);
+  assert.deepEqual(incomplete, [{ id: "CVE-2026-0004", missing: "epss_percentile" }]);
+});
+
+test("inversions() reports the offending pair and the size of the gap", () => {
+  const { inversions } = require(SCRIPT);
+  const found = inversions([
+    { id: "LOW-SCORE-HIGH-RANK", score: 0.01, percentile: 0.93 },
+    { id: "HIGH-SCORE-LOW-RANK", score: 0.9, percentile: 0.5 },
+  ]);
+  assert.equal(found.length, 1);
+  assert.equal(found[0].lower.id, "HIGH-SCORE-LOW-RANK");
+  assert.equal(found[0].higher.id, "LOW-SCORE-HIGH-RANK");
+  assert.ok(found[0].delta > 0.4, `expected a large gap, got ${found[0].delta}`);
+});
+
+test("check() returns the failure list and the corpus size it examined", () => {
+  const { check } = require(SCRIPT);
+  const live = check(path.join(ROOT, "data", "cve-catalog.json"));
+  assert.deepEqual(live.failures, []);
+  assert.ok(live.entryCount > 500, `expected the shipped corpus, got ${live.entryCount}`);
+  assert.ok(live.cohortCount >= 1);
+});
