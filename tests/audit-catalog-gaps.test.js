@@ -294,15 +294,13 @@ test("shipped catalogs: missing-context budget is enforced per catalog (no silen
     // existing controls — perimeter/edge patch SLAs, network segmentation,
     // endpoint and application hardening, mobile/kernel driver hardening, and
     // end-of-life retirement — so none carry a new_control_requirements entry,
-    // taking the count from 623 to 723. The one-hundred-CVE batch covering the
-    // August-2022-to-March-2023 KEV additions is the same shape — Windows
-    // kernel and platform escalation, enterprise-edge and mail-infrastructure
-    // pre-auth RCE, browser and mobile zero-days, and signed-driver escalation
-    // primitives — all of which remediate through controls the registry already
-    // carries (patch SLA, driver blocklisting, network segmentation, endpoint
-    // and application hardening, end-of-life retirement), taking the count from
-    // 723 to 823.
-    "zeroday-lessons": { new_control_requirements: 823 }
+    // taking the count from 623 to 723. This budget does not move for a batch
+    // whose lessons reuse an existing control: reuse still completes the chain,
+    // so the lesson references that control's stable id rather than omitting
+    // the field, and the count stays put. Raising it to absorb lessons that
+    // stop at framework coverage would convert the detector into an acceptance
+    // of incomplete learning loops.
+    "zeroday-lessons": { new_control_requirements: 723 }
   };
   const findings = {};
   for (const key of Object.keys(MOD.SPEC)) {
