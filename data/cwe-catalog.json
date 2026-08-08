@@ -243,6 +243,7 @@
       "CVE-2026-30624",
       "CVE-2026-30625",
       "CVE-2026-42271",
+      "CVE-2026-8037",
       "MAL-2026-3083"
     ],
     "framework_controls_partially_addressing": [
@@ -1771,7 +1772,8 @@
       "CVE-2026-45247",
       "CVE-2026-45659",
       "CVE-2026-50522",
-      "CVE-2026-58644"
+      "CVE-2026-58644",
+      "CVE-2026-63077"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",

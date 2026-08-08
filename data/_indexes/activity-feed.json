@@ -6,12 +6,20 @@
   },
   "events": [
     {
-      "date": "2026-08-06",
+      "date": "2026-08-08",
       "type": "catalog_update",
       "artifact": "data/cve-catalog.json",
       "path": "data/cve-catalog.json",
       "schema_version": "1.0.0",
-      "entry_count": 1023
+      "entry_count": 1025
+    },
+    {
+      "date": "2026-08-08",
+      "type": "catalog_update",
+      "artifact": "data/zeroday-lessons.json",
+      "path": "data/zeroday-lessons.json",
+      "schema_version": "1.1.0",
+      "entry_count": 1025
     },
     {
       "date": "2026-08-06",
@@ -20,14 +28,6 @@
       "path": "data/cwe-catalog.json",
       "schema_version": "1.0.0",
       "entry_count": 232
-    },
-    {
-      "date": "2026-08-06",
-      "type": "catalog_update",
-      "artifact": "data/zeroday-lessons.json",
-      "path": "data/zeroday-lessons.json",
-      "schema_version": "1.1.0",
-      "entry_count": 1023
     },
     {
       "date": "2026-08-05",
