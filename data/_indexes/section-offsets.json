@@ -150,7 +150,7 @@
           "h3_count": 0
         },
         {
-          "name": "TTP Mapping (MITRE ATLAS v2026.06)",
+          "name": "TTP Mapping (MITRE ATLAS v2026.07)",
           "normalized_name": "ttp-mapping",
           "line": 173,
           "byte_start": 17188,
@@ -338,7 +338,7 @@
           "h3_count": 1
         },
         {
-          "name": "TTP Mapping (MITRE ATLAS v2026.06 and ATT&CK)",
+          "name": "TTP Mapping (MITRE ATLAS v2026.07 and ATT&CK)",
           "normalized_name": "ttp-mapping",
           "line": 74,
           "byte_start": 6584,
@@ -450,7 +450,7 @@
           "h3_count": 0
         },
         {
-          "name": "TTP Mapping (MITRE ATLAS v2026.06 and ATT&CK)",
+          "name": "TTP Mapping (MITRE ATLAS v2026.07 and ATT&CK)",
           "normalized_name": "ttp-mapping",
           "line": 81,
           "byte_start": 12106,
@@ -710,7 +710,7 @@
           "h3_count": 0
         },
         {
-          "name": "TTP Mapping (MITRE ATLAS v2026.06)",
+          "name": "TTP Mapping (MITRE ATLAS v2026.07)",
           "normalized_name": "ttp-mapping",
           "line": 185,
           "byte_start": 12544,
@@ -831,7 +831,7 @@
           "h3_count": 2
         },
         {
-          "name": "TTP Mapping (MITRE ATLAS v2026.06 + MITRE ATT&CK)",
+          "name": "TTP Mapping (MITRE ATLAS v2026.07 + MITRE ATT&CK)",
           "normalized_name": "ttp-mapping",
           "line": 333,
           "byte_start": 17125,
@@ -934,7 +934,7 @@
           "h3_count": 0
         },
         {
-          "name": "TTP Mapping (MITRE ATLAS v2026.06 and ATT&CK)",
+          "name": "TTP Mapping (MITRE ATLAS v2026.07 and ATT&CK)",
           "normalized_name": "ttp-mapping",
           "line": 91,
           "byte_start": 9601,
@@ -1502,7 +1502,7 @@
     },
     "skill-update-loop": {
       "path": "skills/skill-update-loop/skill.md",
-      "total_bytes": 47847,
+      "total_bytes": 47843,
       "total_lines": 522,
       "frontmatter": {
         "line_start": 1,
@@ -1534,16 +1534,16 @@
           "normalized_name": "ttp-mapping",
           "line": 67,
           "byte_start": 3702,
-          "byte_end": 4794,
-          "bytes": 1092,
+          "byte_end": 4790,
+          "bytes": 1088,
           "h3_count": 0
         },
         {
           "name": "Why Skills Decay",
           "normalized_name": "why-skills-decay",
           "line": 84,
-          "byte_start": 4794,
-          "byte_end": 5681,
+          "byte_start": 4790,
+          "byte_end": 5677,
           "bytes": 887,
           "h3_count": 0
         },
@@ -1551,8 +1551,8 @@
           "name": "Update Triggers and Assigned Skills",
           "normalized_name": "update-triggers-and-assigned-skills",
           "line": 101,
-          "byte_start": 5681,
-          "byte_end": 33156,
+          "byte_start": 5677,
+          "byte_end": 33152,
           "bytes": 27475,
           "h3_count": 12
         },
@@ -1560,8 +1560,8 @@
           "name": "Skill Currency Scores",
           "normalized_name": "skill-currency-scores",
           "line": 350,
-          "byte_start": 33156,
-          "byte_end": 33746,
+          "byte_start": 33152,
+          "byte_end": 33742,
           "bytes": 590,
           "h3_count": 0
         },
@@ -1569,8 +1569,8 @@
           "name": "Running the Update Loop",
           "normalized_name": "running-the-update-loop",
           "line": 371,
-          "byte_start": 33746,
-          "byte_end": 34698,
+          "byte_start": 33742,
+          "byte_end": 34694,
           "bytes": 952,
           "h3_count": 3
         },
@@ -1578,8 +1578,8 @@
           "name": "Analysis Procedure",
           "normalized_name": "analysis-procedure",
           "line": 400,
-          "byte_start": 34698,
-          "byte_end": 35590,
+          "byte_start": 34694,
+          "byte_end": 35586,
           "bytes": 892,
           "h3_count": 4
         },
@@ -1587,8 +1587,8 @@
           "name": "Output Format",
           "normalized_name": "output-format",
           "line": 432,
-          "byte_start": 35590,
-          "byte_end": 36644,
+          "byte_start": 35586,
+          "byte_end": 36640,
           "bytes": 1054,
           "h3_count": 0
         },
@@ -1596,8 +1596,8 @@
           "name": "Framework Lag Declaration",
           "normalized_name": "framework-lag-declaration",
           "line": 459,
-          "byte_start": 36644,
-          "byte_end": 39447,
+          "byte_start": 36640,
+          "byte_end": 39443,
           "bytes": 2803,
           "h3_count": 0
         },
@@ -1605,8 +1605,8 @@
           "name": "Exploit Availability Matrix",
           "normalized_name": "exploit-availability-matrix",
           "line": 478,
-          "byte_start": 39447,
-          "byte_end": 42176,
+          "byte_start": 39443,
+          "byte_end": 42172,
           "bytes": 2729,
           "h3_count": 0
         },
@@ -1614,8 +1614,8 @@
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
           "line": 499,
-          "byte_start": 42176,
-          "byte_end": 43853,
+          "byte_start": 42172,
+          "byte_end": 43849,
           "bytes": 1677,
           "h3_count": 0
         },
@@ -1623,8 +1623,8 @@
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
           "line": 509,
-          "byte_start": 43853,
-          "byte_end": 47847,
+          "byte_start": 43849,
+          "byte_end": 47843,
           "bytes": 3994,
           "h3_count": 0
         }
@@ -1911,7 +1911,7 @@
           "h3_count": 0
         },
         {
-          "name": "TTP Mapping (MITRE ATLAS v2026.06 + MITRE ATT&CK v19.1)",
+          "name": "TTP Mapping (MITRE ATLAS v2026.07 + MITRE ATT&CK v19.2)",
           "normalized_name": "ttp-mapping",
           "line": 124,
           "byte_start": 10955,
@@ -1996,7 +1996,7 @@
           "h3_count": 0
         },
         {
-          "name": "TTP Mapping (MITRE ATLAS v2026.06 + MITRE ATT&CK Enterprise)",
+          "name": "TTP Mapping (MITRE ATLAS v2026.07 + MITRE ATT&CK Enterprise)",
           "normalized_name": "ttp-mapping",
           "line": 90,
           "byte_start": 9884,
@@ -2081,7 +2081,7 @@
           "h3_count": 1
         },
         {
-          "name": "TTP Mapping (MITRE ATLAS v2026.06 + MITRE ATT&CK)",
+          "name": "TTP Mapping (MITRE ATLAS v2026.07 + MITRE ATT&CK)",
           "normalized_name": "ttp-mapping",
           "line": 127,
           "byte_start": 14990,
@@ -2411,21 +2411,21 @@
     },
     "ot-ics-security": {
       "path": "skills/ot-ics-security/skill.md",
-      "total_bytes": 37122,
+      "total_bytes": 37134,
       "total_lines": 344,
       "frontmatter": {
         "line_start": 1,
         "line_end": 48,
         "byte_start": 0,
-        "byte_end": 1068
+        "byte_end": 1072
       },
       "sections": [
         {
           "name": "Threat Context (mid-2026)",
           "normalized_name": "threat-context",
           "line": 52,
-          "byte_start": 1101,
-          "byte_end": 4592,
+          "byte_start": 1105,
+          "byte_end": 4596,
           "bytes": 3491,
           "h3_count": 0
         },
@@ -2433,8 +2433,8 @@
           "name": "Framework Lag Declaration",
           "normalized_name": "framework-lag-declaration",
           "line": 68,
-          "byte_start": 4592,
-          "byte_end": 9074,
+          "byte_start": 4596,
+          "byte_end": 9078,
           "bytes": 4482,
           "h3_count": 0
         },
@@ -2442,17 +2442,17 @@
           "name": "TTP Mapping",
           "normalized_name": "ttp-mapping",
           "line": 89,
-          "byte_start": 9074,
-          "byte_end": 12810,
-          "bytes": 3736,
+          "byte_start": 9078,
+          "byte_end": 12822,
+          "bytes": 3744,
           "h3_count": 0
         },
         {
           "name": "Exploit Availability Matrix",
           "normalized_name": "exploit-availability-matrix",
           "line": 111,
-          "byte_start": 12810,
-          "byte_end": 15129,
+          "byte_start": 12822,
+          "byte_end": 15141,
           "bytes": 2319,
           "h3_count": 0
         },
@@ -2460,8 +2460,8 @@
           "name": "Analysis Procedure",
           "normalized_name": "analysis-procedure",
           "line": 124,
-          "byte_start": 15129,
-          "byte_end": 23881,
+          "byte_start": 15141,
+          "byte_end": 23893,
           "bytes": 8752,
           "h3_count": 10
         },
@@ -2469,8 +2469,8 @@
           "name": "Output Format",
           "normalized_name": "output-format",
           "line": 220,
-          "byte_start": 23881,
-          "byte_end": 26653,
+          "byte_start": 23893,
+          "byte_end": 26665,
           "bytes": 2772,
           "h3_count": 0
         },
@@ -2478,8 +2478,8 @@
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
           "line": 278,
-          "byte_start": 26653,
-          "byte_end": 29858,
+          "byte_start": 26665,
+          "byte_end": 29870,
           "bytes": 3205,
           "h3_count": 0
         },
@@ -2487,8 +2487,8 @@
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
           "line": 312,
-          "byte_start": 29858,
-          "byte_end": 33312,
+          "byte_start": 29870,
+          "byte_end": 33324,
           "bytes": 3454,
           "h3_count": 0
         },
@@ -2496,8 +2496,8 @@
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
           "line": 328,
-          "byte_start": 33312,
-          "byte_end": 37122,
+          "byte_start": 33324,
+          "byte_end": 37134,
           "bytes": 3810,
           "h3_count": 0
         }
@@ -2739,7 +2739,7 @@
           "h3_count": 0
         },
         {
-          "name": "TTP Mapping (MITRE ATT&CK Enterprise + ATLAS v2026.06)",
+          "name": "TTP Mapping (MITRE ATT&CK Enterprise + ATLAS v2026.07)",
           "normalized_name": "ttp-mapping",
           "line": 108,
           "byte_start": 8717,
@@ -3190,30 +3190,30 @@
     },
     "sector-energy": {
       "path": "skills/sector-energy/skill.md",
-      "total_bytes": 54792,
+      "total_bytes": 54824,
       "total_lines": 412,
       "frontmatter": {
         "line_start": 1,
         "line_end": 61,
         "byte_start": 0,
-        "byte_end": 2609
+        "byte_end": 2613
       },
       "sections": [
         {
           "name": "Threat Context (mid-2026)",
           "normalized_name": "threat-context",
           "line": 67,
-          "byte_start": 3345,
-          "byte_end": 8723,
-          "bytes": 5378,
+          "byte_start": 3349,
+          "byte_end": 8735,
+          "bytes": 5386,
           "h3_count": 0
         },
         {
           "name": "Framework Lag Declaration",
           "normalized_name": "framework-lag-declaration",
           "line": 93,
-          "byte_start": 8723,
-          "byte_end": 17067,
+          "byte_start": 8735,
+          "byte_end": 17079,
           "bytes": 8344,
           "h3_count": 0
         },
@@ -3221,17 +3221,17 @@
           "name": "TTP Mapping",
           "normalized_name": "ttp-mapping",
           "line": 118,
-          "byte_start": 17067,
-          "byte_end": 23445,
-          "bytes": 6378,
+          "byte_start": 17079,
+          "byte_end": 23473,
+          "bytes": 6394,
           "h3_count": 0
         },
         {
           "name": "Exploit Availability Matrix",
           "normalized_name": "exploit-availability-matrix",
           "line": 144,
-          "byte_start": 23445,
-          "byte_end": 27472,
+          "byte_start": 23473,
+          "byte_end": 27500,
           "bytes": 4027,
           "h3_count": 0
         },
@@ -3239,17 +3239,17 @@
           "name": "Analysis Procedure",
           "normalized_name": "analysis-procedure",
           "line": 162,
-          "byte_start": 27472,
-          "byte_end": 38418,
-          "bytes": 10946,
+          "byte_start": 27500,
+          "byte_end": 38450,
+          "bytes": 10950,
           "h3_count": 13
         },
         {
           "name": "Output Format",
           "normalized_name": "output-format",
           "line": 274,
-          "byte_start": 38418,
-          "byte_end": 41878,
+          "byte_start": 38450,
+          "byte_end": 41910,
           "bytes": 3460,
           "h3_count": 0
         },
@@ -3257,8 +3257,8 @@
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
           "line": 341,
-          "byte_start": 41878,
-          "byte_end": 46869,
+          "byte_start": 41910,
+          "byte_end": 46901,
           "bytes": 4991,
           "h3_count": 0
         },
@@ -3266,8 +3266,8 @@
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
           "line": 379,
-          "byte_start": 46869,
-          "byte_end": 51417,
+          "byte_start": 46901,
+          "byte_end": 51449,
           "bytes": 4548,
           "h3_count": 0
         },
@@ -3275,8 +3275,8 @@
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
           "line": 395,
-          "byte_start": 51417,
-          "byte_end": 54792,
+          "byte_start": 51449,
+          "byte_end": 54824,
           "bytes": 3375,
           "h3_count": 0
         }
@@ -3406,7 +3406,7 @@
           "h3_count": 0
         },
         {
-          "name": "TTP Mapping (MITRE ATT&CK Enterprise + ATLAS v2026.06)",
+          "name": "TTP Mapping (MITRE ATT&CK Enterprise + ATLAS v2026.07)",
           "normalized_name": "ttp-mapping",
           "line": 129,
           "byte_start": 12457,

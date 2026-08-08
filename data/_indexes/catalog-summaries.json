@@ -7,9 +7,9 @@
   "catalogs": {
     "atlas-ttps.json": {
       "path": "data/atlas-ttps.json",
-      "purpose": "MITRE ATLAS TTPs (AML.T0xxx) cited by skills, with tactic, name, description. Pinned to ATLAS v2026.06 (May 2026).",
+      "purpose": "MITRE ATLAS TTPs (AML.T0xxx) cited by skills, with tactic, name, description. Pinned to ATLAS v2026.07 (May 2026).",
       "schema_version": "1.0.0",
-      "last_updated": "2026-07-03",
+      "last_updated": "2026-08-08",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -31,7 +31,7 @@
       "path": "data/attack-techniques.json",
       "purpose": null,
       "schema_version": "1.0.0",
-      "last_updated": "2026-06-10",
+      "last_updated": "2026-08-08",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -40,13 +40,13 @@
         "rebuild_after_days": 365,
         "note": "Catalog must be rebuilt against the upstream ATT&CK release whenever MITRE publishes a new version. AGENTS.md external-data version-pinning rule requires the bump to be intentional, not silent. ATT&CK ships semi-annually (April + October); audit on each release for tactic moves, technique splits, and new Detection Strategies."
       },
-      "entry_count": 805,
+      "entry_count": 794,
       "sample_keys": [
-        "T0001",
-        "T0017",
-        "T0051",
-        "T0096",
-        "T0853"
+        "T0853",
+        "T0867",
+        "T0883",
+        "T1021",
+        "T1027"
       ]
     },
     "cve-catalog.json": {

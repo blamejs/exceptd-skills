@@ -342,6 +342,25 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
 
+      - name: Validate shipped TTP ids against the pinned upstream releases
+        # Report-only, and deliberately not a predeploy gate: predeploy is
+        # offline, and this needs MITRE's published releases to answer the
+        # question at all. It catches the class the ATLAS 2026.07 / ATT&CK 19.2
+        # bump exposed — ids that are revoked upstream, or that upstream never
+        # published, sitting in a shipped catalog where a skill can route an
+        # operator to them. `continue-on-error` keeps a finding from failing the
+        # data refresh; the log and the summary carry it to a maintainer, since
+        # a revocation needs a decision about the successor rather than an
+        # automatic rewrite.
+        if: always()
+        continue-on-error: true
+        run: |
+          node scripts/check-ttp-upstream.js | tee ttp-upstream.log
+          echo "### TTP upstream validity" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat ttp-upstream.log >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload refresh-report.json artifact (always — for operator debug)
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.19.1 — 2026-08-08
+
+The pinned MITRE releases move to ATLAS 2026.07 and ATT&CK 19.2, and the audit that pin bumps require turned up eleven technique identifiers in the shipped catalogs that operators could be routed to but MITRE does not publish as usable.
+
+Five ATT&CK techniques were revoked upstream and are remapped to their successors: `T1562.001` and `T1562.006` to `T1685` (Disable or Modify Tools), `T1562.004` to `T1686` (Disable or Modify System Firewall), `T1562.008` to `T1685.002` (Disable or Modify Cloud Log), and the ICS technique `T0855` to `T1692.001` (Command Message). All seven CVE back-references move with them. These were already revoked in 19.1, the previously pinned release, so they had been shipping revoked for a full version cycle. Six further identifiers — `T0001`, `T0017`, `T0051`, `T0096`, `T1480.003` and `T1486.004` — appear in no ATT&CK domain at either version and are removed; none carried a CVE reference.
+
+ATLAS 2026.07 consolidates three techniques into a new parent, and the catalog follows: `AML.T0019` (Publish Poisoned Datasets), `AML.T0058` (Publish Poisoned Models) and `AML.T0104` (Publish Poisoned AI Agent Tool) become `AML.T0115.000`, `AML.T0115.001` and `AML.T0115.002` under Publish Poisoned AI Artifacts. Each successor records the identifier it replaced, and the CVE and D3FEND cross-references follow.
+
+A new validator checks every shipped technique identifier against the pinned upstream release and runs nightly with the data refresh, where it has the network access the question needs. It reports anything revoked, deprecated or absent upstream, and treats an unreachable upstream as its own outcome rather than a pass — the silent-pass path is what let eleven bad identifiers ship. Offline, the suite now also pins referential integrity between the CVE catalog and the technique mirrors, so a future remap cannot update one and miss the other.
+
 ## 0.19.0 — 2026-08-08
 
 The minimum supported Node.js is raised to 24.19.0 (`engines.node` is now `>=24.19.0`), the current Node 24 LTS patch. It carries roughly three months of runtime security fixes over the previous 24.16.0 floor, including OpenSSL 3.5.7 and the V8 patches released across 24.17, 24.18 and 24.19. Continuous integration, the release workflow, the daily-refresh and ATLAS-currency workflows, and the Docker reproduction harness all move to 24.19.0 together, and the harness base image is re-pinned to the 24.19.0-alpine3.23 manifest digest. The `.nvmrc` that 0.18.0 described is now actually in the repository — it had been swallowed by the dotfile ignore rule and never tracked, so `nvm use` in a fresh checkout selected nothing. It is tracked and pinned to 24.19.0, and the lockstep test now covers both it and the published `engines.node` floor, neither of which any test compared against the toolchain before.
