@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.19.6 — 2026-08-08
+
+Another 48 CVEs report the controls they require, taking the catalog to 358 of 1025. The set spans SharePoint and SolarWinds Web Help Desk deserialization, Samsung MagicINFO and SimpleHelp path traversal, Fortinet FortiClient EMS, Ivanti Endpoint Manager, CRI-O and containerd, and the Apple and Chromium memory-safety entries.
+
+Three requirements recur because the vulnerabilities keep demonstrating them. Where a vendor fix exists but needs a service restart the frameworks let operators defer, the remediation clock has to budget the restart rather than count the installer run as done. Where exploitation writes something that outlives the fix — an uploaded web shell, a resident implant — patching closes the entry point without evicting what came through it, so a process whose terminal state is "patched" leaves the foothold in place. And where a product is commissioned once and left outside the fleet patch cadence, a signage server or a remote-support server, the listing date is the only thing that pulls it back into scope.
+
+Entries name the framework controls they close and carry a test that separates the control being present from it being effective. Where no control in the inventory fits a CVE without a category error, the entry stays empty rather than taking a near-match.
+
 ## 0.19.5 — 2026-08-08
 
 Three CVEs reported a control with no name and no requirement text. Their catalog entries held a bare string where the schema expects a control record, which was invisible until 0.19.4 began displaying the field and then rendered as `- undefined undefined:` in the gap report. All three describe the remediation clock for a KEV-listed flaw and now say so, closing the vulnerability-management gaps that already cite them. A malformed record is now omitted from the report rather than printed, so this class degrades to silence instead of noise, and the catalog test fails on the shape so it cannot recur unseen. Three further controls declared no framework gap at all and now name the ones they close.
