@@ -26829,7 +26829,7 @@
         "id": "NEW-CTRL-001",
         "name": "CISA-KEV-RESPONSE-SLA",
         "description": "Enforce timely remediation of CISA KEV-listed Access Control Bypass in Arista EOS - all release trains: KEV due-date as the binding SLA, not a 30-day default.",
-        "evidence": "CVE-2026-7473 — Arista EOS tunnel-decapsulation access-control bypass via incomplete comparison, CISA KEV-listed with confirmed exploitation (RWEP 69), affecting all release trains. Switch firmware upgrades require maintenance windows, which is exactly the case where a compensating-control posture must be declared rather than the SLA quietly slipping.",
+        "evidence": "CVE-2026-7473 — Arista EOS tunnel-decapsulation access-control bypass via incomplete comparison, CISA KEV-listed with confirmed exploitation (RWEP 69), affecting all release trains. Arista states no software fix or upgrade path is planned, so patch_available is false: the only mitigation is MAC/IP access-control lists on the affected switches or upstream devices that drop unexpected tunnel types. The KEV deadline therefore has to be met by deploying and evidencing that ACL, which is precisely the documented-compensating-control limb of the SLA rather than a patch window.",
         "gap_closes": [
           "NIST-800-53-SI-2",
           "AU-ISM-1546",
