@@ -2140,7 +2140,31 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_assist_factor": "low"
+    "ai_assist_factor": "low",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-094",
+        "name": "AI-RUNTIME-API-PATH-TRAVERSAL-VALIDATION",
+        "description": "MLflow's artifact endpoint joins a caller-supplied path onto the artifact root and serves the result, so containment must be enforced on the read direction and not only on uploads and extractions: resolve the requested path to an absolute canonical form, verify the resolved result is still under the artifact root (rejecting absolute paths, ../ segments, and symlinks that leave the root), and do that check before the file handle is opened rather than by filtering the request string. On a tracking server the read half is the higher-value half, because the same host holds the object-store credentials, the tracking database URI, and the operator key material that an arbitrary-file read returns.",
+        "evidence": "Packet: the tracking-server artifact endpoint resolves user-controlled paths under the artifact root without normalization, and an unauthenticated HTTP request carrying ../ reads arbitrary files from the host filesystem (CWE-22, CVSS 7.5). A PoC is public and a patch is available.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.28",
+          "UK-CAF-B4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-033",
+        "name": "AI-ML-DEVELOPER-TOOLING-INVENTORY",
+        "description": "An MLflow tracking server is typically stood up by a data-science team rather than by IT, so nothing tells the application-patching program that a network-reachable artifact-read flaw exists on it — the asset is not on the list the patch SLA runs against. The inventory entry for this server must record each listening endpoint, whether any authentication sits in front of the artifact route specifically (this traversal is reachable unauthenticated), and the blast radius of a file read from that host: artifact-store credentials, registered model artifacts, and training-data paths, which is how a file read becomes model-supply-chain tampering. It needs its own patch SLA tier rather than the generic application tier.",
+        "evidence": "Packet: an unauthenticated HTTP request to the tracking server's artifact endpoint reads arbitrary host files. The CVE is not KEV-listed and active exploitation is unknown despite a public PoC and RWEP 35 — the exact profile that never surfaces on a KEV-driven patch queue and so depends on the asset being inventoried to be remediated at all.",
+        "gap_closes": [
+          "NIST-AI-RMF-MEASURE-2.7",
+          "OWASP-ML-Top-10-2023-ML06",
+          "AU-ISM-1546",
+          "NIS2-Art21-network-security"
+        ]
+      }
+    ]
   },
   "CVE-2024-27132": {
     "name": "MLflow Recipe Template Injection XSS to Client-Side RCE",
@@ -2400,7 +2424,30 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_assist_factor": "low"
+    "ai_assist_factor": "low",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-030",
+        "name": "PERIMETER-DEVICE-ZERODAY-SLA-TIER",
+        "description": "A NetScaler ADC/Gateway is the authentication and TLS-termination boundary for the applications behind it, so the 14/30-day patch windows the citing controls grade against are the wrong clock for it — the device is not protected by the perimeter, it is the perimeter. CVE-2023-3519 argues for a distinct tier: for a pre-authentication defect on an internet-reachable NetScaler, either the fixed build is deployed or the exposed virtual server's public interface is taken offline, within hours of KEV listing, with that shutdown pre-authorized so an on-call engineer can take it without a change window. The tier must also be driven by configured role rather than by product name. Only appliances configured to serve the gateway SAML/formssso path reach the vulnerable nsppe code, so an asset inventory that records 'NetScaler present' cannot select the affected population — it has to record which virtual servers are published and which authentication paths they expose, or the compressed SLA fires against the wrong devices and misses the right ones.",
+        "evidence": "Citrix NetScaler ADC/Gateway, CISA KEV-listed 2023-07-19 with confirmed in-the-wild exploitation and a public PoC available. The packet's attack-vector record: an unauthenticated HTTP POST to /gwtest/formssso reaches the vulnerable nsppe parser — no credential and no prior foothold required — and CISA AA23-201A documented in-wild exploitation by Chinese state-sponsored actors against US critical-infrastructure organizations within weeks of disclosure. RWEP 80 / CVSS 9.8.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "PCI-DSS-4.0-6.3.3",
+          "NIS2-Art21-vulnerability-management"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "The nsppe stack overflow runs before authentication, which means a successful CVE-2023-3519 exploit generates no authentication event to find later and executes with the packet engine's privilege on the appliance. Upgrading to the fixed NetScaler build restores the SAML parser and says nothing about what was installed while the parser was broken. Any NetScaler that served the gateway formssso path from an untrusted network on a vulnerable build must therefore be dispositioned as compromised regardless of what a post-upgrade version scan reports: capture and diff the running configuration against the last known-good, inspect the appliance's web-served directories for files not shipped by the vendor, then rebuild from vendor media at the fixed version rather than upgrading in place, and rotate what the device held — SAML signing and session material, the LDAP/RADIUS bind accounts it authenticated against, the local administrative accounts, and any TLS private key stored on it. Version-based remediation evidence is specifically what fails here, because the attacker's artifacts are not versioned.",
+        "evidence": "Pre-authentication stack buffer overflow (CWE-787) in the NetScaler SAML processing path, reachable by an unauthenticated HTTP POST per the packet's attack-vector record. CISA KEV-listed 2023-07-19, active exploitation confirmed, public PoC available, patch available, RWEP 80. CISA AA23-201A documented state-sponsored exploitation of US critical-infrastructure organizations within weeks of disclosure — meaning estates that patched after that interval applied the fix to devices an adversary had already entered.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2"
+        ]
+      }
+    ]
   },
   "CVE-2024-1709": {
     "name": "ConnectWise ScreenConnect auth-bypass",
@@ -3057,7 +3104,39 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "low"
+    "ai_assist_factor": "low",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "Fortinet's own follow-up on this CVE is the proof case for the control: devices compromised through sslvpnd before patching were left with read-only symlinks in the SSL-VPN language-file directory that continue to grant filesystem read access on fully patched firmware. For FortiOS and FortiProxy the remediation verdict therefore cannot be 'the appliance is on a fixed build'. Every appliance that exposed the SSL-VPN web surface while on a vulnerable build has to be triaged as a compromise: enumerate the SSL-VPN language-file directory and the other web-served paths for entries that are not vendor content, diff the running configuration against a known-good export, and where anything is found — or where the pre-patch exposure window cannot be bounded — reimage the appliance rather than upgrade in place, then rotate the local administrative credentials, API tokens, VPN user secrets, RADIUS and LDAP bind secrets, and any certificate material held on the device. A device whose exposure window predates the patch should be rebuilt even when the symlink hunt comes back clean, because the same code execution could place persistence somewhere the published hunt does not look.",
+        "evidence": "Fortinet FortiOS / FortiProxy, CISA KEV-listed 2024-02-09 with confirmed in-the-wild exploitation, public PoC available, RWEP 85 / CVSS 9.8. Per the packet's attack-vector record: an out-of-bounds write in the sslvpnd daemon's HTTP request handling, reachable by an unauthenticated crafted HTTP request to the SSL-VPN web surface; mass-scanning began within hours of the 2024-02-08 vendor disclosure; and Fortinet's 2025-04-11 follow-up advisory documented attackers who compromised devices before patching leaving read-only symlinks in the SSL-VPN language-file directory that grant persistent filesystem read on fully patched firmware — the packet states plainly that patch alone is insufficient.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2",
+          "AU-ISM-1546"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-030",
+        "name": "PERIMETER-DEVICE-ZERODAY-SLA-TIER",
+        "description": "Mass scanning for this bug started within hours of Fortinet's disclosure and KEV listing followed the next day, so the exposure window was shorter than every patch clock the citing controls grade against — and shorter even than the 7-day federal deadline attached to the KEV entry. The tier this CVE argues for: on a FortiGate or FortiProxy whose SSL-VPN web surface is reachable from the internet, the mitigation clock starts at vendor disclosure rather than at KEV listing or at scanner detection, and taking the SSL-VPN portal offline or restricting it to known client source ranges must be a pre-authorized action an on-call engineer can execute without waiting for a change window, since that is the only mitigation available in the interval between disclosure and a tested firmware upgrade. The tier also has to be written into the SLA policy explicitly for firewalls, which are routinely classified in an asset register as a security control rather than as an asset carrying its own patch obligation — a classification that leaves the single most exposed device in the estate on the slowest clock.",
+        "evidence": "FortiOS / FortiProxy SSL-VPN pre-authentication out-of-bounds write, CVSS 9.8, RWEP 85, public PoC available. The packet records mass-scanning beginning within hours of the 2024-02-08 vendor disclosure, CISA KEV listing on 2024-02-09 with a 7-day federal remediation deadline, and confirmed active exploitation — exploitation preceded the deadline the strictest citing framework would have set.",
+        "gap_closes": [
+          "PCI-DSS-4.0-6.3.3",
+          "DORA-Art-9"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-031",
+        "name": "FIREWALL-EGRESS-TELEMETRY-SEPARATE-TRUST-ZONE",
+        "description": "The post-patch symlink persistence this CVE is known for can only be scoped if the pre-patch exposure window can be bounded, and on FortiOS the record of that window lives on the device the attacker controlled. Exploitation is pre-authentication, so there is no login event to correlate against; the only signal is in the SSL-VPN portal request logs and the appliance's own session records, both of which sit on local storage within reach of code executing in sslvpnd. FortiGate and FortiProxy must therefore forward SSL-VPN portal request logs, administrative session logs and outbound session records to a collector in a separate trust zone — reached with credentials the appliance's administrators do not hold, on a management path the appliance cannot administer — with retention long enough to span the interval between a vendor disclosure and the estate finishing its upgrade cycle, which for this CVE meant covering a window that had already opened before the advisory published. Without that, the answer to 'was this appliance touched before we patched' is supplied by the appliance itself, and a device that was compromised is not a trustworthy witness to its own compromise.",
+        "evidence": "Unauthenticated code execution in the sslvpnd daemon on FortiOS / FortiProxy per the packet's attack-vector record, with no authentication step to generate a log event. CISA KEV-listed 2024-02-09, confirmed in-the-wild exploitation, public PoC available, RWEP 85. Fortinet's 2025-04-11 follow-up advisory established that compromise predating the patch persists onto patched firmware — so the forensic question is retrospective, and answering it requires telemetry that survived the compromise of the device that produced it.",
+        "gap_closes": [
+          "NIS2-Art21-network-security"
+        ]
+      }
+    ]
   },
   "CVE-2025-10585": {
     "name": "Google Chrome V8 Type Confusion Zero-Day (TAG-disclosed)",
@@ -6081,7 +6160,11 @@
         "name": "NPM-CI-IGNORE-SCRIPTS-DEFAULT",
         "description": "Equivalent posture for Bundler / Go: refuse postinstall / init-hook execution from new or recently-updated dependencies by default in CI.",
         "evidence": "MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER — Go module init hooks rewrote GOPROXY and go.sum.",
-        "gap_closes": []
+        "gap_closes": [
+          "NIS2-Art21-supply-chain",
+          "NIST-800-218-SSDF-PO.4.2",
+          "AU-Essential-8-App-Hardening"
+        ]
       }
     ],
     "compliance_exposure_score": {
@@ -6346,14 +6429,20 @@
         "name": "MCP-SERVER-CONFIG-ALLOWLIST",
         "description": "MCP server inventory + allowlist limits the adversarial-content surface that can reach the IDE agent.",
         "evidence": "CVE-2025-55319 — external MCP server messages were a documented delivery path.",
-        "gap_closes": []
+        "gap_closes": [
+          "OWASP-LLM-Top-10-LLM05",
+          "UK-CAF-B4"
+        ]
       },
       {
         "id": "NEW-CTRL-071",
         "name": "AI-DISCOVERY-CREDIT-IN-COMPLIANCE-EVIDENCE",
         "description": "Record AI-defender contribution.",
         "evidence": "CVE-2025-55319 — ZeroPath disclosure; framework attribution gap.",
-        "gap_closes": []
+        "gap_closes": [
+          "ISO-IEC-42001-AIMS-A.6.2.5",
+          "NIST-AI-RMF-MEASURE-2.7"
+        ]
       }
     ],
     "compliance_exposure_score": {
@@ -6927,7 +7016,29 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "Upgrading the ScreenConnect server to the fixed build removes the traversal but not what the traversal already wrote. CVE-2024-1708 is an arbitrary file-write primitive: chained with the companion authentication bypass it plants a web shell in a ScreenConnect-served directory, and that file is application content rather than product code, so the vendor update leaves it in place and running. Any ScreenConnect instance that was reachable from an untrusted network on a vulnerable build must therefore be handled as compromised rather than as remediated: export the configuration, session history and extension inventory for forensics, rebuild the host from known-good media, reinstall at the fixed version, and rotate everything the server held or brokered — the relay/agent join material, the ScreenConnect administrative and integrated-identity accounts, and any credential a technician entered through a remote session during the exposure window. Deleting the one web shell that was found and then patching is not equivalent, because the same write primitive places files anywhere the service account can reach, and the read half of the traversal means configuration secrets on the host should be assumed disclosed.",
+        "evidence": "ConnectWise ScreenConnect, CISA KEV-listed 2026-04-28 with confirmed in-the-wild exploitation and a public PoC available. The packet's attack-vector record states the path traversal (CWE-22) lets an attacker write or read files outside the intended directory and was used with the companion authentication bypass to drop a web shell — i.e. attacker-planted files persist independently of the vendor patch. RWEP 83 against CVSS 7.5: the gap between the two is exactly the post-exploitation persistence that a base score for an information-disclosure-shaped traversal does not carry.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8",
+          "CIS-Controls-v8-10.1"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-037",
+        "name": "FLEET-COMPROMISE-IR-PLAYBOOK",
+        "description": "ScreenConnect is a fleet control plane, not an ordinary web application: its access agents run with service-level privilege on every managed endpoint and execute what the server tells them to. An incident-response plan scoped to 'the ScreenConnect host' therefore has the wrong blast radius, because a web shell reached through this traversal gives the attacker the same command channel into the managed estate that the legitimate operator has. The playbook must be written and rehearsed before the event and must cover: revocation and re-issue of the relay/agent trust material so existing agent installations cannot be driven by attacker-held server identity; an audit of session, command and file-transfer history plus any extension or extension directory added since the exposure window opened; quarantine criteria for endpoints that received a session or a queued command during that window; and rotation of every credential used through a remote session, including the customer-side administrative accounts a technician authenticated with. Recovery timing must assume the ScreenConnect server itself is unavailable during the response, since it is the system being rebuilt.",
+        "evidence": "ConnectWise ScreenConnect path traversal, CISA KEV-listed 2026-04-28, active exploitation confirmed, public PoC available, RWEP 83. The packet records the traversal being used with the companion authentication bypass to drop a web shell on the server that brokers remote sessions to managed endpoints, which places every endpoint reachable from that server inside the incident scope rather than outside it.",
+        "gap_closes": [
+          "UK-CAF-D1"
+        ]
+      }
+    ]
   },
   "CVE-2025-29635": {
     "name": "D-Link DIR-823X Command Injection Vulnerability",
@@ -7762,7 +7873,30 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "A vendor patch for this Office document-parsing flaw exists and the CVE identifier dates to 2009, yet CISA added it to KEV on 2026-04-14 on the strength of current in-the-wild exploitation. Any remediation queue that sorts or ages by CVE publication date, by 'newly disclosed' status, or by scanner first-seen date buries a CVE-2009 entry beneath every current-quarter finding and it never reaches a patch window, which is exactly why the long-tail estate is still being exploited. The KEV listing date must start the clock instead of the CVE year: on 2026-04-14 every Office installation in the estate is re-evaluated against the fixed build inside the KEV SLA, and any Office build that cannot reach it is cut off from untrusted documents rather than risk-accepted by age. The distinguishing test: query the vulnerability queue for KEV-listed CVEs older than ten years and confirm they carry the same due date as a current-quarter KEV entry — a program whose SLA derives from disclosure age reports 'no overdue criticals' while an actively exploited 2009 Office flaw sits unremediated on the frozen estate.",
+        "evidence": "Packet: CVE-2009-0238, Microsoft Office Remote Code Execution, CWE-94 code injection in Office document parsing, exploitable by an attacker-controlled document for code execution in the Office process. CISA KEV-listed 2026-04-14, active_exploitation confirmed, CVSS 9.8, RWEP 77, poc_available true, patch_available true — the residual exposure is the long-tail unpatched estate, not an absent fix.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-patch-management"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-120",
+        "name": "DOWNLOAD-PROVENANCE-ENFORCEMENT",
+        "description": "Exploitation here requires the victim to open an attacker-supplied Office document, so on an estate that has not yet reached the fixed build the delivery path is the only enforceable control. Require Mark-of-the-Web on every Office file arriving by mail, web download, or untrusted file share, and require MOTW-tagged documents to open in Protected View — an isolated, reduced-privilege render — instead of the full parsing path that carries the CWE-94 sink at the user's own process privilege. Provenance must survive the container: files extracted from an archive, mounted from an ISO or VHD, or renamed must inherit the tag rather than lose it, and 'Enable Editing' on externally sourced documents must be blocked by policy rather than left to the user. The distinguishing test: mail a MOTW-tagged spreadsheet nested inside a ZIP to a managed workstation, extract it, and confirm the extracted file still opens in Protected View — a user-application-hardening attestation that covers only macro and ActiveX/OLE settings still lets a provenance-stripped document reach the vulnerable parser with full user privileges.",
+        "evidence": "Packet attack vector: an attacker-controlled document reaching Microsoft Office's parser for code execution in the Office process (CWE-94). poc_available true and CISA-confirmed in-the-wild exploitation at the 2026-04-14 KEV listing. AU-Essential-8-App-Hardening (user application hardening) and NIST-800-53-AC-6 (least privilege) are both already recorded as insufficient controls citing this CVE.",
+        "gap_closes": [
+          "AU-Essential-8-App-Hardening",
+          "NIST-800-53-AC-6"
+        ]
+      }
+    ]
   },
   "CVE-2026-32201": {
     "name": "Microsoft SharePoint Server Improper Input Validation Vulnerability",
@@ -7992,7 +8126,30 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "Exchange Server is internet-facing by construction and this CWE-502 sink yields code execution on the mail server itself. A vendor patch exists and the CVE identifier dates to the 2023 cycle, while the KEV listing is 2026-04-13 — so an estate installing the fixed cumulative/security update in response to that listing is patching a host that stayed reachable and exploitable throughout the interval, with a public PoC in circulation. Treat any Exchange server that ran a vulnerable build during confirmed in-the-wild exploitation as compromised until proven otherwise: alongside patching, hunt the OWA/ECP virtual directories and the Exchange install tree for web shells and unexpected .aspx/.dll drops, export and diff transport rules, mailbox permissions, and journaling configuration against last known-good, and rotate the machine account, Exchange service accounts, and every credential that authenticated through the server during the exposure window. Patch-in-place restores the build number and leaves a resident implant and any stolen credential fully operative. The distinguishing test: open a closed Exchange remediation ticket and look for a post-patch persistence sweep and a credential-rotation record — a 'patched within SLA' closure carrying neither is paper remediation of a service that was already being exploited.",
+        "evidence": "Packet: CVE-2023-21529, Microsoft Exchange Server Deserialization of Untrusted Data (CWE-502) reachable by an attacker for remote code execution on the Exchange server. CISA KEV-listed 2026-04-13, active_exploitation confirmed, CVSS 9.8, RWEP 83, poc_available true, patch_available true. AU-Essential-8-Patch, NIST-800-53-SI-2, and NIS2-Art21-vulnerability-handling are already recorded as insufficient controls citing this CVE.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "AU-Essential-8-Patch",
+          "NIS2-Art21-vulnerability-handling"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-040",
+        "name": "OWA-PER-REQUEST-SIEM-INGESTION",
+        "description": "A serialized object arriving in a request body or header is inert to file-based anti-malware — nothing is written to disk before the gadget chain runs inside the Exchange worker process — and it travels over a session that authentication logging records as ordinary, so the endpoint AV control credited for this server never had anything to detect. Ship Exchange's per-request IIS/OWA/ECP access logs (URI stem and query, method, request size, status, user agent, source address, responding backend) to a SIEM outside the Exchange trust zone with at least 90-day retention, and alert on POSTs to Autodiscover, ECP, and PowerShell endpoints with anomalous body sizes or from unexpected sources. Retention depth is the load-bearing part here: the KEV listing landed 2026-04-13 on a CVE from the 2023 cycle, so an investigation opened at patch time must be able to reach back into an exposure window that long. The distinguishing test: pick a date months before the current remediation and try to retrieve the full request line for a single OWA POST from the SIEM — if only the authentication event survives, the deserialization request that established the foothold is unrecoverable.",
+        "evidence": "Packet attack vector: CWE-502 deserialization of untrusted data reachable for remote code execution on the Exchange server; CISA KEV-listed 2026-04-13 with confirmed in-the-wild exploitation, poc_available true, RWEP 83, CVSS 9.8. CIS-Controls-v8-10.1 (Deploy and Maintain Anti-Malware Software) and UK-CAF-B4 (System security) are already recorded as insufficient controls citing this CVE.",
+        "gap_closes": [
+          "CIS-Controls-v8-10.1",
+          "UK-CAF-B4"
+        ]
+      }
+    ]
   },
   "CVE-2023-36424": {
     "name": "Microsoft Windows Out-of-Bounds Read Vulnerability",
@@ -8452,7 +8609,31 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-057",
+        "name": "BROWSER-MANAGED-UPDATE-NO-DEFERRAL",
+        "description": "The fix for this Dawn/WebGPU use-after-free reaches endpoints only as a browser security-channel release, so any managed update ring that pins a version or holds the security channel for staging leaves the sandbox-escape link of the chain live fleet-wide. Managed browser policy has to let the security channel land within 24h and force the relaunch that actually replaces the running GPU process — an updated binary on disk beside a browser session that has not been restarted is still executing the vulnerable Dawn code.",
+        "evidence": "KEV-listed 2026-04-01 with confirmed in-the-wild exploitation, a public PoC, and a patch available; the flaw is the sandbox-escape step used after the renderer is already compromised, so it is the link that converts a contained renderer bug into host code execution.",
+        "gap_closes": [
+          "AU-Essential-8-App-Hardening",
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8",
+          "NIS2-Art21-patch-management"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-018",
+        "name": "SCANNER-PAPER-COMPLIANCE-TEST",
+        "description": "A scan that reports the installed browser version as fixed does not prove this defect is gone. Dawn is Chromium's WebGPU implementation, so the same component ships inside Chromium-derived browsers and inside desktop applications that embed Chromium, each on its own update cadence and none of them moved by the browser's updater. The operational test: does the scan enumerate every Chromium-embedding runtime on the host as a separate versioned asset, record whether WebGPU is reachable in each, and read the version of the running process rather than the installed package?",
+        "evidence": "Patch available and KEV-listed 2026-04-01 with confirmed exploitation; the packet locates the flaw in Dawn/WebGPU rather than in a single vendor application, and exploitation requires prior renderer compromise, so the escape path only matters where a vulnerable Dawn build is actually loaded.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2"
+        ]
+      }
+    ]
   },
   "CVE-2026-3055": {
     "name": "Citrix NetScaler Out-of-Bounds Read Vulnerability",
@@ -11557,7 +11738,40 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-030",
+        "name": "PERIMETER-DEVICE-ZERODAY-SLA-TIER",
+        "description": "The perimeter SLA tier has to extend from the firewall to the console that programs it. Cisco Secure Firewall Management Center and Security Cloud Control firewall management push policy, access rules, intrusion configuration, and software to every managed sensor, so unauthenticated remote code execution on the management plane is equivalent to administrative control of the entire enforcement estate — a strictly larger blast radius than the same flaw on one appliance, and the reason a frameworks list that enumerates only firewalls, VPN concentrators, and load-balancers under-tiers this device. On the 2026-03-19 KEV listing the requirement is deployment of the fixed release within hours, or removal of the FMC/SCC management interface from any network segment an attacker can reach (management VRF, jump-host-only ACL), not the routine 14/30-day appliance window; for the SaaS-delivered SCC side, vendor remediation status must be obtained and recorded rather than assumed complete. The distinguishing test: from a general-purpose user VLAN, attempt to open the FMC management HTTPS interface — if it answers, the standard patch window is the only thing standing between an unauthenticated attacker and the firewall control plane.",
+        "evidence": "Packet: CVE-2026-20131, Cisco Secure Firewall Management Center (FMC) Software and Cisco Security Cloud Control (SCC) Firewall Management, CWE-502 deserialization of untrusted data yielding unauthenticated remote code execution on the firewall management plane. CISA KEV-listed 2026-03-19, active_exploitation confirmed, CVSS 9.8, RWEP 83, poc_available true, patch_available true.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "FMC holds the administrative credentials, the sensor registration keys, and the policy source of truth for every firewall it manages, so unauthenticated code execution on it is a credential-and-configuration compromise of the enforcement fleet rather than a single-host incident — and with a public PoC and confirmed in-the-wild exploitation, an operator patching after 2026-03-19 cannot assume they got there first. The runbook for a KEV-listed, actively exploited FMC/SCC RCE must default to: export and diff the running policy against last known-good (added permit rules, disabled inspection, new remote-access or VPN entries, altered NAT), reimage FMC from vendor media at the fixed release instead of upgrading in place, re-register managed devices with new keys, and rotate FMC local admin, RADIUS/TACACS, and every device credential FMC stored. The distinguishing test: read the FMC incident procedure and check whether it ends at 'upgraded to fixed release' — with no policy diff and no sensor re-registration step, an attacker-inserted firewall rule survives the remediation and keeps the network open behind a device the audit now records as patched.",
+        "evidence": "Packet: unauthenticated remote code execution on the Cisco FMC / SCC firewall management plane via CWE-502 deserialization; CISA KEV-listed 2026-03-19 with active_exploitation confirmed, poc_available true, patch_available true, RWEP 83, CVSS 9.8. AU-Essential-8-Patch and NIS2-Art21-vulnerability-handling are already recorded as insufficient controls citing this CVE.",
+        "gap_closes": [
+          "NIS2-Art21-vulnerability-handling",
+          "AU-Essential-8-Patch"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-031",
+        "name": "FIREWALL-EGRESS-TELEMETRY-SEPARATE-TRUST-ZONE",
+        "description": "In a Cisco Secure Firewall deployment FMC is both the target of this flaw and the event collector for the sensors it manages, so an attacker who reaches unauthenticated code execution on FMC lands on the box holding the connection, intrusion, and audit records that would evidence the intrusion — including FMC's own audit trail of the policy changes they make next. Where the deployment relies on FMC as the event store, that is a single-point forensic dependency on the compromised host. Forward FMC audit and syslog, plus the managed sensors' event streams, to a SIEM in a separate trust zone with separate credentials and a separate authentication path, and alert on FMC audit-log gaps, policy deployments not tied to a change ticket, and sensor event streams that go silent. The distinguishing test: simulate a total FMC outage and confirm the SIEM still holds the managed sensors' events for that window — if firewall telemetry exists only inside FMC, an exploited management plane produces no evidence at all, which is why the anti-malware control credited for this estate (unrunnable on the appliance in the first place) cannot substitute.",
+        "evidence": "Packet: CWE-502 deserialization yielding unauthenticated RCE on the Cisco FMC / SCC firewall management plane, CISA KEV-listed 2026-03-19 with confirmed in-the-wild exploitation and a public PoC (RWEP 83). CIS-Controls-v8-10.1 (Deploy and Maintain Anti-Malware Software) and UK-CAF-B4 (System security) are already recorded as insufficient controls citing this CVE.",
+        "gap_closes": [
+          "CIS-Controls-v8-10.1",
+          "UK-CAF-B4"
+        ]
+      }
+    ]
   },
   "CVE-2025-66376": {
     "name": "Synacor Zimbra Collaboration Suite (ZCS) Cross-Site Scripting Vulnerability",
@@ -26200,7 +26414,19 @@
     "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
-      "Enforce timely remediation of CISA KEV-listed RCE in Google Chrome and Chromium-based browsers before Chrome 149: KEV due-date as the binding SLA, not a 30-day default."
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "Enforce timely remediation of CISA KEV-listed RCE in Google Chrome and Chromium-based browsers before Chrome 149: KEV due-date as the binding SLA, not a 30-day default.",
+        "evidence": "CVE-2026-11645 — Chromium V8 out-of-bounds read/write, CISA KEV-listed with confirmed in-the-wild exploitation (RWEP 60). Browser fleets patch on a release cadence rather than a KEV clock, so the binding date is the KEV due date, not the next scheduled Chrome rollout.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2",
+          "AU-ISM-1546",
+          "NIS2-Art21-vulnerability-handling",
+          "DORA-Art-9"
+        ]
+      }
     ],
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
@@ -26240,7 +26466,16 @@
     "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
-      "Enforce timely remediation of CISA KEV-listed Privilege Escalation in Cisco Catalyst SD-WAN Manager (formerly SD-WAN vManage) and SD-WAN vSmart Controller across the affected 20: KEV due-date as the binding SLA, not a 30-day default."
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "Enforce timely remediation of CISA KEV-listed Privilege Escalation in Cisco Catalyst SD-WAN Manager (formerly SD-WAN vManage) and SD-WAN vSmart Controller across the affected 20: KEV due-date as the binding SLA, not a 30-day default.",
+        "evidence": "CVE-2026-20245 — Cisco Catalyst SD-WAN Manager root command execution via improper output encoding, CISA KEV-listed with confirmed exploitation (RWEP 56). Network-management appliances sit outside the OS patch pipeline these controls assume, so the remediation tempo has to be stated for the appliance estate explicitly.",
+        "gap_closes": [
+          "AU-ISM-1546",
+          "DORA-Art-9"
+        ]
+      }
     ],
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"
@@ -26590,7 +26825,18 @@
     "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
-      "Enforce timely remediation of CISA KEV-listed Access Control Bypass in Arista EOS - all release trains: KEV due-date as the binding SLA, not a 30-day default."
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "Enforce timely remediation of CISA KEV-listed Access Control Bypass in Arista EOS - all release trains: KEV due-date as the binding SLA, not a 30-day default.",
+        "evidence": "CVE-2026-7473 — Arista EOS tunnel-decapsulation access-control bypass via incomplete comparison, CISA KEV-listed with confirmed exploitation (RWEP 69), affecting all release trains. Switch firmware upgrades require maintenance windows, which is exactly the case where a compensating-control posture must be declared rather than the SLA quietly slipping.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "AU-ISM-1546",
+          "DORA-Art-9",
+          "UK-CAF-B4"
+        ]
+      }
     ],
     "_auto_imported": false,
     "_intake_method": "manual-verified-curation"

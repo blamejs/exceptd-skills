@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.19.5 — 2026-08-08
+
+Three CVEs reported a control with no name and no requirement text. Their catalog entries held a bare string where the schema expects a control record, which was invisible until 0.19.4 began displaying the field and then rendered as `- undefined undefined:` in the gap report. All three describe the remediation clock for a KEV-listed flaw and now say so, closing the vulnerability-management gaps that already cite them. A malformed record is now omitted from the report rather than printed, so this class degrades to silence instead of noise, and the catalog test fails on the shape so it cannot recur unseen. Three further controls declared no framework gap at all and now name the ones they close.
+
+Eight more CVEs report the controls they require, among them CitrixBleed, the Fortinet SSL-VPN out-of-bounds write, the ConnectWise ScreenConnect traversal and the Cisco Secure Firewall Management Center deserialization. These concentrate on what a perimeter appliance compromise demands beyond patching — treating a device that ran a vulnerable build during confirmed exploitation as compromised rather than fixed, and keeping request-level logs outside the appliance's own trust zone long enough to investigate a listing that arrives years after disclosure. Each names the framework controls it closes and carries a test that separates the control being present from it being effective.
+
 ## 0.19.4 — 2026-08-08
 
 `framework-gap` now reports the controls a CVE needs that no framework carries yet. The command already answered half the question — which existing controls are insufficient — and stopped there, so an operator learned which controls fall short without learning what belongs in their place. The catalog had recorded the answer for 302 CVEs since the zero-day learning loop began and no command read it, in either output mode. Each entry names the requirement, its evidence, and the specific framework controls it closes, so it attaches to the gaps listed above it rather than reading as free-standing advice. Both the human-readable report and `--json` carry it, and the summary line counts it.
