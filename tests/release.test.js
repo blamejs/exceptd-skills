@@ -153,3 +153,43 @@ require("node:test").describe("prepare cannot rebaseline a shrunken suite", () =
     assert.ok(line, "prepare must invoke the gate in checking mode");
   });
 });
+
+require("node:test").describe("watch refuses an unsettled check set", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const path = require("node:path");
+
+  const SRC = fs.readFileSync(path.join(__dirname, "..", "scripts", "release.js"), "utf8");
+
+  test("zero registered checks is treated as not-ready, not as a pass", () => {
+    // `gh pr checks --watch` returns immediately when the workflows have not
+    // registered yet. The failure filter then finds nothing wrong and every
+    // later gate is clean, so the phase pointed at merge for a PR whose CI had
+    // not started. Absence of a failure is not evidence of success.
+    assert.match(SRC, /if \(checks\.length === 0\)/,
+      "watch must refuse an empty check set rather than reading it as clean");
+    const emptyGuard = SRC.indexOf("checks.length === 0");
+    const failFilter = SRC.indexOf('c.bucket === "fail"');
+    assert.ok(emptyGuard > 0 && failFilter > 0);
+    assert.ok(emptyGuard < failFilter,
+      "the empty-set guard has to run BEFORE the failure filter, or the filter reports clean first");
+  });
+
+  test("pending checks block the phase", () => {
+    // Settled-and-passing is the only state that should advance to merge.
+    assert.match(SRC, /c\.bucket === "pending"/,
+      "watch must detect checks that have not settled");
+    const pendingGuard = SRC.indexOf('c.bucket === "pending"');
+    const failFilter = SRC.indexOf('c.bucket === "fail"');
+    assert.ok(pendingGuard < failFilter, "pending must be checked before concluding on failures");
+  });
+
+  test("both guards exit non-zero rather than falling through", () => {
+    // A guard that printed a warning and continued would leave the original
+    // bug in place while looking fixed.
+    const seg = SRC.slice(SRC.indexOf("checks.length === 0"), SRC.indexOf('c.bucket === "fail"'));
+    const exits = seg.match(/process\.exit\(3\)/g) || [];
+    assert.equal(exits.length, 2, "the empty and pending guards must each exit 3");
+  });
+});
