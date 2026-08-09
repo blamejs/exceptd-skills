@@ -139,3 +139,71 @@ test('E: zeroday-lessons.json carries no orphan entries for the deleted CVEs', (
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+require("node:test").describe("new_control_requirements entries are well-formed", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const path = require("node:path");
+  const fs = require("node:fs");
+
+  const ROOT = path.join(__dirname, "..");
+  const LESSONS = JSON.parse(fs.readFileSync(path.join(ROOT, "data/zeroday-lessons.json"), "utf8"));
+  const GAPS = JSON.parse(fs.readFileSync(path.join(ROOT, "data/framework-control-gaps.json"), "utf8"));
+
+  const allControls = () => {
+    const out = [];
+    for (const [cve, lesson] of Object.entries(LESSONS)) {
+      if (cve === "_meta") continue;
+      for (const c of lesson.new_control_requirements || []) out.push([cve, c]);
+    }
+    return out;
+  };
+
+  test("every control is an object carrying an id, not a bare string", () => {
+    // Three entries held a bare string here. Nothing noticed until the field
+    // started being rendered, at which point operators got
+    // "- undefined undefined:" in the framework-gap report. A malformed record
+    // is invisible right up until it is displayed, so assert the shape.
+    const malformed = allControls()
+      .filter(([, c]) => !c || typeof c !== "object" || typeof c.id !== "string" || !c.id)
+      .map(([cve, c]) => `${cve}: ${JSON.stringify(c).slice(0, 80)}`);
+    assert.deepEqual(malformed, [], `malformed new_control_requirements entries:\n  ${malformed.join("\n  ")}`);
+  });
+
+  test("the shape check is looking at a real, substantial surface", () => {
+    // Anti-coincidence: if the walk returned nothing the assertion above would
+    // pass vacuously and stop protecting anything.
+    const controls = allControls();
+    assert.ok(controls.length > 250, `expected a substantial control surface, walked ${controls.length}`);
+    assert.ok(controls.every(([, c]) => c && typeof c === "object"));
+  });
+
+  test("every control carries a description, evidence and at least one gap_closes", () => {
+    const thin = allControls()
+      .filter(([, c]) =>
+        typeof c.description !== "string" || c.description.trim().length === 0 ||
+        typeof c.evidence !== "string" || c.evidence.trim().length === 0 ||
+        !Array.isArray(c.gap_closes) || c.gap_closes.length === 0)
+      .map(([cve, c]) => `${cve}/${c.id}`);
+    assert.deepEqual(thin, [], `controls missing description, evidence or gap_closes:\n  ${thin.join("\n  ")}`);
+  });
+
+  test("gap_closes on the repaired KEV entries resolve to real registry keys", () => {
+    // Scoped to the entries repaired alongside this test rather than the whole
+    // corpus: gap_closes elsewhere legitimately names real framework controls
+    // (NIST-800-53-CM-6, DORA-Article-9) that this catalog has no entry for, so
+    // a corpus-wide referential assertion would fail on correct data.
+    const keys = new Set(Object.keys(GAPS).filter((k) => k !== "_meta"));
+    for (const cve of ["CVE-2026-11645", "CVE-2026-20245", "CVE-2026-7473"]) {
+      const controls = LESSONS[cve].new_control_requirements;
+      assert.ok(Array.isArray(controls) && controls.length >= 1, `${cve} must carry a control`);
+      for (const c of controls) {
+        assert.equal(c.id, "NEW-CTRL-001");
+        assert.equal(c.name, "CISA-KEV-RESPONSE-SLA");
+        for (const g of c.gap_closes) {
+          assert.ok(keys.has(g), `${cve}/${c.id} gap_closes "${g}" is not a framework-control-gaps key`);
+        }
+      }
+    }
+  });
+});

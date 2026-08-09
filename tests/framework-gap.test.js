@@ -861,3 +861,56 @@ require("node:test").describe("new-control requirements reach the report", () =>
     assert.ok(Object.keys(r.frameworks).length > 0);
   });
 });
+
+require("node:test").describe("malformed controls never reach the renderer", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const { gapReport } = require("../lib/framework-gap.js");
+  const controlGaps = require("../data/framework-control-gaps.json");
+  const cveCatalog = require("../data/cve-catalog.json");
+
+  const CVE = "CVE-2026-11645";
+  const report = (ncr) =>
+    gapReport(["all"], CVE, controlGaps, cveCatalog, {
+      allFrameworks: true,
+      lessons: { [CVE]: { new_control_requirements: ncr } },
+    });
+
+  const WELL_FORMED = {
+    id: "NEW-CTRL-001", name: "CISA-KEV-RESPONSE-SLA",
+    description: "d", evidence: "e", gap_closes: ["NIST-800-53-SI-2"],
+  };
+
+  test("a bare string is dropped", () => {
+    // The original defect: three entries held a string here, and the report
+    // printed "- undefined undefined:".
+    const r = report(["Enforce timely remediation of ..."]);
+    assert.deepEqual(r.new_control_requirements, []);
+    assert.equal(r.summary.new_control_requirements, 0);
+  });
+
+  test("an object missing the fields the renderer prints is dropped", () => {
+    // Guarding the id alone let this through as "NEW-X undefined:" — the guard
+    // covered the case that prompted it and nothing else.
+    for (const partial of [
+      { id: "NEW-X" },
+      { id: "NEW-X", name: "N" },
+      { id: "NEW-X", name: "", description: "d" },
+      { id: "", name: "N", description: "d" },
+      { id: "NEW-X", name: "N", description: "   " },
+    ]) {
+      const r = report([partial]);
+      assert.deepEqual(r.new_control_requirements, [],
+        `expected ${JSON.stringify(partial)} to be dropped`);
+    }
+  });
+
+  test("a well-formed control alongside a malformed one still reports", () => {
+    // Anti-coincidence: a filter that dropped everything would pass every
+    // assertion above while silently removing real controls from the report.
+    const r = report(["a bare string", { id: "NEW-Y" }, WELL_FORMED]);
+    assert.equal(r.new_control_requirements.length, 1);
+    assert.equal(r.new_control_requirements[0].id, "NEW-CTRL-001");
+    assert.equal(r.summary.new_control_requirements, 1);
+  });
+});
