@@ -415,6 +415,25 @@ function cmdWatch() {
   var checksRaw = _capture("gh", ["pr", "checks", prNum, "--json", "name,bucket,link"]).stdout;
   var checks = [];
   try { checks = JSON.parse(checksRaw || "[]"); } catch (_e) { checks = []; }
+  // An empty or still-pending check set is NOT a pass. `gh pr checks --watch`
+  // returns immediately when no check has registered yet — the workflows are
+  // still being scheduled — and the filters below then find nothing wrong,
+  // so the phase printed "next: merge" for a PR whose CI had not started.
+  // Absence of a failure is not evidence of success; require that checks exist
+  // and have settled before reading anything into them.
+  if (checks.length === 0) {
+    console.log("\nno checks have registered on this PR yet — they are probably still scheduling.");
+    console.log("Wait a moment, then re-run: node scripts/release.js watch");
+    process.exit(3); // allow:process-exit-after-stdout-write — maintainer-run release orchestrator; the guidance line above is human-read on a TTY, not a piped result channel
+  }
+  var pending = checks.filter(function (c) { return c.bucket === "pending"; });
+  if (pending.length > 0) {
+    console.log("\nchecks still running (" + pending.length + " of " + checks.length + "):");
+    pending.forEach(function (c) { console.log("  · " + c.name); });
+    console.log("\nRe-run when they settle: node scripts/release.js watch");
+    process.exit(3); // allow:process-exit-after-stdout-write — maintainer-run release orchestrator; the guidance line above is human-read on a TTY, not a piped result channel
+  }
+
   var failed = checks.filter(function (c) { return c.bucket === "fail" || c.bucket === "cancel"; });
   if (failed.length > 0) {
     console.log("\nfailed checks (" + failed.length + "):");
