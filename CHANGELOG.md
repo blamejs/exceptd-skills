@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.19.7 — 2026-08-09
+
+Another 66 CVEs report the controls they require, taking coverage to 424 of 1025. The set reaches beyond appliances into Roundcube and Zimbra webmail, SmarterMail, WatchGuard Firebox, VMware Aria Operations, GitLab, Vite, Windows NTFS, FreePBX and the Apple and Ivanti mobile estate.
+
+Two requirements dominate where the affected asset manages other assets. A device-management gateway reached before authentication is a fleet event rather than a host event: the vendor fix closes the injection path but leaves every configuration profile pushed, certificate issued and credential that transited the server untouched, so the requirement covers revoking what the server issued and invalidating device trust state, not just installing the update. And on a mobile estate the operative failure is deferral — an update prompt dismissed on a personally-carried device extends exposure to a confirmed-exploited kernel flaw for weeks while the console still reports the fleet as managed — so the requirement is enforcement with a deadline and loss of access past it, not a patch-level report.
+
+Entries state their own limits. Where a control bounds the damage without preventing the flaw, it says so rather than implying prevention; where the vendor ships no fix, the requirement describes the compensating control instead of a patch window.
+
 ## 0.19.6 — 2026-08-08
 
 Another 48 CVEs report the controls they require, taking the catalog to 358 of 1025. The set spans SharePoint and SolarWinds Web Help Desk deserialization, Samsung MagicINFO and SimpleHelp path traversal, Fortinet FortiClient EMS, Ivanti Endpoint Manager, CRI-O and containerd, and the Apple and Chromium memory-safety entries.
