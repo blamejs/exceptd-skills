@@ -7893,7 +7893,31 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "PaperCut NG/MF is bought and audited as back-office print-management software, so it sits in the slow lane of most patch programs — but this packet makes it an authentication enforcement point that is failing open under confirmed exploitation, which is why the KEV clock and not the application-patch cadence has to govern it. Meeting the SLA on this product means the PaperCut application service is actually restarted onto the fixed build on every instance: the packet records a vendor patch but no live-patch path, and its live_patch_notes state the vendor patch typically requires a service restart or system reboot per the KEV requiredAction, so a staged package on a still-running instance has not moved the exposure at all. Until that restart lands on a given server, the bypass reachable through the SecurityRequestFilter class is still available to an unauthenticated caller, so the interim action the SLA has to record is constraining who can reach that instance's admin surface — not a scheduled maintenance window with the server left reachable in the meantime.",
+        "evidence": "Packet records cisa_kev true with kev_date 2026-04-20 and active_exploitation confirmed, RWEP 83 / CVSS 9.1, poc_available true. patch_available is true, live_patch_available is false, and live_patch_notes read: 'No live-patch tool registered for this entry at bulk-import time. Vendor patch typically requires service restart or system reboot per the KEV requiredAction.' The citing framework gaps record AU-Essential-8-Patch (Patch operating systems), ISO-27001-2022-A.8.8 (Management of technical vulnerabilities), NIST-800-53-SI-2 (Flaw Remediation) and NIS2-Art21-vulnerability-handling as insufficient for this CVE.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-vulnerability-handling"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-129",
+        "name": "ENTERPRISE-ERP-MANAGEMENT-FUNCTION-AUTHENTICATION",
+        "description": "PaperCut's request-filter layer is where the product makes its authentication decision, and this CVE is that layer failing open: the packet places the bypass in the SecurityRequestFilter class and has a remote unauthenticated attacker reaching administrative functionality behind it. Bound to this product, the control means each administrative function on the PaperCut server authorizes its caller itself rather than inheriting a verdict from the filter that fronts it, and the admin surface is segmented so an untrusted network caller cannot present a request to that filter in the first place. The least-privilege control cited as insufficient here does not touch this path — the attacker never authenticates as any PaperCut operator, so per-account privilege scoping is never consulted, and the account model that an identity-and-access attestation examines is bypassed rather than abused. Distinguishing test: from a segment with no operational need for the print-administration console, issue unauthenticated requests to each administrative endpoint on a staging PaperCut instance and confirm each is refused before the function runs — an attestation that every PaperCut administrator authenticates at login passes cleanly while this path stays open.",
+        "evidence": "Packet vector: 'PaperCut NG/MF contains an improper authentication vulnerability that could allow remote attackers to bypass authentication on affected installations via the SecurityRequestFilter class.' cwe_refs is CWE-287; attack_vector states the flaw lets an unauthenticated attacker bypass authentication and reach administrative functionality, KEV-listed 2026-04-20 with confirmed in-the-wild exploitation and poc_available true. UK-CAF-B2 (Identity and access control) and NIST-800-53-AC-6 (Least Privilege) are both recorded among the citing gaps.",
+        "gap_closes": [
+          "UK-CAF-B2",
+          "NIST-800-53-AC-6"
+        ]
+      }
+    ]
   },
   "CVE-2025-48700": {
     "name": "Synacor Zimbra Collaboration Suite (ZCS) Cross-site Scripting Vulnerability",
@@ -12248,7 +12272,31 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "The remediation unit here is not an OS package but a Composer-managed component living inside every Laravel application that uses Livewire, so the KEV clock has to be run against an inventory of applications rather than an inventory of hosts. For this CVE that means: enumerate every Laravel deployment whose lockfile resolves Livewire, bump the package to the fixed release, redeploy the built artifact, and restart the PHP-FPM and queue workers so long-lived processes stop serving the old code — the packet records no live-patch path and a vendor patch that typically requires a service restart or system reboot per the KEV required action, so the restart is part of the remediation rather than a deferral point. The packet qualifies the flaw as reaching unauthenticated remote command execution in specific scenarios, which is the reason a host-level scan is not sufficient evidence of closure: an operator cannot tell from a server inventory which applications sit in the exposed configuration. With confirmed in-the-wild exploitation from the 2026-03-20 listing, the four-hour target starts at KEV listing / patch availability rather than at the next release train, and a Laravel estate whose deploys are gated on a weekly window has no way to meet it without an out-of-band path for a single dependency bump. The distinguishing test: on a production host, confirm the Livewire version actually loaded by the running PHP workers is the fixed one — not the version declared in the repository lockfile, which says what the next deploy will ship, not what is serving traffic now.",
+        "evidence": "Packet: CWE-94 code injection enabling unauthenticated remote command execution on the web server, described as reachable in specific scenarios. CISA KEV-listed 2026-03-20 with active_exploitation confirmed; CVSS 9.8, RWEP 77, poc_available true. patch_available true, live_patch_available false, and live_patch_notes records that no live-patch tool is registered and that the vendor patch typically requires a service restart or system reboot per the KEV requiredAction.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-vulnerability-management"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "Livewire's defect runs attacker-supplied code inside the PHP process that serves the request, with no credential required, and the packet records confirmed in-the-wild exploitation from the 2026-03-20 listing. Any internet-reachable Laravel application that was serving traffic during that window therefore has to be triaged as possibly compromised rather than closed out when the dependency is bumped: updating the package removes the injection sink but removes nothing the injected code already did — a PHP file written under the application's public or storage tree, a poisoned compiled view or cached container file, a queued job, an added administrative user, or a read of the application's environment file that handed over its database, cache, mail and third-party API credentials in one request. The control for this deployment: redeploy the application from the build pipeline onto a clean host image rather than patching the running one, restore the code tree from version control rather than editing in place, and rotate every secret the application process could read, since the exploit path could read all of them. The distinguishing test after remediation: diff the deployed file tree against the artifact the build pipeline produced, and treat any file the pipeline did not emit as the finding — a \"patched per SLA\" verdict recorded against the Livewire version attests to what is running now and says nothing about what ran during the exposure window.",
+        "evidence": "Packet: CWE-94 code injection giving unauthenticated remote command execution on the web server; CISA KEV-listed 2026-03-20 with active_exploitation confirmed; poc_available true; RWEP 77 against CVSS 9.8; patch_available true with live_patch_available false.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "UK-CAF-B4"
+        ]
+      }
+    ]
   },
   "CVE-2025-43510": {
     "name": "Apple Multiple Products Improper Locking Vulnerability",
@@ -15876,7 +15924,41 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "Web Help Desk is an always-on IT-operations server, so the KEV clock for this CVE runs against a small number of high-value hosts rather than a fleet — which makes the four-hour target achievable and makes missing it hard to justify. For this entry the action is to apply the vendor update to each Web Help Desk instance and restart the service: the packet records no live-patch path and a vendor patch that typically requires a service restart or system reboot per the KEV required action, so the service interruption is part of remediation rather than the reason to hold the fix for the next maintenance window. What makes the standard cadence indefensible here is the combination the packet records: the deserialization path reaches command execution on the host machine and can be exploited without authentication, and exploitation is confirmed rather than theoretical as of the 2026-02-03 listing — meaning the window between listing and restart is a window in which instances are being reached, not merely a window in which they could be. The distinguishing test: measure the elapsed time between the 2026-02-03 KEV listing and the completed restart of each Web Help Desk instance. A change-management process that routes an actively exploited unauthenticated RCE on an IT-management server through a standard weekly or monthly window has documented the exposure rather than removed it, even though every instance eventually reports the fixed build.",
+        "evidence": "Packet: SolarWinds Web Help Desk deserialization of untrusted data (CWE-502) that could lead to remote code execution allowing an attacker to run commands on the host machine, exploitable without authentication. CISA KEV-listed 2026-02-03 with active_exploitation confirmed; CVSS 9.8, RWEP 77, poc_available true. patch_available true, live_patch_available false, and live_patch_notes records that no live-patch tool is registered and that the vendor patch typically requires a service restart or system reboot per the KEV requiredAction.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-vulnerability-management"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "A help-desk server is where an IT organization's operational secrets accumulate: the service accounts wired into directory and asset-discovery integrations, the database and mail-integration credentials, and the ticket bodies in which staff paste passwords and access instructions. The packet's path hands an unauthenticated attacker command execution on that host, and exploitation is confirmed, so an instance that was reachable before the update landed has to be handled as an incident rather than as a patch record: preserve the application and configuration state for review, rebuild the server rather than updating it in place, and rotate every credential the instance held or could reach — the directory and integration service accounts first, since those are what convert a single-host compromise into access across the estate. Applying the update to a running instance closes the deserialization path but removes nothing already placed through it: a web shell in the application's served tree, a scheduled task, an added administrative account, or a modified application file all survive the upgrade and none of them are visible to a version check. The distinguishing test: after remediation, reconcile the instance's file tree, service accounts and administrative user list against a known-good baseline; if the only evidence of closure is that the version now reports fixed, the compromise question has not been asked.",
+        "evidence": "Packet: CWE-502 deserialization of untrusted data leading to remote code execution allowing an attacker to run commands on the host machine, exploitable without authentication; CISA KEV-listed 2026-02-03 with active_exploitation confirmed; poc_available true; RWEP 77 against CVSS 9.8; patch_available true with live_patch_available false.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "UK-CAF-B4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-125",
+        "name": "SERVICE-INTERNAL-PROTOCOL-DESERIALIZATION-HARDENING",
+        "description": "For Web Help Desk this control means treating the service's own request listener as a trust boundary instead of an internal convenience: the defect is untrusted deserialization reaching command execution for a peer that never authenticates, and the deployment assumption that normally protects it — \"the help desk is an internal ticketing system\" — is not a control, it is a statement about where the box sits. The requirement for this product is that the Web Help Desk listener accepts connections only from the segments that legitimately raise and service tickets (staff networks, the management/jump network), enforced by network ACL or host firewall rather than inherited from network topology, and that no instance is published to the internet for remote-staff convenience without an authenticating gateway in front of it, since an unauthenticated request body is all the packet's path requires to reach the deserializer. Content arriving on that listener must not be permitted to construct arbitrary objects, rather than being trusted because of where it appears to come from. The distinguishing test: from a general user or guest VLAN, and from an external address, attempt to reach the Web Help Desk service port on a staging deployment and confirm the connection is refused before the application processes the request body — an instance that passes a patch-level audit while answering unauthenticated requests from any segment is exposed again the moment the next deserialization defect in this product lands.",
+        "evidence": "Packet: CWE-502 deserialization of untrusted data in SolarWinds Web Help Desk, exploitable without authentication, leading to remote code execution on the host machine; active_exploitation confirmed with CISA KEV listing 2026-02-03; CVSS 9.8, RWEP 77, poc_available true; patch_available true, live_patch_available false with a vendor patch that typically requires a service restart or system reboot per the KEV requiredAction.",
+        "gap_closes": [
+          "NIS2-Art21-vulnerability-management",
+          "UK-CAF-B4"
+        ]
+      }
+    ]
   },
   "CVE-2026-1281": {
     "name": "Ivanti Endpoint Manager Mobile (EPMM) Code Injection Vulnerability (variant: CVE-2026-1281)",
@@ -17381,7 +17463,31 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-132",
+        "name": "INDEPENDENT-INTEGRITY-VERIFICATION-OF-SIGNED-VENDOR-INSTALLERS",
+        "description": "This is the sharpest form of the control's premise: the packet does not describe a coding defect that a vendor build fixes, it describes ASUS Live Update clients that were themselves distributed with unauthorized modifications introduced through a supply chain compromise, executing on the endpoint in the trusted context of the vendor update utility. Every downstream check that resolves to 'it arrived through ASUS Live Update' therefore fails open, and so does an update-hygiene posture whose whole content is keeping the utility current. On managed ASUS hardware the in-app updater must stop being the trust decision: pull Live Update builds through managed software distribution, verify each build against an integrity reference obtained independently of the download itself — vendor-published per-release integrity values fetched over a separate channel, or a behavioural baseline of the installed binaries — and only then push it to endpoints. The packet's targeting detail makes one shortcut unusable: because only devices meeting specific conditions perform the unintended actions, a build that behaves benignly on a test bench is not evidence of a clean build, so verification has to be against a per-release integrity reference rather than against observed behaviour on one machine. The distinguishing test: take the build the endpoint's own updater would install and confirm it can be matched to an integrity value obtained over a channel other than that updater — a build whose only validation is that the updater fetched it is precisely the case this CVE describes.",
+        "evidence": "CWE-506 embedded malicious code. The packet states ASUS Live Update clients 'were distributed with unauthorized modifications introduced through a supply chain compromise' and that 'the modified builds could cause devices meeting specific targeting conditions to perform unintended actions'; the attack vector places execution on the ASUS endpoint in the trusted context of the vendor update utility. CISA KEV-listed 2025-12-17, active_exploitation confirmed, poc_available true, CVSS 8.8, RWEP 77.",
+        "gap_closes": [
+          "AU-Essential-8-App-Hardening",
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "The KEV clock here does not buy a code fix, it buys removal of a tampered build. The packet records the defect as embedded malicious code introduced through a supply chain compromise rather than a flaw in the software's logic, so remediating an affected endpoint means getting the modified ASUS Live Update client off it and a known-good build — or nothing — in its place, and the packet's live-patch note puts that behind a service restart or system reboot per the KEV required action rather than anything applied in place. Scope the clock to the ASUS endpoint population rather than to a server: the packet places execution on the endpoint in the trusted context of the update utility, so the first task inside the SLA is enumerating which endpoints carry the affected Live Update client at all, and an estate that cannot answer that question has not started the clock regardless of what its patch dashboard reports. The packet also records the product statement that the impacted build could be end-of-life or end-of-service, with users directed to discontinue product utilization — so for any endpoint where no clean build applies, removing the utility is the action this SLA covers, recorded as a documented compensating control rather than as a deferral.",
+        "evidence": "CISA KEV-listed 2025-12-17 with active_exploitation confirmed and poc_available true. patch_available true; live_patch_available false, with the packet stating no live-patch tool was registered for this entry and that the vendor patch typically requires service restart or system reboot per the KEV requiredAction. The packet's product statement records that the impacted product could be end-of-life (EoL) and/or end-of-service (EoS) and that users should discontinue product utilization.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-vulnerability-management"
+        ]
+      }
+    ]
   },
   "CVE-2025-40602": {
     "name": "SonicWall SMA1000 Missing Authorization Vulnerability",
@@ -17940,7 +18046,30 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "WinRAR is a user-installed desktop archiver, not an operating-system component — which is exactly why the cited 'Patch operating systems' control does not reach this defect, and why an OS-patch-compliance dashboard can read 100% green whether or not a single WinRAR copy was updated. For this CVE the control means the KEV clock that opened 2025-12-09 is driven by a software-inventory sweep that locates every WinRAR installation across the estate — including copies users installed themselves, outside any managed-software channel — and drives each one to the vendor's fixed release. The packet records a vendor patch with no live-patch path registered, so the update itself is the remediation: there is no mitigating rule, signature or configuration toggle recorded here that can stand in for it while the sweep runs. The distinguishing test is whether the estate can answer, on demand, how many WinRAR installations currently sit below the fixed release; an organisation that can report OS patch percentages but cannot enumerate its archiver installations has no clock running on this KEV entry at all.",
+        "evidence": "Packet: CISA KEV-listed 2025-12-09, active_exploitation 'confirmed', poc_available true, CVSS 7.5, RWEP 77. Product per packet name: 'RARLAB WinRAR Path Traversal Vulnerability'. patch_available true; live_patch_available false, with live_patch_notes stating no live-patch tool is registered for this entry at bulk-import time. The citing framework gap AU-Essential-8-Patch is recorded with control text 'Patch operating systems'.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8",
+          "NIS2-Art21-patch-management",
+          "NIST-800-53-SI-2"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-120",
+        "name": "DOWNLOAD-PROVENANCE-ENFORCEMENT",
+        "description": "Exploitation requires a victim to receive a crafted archive and extract it, so until every WinRAR installation reaches the fixed release the delivery path is the only surface an operator can enforce against. This CVE is specifically the container case the control exists for: per the packet the crafted archive writes files outside the intended directory — for example into a Startup/autorun location — so the file that eventually executes is one the extractor created, never one the user selected or opened. The requirement for this product is that the untrusted-origin marking applied at the mail gateway and the file-share boundary survives extraction and attaches to what WinRAR writes, so a binary that lands in an autorun location out of an externally-sourced archive is still handled as externally-sourced when it runs at the user's privilege. The distinguishing test: deliver an externally-sourced archive through each ingress path, extract it, and confirm the extracted contents — not merely the archive that arrived — still carry the untrusted-origin marking. An estate that marks the received container and lets everything unpacked from it emerge unmarked has enforced provenance on the one file the traversal does not use.",
+        "evidence": "Packet: attack_vector records 'a path-traversal flaw (CWE-22) in WinRAR's archive extraction, letting a crafted archive write files outside the intended directory (e.g. into a Startup/autorun location) for code execution when the victim extracts it.' Vector: 'RARLAB WinRAR contains a path traversal vulnerability allowing an attacker to execute code in the context of the current user.' poc_available true, active_exploitation 'confirmed', CISA KEV-listed 2025-12-09; patch_available true with live_patch_available false.",
+        "gap_closes": [
+          "UK-CAF-B4"
+        ]
+      }
+    ]
   },
   "CVE-2025-62221": {
     "name": "Microsoft Windows Use After Free Vulnerability",
@@ -17995,7 +18124,31 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-145",
+        "name": "ACTIVELY-EXPLOITED-OS-LPE-REMEDIATION-WINDOW-ENFORCEMENT",
+        "description": "The packet's vector says an *authorized* attacker elevates privileges locally through a use-after-free in the Windows Cloud Files Mini Filter Driver — a kernel-mode component, so the defect executes below every account-level boundary the endpoint estate is audited on. For this CVE the control means the Windows update carrying the fix is driven across the whole affected endpoint fleet on the KEV clock that opened 2025-12-09, not folded into the next monthly rollup cycle, and that completion is measured by each host's installed build against the fixed build for its SKU rather than by 'update approved' or 'update downloaded' in the management console. The packet records a vendor patch with no live-patch path and a fix that requires a service restart or system reboot, so a host that has taken the update but not restarted still carries the vulnerable driver in memory and must be counted as exposed, not as remediated. The control's second half is the load-bearing half on this path: because the attacker is already an authorized local user, tightening account privilege does not contain the escalation to SYSTEM — a least-privilege attestation passes cleanly while the flaw remains fully exploitable, which is exactly why the cited AC-6 gap is recorded against this entry.",
+        "evidence": "Packet: CISA KEV-listed 2025-12-09, active_exploitation 'confirmed', poc_available true, CVSS 8.8, RWEP 77. Vector: 'Microsoft Windows Cloud Files Mini Filter Driver contains a use after free vulnerability that can allow an authorized attacker to elevate privileges locally.' attack_vector: 'a use-after-free (CWE-416) in a Windows kernel-mode component, exploited by a local foothold to escalate privileges to SYSTEM.' patch_available true; live_patch_available false, with live_patch_notes stating no live-patch tool is registered for this entry and that the vendor patch typically requires service restart or system reboot per the KEV requiredAction. Citing gaps include NIST-800-53-AC-6 (Least Privilege).",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8",
+          "NIS2-Art21-patch-management",
+          "NIST-800-53-SI-2",
+          "NIST-800-53-AC-6"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-003",
+        "name": "KERNEL-EXPLOITATION-DETECTION",
+        "description": "No live-patch path is registered for this entry and the vendor fix only takes effect after a restart, so each endpoint runs the vulnerable kernel-mode filter driver until it reboots — and with a public PoC plus confirmed in-the-wild exploitation, that window is contested rather than theoretical. For this CVE the control means the endpoint estate must carry telemetry keyed to the *outcome* of the kernel-mode use-after-free rather than to the driver's version: a process running in an ordinary user context acquiring a SYSTEM token, SYSTEM-privileged children spawned out of an interactive user session, and abnormal activity against the kernel-mode filter-driver surface — with alerting measured in seconds, not surfaced at the next log review. The packet notes that LPEs of this class are routinely paired with an initial-access flaw by ransomware operators, so this rule has to stand on its own: it is the detection that has to fire when the initial-access step was already missed, and the escalation to SYSTEM is the last observable step before the operator holds the host.",
+        "evidence": "Packet: poc_available true with active_exploitation 'confirmed'; attack_vector records 'a use-after-free (CWE-416) in a Windows kernel-mode component, exploited by a local foothold to escalate privileges to SYSTEM' and that 'LPEs of this class are routinely paired with an initial-access flaw by ransomware operators.' live_patch_available false, live_patch_notes stating no live-patch tool is registered and the vendor patch typically requires service restart or system reboot per the KEV requiredAction. CISA KEV-listed 2025-12-09.",
+        "gap_closes": [
+          "UK-CAF-B4"
+        ]
+      }
+    ]
   },
   "CVE-2022-37055": {
     "name": "D-Link Routers Buffer Overflow Vulnerability",
@@ -19573,7 +19726,30 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "An Adobe Commerce or Magento Open Source storefront is on the public internet as a condition of doing its job, and the packet's path through the Commerce REST API requires no authentication, so there is no interior network step between a published exploit and the store — the exposure window is exactly the interval between the 2025-10-24 KEV listing and the fix being live. That makes this a KEV-clock item rather than a release-train item, which matters for this product class specifically: storefront deployments are commonly scheduled around retail change-freeze windows, and a freeze is precisely the period when the store is busiest, most reluctant to deploy, and most valuable to an attacker holding an unauthenticated session-takeover primitive. The packet records a vendor patch with no live-patch path and a service restart or reboot requirement, so remediation is applying the vendor fix and taking that restart inside the KEV window, with the freeze treated as something the KEV listing overrides rather than something that defers it. Distinguishing test: read the applied patch level from the running store and confirm the restart completed, rather than accepting the deployment ticket or the change-management record as evidence — a store whose pipeline shows the patch merged but not released is unremediated in the only place that counts.",
+        "evidence": "Packet: CWE-20 improper input validation in Adobe Commerce and Magento Open Source, in the Commerce REST API (the 'SessionReaper' flaw), allowing an unauthenticated attacker to take over customer/admin sessions and reach code execution; the vector text records account takeover through the Commerce REST API. cisa_kev true with kev_date 2025-10-24; active_exploitation confirmed; poc_available true; cvss 9.8; rwep_score 77. patch_available true; live_patch_available false, with live_patch_notes recording no registered live-patch tool and that the vendor patch typically requires service restart or system reboot per the KEV requiredAction.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8",
+          "NIS2-Art21-patch-management",
+          "NIST-800-53-SI-2"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "The storefront occupies the position this control governs even though it is an application tier rather than an appliance: an unauthenticated, internet-reachable path — the Commerce REST API — that ends in code execution, under exploitation confirmed in the wild as of the 2025-10-24 KEV listing. Applied to a store, the requirement is that remediation is not 'apply the patch and close the ticket'. Any store that was reachable and unpatched during the exploitation window has to be handled as possibly holding attacker-written code and attacker-held sessions, because the packet's primitive is session takeover: the fix closes the path that produced those sessions and does nothing to sessions already issued through it. That makes forced invalidation of every session predating the fix, plus rotation of administrator credentials and integration/API keys, part of remediation rather than a follow-up, and it makes the integrity question a comparison of deployed storefront code against the release artifact rather than an inference from the absence of an alert. Distinguishing test: on a patched store, confirm a session token minted before the fix is now refused, and diff the deployed code tree against the build artifact — a store that reports the vendor patch applied while pre-fix sessions still authenticate has closed the entry path and left the access it produced in place.",
+        "evidence": "Packet: the flaw lets an unauthenticated attacker take over customer/admin sessions and reach code execution through the Commerce REST API; cisa_kev true with kev_date 2025-10-24 and active_exploitation confirmed, so the exploitation window predates any operator's remediation. poc_available true; cvss 9.8; rwep_score 77. The packet's citing framework gaps include UK-CAF-B2 (Identity and access control). patch_available true; live_patch_available false, with the vendor patch requiring service restart or reboot per the KEV requiredAction.",
+        "gap_closes": [
+          "UK-CAF-B2"
+        ]
+      }
+    ]
   },
   "CVE-2025-59287": {
     "name": "Microsoft Windows Server Update Service (WSUS) Deserialization of Untrusted Data Vulnerability",
@@ -19890,7 +20066,30 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "Kentico Xperience instances are public-facing content-delivery surfaces, and this defect hands an unauthenticated caller control of administrative objects — so the exposure window for a KEV-listed bypass is measured from the 2025-10-20 listing to the moment the last instance has actually restarted on the fixed build, not to the moment the update was staged. The packet's live-patch note makes that second half load-bearing: there is no live-patch path, and the vendor fix typically requires a service restart or system reboot per the KEV requiredAction, so an SLA that stops at package deployment leaves the bypass reachable on a running site. The estate side of this is the enumeration: every Kentico instance, including sites that are not on the primary application's patch cadence, has to be on the same clock, because a single unrestarted internet-reachable instance is a full administrative-object compromise and the CMS is where the organization's public content and its administrative credential material meet. The distinguishing test: after the due date, list instances by running build and restart timestamp — a patch-compliance dashboard reporting the fixed version as available or downloaded, rather than running, records the exposure instead of ending it.",
+        "evidence": "CISA KEV-listed 2025-10-20 with active_exploitation confirmed and poc_available true; CVSS 9.1, RWEP 77. The vector states the authentication bypass could allow an attacker to control administrative objects, and the attack_vector characterises it as CWE-288 authentication bypass using an alternate path or channel reaching administrative functionality without credentials. patch_available is true but live_patch_available is false, and live_patch_notes record that the vendor patch typically requires a service restart or system reboot per the KEV requiredAction. The citing gaps AU-Essential-8-Patch, ISO-27001-2022-A.8.8, NIS2-Art21-patch-management and NIST-800-53-SI-2 are all patch-cadence controls; none of them defines a listing-triggered clock of its own.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8",
+          "NIS2-Art21-patch-management",
+          "NIST-800-53-SI-2"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "The packet says this bypass lets an attacker control administrative objects, and that it has been exploited in the wild with a public PoC — which means on an instance that was internet-reachable before the fix landed, the update removes the alternate-path bypass but leaves behind whatever administrative objects were created or altered through it. Those objects are indistinguishable from legitimate ones after the fact, because they were created through the CMS's own administrative interfaces rather than by writing to disk. A Kentico instance exposed during the window therefore needs an administrative-object and account audit against a known-good baseline, rotation of administrative credentials and of any API or connection secrets the CMS holds, and invalidation of existing administrative sessions — treated as an incident with the update as one step in it, not as a patch-and-close. The distinguishing test: on an already-updated instance, diff the administrative object and account inventory against the pre-exposure baseline; 'the fixed build is running' is not evidence that the administrative state is the one the operator intended.",
+        "evidence": "The packet's vector states the flaw could allow an attacker to control administrative objects, and the attack_vector records an unauthenticated attacker reaching administrative functionality. active_exploitation is confirmed, CISA KEV-listed 2025-10-20, poc_available true, CVSS 9.1, RWEP 77. patch_available is true with live_patch_available false and live_patch_notes recording a service restart or system reboot requirement, so the remediation on offer is an in-place vendor update that carries the instance's existing administrative state forward. UK-CAF-B2 (identity and access control) is cited as a gap: an attestation that administrator accounts are governed and periodically reviewed does not surface principals or administrative objects introduced through an authentication bypass rather than through the account-provisioning path it governs.",
+        "gap_closes": [
+          "UK-CAF-B2"
+        ]
+      }
+    ]
   },
   "CVE-2025-33073": {
     "name": "Microsoft Windows SMB Client Improper Access Control Vulnerability",
@@ -20018,7 +20217,30 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "Oracle E-Business Suite is the class of system whose changes normally queue behind an ERP change window and a regression cycle, and this control's demand is that a KEV listing with confirmed exploitation preempts that queue for the affected component. For this deployment 'verified mitigation' has a specific end state the packet defines: the fix applied to the Configurator component and the service restarted, because live_patch_available is false and the packet's live-patch note records that the vendor patch typically requires a service restart or system reboot per the KEV required action -- an EBS instance that has taken the patch into its staging environment, or applied it without the restart, has not mitigated. Where the change window genuinely cannot be pulled forward, this control's third option is the one that must be exercised explicitly rather than assumed: a written, time-bound compensating control -- the Configurator Runtime endpoints removed from untrusted-network reachability until the restart happens -- recorded as an active compensating state with an owner and an expiry, not as an informal decision to wait for the next window. Distinguishing test: for each EBS instance, produce the timestamp at which the fixed Configurator component was actually running post-restart and compare it against the 2025-10-20 KEV listing date; an instance whose only evidence is a change ticket scheduled into a future quarterly window has not met the SLA no matter how cleanly it passes a patch-management audit.",
+        "evidence": "Packet facts only: CISA KEV-listed 2025-10-20 with active_exploitation 'confirmed' and poc_available true. CWE-918 server-side request forgery in the Runtime component of Oracle Configurator, which the vector records as remotely exploitable without authentication. RWEP 83 against CVSS 7.5 -- real-world exploit priority far above the base score, driven by the KEV listing and confirmed exploitation rather than by base severity. patch_available true, live_patch_available false, with the live-patch note stating that no live-patch tool is registered for this entry and that the vendor patch typically requires service restart or system reboot per the KEV required action. The citing gaps are AU Essential Eight patch operating systems, ISO/IEC 27001:2022 A.8.8, NIST SP 800-53 SI-2 and NIS2 Art. 21 vulnerability handling -- every one of them cadence-based, none tied to a KEV clock.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-vulnerability-handling"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-129",
+        "name": "ENTERPRISE-ERP-MANAGEMENT-FUNCTION-AUTHENTICATION",
+        "description": "The precondition the packet records is that the Runtime component of Oracle Configurator can be reached and driven over the network with no credential at all, so the control has to bind at the function and at reachability rather than at the EBS sign-on page. For this deployment that means two things. The Configurator Runtime paths must require an authenticated, authorized caller before the component acts on the request -- an unauthenticated caller must be refused before the server-side fetch the SSRF depends on is ever issued. And the EBS surface must be segmented so that an untrusted network caller cannot reach those paths at all: an internet-facing EBS front end should publish only the modules it has a business reason to publish, with Configurator Runtime off that list unless external self-service configuration is a deliberate requirement. On this entry the segmentation half is also the only lever that exists between the KEV listing and the restart the vendor patch needs, since the packet records no live-patch path. Least-privilege posture on EBS accounts is beside the point on this path and should not be offered as a compensating control: the attacker never holds an account. Distinguishing test: from an untrusted network segment against a staging instance, request each Configurator Runtime path unauthenticated and confirm the request is refused before the component processes it -- an attestation that 'all E-Business Suite users authenticate' passes cleanly while this path remains open.",
+        "evidence": "Packet facts only: the vector states the SSRF exists 'in the Runtime component of Oracle Configurator' and that the vulnerability 'is remotely exploitable without authentication'; attack_vector describes an unauthenticated attacker coercing server-side requests to internal resources. CWE-918. CISA KEV-listed 2025-10-20, active_exploitation 'confirmed', poc_available true, RWEP 83, CVSS 7.5. patch_available true with live_patch_available false and a note recording that the vendor patch typically requires service restart or system reboot, so reachability control is the only interim lever. UK NCSC CAF B4 system security is cited as an insufficient control on this entry.",
+        "gap_closes": [
+          "UK-CAF-B4"
+        ]
+      }
+    ]
   },
   "CVE-2025-54253": {
     "name": "Adobe Experience Manager Forms Code Execution Vulnerability",
@@ -20470,7 +20692,29 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For a ZCS estate the KEV clock has to be started by the KEV listing itself rather than by severity, because this entry is the case where severity actively argues against acting: CVSS 6.1 falls below the critical-only trigger most mail-platform patch policies fire on, while the packet's RWEP of 77 reflects what is actually true of it — confirmed in-the-wild exploitation and a public PoC. The surface on the clock is the Classic Web Client, not the mail transport that vulnerability programs usually track for a mail server, since the packet's execution path is a user opening a message whose ICS entry carries the ontoggle payload. The packet records a vendor patch with no live-patch path and notes that the vendor patch typically requires a service restart or reboot per the KEV required action, so remediation means taking that restart on the KEV clock instead of holding it for the next mail-system maintenance window. Distinguishing test: confirm the running Classic Web Client is serving the fixed build rather than reading a package-level 'patched' status off the mail host — and treat closing the SLA ticket as separate from closing the incident, because applying the fix stops new ICS payloads from executing and does nothing to a redirect filter the packet's payload already created.",
+        "evidence": "Packet: CWE-79 in the Synacor Zimbra Collaboration Suite (ZCS) Classic Web Client caused by insufficient sanitization of HTML content in ICS files; when a user views an e-mail message containing a malicious ICS entry, embedded JavaScript executes via an ontoggle event inside a tag, running arbitrary JavaScript within the victim's session and enabling unauthorized actions such as setting e-mail filters that redirect messages to an attacker-controlled address, leading to e-mail redirection and data exfiltration. cisa_kev true with kev_date 2025-10-07; active_exploitation confirmed; poc_available true; cvss 6.1; rwep_score 77. patch_available true; live_patch_available false, with live_patch_notes recording no registered live-patch tool and that the vendor patch typically requires service restart or system reboot per the KEV requiredAction.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-040",
+        "name": "OWA-PER-REQUEST-SIEM-INGESTION",
+        "description": "Zimbra's Classic Web Client presents this control's exact telemetry problem, and the packet's own impact description is why: the script runs inside a session the victim already authenticated, so the attacker never authenticates and every authentication event a ZCS deployment forwards stays clean through the whole exploitation path. The only trace is the request stream the victim's own browser produces after the ICS entry renders, including the mailbox-configuration call that installs the filter redirecting mail to the attacker's address. Forward ZCS per-request web-client access logs and mailbox filter/forwarding-configuration changes to a SIEM held outside the mail server, retained far enough back to cover the period before the 2025-10-07 KEV listing, and alert on filter or forwarding-address changes not originating from an interactive settings session. This is the half of the response that still has value after the patch lands: the fix closes the ICS execution path but leaves any filter already created quietly forwarding mail, and nothing in an authentication or MTA delivery log will surface it. Distinguishing test: create a filter through the web client on a staging ZCS and confirm the SIEM records the change with actor and timestamp — a deployment whose mail-server logging consists of authentication events and MTA delivery records passes a security-monitoring attestation while the entire exploitation and persistence path is invisible to it.",
+        "evidence": "Packet: the ICS-borne JavaScript runs within the victim's session and allows unauthorized actions on the victim's account, specifically named as setting e-mail filters to redirect messages to an attacker-controlled address, producing e-mail redirection and data exfiltration. active_exploitation confirmed; cisa_kev true with kev_date 2025-10-07; poc_available true; rwep_score 77. The packet's citing framework gaps include UK-CAF-C1 (Security monitoring) and NIS2-Art21-incident-handling. patch_available true; live_patch_available false, with the vendor patch requiring service restart or reboot per the KEV requiredAction.",
+        "gap_closes": [
+          "UK-CAF-C1",
+          "NIS2-Art21-incident-handling"
+        ]
+      }
+    ]
   },
   "CVE-2021-22555": {
     "name": "Linux Kernel Heap Out-of-Bounds Write Vulnerability",
@@ -20525,7 +20769,39 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-130",
+        "name": "CONTAINER-HOST-NAMESPACE-ESCAPE-HARDENING",
+        "description": "The packet states the precondition rather than leaving it implicit: the flaw is reached through user namespaces, by a local user with user-namespace access, and the outcome is root. On a container host that is the escape case exactly — a confined workload able to create a user namespace drives a heap out-of-bounds write in the kernel's netfilter x_tables code and lands as host root, so the namespace boundary the deployment is designed around is not a boundary at all and the kernel is the only thing left. For this CVE the control means unprivileged user-namespace creation is disabled on every host whose workloads do not genuinely require it, and each container is confined with an AppArmor or SELinux profile plus a seccomp profile with CAP_SYS_ADMIN dropped — because those measures remove the exploit precondition on hosts that cannot yet absorb the reboot the vendor kernel update needs. The distinguishing test: from inside a representative unprivileged container on a staging host, attempt to create a user namespace and reach the x_tables path, and confirm it is refused before the write occurs. A fleet that passes image-scanning and RBAC audits while permitting unprivileged user-namespace creation is still handing every confined workload this primitive.",
+        "evidence": "Packet: vector states the flaw 'could allow an attacker to gain privileges or cause a DoS (via heap memory corruption) through user name space'; attack_vector records 'a heap out-of-bounds write (CWE-787) in the Linux kernel netfilter x_tables, exploited by a local user (with user-namespace access) to gain root.' CISA KEV-listed 2025-10-06, active_exploitation 'confirmed', poc_available true, CVSS 8.8, RWEP 77. patch_available true; live_patch_available false, with live_patch_notes stating no live-patch tool is registered and the vendor patch typically requires service restart or system reboot per the KEV requiredAction.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "UK-CAF-B4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-002",
+        "name": "LIVE-PATCH-CAPABILITY",
+        "description": "The packet pairs an available vendor kernel fix with no registered live-patch path and a remediation that requires a service restart or system reboot — which, on a Linux fleet carrying production workloads, converts an actively-exploited local-root flaw into a scheduling negotiation measured in maintenance windows rather than in the hours the KEV listing implies. For this CVE the control means live kernel patching (kpatch, livepatch, kGraft or equivalent) must already be a deployed and quarterly-tested capability on every host that cannot absorb an unplanned reboot, provisioned ahead of the next kernel KEV listing rather than stood up in response to one: a capability that did not exist on 2025-10-06 could not shorten this exposure by a single day. To be explicit about what is actionable here — the remediation for this entry remains the vendor kernel update taken with the reboot, since the packet records no live-patch tool for it; the control's value is that the next kernel out-of-bounds write does not have to queue behind the same negotiation. The distinguishing test: pick a production host and confirm a live-patch agent is installed and has successfully applied a kernel patch within the last quarter. A fleet whose compliance report is green because kernel updates are staged-but-not-rebooted is still running the vulnerable kernel in memory.",
+        "evidence": "Packet: patch_available true, live_patch_available false, live_patch_notes 'No live-patch tool registered for this entry at bulk-import time. Vendor patch typically requires service restart or system reboot per the KEV requiredAction.' CISA KEV-listed 2025-10-06 with active_exploitation 'confirmed' and poc_available true; CVSS 8.8, RWEP 77. Affected product per packet name: 'Linux Kernel Heap Out-of-Bounds Write Vulnerability'.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "NIS2-Art21-patch-management",
+          "NIST-800-53-SI-2"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-003",
+        "name": "KERNEL-EXPLOITATION-DETECTION",
+        "description": "With a public PoC, confirmed in-the-wild exploitation, no registered live-patch path, and a fix that only takes effect on reboot, every host still waiting in the maintenance queue is running the vulnerable netfilter x_tables code with a working exploit in circulation. For this CVE the control means auditd or eBPF rules written against the exploitation sequence the packet describes rather than against the kernel package version: unprivileged user-namespace creation by a process that then issues netfilter/x_tables socket-option calls, and any transition to uid 0 by a process that did not start privileged — alerting within 60 seconds, because a local-root primitive is used and moved on from in far less time than a daily log review. The packet records that LPEs of this class are routinely paired with an initial-access primitive, so the rule has to stand alone rather than assume an earlier alert: this is the detection that has to fire when the initial-access step went unseen. It is also the control that distinguishes a fleet that knows its unrebooted hosts are exposed from one that reports them as patched because the package version is current.",
+        "evidence": "Packet: poc_available true with active_exploitation 'confirmed'; attack_vector records 'a heap out-of-bounds write (CWE-787) in the Linux kernel netfilter x_tables, exploited by a local user (with user-namespace access) to gain root' and that 'LPEs of this class are routinely paired with an initial-access primitive.' Vector notes the path is 'through user name space'. live_patch_available false, with live_patch_notes stating no live-patch tool is registered and the vendor patch typically requires service restart or system reboot per the KEV requiredAction. CISA KEV-listed 2025-10-06.",
+        "gap_closes": [
+          "UK-CAF-B4"
+        ]
+      }
+    ]
   },
   "CVE-2010-3962": {
     "name": "Microsoft Internet Explorer Uninitialized Memory Corruption Vulnerability",
@@ -21155,7 +21431,31 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "A Meteobridge is a small weather-station data-logger appliance that no endpoint-management console enrols and no software-inventory agent reports, so the KEV clock this control imposes lands on a device class that typically has no owner inside the patch program at all — the first work the SLA forces is enumerating where these units are before any of them can be counted as remediated. Meeting it means each unit is taken through the vendor update and the restart the packet's live_patch_notes describe, with no live-patch path available to avoid that interruption. The SLA is unusually load-bearing on this product because the flaw needs no credential and yields root: there is no partial state where an unpatched unit is merely degraded, and there is no account lockout, session expiry or credential rotation that buys time while the update is scheduled — an enumerated-but-unpatched Meteobridge past the clock is fully exposed to a publicly available exploit.",
+        "evidence": "Packet records cisa_kev true with kev_date 2025-10-02 and active_exploitation confirmed, RWEP 77 / CVSS 9.8, poc_available true. patch_available is true, live_patch_available is false, and live_patch_notes read: 'No live-patch tool registered for this entry at bulk-import time. Vendor patch typically requires service restart or system reboot per the KEV requiredAction.' AU-Essential-8-Patch, ISO-27001-2022-A.8.8 and NIST-800-53-SI-2 are recorded among the citing gaps.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-134",
+        "name": "DEVICE-MANAGEMENT-GATEWAY-CONFIG-ENDPOINT-AUTH-INPUT-NEUTRALIZATION",
+        "description": "The packet's CWE pair is the entire defect: CWE-306 means the Meteobridge's network-facing configuration surface performs a critical function without ever demanding a credential, and CWE-77 means what arrives at that surface reaches an OS command sink — which is why the packet's own wording is that a remote unauthenticated attacker gains arbitrary command execution with elevated privileges (root) on affected devices. Bound to this appliance, the control requires each of those configuration endpoints to authenticate its caller before processing, to neutralize what it passes to the command interpreter rather than filtering the request string, and to be unreachable from untrusted networks — the last clause is the practical one, because a weather station's data-publishing role is precisely what puts its interface on a reachable address, and reachability is the only remaining exploit precondition once a public exploit exists. The least-privilege gap cited for this CVE is not on this path: the attacker holds no account to constrain, and the injected command already executes as root, so account-privilege scoping is never consulted. Because exploitation is confirmed rather than theoretical, a unit whose configuration surface was reachable before the firmware update needs forensic triage rather than a patch-and-close, since the update closes the injection path but removes nothing an attacker already ran as root. Distinguishing test: from an untrusted segment, send each configuration endpoint on a staging Meteobridge a payload that attempts command execution and confirm it is refused before any interpreter runs.",
+        "evidence": "Packet vector: 'Smartbedded Meteobridge contains a command injection vulnerability that could allow remote unauthenticated attackers to gain arbitrary command execution with elevated privileges (root) on affected devices.' cwe_refs are CWE-306 and CWE-77; attack_vector describes an OS command-injection flaw on the Smartbedded Meteobridge weather-station device letting an unauthenticated attacker execute commands on the device, CISA KEV-listed 2025-10-02 with confirmed in-the-wild exploitation, poc_available true. NIST-800-53-AC-6 (Least Privilege), UK-CAF-B4 (System security) and NIS2-Art21-network-security are recorded among the citing gaps.",
+        "gap_closes": [
+          "NIST-800-53-AC-6",
+          "UK-CAF-B4",
+          "NIS2-Art21-network-security"
+        ]
+      }
+    ]
   },
   "CVE-2025-32463": {
     "name": "Sudo Inclusion of Functionality from Untrusted Control Sphere Vulnerability",
@@ -21638,7 +21938,40 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-030",
+        "name": "PERIMETER-DEVICE-ZERODAY-SLA-TIER",
+        "description": "The vulnerable component is the VPN web server on Cisco Secure Firewall ASA and FTD — the device that terminates remote access and is itself the trust boundary — and the packet gives a CWE-120 buffer overflow reachable without authentication for remote code execution at CVSS 9.8. A standard 14- or 30-day appliance patch SLA measures the wrong thing on this class: from the KEV listing there is a public PoC and confirmed in-the-wild exploitation against the box whose whole job is deciding who gets inside, so the exposure is not proportional to the number of days remaining in the window. The requirement for this deployment is a distinct tier — the vendor fix deployed within hours of the KEV listing, taking the service restart or reboot the packet's requiredAction calls for, or the VPN web server's listener removed from untrusted networks until that reboot completes. The distinguishing test: enumerate every ASA and FTD unit with the VPN web server enabled and confirm each is on the fixed build past the KEV due date; a fleet report showing those units scheduled into the next quarterly maintenance window has recorded the exposure rather than removed it, and the restart requirement is exactly why they get scheduled there.",
+        "evidence": "Packet: CWE-120 buffer overflow in the Cisco Secure Firewall ASA and Secure Firewall Threat Defense (FTD) VPN Web Server, allowing unauthenticated remote code execution; cvss 9.8, rwep_score 77, poc_available true. CISA KEV-listed 2025-09-25 with active_exploitation confirmed. patch_available true, live_patch_available false; live_patch_notes: 'No live-patch tool registered for this entry at bulk-import time. Vendor patch typically requires service restart or system reboot per the KEV requiredAction.'",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2",
+          "UK-CAF-B4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "Because this is pre-authentication code execution on the ASA/FTD appliance itself and the packet records confirmed in-the-wild exploitation alongside a public PoC, the vendor update remediates the defect but not the device: anything an attacker wrote to a unit during the exposure window survives the upgrade. Any appliance whose VPN web server was reachable before the fix landed has to be treated as compromised until shown otherwise — configuration and image captured for forensics first, the device rebuilt from a known-good image, and every credential it held or terminated rotated, including local administrative accounts, VPN user credentials and active session material, and the key material on the tunnels it fronted. The packet also states this flaw can be chained with CVE-2025-20362, so the triage question is not whether the overflow ran in isolation but what the chained access reached afterwards and which interior credentials passed through the box during the window. Distinguishing test: an IR runbook that answers a KEV-listed pre-auth RCE on a VPN concentrator with patch-and-monitor fails this control — the default has to be rebuild plus rotation, decided before the next disclosure rather than during it.",
+        "evidence": "Packet: unauthenticated remote code execution on the ASA/FTD VPN Web Server via a CWE-120 buffer overflow; the vector notes 'This vulnerability could be chained with CVE-2025-20362.' active_exploitation confirmed, CISA KEV-listed 2025-09-25, poc_available true, rwep_score 77. patch_available true with no live-patch path recorded.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "UK-CAF-B4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-031",
+        "name": "FIREWALL-EGRESS-TELEMETRY-SEPARATE-TRUST-ZONE",
+        "description": "Code execution on the ASA/FTD unit puts the attacker inside the same system that produces the device's own record, so syslog, VPN authentication events and threat logs held on the compromised appliance are attacker-controlled evidence from the moment the overflow lands. This deployment therefore has to be forwarding those streams continuously to a collector in a separate trust zone — different management plane, different credentials, different authentication path from the firewall administrators' — so that the record of pre-exploitation probing of the VPN web server, and of what the chain with CVE-2025-20362 reached afterwards, exists somewhere the appliance cannot reach or erase. With exploitation already confirmed at KEV listing and a restart-requiring vendor update, the interval between exposure and completed reboot is precisely when the off-device copy is the only surviving source. Distinguishing test: on a staging unit, clear the local log store and confirm the separate-zone collector still holds that period's VPN authentication and connection events.",
+        "evidence": "Packet: the flaw yields remote code execution on the Cisco ASA/FTD appliance's VPN Web Server itself; active_exploitation confirmed, CISA KEV-listed 2025-09-25, poc_available true. Remediation requires the vendor patch with a service restart or system reboot per the KEV requiredAction (live_patch_available false), and the vector notes the flaw can be chained with CVE-2025-20362.",
+        "gap_closes": [
+          "NIS2-Art21-network-security"
+        ]
+      }
+    ]
   },
   "CVE-2025-5086": {
     "name": "Dassault Systèmes DELMIA Apriso Deserialization of Untrusted Data Vulnerability",
@@ -24196,7 +24529,29 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "The interval is what makes this a KEV-clock case: the packet carries a 2016 identifier year and a KEV listing dated 2025-07-07 with confirmed exploitation. Nine years of CVSS 9.8 sitting in the record did not get this fixed, which is the direct evidence that severity-ordered, recency-fed remediation does not reach it — a queue built from current-year advisories and this month's vendor bulletins never surfaces a 2016 library flaw at all, no matter how the severity threshold is set. The KEV listing is the event that has to override that ordering and put every PHP application sending mail through PHPMailer on the clock. The packet records a vendor patch with no live-patch path and a restart or reboot requirement, so remediation is shipping the fixed library into each affected application and taking that restart, rather than assuming that replacing files on disk is the end of it. Distinguishing test: ask the KEV-response process to produce the remediation date for a CVE whose identifier year is 2016 — a program reporting full KEV coverage while its intake is driven by current-year advisory feeds has not looked at this entry, and the gap is in what feeds the queue rather than in the SLA written above it.",
+        "evidence": "Packet: CWE-77/CWE-88 command injection in PHPMailer because it fails to sanitize user-supplied input, affecting the 'mail()' function of the 'class.phpmailer.php' script; an attacker can execute arbitrary code within the context of the application, and failed exploit attempts result in a denial-of-service condition. The packet places the flaw in PHPMailer's sender-address handling, enabling remote code execution in PHP applications that pass attacker-controlled input to the From address. cisa_kev true with kev_date 2025-07-07 against a CVE identifier year of 2016; active_exploitation confirmed; poc_available true; cvss 9.8; rwep_score 77. patch_available true; live_patch_available false, with live_patch_notes recording no registered live-patch tool and that the vendor patch typically requires service restart or system reboot per the KEV requiredAction.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-021",
+        "name": "TIER-3-DEPENDENCY-INVENTORY",
+        "description": "PHPMailer is almost never something an organization decides to install. It arrives inside a CMS, a plugin, a theme, a vendored composer tree, or a third-party web application, which means estate exposure here is a property of dependencies-of-dependencies rather than of anything that appears on a software inventory or in an OS package database — and an operating-system patch cycle will never touch a copy of class.phpmailer.php sitting inside an application directory. The packet's path needs exactly one such copy: any PHP application that passes attacker-controlled input into the From address supplies the flaw its input, and code then executes in that application's context, so a single unenumerated copy behind a contact form is the whole exposure. Inventory therefore has to resolve to the library level and follow transitive and vendored copies — every place the file exists on disk and in every container image — because a copy nobody has enumerated cannot be assessed as vulnerable, cannot be put in a patch queue, and cannot be confirmed as fixed afterwards. Distinguishing test: search filesystems and built images for PHPMailer copies and reconcile the result against the software inventory; every copy the search returns that the inventory does not list was never in the patch queue, and a clean patch-compliance report covering only the products the organization believes it runs is measuring the wrong set.",
+        "evidence": "Packet: the flaw is in the 'mail()' function of the 'class.phpmailer.php' script and enables remote code execution in PHP applications that pass attacker-controlled input to the From address, with code executing within the context of the application. cisa_kev true with kev_date 2025-07-07; active_exploitation confirmed; poc_available true; cvss 9.8; rwep_score 77. The packet's citing framework gaps include AU-Essential-8-Patch (Patch operating systems) and NIS2-Art21-vulnerability-management (Vulnerability handling). patch_available true; live_patch_available false.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "NIS2-Art21-vulnerability-management"
+        ]
+      }
+    ]
   },
   "CVE-2014-3931": {
     "name": "Multi-Router Looking Glass (MRLG) Buffer Overflow Vulnerability",
@@ -24553,7 +24908,29 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-030",
+        "name": "PERIMETER-DEVICE-ZERODAY-SLA-TIER",
+        "description": "NetScaler ADC/Gateway carries this defect only when it is configured as a Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or an AAA virtual server — which is to say, only when it is acting as the organization's remote-access trust boundary, exactly the deployment class this SLA tier exists for. Two consequences for this product: units in those roles cannot be folded into a 14- or 30-day appliance-maintenance cadence, and the clock does not stop at the staged image, because the packet records no live-patch path and a restart-or-reboot requirement — so it runs from the 2025-06-30 KEV listing through the completed restart of every unit in a Gateway or AAA role. The control's alternative, isolating the vulnerable interface, has a specific meaning here: the vulnerable parser is what answers on the Gateway or AAA virtual server itself, so interim exposure is bounded by restricting reachability of those virtual servers, not by filtering somewhere upstream of an appliance that is itself the filter. Inventorying which units hold those roles is the first action, since it is also what lets the rest of the fleet be triaged down. The distinguishing test: enumerate every NetScaler by configured role and running build against the fixed build past the due date — a severity-driven patch queue that sorts by CVSS 7.5 leaves an actively-exploited boundary device sitting behind higher-scored internal findings.",
+        "evidence": "The packet's vector states that NetScaler must be configured as Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) OR AAA virtual server for the flaw to apply, placing the vulnerable role on the remote-access trust boundary. The attack_vector describes a CWE-119 buffer overflow exploitable for memory corruption yielding both DoS and code execution. CISA KEV-listed 2025-06-30, active_exploitation confirmed, poc_available true, CVSS 7.5 against RWEP 77. patch_available is true, live_patch_available is false, and live_patch_notes record that the vendor patch typically requires a service restart or system reboot per the KEV requiredAction. The citing gaps AU-Essential-8-Patch, ISO-27001-2022-A.8.8 and NIST-800-53-SI-2 are general patch-and-flaw-remediation controls that apply one cadence to the estate and draw no distinction for a device that is itself the trust boundary.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "A NetScaler in the Gateway or AAA role that was reachable while this was being exploited cannot be treated as clean once the update lands. The packet's primitive is a buffer overflow producing unintended control flow, and its attack_vector records code execution alongside denial of service — so a successful run means attacker-controlled execution on the appliance that terminates the organization's remote-access sessions and performs its authentication. The default response for an affected unit is therefore configuration extraction, rebuild from vendor media, and rotation of the credential and key material the appliance holds or could observe — administrative credentials, certificate private keys, and any credentials that traversed the Gateway or AAA virtual server — with existing sessions invalidated rather than carried across the upgrade. The reason this is the default rather than the escalation is mechanical: the packet offers no live-patch path, so remediation is an in-place vendor update plus restart, and an in-place update preserves the appliance's configuration and filesystem, which is precisely what an implant needs to survive the fix. The distinguishing test: on an already-upgraded unit, ask what evidence exists that no code ran before the upgrade — if the answer is the build number, the unit has been patched but not cleared.",
+        "evidence": "The packet describes a CWE-119 buffer overflow leading to unintended control flow, with the attack_vector recording exploitation for memory corruption yielding DoS and code execution, on a NetScaler configured as Gateway (VPN virtual server, ICA Proxy, CVPN, RDP Proxy) or AAA virtual server. active_exploitation is confirmed, CISA KEV-listed 2025-06-30, poc_available true, CVSS 7.5, RWEP 77. patch_available is true with live_patch_available false and live_patch_notes recording a service restart or system reboot requirement — an in-place update that carries the appliance's existing configuration forward. UK-CAF-B4 (system security) is cited as a gap: a system-security attestation satisfied by the appliance running a supported, patched build says nothing about whether that build was applied over a unit that had already executed attacker code.",
+        "gap_closes": [
+          "UK-CAF-B4"
+        ]
+      }
+    ]
   },
   "CVE-2019-6693": {
     "name": "Fortinet FortiOS Use of Hard-Coded Credentials Vulnerability",
@@ -26550,7 +26927,20 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "The vulnerable component here is a Windows OS component driven by attacker-controlled web/script content delivered as a crafted URL, so exposure is estate-wide across every Windows endpoint that renders one — there is no single service to isolate and no interface to restrict as an interim measure, which removes the compensating-control branch this SLA normally allows. The packet records no registered live-patch tool and a vendor fix that requires a service restart or system reboot per the KEV requiredAction, and that makes the load-bearing detail the terminus of the clock rather than its length: the KEV-tied remediation window must end at reboot-completed on each endpoint, because until the restart happens the scripting engine resident in memory is still the vulnerable one. The distinguishing test: sample endpoints the patch console reports as compliant and confirm each has actually restarted since the update was staged — a fleet reporting full deployment while carrying pending-reboot endpoints past the KEV due date has recorded compliance, not removed the exposure.",
+        "evidence": "Packet records cisa_kev true with kev_date 2025-05-13, active_exploitation confirmed, poc_available true, CVSS 8.8 and RWEP 77. patch_available is true, live_patch_available is false, and live_patch_notes state that no live-patch tool is registered for this entry and that the vendor patch typically requires service restart or system reboot per the KEV requiredAction. The vector records a type confusion (CWE-843) in the Windows Scripting Engine allowing an unauthorized attacker to execute code over a network via a specially crafted URL, exploitable by attacker-controlled web/script content for code execution in the client.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management",
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
   },
   "CVE-2025-32706": {
     "name": "Microsoft Windows Common Log File System (CLFS) Driver Heap-Based Buffer Overflow Vulnerability",
@@ -27895,7 +28285,32 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-129",
+        "name": "ENTERPRISE-ERP-MANAGEMENT-FUNCTION-AUTHENTICATION",
+        "description": "The Visual Composer Metadata Uploader is a development/management function of the NetWeaver application server, and the packet shows it accepting an unauthenticated POST to /developmentserver/metadatauploader with no authorization check at all — so the control has to bind at the endpoint, not at the SAP logon. Every development-server and Visual Composer function on the NetWeaver stack must authorize the caller before the upload handler runs, and the /developmentserver/* surface must be segmented so an untrusted network caller cannot reach it in the first place. Role and authorization-object review over SAP user accounts is beside the point on this path: the attacker never holds an SAP account, and the uploaded JSP executes with the SAP service account's privileges rather than any user's, so the blast radius is the service identity and everything it can reach, not the rights of some compromised dialog user. The distinguishing test for this product: from an untrusted network segment, POST a file to /developmentserver/metadatauploader on a staging NetWeaver instance and confirm it is refused before anything is written into a directory the application server serves — an estate that passes SAP role-and-authorization audits while leaving that endpoint network-reachable is still exposed to the unauthenticated upload path.",
+        "evidence": "The packet's vector records an unauthenticated POST to /developmentserver/metadatauploader that uploads an executable binary / JSP webshell which the application server then serves and executes, yielding RCE as the SAP service account; the attack_vector states the endpoint lacks an authorization check. CVSS 10, RWEP 78, CISA KEV-listed 2025-04-29, active_exploitation confirmed, poc_available true. The citing gaps include DORA-Art-9 (ICT risk management framework), UK-CAF-B4 (system security) and NIS2-Art21-network-security (security of network and information systems) — protection-and-prevention controls that carry no requirement for an application server's development or upload endpoints to authenticate the caller before the function runs.",
+        "gap_closes": [
+          "DORA-Art-9",
+          "UK-CAF-B4",
+          "NIS2-Art21-network-security"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "For this SAP flaw the artifact left behind is a JSP webshell already written into a directory the NetWeaver application server serves and executes, so applying the Visual Composer fix closes the upload path and removes nothing that came through it. Any instance that was reachable at /developmentserver/metadatauploader during the mass-exploitation window has to be triaged as compromised rather than patched and closed: hunt the served and deployment directories for files that do not correspond to a sanctioned deployment, rotate the SAP service account and every credential recoverable from the host, and rebuild rather than clean where a webshell is found. The packet records hands-on-keyboard follow-on including ransomware staging behind this access and frequent chaining with the NetWeaver deserialization flaw CVE-2025-42999, which means an operator whose entire response is the vendor update may be closing the door behind an actor already inside, and may leave the second flaw's path open as well. The distinguishing test: on an instance already updated, enumerate the served directory tree against a known-good deployment manifest — a patch-compliance record showing the fix applied is not evidence that nothing was written before it landed.",
+        "evidence": "The packet's vector states the uploaded executable binary / JSP webshell is served and executed by the application server itself. Its attack_vector records mass exploitation from April 2025, webshell access leading to hands-on-keyboard follow-on including ransomware staging, and frequent chaining with CVE-2025-42999. patch_available is true and live_patch_available is false with no live-patch notes recorded, so the remediation on offer is a vendor update — an action that cannot remove a webshell already written to disk. CISA KEV-listed 2025-04-29, active_exploitation confirmed, poc_available true, CVSS 10, RWEP 78. The citing gaps ISO-27001-2022-A.8.8, NIST-800-53-SI-2, PCI-DSS-4.0-6.3.3 and AU-ISM-1546 are all patch-installation controls whose satisfied state is 'update applied'.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2",
+          "PCI-DSS-4.0-6.3.3",
+          "AU-ISM-1546"
+        ]
+      }
+    ]
   },
   "CVE-2025-31161": {
     "name": "CrushFTP HTTP authorization-header authentication bypass (crushadmin takeover)",
@@ -30544,7 +30959,41 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-134",
+        "name": "DEVICE-MANAGEMENT-GATEWAY-CONFIG-ENDPOINT-AUTH-INPUT-NEUTRALIZATION",
+        "description": "UniFi OS is the management gateway for the estate it fronts, and on this path the authentication decision itself is what fails: an nginx allowlist matches the raw, percent-encoded request URI while the backend routes on a separately decoded URI, so a caller with no credential reaches an authenticated backend route. Applied to this product the control has two halves. The vendor's half is that the route-authorization decision and the routing decision must be taken from the same normalized form of the URI, so a request the gateway believes matches the auth-exempt /api/auth/validate-sso/ entry cannot resolve to a different handler — that is why the packet's remediation is the vendor update. The operator's half is reachability and the sink: the package-update path the chain reaches passes an unsanitized package name to sh -c, so the UniFi OS management surface must answer only from an operator/management segment or an authenticated VPN, never from a general user VLAN and never published to the internet through a port forward or remote-access mapping. The distinguishing test: from a general user VLAN and from an external address, request the allowlisted /api/auth/validate-sso/ path in percent-encoded form and confirm the console does not answer at all — reachability is the entire precondition for an unauthenticated bypass, and 'the console is behind our firewall' is a claim about topology, not a demonstration that the surface is unreachable from untrusted segments. Because exploitation is confirmed, a console that was reachable before the update lands needs forensic review of what is installed on it rather than a patch-and-close.",
+        "evidence": "Packet vector: the UniFi OS nginx gateway compares a raw, percent-encoded request URI against its public-routes allowlist while the backend routing decision uses a separately decoded/normalized URI, so a request whose raw form matches the allowlisted, auth-exempt /api/auth/validate-sso/ entry normalizes to an authenticated backend route — an unauthenticated, network-reachable attacker defeats the access-control gate (CWE-284, CVSS 10, RWEP 79). The packet records the chain with CVE-2026-34909 (path traversal) and CVE-2026-34910 (an unsanitized package name passed to sh -c) yielding remote code execution; cisa_kev true with kev_date 2026-06-23, active_exploitation confirmed, poc_available true. live_patch_available is false and live_patch_notes state remediation is the vendor update plus the named compensating controls until it lands.",
+        "gap_closes": [
+          "NIST-800-53-SC-7",
+          "NIS2-Art21-network-security",
+          "UK-CAF-B4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-030",
+        "name": "PERIMETER-DEVICE-ZERODAY-SLA-TIER",
+        "description": "What this flaw defeats is the console's own access-control gate — the allowlist that decides which routes answer without a credential — so the device is not an application sitting behind a trust boundary, it is the boundary. The packet gives a CVSS 10 unauthenticated path with a public PoC and confirmed exploitation, and records no live-patch path for this product class, which leaves an operator exactly the two branches this control names: take the UniFi OS update, accepting the service restart that the absence of a live-patch path implies, on a clock measured from the 2026-06-23 KEV listing; or isolate the management interface from every untrusted segment until the update lands. A 14- or 30-day operating-system patch SLA applied to a console whose bypass chains to full root through passwordless sudo to /usr/bin/dpkg is a cadence, not a remediation plan. The distinguishing test: enumerate every UniFi OS console in the estate against the fixed release and confirm none remains below it past the KEV due date, with any that do carrying an explicit interface-isolation record rather than a dashboard row.",
+        "evidence": "Packet records CVSS 10 with RWEP 79, cisa_kev true with kev_date 2026-06-23, active_exploitation confirmed, poc_available true, patch_available true, live_patch_available false, and live_patch_notes stating there is no live-patch path for this product class and that remediation is the vendor update plus the named compensating controls until it lands. The vector places the failure in the gateway's own access-control gate (raw percent-encoded URI matched against the public-routes allowlist versus a separately decoded/normalized backend URI) and records escalation to full root via the service's passwordless sudo to /usr/bin/dpkg.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "The last step of this chain installs attacker-chosen content through the console's own package-update path: an unsanitized package name reaching sh -c, then passwordless sudo to /usr/bin/dpkg running a malicious package maintainer script as root. A package installed that way — and anything its maintainer script wrote — is simply part of the console's filesystem afterward, and the UniFi OS update that fixes the URI-normalization mismatch removes none of it. So for any console that was reachable by an unauthenticated caller during the exposure window, with exploitation confirmed in the wild, the default disposition has to be configuration export, rebuild from a vendor image, and rotation of every credential the console held or brokered — not update-in-place followed by a green patch report. The distinguishing test: on a console suspected of exposure, compare the installed package set and dpkg maintainer scripts against a known-good build before the update is applied; an estate holding no such baseline cannot distinguish a patched console from a patched-and-still-owned one.",
+        "evidence": "Packet vector: chained with CVE-2026-34909 and CVE-2026-34910 (an unsanitized package name passed to sh -c) the access-control bypass yields remote code execution, and the service's passwordless sudo to /usr/bin/dpkg escalates to full root via a malicious package maintainer script. active_exploitation is confirmed, cisa_kev true with kev_date 2026-06-23, poc_available true. patch_available is true but live_patch_available is false, with live_patch_notes stating there is no live-patch path for this product class.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
   },
   "CVE-2026-20253": {
     "name": "Splunk Enterprise Missing Authentication for Critical Function Vulnerability",
@@ -31132,7 +31581,31 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "Active! Mail's web front end is internet-facing and parses incoming HTTP requests prior to authentication, and the packet records the successful outcome as arbitrary code execution in the context of the web service on the mail server. It also records what attackers did with that foothold: reached hosted mailboxes and harvested stored credentials, including cloud-admin credentials at affected providers. Both facts point the same way — installing the vendor update on an instance that was reachable during the exploitation window closes the overflow and does nothing about credentials already taken or anything left running on the host. So for this product the default response to a confirmed-exploited instance is to preserve and export the configuration, rebuild the mail host rather than patch it in place, and rotate every credential the server stored or could reach: mailbox credentials first, then the provider and cloud-admin credentials the packet names, because those are the ones whose blast radius extends past the mail server into the hosting environment. Service crashes deserve the same treatment as a signal: the packet ties the denial-of-service outcome to a failed-control attempt at the same overflow, so a crash on an internet-facing Active! Mail instance is a reason to hunt, not a stability ticket to close.",
+        "evidence": "CWE-121 stack-based buffer overflow reachable pre-authentication on an internet-facing webmail front end; the packet describes an over-length field overflowing a fixed-size stack buffer and overwriting the saved return address, yielding arbitrary code execution in the context of the web service on the mail server, or a service crash for denial of service on failed control. The packet further states that 'in observed incidents the foothold was used to reach hosted mailboxes and harvest stored credentials (including cloud-admin credentials at affected providers)'. CISA KEV-listed 2025-04-28, active_exploitation confirmed, poc_available true, CVSS 9.8, RWEP 68.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-vulnerability-management"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "The packet gives a vendor update and no live-patch path for this product class, stating that remediation is the vendor update plus the named compensating controls until it lands — so on Active! Mail there is nothing to apply without taking the webmail service down, and the compensating controls are the whole of the coverage in between. That interval is also the whole of the exposure, because there is no access-control lever to pull meanwhile: the front end must stay internet-reachable to serve users, it parses the attacker's request before authentication, and no user interaction is involved in reaching the vulnerable parser. Run the clock from the 2025-04-28 KEV listing through the restart of every affected instance, and count instances rather than hosts — the packet's own incident detail is about hosted mailboxes at providers, so an operator running the product for multiple tenants owes one completed clock per instance. The service interruption the update requires belongs inside the SLA, not as the reason to defer it into the next maintenance window.",
+        "evidence": "CISA KEV-listed 2025-04-28 with active_exploitation confirmed and poc_available true. patch_available true; live_patch_available false, with the packet stating there is no live-patch path for this product class and that remediation is the vendor update plus the named compensating controls until it lands. The packet describes the front end as internet-facing and parsing incoming HTTP requests prior to authentication, exploitable by a remote unauthenticated attacker. CVSS 9.8, RWEP 68.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-vulnerability-management"
+        ]
+      }
+    ]
   },
   "CVE-2025-3928": {
     "name": "Commvault Web Server Unspecified Vulnerability",
@@ -31511,7 +31984,41 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-009",
+        "name": "KERNEL-MODULE-INVENTORY-AND-DISABLE",
+        "description": "The packet states the snd-usb-audio driver is bound by the kernel automatically when a USB audio device enumerates, which means the vulnerable descriptor-parsing code runs on any host with a physically reachable USB port whether or not that host has any audio-peripheral role. For this CVE the control means enumerating which systems actually need USB audio-class support and removing the driver from the reachable surface on the ones that do not — kiosks, servers, rack-mounted and unattended endpoints, and any device whose threat model includes an attacker with physical access to the port. The mechanism depends on how the kernel was built, and getting that wrong is how this control gets recorded as a mitigation while the parse path stays reachable: a modprobe blacklist only stops an autoload, so it applies where snd-usb-audio is a module, and does nothing on a kernel compiled with CONFIG_SND_USB_AUDIO=y, where the driver is built in and binds regardless. Determine which build a host is running before claiming the control — the driver is built in if it appears in /lib/modules/<release>/modules.builtin, and modular if modinfo resolves it. Where it is built in, the equivalent controls are USB device authorization (deny-by-default on the USB bus, allowlisting the peripherals a host is meant to accept) or a kernel built without the driver; a blacklist entry on such a host is not a compensating control and the host stays unremediated until it reboots onto the fixed kernel. The distinguishing test is to attach a USB audio-class device to a supposedly remediated host and confirm the driver does not bind, rather than confirming the module is absent from the currently loaded set — a host whose loaded-module list looks clean at audit time will still bind the driver the moment a device is plugged in, and a built-in driver will bind no matter what the blacklist says.",
+        "evidence": "Packet vector: the ALSA USB-audio driver (snd-usb-audio) traverses clock-source, clock-multiplier and clock-selector descriptors of an attached USB audio device without validating each descriptor's bLength field, and reachability requires physical USB access plus 'the (low) privilege of the kernel auto-binding the audio driver on enumeration'. CWE-125, CVSS 7.1, RWEP 59, AV:L. patch_available true; live_patch_available false with live_patch_notes 'No live-patch path for this product class; remediation is the vendor update plus the named compensating controls until it lands.'",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "NIST-800-53-SI-2",
+          "UK-CAF-B4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-017",
+        "name": "BUG-FAMILY-MITIGATION-PERSISTENCE",
+        "description": "The packet does not describe one unchecked descriptor read; it describes the same missing bLength validation across three separate descriptor traversals in the same driver, which makes this a parse-site class rather than a point defect. For this CVE the control means whichever USB-audio surface removal the host required — modprobe blacklist on a modular build, USB device authorization on a built-in one — and any USB-peripheral restriction deployed alongside it, stays in force after the fixed kernel is installed and rebooted, for a stated soak period, instead of being reverted the moment the vulnerability scanner reports the host on a fixed build. A fix that hardens the three named traversals says nothing about the remaining descriptor-parsing paths the same driver walks on enumeration, and the packet's own primitive — reading past the end of an allocated descriptor buffer using an attacker-declared length — is a pattern, not a location. The distinguishing test is whether the change record for this CVE has a scheduled review date on removing the compensating control, or whether the blacklist was rolled back in the same maintenance action that applied the kernel; the second is the failure mode this control exists to prevent.",
+        "evidence": "Packet vector names three distinct descriptor types traversed without bLength validation in the same driver: clock-source, clock-multiplier and clock-selector descriptors of an attached USB audio device, where 'a malicious or bogus USB device can present a descriptor whose declared length is shorter than the structure the driver dereferences'. CWE-125 out-of-bounds read. live_patch_available false; remediation per live_patch_notes is 'the vendor update plus the named compensating controls until it lands'.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "NIS2-Art21-vulnerability-management"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "This entry is KEV-listed with confirmed exploitation, but the packet records no live-patch path for the product class, so the mitigation the SLA clock demands cannot be a hot fix — it is either the vendor kernel update with a reboot, or the documented compensating control, and on a fleet that cannot reboot inside the window it is the compensating control by default. For this CVE the SLA therefore has to be written so that a verified USB-audio surface removal counts as the mitigation for hosts still awaiting a reboot — a modprobe blacklist where the driver is modular, or USB device authorization where it is built into the kernel and a blacklist would do nothing, with the reboot tracked as a separate open item rather than the clock being paused until a maintenance window appears. The distinguishing test is whether the KEV response record for this CVE names a mitigation state for every affected host at the deadline — updated-and-rebooted, or compensating-control-verified — or whether hosts pending reboot are simply absent from the record; an SLA that only counts completed kernel updates will report a clean deadline while the descriptor-parse path stays reachable on every host that has not yet restarted.",
+        "evidence": "cisa_kev true, kev_date 2025-04-09, active_exploitation 'confirmed'. RWEP 59, CVSS 7.1. patch_available true, live_patch_available false, live_patch_notes 'No live-patch path for this product class; remediation is the vendor update plus the named compensating controls until it lands.' poc_available is false, so the confirmed-exploitation signal here comes from the KEV listing rather than from published exploit code.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "AU-Essential-8-Patch",
+          "NIS2-Art21-vulnerability-management"
+        ]
+      }
+    ]
   },
   "CVE-2024-53197": {
     "name": "Linux Kernel Out-of-Bounds Access Vulnerability",
@@ -31786,7 +32293,41 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-124",
+        "name": "FRAMEWORK-DEFAULT-SECRET-DETECTION",
+        "description": "Cisco Smart Licensing Utility ships an undocumented static administrative account whose credential is compiled into the binary, so the secret an attacker needs is a property of the product, identical on every install, and not something the operator provisioned or can rotate. That inverts the usual form of this control: there is no per-instance key to make unique, so the deployment gate has to be presence-of-the-shipped-credential rather than uniqueness-of-the-operator's. For CSLU that means treating any host carrying an affected 2.0.0-2.2.0 build as holding a published administrative credential until the vendor update is applied, and verifying after the update that presenting the shipped Basic-auth credential to the CSLU REST API on TCP/8182 is refused rather than accepted. Re-run that check after any workstation or server rebuild, image restore or CSLU reinstall, since those are the operations that silently put an affected build back on a host that was previously remediated, and the utility carries no operator-visible account listing that would make the regression obvious. The distinguishing test is to authenticate against a staging instance with the shipped credential and confirm refusal — an estate that passes a password-policy and privileged-account-review audit still hands full administrative control of the CSLU API to any unauthenticated caller who can reach the port, because the account was never in the directory the audit examined.",
+        "evidence": "Packet vector: 'Cisco Smart Licensing Utility ships an undocumented static administrative account (CWE-798 / CWE-912) whose credentials (cslu-windows-client:Library4C$LU) are hardcoded in the binary', its REST API 'listens on TCP/8182' when running, and 'an unauthenticated, remote attacker who reaches the host over the network can present the static Basic-auth credentials to authenticate as administrator with no prior access', yielding 'full administrative control over the CSLU application API'. Affected range given as 2.0.0-2.2.0. CVSS 9.8, RWEP 70, poc_available true.",
+        "gap_closes": [
+          "UK-CAF-B4",
+          "ISO-27001-2022-A.8.8"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-018",
+        "name": "SCANNER-PAPER-COMPLIANCE-TEST",
+        "description": "The packet records that CSLU only listens while actively invoked, which makes this vulnerability structurally invisible to the two techniques most estates rely on for evidence: a network scan of TCP/8182 finds the port closed whenever the utility happens not to be running, and a service inventory finds nothing listening to attribute a version to. For this CVE the operational test has to be installed-software inventory across the Windows estate — does any host carry a Smart Licensing Utility build in the 2.0.0-2.2.0 range, regardless of whether the service answered at scan time — because that, not port reachability, is the condition the packet ties exposure to. The distinguishing test is to scan a staging host with an affected CSLU installed but not currently invoked, and confirm the tooling still reports it as affected; a scanner that returns clean because nothing answered on 8182 has measured the sampling moment rather than the exposure, and every subsequent invocation of the utility reopens an unauthenticated administrative API with a credential published in the advisory.",
+        "evidence": "Packet vector: 'Because CSLU only listens while actively invoked, exposure is intermittent, but any reachable, running 2.0.0-2.2.0 instance is trivially compromisable', with the REST API on TCP/8182 reachable by an unauthenticated remote attacker while the service runs. cisa_kev true, kev_date 2025-03-31, active_exploitation 'confirmed'.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "NIS2-Art21-vulnerability-management",
+          "AU-Essential-8-Patch"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "KEV listing on 2025-03-31 with confirmed exploitation, a public PoC and unauthenticated administrative access at CVSS 9.8 puts this above any routine patch cadence, and the packet gives no live-patch path, so the mitigation that satisfies the clock is either upgrading past the affected 2.0.0-2.2.0 range or removing/stopping the utility on hosts that do not need it. For this CVE the SLA should treat 'CSLU not installed' as a first-class satisfying outcome rather than only counting upgrades, because Smart Licensing Utility is a support tool rather than a production dependency on most of the hosts that carry it, and uninstalling is faster than scheduling a software update across a Windows estate. The distinguishing test is whether the KEV record for this CVE resolves every affected host to upgraded, uninstalled, or explicitly risk-accepted at the deadline; an SLA measured only on upgrade completion will show hosts as pending indefinitely while an unauthenticated caller with the published credential can take administrative control of the API the next time the utility runs.",
+        "evidence": "cisa_kev true, kev_date 2025-03-31, active_exploitation 'confirmed'. CVSS 9.8, RWEP 70, poc_available true. patch_available true; live_patch_available false with live_patch_notes 'No live-patch path for this product class; remediation is the vendor update plus the named compensating controls until it lands.' Packet vector states the attacker gains 'full administrative control over the CSLU application API', which is chained with CVE-2024-20440 to harvest further credentials and tokens.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "AU-Essential-8-Patch",
+          "NIS2-Art21-vulnerability-management"
+        ]
+      }
+    ]
   },
   "CVE-2025-2783": {
     "name": "Google Chromium Mojo Sandbox Escape Vulnerability",
@@ -32762,7 +33303,30 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_disclosure",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "Microsoft Management Console is a built-in Windows component, so the affected population is the entire managed Windows endpoint estate rather than a single service that can be stopped or firewalled while a fix is scheduled. The packet records a vendor update with live_patch_available false and no live-patch path for this product class, which means remediation is the update landing on each host, and the interval before it lands is carried by the compensating controls the packet's live_patch_notes points to. This control binds that deployment clock to the 2025-03-11 KEV listing rather than to the next scheduled endpoint-patch ring, so the estate must reach the fixed state (or run documented, expiring compensating controls) inside the window the packet records as closing 2025-04-01. The distinguishing test is to enumerate the fleet against the fixed state on the due date: a patch programme that ships this update on a monthly ring passes a process audit while every unremediated host carries an actively-exploited security-feature bypass for the remainder of that month, and the packet's RWEP of 82 against a CVSS of 7.0 is exactly the case a CVSS-ranked queue defers.",
+        "evidence": "Packet: cisa_kev true, kev_date 2025-03-11, attack_vector records the KEV due date as 2025-04-01, active_exploitation confirmed, poc_available true, rwep_score 82 against cvss 7.0, patch_available true, live_patch_available false, live_patch_notes 'No live-patch path for this product class; remediation is the vendor update (or, for end-of-life products, decommissioning) plus the named compensating controls until it lands.'",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-vulnerability-management"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-041",
+        "name": "PROTECTION-MECHANISM-FAILURE-CLASS-REGRESSION",
+        "description": "What fails in this CVE is not a code-execution sink but a Windows security feature refusing to hold: the packet's vector is improper neutralization in Microsoft Management Console that lets an unauthorized attacker bypass a security feature locally (CWE-707). That makes build-number verification structurally unable to answer the operator's real question, because a host reports the same patch state whether the protection enforces or has been bypassed. The requirement here is to carry the MMC bypass primitive in the standing protection-mechanism regression battery alongside the MOTW/SmartScreen/AMSI-class primitives the control already governs, and to re-run that battery after each Windows update deployment on a representative build rather than once at remediation of this CVE. The distinguishing test for this product: on a host the scanner reports as fixed, exercise the bypass against the MMC surface and confirm the security feature blocks it. With a PoC available and exploitation confirmed, an estate that verifies patch level but never verifies enforcement cannot distinguish a re-enforced protection from a re-broken one.",
+        "evidence": "Packet: cwe_refs CWE-707, vector 'Improper neutralization in Microsoft Management Console allows an unauthorized attacker to bypass a security feature locally.', poc_available true, active_exploitation confirmed, cisa_kev true (2025-03-11), patch_available true, live_patch_available false.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "UK-CAF-B4"
+        ]
+      }
+    ]
   },
   "CVE-2024-13161": {
     "name": "Ivanti Endpoint Manager (EPM) Absolute Path Traversal Vulnerability (GetHashForSingleFile)",
@@ -32817,7 +33381,39 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-134",
+        "name": "DEVICE-MANAGEMENT-GATEWAY-CONFIG-ENDPOINT-AUTH-INPUT-NEUTRALIZATION",
+        "description": "Ivanti EPM is the endpoint-management server for the estate, and this flaw reaches sensitive information on it with no credential at all: the GetHashForSingleFile handler consumes a caller-supplied absolute path and returns what it finds, so the read completes before any authentication decision is made. Two requirements follow for this deployment. Every EPM handler that takes a caller-supplied path must authenticate the caller before it acts, and must resolve the supplied path to a canonical absolute form and verify the result still sits under the directory that handler is entitled to read — rejecting absolute paths and traversal segments before a file handle is opened, rather than filtering the request string on the way in. And no EPM instance may present those handlers to an untrusted network, because a remote unauthenticated attacker is the packet's threat model and reachability is the entire exploit precondition. The distinguishing test for this product: from an unauthenticated client against a staging EPM, call the file-hash handler with an absolute path outside its intended directory and confirm the request is refused before any file is read — an estate that passes EPM role-and-permission audits still exposes this path, since the attacker never reaches the role model. Because exploitation is confirmed and a public PoC exists, an instance that presented these handlers to an untrusted network before the January-2025 security updates needs forensic triage rather than a patch-and-close.",
+        "evidence": "CWE-36 absolute path traversal, named in the packet against the GetHashForSingleFile handler; the packet states the flaw 'allows a remote unauthenticated attacker to leak sensitive information' in Ivanti EPM before the 2024 January-2025 Security Update and the 2022 SU6 January-2025 Security Update. CISA KEV-listed 2025-03-10 (due 2025-03-31), active_exploitation confirmed, poc_available true, CVSS 9.8, RWEP 73.",
+        "gap_closes": [
+          "UK-CAF-B4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For this CVE the compressed clock runs on the EPM server itself, not on the endpoints it manages, and that inverts the usual patch-cadence assumption: one server-side update closes the exposure for the whole estate, so there is no fleet-rollout tail to justify a monthly or quarterly maintenance window. The packet records a vendor fix — the 2024 January-2025 Security Update and the 2022 SU6 January-2025 Security Update — and no live-patch path for this product class, so remediation means taking the EPM server through the update rather than applying anything in place, and the named compensating controls hold only until it lands. The flaw was already exploited in the wild with a public PoC when CISA listed it on 2025-03-10, which makes the 2025-03-31 due date the outer bound rather than the target. Inside the interval the only available lever is reachability: restrict which networks can reach the EPM management surface, since the attack requires no credential and no user interaction.",
+        "evidence": "CISA KEV-listed 2025-03-10 with a stated due date of 2025-03-31 and active_exploitation confirmed; poc_available true; patch_available true, with the packet naming the 2024 January-2025 Security Update and 2022 SU6 January-2025 Security Update as the fixing releases; live_patch_available false, and the packet's live-patch note stating there is no live-patch path for this product class and that remediation is the vendor update plus the named compensating controls until it lands. CVSS 9.8, RWEP 73.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-vulnerability-management"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-037",
+        "name": "FLEET-COMPROMISE-IR-PLAYBOOK",
+        "description": "The primitive here is a read, and a read is not reversed by an update: whatever an unauthenticated attacker pulled off an exposed EPM server before the January-2025 security updates remains in their hands afterwards. Because EPM is a fleet-control-plane asset rather than an ordinary application server, the response has to be scoped to the estate it serves and not to the one host — establish the exposure window from the instance's first untrusted-network-reachable day through the day the update landed, rotate credentials for every account that authenticated through the EPM server inside that window, and treat material the server held during it as disclosed rather than still-confidential. This playbook has to be written before the disclosure, because reconstructing which accounts transited a management server months after the fact is the step that fails under time pressure. It is also the half of the response no patch-status dashboard surfaces: a flaw-remediation control closes at 'update installed', and for a confirmed-exploited disclosure primitive that is not closure.",
+        "evidence": "CWE-36 absolute path traversal allowing, per the packet, a remote unauthenticated attacker to leak sensitive information from Ivanti EPM; active_exploitation confirmed and CISA KEV-listed 2025-03-10 (due 2025-03-31); poc_available true; live_patch_available false, with remediation recorded as the vendor update plus named compensating controls until it lands.",
+        "gap_closes": [
+          "NIST-800-53-SI-2"
+        ]
+      }
+    ]
   },
   "CVE-2024-13160": {
     "name": "Ivanti Endpoint Manager (EPM) Absolute Path Traversal Vulnerability (GetHashForWildcard)",
@@ -33756,7 +34352,38 @@
     },
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_disclosure",
-    "ai_assist_factor": "none"
+    "ai_assist_factor": "none",
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-030",
+        "name": "PERIMETER-DEVICE-ZERODAY-SLA-TIER",
+        "description": "PAN-OS is the trust boundary itself, and the exposed surface in this CVE is its management web interface — the plane that administers the boundary — which is why placing this appliance in the same patch population as a general server or workstation gives it the wrong clock. The control's alternative branch is precisely the action the packet's own vector names: isolate the vulnerable interface by restricting management-web-interface access to trusted internal IP addresses per the vendor's deployment guidance, which removes network reach for callers outside the operator network while the appliance update is scheduled. The packet also bounds the tier's scope — it states the issue does not affect Cloud NGFW or Prisma Access — so the accelerated tier applies to the PAN-OS appliance estate specifically rather than to every Palo Alto product in the inventory. The distinguishing test: from a general user segment, attempt to load the PAN-OS management web interface; anything that answers is inside the reachable population for an authenticated file read whose exploitation the packet records as confirmed, and 'the firewall is on the internal network' is a topology assertion, not a demonstration that the management plane is unreachable.",
+        "evidence": "Packet: name 'Palo Alto Networks PAN-OS File Read Vulnerability', vector states an authenticated attacker with network access to the management web interface can read files readable by the 'nobody' user and that risk is greatly reduced by restricting management web interface access to trusted internal IP addresses per the vendor's linked best-practices deployment guidelines; vector also states the issue does not affect Cloud NGFW or Prisma Access. cisa_kev true, kev_date 2025-02-20, active_exploitation confirmed, patch_available true, live_patch_available false.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "UK-CAF-B4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "On this CVE the packet supplies the compensating-control branch of the SLA directly: the vendor's stated risk-reduction step is restricting management-web-interface access to trusted internal IP addresses, a configuration change on the firewall itself rather than a code deployment. That leaves no defensible interval between the 2025-02-20 KEV listing and a mitigated state, even where the PAN-OS update must wait for a change window — the packet records patch_available true with live_patch_available false and no live-patch path, so the update has to be taken on the appliance and the access restriction is what covers the wait. The clock the control imposes runs to the due date the packet records as 2025-03-13, and it applies per appliance: the deliverable is every PAN-OS unit either updated or demonstrably answering its management interface only from the operator network, dated against the KEV listing rather than against the next firmware maintenance cycle.",
+        "evidence": "Packet: cisa_kev true, kev_date 2025-02-20, attack_vector records the KEV due date as 2025-03-13, active_exploitation confirmed, poc_available true, rwep_score 77 against cvss 6.5, patch_available true, live_patch_available false, live_patch_notes 'No live-patch path for this product class; remediation is the vendor update (or, for end-of-life products, decommissioning) plus the named compensating controls until it lands.', and the vector names the management-web-interface IP restriction as the risk-reduction measure.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-vulnerability-management"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-038",
+        "name": "MITIGATION-ACTIVE-PATCH-PENDING-VERDICT-CLASS",
+        "description": "This entry is unusually prone to the conflation the control exists to prevent, because the vendor's own text offers the access restriction as risk reduction in the same breath as the flaw description. The two states are materially different on this appliance: restricting the management web interface to trusted internal IP addresses narrows who can reach the endpoint, but the file read still succeeds for any caller who reaches it with credentials — which on a firewall means every administrator account and anything that has taken one — so the primitive is contained, not removed. Compliance evidence must therefore carry 'management interface restricted to trusted internal IPs, PAN-OS update pending' as its own time-bound state rather than folding it into a patched-per-SLA line. The residual to record with it: with exploitation confirmed and a PoC available, any appliance whose management interface was reachable before the restriction was applied may already have disclosed every file the 'nobody' user can open, so closing the state also means treating that pre-restriction window as an exposure to triage rather than a patch-and-close.",
+        "evidence": "Packet: vector states an authenticated attacker with network access to the management web interface reads files readable by the 'nobody' user, and that restricting management web interface access to trusted internal IP addresses greatly reduces the risk; cwe_refs CWE-73 and CWE-610; active_exploitation confirmed; poc_available true; patch_available true; live_patch_available false with live_patch_notes recording no live-patch path for this product class.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
   },
   "CVE-2026-56291": {
     "name": "Balbooa Forms Unrestricted Upload of File with Dangerous Type Vulnerability",
@@ -34354,7 +34981,19 @@
         "adequate": false,
         "gap": "Protection-of-audit-information control is directly undermined — the observed exploitation pattern deletes security logs via link-following, defeating log-integrity assumptions."
       }
-    }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-145",
+        "name": "ACTIVELY-EXPLOITED-OS-LPE-REMEDIATION-WINDOW-ENFORCEMENT",
+        "description": "Windows Storage is an OS component rather than an optional server role, so the exposed population is the whole Windows fleet and there is no subset an operator can enumerate and isolate instead of updating. The exploitation precondition the packet names is standard user access — the local attacker plants a symbolic link that redirects a privileged Windows Storage file-management operation to a target of their choosing — so account-privilege policy is not a containment story here: the flaw is the thing that converts a standard user into a privileged one, which is precisely why this control says privilege policy must not be relied on to hold the line. Applied to this entry, the Windows update carrying the fix has to be driven across every affected endpoint on the clock that started with the 2025-02-11 KEV listing rather than folded into the normal monthly ring, and the packet's live_patch_available: false with no live_patch_notes has to be treated as a hard planning fact — nothing can be applied to a running endpoint, so the rollout needs restart windows for the fleet and not just a deployment ring. One scheduling signal is actively misleading on this entry: poc_available is false while active_exploitation is confirmed, so a program that gates urgency on public proof-of-concept availability will hold this at routine severity indefinitely. The distinguishing test: enumerate installed build numbers across the fleet against the fixed build for each Windows SKU in the estate and confirm zero endpoints remain below it past the KEV due date — an attestation that 'standard users are not local administrators' passes cleanly while this path stays wide open.",
+        "evidence": "Packet: CISA KEV-listed 2025-02-11, active_exploitation confirmed, CVSS 7.1, RWEP 61, CWE-59. Attack path as recorded: 'A local attacker with standard user access creates a symbolic link that redirects a privileged Windows Storage file-management operation to an unintended target, allowing them to delete arbitrary files — including security event logs — and escalate privileges.' Remediation fields: patch_available true; live_patch_available false with live_patch_notes null. poc_available false, i.e. confirmed in-the-wild exploitation with no public PoC recorded.",
+        "gap_closes": [
+          "AU-ISM-1546",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
   },
   "CVE-2024-40891": {
     "name": "Zyxel DSL CPE OS Command Injection Vulnerability",
@@ -36111,7 +36750,20 @@
         "adequate": false,
         "gap": "Vulnerability management processes did not surface XXE-capable unauthenticated endpoints as high-priority exposure."
       }
-    }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "Proself ships as three separately versioned editions and the packet gives each its own affected ceiling — Enterprise/Standard Ver5.62 and earlier, Gateway Edition Ver1.65 and earlier, Mail Sanitize Edition Ver1.08 and earlier — so 'verified mitigation' on this entry means confirming every deployed edition individually against its own fixed version. A single 'Proself is updated' attestation is the specific failure mode here, because the version numbers are not comparable across editions and an estate that moved its Enterprise/Standard servers while leaving a Gateway or Mail Sanitize instance in place is still answering the unauthenticated XXE path. The clock this control sets runs from the 2024-12-03 KEV listing, and because live_patch_available is false with no live-patch notes recorded, meeting it means taking each Proself instance through the vendor update — there is nothing to apply to a running service as an interim. Two properties of this entry make the compressed clock matter more than its 7.5 base score suggests. First, exploitation is confirmed in the wild while no public proof-of-concept is recorded, so a program that schedules on PoC availability will never receive the signal it is waiting for. Second, what the flaw returns is arbitrary files on the server 'containing account information', which means updating does not end the incident: every credential readable through the pre-update window has to be treated as disclosed and rotated, and the control's 'verified mitigation' bar is not met by the update alone on an instance that was internet-reachable before it landed.",
+        "evidence": "Packet: CWE-611, CVSS 7.5, RWEP 42, CISA KEV-listed 2024-12-03, active_exploitation confirmed, poc_available false. Attack path as recorded: 'An unauthenticated attacker submits a specially crafted XML request containing external entity declarations to a Proself endpoint, causing the server to disclose arbitrary local files including account information.' Packet vector text names the affected ceilings — 'Proself Enterprise/Standard Edition Ver5.62 and earlier, Proself Gateway Edition Ver1.65 and earlier, and Proself Mail Sanitize Edition Ver1.08 and earlier' — and states that 'arbitrary files on the server containing account information may be read by the attacker.' Remediation fields: patch_available true; live_patch_available false with live_patch_notes null.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-vulnerability-management"
+        ]
+      }
+    ]
   },
   "CVE-2023-28461": {
     "name": "Array Networks AG and vxAG ArrayOS Missing Authentication for Critical Function Vulnerability",
@@ -36259,7 +36911,31 @@
         "adequate": false,
         "gap": "Access enforcement failed because the Process Extension SDK component did not correctly authorize requests, allowing unauthenticated access to data that should require a session."
       }
-    }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-129",
+        "name": "ENTERPRISE-ERP-MANAGEMENT-FUNCTION-AUTHENTICATION",
+        "description": "Agile PLM is the system of record for product designs and supplier data, and this flaw shows the Agile PLM Framework's Process Extension SDK component answering a crafted HTTP request from a caller holding no credential at all — the authorization decision is taken incorrectly inside the function rather than at the console login. Applied to this deployment the control means every Process Extension / SDK entry point on the Framework authorizes the caller before it returns any PLM content, and the Framework's HTTP surface is segmented so an untrusted network caller cannot reach that component in the first place. Least-privilege review of Agile PLM user roles does not touch this path: the attacker never holds an account, and the packet scores impact as unauthorized access to critical data or complete access to all Agile PLM Framework accessible data (C:H) rather than the privileges of some compromised user. Distinguishing test: from an untrusted network segment, send an unauthenticated HTTP request to each Process Extension SDK endpoint on a staging 9.3.6 instance and confirm it is refused before any PLM data is returned — an attestation that 'all PLM users authenticate at login' passes cleanly while this path stays open.",
+        "evidence": "Packet: CWE-863 incorrect authorization in the Oracle Agile PLM Framework's Software Development Kit / Process Extension component; an unauthenticated attacker with network access via HTTP sends a crafted request and obtains unauthorized access to critical data or complete access to all Agile PLM Framework accessible data. CVSS 3.1 base 7.5, vector AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N; affected supported version 9.3.6. CISA KEV-listed 2024-11-21, active_exploitation confirmed.",
+        "gap_closes": [
+          "NIST-800-53-AC-3",
+          "UK-CAF-B4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "Agile PLM sits in the supply-chain application tier that most estates patch on a quarterly application cadence, and the packet's own numbers are what make that cadence wrong here: a 7.5 base score with confidentiality-only impact and poc_available false will sort below every 9.x item in a score-ordered or exploit-availability-ordered queue, while the entry is KEV-listed with exploitation already confirmed. The control binds the clock to the KEV listing instead of to the score: the affected 9.3.6 Framework instance is taken through the vendor update inside the KEV-tier window. The packet records a vendor patch and no live-patch path, so there is no in-place mitigation to buy time with — where the update cannot land in that window the remaining lever is removing HTTP reachability of the Process Extension SDK surface from untrusted networks, recorded as a time-bound exception rather than as patched-per-SLA.",
+        "evidence": "Packet: cisa_kev true, kev_date 2024-11-21, active_exploitation confirmed, poc_available false, rwep_score 42, cvss 7.5. patch_available true, live_patch_available false, live_patch_notes null. Attack path is an unauthenticated crafted HTTP request to the Agile PLM Framework Process Extension SDK component (version 9.3.6).",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-vulnerability-management"
+        ]
+      }
+    ]
   },
   "CVE-2024-38813": {
     "name": "VMware vCenter Server Privilege Escalation Vulnerability",
@@ -38248,7 +38924,39 @@
         "adequate": false,
         "gap": "Least-functionality is the real fix here: the IOS HTTP admin server should be disabled, but CM-7 baselining rarely reaches retired edge routers still exposing /level/15/exec, so the CSRF surface persists."
       }
-    }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-127",
+        "name": "UNSUPPORTED-NETWORK-DEVICE-ENUMERATION-AND-RETIREMENT",
+        "description": "A 2008-vintage flaw in the Cisco IOS 12.4 HTTP administration component on the 871 Integrated Services Router is reachable in 2026 only because the router is still racked and still answering. The control means the asset inventory has to carry an end-of-support date for every network-attached embedded device including routers, so a unit whose vendor has stopped issuing fixes but whose HTTP admin surface is still remotely reachable is discoverable before an advisory names it, not after. The distinguishing test for this device class: query the inventory for routers past end-of-support whose management interface answers from a segment with no operational need to reach it; any non-empty result without a replace-or-formally-risk-accept decision is the finding. A patch-management policy that assumes a fix always exists produces no record at all for this router, because there is no version to compare it against.",
+        "evidence": "Packet: affected product is the HTTP Administration component in Cisco IOS 12.4 on the 871 Integrated Services Router; patch_available is false and live_patch_available is false; live_patch_notes reads 'End-of-life or unpatched product with no vendor fix and no live-patch path; isolate or decommission affected systems.' CISA KEV-listed 2026-07-13 with active_exploitation confirmed (RWEP 70, CVSS 4.3). Citing gaps include ISO/IEC 27001:2022 A.8.8 (Management of technical vulnerabilities) and the NIS2 Art.21 network-security measures.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "NIS2-Art21-network-security"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-122",
+        "name": "EOL-ASSET-DECOMMISSION",
+        "description": "There is no build of IOS an operator can move this router to, so for CVE-2008-4128 'remediation' means removal and nothing else. Applied to this device: any surviving unit must be segmented so that its HTTP admin server cannot be reached from any network an administrator browses the web from, and carried to decommission on a bounded, dated schedule rather than an open-ended risk acceptance. Segmentation is the compensating control, not the fix, because the exploit needs only an already-authenticated administrator's browser to be able to issue requests to /level/15/exec/- and /level/15/exec/-/configure/http on the device — the attacker never authenticates. The distinguishing test: from every segment an administrator's workstation can browse from, attempt to load the router's HTTP admin surface; anything that answers is within reach of the lure path, and a risk-acceptance memo with no removal date leaves a KEV-listed no-fix device in service indefinitely.",
+        "evidence": "Packet: patch_available false, live_patch_available false, live_patch_notes 'End-of-life or unpatched product with no vendor fix and no live-patch path; isolate or decommission affected systems.' Attack vector per packet: an attacker lures an already-authenticated IOS administrator to a crafted page that forces requests to /level/15/exec/- and /level/15/exec/-/configure/http, executing privilege-15 and configuration commands through the router HTTP admin server. CWE-352; CISA KEV-listed 2026-07-13, active_exploitation confirmed. Citing gaps name NIST SP 800-53 Rev 5 SC-7 (Boundary Protection) and UK CAF B4 (System security) as insufficient.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SC-7",
+          "UK-CAF-B4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-038",
+        "name": "MITIGATION-ACTIVE-PATCH-PENDING-VERDICT-CLASS",
+        "description": "This router can never reach a 'patched' verdict — the packet records no vendor fix and no live-patch path — so vulnerability-management reporting has to represent it as its own state rather than as an overdue patch item that rolls forward every cycle. For CVE-2008-4128 the register entry must read: full exposure, contained by segmentation of the HTTP admin surface, with a dated decommission action attached; not 'patch pending'. The distinguishing test: pull the register entry for this CVE and confirm the recorded state names the compensating control and the removal date; an estate whose report shows only an aging patch-SLA breach has recorded the exposure without ever forcing the only decision that ends it.",
+        "evidence": "Packet: patch_available false and live_patch_available false, with live_patch_notes stating no vendor fix and no live-patch path exists; CISA KEV-listed 2026-07-13 with active_exploitation confirmed and poc_available false. The citing gap ISO/IEC 27001:2022 A.8.8 (Management of technical vulnerabilities) is patch-closure-shaped and has no verdict for a product with no fix.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
   },
   "CVE-2020-14644": {
     "name": "Oracle WebLogic Server Remote Code Execution Vulnerability",
@@ -38618,7 +39326,30 @@
         "adequate": false,
         "gap": "Malicious-code protection keyed on file extension/type is defeated precisely because the vulnerability misrepresents the extension to both the user and naive filters."
       }
-    }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-120",
+        "name": "DOWNLOAD-PROVENANCE-ENFORCEMENT",
+        "description": "The victim in this chain ran the file because of what it was called, not what it was: the packet records the downloaded HTA being presented with a filename that read as a PDF. That makes the untrusted-origin marking, applied at the ingress boundary and independent of anything the file carries, the control that still functions when the displayed name lies. For this CVE it means the .URL lure arriving by mail or web download is tagged as externally sourced at the gateway, and the tag survives the transformation the packet describes — a file that is renamed, or fetched onward through the handler the lure opens, must inherit the untrusted marking rather than lose it, so the artifact the user is invited to double-click still triggers an untrusted-content decision. The distinguishing test: deliver a file whose presented name and actual handler disagree through each ingress path onto a managed workstation and confirm it still reaches the user marked as untrusted; a user-application-hardening attestation that covers macro and ActiveX settings, and user training to 'check the extension', are exactly what a filename-spoofing flaw defeats.",
+        "evidence": "Packet attack_vector: 'Void Banshee lured victims with a .URL that used CVE-2024-38112 to open attacker content in MSHTML/IE, then used CVE-2024-43461 to spoof the downloaded HTA's filename as a PDF so the victim ran it, dropping Atlantida stealer.' CWE-451; CISA KEV-listed 2024-09-16 with active_exploitation confirmed; RWEP 79, CVSS 8.8, poc_available true. Citing gaps name ASD Essential Eight user application hardening, NIST SP 800-53 SI-3 (Malicious Code Protection) and ISO/IEC 27001:2022 A.8.7 (Protection against malware) as insufficient.",
+        "gap_closes": [
+          "AU-Essential-8-App-Hardening",
+          "NIST-800-53-SI-3",
+          "ISO-27001-2022-A.8.7"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For this MSHTML flaw the packet gives a vendor update and no live-patch path, and states the update requires a reboot to take effect — so the KEV clock has to run from the 2024-09-16 listing through completed reboot of every affected endpoint, not to the moment the update is staged or downloaded. Until that reboot lands, the endpoint still renders the attacker-chosen filename to the user, which is the whole exploitation step this CVE contributes to the chain. Where the reboot cannot be taken inside the window, the compensating position has to be documented explicitly for those hosts rather than assumed from the deployment report. The distinguishing test: measure elapsed time from the KEV listing to the last endpoint's post-update reboot; a fleet reported as compliant on update-deployment counts while endpoints await restart has not closed the window.",
+        "evidence": "Packet: CISA KEV-listed 2024-09-16, active_exploitation confirmed, RWEP 79, CVSS 8.8. patch_available true, live_patch_available false, live_patch_notes 'No live-patching primitive for this product; the vendor update requires a reboot and is the remediation.' The packet places this CVE as the victim-deception step of a chain that also uses CVE-2024-38112 and ends in the Atlantida stealer. Citing gaps name NIST SP 800-53 SI-2 (Flaw Remediation) and NIS2 Art.21 vulnerability handling as insufficient.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-vulnerability-management"
+        ]
+      }
+    ]
   },
   "CVE-2024-8190": {
     "name": "Ivanti Cloud Services Appliance OS Command Injection Vulnerability",
@@ -38692,7 +39423,40 @@
         "adequate": false,
         "gap": "Malicious-code protection that keys off MOTW/Protected View is directly undermined when the mark is stripped, so signature/behavioral gating never triggers on the downloaded payload."
       }
-    }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-041",
+        "name": "PROTECTION-MECHANISM-FAILURE-CLASS-REGRESSION",
+        "description": "What fails here is a defense, not a parser: a crafted .lnk whose target path forces Windows to rewrite and canonicalize the shortcut drops the Zone.Identifier alternate data stream, so files opened afterwards skip Protected View and SmartScreen. An estate can hold every MOTW, SmartScreen and Protected View policy in the enforced state and still detonate the payload, which is why this product needs a standing class-level regression battery rather than a one-off check that this shortcut is now tagged — the known Zone.Identifier-stripping primitives replayed against detonation chambers, EDR rules and application-hardening policy on every patch deployment, since the packet's CWE-693 classification says the mechanism itself failed and mechanisms that fail once tend to fail again on the same primitive. The distinguishing test: deliver a shortcut-borne file through a managed workstation's normal path after the update lands and confirm the opened file still carries its zone marking and still opens in Protected View. Confirming that SmartScreen and Protected View are 'enabled' is a statement about policy state, not evidence that the marking survives an attacker-chosen delivery container.",
+        "evidence": "Packet: CWE-693 protection-mechanism failure, Windows Mark of the Web (MOTW). Attack path is a crafted .lnk file whose target path forces Windows to rewrite/canonicalize the shortcut, dropping the Zone.Identifier ADS and removing the Mark-of-the-Web so subsequently opened files skip Protected View and SmartScreen prompts. CISA KEV-listed 2024-09-10, active_exploitation confirmed, poc_available true, cvss 5.4, rwep_score 75.",
+        "gap_closes": [
+          "AU-Essential-8-App-Hardening",
+          "NIST-800-53-SI-3",
+          "ISO-27001-2022-A.8.7"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-119",
+        "name": "ARCHIVE-CONTENT-TYPE-PROVENANCE",
+        "description": "On this CVE the endpoint's own provenance marking is the thing that breaks — the Zone.Identifier ADS is dropped when Windows canonicalizes the attacker's shortcut — so the untrusted-origin decision cannot be left to metadata that rides along with the delivered file and that the attacker's .lnk controls. The operator-side expression is that the mail gateway and file-share boundary establish and hold the origin decision themselves: externally-sourced shortcut files and the archives carrying them are blocked, detonated or quarantined at ingress, so a file whose zone marking has been stripped on the workstation is never treated as locally-sourced content on the strength of the missing ADS. The distinguishing test: deliver a .lnk-bearing item through each ingress path and confirm the boundary acts on it, instead of confirming only that Protected View and SmartScreen are enabled on the endpoint — the packet's path is specifically the removal of the tag those two features key off, so an endpoint-only attestation says nothing about this delivery.",
+        "evidence": "Packet: the delivered artifact is a crafted .lnk file; Windows rewriting the shortcut's target path drops the Zone.Identifier ADS, removing the Mark-of-the-Web, so subsequently opened files skip Protected View and SmartScreen. poc_available true and active_exploitation confirmed (CISA KEV 2024-09-10), so the delivery path is in live use.",
+        "gap_closes": [
+          "AU-Essential-8-App-Hardening",
+          "NIST-800-53-SI-3",
+          "ISO-27001-2022-A.8.7"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "At CVSS 5.4 this is the shape of finding a score-ordered queue puts below every critical in the same month's rollup, yet the packet has it KEV-listed with confirmed in-the-wild exploitation and a public PoC — its value to an attacker is that it silences the prompt the user would otherwise see, not that it scores high. The control replaces the score-ordered queue with a KEV-triggered clock: the Windows update that fixes the shortcut-rewrite path is deployed and the reboot taken across the affected fleet inside the KEV window, because the packet records no live-patching primitive for this product and names the reboot-requiring vendor update as the remediation. There is no configuration toggle that holds the line in the meantime — MOTW is itself the control being bypassed — so an estate that defers the reboot into its normal cadence is relying entirely on gateway-side delivery blocking, and should record that as its actual posture.",
+        "evidence": "Packet: cisa_kev true, kev_date 2024-09-10, active_exploitation confirmed, poc_available true, cvss 5.4, rwep_score 75. patch_available true, live_patch_available false; live_patch_notes: 'No live-patching primitive for this product; the vendor update requires a reboot and is the remediation.'",
+        "gap_closes": [
+          "NIST-800-53-SI-2"
+        ]
+      }
+    ]
   },
   "CVE-2024-38014": {
     "name": "Microsoft Windows Installer Improper Privilege Management Vulnerability",
@@ -40095,7 +40859,42 @@
         "adequate": false,
         "gap": "The 2024-08-05 KEV due date lagged the near-immediate mass exploitation of a preauth RCE affecting every default GeoServer install; SI-2 remediation windows are too slow for this exposure."
       }
-    }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-025",
+        "name": "CONFIGURATION-SIDE-LIVE-PATCH-INVENTORY",
+        "description": "The GeoServer advisory in this packet ships a deployment-side mitigation that removes the vulnerable code without waiting for the upgrade: deleting the gt-complex-x.y.jar matching the running GeoTools version (the packet's own example is gt-complex-31.1.jar on GeoServer 2.25.1) strips the JXPath evaluation path that the OGC request handlers reach. For this product the control means knowing, per instance, whether the gt-complex module is load-bearing before the next disclosure — because the same advisory states that removing the jar may break GeoServer functionality or prevent GeoServer from deploying where that module is needed. An operator who discovers that during an incident has neither a mitigation nor a tested rollback. Hold a rehearsed jar-removal-and-restart procedure for the instances where gt-complex is not required, keep it deployable independently of the upgrade to 2.22.6 / 2.23.6 / 2.24.4 / 2.25.2, and record which instances cannot take it so their exposure is managed by reachability instead. The packet records no live-patching primitive for this product, so between the KEV listing and a completed upgrade this configuration path is the only lever that removes the unauthenticated code-execution sink rather than merely narrowing who can reach it.",
+        "evidence": "Packet vector: \"multiple OGC request parameters allow Remote Code Execution (RCE) by unauthenticated users through specially crafted input against a default GeoServer installation due to unsafely evaluating property names as XPath expressions\"; \"Versions 2.22.6, 2.23.6, 2.24.4, and 2.25.2 contain a patch for the issue. A workaround exists by removing the `gt-complex-x.y.jar` file from the GeoServer where `x.y` is the GeoTools version (e.g., `gt-complex-31.1.jar` if running GeoServer 2.25.1). This will remove the vulnerable code from GeoServer but may break some GeoServer functionality or prevent GeoServer from deploying if the gt-complex module is needed.\" patch_available: true; live_patch_available: false; live_patch_notes: \"No live-patching primitive for this product; the vendor update (no reboot required) is the remediation.\" CISA KEV 2024-07-15, active_exploitation confirmed, CVSS 9.8, RWEP 70.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-038",
+        "name": "MITIGATION-ACTIVE-PATCH-PENDING-VERDICT-CLASS",
+        "description": "A GeoServer instance with gt-complex removed and a GeoServer instance upgraded to 2.22.6 / 2.23.6 / 2.24.4 / 2.25.2 are not the same compliance state, and this CVE makes the difference operationally sharp rather than academic. The mitigated instance still runs an affected release and still reports an affected version, so nothing in its self-description distinguishes it from an unremediated one; and because the mitigation is the absence of a file rather than a change to the code, any operation that rebuilds the deployment from its original artifact — redeploying the WAR, rebuilding the container image, installing an extension that pulls the module back — silently restores unauthenticated remote code execution with no new CVE, no version change, and no failed control test. The audit verdict for such an instance must therefore be recorded as a compensating-control state carrying a time-bound action item to reach a fixed release, never as \"patched per SLA\". The distinguishing test for this deployment: redeploy a mitigated instance through its normal build-and-release pipeline, then confirm the gt-complex jar is still absent afterwards — an estate that verified the removal once, by hand, has verified nothing about the state its pipeline will produce tomorrow.",
+        "evidence": "Packet vector: workaround is \"removing the `gt-complex-x.y.jar` file from the GeoServer\", which \"will remove the vulnerable code from GeoServer but may break some GeoServer functionality or prevent GeoServer from deploying if the gt-complex module is needed\", while the fix is \"Versions 2.22.6, 2.23.6, 2.24.4, and 2.25.2\". patch_available: true; live_patch_available: false. CISA KEV 2024-07-15 with active_exploitation confirmed; attack_vector: \"An unauthenticated attacker sends an OGC request (WFS/WMS/WPS) whose property name is a JXPath expression; GeoServer evaluates it via the GeoTools/commons-jxpath path and executes arbitrary code.\"",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-vulnerability-management"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-018",
+        "name": "SCANNER-PAPER-COMPLIANCE-TEST",
+        "description": "This CVE carries two distinct false-clean traps, and the packet names both. The first is scoping: the XPath evaluation was intended only for complex feature types (Application Schema data stores) but is applied to simple feature types as well, which is why the advisory states the vulnerability applies to ALL GeoServer instances including a default installation — so an assessment that excluded the estate's simple-feature deployments as \"not the affected configuration\" excluded nothing real. The second is version reading: the vulnerable code is in the GeoTools library GeoServer calls, whose jar version numbering differs from the GeoServer release it ships with (gt-complex-31.1.jar on GeoServer 2.25.1), and a jar-removal-mitigated host still advertises an affected GeoServer version. Version-string scanning therefore misreports in both directions on this product. The operational test that separates paper compliance from a demonstrated result: submit a property name containing a benign JXPath expression through each of the six request types the advisory confirms as exploitable — WFS GetFeature, WFS GetPropertyValue, WMS GetMap, WMS GetFeatureInfo, WMS GetLegendGraphic and WPS Execute — against a staging instance and confirm none of them evaluates it. A scan report keyed on the GeoServer banner alone has not tested any of those paths.",
+        "evidence": "Packet vector: \"This XPath evaluation is intended to be used only by complex feature types (i.e., Application Schema data stores) but is incorrectly being applied to simple feature types as well which makes this vulnerability apply to **ALL** GeoServer instances\"; \"this vulnerability has been confirmed to be exploitable through WFS GetFeature, WFS GetPropertyValue, WMS GetMap, WMS GetFeatureInfo, WMS GetLegendGraphic and WPS Execute requests\"; \"The GeoTools library API that GeoServer calls evaluates property/attribute names for feature types in a way that unsafely passes them to the commons-jxpath library\"; workaround jar named as `gt-complex-31.1.jar` for GeoServer 2.25.1. CISA KEV 2024-07-15, active_exploitation confirmed, CVSS 9.8.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8",
+          "UK-CAF-B4"
+        ]
+      }
+    ]
   },
   "CVE-2024-23692": {
     "name": "Rejetto HTTP File Server Template Engine Injection Vulnerability",
@@ -40132,7 +40931,30 @@
         "adequate": false,
         "gap": "SI-2 flaw remediation has no vendor patch to apply for EoL HFS 2.3m; only decommission/migration mitigates."
       }
-    }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-122",
+        "name": "EOL-ASSET-DECOMMISSION",
+        "description": "For Rejetto HFS there is no remediation to schedule. The packet records no vendor fix, no live-patch path, and the product unsupported at and below 2.3m as of the CVE assignment date, so exposure that persists is exposure no future maintenance window will ever close — the usual vulnerability-management response of assigning a patch due date produces a register entry that can never be satisfied. What this control means for this product: enumerate every HFS instance at 2.3m or earlier, including the ones nobody registered as a service, because HFS is characteristically stood up ad hoc to hand a file to somebody and then left running; take its HTTP listener off every untrusted network immediately, which for these hosts usually means withdrawing a router port-forward or firewall publish rather than reconfiguring the application; and set a dated commitment to replace it with a supported file-transfer product and remove the binary. Reachability is the whole exploit precondition here — the request that runs commands carries its payload in the search parameter with an empty Host header to defeat filtering and needs no credential at all, so any instance that answers an HTTP request from an untrusted network is exploitable by anyone who can reach it. Segmentation is the mandatory interim state, not a substitute for removal; leaving a confirmed-exploited unpatchable service behind a firewall indefinitely converts a temporary compensating control into a permanent accepted breach path.",
+        "evidence": "Packet: patch_available false; live_patch_available false; live_patch_notes \"End-of-life or unpatched product with no vendor fix and no live-patch path; isolate or decommission affected systems.\" vector: \"Rejetto HTTP File Server, up to and including version 2.3m, is vulnerable to a template injection vulnerability. This vulnerability allows a remote, unauthenticated attacker to execute arbitrary commands on the affected system by sending a specially crafted HTTP request. As of the CVE assignment date, Rejetto HFS 2.3m is no longer supported.\" attack_vector: \"An unauthenticated attacker sends an HTTP request whose 'search' parameter contains HFS template macros with an empty Host header to bypass filtering; the server evaluates the injected {.exec.}/{.chr.} macros and runs arbitrary OS commands.\" CISA KEV 2024-07-09, active_exploitation confirmed, CVSS 9.8, RWEP 81, poc_available true.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIST-800-53-SC-7",
+          "NIS2-Art21-network-security"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-038",
+        "name": "MITIGATION-ACTIVE-PATCH-PENDING-VERDICT-CLASS",
+        "description": "This CVE is the case the three-state verdict exists for, because the state every framework treats as the destination — binary patch deployed — is permanently unavailable. The packet gives no vendor fix and an unsupported product, so an HFS instance can only ever occupy the compensating-control state (network isolation holding the unauthenticated macro-injection path out of reach) or the full-exposure state, and the compliance record has to say which, with a decommission date attached. The failure this control prevents is procedural rather than technical: a register that records \"remediation blocked pending vendor patch\" for an unsupported product produces an entry that renews quietly at every review, reads as diligence, and never escalates, while the service stays reachable and confirmed-exploited. The distinguishing test: query the vulnerability register for every entry whose remediation is blocked on a vendor fix, and check each against the product's support status — any entry for an unsupported product that carries a patch due date instead of a decommission date is a finding, because the due date describes an event that will not occur.",
+        "evidence": "Packet: patch_available false; live_patch_available false; live_patch_notes \"End-of-life or unpatched product with no vendor fix and no live-patch path; isolate or decommission affected systems.\" vector: \"As of the CVE assignment date, Rejetto HFS 2.3m is no longer supported.\" CISA KEV 2024-07-09 with active_exploitation confirmed and poc_available true; RWEP 81, CVSS 9.8.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "UK-CAF-B4"
+        ]
+      }
+    ]
   },
   "CVE-2024-38080": {
     "name": "Microsoft Windows Hyper-V Privilege Escalation Vulnerability",
@@ -40674,7 +41496,39 @@
         "adequate": false,
         "gap": "Boundary protection is undermined because the vulnerable component IS the boundary device; SC-7 assumes the gateway is trustworthy, but the traversal turns the VPN concentrator into an unauthenticated file-read oracle."
       }
-    }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-030",
+        "name": "PERIMETER-DEVICE-ZERODAY-SLA-TIER",
+        "description": "A Check Point Quantum Security Gateway is not a server behind the boundary, it is the boundary, and the packet places the vulnerable MyCRL endpoint on the internet-facing surface of gateways running the Remote Access VPN or Mobile Access blades. This control's tier therefore governs: vendor fix deployed within hours of the KEV listing, or isolation of the vulnerable interface -- meaning the remote-access and mobile-access portal taken out of service -- as the interim, rather than the standard multi-week appliance-patch window that would otherwise apply. Two packet facts shape how the tier runs on this product. First, the vendor update requires a reboot and there is no live-patching primitive for this product, so the tier's clock cannot stop at 'hotfix installed'; it stops at 'gateway restarted', because until then the vulnerable endpoint is still being served. Second, the exposure is conditioned on which blades are enabled, so the tier's opening action is enumerating which gateways are internet-connected with Remote Access VPN or Mobile Access enabled -- that list bounds the interim exposure and tells the operator which units must be isolated if the reboot cannot happen immediately. Distinguishing test: ask the operator to produce, within the tier's own window, the list of internet-facing gateways with those blades enabled and the restart timestamp for each; an appliance-patching programme that can only report a change-ticket queue has no tier for the device that terminates every remote-access session.",
+        "evidence": "Packet facts only: CISA KEV-listed 2024-05-30 with active_exploitation 'confirmed', poc_available true, CVSS 8.6 and RWEP 81. The vector records the exposure as affecting Check Point Security Gateways 'once connected to the internet and enabled with remote Access VPN or Mobile Access Software Blades', and states that a security fix mitigating the vulnerability is available. attack_vector: an unauthenticated attacker sends a path-traversal request to the gateway's MyCRL endpoint and reads arbitrary appliance files. patch_available is true; live_patch_available is false, with the live-patch note recording 'No live-patching primitive for this product; the vendor update requires a reboot and is the remediation.' The citing gaps include NIST SP 800-53 SC-7 boundary protection and NIS2 Art. 21 security of network and information systems -- controls that presume the boundary device itself is sound -- alongside AU Essential Eight patch operating systems.",
+        "gap_closes": [
+          "NIST-800-53-SC-7",
+          "NIS2-Art21-network-security",
+          "AU-Essential-8-Patch"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "This control normally fires on pre-auth RCE; here the primitive is a pre-auth arbitrary file read, and that difference makes the control more necessary rather than less, because the entire product of the exploit is secret material. Per the packet the attacker reads arbitrary appliance files and harvests credentials and configuration that enable follow-on VPN and lateral access -- so applying the vendor fix and rebooting closes the read path while leaving every secret already taken fully valid. For a gateway that sat internet-connected with Remote Access VPN or Mobile Access enabled before the fix landed, the runbook default must therefore be assume-exfiltrated: rotate the local account and administrative credential material the gateway holds, re-issue the certificate and key material it stores, treat the stored VPN configuration as known to the attacker, and reset any directory or authentication-service credentials the gateway was configured with -- ahead of, or alongside, the reboot rather than after a subsequent incident. Follow-on access on this path arrives as a successful remote-access authentication using real credentials, which is why closing the vulnerability does not close the incident. Distinguishing test: choose one gateway that was exposed before remediation and ask which specific secrets it held and when each was last rotated; if the answer is 'we installed the fix and rebooted', the disclosure has been stopped without being remediated, and the framework's flaw-remediation control has recorded a closure the attacker's stolen credentials do not honour.",
+        "evidence": "Packet facts only: attack_vector states the unauthenticated path-traversal request against the MyCRL endpoint lets the attacker read arbitrary appliance files, 'harvesting credentials and configuration that enable follow-on VPN/lateral access'. CWE-200 information disclosure -- not remote code execution. CISA KEV-listed 2024-05-30 with active_exploitation 'confirmed' and poc_available true, RWEP 81 against CVSS 8.6. patch_available true; live_patch_available false, with the note that the vendor update requires a reboot and is the remediation -- i.e. the packet records remediation of the flaw, not of the disclosure it already produced. Citing gaps NIST SP 800-53 SI-2 flaw remediation and ISO/IEC 27001:2022 A.8.8 technical-vulnerability management both treat the fix as the terminal state.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-031",
+        "name": "FIREWALL-EGRESS-TELEMETRY-SEPARATE-TRUST-ZONE",
+        "description": "On this CVE the only record that a given gateway's MyCRL endpoint was requested -- and which appliance files came back -- is generated by the gateway itself, the same device the unauthenticated attacker is reading arbitrary files from. Once the harvested credentials are replayed, the follow-on step the packet describes surfaces as an ordinary successful remote-access VPN authentication, which is invisible unless the authentication record is held and queried somewhere the gateway's own state cannot influence. Applied to this product, the control means the gateway's request-level logs and its remote-access authentication logs are forwarded continuously to a SIEM in a separate trust zone -- different management plane, different credentials, different authentication path -- so that after a KEV listing the operator can retrospectively answer two questions across the whole fleet: was this endpoint requested on any gateway before the reboot completed, and which accounts authenticated through remote access afterwards from new locations or at anomalous times. That retrospective window is the whole value here, because the KEV listing arrives after exploitation, and the packet's citing gap is precisely that security monitoring is not carrying this. Distinguishing test: take a gateway's local log store out of the picture entirely and confirm both questions can still be answered from the off-box collector, for the period preceding the reboot -- a monitoring attestation resting on the gateway's own log retention cannot scope an incident whose first act was reading that gateway's files.",
+        "evidence": "Packet facts only: the vulnerable surface is the gateway's MyCRL endpoint, reachable unauthenticated, and the recorded outcome is reading arbitrary appliance files to harvest credentials and configuration enabling follow-on VPN/lateral access. CISA KEV-listed 2024-05-30, active_exploitation 'confirmed', poc_available true -- exploitation preceded the listing, so the operator's question is retrospective. live_patch_available false with the note that the vendor update requires a reboot, so a detection window exists between the KEV listing and the completed restart of every affected gateway. UK NCSC CAF C1 security monitoring is cited as an insufficient control on this entry.",
+        "gap_closes": [
+          "UK-CAF-C1"
+        ]
+      }
+    ]
   },
   "CVE-2024-4978": {
     "name": "JAVS Viewer Installer Embedded Malicious Code Vulnerability",
@@ -42047,7 +42901,31 @@
         "adequate": false,
         "gap": "Application-hardening baselines do not disable or restrict the Microsoft Streaming Service driver, leaving the vulnerable IOCTL/KS path reachable by any local user."
       }
-    }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-145",
+        "name": "ACTIVELY-EXPLOITED-OS-LPE-REMEDIATION-WINDOW-ENFORCEMENT",
+        "description": "The packet's path for this flaw starts from an ordinary local process and ends at SYSTEM: a user-mode caller drives the mskssrv.sys streaming driver into dereferencing an attacker-controlled pointer, which yields a kernel write primitive. That makes the account-privilege posture most estates are audited on — standard users, no local administrators, least privilege attested — a boundary this flaw does not have to cross, so it cannot be the containment story while the fix is outstanding. The second half matters more for scheduling: the packet states there is no vendor live-patch mechanism and that remediation requires applying the fixed release and rebooting, which means exposure does not end when the update is pushed, it ends when each host restarts. A fleet reporting successful deployment while machines sit unrestarted is still exploitable on every one of them. Run the clock from the KEV listing date to completed reboot per host rather than to deployment-tool success, enumerate the fleet's actual installed builds against the fixed build for each SKU, and treat any host that has taken the update but not the restart as unremediated in the compliance record rather than as compliant-pending-reboot.",
+        "evidence": "Packet: attack_vector \"A local process drives the mskssrv.sys streaming driver to dereference an attacker-controlled pointer, converting a user-mode foothold into a kernel write primitive and SYSTEM privileges.\"; vector \"Microsoft Streaming Service Elevation of Privilege Vulnerability\"; CWE-822. patch_available true; live_patch_available false; live_patch_notes \"No vendor live-patch mechanism; remediation requires applying the fixed release and rebooting.\" CISA KEV 2024-02-29, active_exploitation confirmed, CVSS 8.4, RWEP 77, poc_available true.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-patch-management",
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-AC-6",
+          "AU-Essential-8-App-Hardening"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-003",
+        "name": "KERNEL-EXPLOITATION-DETECTION",
+        "description": "Because the packet ties remediation to a reboot of every affected endpoint and records confirmed in-the-wild exploitation with a PoC available, this estate has a detection-only window whose length is set by its restart schedule rather than by how fast the update is pushed — and monitoring is the citing gap the packet names. On a Windows fleet the telemetry source is the EDR/ETW equivalent of the auditd or eBPF rules this control is usually expressed in: alert on a local, unprivileged process obtaining a handle to the Microsoft Streaming Service device, and on a subsequent token or integrity-level change to SYSTEM within the same process lineage. That pairing is what the packet's path actually produces — the user-mode foothold reaching the driver, then the kernel write cashing out as SYSTEM — and detecting only the second half means detecting the escalation after it has already succeeded, at whatever point the follow-on payload becomes noisy enough for signature-based tooling to notice. The rule has to be live for the whole reboot window and its coverage checked against the same host list used for the build enumeration, so unrestarted hosts are the ones being watched most closely rather than the ones nobody has instrumented.",
+        "evidence": "Packet: attack_vector \"A local process drives the mskssrv.sys streaming driver to dereference an attacker-controlled pointer, converting a user-mode foothold into a kernel write primitive and SYSTEM privileges.\"; live_patch_notes \"No vendor live-patch mechanism; remediation requires applying the fixed release and rebooting.\"; live_patch_available false. CISA KEV 2024-02-29 with active_exploitation confirmed and poc_available true; RWEP 77, CVSS 8.4. Citing gap in the packet: UK-CAF-C1 \"Security monitoring\" (UK NCSC Cyber Assessment Framework v3.2).",
+        "gap_closes": [
+          "UK-CAF-C1"
+        ]
+      }
+    ]
   },
   "CVE-2020-3259": {
     "name": "Cisco ASA and FTD Information Disclosure Vulnerability",
@@ -42470,7 +43348,41 @@
         "adequate": false,
         "gap": "System-security assurance credits hardware mitigations like PAC; this flaw defeats that mitigation, so control coverage over-relies on the bypassed protection."
       }
-    }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-056",
+        "name": "MOBILE-ENDPOINT-MDM-ENFORCED-KEV-SLA",
+        "description": "Apple shipped this fix as an OS release across five product families at once — macOS Ventura 13.1, watchOS 9.2, iOS 16.2, iPadOS 16.2 and tvOS 16.2 — and the packet records no live-patch mechanism, so every affected device has to be carried through the update and rebooted before the defect is gone. Enforce the fixed build from the device-management channel with user deferral disallowed rather than by prompting the user, and make the enrolment scope cover the watchOS and tvOS members of the estate, which patch-compliance programs built around laptops and phones routinely leave out while the same defect sits on them. The clock runs from the KEV listing, not from the next device-refresh window, because the remediation the packet describes is a reboot the operator has to schedule rather than a silent background fix.",
+        "evidence": "Packet vector: \"This issue is fixed in macOS Ventura 13.1, watchOS 9.2, iOS 16.2 and iPadOS 16.2, tvOS 16.2.\" patch_available true; live_patch_available false with live_patch_notes \"No vendor live-patch mechanism; remediation requires applying the fixed release and rebooting.\" cisa_kev true, kev_date 2024-01-31, active_exploitation confirmed.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "NIS2-Art21-patch-management",
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-126",
+        "name": "MOBILE-OS-MINIMUM-PATCH-LEVEL-ENFORCEMENT",
+        "description": "Treat the fixed build as an access condition for organizational data rather than a reporting metric: a Mac, iPhone, iPad, Watch or Apple TV still below macOS Ventura 13.1 / watchOS 9.2 / iOS 16.2 / iPadOS 16.2 / tvOS 16.2 is denied or quarantined from mail, VPN and document access until it takes the update. The distinction matters more than usual for this defect because what it removes is Pointer Authentication — a mitigation whose entire job is to stop an attacker who already holds arbitrary kernel read/write from converting that into reliable control. A device left below the fixed build is therefore not simply unpatched; it has lost the mitigation that would otherwise blunt the rest of the chain, and no downstream detection replaces it. Distinguishing test: enrol a device pinned below the fixed build and confirm the policy actually refuses it protected resources, rather than listing the stale build on a dashboard while the device keeps its access.",
+        "evidence": "Packet vector: \"An attacker with arbitrary read and write capability may be able to bypass Pointer Authentication.\" attack_vector: \"Within an exploit chain, code that already holds arbitrary kernel read/write wins a time-of-check/time-of-use race to defeat Pointer Authentication, removing a key mitigation and enabling reliable kernel-level control on the device.\" CWE-367; RWEP 57 with CVSS 7.0; active_exploitation confirmed; fixed releases named in the packet vector.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8",
+          "UK-CAF-B4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-121",
+        "name": "MOBILE-ZERO-CLICK-HARDENING",
+        "description": "The packet does not describe a standalone bug reachable on its own — it is a step inside a chain whose precondition is arbitrary kernel read/write already held, and the exploitation signal is Apple's own report against iOS releases predating iOS 15.7.1 with no public PoC, which is the targeted-implant profile rather than commodity malware. For the population plausibly inside that targeting set — executives, journalists, legal and security staff — place devices in the platform's reduced-attack-surface mode where the OS version supports it, so untrusted web content, message attachments, fonts and link previews are not processed automatically. That narrows the delivery path for the earlier chain stages that must land before this PAC bypass is reachable at all, which is the only lever available while devices wait on a reboot-gated update. It has to be a standing assignment made before the next disclosure, not a reaction to this CVE — the mode only helps if it was already on when the chain arrived.",
+        "evidence": "Packet vector: \"Apple is aware of a report that this issue may have been exploited against versions of iOS released before iOS 15.7.1.\" attack_vector places the flaw \"[w]ithin an exploit chain\". poc_available false while active_exploitation is confirmed. live_patch_available false; remediation per live_patch_notes requires applying the fixed release and rebooting.",
+        "gap_closes": [
+          "UK-CAF-B4"
+        ]
+      }
+    ]
   },
   "CVE-2024-21893": {
     "name": "Ivanti Connect Secure, Policy Secure, and Neurons Server-Side Request Forgery (SSRF) Vulnerability",
@@ -44022,7 +44934,31 @@
         "adequate": false,
         "gap": "Mobile-device hardening controls rarely account for a GPU-driver LPE that undoes app-sandbox isolation once a malicious app is already present."
       }
-    }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-145",
+        "name": "ACTIVELY-EXPLOITED-OS-LPE-REMEDIATION-WINDOW-ENFORCEMENT",
+        "description": "This is a confirmed-exploited local privilege escalation reached from an ordinary unprivileged application through a GPU driver IOCTL, and the packet records no vendor live-patch mechanism — remediation is applying the fixed release and rebooting. For this CVE that means the fixed release is driven across the affected estate on the KEV clock rather than folded into the next routine device-update cycle, and the reboot is treated as part of remediation rather than as a follow-up, since an installed-but-not-restarted device is still running the vulnerable kgsl code. Because the packet scopes the defect to multiple Qualcomm chipsets rather than one product, the enforcement has to enumerate the fixed build per affected device model and confirm zero devices remain below it past the due date; a single fleet-wide 'up to date' figure hides the models whose fixed release has not been taken. The control's second clause is the one that matters most here: account-privilege policy is not containment, because the packet's attacker is already an unprivileged local application, so restricting administrative rights changes nothing about the escalation path. The distinguishing test is a per-model build enumeration against the fixed release with a hard deadline, not a patch-compliance percentage.",
+        "evidence": "Packet attack_vector: 'A local, already-present unprivileged application issues a crafted IOCTL to the Adreno GPU (kgsl) driver; an integer overflow during shared-virtual-memory assignment corrupts kernel memory and escalates privileges, typically as one stage of a mobile exploit chain.' Entry name 'Qualcomm Multiple Chipsets Integer Overflow Vulnerability'; CWE-190; CVSS 7.8; RWEP 53. cisa_kev true, kev_date 2023-12-05, active_exploitation 'confirmed'. patch_available true; live_patch_available false with live_patch_notes 'No vendor live-patch mechanism; remediation requires applying the fixed release and rebooting.'",
+        "gap_closes": [
+          "NIS2-Art21-patch-management",
+          "NIST-800-53-SI-2",
+          "AU-ISM-1546"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-126",
+        "name": "MOBILE-OS-MINIMUM-PATCH-LEVEL-ENFORCEMENT",
+        "description": "The packet's trigger is a locally installed unprivileged application issuing a crafted IOCTL, so on any device that has not yet taken the fixed release the operator's only remaining lever is constraining what code gets to run at all — restricting installation of untrusted or side-loaded applications, and denying the device access to organizational data rather than listing it on a patch-compliance report. For this CVE the fixed release for each affected chipset must be an access condition: a device below it is quarantined from mail, VPN and document access instead of being flagged for later. That is what the citing least-functionality gap actually demands on this vector, and it is the half of the control that does the work here, because the escalation path does not need network reachability or elevated rights — it needs an app on the device. The distinguishing test is to enrol a device pinned below the fixed release for its chipset and confirm the policy denies it access to protected resources; an estate that surfaces the stale build on a dashboard while the device keeps its access has recorded the exposure rather than removed it, and the packet describes this flaw as one stage of a chain, which means the device that keeps its access is the one that carries the rest of the chain inside the trust boundary.",
+        "evidence": "Packet attack_vector: 'A local, already-present unprivileged application issues a crafted IOCTL to the Adreno GPU (kgsl) driver ... corrupts kernel memory and escalates privileges, typically as one stage of a mobile exploit chain.' Packet vector: 'Memory corruption in Graphics Linux while assigning shared virtual memory region during IOCTL call.' Citing gap NIST-800-53-CM-7 (Least Functionality) is recorded as insufficient for this entry. patch_available true, live_patch_available false, live_patch_notes 'No vendor live-patch mechanism; remediation requires applying the fixed release and rebooting.' poc_available false.",
+        "gap_closes": [
+          "NIST-800-53-CM-7",
+          "UK-CAF-B4",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
   },
   "CVE-2023-33106": {
     "name": "Qualcomm Multiple Chipsets Use of Out-of-Range Pointer Offset Vulnerability",
@@ -44946,7 +45882,33 @@
         "adequate": false,
         "gap": "Patching within the ISM window helps, but the control does not mandate restricting the J-Web management interface that is the actual attack surface."
       }
-    }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-025",
+        "name": "CONFIGURATION-SIDE-LIVE-PATCH-INVENTORY",
+        "description": "The vulnerable surface here is J-Web, the optional web management front end on EX Series switches — the device forwards traffic without it — and the packet's only remediation is applying a fixed Junos release and rebooting, which on an access-layer switch is a service outage the operator has to schedule. That gap between disclosure and reboot window is precisely when an unauthenticated, network-reachable request path stays open. Inventory and pre-test the configuration-side path so it is deployable independently of the Junos upgrade schedule: the J-Web HTTP/HTTPS management service turned off on units that do not need it, and restricted to a management network on the units that do. Exposure then ends at a config commit instead of at the next maintenance window. Track which units are running on the configuration-side mitigation versus which are on the fixed release — those are two different states, and a fleet report that merges them hides how many devices still carry the reachable code path.",
+        "evidence": "Packet vector: \"A PHP External Variable Modification vulnerability in J-Web of Juniper Networks Junos OS on EX Series allows an unauthenticated, network-based attacker to control certain, important environment variables.\" patch_available true; live_patch_available false with live_patch_notes \"No vendor live-patch mechanism; remediation requires applying the fixed release and rebooting.\" The entry's own citing framework gaps name NIST 800-53 CM-7 Least Functionality and SC-7 Boundary Protection.",
+        "gap_closes": [
+          "NIST-800-53-CM-7",
+          "NIST-800-53-SC-7",
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8",
+          "AU-ISM-1546"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "This flaw is not the end state the operator is defending against — the packet describes it being chained with other J-Web flaws toward pre-auth remote code execution, carrying a public PoC and confirmed in-the-wild exploitation. Any EX Series unit whose J-Web interface was reachable during the exposure window has to be handled as potentially implanted, not merely unpatched: capture the running and candidate configuration for comparison against a known-good baseline, rebuild from a vendor image rather than upgrading in place, and rotate every credential the device held or authenticated — local administrative accounts, shared secrets, and any key material sitting in the configuration. Upgrading in place closes the request path and leaves untouched whatever was written through it beforehand, which is exactly the outcome a vulnerability-management attestation records as remediated. The gap is that the frameworks cited here are satisfied by the version bump alone.",
+        "evidence": "Packet attack_vector: \"An unauthenticated attacker sends crafted J-Web requests that modify PHP environment variables, causing partial integrity loss that is chained with other J-Web flaws toward pre-auth remote code execution.\" cisa_kev true, kev_date 2023-11-13, active_exploitation confirmed, poc_available true. RWEP 76 against CVSS 5.3 — the base score reflects the packet's \"partial loss of integrity\" wording while the real-world priority reflects the chain, so CVSS-driven triage under-ranks this entry.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8",
+          "UK-CAF-B4"
+        ]
+      }
+    ]
   },
   "CVE-2023-36845": {
     "name": "Juniper Junos OS EX/SRX J-Web PHPRC Modification RCE",
@@ -46465,7 +47427,32 @@
         "adequate": false,
         "gap": "System security expects a trustworthy code-integrity anchor, but this flaw defeats the code-signature trust anchor itself, so the control's assumption is invalid until patched."
       }
-    }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-126",
+        "name": "MOBILE-OS-MINIMUM-PATCH-LEVEL-ENFORCEMENT",
+        "description": "Both halves of this control are load-bearing here, because the trigger the packet names is a malicious application defeating code-signature validation. First, make macOS Ventura 13.6 / iOS 16.7 / iPadOS 16.7 an access condition: a device below it is denied or quarantined from organizational mail, VPN and documents rather than listed on a patch-compliance report. Second, on any device that cannot yet take the fixed build, constrain what code is permitted to run at all — installation restricted to the managed application catalogue, no side-loading, and no enterprise or developer provisioning profiles beyond the ones the estate itself issues. Signature validation is the platform mechanism that normally makes \"only approved code runs\" true, and this defect is that mechanism failing, so while devices sit below the fixed build the enforcement has to come from the management layer instead. Distinguishing test: enrol a device pinned below the fixed build and confirm it is actually refused protected resources.",
+        "evidence": "Packet vector: \"A malicious app may be able to bypass signature validation. Apple is aware of a report that this issue may have been actively exploited against versions of iOS before iOS 16.7.\" Fixed releases named in the packet: macOS Ventura 13.6, iOS 16.7 and iPadOS 16.7. CWE-295 improper certificate validation; attack_vector describes bypassing code-signature checks so unsigned code runs as part of a chained exploit. patch_available true; live_patch_available false.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8",
+          "UK-CAF-B4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-056",
+        "name": "MOBILE-ENDPOINT-MDM-ENFORCED-KEV-SLA",
+        "description": "The fix ships only as an OS release — macOS Ventura 13.6, iOS 16.7, iPadOS 16.7 — with no live-patch path, so remediation across the Apple estate is a reboot on every device and nothing lands silently in the background. Drive it from the device-management channel on the KEV clock with user deferral disallowed, because this is the update class users postpone longest: a certificate-validation fix produces no symptom the user can perceive, so the reboot is the only part of it they experience. Hold the macOS half of the estate to the same clock as the phones — a Ventura Mac below 13.6 carries the same signature-validation bypass as an iPhone below iOS 16.7, and it is typically the population left on a user-driven update cadence while the mobile fleet is centrally enforced.",
+        "evidence": "Packet vector: \"This issue is fixed in macOS Ventura 13.6, iOS 16.7 and iPadOS 16.7.\" cisa_kev true, kev_date 2023-09-25, active_exploitation confirmed. live_patch_available false with live_patch_notes \"No vendor live-patch mechanism; remediation requires applying the fixed release and rebooting.\" poc_available false — the exploitation signal is Apple's own report, not a published exploit.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "NIS2-Art21-vulnerability-management",
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
   },
   "CVE-2023-41992": {
     "name": "Apple Multiple Products Kernel Privilege Escalation Vulnerability",
