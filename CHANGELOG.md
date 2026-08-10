@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.19.11 — 2026-08-10
+
+Another 36 CVEs report the controls they require, taking coverage to 574 of 1025. The set includes the Qualcomm Adreno driver flaw, Fortra GoAnywhere MFT, Rails, TP-Link routers, Palo Alto Expedition, the Windows CLFS driver, and Apple memory-corruption entries.
+
+The Qualcomm entry states a case the patch controls cited against it cannot express: the vulnerable code is a hardware-vendor driver, so no operator publishes its fix — it arrives only inside a device build for that chipset. The requirement is therefore the fixed build enforced as a condition of access to organizational data, with the device that has no fixed build available named as unremediated rather than filed as a deferral, since the only remaining levers there are withholding data and replacement. A browser update does not reach the driver even though the flaw triggers while rendering, and the entry says so instead of pointing at a fix that does not touch the vulnerable code.
+
+Requirements that assume a telemetry agent now say where they do not run. A detection prescribing host audit rules was left off the mobile-driver entry on the grounds that it could never observe the privilege transition on that device class — a rule recorded as coverage while detecting nothing is worse than an acknowledged gap.
+
 ## 0.19.10 — 2026-08-10
 
 Another 39 CVEs report the controls they require, taking coverage to 538 of 1025. The set includes the WSUS deserialization flaw, Grafana and Roundcube, Quest KACE, Samsung mobile, Chromium ANGLE, and the QNAP Pwn2Own chain.
