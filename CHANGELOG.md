@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.19.15 — 2026-08-10
+
+Another 35 CVEs report the controls they require, taking coverage to 713 of 1025. The set includes HPE OneView, the Windows CLFS driver, SharePoint, Outlook, Adobe ColdFusion, Citrix Session Recording, and the Cisco and D-Link router entries.
+
+Infrastructure-management appliances get a clock of their own. HPE OneView is normally inventoried as the tool an estate patches its servers with rather than as an asset that needs patching, which is how a pre-authentication flaw on it rides the next infrastructure window while the operating-system attestation reads clean. The requirement runs the appliance's own update on the listing clock rather than the cadence of the updates it distributes, and names the restart as the step most likely to slip, because taking it interrupts the console operators depend on.
+
+Where nothing can be disabled, the entry says so instead of reaching for a compensating control. The CLFS driver ships with Windows and the attacker is already an authorized local user, so there is no module to blacklist, no account model being abused, and no privilege tier that gets consulted — leaving an honestly measured remediation window and detection during it as the only two requirements the evidence supports.
+
+Detection of the polkit D-Bus race moves to `NEW-CTRL-146` (USERSPACE-PRIVILEGED-DBUS-RACE-DETECTION). It had been filed under the kernel-exploitation detection control while describing userspace telemetry, so a report correlating by identifier would have counted kernel-detection coverage as covering polkit.
+
+`release.js prepare` accepts `--with-content` for a release that intentionally ships uncommitted work. It previously refused any tree dirtier than the changelog entry, so such releases were run by hand — and a hand-run sequence is how the phase's own steps get skipped. The refusal is unchanged without the flag, and with it the carried paths are listed rather than silently included.
+
 ## 0.19.14 — 2026-08-10
 
 Another 36 CVEs report the controls they require, taking coverage to 678 of 1025. The set includes Citrix Session Recording, Erlang/OTP SSH, FreePBX, Zimbra, Ubiquiti UniFi OS, Power Pages, Android Runtime, and the PowerPoint record-parser entry.
