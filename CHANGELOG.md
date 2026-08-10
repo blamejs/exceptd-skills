@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.19.10 — 2026-08-10
+
+Another 39 CVEs report the controls they require, taking coverage to 538 of 1025. The set includes the WSUS deserialization flaw, Grafana and Roundcube, Quest KACE, Samsung mobile, Chromium ANGLE, and the QNAP Pwn2Own chain.
+
+Two of these state something the patch-cadence controls cited against them do not. The WSUS entry inverts the usual remediation order: the update server has to be fixed ahead of the endpoints it serves, because an unauthenticated path to code execution on it reaches every host that trusts it for updates. And the QNAP chain components carry no KEV listing and no confirmed exploitation, so a listing-triggered clock never starts for them — a working exploit chain was demonstrated publicly regardless, and each component scored on its own severity understates what the chain composes into. The entry says so rather than attaching a control whose trigger condition is absent.
+
+Requirements that bound reachability now state what they do not do. A management-surface isolation limits who can reach a command-injection sink; it does not remove the sink, does nothing against an attacker already inside the segment, and does not substitute for the firmware update. Recording the condition is what stops a compensating control being logged as remediation while the path stays reachable.
+
 ## 0.19.9 — 2026-08-09
 
 Another 38 CVEs report the controls they require, taking coverage to 499 of 1025 — roughly half the catalog. The set spans Laravel Livewire and SolarWinds Web Help Desk, Adobe Commerce, PaperCut, WinRAR, PHPMailer, Ubiquiti UniFi OS, Zimbra, and Windows and Linux kernel entries.
