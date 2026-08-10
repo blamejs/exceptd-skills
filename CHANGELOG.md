@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.19.12 — 2026-08-10
+
+Another 34 CVEs report the controls they require, taking coverage to 608 of 1025. The set includes Soliton FileZen, Ivanti EPMM and Cloud Services Appliance, DELMIA Apriso, Hikvision, PTC Windchill, Dovecot, and Linux and Android kernel entries.
+
+Where a catalog entry contradicts itself, the requirement now says so rather than choosing a reading. The FileZen entry describes the command injection as reached after a product login in one field and as unauthenticated in another; the control states both readings and which interim measure survives under each, because an account-side restriction is worthless if the second reading is the true one, and recording it as the mitigation would be the failure this field exists to catch.
+
+Appliance entries state the restart as the completion criterion rather than a step after it. On a file-transfer appliance the restart interrupts in-flight transfers, which makes it exactly the step that gets deferred while the update is recorded as deployed — so the requirement is the running software level and the timestamp of the restart that activated it, per unit.
+
 ## 0.19.11 — 2026-08-10
 
 Another 36 CVEs report the controls they require, taking coverage to 574 of 1025. The set includes the Qualcomm Adreno driver flaw, Fortra GoAnywhere MFT, Rails, TP-Link routers, Palo Alto Expedition, the Windows CLFS driver, and Apple memory-corruption entries.
