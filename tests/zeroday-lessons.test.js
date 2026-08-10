@@ -304,3 +304,85 @@ require("node:test").describe("AGENTS.md control table matches the catalog", () 
     assert.deepEqual(wrong, [], `AGENTS.md control names disagree with the catalog:\n  ${wrong.join("\n  ")}`);
   });
 });
+
+require("node:test").describe("controls stay bound to the CVE they were curated for", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const path = require("node:path");
+  const fs = require("node:fs");
+
+  const ROOT = path.join(__dirname, "..");
+  const LESSONS = JSON.parse(fs.readFileSync(path.join(ROOT, "data/zeroday-lessons.json"), "utf8"));
+  const GAPS = JSON.parse(fs.readFileSync(path.join(ROOT, "data/framework-control-gaps.json"), "utf8"));
+
+  // Which framework gaps name each CVE as their evidence.
+  const citing = new Map();
+  for (const [key, g] of Object.entries(GAPS)) {
+    if (key === "_meta") continue;
+    for (const cve of g.evidence_cves || []) {
+      if (!citing.has(cve)) citing.set(cve, new Set());
+      citing.get(cve).add(key);
+    }
+  }
+
+  const unbound = () => {
+    const out = [];
+    for (const [cve, lesson] of Object.entries(LESSONS)) {
+      if (cve === "_meta") continue;
+      const mine = citing.get(cve) || new Set();
+      for (const c of lesson.new_control_requirements || []) {
+        for (const g of c.gap_closes || []) if (!mine.has(g)) out.push(`${cve}/${c.id} -> ${g}`);
+      }
+    }
+    return out;
+  };
+
+  // A control belongs to its CVE because the gap it closes is one the framework
+  // catalog already cites that CVE as evidence for. That link is what makes a
+  // control attached to the wrong CVE detectable: its gap_closes would not
+  // appear in the wrong CVE's citing set. Generic shape checks cannot see this.
+  //
+  // References that predate the check are hand-curated entries pointing at
+  // cross-cutting ALL-* gaps, and at controls whose gap is real but which the
+  // framework catalog does not cite against that CVE. They are pinned BY
+  // IDENTITY, not by count: a count-only baseline reads clean when one
+  // violation is corrected and a different one is introduced in the same
+  // change, which is exactly the case this check exists to catch. Entries may
+  // leave the baseline as they are fixed; none may be added.
+  const BASELINE = new Set(
+    JSON.parse(fs.readFileSync(path.join(ROOT, "tests/.control-binding-baseline.json"), "utf8")).refs
+  );
+
+  test("no control closes a gap that does not cite its CVE", () => {
+    const introduced = unbound().filter((r) => !BASELINE.has(r));
+    assert.deepEqual(
+      introduced,
+      [],
+      "a control is attached to a CVE that the gap it claims to close does not cite:\n  " +
+        introduced.join("\n  ")
+    );
+  });
+
+  test("the baseline does not drift out of sync with the corpus", () => {
+    // A baseline still listing references that no longer exist would quietly
+    // widen the allowance, since the count of permitted violations would exceed
+    // the count of real ones.
+    const live = new Set(unbound());
+    const stale = [...BASELINE].filter((r) => !live.has(r));
+    assert.deepEqual(stale, [], "baseline lists references that are gone — remove them:\n  " + stale.join("\n  "));
+  });
+
+  test("the binding is the norm, not the exception", () => {
+    // Anti-coincidence: the baseline is only meaningful if the overwhelming
+    // majority of references really are bound. If that ratio collapsed, the
+    // baseline would be tolerating a broken corpus rather than known debt.
+    let total = 0;
+    for (const [cve, lesson] of Object.entries(LESSONS)) {
+      if (cve === "_meta") continue;
+      for (const c of lesson.new_control_requirements || []) total += (c.gap_closes || []).length;
+    }
+    assert.ok(total > 2500, `expected a substantial reference surface, counted ${total}`);
+    const boundRatio = (total - unbound().length) / total;
+    assert.ok(boundRatio > 0.95, `only ${(boundRatio * 100).toFixed(1)}% of gap_closes are bound to their CVE`);
+  });
+});
