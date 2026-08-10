@@ -1,6 +1,6 @@
 {
   "schema_version": "1.1.0",
-  "generated_at": "2026-08-10T17:52:17.659Z",
+  "generated_at": "2026-08-10T18:19:35.848Z",
   "generator": "scripts/build-indexes.js",
   "source_count": 64,
   "source_hashes": {
@@ -16,7 +16,7 @@
     "data/framework-control-gaps.json": "a0a43cd0c8fff6ca753bb2c98f121922ff3de63102b7d67c86c76037e28cd553",
     "data/global-frameworks.json": "20b18a851b3ab82e57cd159b49476d69fe544f02523398b2015189ab81c7c3f8",
     "data/rfc-references.json": "6e9017eca910ab7e4bee85ad7c23927fd6ec766f34be7fce49ebf020cec3381a",
-    "data/zeroday-lessons.json": "cb5d8c6ab9867775c2527f3a5b1adab12f4aae15d6af1b0de369012b9c723360",
+    "data/zeroday-lessons.json": "7a74e6b829ee4c07927b3261ecb3d0ac39b2a46364c3785a3294561fbde3a2fa",
     "skills/kernel-lpe-triage/skill.md": "0f79c641cef6e5f4a942eb94f43c460562bf83dfb67ae112d146c39c6b320fb0",
     "skills/ai-attack-surface/skill.md": "c97335e14cd34bd1cd3c9d2cbd397f33569a07292b2f2f7721483575eb4459f7",
     "skills/mcp-agent-trust/skill.md": "6195c93a6cadb213051214742890fa2bf4e39bae377a654d4195f0c90bd8b896",
