@@ -10,7 +10,9 @@
  * before tag push, GUARD before tag).
  *
  * Usage:
- *   node scripts/release.js prepare [--minor]   # bump + sign + indexes + snapshot + sbom + baseline
+ *   node scripts/release.js prepare [--minor] [--with-content]
+ *                                             # bump + sign + indexes + snapshot + sbom + baseline
+ *                                             # --with-content: this release ships uncommitted work
  *   node scripts/release.js gates               # npm test + 20-gate predeploy
  *   node scripts/release.js commit              # release branch + signed commit
  *   node scripts/release.js push                # push branch + open PR
@@ -247,12 +249,26 @@ function cmdPrepare(opts) {
   // (prepare is about to bump versions + regenerate artifacts — it must start
   // from an otherwise-clean main so the release commit captures only the
   // intended change set).
+  //
+  // `--with-content` widens that to a release which SHIPS an uncommitted change
+  // — a curation batch written into data/, a fix folded in alongside the bump.
+  // Without it, such a release cannot use this phase at all and gets hand-run
+  // instead, which is how the steps below drift: a hand-rolled sequence dropped
+  // the shrinkage gate two lines above the baseline refresh and rebaselined
+  // without ever checking. The flag keeps the phase authoritative for that flow
+  // rather than leaving it to memory. It still prints what it is carrying, so
+  // an unintended file in the tree is visible rather than silently released.
   var dirty = _capture("git", ["status", "--porcelain"]).stdout
     .split(/\r?\n/)
     .filter(function (l) { return l.trim() && !/\bCHANGELOG\.md$/.test(l); });
-  if (dirty.length) {
+  if (dirty.length && !opts.withContent) {
     throw new Error("release: prepare requires a clean working tree (CHANGELOG.md may be pre-edited). Also uncommitted:\n  " +
-      dirty.join("\n  "));
+      dirty.join("\n  ") +
+      "\n\nIf this release intentionally ships those changes, re-run with --with-content.");
+  }
+  if (dirty.length) {
+    console.log("carrying " + dirty.length + " uncommitted path(s) into this release (--with-content):");
+    dirty.forEach(function (l) { console.log("  " + l.trim()); });
   }
 
   var current = _readJsonVersion("package.json");
@@ -666,7 +682,9 @@ function cmdHelp() {
   console.log("release.js — orchestrated exceptd release flow");
   console.log("");
   console.log("Usage:");
-  console.log("  node scripts/release.js prepare [--minor]   # bump + sign + indexes + snapshot + sbom + baseline");
+  console.log("  node scripts/release.js prepare [--minor] [--with-content]");
+  console.log("                                              # bump + sign + indexes + snapshot + sbom + baseline");
+  console.log("                                              # --with-content: release ships uncommitted work");
   console.log("  node scripts/release.js gates               # npm test + 20-gate predeploy");
   console.log("  node scripts/release.js commit              # release branch + signed commit");
   console.log("  node scripts/release.js push                # push branch + open PR");
@@ -684,7 +702,10 @@ function cmdHelp() {
 // ---- Dispatch ------------------------------------------------------------
 
 var sub = process.argv[2] || "help";
-var opts = { minor: process.argv.slice(3).indexOf("--minor") !== -1 };
+var opts = {
+  minor: process.argv.slice(3).indexOf("--minor") !== -1,
+  withContent: process.argv.slice(3).indexOf("--with-content") !== -1,
+};
 
 try {
   switch (sub) {

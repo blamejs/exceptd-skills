@@ -193,3 +193,44 @@ require("node:test").describe("watch refuses an unsettled check set", () => {
     assert.equal(exits.length, 2, "the empty and pending guards must each exit 3");
   });
 });
+
+require("node:test").describe("prepare can carry a content-bearing release", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const path = require("node:path");
+
+  const SRC = fs.readFileSync(path.join(__dirname, "..", "scripts", "release.js"), "utf8");
+
+  test("--with-content is parsed and gates the clean-tree refusal", () => {
+    // Without this, a release that ships an uncommitted change (a curation
+    // batch, a fix folded in with the bump) cannot use this phase at all and
+    // gets hand-run instead. That is how the phase's own steps get skipped.
+    assert.match(SRC, /withContent: process\.argv\.slice\(3\)\.indexOf\("--with-content"\) !== -1/);
+    assert.match(SRC, /if \(dirty\.length && !opts\.withContent\)/);
+  });
+
+  test("the refusal still fires when the flag is absent", () => {
+    // The flag must widen the gate, not remove it: an accidental dirty tree on
+    // an ordinary release has to keep failing.
+    const guard = SRC.slice(SRC.indexOf("var dirty = _capture"), SRC.indexOf("var current = _readJsonVersion"));
+    assert.match(guard, /throw new Error\("release: prepare requires a clean working tree/);
+    assert.match(guard, /--with-content/, "the refusal should tell the operator the flag exists");
+  });
+
+  test("what the release carries is printed, not silently swallowed", () => {
+    // An unintended file riding along is the risk the clean-tree check existed
+    // to catch, so the flag has to make the contents visible.
+    const guard = SRC.slice(SRC.indexOf("var dirty = _capture"), SRC.indexOf("var current = _readJsonVersion"));
+    assert.match(guard, /carrying " \+ dirty\.length \+ " uncommitted path\(s\)/);
+    assert.match(guard, /dirty\.forEach/);
+  });
+
+  test("the shrinkage gate still precedes the baseline refresh", () => {
+    // The reason to keep this phase authoritative: a hand-rolled sequence
+    // dropped exactly this ordering and rebaselined without checking.
+    const check = SRC.indexOf('_run("node", ["scripts/check-test-count.js"]);');
+    const update = SRC.indexOf('_run("node", ["scripts/check-test-count.js", "--update-baseline"]);');
+    assert.ok(check > 0 && update > check, "the bare gate must run before --update-baseline");
+  });
+});
