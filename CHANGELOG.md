@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.19.14 — 2026-08-10
+
+Another 36 CVEs report the controls they require, taking coverage to 678 of 1025. The set includes Citrix Session Recording, Erlang/OTP SSH, FreePBX, Zimbra, Ubiquiti UniFi OS, Power Pages, Android Runtime, and the PowerPoint record-parser entry.
+
+Two entries state why a network-shaped defence does nothing for them. The Citrix Session Recording deserialization is reached by an authenticated user already on the same intranet as the server, so the payload arrives as ordinary internal traffic from an ordinary internal account — restricting reachability bounds which hosts can present it and repairs nothing, and any account inside the permitted segment still holds the path.
+
+Where a decade-old defect returns to the exploited list, the requirement is not "apply the update" but "find the installs that never received it". The re-listed PowerPoint entry measures completion by the build each install reports rather than by a management console showing no updates pending — the hosts keeping a defect of that vintage reachable are the ones that fell out of managed updating, so the console's silence is missing visibility rather than evidence. Copies no inventory can see are remediated by removal, never by being recorded as compliant.
+
 ## 0.19.13 — 2026-08-10
 
 Another 34 CVEs report the controls they require, taking coverage to 642 of 1025. The set includes BeyondTrust Remote Support and Privileged Remote Access, Cisco Unified Communications and Catalyst SD-WAN, Sitecore, TP-Link, and Windows and Linux kernel entries.
