@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.19.9 — 2026-08-09
+
+Another 38 CVEs report the controls they require, taking coverage to 499 of 1025 — roughly half the catalog. The set spans Laravel Livewire and SolarWinds Web Help Desk, Adobe Commerce, PaperCut, WinRAR, PHPMailer, Ubiquiti UniFi OS, Zimbra, and Windows and Linux kernel entries.
+
+A pattern worth naming runs through the application-framework entries: the thing that has to be patched is a package inside an application, not a package on a host, so a host-level inventory cannot answer whether the estate is remediated. Where that applies, the requirement is stated against the running process rather than the repository — confirm the version the workers actually loaded, since a lockfile records what the next deploy will ship, not what is serving traffic now.
+
 ## 0.19.8 — 2026-08-09
 
 Control identifiers are unique and uniformly shaped again. `AGENTS.md` states these IDs are stable and citable from skill bodies, operator reports and framework-gap analyses, and two things had drifted from that. Thirteen control classes carried a descriptive string where the identifier belongs — `MOBILE-OS-MINIMUM-PATCH-LEVEL-ENFORCEMENT` rather than a number — and could not be cited under the contract at all; they are now `NEW-CTRL-126` through `NEW-CTRL-138`, keeping their names.
