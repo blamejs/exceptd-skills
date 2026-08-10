@@ -222,8 +222,10 @@ Recently added (use the IDs in skill prose and operator briefings; full text in 
 
 | ID | Name | Surfacing zero-day | Coverage gap closed |
 |---|---|---|---|
-| `NEW-CTRL-048` | NPM-MAINTAINER-MFA-ENFORCEMENT / KERNEL-EXIT-RACE-CVE-CLASS-MONITORING | `MAL-2026-NODE-IPC-STEALER`, `CVE-2026-46333` | NIST-800-218 SSDF, NIST-800-53 IA-5/AU-2/SI-4, NIS2 Art.21 supply-chain |
-| `NEW-CTRL-049` | LOCKFILE-INTEGRITY-VERIFIED-AT-CI-BOOT / SUID-MINIMIZATION-FOR-KERNEL-LPE-CARRIER-BINARIES | `MAL-2026-NODE-IPC-STEALER`, `CVE-2026-46333` | NIST-800-218 SSDF, EU CRA Art.13, SLSA Build L3, NIST-800-53 CM-6/AC-3 |
+| `NEW-CTRL-048` | NPM-MAINTAINER-MFA-ENFORCEMENT | `MAL-2026-NODE-IPC-STEALER` | NIST-800-218 SSDF, NIST-800-53 IA-5, NIS2 Art.21 supply-chain |
+| `NEW-CTRL-049` | LOCKFILE-INTEGRITY-VERIFIED-AT-CI-BOOT | `MAL-2026-NODE-IPC-STEALER` | NIST-800-218 SSDF, EU CRA Art.13, SLSA Build L3 |
+| `NEW-CTRL-141` | KERNEL-EXIT-RACE-CVE-CLASS-MONITORING | `CVE-2026-46333` | NIST-800-53 AU-2/SI-4 |
+| `NEW-CTRL-142` | SUID-MINIMIZATION-FOR-KERNEL-LPE-CARRIER-BINARIES | `CVE-2026-46333` | NIST-800-53 CM-6/AC-3 |
 | `NEW-CTRL-050` | AI-ASSISTANT-CONFIG-FILE-PERMISSION-LOCKDOWN | `MAL-2026-SHAI-HULUD-OSS` | NIST-800-53 AC-3/CM-6. Enforced operationally by `exceptd doctor --ai-config`. |
 | `NEW-CTRL-051` | NPM-PUBLISH-TOKEN-WORKSTATION-ISOLATION | `MAL-2026-SHAI-HULUD-OSS` | NIST-800-53 IA-5, NIST-800-218 SSDF PW.4 |
 | `NEW-CTRL-052` | GITHUB-REPO-PATTERN-MONITORING-FOR-EXFIL-CHANNELS | `MAL-2026-SHAI-HULUD-OSS` | NIST-800-53 SI-4. Enforced operationally by `exceptd watchlist --org-scan`. |
@@ -247,7 +249,7 @@ Recently added (use the IDs in skill prose and operator briefings; full text in 
 | `NEW-CTRL-070` | TYPOSQUAT-INSTALL-TIME-NAME-CONFUSION-GUARD | `MAL-2025-PYPI-COLORAMA-SOLANA-STEALER` | NIST-800-218 SSDF PW.4, NIST-800-53 SI-7, EU CRA Annex I §1(2)(c) |
 | `NEW-CTRL-071` | AI-DISCOVERY-CREDIT-IN-COMPLIANCE-EVIDENCE | `MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP` + `CVE-2025-6965` + `CVE-2025-0133` + ZeroPath quartet | NIST AI RMF MEASURE 2.7, ISO/IEC 42001 §6.1.4 (records of AI use), EU AI Act Art.12 (record-keeping) |
 | `NEW-CTRL-072` | PRIMARY-SOURCE-INTAKE-VENDOR-BLOG-COVERAGE | `CVE-2026-31635` (DirtyDecrypt) | NIST-800-53 SI-5 (security alerts / advisories), ISO-27001-2022 A.5.7 (threat intelligence), CIS Controls v8 7.1 |
-| `NEW-CTRL-073` | RESEARCHER-HANDLE-GITHUB-RELEASE-TRACKER | `CVE-2020-17103-REREGRESSION-2026` (MiniPlasma) + Nightmare-Eclipse cluster | NIST-800-53 SI-5, ISO-27001-2022 A.5.7, CIS Controls v8 7.1. Enforced operationally by `lib/source-advisories.js#FEEDS[nightmare-eclipse-github]` (github-events kind). |
+| `NEW-CTRL-073` | RESEARCHER-HANDLE-ACTIVITY-TRACKER | `CVE-2020-17103-REREGRESSION-2026` (MiniPlasma) + Nightmare-Eclipse cluster | NIST-800-53 SI-5, ISO-27001-2022 A.5.7, CIS Controls v8 7.1. Enforced operationally by `lib/source-advisories.js#FEEDS[nightmare-eclipse-gitlab]` (gitlab-activity kind). |
 | `NEW-CTRL-074` | CVE-REGRESSION-WATCHER | `CVE-2020-17103-REREGRESSION-2026` (MiniPlasma) | NIST-800-53 CM-3 (configuration-change control), NIST-800-53 SI-2, ISO-27001-2022 A.8.8 (vulnerability management). Enforced operationally by `lib/cve-regression-watcher.js` — surfaces historical-CVE references in poller diffs as candidate silent-regression cases. |
 | `NEW-CTRL-075` | AV-AGENT-CURRENCY-CROSS-VERIFICATION | `BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND` (UnDefend) | NIST-800-53 SI-3 + SI-4, ISO-27001-2022 A.8.7. Independent control-plane cross-check (Defender for Endpoint cloud telemetry / Intune compliance / SCCM inventory) for AV / EDR signature + platform currency; alert on drift > 7 days. |
 

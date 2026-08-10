@@ -207,3 +207,100 @@ require("node:test").describe("new_control_requirements entries are well-formed"
     }
   });
 });
+
+require("node:test").describe("control ids honor the stable NEW-CTRL contract", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const path = require("node:path");
+  const fs = require("node:fs");
+
+  const LESSONS = JSON.parse(
+    fs.readFileSync(path.join(__dirname, "..", "data/zeroday-lessons.json"), "utf8")
+  );
+
+  const controls = () => {
+    const out = [];
+    for (const [cve, lesson] of Object.entries(LESSONS)) {
+      if (cve === "_meta") continue;
+      for (const c of lesson.new_control_requirements || []) out.push([cve, c]);
+    }
+    return out;
+  };
+
+  test("every control id is NEW-CTRL-NNN", () => {
+    // AGENTS.md states these ids are stable and citable from skill bodies,
+    // operator reports and framework-gap analyses. Descriptive strings used as
+    // ids cannot be cited that way, and 13 control classes had drifted into
+    // them before this was pinned.
+    const bad = controls()
+      .filter(([, c]) => !/^NEW-CTRL-\d{3}$/.test(String(c.id)))
+      .map(([cve, c]) => `${cve}/${c.id}`);
+    assert.deepEqual(bad, [], `control ids must match NEW-CTRL-NNN:\n  ${bad.join("\n  ")}`);
+  });
+
+  test("an id always means the same control", () => {
+    // Seven ids had been assigned to two different controls each, so citing
+    // one was ambiguous: NEW-CTRL-009 meant KERNEL-MODULE-INVENTORY-AND-DISABLE
+    // in some lessons and REGISTRY-COOLDOWN-POLICY in others. A stable id that
+    // resolves to two controls is worse than no id.
+    const names = new Map();
+    for (const [, c] of controls()) {
+      if (!names.has(c.id)) names.set(c.id, new Set());
+      names.get(c.id).add(c.name);
+    }
+    const split = [...names.entries()]
+      .filter(([, s]) => s.size > 1)
+      .map(([id, s]) => `${id} -> ${[...s].join(" | ")}`);
+    assert.deepEqual(split, [], `each control id must map to exactly one name:\n  ${split.join("\n  ")}`);
+  });
+
+  test("the id checks are walking a real surface", () => {
+    // Anti-coincidence: an empty walk satisfies both assertions above.
+    const all = controls();
+    assert.ok(all.length > 800, `expected a substantial control surface, walked ${all.length}`);
+    assert.ok(new Set(all.map(([, c]) => c.id)).size > 100, "expected many distinct control ids");
+  });
+});
+
+require("node:test").describe("AGENTS.md control table matches the catalog", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const path = require("node:path");
+  const fs = require("node:fs");
+
+  const ROOT = path.join(__dirname, "..");
+  const LESSONS = JSON.parse(fs.readFileSync(path.join(ROOT, "data/zeroday-lessons.json"), "utf8"));
+  const AGENTS = fs.readFileSync(path.join(ROOT, "AGENTS.md"), "utf8");
+
+  // id -> name, from the catalog (the ids are unique by the test above)
+  const catalog = new Map();
+  for (const [cve, lesson] of Object.entries(LESSONS)) {
+    if (cve === "_meta") continue;
+    for (const c of lesson.new_control_requirements || []) catalog.set(c.id, c.name);
+  }
+
+  // Rows look like: | `NEW-CTRL-048` | NAME | surfacing | gaps |
+  const rows = [...AGENTS.matchAll(/^\|\s*`(NEW-CTRL-\d{3})`\s*\|\s*([^|]+?)\s*\|/gm)]
+    .map((m) => ({ id: m[1], name: m[2] }));
+
+  test("the table is actually being parsed", () => {
+    // Anti-coincidence: a regex that matched nothing would make the checks
+    // below vacuous, and the table's format is the thing most likely to move.
+    assert.ok(rows.length >= 8, `expected to parse several control rows, got ${rows.length}`);
+  });
+
+  test("every id documented in AGENTS.md exists in the catalog", () => {
+    const missing = rows.filter((r) => !catalog.has(r.id)).map((r) => r.id);
+    assert.deepEqual(missing, [], `AGENTS.md documents ids absent from zeroday-lessons.json: ${missing.join(", ")}`);
+  });
+
+  test("each documented id carries the catalog's name for it", () => {
+    // The table had been carrying two slash-joined names under one id, which is
+    // how a citation contract erodes: the doc says NEW-CTRL-048 is two controls
+    // and an operator citing it means either.
+    const wrong = rows
+      .filter((r) => catalog.get(r.id) !== r.name)
+      .map((r) => `${r.id}: table "${r.name}" vs catalog "${catalog.get(r.id)}"`);
+    assert.deepEqual(wrong, [], `AGENTS.md control names disagree with the catalog:\n  ${wrong.join("\n  ")}`);
+  });
+});

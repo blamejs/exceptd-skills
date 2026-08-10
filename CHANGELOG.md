@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.19.8 — 2026-08-09
+
+Control identifiers are unique and uniformly shaped again. `AGENTS.md` states these IDs are stable and citable from skill bodies, operator reports and framework-gap analyses, and two things had drifted from that. Thirteen control classes carried a descriptive string where the identifier belongs — `MOBILE-OS-MINIMUM-PATCH-LEVEL-ENFORCEMENT` rather than a number — and could not be cited under the contract at all; they are now `NEW-CTRL-126` through `NEW-CTRL-138`, keeping their names.
+
+Seven identifiers meant two different controls each. `NEW-CTRL-009` resolved to kernel-module inventory in some entries and to a registry cooldown policy in others, so a citation was ambiguous. In every case the duplicate was added after the identifier was already published — the original holder keeps its number, and the later control moves: `NEW-CTRL-139` (CI workflow trust-boundary isolation), `140` (registry cooldown policy), `141` (kernel exit-race CVE-class monitoring), `142` (SUID minimization for kernel-LPE carrier binaries), `143` (LLM-gateway MCP execution-endpoint privilege parity), `144` (embedded media-parser inventory and patch parity), `145` (actively-exploited OS-LPE remediation window). An operator citing one of those seven between its introduction and this release should remap; every other identifier is unchanged. The catalog now fails its own tests if an identifier is malformed or resolves to more than one control, and the `AGENTS.md` table is checked against the catalog so a documented name cannot drift from the control it names — it had, for the researcher-handle tracker, which the table still described as GitHub-specific after the feed moved to GitLab.
+
+Alongside this, 37 more CVEs report the controls they require, taking coverage to 461 of 1025.
+
 ## 0.19.7 — 2026-08-09
 
 Another 66 CVEs report the controls they require, taking coverage to 424 of 1025. The set reaches beyond appliances into Roundcube and Zimbra webmail, SmarterMail, WatchGuard Firebox, VMware Aria Operations, GitLab, Vite, Windows NTFS, FreePBX and the Apple and Ivanti mobile estate.
