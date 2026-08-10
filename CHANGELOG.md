@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.19.13 — 2026-08-10
+
+Another 34 CVEs report the controls they require, taking coverage to 642 of 1025. The set includes BeyondTrust Remote Support and Privileged Remote Access, Cisco Unified Communications and Catalyst SD-WAN, Sitecore, TP-Link, and Windows and Linux kernel entries.
+
+The catalog now checks that a control stays attached to the CVE it was written for. The link is the framework gap: a control claims to close a gap that the framework catalog already cites that CVE as evidence for, so a control moved onto an unrelated CVE breaks a reference that generic structure checks cannot see. A hundred and five older references sit outside that rule and are grandfathered by count rather than silently accepted; the check fails if the number grows.
+
+Where remote-access products are concerned, the requirements say what isolation cannot do. Remote Support and Privileged Remote Access exist in order to be reachable, so "restrict the interface instead of meeting the clock" is only available where an operator can name a user population whose access can be suspended for the duration — and where they cannot, the update and its restart are the only lever, with nothing to record in its place.
+
 ## 0.19.12 — 2026-08-10
 
 Another 34 CVEs report the controls they require, taking coverage to 608 of 1025. The set includes Soliton FileZen, Ivanti EPMM and Cloud Services Appliance, DELMIA Apriso, Hikvision, PTC Windchill, Dovecot, and Linux and Android kernel entries.
