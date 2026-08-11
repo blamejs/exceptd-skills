@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.19.23 — 2026-08-11
+
+Every CVE in the catalog now records the controls it requires. The last 34 entries complete the set at 1025 of 1025 — 2,176 control requirements drawn from 143 distinct controls — so `framework-gap` reports the controls a CVE needs that no framework carries for any entry in the catalog, not a subset of it. The closing set includes PHP-CGI, Samba, Apache Tomcat, XStream, Oracle WebLogic, Cisco IOS XE and ASA, Ivanti EPMM, Mirth Connect, and consumer routers from Zyxel and D-Link.
+
+Some populations are defined by a combination, not a product. The PHP-CGI entry applies only to Windows hosts running Apache with PHP-CGI below the fixed builds; a Linux host, or a Windows host serving PHP through another interface, is not an instance of it. The requirement says so, because an emergency batch scoped to "PHP" spends its window on hosts that were never exposed. It also names why a request filter written against the obvious payload proves nothing here: the injection arrives as a soft hyphen that Windows remaps to a dash, so a rule has to be validated by replaying the encoded byte rather than the character the rule author had in mind.
+
+Where the vulnerable interface is the reason the device exists, the entry says what isolation cannot do. Several of the closing entries are consumer routers and access points whose management interface is reachable from the network they serve, so restricting reachability bounds who can send the request and repairs nothing — and for the models with no fixed firmware, removal is the requirement rather than a step after patching.
+
 ## 0.19.22 — 2026-08-11
 
 Another 38 CVEs report the controls they require, taking coverage to 991 of 1025. The set includes Citrix NetScaler, Apache ActiveMQ and RocketMQ, Adobe ColdFusion, Oracle Fusion Middleware, Zimbra, Ivanti's Cloud Services Appliance, Qlik Sense, Cisco NX-OS, and the Fortinet FortiSandbox and Trend Micro Apex One entries.
