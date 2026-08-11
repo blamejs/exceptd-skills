@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.19.18 — 2026-08-11
+
+Another 40 CVEs report the controls they require, taking coverage to 833 of 1025. The set includes Ivanti Connect Secure, PAN-OS, Confluence, VMware vCenter, Adobe ColdFusion, Firefox, Chromium, Windows Hyper-V, Oracle E-Business Suite, SonicWall's SSL-VPN, and the Realtek SDK.
+
+Where the vendor hosts the software, the patch obligations complete themselves. The Microsoft Partner Center fix was applied server-side, with nothing for an operator to install, schedule or attest — so all five patch-cadence controls citing the CVE can be marked satisfied by someone who did nothing and could have done nothing, while exploitation ran against the service. What the operator does hold is the relationship: Partner Center brokers access into downstream customer tenants, so the escalation lands on the delegated grant rather than on any one organisation's server. The requirement is validation and logging of the cross-tenant calls a partner identity makes, plus an incident path for a control plane whose remediation was never the operator's to perform.
+
+Whether a patch exists is a per-model question when the defect sits in a component other vendors embed. The Realtek SDK entry records an available fix alongside affected devices that are end-of-life with no fixed firmware, and the flaw is in a UPnP service shipped inside OEM router and IoT builds — so the answer comes from each OEM rather than being assumed either way across an estate. The requirement splits that estate into three states rather than the usual two: patched, mitigation-active with the WAN-side path blocked and a dated review, and no verdict — which is a device to retire, not a row to leave open.
+
+An appliance cannot be isolated out of doing its job. The FortiWeb command injection is reachable over crafted HTTP requests as well as the CLI, and serving HTTP is the entire reason the appliance is deployed, so restricting reachability narrows the management path for the duration and closes nothing. That entry also counts a unit carrying the new image but not yet restarted as still exposed, because the recorded fix requires the restart to take effect.
+
 ## 0.19.17 — 2026-08-11
 
 Another 41 CVEs report the controls they require, taking coverage to 793 of 1025. The set includes Chromium V8, Apple WebKit and CoreMedia, PAN-OS, MOVEit Transfer, SharePoint, Cisco ASA and Catalyst SD-WAN, Ivanti's Cloud Services Appliance, D-Link NAS devices, jQuery, and GNU Bash.
