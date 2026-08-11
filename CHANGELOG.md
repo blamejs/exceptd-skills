@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.19.21 — 2026-08-11
+
+Another 39 CVEs report the controls they require, taking coverage to 953 of 1025. The set includes Jenkins, PAN-OS, Ivanti EPMM and the Cloud Services Appliance, Juniper's J-Web, Veeam Cloud Connect, Veritas Backup Exec, SolarWinds Web Help Desk, Apache OFBiz, Adobe Acrobat, and IP cameras from Reolink and NUUO.
+
+A patch that has been superseded is not a patch. The Cobalt Strike teamserver entry records that the first fix was incomplete, so a server upgraded off the vulnerable line — and even one upgraded to that first fix — can still be exploitable. The requirement refuses to close on "upgraded", and names the running version against the release that carries the complete fix, because a remediation record keyed to the first advisory reads as done while the flaw is reachable.
+
+Where the vulnerable component is unnamed, the inventory gap is the finding. One entry describes a flaw in an unspecified third-party component packaged inside a vendor's product — so the asset record says the product name and stops, and the component that actually carried the code execution was never tracked, scanned or held to a patch SLA by anyone. The requirement is that component inventory reach the depth at which the vulnerability actually sits, and the entry is explicit that the exploitation preceded any vendor fix: no remediation clock has force in a window where no fix exists, and pretending otherwise is how that window gets recorded as compliant.
+
+Two release tracks moving independently are two populations. The Jenkins entry names an affected weekly-line build and an affected long-term-support build, so an estate that upgrades one line and leaves a controller on the other has not finished — completion is counted per controller, not per track. The entry also separates what the upgrade does from what it cannot: the primitive is file disclosure, an unauthenticated caller obtains at least the first lines of any file on the controller, and the upgrade closes the read without unreading what was already taken.
+
 ## 0.19.20 — 2026-08-11
 
 Another 38 CVEs report the controls they require, taking coverage to 914 of 1025. The set includes Ivanti Connect Secure and EPMM, VMware ESXi, Exchange, SharePoint, Adobe ColdFusion and Acrobat, Juniper's J-Web interface, Zimbra, Roundcube, libwebp, the Linux netfilter entries, and Outlook's credential-leak defect.
