@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.19.16 — 2026-08-10
+
+Another 39 CVEs report the controls they require, taking coverage to 752 of 1025. The set includes React Native's development server, React Server Components, F5 BIG-IP, Fortinet SSL-VPN, Ivanti Connect Secure, PAN-OS, SonicWall, SAP NetWeaver, Oracle E-Business Suite, ImageMagick, and the Windows CLFS and CNG entries.
+
+Some of these put the clock somewhere the production patch pipeline never reaches. The React Native command-line tool's development server runs on developer workstations and build images, so an estate can complete a patch cycle with the exposure untouched — and the exposure exists only while a development server is running and answering from the network, which no patch-posture dashboard reports on. Completion is counted per host and per build image, and the running process is named as the step that slips: updating the package while a server keeps serving from a pre-fix load leaves the host exposed.
+
+Where the vulnerable code arrives beneath what a team declares, the inventory has to resolve it. The React Server Components defect is in React's own payload decoder, and React is usually not the declared dependency — the application declares the rendering framework and React comes underneath it. The version recorded has to be the one linked into the deployed artifact, tested by extracting it from a build that is answering requests rather than from the repository, because a merged dependency bump and a deployed pre-fix build read the same on a patch attestation.
+
+Security tooling is carried as an asset like anything else. The Cobalt Strike client is a per-operator install that managed software distribution generally never sees, so the estate's patch report has no row for it and the absence reads as compliance — while the defect runs the engagement's data flow backwards, rendering implant data from a host under someone else's control in the operator's own console. The requirement counts the client per operator workstation rather than per team server, and puts the engagement toolchain itself inside the scope that treats it as attack surface with an untrusted input path.
+
 ## 0.19.15 — 2026-08-10
 
 Another 35 CVEs report the controls they require, taking coverage to 713 of 1025. The set includes HPE OneView, the Windows CLFS driver, SharePoint, Outlook, Adobe ColdFusion, Citrix Session Recording, and the Cisco and D-Link router entries.
