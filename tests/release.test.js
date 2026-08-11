@@ -242,21 +242,32 @@ require("node:test").describe("the CodeQL gate asks the repo-wide question", () 
   const path = require("node:path");
 
   const SRC = fs.readFileSync(path.join(__dirname, "..", "scripts", "release.js"), "utf8");
-  const helper = SRC.slice(SRC.indexOf("function _openCodeqlAlerts"), SRC.indexOf("function cmdPrepare("));
+  // Both helpers: the per-ref fetch and the union that consumes it.
+  const helper = SRC.slice(SRC.indexOf("function _codeqlAlertsForRef"), SRC.indexOf("function cmdPrepare("));
 
-  test("the alert query is not scoped to the PR merge ref", () => {
-    // Scoping to refs/pull/<N>/merge asks "did this PR introduce an alert",
-    // while the rule is "is the repo free of un-triaged alerts". Two alerts on
-    // refs/heads/main returned zero under the narrow query and rode through
-    // eight consecutive releases printing "zero open CodeQL alerts".
-    assert.doesNotMatch(helper, /refs\/pull\//, "the query must not be scoped to a PR ref");
-    assert.match(helper, /"state=open"/);
-    assert.match(helper, /"tool_name=CodeQL"/);
+  test("both refs are queried — neither alone is sufficient", () => {
+    // PR-merge-ref alone missed two alerts sitting on main through eight
+    // releases. Default-branch alone would miss an alert this PR introduces
+    // that is not on main yet. Each replacement just moves the blind spot, so
+    // the gate blocks on the union.
+    assert.match(helper, /_codeqlAlertsForRef\(null\)/, "the default branch must be queried");
+    assert.match(helper, /_codeqlAlertsForRef\("refs\/pull\/" \+ prNum \+ "\/merge"\)/,
+      "the PR merge ref must be queried too");
+    assert.match(SRC, /"state=open"/);
+    assert.match(SRC, /"tool_name=CodeQL"/);
   });
 
-  test("the helper takes no PR argument, so it cannot be re-narrowed by a caller", () => {
-    assert.match(SRC, /function _openCodeqlAlerts\(\)/);
-    assert.match(SRC, /var codeqlAlerts = _openCodeqlAlerts\(\);/);
+  test("the union is deduplicated by alert number and labelled by scope", () => {
+    // One alert present on both refs must be reported once, and the operator
+    // has to be able to tell "already on main" from "this PR introduced it".
+    assert.match(helper, /byNumber/, "results must be merged by alert number");
+    assert.match(helper, /introduced by this PR/);
+    assert.match(helper, /default branch/);
+  });
+
+  test("either query failing yields null, never an empty pass", () => {
+    assert.match(helper, /if \(onDefault === null \|\| onPr === null\) return null;/,
+      "a failed lookup must not read as zero alerts");
   });
 
   test("the query is filtered to CodeQL so Scorecard policy alerts cannot mask a finding", () => {
@@ -266,9 +277,11 @@ require("node:test").describe("the CodeQL gate asks the repo-wide question", () 
     assert.match(helper, /tool_name=CodeQL/);
   });
 
-  test("a query failure is reported, never treated as zero alerts", () => {
+  test("a query failure is reported at the call site, never treated as zero alerts", () => {
     assert.match(helper, /if \(rv\.status !== 0\) return null;/);
-    const block = SRC.slice(SRC.indexOf("var codeqlAlerts = _openCodeqlAlerts()"), SRC.indexOf("_ok(\"zero open CodeQL alerts\")"));
+    const start = SRC.indexOf("var codeqlAlerts = _openCodeqlAlerts(");
+    assert.ok(start > 0, "the call site must exist — this slice silently empties if it is renamed");
+    const block = SRC.slice(start, SRC.indexOf('_ok("zero open CodeQL alerts")'));
     assert.match(block, /codeqlAlerts === null/, "a null result must take the could-not-query branch");
     assert.match(block, /could not query CodeQL alerts/);
   });
