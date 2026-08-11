@@ -235,6 +235,45 @@ require("node:test").describe("prepare can carry a content-bearing release", () 
   });
 });
 
+require("node:test").describe("the CodeQL gate asks the repo-wide question", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const path = require("node:path");
+
+  const SRC = fs.readFileSync(path.join(__dirname, "..", "scripts", "release.js"), "utf8");
+  const helper = SRC.slice(SRC.indexOf("function _openCodeqlAlerts"), SRC.indexOf("function cmdPrepare("));
+
+  test("the alert query is not scoped to the PR merge ref", () => {
+    // Scoping to refs/pull/<N>/merge asks "did this PR introduce an alert",
+    // while the rule is "is the repo free of un-triaged alerts". Two alerts on
+    // refs/heads/main returned zero under the narrow query and rode through
+    // eight consecutive releases printing "zero open CodeQL alerts".
+    assert.doesNotMatch(helper, /refs\/pull\//, "the query must not be scoped to a PR ref");
+    assert.match(helper, /"state=open"/);
+    assert.match(helper, /"tool_name=CodeQL"/);
+  });
+
+  test("the helper takes no PR argument, so it cannot be re-narrowed by a caller", () => {
+    assert.match(SRC, /function _openCodeqlAlerts\(\)/);
+    assert.match(SRC, /var codeqlAlerts = _openCodeqlAlerts\(\);/);
+  });
+
+  test("the query is filtered to CodeQL so Scorecard policy alerts cannot mask a finding", () => {
+    // Scorecard writes to the same code-scanning surface. Its accepted
+    // out-of-scope alerts would make the list permanently non-empty, and a
+    // list that is never empty stops being a gate.
+    assert.match(helper, /tool_name=CodeQL/);
+  });
+
+  test("a query failure is reported, never treated as zero alerts", () => {
+    assert.match(helper, /if \(rv\.status !== 0\) return null;/);
+    const block = SRC.slice(SRC.indexOf("var codeqlAlerts = _openCodeqlAlerts()"), SRC.indexOf("_ok(\"zero open CodeQL alerts\")"));
+    assert.match(block, /codeqlAlerts === null/, "a null result must take the could-not-query branch");
+    assert.match(block, /could not query CodeQL alerts/);
+  });
+});
+
 require("node:test").describe("regen re-derives artifacts on a release branch", () => {
   const test = require("node:test");
   const assert = require("node:assert/strict");
