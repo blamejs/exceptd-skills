@@ -234,3 +234,49 @@ require("node:test").describe("prepare can carry a content-bearing release", () 
     assert.ok(check > 0 && update > check, "the bare gate must run before --update-baseline");
   });
 });
+
+require("node:test").describe("regen re-derives artifacts on a release branch", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const path = require("node:path");
+
+  const SRC = fs.readFileSync(path.join(__dirname, "..", "scripts", "release.js"), "utf8");
+
+  test("prepare and regen share one regeneration body", () => {
+    // Two copies of the four commands drift, and the drift is invisible because
+    // both look like they regenerated everything. There must be exactly one.
+    assert.match(SRC, /function _regenArtifacts\(\)/);
+    const calls = SRC.match(/_regenArtifacts\(\)/g) || [];
+    assert.equal(calls.length, 3, "one definition plus one call from each of prepare and regen");
+    assert.equal((SRC.match(/"run", "refresh-sbom"/g) || []).length, 1, "refresh-sbom is invoked from one place only");
+  });
+
+  test("refresh-sbom runs last in the shared body", () => {
+    // It hashes the shipped tree; anything regenerated after it strands hashes.
+    const body = SRC.slice(SRC.indexOf("function _regenArtifacts()"), SRC.indexOf("function cmdRegen()"));
+    const sbom = body.indexOf('"refresh-sbom"');
+    for (const earlier of ['"sign-all"', '"build-indexes"', '"refresh-snapshot"']) {
+      assert.ok(body.indexOf(earlier) > 0 && body.indexOf(earlier) < sbom, earlier + " must precede refresh-sbom");
+    }
+  });
+
+  test("regen is dispatched and requires a release branch", () => {
+    // Positively require release-vX.Y.Z, not merely "not main": this re-signs
+    // the manifest and rewrites checked-in artifacts, so a run from a feature
+    // branch or a detached HEAD would derive release artifacts from a tree that
+    // is not the release.
+    assert.match(SRC, /case "regen":\s+cmdRegen\(\);/);
+    const body = SRC.slice(SRC.indexOf("function cmdRegen()"), SRC.indexOf("function cmdPrepare("));
+    assert.match(body, /if \(!_gitOnRelease\(\)\)/);
+    assert.doesNotMatch(body, /if \(_gitOnMain\(\)\)/, "rejecting main alone still admits every other branch");
+    assert.match(body, /throw new Error\("release: regen must run on a release-vX\.Y\.Z branch/);
+  });
+
+  test("regen does not demand a clean tree", () => {
+    // The phase exists for a dirty tree — a review finding fixed after prepare.
+    const body = SRC.slice(SRC.indexOf("function cmdRegen()"), SRC.indexOf("function cmdPrepare("));
+    assert.doesNotMatch(body, /requires a clean working tree/);
+    assert.match(body, /regenerating against " \+ dirty\.length/, "what it is regenerating against must be visible");
+  });
+});

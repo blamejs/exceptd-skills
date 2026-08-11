@@ -239,6 +239,48 @@ function _openCodeqlAlerts(prNum) {
 
 // ---- Subcommands ---------------------------------------------------------
 
+// The derived-artifact regeneration, in the one order that is correct. Shared
+// by `prepare` and `regen` so the two cannot drift: any source edit after a
+// prepare — a review finding fixed on the release branch, most often a data
+// correction — invalidates the signatures, indexes and SBOM hashes, and
+// re-running the four commands from memory is where the ordering gets lost.
+function _regenArtifacts() {
+  _section("regen artifacts");
+  // Order matters: sign first (re-signs the manifest), then the snapshot/
+  // index/SBOM derivations. refresh-sbom runs LAST because it hashes the
+  // shipped tree (incl. README) — regenerating it before a later source edit
+  // strands the hashes (the recurring "refresh-sbom last" lesson).
+  _run("node", ["lib/sign.js", "sign-all"]);
+  _run("npm", ["run", "build-indexes"]);
+  _run("npm", ["run", "refresh-snapshot"]);
+  _run("npm", ["run", "refresh-sbom"]);
+  _ok("signed + indexes + snapshot + sbom regenerated");
+}
+
+// Re-derive the artifacts after editing source on an already-prepared release
+// branch. No version bump, no CHANGELOG requirement, no clean-tree demand —
+// this phase exists precisely for a dirty tree. It refuses on main, where the
+// bump belongs to `prepare`.
+function cmdRegen() {
+  _section("regen");
+  // Positively require a release branch rather than merely rejecting main: this
+  // re-signs the manifest and rewrites checked-in derived artifacts, so an
+  // accidental run from a feature branch or a detached HEAD would produce
+  // release artifacts from a tree that is not the release.
+  if (!_gitOnRelease()) {
+    throw new Error("release: regen must run on a release-vX.Y.Z branch (on " + _gitBranch() + "). " +
+      "On main the regeneration belongs to `prepare`.");
+  }
+  var dirty = _capture("git", ["status", "--porcelain"]).stdout.split(/\r?\n/).filter(function (l) { return l.trim(); });
+  if (!dirty.length) console.log("working tree is clean — regenerating anyway (artifacts may be stale from an earlier commit)");
+  else {
+    console.log("regenerating against " + dirty.length + " uncommitted path(s):");
+    dirty.forEach(function (l) { console.log("  " + l.trim()); });
+  }
+  _regenArtifacts();
+  console.log("\nnext: node scripts/release.js gates");
+}
+
 function cmdPrepare(opts) {
   _section("prepare");
   if (!_gitOnMain()) throw new Error("release: prepare must run on main (on " + _gitBranch() + ")");
@@ -299,16 +341,7 @@ function cmdPrepare(opts) {
   _writeJsonVersion("manifest.json", next);
   _ok("bumped package.json + manifest.json → " + next);
 
-  _section("regen artifacts");
-  // Order matters: sign first (re-signs the manifest), then the snapshot/
-  // index/SBOM derivations. refresh-sbom runs LAST because it hashes the
-  // shipped tree (incl. README) — regenerating it before a later source edit
-  // strands the hashes (the recurring "refresh-sbom last" lesson).
-  _run("node", ["lib/sign.js", "sign-all"]);
-  _run("npm", ["run", "build-indexes"]);
-  _run("npm", ["run", "refresh-snapshot"]);
-  _run("npm", ["run", "refresh-sbom"]);
-  _ok("signed + indexes + snapshot + sbom regenerated");
+  _regenArtifacts();
 
   _section("test-count baseline");
   // Check BEFORE refreshing. `--update-baseline` writes whatever it observes,
@@ -685,6 +718,7 @@ function cmdHelp() {
   console.log("  node scripts/release.js prepare [--minor] [--with-content]");
   console.log("                                              # bump + sign + indexes + snapshot + sbom + baseline");
   console.log("                                              # --with-content: release ships uncommitted work");
+  console.log("  node scripts/release.js regen               # re-derive artifacts after editing a release branch");
   console.log("  node scripts/release.js gates               # npm test + 20-gate predeploy");
   console.log("  node scripts/release.js commit              # release branch + signed commit");
   console.log("  node scripts/release.js push                # push branch + open PR");
@@ -710,6 +744,7 @@ var opts = {
 try {
   switch (sub) {
     case "prepare": cmdPrepare(opts); break;
+    case "regen":   cmdRegen();       break;
     case "gates":   cmdGates();       break;
     case "commit":  cmdCommit();      break;
     case "push":    cmdPush();        break;
