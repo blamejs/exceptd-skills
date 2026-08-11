@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.19.19 — 2026-08-11
+
+Another 43 CVEs report the controls they require, taking coverage to 876 of 1025. The set includes Jenkins, Oracle WebLogic and Java SE, FortiManager, SonicWall's SMA appliances, Veeam Backup and Replication, Veritas Backup Exec, the Barracuda Email Security Gateway, PaperCut, Roundcube, and IP cameras from Dahua, Edimax and PTZOptics.
+
+An applied patch is not always the end state, and one entry says so in the vendor's own terms. Barracuda auto-applied the fix to every customer Email Security Gateway without the operator doing anything — and still advised replacing compromised units, because nothing restores the integrity of an appliance that was already backdoored. The operator's question on that product is therefore not whether the fix landed but whether the unit was held during the exposure window, which on an appliance the attacker controlled cannot be answered from the appliance's own logs. The requirement pairs the replacement default with off-box telemetry, so the record of what the appliance did outlives the appliance.
+
+Backup infrastructure is rated by what it protects, not by what it is. Three entries in this set put unauthenticated code execution on backup servers and agents, and each records the same gap between a fix existing and it being applied — a Backup Exec flaw was exploited for over a year against a fix already shipped, and Veeam servers were still unpatched when ransomware affiliates arrived roughly six weeks after the release. The requirement moves those hosts off the maintenance window their tier normally gets and onto the listing clock, and it names what an upgrade does not undo: the accounts created and the staging left behind on a server that was already reached.
+
+Where a vulnerability's scope is recorded as "per vendor advisory", the sweep is built from that advisory rather than from the models the description happens to name. The DrayTek entry names three Vigor models in its description while the affected-product record scopes it to the product line, so an inventory built from the description reports clean across an estate standardised on another model. The same entry declines to guess at end-of-support: a fix existing for this CVE says nothing about whether a given model can still receive one, so that is written as something to obtain per model — and the units driving this class of exploitation are the home-office and small-branch routers that were never in the patch inventory to begin with.
+
 ## 0.19.18 — 2026-08-11
 
 Another 40 CVEs report the controls they require, taking coverage to 833 of 1025. The set includes Ivanti Connect Secure, PAN-OS, Confluence, VMware vCenter, Adobe ColdFusion, Firefox, Chromium, Windows Hyper-V, Oracle E-Business Suite, SonicWall's SSL-VPN, and the Realtek SDK.
