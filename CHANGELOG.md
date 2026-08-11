@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.19.17 — 2026-08-11
+
+Another 41 CVEs report the controls they require, taking coverage to 793 of 1025. The set includes Chromium V8, Apple WebKit and CoreMedia, PAN-OS, MOVEit Transfer, SharePoint, Cisco ASA and Catalyst SD-WAN, Ivanti's Cloud Services Appliance, D-Link NAS devices, jQuery, and GNU Bash.
+
+Where the vulnerable code is a file rather than a package, the scan's silence is not a finding of absence. jQuery ships inside applications — vendored into a web root, emitted by a build step, embedded in a third-party product's web interface — and the affected range covers effectively every copy ever placed that way, so an inventory keyed to installed packages has no row to report on. The entry also names the second measurement that reads clean: the vulnerability's own text says the untrusted HTML executes even after sanitizing it, so an application recording sanitization as its mitigation has recorded something the defect is documented to survive.
+
+Some entries have no fixed build to reach. The D-Link NAS devices are past end of support with the vendor's confirmation on record, no patch, and no live-patch path — so removal is the requirement rather than a step after patching, and restricting reachability is the only lever an operator holds for as long as a unit stays in service. On appliances holding the primary and backup copy of a site's files, that distinction is the whole disposition.
+
+A CVE's identifier year is not its remediation priority. The Bash entry carries a 2014 identifier and a 2025 listing date, so a process that ages work by identifier files it as historical while the clock is running — the requirement is that the listing, not the year, sets the queue position. It also separates a family-level attestation from this member: an estate that closed its Shellshock work on "newer than the first fix" has not shown the build carrying the fix for this defect, and the population that needs it is the hosts where attacker-controlled data actually reaches a Bash environment rather than every host with Bash installed.
+
 ## 0.19.16 — 2026-08-10
 
 Another 39 CVEs report the controls they require, taking coverage to 752 of 1025. The set includes React Native's development server, React Server Components, F5 BIG-IP, Fortinet SSL-VPN, Ivanti Connect Secure, PAN-OS, SonicWall, SAP NetWeaver, Oracle E-Business Suite, ImageMagick, and the Windows CLFS and CNG entries.

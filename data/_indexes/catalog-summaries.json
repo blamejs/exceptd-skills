@@ -229,7 +229,7 @@
       "path": "data/zeroday-lessons.json",
       "purpose": "Distilled lessons from notable zero-days and campaigns (SesameOp, Copy Fail, Dirty Frag, Copilot RCE, Windsurf MCP). Each entry: technique, distinguishing characteristic, what it means for the framework lag.",
       "schema_version": "1.1.0",
-      "last_updated": "2026-08-10",
+      "last_updated": "2026-08-11",
       "tlp": "CLEAR",
       "source_confidence_default": "B2",
       "freshness_policy": {
