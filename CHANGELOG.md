@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.19.20 — 2026-08-11
+
+Another 38 CVEs report the controls they require, taking coverage to 914 of 1025. The set includes Ivanti Connect Secure and EPMM, VMware ESXi, Exchange, SharePoint, Adobe ColdFusion and Acrobat, Juniper's J-Web interface, Zimbra, Roundcube, libwebp, the Linux netfilter entries, and Outlook's credential-leak defect.
+
+An ordinary directory operation can be equivalent to hypervisor root. On an AD-integrated ESXi host, full administrative access is granted to members of a group matched by name, so whoever can create a group with that name holds hypervisor administration — which is what the named ransomware actors did, deleting and re-creating it. The requirement classifies that group-creation permission at the tier the access it confers actually is, and the entry carries the consequence: backup copies for VMs on those hosts must not live on datastores the hosts present, because the failure mode on record is backups encrypted alongside the machines they were meant to restore.
+
+Where the vulnerable code is vendored beneath products, the inventory has to reach the depth it actually sits at. The libwebp entry refuses to be scoped to a browser: everything embedding the codec is reachable through a crafted image, and the record names Chromium-based browsers, Electron applications and native software that bundles its own copy. Each install is held to its own fixed build rather than to the browser's, and the entry states why an application list cannot produce that population — a component vendored beneath a product is not something an operator installs, so it appears in no software inventory built from what was installed.
+
+One entry is reclassified. The D-Link DCS-2530L and DCS-2670L camera flaw (CVE-2020-25078) was carried as remote code execution with a CWE-94 assignment and an estimated CVSS of 8.8; the verified primitive is administrator-password disclosure from an unauthenticated endpoint, scored 7.5 for confidentiality impact alone. The score, the weakness class, the attack class and the ATT&CK mapping now follow the verified reading, and the indicators changed with them: what an operator hunts is unauthenticated requests to the disclosing endpoint and reuse of that password elsewhere, not command execution, implanted firmware or outbound command-and-control from the camera. The response changes too — rotate the credential and everywhere it was reused, and replace units that cannot reach a fixed build, rather than treating reachability as evidence that something ran on the device.
+
+For entries where the fix and the listing arrive together, the alternatives are what the clock needs. The Outlook credential-leak entry pairs the vendor update with three named mitigations, so a client that cannot take the update inside the window still has a deployable answer. It also records what remediation cannot reach: roughly eleven months of exploitation preceded the listing, and the defect's output is the user's authentication material delivered to an attacker with no interaction — so credentials exposed before the update are not repaired by it.
+
 ## 0.19.19 — 2026-08-11
 
 Another 43 CVEs report the controls they require, taking coverage to 876 of 1025. The set includes Jenkins, Oracle WebLogic and Java SE, FortiManager, SonicWall's SMA appliances, Veeam Backup and Replication, Veritas Backup Exec, the Barracuda Email Security Gateway, PaperCut, Roundcube, and IP cameras from Dahua, Edimax and PTZOptics.
