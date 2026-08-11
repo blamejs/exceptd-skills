@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:6b1be1ba-95e0-4f89-adb4-c09296604b75",
+  "serialNumber": "urn:uuid:04f95c9d-fe3c-41cc-84d6-38b98f7d756d",
   "version": 1,
   "metadata": {
     "timestamp": "2026-08-11T00:00:00.000Z",
@@ -29,7 +29,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "a3eaf7a23b297b534a8ab8ddcd4d8de4f729b3d16ee594af624a17c81051cd39"
+          "content": "6c3aaca75be7249042fdbc789c7c1e0fb26d5e24acbd9c515818a756d8c6d758"
         }
       ],
       "externalReferences": [
@@ -334,11 +334,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "13cf279a8ea22fdcc2c1485689a4dbea2dadfa65171bd7a3df1950e998d81b23"
+          "content": "3c1089b065f070984c997a601a6abd541706dbf50b3901f2ae32d0fd4542e0c2"
         },
         {
           "alg": "SHA3-512",
-          "content": "3be7ebf972c4d28ed5be88fd506ae55740059c550e3a64024ac657d21490f7cda6aecfef4080ccbb413526f93b590b6ffe8d5201c64435a5807575060dc6045b"
+          "content": "21005cb8c13bd7003a0755530b7b2b8e18ac814cb5ca99f6e8d7438a96133fd3e0d78184c19770916fcaecb828895e8f2a33af149b0c0a1723a2ec1304f12247"
         }
       ]
     },
@@ -949,11 +949,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "1b05a34031143e5e04561eec037643456b64cb215bb979b255ab2c78b4955156"
+          "content": "a4f86106ba3b5a75646a923ce2fc3f09bdc17aeff8357e8513a1052c5168014e"
         },
         {
           "alg": "SHA3-512",
-          "content": "0fcfba50ba0c9306d7e2d3a492b7bdb305adf920a9ca945bfa177bd026567797a204495744f44870a5b4abfcb3c8e0804606255579f74d1c4bcc0b188ba3bb64"
+          "content": "309ecec3b54cb9acd8d3f5babffe3f241520f88b1d7b40daa2853ebd6ebf91c50b975ba6c221e98812a35026b8d44971c3eddc782330378b251d07d4e45dbfd8"
         }
       ]
     },
@@ -1954,11 +1954,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "dad3198a7df1ff72f4400adcc4a6457130dbc3f2e323302bf762824418ad6368"
+          "content": "8a272417326889968145ebc4e93c57b0db3ecaa44186188769cda934e6369763"
         },
         {
           "alg": "SHA3-512",
-          "content": "3f066d2b9b3e2c7b8be7a7ef768a2f7820251cbe5703310b8f394f6507c7b6022524041b0deacfd91b634d163b2477a6e89aea2771026645ed68c58a16929436"
+          "content": "60ebc84d3fdb1b475d8cf065f2ffbe7f67d2dc20403d36f33bd58d54a9b78f73c4b2e94988972d24e2a6a5c2bbae4034156a8831d0298e6df6224757e8ba278f"
         }
       ]
     },
