@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.19.22 — 2026-08-11
+
+Another 38 CVEs report the controls they require, taking coverage to 991 of 1025. The set includes Citrix NetScaler, Apache ActiveMQ and RocketMQ, Adobe ColdFusion, Oracle Fusion Middleware, Zimbra, Ivanti's Cloud Services Appliance, Qlik Sense, Cisco NX-OS, and the Fortinet FortiSandbox and Trend Micro Apex One entries.
+
+Three entries put the flaw inside the security product itself. A sandbox appliance exists so hostile content detonates somewhere other than production; an endpoint-protection console exists to control the fleet; a migration tool exists to move firewall configurations. Each is carried as tooling rather than as an asset, which is how each stays outside the inventory that would have clocked it — and the migration tool holds, in its own record, the usernames, cleartext passwords, configurations and device API keys of every firewall it has handled. The requirement puts these on the tier their contents justify rather than the tier their role suggests, and states what the upgrade does not undo: credentials that passed through the tool stay valid until they are re-issued on the devices themselves.
+
+Where an exploit's precondition is administrative access, the administrator population is the attack surface. The endpoint-protection entry needs console access before its uninstaller module can be driven into executing commands — so the requirement raises those accounts above ordinary application administrators, reachable through a privileged-access path rather than from any workstation on the corporate segment. Recording the flaw as needing a patch and stopping there leaves the prerequisite untouched.
+
+A second-order injection is not visible at the point it is submitted. The sandbox appliance stores a value from one feature and executes it as an operating-system command later, so a check that validates input on submission sees nothing wrong. The requirement is that the configuration-accepting endpoint neutralises the value before it can reach a command sink, and the distinguishing test exercises the stored path rather than the submission path.
+
 ## 0.19.21 — 2026-08-11
 
 Another 39 CVEs report the controls they require, taking coverage to 953 of 1025. The set includes Jenkins, PAN-OS, Ivanti EPMM and the Cloud Services Appliance, Juniper's J-Web, Veeam Cloud Connect, Veritas Backup Exec, SolarWinds Web Help Desk, Apache OFBiz, Adobe Acrobat, and IP cameras from Reolink and NUUO.
