@@ -65,14 +65,45 @@ function assertPinShape(kind, value) {
   return value;
 }
 
+/**
+ * The only hosts this checker may ever contact. `assertPinShape` already bounds
+ * the catalog-sourced version to a digit-and-dot shape before it reaches a URL,
+ * but that guard sits a long way from the request — a later edit could add a
+ * caller that skips it, and static analysis reasonably flags file data reaching
+ * an outbound request when the barrier is that distant. Re-check the resolved
+ * origin at the sink so the property is enforced where it matters and is
+ * verifiable by reading ten lines rather than tracing the whole module.
+ */
+const ALLOWED_ORIGINS = new Set(["https://raw.githubusercontent.com"]);
+
+function assertAllowedUrl(rawUrl) {
+  let parsed;
+  try {
+    parsed = new URL(rawUrl);
+  } catch (_e) {
+    throw new Error(`refusing to fetch a malformed URL: ${JSON.stringify(rawUrl)}`);
+  }
+  if (!ALLOWED_ORIGINS.has(parsed.origin)) {
+    throw new Error(
+      `refusing to fetch ${parsed.origin} — this checker may only contact ` +
+        `${[...ALLOWED_ORIGINS].join(", ")}`
+    );
+  }
+  // Reject anything that could smuggle credentials or redirect the path.
+  if (parsed.username || parsed.password || parsed.search || parsed.hash) {
+    throw new Error(`refusing to fetch a URL carrying credentials or a query/fragment: ${parsed.origin}${parsed.pathname}`);
+  }
+  return parsed.toString();
+}
+
 async function fetchJson(url) {
-  const res = await fetch(url, { headers: { "user-agent": UA } });
+  const res = await fetch(assertAllowedUrl(url), { headers: { "user-agent": UA }, redirect: "error" });
   if (!res.ok) throw new Error(`${res.status} ${url}`);
   return JSON.parse(await res.text());
 }
 
 async function fetchText(url) {
-  const res = await fetch(url, { headers: { "user-agent": UA } });
+  const res = await fetch(assertAllowedUrl(url), { headers: { "user-agent": UA }, redirect: "error" });
   if (!res.ok) throw new Error(`${res.status} ${url}`);
   return res.text();
 }
@@ -199,4 +230,4 @@ if (require.main === module) main().catch((err) => {
   process.exitCode = 2;
 });
 
-module.exports = { VERSION_SHAPES, assertPinShape };
+module.exports = { VERSION_SHAPES, assertPinShape, ALLOWED_ORIGINS, assertAllowedUrl };

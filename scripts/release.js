@@ -224,17 +224,52 @@ function _unresolvedThreads(prNum) {
 // scanning unavailable, API error, or the GET-param form not supported) so a
 // transient failure fails OPEN rather than blocking a release — the pre-flight
 // checklist is the human backstop.
-function _openCodeqlAlerts(prNum) {
-  var rv = _capture("gh", ["api", "repos/:owner/:repo/code-scanning/alerts",
-    "-X", "GET",
-    "-f", "ref=refs/pull/" + prNum + "/merge",
-    "-f", "state=open",
-    "-f", "tool_name=CodeQL"]);
+// Two refs, and BOTH are load-bearing — each alone has a blind spot that has
+// already bitten:
+//
+//   refs/pull/<N>/merge  answers "did this PR introduce an alert". Scoping to
+//     it ALONE let two medium alerts sitting on refs/heads/main since
+//     2026-08-08 return zero, riding through eight consecutive releases while
+//     the phase printed "zero open CodeQL alerts" — GitHub only annotates a PR
+//     with alerts that PR introduces.
+//   (no ref)             answers against the DEFAULT BRANCH, catching exactly
+//     those pre-existing findings — but on its own it misses an alert this PR
+//     introduces that is not on main yet, which is the case the PR-scoped query
+//     was there for.
+//
+// So the gate blocks on the union. Replacing one query with the other just
+// trades which blind spot you have.
+//
+// Filtered to tool_name=CodeQL deliberately: OpenSSF Scorecard writes to the
+// same code-scanning surface, and its accepted-out-of-scope policy alerts would
+// otherwise make this list permanently non-empty and therefore useless.
+function _codeqlAlertsForRef(ref) {
+  var args = ["api", "repos/:owner/:repo/code-scanning/alerts", "-X", "GET",
+    "-f", "state=open", "-f", "tool_name=CodeQL", "-f", "per_page=100"];
+  if (ref) args.push("-f", "ref=" + ref);
+  var rv = _capture("gh", args);
   if (rv.status !== 0) return null;
   try {
     var arr = JSON.parse(rv.stdout || "[]");
     return Array.isArray(arr) ? arr : null;
   } catch (_e) { return null; }
+}
+
+function _openCodeqlAlerts(prNum) {
+  var onDefault = _codeqlAlertsForRef(null);
+  var onPr = _codeqlAlertsForRef("refs/pull/" + prNum + "/merge");
+  // Either query failing means the question is unanswered. Never let a failed
+  // lookup read as "no alerts" — that is the same absent-input-passes shape
+  // this whole gate exists to close.
+  if (onDefault === null || onPr === null) return null;
+
+  var byNumber = new Map();
+  onDefault.forEach(function (a) { byNumber.set(a.number, { alert: a, scope: "default branch" }); });
+  onPr.forEach(function (a) {
+    if (byNumber.has(a.number)) byNumber.get(a.number).scope = "default branch + this PR";
+    else byNumber.set(a.number, { alert: a, scope: "introduced by this PR" });
+  });
+  return [...byNumber.values()];
 }
 
 // ---- Subcommands ---------------------------------------------------------
@@ -499,12 +534,16 @@ function cmdWatch() {
       "verify manually per the pre-flight checklist before merge.");
   } else if (codeqlAlerts.length > 0) {
     console.log("\nopen CodeQL alerts (" + codeqlAlerts.length + "):");
-    codeqlAlerts.forEach(function (a) {
+    codeqlAlerts.forEach(function (e) {
+      var a = e.alert;
       var loc = (a.most_recent_instance && a.most_recent_instance.location) || {};
       var sev = (a.rule && (a.rule.security_severity_level || a.rule.severity)) || "?";
       console.log("  ⚠ " + (a.rule && a.rule.id) + " [" + sev + "]  " +
-        (loc.path ? loc.path + ":" + loc.start_line : "") + "  " + (a.html_url || ""));
+        (loc.path ? loc.path + ":" + loc.start_line : "") + "  " +
+        "(" + e.scope + ")  " + (a.html_url || ""));
     });
+    console.log("\nThe union of the default branch and this PR's merge ref: an alert already on main " +
+      "blocks the release as surely as one this PR introduces.");
     console.log("\nFix real findings in code (push, let CodeQL re-scan) OR dismiss by-design FPs with a " +
       "written reason, then re-run: node scripts/release.js watch");
     process.exit(3); // allow:process-exit-after-stdout-write — maintainer-run release orchestrator; the guidance line above is human-read on a TTY, not a piped result channel

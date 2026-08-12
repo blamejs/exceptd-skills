@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.19.24 — 2026-08-11
+
+The upstream TTP checker validates the origin at the point it makes a request. It reads the pinned ATT&CK and ATLAS versions out of the signed catalogs and interpolates them into an upstream URL, with a shape guard on the pin sitting some distance upstream of the fetch. The origin is now re-checked at the request itself against a single-entry allowlist, redirects are refused rather than followed, and a URL carrying credentials, a query or a fragment is rejected — so the property holds locally, survives a later caller that skips the earlier guard, and can be confirmed by reading the function rather than tracing the module.
+
+The release orchestrator's code-scanning gate blocks on both references rather than one. It queried alerts against the pull request's merge reference alone, which reports only what that pull request introduced — so an alert already present on the default branch returned nothing and the phase reported a clean result. Querying the default branch alone has the opposite blind spot, missing an alert the pull request introduces before it reaches that branch, so the gate now blocks on the union of the two, deduplicated by alert and labelled with which reference each was found on. It is filtered to the analysis tool whose findings it is meant to block, so policy alerts from other tools cannot make the list permanently non-empty and therefore useless, and a failed lookup is reported as unanswered rather than passing as zero.
+
 ## 0.19.23 — 2026-08-11
 
 Every CVE in the catalog now records the controls it requires. The last 34 entries complete the set at 1025 of 1025 — 2,176 control requirements drawn from 143 distinct controls — so `framework-gap` reports the controls a CVE needs that no framework carries for any entry in the catalog, not a subset of it. The closing set includes PHP-CGI, Samba, Apache Tomcat, XStream, Oracle WebLogic, Cisco IOS XE and ASA, Ivanti EPMM, Mirth Connect, and consumer routers from Zyxel and D-Link.
