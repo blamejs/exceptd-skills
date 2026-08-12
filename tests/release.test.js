@@ -287,6 +287,46 @@ require("node:test").describe("the CodeQL gate asks the repo-wide question", () 
   });
 });
 
+require("node:test").describe("release separates a failed publish from a failed lookup", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const path = require("node:path");
+
+  const SRC = fs.readFileSync(path.join(__dirname, "..", "scripts", "release.js"), "utf8");
+  const block = SRC.slice(SRC.indexOf("var concl = \"\";"), SRC.indexOf('_ok("release.yml: success")'));
+
+  test("an unreadable conclusion is reported as unanswered, not as failure", () => {
+    // Reporting conclusion=(unknown) on a run whose jobs had all succeeded, and
+    // whose package was already on npm, is a false alarm on a good publish. The
+    // two states need different messages because they need different responses.
+    assert.ok(block.length > 0, "the conclusion block must exist");
+    assert.match(block, /UNANSWERED question, not a failed publish/);
+    assert.match(block, /could not read a terminal conclusion/);
+  });
+
+  test("a conclusion is accepted only when completed AND non-empty", () => {
+    // An in-progress run reports an empty conclusion legitimately, and a
+    // completed run can briefly report one while the value settles. Accepting
+    // either reproduces the false failed-publish: the loop would exit with
+    // concl === "" and then throw as though the workflow had failed.
+    assert.match(block, /parts\[0\] === "completed" && parts\[1\]/,
+      "an empty conclusion must not end the retry loop");
+  });
+
+  test("the lookup is retried before anything is concluded", () => {
+    assert.match(block, /for \(var _c = 0; _c < 5; _c\+\+\)/, "a transient API error must not decide the release");
+    assert.match(block, /rv\.status === 0 && rv\.stdout/, "a failed call must not be parsed as a result");
+  });
+
+  test("a genuine non-success conclusion still fails hard", () => {
+    // The retry must not soften the real case: a completed run that did not
+    // succeed is still a blocked release.
+    assert.match(block, /if \(concl !== "success"\)/);
+    assert.match(block, /did not finish successfully/);
+  });
+});
+
 require("node:test").describe("regen re-derives artifacts on a release branch", () => {
   const test = require("node:test");
   const assert = require("node:assert/strict");

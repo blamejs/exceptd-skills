@@ -674,12 +674,37 @@ function cmdRelease() {
   }
   if (runId) {
     _run("gh", ["run", "watch", runId, "--exit-status"], { allowFail: true });
-    var concl = _capture("gh", ["run", "view", runId, "--json", "conclusion", "--jq", ".conclusion"]).stdout;
-    // A non-success conclusion is a hard failure: the publish either failed or
-    // is unconfirmable, and either way the release is not done. Warning-and-
-    // continuing let a stalled publish read as a clean release.
+    // Read the conclusion, distinguishing "the workflow failed" from "the
+    // lookup failed". Conflating them reported conclusion=(unknown) on a
+    // release whose three jobs had all succeeded and whose package was already
+    // on npm — a false alarm on a good publish, twice, because an empty stdout
+    // (transient API error, or a run still settling) was treated as a verdict.
+    // Retry a few times before concluding anything: the value we want is a
+    // terminal state, and asking again is cheap next to a wrong answer.
+    var concl = "";
+    var lookupOk = false;
+    for (var _c = 0; _c < 5; _c++) {
+      var rv = _capture("gh", ["run", "view", runId, "--json", "status,conclusion",
+        "--jq", ".status + \"|\" + (.conclusion // \"\")"]);
+      if (rv.status === 0 && rv.stdout) {
+        var parts = rv.stdout.split("|");
+        // Accept only a completed run WITH a non-empty conclusion. An
+        // in-progress run legitimately reports an empty one, and a completed
+        // run can briefly report one too while the value settles — taking
+        // either as an answer reproduces the false failed-publish this retry
+        // exists to prevent. Keep polling until a real verdict appears.
+        if (parts[0] === "completed" && parts[1]) { concl = parts[1]; lookupOk = true; break; }
+      }
+      if (_c < 4) _spawn(process.execPath, ["-e", "setTimeout(function(){},3000)"], { stdio: "ignore" });
+    }
+    if (!lookupOk) {
+      throw new Error("release: could not read a terminal conclusion for release.yml run " + runId +
+        " after 5 attempts — the run may still be in progress, or the API call failed. This is an " +
+        "UNANSWERED question, not a failed publish: re-run this phase, and check the run directly " +
+        "with `gh run view " + runId + " --json status,conclusion,jobs` before treating the release as done.");
+    }
     if (concl !== "success") {
-      throw new Error("release: release.yml conclusion=" + (concl || "(unknown)") +
+      throw new Error("release: release.yml conclusion=" + concl +
         " — the publish workflow did not finish successfully; re-check release.yml before treating the release as done");
     }
     _ok("release.yml: success");

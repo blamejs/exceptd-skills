@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.19.25 — 2026-08-12
+
+The release orchestrator distinguishes a failed publish from a failed question. Reading the publish workflow's conclusion treated an empty answer as a verdict, so a transient API error — or a run that had not yet settled — reported the release as unsuccessful while its jobs had all succeeded and the package was already on the registry. The conclusion is now read only from a run that reports itself completed, retried a few times before anything is concluded, and an unreadable answer says so in terms that distinguish it from a failure, because the two need different responses. A genuine non-success conclusion still stops the release.
+
 ## 0.19.24 — 2026-08-11
 
 The upstream TTP checker validates the origin at the point it makes a request. It reads the pinned ATT&CK and ATLAS versions out of the signed catalogs and interpolates them into an upstream URL, with a shape guard on the pin sitting some distance upstream of the fetch. The origin is now re-checked at the request itself against a single-entry allowlist, redirects are refused rather than followed, and a URL carrying credentials, a query or a fragment is rejected — so the property holds locally, survives a later caller that skips the earlier guard, and can be confirmed by reading the function rather than tracing the module.
