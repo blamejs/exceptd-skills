@@ -193,3 +193,142 @@ require("node:test").describe("watch refuses an unsettled check set", () => {
     assert.equal(exits.length, 2, "the empty and pending guards must each exit 3");
   });
 });
+
+require("node:test").describe("prepare can carry a content-bearing release", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const path = require("node:path");
+
+  const SRC = fs.readFileSync(path.join(__dirname, "..", "scripts", "release.js"), "utf8");
+
+  test("--with-content is parsed and gates the clean-tree refusal", () => {
+    // Without this, a release that ships an uncommitted change (a curation
+    // batch, a fix folded in with the bump) cannot use this phase at all and
+    // gets hand-run instead. That is how the phase's own steps get skipped.
+    assert.match(SRC, /withContent: process\.argv\.slice\(3\)\.indexOf\("--with-content"\) !== -1/);
+    assert.match(SRC, /if \(dirty\.length && !opts\.withContent\)/);
+  });
+
+  test("the refusal still fires when the flag is absent", () => {
+    // The flag must widen the gate, not remove it: an accidental dirty tree on
+    // an ordinary release has to keep failing.
+    const guard = SRC.slice(SRC.indexOf("var dirty = _capture"), SRC.indexOf("var current = _readJsonVersion"));
+    assert.match(guard, /throw new Error\("release: prepare requires a clean working tree/);
+    assert.match(guard, /--with-content/, "the refusal should tell the operator the flag exists");
+  });
+
+  test("what the release carries is printed, not silently swallowed", () => {
+    // An unintended file riding along is the risk the clean-tree check existed
+    // to catch, so the flag has to make the contents visible.
+    const guard = SRC.slice(SRC.indexOf("var dirty = _capture"), SRC.indexOf("var current = _readJsonVersion"));
+    assert.match(guard, /carrying " \+ dirty\.length \+ " uncommitted path\(s\)/);
+    assert.match(guard, /dirty\.forEach/);
+  });
+
+  test("the shrinkage gate still precedes the baseline refresh", () => {
+    // The reason to keep this phase authoritative: a hand-rolled sequence
+    // dropped exactly this ordering and rebaselined without checking.
+    const check = SRC.indexOf('_run("node", ["scripts/check-test-count.js"]);');
+    const update = SRC.indexOf('_run("node", ["scripts/check-test-count.js", "--update-baseline"]);');
+    assert.ok(check > 0 && update > check, "the bare gate must run before --update-baseline");
+  });
+});
+
+require("node:test").describe("the CodeQL gate asks the repo-wide question", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const path = require("node:path");
+
+  const SRC = fs.readFileSync(path.join(__dirname, "..", "scripts", "release.js"), "utf8");
+  // Both helpers: the per-ref fetch and the union that consumes it.
+  const helper = SRC.slice(SRC.indexOf("function _codeqlAlertsForRef"), SRC.indexOf("function cmdPrepare("));
+
+  test("both refs are queried — neither alone is sufficient", () => {
+    // PR-merge-ref alone missed two alerts sitting on main through eight
+    // releases. Default-branch alone would miss an alert this PR introduces
+    // that is not on main yet. Each replacement just moves the blind spot, so
+    // the gate blocks on the union.
+    assert.match(helper, /_codeqlAlertsForRef\(null\)/, "the default branch must be queried");
+    assert.match(helper, /_codeqlAlertsForRef\("refs\/pull\/" \+ prNum \+ "\/merge"\)/,
+      "the PR merge ref must be queried too");
+    assert.match(SRC, /"state=open"/);
+    assert.match(SRC, /"tool_name=CodeQL"/);
+  });
+
+  test("the union is deduplicated by alert number and labelled by scope", () => {
+    // One alert present on both refs must be reported once, and the operator
+    // has to be able to tell "already on main" from "this PR introduced it".
+    assert.match(helper, /byNumber/, "results must be merged by alert number");
+    assert.match(helper, /introduced by this PR/);
+    assert.match(helper, /default branch/);
+  });
+
+  test("either query failing yields null, never an empty pass", () => {
+    assert.match(helper, /if \(onDefault === null \|\| onPr === null\) return null;/,
+      "a failed lookup must not read as zero alerts");
+  });
+
+  test("the query is filtered to CodeQL so Scorecard policy alerts cannot mask a finding", () => {
+    // Scorecard writes to the same code-scanning surface. Its accepted
+    // out-of-scope alerts would make the list permanently non-empty, and a
+    // list that is never empty stops being a gate.
+    assert.match(helper, /tool_name=CodeQL/);
+  });
+
+  test("a query failure is reported at the call site, never treated as zero alerts", () => {
+    assert.match(helper, /if \(rv\.status !== 0\) return null;/);
+    const start = SRC.indexOf("var codeqlAlerts = _openCodeqlAlerts(");
+    assert.ok(start > 0, "the call site must exist — this slice silently empties if it is renamed");
+    const block = SRC.slice(start, SRC.indexOf('_ok("zero open CodeQL alerts")'));
+    assert.match(block, /codeqlAlerts === null/, "a null result must take the could-not-query branch");
+    assert.match(block, /could not query CodeQL alerts/);
+  });
+});
+
+require("node:test").describe("regen re-derives artifacts on a release branch", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const path = require("node:path");
+
+  const SRC = fs.readFileSync(path.join(__dirname, "..", "scripts", "release.js"), "utf8");
+
+  test("prepare and regen share one regeneration body", () => {
+    // Two copies of the four commands drift, and the drift is invisible because
+    // both look like they regenerated everything. There must be exactly one.
+    assert.match(SRC, /function _regenArtifacts\(\)/);
+    const calls = SRC.match(/_regenArtifacts\(\)/g) || [];
+    assert.equal(calls.length, 3, "one definition plus one call from each of prepare and regen");
+    assert.equal((SRC.match(/"run", "refresh-sbom"/g) || []).length, 1, "refresh-sbom is invoked from one place only");
+  });
+
+  test("refresh-sbom runs last in the shared body", () => {
+    // It hashes the shipped tree; anything regenerated after it strands hashes.
+    const body = SRC.slice(SRC.indexOf("function _regenArtifacts()"), SRC.indexOf("function cmdRegen()"));
+    const sbom = body.indexOf('"refresh-sbom"');
+    for (const earlier of ['"sign-all"', '"build-indexes"', '"refresh-snapshot"']) {
+      assert.ok(body.indexOf(earlier) > 0 && body.indexOf(earlier) < sbom, earlier + " must precede refresh-sbom");
+    }
+  });
+
+  test("regen is dispatched and requires a release branch", () => {
+    // Positively require release-vX.Y.Z, not merely "not main": this re-signs
+    // the manifest and rewrites checked-in artifacts, so a run from a feature
+    // branch or a detached HEAD would derive release artifacts from a tree that
+    // is not the release.
+    assert.match(SRC, /case "regen":\s+cmdRegen\(\);/);
+    const body = SRC.slice(SRC.indexOf("function cmdRegen()"), SRC.indexOf("function cmdPrepare("));
+    assert.match(body, /if \(!_gitOnRelease\(\)\)/);
+    assert.doesNotMatch(body, /if \(_gitOnMain\(\)\)/, "rejecting main alone still admits every other branch");
+    assert.match(body, /throw new Error\("release: regen must run on a release-vX\.Y\.Z branch/);
+  });
+
+  test("regen does not demand a clean tree", () => {
+    // The phase exists for a dirty tree — a review finding fixed after prepare.
+    const body = SRC.slice(SRC.indexOf("function cmdRegen()"), SRC.indexOf("function cmdPrepare("));
+    assert.doesNotMatch(body, /requires a clean working tree/);
+    assert.match(body, /regenerating against " \+ dirty\.length/, "what it is regenerating against must be visible");
+  });
+});

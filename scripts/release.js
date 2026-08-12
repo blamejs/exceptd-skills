@@ -10,7 +10,9 @@
  * before tag push, GUARD before tag).
  *
  * Usage:
- *   node scripts/release.js prepare [--minor]   # bump + sign + indexes + snapshot + sbom + baseline
+ *   node scripts/release.js prepare [--minor] [--with-content]
+ *                                             # bump + sign + indexes + snapshot + sbom + baseline
+ *                                             # --with-content: this release ships uncommitted work
  *   node scripts/release.js gates               # npm test + 20-gate predeploy
  *   node scripts/release.js commit              # release branch + signed commit
  *   node scripts/release.js push                # push branch + open PR
@@ -222,12 +224,30 @@ function _unresolvedThreads(prNum) {
 // scanning unavailable, API error, or the GET-param form not supported) so a
 // transient failure fails OPEN rather than blocking a release — the pre-flight
 // checklist is the human backstop.
-function _openCodeqlAlerts(prNum) {
-  var rv = _capture("gh", ["api", "repos/:owner/:repo/code-scanning/alerts",
-    "-X", "GET",
-    "-f", "ref=refs/pull/" + prNum + "/merge",
-    "-f", "state=open",
-    "-f", "tool_name=CodeQL"]);
+// Two refs, and BOTH are load-bearing — each alone has a blind spot that has
+// already bitten:
+//
+//   refs/pull/<N>/merge  answers "did this PR introduce an alert". Scoping to
+//     it ALONE let two medium alerts sitting on refs/heads/main since
+//     2026-08-08 return zero, riding through eight consecutive releases while
+//     the phase printed "zero open CodeQL alerts" — GitHub only annotates a PR
+//     with alerts that PR introduces.
+//   (no ref)             answers against the DEFAULT BRANCH, catching exactly
+//     those pre-existing findings — but on its own it misses an alert this PR
+//     introduces that is not on main yet, which is the case the PR-scoped query
+//     was there for.
+//
+// So the gate blocks on the union. Replacing one query with the other just
+// trades which blind spot you have.
+//
+// Filtered to tool_name=CodeQL deliberately: OpenSSF Scorecard writes to the
+// same code-scanning surface, and its accepted-out-of-scope policy alerts would
+// otherwise make this list permanently non-empty and therefore useless.
+function _codeqlAlertsForRef(ref) {
+  var args = ["api", "repos/:owner/:repo/code-scanning/alerts", "-X", "GET",
+    "-f", "state=open", "-f", "tool_name=CodeQL", "-f", "per_page=100"];
+  if (ref) args.push("-f", "ref=" + ref);
+  var rv = _capture("gh", args);
   if (rv.status !== 0) return null;
   try {
     var arr = JSON.parse(rv.stdout || "[]");
@@ -235,7 +255,66 @@ function _openCodeqlAlerts(prNum) {
   } catch (_e) { return null; }
 }
 
+function _openCodeqlAlerts(prNum) {
+  var onDefault = _codeqlAlertsForRef(null);
+  var onPr = _codeqlAlertsForRef("refs/pull/" + prNum + "/merge");
+  // Either query failing means the question is unanswered. Never let a failed
+  // lookup read as "no alerts" — that is the same absent-input-passes shape
+  // this whole gate exists to close.
+  if (onDefault === null || onPr === null) return null;
+
+  var byNumber = new Map();
+  onDefault.forEach(function (a) { byNumber.set(a.number, { alert: a, scope: "default branch" }); });
+  onPr.forEach(function (a) {
+    if (byNumber.has(a.number)) byNumber.get(a.number).scope = "default branch + this PR";
+    else byNumber.set(a.number, { alert: a, scope: "introduced by this PR" });
+  });
+  return [...byNumber.values()];
+}
+
 // ---- Subcommands ---------------------------------------------------------
+
+// The derived-artifact regeneration, in the one order that is correct. Shared
+// by `prepare` and `regen` so the two cannot drift: any source edit after a
+// prepare — a review finding fixed on the release branch, most often a data
+// correction — invalidates the signatures, indexes and SBOM hashes, and
+// re-running the four commands from memory is where the ordering gets lost.
+function _regenArtifacts() {
+  _section("regen artifacts");
+  // Order matters: sign first (re-signs the manifest), then the snapshot/
+  // index/SBOM derivations. refresh-sbom runs LAST because it hashes the
+  // shipped tree (incl. README) — regenerating it before a later source edit
+  // strands the hashes (the recurring "refresh-sbom last" lesson).
+  _run("node", ["lib/sign.js", "sign-all"]);
+  _run("npm", ["run", "build-indexes"]);
+  _run("npm", ["run", "refresh-snapshot"]);
+  _run("npm", ["run", "refresh-sbom"]);
+  _ok("signed + indexes + snapshot + sbom regenerated");
+}
+
+// Re-derive the artifacts after editing source on an already-prepared release
+// branch. No version bump, no CHANGELOG requirement, no clean-tree demand —
+// this phase exists precisely for a dirty tree. It refuses on main, where the
+// bump belongs to `prepare`.
+function cmdRegen() {
+  _section("regen");
+  // Positively require a release branch rather than merely rejecting main: this
+  // re-signs the manifest and rewrites checked-in derived artifacts, so an
+  // accidental run from a feature branch or a detached HEAD would produce
+  // release artifacts from a tree that is not the release.
+  if (!_gitOnRelease()) {
+    throw new Error("release: regen must run on a release-vX.Y.Z branch (on " + _gitBranch() + "). " +
+      "On main the regeneration belongs to `prepare`.");
+  }
+  var dirty = _capture("git", ["status", "--porcelain"]).stdout.split(/\r?\n/).filter(function (l) { return l.trim(); });
+  if (!dirty.length) console.log("working tree is clean — regenerating anyway (artifacts may be stale from an earlier commit)");
+  else {
+    console.log("regenerating against " + dirty.length + " uncommitted path(s):");
+    dirty.forEach(function (l) { console.log("  " + l.trim()); });
+  }
+  _regenArtifacts();
+  console.log("\nnext: node scripts/release.js gates");
+}
 
 function cmdPrepare(opts) {
   _section("prepare");
@@ -247,12 +326,26 @@ function cmdPrepare(opts) {
   // (prepare is about to bump versions + regenerate artifacts — it must start
   // from an otherwise-clean main so the release commit captures only the
   // intended change set).
+  //
+  // `--with-content` widens that to a release which SHIPS an uncommitted change
+  // — a curation batch written into data/, a fix folded in alongside the bump.
+  // Without it, such a release cannot use this phase at all and gets hand-run
+  // instead, which is how the steps below drift: a hand-rolled sequence dropped
+  // the shrinkage gate two lines above the baseline refresh and rebaselined
+  // without ever checking. The flag keeps the phase authoritative for that flow
+  // rather than leaving it to memory. It still prints what it is carrying, so
+  // an unintended file in the tree is visible rather than silently released.
   var dirty = _capture("git", ["status", "--porcelain"]).stdout
     .split(/\r?\n/)
     .filter(function (l) { return l.trim() && !/\bCHANGELOG\.md$/.test(l); });
-  if (dirty.length) {
+  if (dirty.length && !opts.withContent) {
     throw new Error("release: prepare requires a clean working tree (CHANGELOG.md may be pre-edited). Also uncommitted:\n  " +
-      dirty.join("\n  "));
+      dirty.join("\n  ") +
+      "\n\nIf this release intentionally ships those changes, re-run with --with-content.");
+  }
+  if (dirty.length) {
+    console.log("carrying " + dirty.length + " uncommitted path(s) into this release (--with-content):");
+    dirty.forEach(function (l) { console.log("  " + l.trim()); });
   }
 
   var current = _readJsonVersion("package.json");
@@ -283,16 +376,7 @@ function cmdPrepare(opts) {
   _writeJsonVersion("manifest.json", next);
   _ok("bumped package.json + manifest.json → " + next);
 
-  _section("regen artifacts");
-  // Order matters: sign first (re-signs the manifest), then the snapshot/
-  // index/SBOM derivations. refresh-sbom runs LAST because it hashes the
-  // shipped tree (incl. README) — regenerating it before a later source edit
-  // strands the hashes (the recurring "refresh-sbom last" lesson).
-  _run("node", ["lib/sign.js", "sign-all"]);
-  _run("npm", ["run", "build-indexes"]);
-  _run("npm", ["run", "refresh-snapshot"]);
-  _run("npm", ["run", "refresh-sbom"]);
-  _ok("signed + indexes + snapshot + sbom regenerated");
+  _regenArtifacts();
 
   _section("test-count baseline");
   // Check BEFORE refreshing. `--update-baseline` writes whatever it observes,
@@ -450,12 +534,16 @@ function cmdWatch() {
       "verify manually per the pre-flight checklist before merge.");
   } else if (codeqlAlerts.length > 0) {
     console.log("\nopen CodeQL alerts (" + codeqlAlerts.length + "):");
-    codeqlAlerts.forEach(function (a) {
+    codeqlAlerts.forEach(function (e) {
+      var a = e.alert;
       var loc = (a.most_recent_instance && a.most_recent_instance.location) || {};
       var sev = (a.rule && (a.rule.security_severity_level || a.rule.severity)) || "?";
       console.log("  ⚠ " + (a.rule && a.rule.id) + " [" + sev + "]  " +
-        (loc.path ? loc.path + ":" + loc.start_line : "") + "  " + (a.html_url || ""));
+        (loc.path ? loc.path + ":" + loc.start_line : "") + "  " +
+        "(" + e.scope + ")  " + (a.html_url || ""));
     });
+    console.log("\nThe union of the default branch and this PR's merge ref: an alert already on main " +
+      "blocks the release as surely as one this PR introduces.");
     console.log("\nFix real findings in code (push, let CodeQL re-scan) OR dismiss by-design FPs with a " +
       "written reason, then re-run: node scripts/release.js watch");
     process.exit(3); // allow:process-exit-after-stdout-write — maintainer-run release orchestrator; the guidance line above is human-read on a TTY, not a piped result channel
@@ -666,7 +754,10 @@ function cmdHelp() {
   console.log("release.js — orchestrated exceptd release flow");
   console.log("");
   console.log("Usage:");
-  console.log("  node scripts/release.js prepare [--minor]   # bump + sign + indexes + snapshot + sbom + baseline");
+  console.log("  node scripts/release.js prepare [--minor] [--with-content]");
+  console.log("                                              # bump + sign + indexes + snapshot + sbom + baseline");
+  console.log("                                              # --with-content: release ships uncommitted work");
+  console.log("  node scripts/release.js regen               # re-derive artifacts after editing a release branch");
   console.log("  node scripts/release.js gates               # npm test + 20-gate predeploy");
   console.log("  node scripts/release.js commit              # release branch + signed commit");
   console.log("  node scripts/release.js push                # push branch + open PR");
@@ -684,11 +775,15 @@ function cmdHelp() {
 // ---- Dispatch ------------------------------------------------------------
 
 var sub = process.argv[2] || "help";
-var opts = { minor: process.argv.slice(3).indexOf("--minor") !== -1 };
+var opts = {
+  minor: process.argv.slice(3).indexOf("--minor") !== -1,
+  withContent: process.argv.slice(3).indexOf("--with-content") !== -1,
+};
 
 try {
   switch (sub) {
     case "prepare": cmdPrepare(opts); break;
+    case "regen":   cmdRegen();       break;
     case "gates":   cmdGates();       break;
     case "commit":  cmdCommit();      break;
     case "push":    cmdPush();        break;

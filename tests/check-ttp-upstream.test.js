@@ -136,3 +136,55 @@ test("a pinned version cannot steer the upstream request", () => {
   assert.throws(() => assertPinShape("atlas", null), /does not match/,
     "a missing pin must throw rather than stringify into a URL");
 });
+
+test("the request sink refuses any origin but the pinned upstream", () => {
+  // The pin shape-check above sits a long way from the fetch. This is the same
+  // property enforced at the sink, so it survives a later caller that builds a
+  // URL without going through assertPinShape.
+  const { ALLOWED_ORIGINS, assertAllowedUrl } = require(SCRIPT);
+
+  assert.ok(ALLOWED_ORIGINS instanceof Set);
+  assert.equal(ALLOWED_ORIGINS.size, 1, "widening the allowlist should be a deliberate, reviewed change");
+  assert.ok(ALLOWED_ORIGINS.has("https://raw.githubusercontent.com"));
+
+  // The two URLs the script actually builds must pass unchanged.
+  const attack = "https://raw.githubusercontent.com/mitre-attack/attack-stix-data/v19.2/enterprise-attack/enterprise-attack.json";
+  const atlas = "https://raw.githubusercontent.com/mitre-atlas/atlas-data/v2026.07/dist/v6/ATLAS-2026.07.yaml";
+  assert.equal(assertAllowedUrl(attack), attack, "the real ATT&CK URL must be allowed unchanged");
+  assert.equal(assertAllowedUrl(atlas), atlas, "the real ATLAS URL must be allowed unchanged");
+
+  for (const [bad, why] of [
+    ["https://evil.example.com/x.json", "a different host"],
+    ["https://raw.githubusercontent.com.evil.com/x", "a suffix-confusion host"],
+    ["https://rawgithubusercontent.com/x", "a lookalike host"],
+    ["http://raw.githubusercontent.com/x", "plaintext http against the right host"],
+    ["not a url", "an unparseable string"],
+  ]) {
+    assert.throws(() => assertAllowedUrl(bad), /refusing to fetch/, `${why} must be refused`);
+  }
+
+  // Credentials, query and fragment are refused even on the allowed origin —
+  // each is a way to change what the request does without changing its host.
+  for (const [bad, why] of [
+    ["https://user:pass@raw.githubusercontent.com/x", "embedded credentials"],
+    ["https://raw.githubusercontent.com/x?token=abc", "a query string"],
+    ["https://raw.githubusercontent.com/x#frag", "a fragment"],
+  ]) {
+    assert.throws(() => assertAllowedUrl(bad), /refusing to fetch/, `${why} must be refused`);
+  }
+});
+
+test("the fetch helpers route through the sink guard and refuse redirects", () => {
+  // A helper that calls fetch(url) directly would bypass the guard entirely,
+  // and following a redirect would let the allowed origin hand the request to
+  // another one — so both properties are pinned in source.
+  const fs = require("node:fs");
+  const src = fs.readFileSync(SCRIPT, "utf8");
+  const helpers = src.slice(src.indexOf("async function fetchJson"), src.indexOf("/** Every ATT&CK technique id"));
+
+  assert.equal((helpers.match(/await fetch\(assertAllowedUrl\(url\)/g) || []).length, 2,
+    "both fetch helpers must pass the URL through assertAllowedUrl");
+  assert.doesNotMatch(helpers, /await fetch\(url\b/, "no helper may fetch an unvalidated URL");
+  assert.equal((helpers.match(/redirect: "error"/g) || []).length, 2,
+    "both helpers must refuse redirects rather than follow them off the allowed origin");
+});

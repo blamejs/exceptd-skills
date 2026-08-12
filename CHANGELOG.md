@@ -1,5 +1,149 @@
 # Changelog
 
+## 0.19.24 — 2026-08-11
+
+The upstream TTP checker validates the origin at the point it makes a request. It reads the pinned ATT&CK and ATLAS versions out of the signed catalogs and interpolates them into an upstream URL, with a shape guard on the pin sitting some distance upstream of the fetch. The origin is now re-checked at the request itself against a single-entry allowlist, redirects are refused rather than followed, and a URL carrying credentials, a query or a fragment is rejected — so the property holds locally, survives a later caller that skips the earlier guard, and can be confirmed by reading the function rather than tracing the module.
+
+The release orchestrator's code-scanning gate blocks on both references rather than one. It queried alerts against the pull request's merge reference alone, which reports only what that pull request introduced — so an alert already present on the default branch returned nothing and the phase reported a clean result. Querying the default branch alone has the opposite blind spot, missing an alert the pull request introduces before it reaches that branch, so the gate now blocks on the union of the two, deduplicated by alert and labelled with which reference each was found on. It is filtered to the analysis tool whose findings it is meant to block, so policy alerts from other tools cannot make the list permanently non-empty and therefore useless, and a failed lookup is reported as unanswered rather than passing as zero.
+
+## 0.19.23 — 2026-08-11
+
+Every CVE in the catalog now records the controls it requires. The last 34 entries complete the set at 1025 of 1025 — 2,176 control requirements drawn from 143 distinct controls — so `framework-gap` reports the controls a CVE needs that no framework carries for any entry in the catalog, not a subset of it. The closing set includes PHP-CGI, Samba, Apache Tomcat, XStream, Oracle WebLogic, Cisco IOS XE and ASA, Ivanti EPMM, Mirth Connect, and consumer routers from Zyxel and D-Link.
+
+Some populations are defined by a combination, not a product. The PHP-CGI entry applies only to Windows hosts running Apache with PHP-CGI below the fixed builds; a Linux host, or a Windows host serving PHP through another interface, is not an instance of it. The requirement says so, because an emergency batch scoped to "PHP" spends its window on hosts that were never exposed. It also names why a request filter written against the obvious payload proves nothing here: the injection arrives as a soft hyphen that Windows remaps to a dash, so a rule has to be validated by replaying the encoded byte rather than the character the rule author had in mind.
+
+Where the vulnerable interface is the reason the device exists, the entry says what isolation cannot do. Several of the closing entries are consumer routers and access points whose management interface is reachable from the network they serve, so restricting reachability bounds who can send the request and repairs nothing — and for the models with no fixed firmware, removal is the requirement rather than a step after patching.
+
+## 0.19.22 — 2026-08-11
+
+Another 38 CVEs report the controls they require, taking coverage to 991 of 1025. The set includes Citrix NetScaler, Apache ActiveMQ and RocketMQ, Adobe ColdFusion, Oracle Fusion Middleware, Zimbra, Ivanti's Cloud Services Appliance, Qlik Sense, Cisco NX-OS, and the Fortinet FortiSandbox and Trend Micro Apex One entries.
+
+Three entries put the flaw inside the security product itself. A sandbox appliance exists so hostile content detonates somewhere other than production; an endpoint-protection console exists to control the fleet; a migration tool exists to move firewall configurations. Each is carried as tooling rather than as an asset, which is how each stays outside the inventory that would have clocked it — and the migration tool holds, in its own record, the usernames, cleartext passwords, configurations and device API keys of every firewall it has handled. The requirement puts these on the tier their contents justify rather than the tier their role suggests, and states what the upgrade does not undo: credentials that passed through the tool stay valid until they are re-issued on the devices themselves.
+
+Where an exploit's precondition is administrative access, the administrator population is the attack surface. The endpoint-protection entry needs console access before its uninstaller module can be driven into executing commands — so the requirement raises those accounts above ordinary application administrators, reachable through a privileged-access path rather than from any workstation on the corporate segment. Recording the flaw as needing a patch and stopping there leaves the prerequisite untouched.
+
+A second-order injection is not visible at the point it is submitted. The sandbox appliance stores a value from one feature and executes it as an operating-system command later, so a check that validates input on submission sees nothing wrong. The requirement is that the configuration-accepting endpoint neutralises the value before it can reach a command sink, and the distinguishing test exercises the stored path rather than the submission path.
+
+## 0.19.21 — 2026-08-11
+
+Another 39 CVEs report the controls they require, taking coverage to 953 of 1025. The set includes Jenkins, PAN-OS, Ivanti EPMM and the Cloud Services Appliance, Juniper's J-Web, Veeam Cloud Connect, Veritas Backup Exec, SolarWinds Web Help Desk, Apache OFBiz, Adobe Acrobat, and IP cameras from Reolink and NUUO.
+
+A patch that has been superseded is not a patch. The Cobalt Strike teamserver entry records that the first fix was incomplete, so a server upgraded off the vulnerable line — and even one upgraded to that first fix — can still be exploitable. The requirement refuses to close on "upgraded", and names the running version against the release that carries the complete fix, because a remediation record keyed to the first advisory reads as done while the flaw is reachable.
+
+Where the vulnerable component is unnamed, the inventory gap is the finding. One entry describes a flaw in an unspecified third-party component packaged inside a vendor's product — so the asset record says the product name and stops, and the component that actually carried the code execution was never tracked, scanned or held to a patch SLA by anyone. The requirement is that component inventory reach the depth at which the vulnerability actually sits, and the entry is explicit that the exploitation preceded any vendor fix: no remediation clock has force in a window where no fix exists, and pretending otherwise is how that window gets recorded as compliant.
+
+Two release tracks moving independently are two populations. The Jenkins entry names an affected weekly-line build and an affected long-term-support build, so an estate that upgrades one line and leaves a controller on the other has not finished — completion is counted per controller, not per track. The entry also separates what the upgrade does from what it cannot: the primitive is file disclosure, an unauthenticated caller obtains at least the first lines of any file on the controller, and the upgrade closes the read without unreading what was already taken.
+
+## 0.19.20 — 2026-08-11
+
+Another 38 CVEs report the controls they require, taking coverage to 914 of 1025. The set includes Ivanti Connect Secure and EPMM, VMware ESXi, Exchange, SharePoint, Adobe ColdFusion and Acrobat, Juniper's J-Web interface, Zimbra, Roundcube, libwebp, the Linux netfilter entries, and Outlook's credential-leak defect.
+
+An ordinary directory operation can be equivalent to hypervisor root. On an AD-integrated ESXi host, full administrative access is granted to members of a group matched by name, so whoever can create a group with that name holds hypervisor administration — which is what the named ransomware actors did, deleting and re-creating it. The requirement classifies that group-creation permission at the tier the access it confers actually is, and the entry carries the consequence: backup copies for VMs on those hosts must not live on datastores the hosts present, because the failure mode on record is backups encrypted alongside the machines they were meant to restore.
+
+Where the vulnerable code is vendored beneath products, the inventory has to reach the depth it actually sits at. The libwebp entry refuses to be scoped to a browser: everything embedding the codec is reachable through a crafted image, and the record names Chromium-based browsers, Electron applications and native software that bundles its own copy. Each install is held to its own fixed build rather than to the browser's, and the entry states why an application list cannot produce that population — a component vendored beneath a product is not something an operator installs, so it appears in no software inventory built from what was installed.
+
+One entry is reclassified. The D-Link DCS-2530L and DCS-2670L camera flaw (CVE-2020-25078) was carried as remote code execution with a CWE-94 assignment and an estimated CVSS of 8.8; the verified primitive is administrator-password disclosure from an unauthenticated endpoint, scored 7.5 for confidentiality impact alone. The score, the weakness class, the attack class and the ATT&CK mapping now follow the verified reading, and the indicators changed with them: what an operator hunts is unauthenticated requests to the disclosing endpoint and reuse of that password elsewhere, not command execution, implanted firmware or outbound command-and-control from the camera. The response changes too — rotate the credential and everywhere it was reused, and replace units that cannot reach a fixed build, rather than treating reachability as evidence that something ran on the device.
+
+For entries where the fix and the listing arrive together, the alternatives are what the clock needs. The Outlook credential-leak entry pairs the vendor update with three named mitigations, so a client that cannot take the update inside the window still has a deployable answer. It also records what remediation cannot reach: roughly eleven months of exploitation preceded the listing, and the defect's output is the user's authentication material delivered to an attacker with no interaction — so credentials exposed before the update are not repaired by it.
+
+## 0.19.19 — 2026-08-11
+
+Another 43 CVEs report the controls they require, taking coverage to 876 of 1025. The set includes Jenkins, Oracle WebLogic and Java SE, FortiManager, SonicWall's SMA appliances, Veeam Backup and Replication, Veritas Backup Exec, the Barracuda Email Security Gateway, PaperCut, Roundcube, and IP cameras from Dahua, Edimax and PTZOptics.
+
+An applied patch is not always the end state, and one entry says so in the vendor's own terms. Barracuda auto-applied the fix to every customer Email Security Gateway without the operator doing anything — and still advised replacing compromised units, because nothing restores the integrity of an appliance that was already backdoored. The operator's question on that product is therefore not whether the fix landed but whether the unit was held during the exposure window, which on an appliance the attacker controlled cannot be answered from the appliance's own logs. The requirement pairs the replacement default with off-box telemetry, so the record of what the appliance did outlives the appliance.
+
+Backup infrastructure is rated by what it protects, not by what it is. Three entries in this set put unauthenticated code execution on backup servers and agents, and each records the same gap between a fix existing and it being applied — a Backup Exec flaw was exploited for over a year against a fix already shipped, and Veeam servers were still unpatched when ransomware affiliates arrived roughly six weeks after the release. The requirement moves those hosts off the maintenance window their tier normally gets and onto the listing clock, and it names what an upgrade does not undo: the accounts created and the staging left behind on a server that was already reached.
+
+Where a vulnerability's scope is recorded as "per vendor advisory", the sweep is built from that advisory rather than from the models the description happens to name. The DrayTek entry names three Vigor models in its description while the affected-product record scopes it to the product line, so an inventory built from the description reports clean across an estate standardised on another model. The same entry declines to guess at end-of-support: a fix existing for this CVE says nothing about whether a given model can still receive one, so that is written as something to obtain per model — and the units driving this class of exploitation are the home-office and small-branch routers that were never in the patch inventory to begin with.
+
+## 0.19.18 — 2026-08-11
+
+Another 40 CVEs report the controls they require, taking coverage to 833 of 1025. The set includes Ivanti Connect Secure, PAN-OS, Confluence, VMware vCenter, Adobe ColdFusion, Firefox, Chromium, Windows Hyper-V, Oracle E-Business Suite, SonicWall's SSL-VPN, and the Realtek SDK.
+
+Where the vendor hosts the software, the patch obligations complete themselves. The Microsoft Partner Center fix was applied server-side, with nothing for an operator to install, schedule or attest — so all five patch-cadence controls citing the CVE can be marked satisfied by someone who did nothing and could have done nothing, while exploitation ran against the service. What the operator does hold is the relationship: Partner Center brokers access into downstream customer tenants, so the escalation lands on the delegated grant rather than on any one organisation's server. The requirement is validation and logging of the cross-tenant calls a partner identity makes, plus an incident path for a control plane whose remediation was never the operator's to perform.
+
+Whether a patch exists is a per-model question when the defect sits in a component other vendors embed. The Realtek SDK entry records an available fix alongside affected devices that are end-of-life with no fixed firmware, and the flaw is in a UPnP service shipped inside OEM router and IoT builds — so the answer comes from each OEM rather than being assumed either way across an estate. The requirement splits that estate into three states rather than the usual two: patched, mitigation-active with the WAN-side path blocked and a dated review, and no verdict — which is a device to retire, not a row to leave open.
+
+An appliance cannot be isolated out of doing its job. The FortiWeb command injection is reachable over crafted HTTP requests as well as the CLI, and serving HTTP is the entire reason the appliance is deployed, so restricting reachability narrows the management path for the duration and closes nothing. That entry also counts a unit carrying the new image but not yet restarted as still exposed, because the recorded fix requires the restart to take effect.
+
+## 0.19.17 — 2026-08-11
+
+Another 41 CVEs report the controls they require, taking coverage to 793 of 1025. The set includes Chromium V8, Apple WebKit and CoreMedia, PAN-OS, MOVEit Transfer, SharePoint, Cisco ASA and Catalyst SD-WAN, Ivanti's Cloud Services Appliance, D-Link NAS devices, jQuery, and GNU Bash.
+
+Where the vulnerable code is a file rather than a package, the scan's silence is not a finding of absence. jQuery ships inside applications — vendored into a web root, emitted by a build step, embedded in a third-party product's web interface — and the affected range covers effectively every copy ever placed that way, so an inventory keyed to installed packages has no row to report on. The entry also names the second measurement that reads clean: the vulnerability's own text says the untrusted HTML executes even after sanitizing it, so an application recording sanitization as its mitigation has recorded something the defect is documented to survive.
+
+Some entries have no fixed build to reach. The D-Link NAS devices are past end of support with the vendor's confirmation on record, no patch, and no live-patch path — so removal is the requirement rather than a step after patching, and restricting reachability is the only lever an operator holds for as long as a unit stays in service. On appliances holding the primary and backup copy of a site's files, that distinction is the whole disposition.
+
+A CVE's identifier year is not its remediation priority. The Bash entry carries a 2014 identifier and a 2025 listing date, so a process that ages work by identifier files it as historical while the clock is running — the requirement is that the listing, not the year, sets the queue position. It also separates a family-level attestation from this member: an estate that closed its Shellshock work on "newer than the first fix" has not shown the build carrying the fix for this defect, and the population that needs it is the hosts where attacker-controlled data actually reaches a Bash environment rather than every host with Bash installed.
+
+## 0.19.16 — 2026-08-10
+
+Another 39 CVEs report the controls they require, taking coverage to 752 of 1025. The set includes React Native's development server, React Server Components, F5 BIG-IP, Fortinet SSL-VPN, Ivanti Connect Secure, PAN-OS, SonicWall, SAP NetWeaver, Oracle E-Business Suite, ImageMagick, and the Windows CLFS and CNG entries.
+
+Some of these put the clock somewhere the production patch pipeline never reaches. The React Native command-line tool's development server runs on developer workstations and build images, so an estate can complete a patch cycle with the exposure untouched — and the exposure exists only while a development server is running and answering from the network, which no patch-posture dashboard reports on. Completion is counted per host and per build image, and the running process is named as the step that slips: updating the package while a server keeps serving from a pre-fix load leaves the host exposed.
+
+Where the vulnerable code arrives beneath what a team declares, the inventory has to resolve it. The React Server Components defect is in React's own payload decoder, and React is usually not the declared dependency — the application declares the rendering framework and React comes underneath it. The version recorded has to be the one linked into the deployed artifact, tested by extracting it from a build that is answering requests rather than from the repository, because a merged dependency bump and a deployed pre-fix build read the same on a patch attestation.
+
+Security tooling is carried as an asset like anything else. The Cobalt Strike client is a per-operator install that managed software distribution generally never sees, so the estate's patch report has no row for it and the absence reads as compliance — while the defect runs the engagement's data flow backwards, rendering implant data from a host under someone else's control in the operator's own console. The requirement counts the client per operator workstation rather than per team server, and puts the engagement toolchain itself inside the scope that treats it as attack surface with an untrusted input path.
+
+## 0.19.15 — 2026-08-10
+
+Another 35 CVEs report the controls they require, taking coverage to 713 of 1025. The set includes HPE OneView, the Windows CLFS driver, SharePoint, Outlook, Adobe ColdFusion, Citrix Session Recording, and the Cisco and D-Link router entries.
+
+Infrastructure-management appliances get a clock of their own. HPE OneView is normally inventoried as the tool an estate patches its servers with rather than as an asset that needs patching, which is how a pre-authentication flaw on it rides the next infrastructure window while the operating-system attestation reads clean. The requirement runs the appliance's own update on the listing clock rather than the cadence of the updates it distributes, and names the restart as the step most likely to slip, because taking it interrupts the console operators depend on.
+
+Where nothing can be disabled, the entry says so instead of reaching for a compensating control. The CLFS driver ships with Windows and the attacker is already an authorized local user, so there is no module to blacklist, no account model being abused, and no privilege tier that gets consulted — leaving an honestly measured remediation window and detection during it as the only two requirements the evidence supports.
+
+Detection of the polkit D-Bus race moves to `NEW-CTRL-146` (USERSPACE-PRIVILEGED-DBUS-RACE-DETECTION). It had been filed under the kernel-exploitation detection control while describing userspace telemetry, so a report correlating by identifier would have counted kernel-detection coverage as covering polkit.
+
+`release.js prepare` accepts `--with-content` for a release that intentionally ships uncommitted work. It previously refused any tree dirtier than the changelog entry, so such releases were run by hand — and a hand-run sequence is how the phase's own steps get skipped. The refusal is unchanged without the flag, and with it the carried paths are listed rather than silently included.
+
+## 0.19.14 — 2026-08-10
+
+Another 36 CVEs report the controls they require, taking coverage to 678 of 1025. The set includes Citrix Session Recording, Erlang/OTP SSH, FreePBX, Zimbra, Ubiquiti UniFi OS, Power Pages, Android Runtime, and the PowerPoint record-parser entry.
+
+Two entries state why a network-shaped defence does nothing for them. The Citrix Session Recording deserialization is reached by an authenticated user already on the same intranet as the server, so the payload arrives as ordinary internal traffic from an ordinary internal account — restricting reachability bounds which hosts can present it and repairs nothing, and any account inside the permitted segment still holds the path.
+
+Where a decade-old defect returns to the exploited list, the requirement is not "apply the update" but "find the installs that never received it". The re-listed PowerPoint entry measures completion by the build each install reports rather than by a management console showing no updates pending — the hosts keeping a defect of that vintage reachable are the ones that fell out of managed updating, so the console's silence is missing visibility rather than evidence. Copies no inventory can see are remediated by removal, never by being recorded as compliant.
+
+## 0.19.13 — 2026-08-10
+
+Another 34 CVEs report the controls they require, taking coverage to 642 of 1025. The set includes BeyondTrust Remote Support and Privileged Remote Access, Cisco Unified Communications and Catalyst SD-WAN, Sitecore, TP-Link, and Windows and Linux kernel entries.
+
+The catalog now checks that a control stays attached to the CVE it was written for. The link is the framework gap: a control claims to close a gap that the framework catalog already cites that CVE as evidence for, so a control moved onto an unrelated CVE breaks a reference that generic structure checks cannot see. A hundred and five older references sit outside that rule and are grandfathered by count rather than silently accepted; the check fails if the number grows.
+
+Where remote-access products are concerned, the requirements say what isolation cannot do. Remote Support and Privileged Remote Access exist in order to be reachable, so "restrict the interface instead of meeting the clock" is only available where an operator can name a user population whose access can be suspended for the duration — and where they cannot, the update and its restart are the only lever, with nothing to record in its place.
+
+## 0.19.12 — 2026-08-10
+
+Another 34 CVEs report the controls they require, taking coverage to 608 of 1025. The set includes Soliton FileZen, Ivanti EPMM and Cloud Services Appliance, DELMIA Apriso, Hikvision, PTC Windchill, Dovecot, and Linux and Android kernel entries.
+
+Where a catalog entry contradicts itself, the requirement now says so rather than choosing a reading. The FileZen entry describes the command injection as reached after a product login in one field and as unauthenticated in another; the control states both readings and which interim measure survives under each, because an account-side restriction is worthless if the second reading is the true one, and recording it as the mitigation would be the failure this field exists to catch.
+
+Appliance entries state the restart as the completion criterion rather than a step after it. On a file-transfer appliance the restart interrupts in-flight transfers, which makes it exactly the step that gets deferred while the update is recorded as deployed — so the requirement is the running software level and the timestamp of the restart that activated it, per unit.
+
+## 0.19.11 — 2026-08-10
+
+Another 36 CVEs report the controls they require, taking coverage to 574 of 1025. The set includes the Qualcomm Adreno driver flaw, Fortra GoAnywhere MFT, Rails, TP-Link routers, Palo Alto Expedition, the Windows CLFS driver, and Apple memory-corruption entries.
+
+The Qualcomm entry states a case the patch controls cited against it cannot express: the vulnerable code is a hardware-vendor driver, so no operator publishes its fix — it arrives only inside a device build for that chipset. The requirement is therefore the fixed build enforced as a condition of access to organizational data, with the device that has no fixed build available named as unremediated rather than filed as a deferral, since the only remaining levers there are withholding data and replacement. A browser update does not reach the driver even though the flaw triggers while rendering, and the entry says so instead of pointing at a fix that does not touch the vulnerable code.
+
+Requirements that assume a telemetry agent now say where they do not run. A detection prescribing host audit rules was left off the mobile-driver entry on the grounds that it could never observe the privilege transition on that device class — a rule recorded as coverage while detecting nothing is worse than an acknowledged gap.
+
+## 0.19.10 — 2026-08-10
+
+Another 39 CVEs report the controls they require, taking coverage to 538 of 1025. The set includes the WSUS deserialization flaw, Grafana and Roundcube, Quest KACE, Samsung mobile, Chromium ANGLE, and the QNAP Pwn2Own chain.
+
+Two of these state something the patch-cadence controls cited against them do not. The WSUS entry inverts the usual remediation order: the update server has to be fixed ahead of the endpoints it serves, because an unauthenticated path to code execution on it reaches every host that trusts it for updates. And the QNAP chain components carry no KEV listing and no confirmed exploitation, so a listing-triggered clock never starts for them — a working exploit chain was demonstrated publicly regardless, and each component scored on its own severity understates what the chain composes into. The entry says so rather than attaching a control whose trigger condition is absent.
+
+Requirements that bound reachability now state what they do not do. A management-surface isolation limits who can reach a command-injection sink; it does not remove the sink, does nothing against an attacker already inside the segment, and does not substitute for the firmware update. Recording the condition is what stops a compensating control being logged as remediation while the path stays reachable.
+
+## 0.19.9 — 2026-08-09
+
+Another 38 CVEs report the controls they require, taking coverage to 499 of 1025 — roughly half the catalog. The set spans Laravel Livewire and SolarWinds Web Help Desk, Adobe Commerce, PaperCut, WinRAR, PHPMailer, Ubiquiti UniFi OS, Zimbra, and Windows and Linux kernel entries.
+
+A pattern worth naming runs through the application-framework entries: the thing that has to be patched is a package inside an application, not a package on a host, so a host-level inventory cannot answer whether the estate is remediated. Where that applies, the requirement is stated against the running process rather than the repository — confirm the version the workers actually loaded, since a lockfile records what the next deploy will ship, not what is serving traffic now.
+
 ## 0.19.8 — 2026-08-09
 
 Control identifiers are unique and uniformly shaped again. `AGENTS.md` states these IDs are stable and citable from skill bodies, operator reports and framework-gap analyses, and two things had drifted from that. Thirteen control classes carried a descriptive string where the identifier belongs — `MOBILE-OS-MINIMUM-PATCH-LEVEL-ENFORCEMENT` rather than a number — and could not be cited under the contract at all; they are now `NEW-CTRL-126` through `NEW-CTRL-138`, keeping their names.
