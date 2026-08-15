@@ -1837,3 +1837,331 @@ test('de-listing an entry that never carried a date leaves no spurious key', asy
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+require('node:test').describe('epss-triple-coherence', () => {
+  const { epssTripleDiffs, EPSS_DRIFT, ALL_SOURCES, epssDiffFromCache } = require(path.join(ROOT, 'lib', 'refresh-external.js'));
+  const { renderEpssNote } = require(path.join(ROOT, 'lib', 'cve-enrich.js'));
+  const gate = require(path.join(ROOT, 'scripts', 'check-epss-consistency.js'));
+
+  // The shape observed on the nightly refresh branch: a score that moved far
+  // past the drift threshold while its percentile moved a small fraction of it.
+  const local = () => ({
+    epss_score: 0.84793,
+    epss_percentile: 0.99688,
+    epss_date: '2026-08-07',
+    epss_note: 'FIRST EPSS 0.84793 (100th percentile) as of 2026-08-07.',
+  });
+  const row = { score: 0.99311, percentile: 0.9995, date: '2026-08-13' };
+  // A neighbour already on the new publication, scoring BELOW the refreshed
+  // entry. If the refreshed entry keeps yesterday's percentile, the cohort
+  // stops ranking monotonically — which is exactly what the gate reports.
+  const neighbour = { epss_score: 0.99085, epss_percentile: 0.99929, epss_date: '2026-08-13' };
+
+  // The logic this replaced: the drift threshold applied to each field on its
+  // own, so a field whose delta was small was left at the previous publication.
+  // Kept here so the assertions below fail if the fix is ever reverted — a test
+  // that only exercised the new path would pass against the bug too.
+  function independentThresholdDiffs(id, loc, fetched, drift) {
+    const out = [];
+    if (fetched.score != null && loc.epss_score != null && Math.abs(fetched.score - loc.epss_score) > drift)
+      out.push({ id, field: 'epss_score', after: fetched.score });
+    if (fetched.percentile != null && loc.epss_percentile != null && Math.abs(fetched.percentile - loc.epss_percentile) > drift)
+      out.push({ id, field: 'epss_percentile', after: fetched.percentile });
+    if (fetched.date && loc.epss_date && fetched.date !== loc.epss_date) {
+      const moved = out.some((d) => d.field === 'epss_score' || d.field === 'epss_percentile');
+      if (moved) out.push({ id, field: 'epss_date', after: fetched.date });
+    }
+    return out;
+  }
+
+  const applyTo = (entry, diffs) => {
+    const out = { ...entry };
+    for (const d of diffs) out[d.field] = d.after;
+    return out;
+  };
+  // mkdtempSync, not a composed path in the shared temp directory. It creates
+  // the directory atomically with owner-only permissions, so nothing can
+  // pre-create or swap the file between the name being chosen and the write —
+  // which a pid-plus-timestamp name does not prevent, however unlikely the
+  // collision. Each caller gets its own directory and removes it afterwards.
+  const tmpDirs = [];
+  const tmpJson = (obj) => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'epss-coh-'));
+    tmpDirs.push(dir);
+    const p = path.join(dir, 'catalog.json');
+    fs.writeFileSync(p, JSON.stringify(obj));
+    return p;
+  };
+  const cleanupTmp = () => {
+    while (tmpDirs.length) {
+      try { fs.rmSync(tmpDirs.pop(), { recursive: true, force: true }); } catch { /* best effort */ }
+    }
+  };
+  const runGate = (catalog) => {
+    const p = tmpJson(catalog);
+    try { return gate.check(p); } finally { cleanupTmp(); }
+  };
+
+  test('the drift threshold decides whether an entry refreshes, not which of its fields does', () => {
+    const old = independentThresholdDiffs('CVE-2099-0001', local(), row, EPSS_DRIFT);
+    const now = epssTripleDiffs('CVE-2099-0001', local(), row, EPSS_DRIFT);
+
+    assert.equal(old.some((d) => d.field === 'epss_percentile'), false,
+      'precondition: the replaced logic omitted the percentile because its own delta was under the threshold');
+    assert.equal(old.some((d) => d.field === 'epss_score'), true,
+      'precondition: the replaced logic did write the score');
+
+    assert.deepEqual(now.map((d) => d.field).sort(), ['epss_date', 'epss_percentile', 'epss_score'],
+      'all three fields travel together once either number has moved');
+    for (const d of now) {
+      const expected = { epss_score: row.score, epss_percentile: row.percentile, epss_date: row.date }[d.field];
+      assert.equal(d.after, expected, `${d.field} must come from the fetched row`);
+    }
+  });
+
+  test('the replaced logic produces a cohort the consistency gate rejects; this one does not', () => {
+    const before = runGate({ A: local(), B: neighbour });
+    assert.deepEqual(before.failures, [], 'precondition: the starting catalog is consistent');
+
+    const broken = runGate({
+      A: applyTo(local(), independentThresholdDiffs('A', local(), row, EPSS_DRIFT)),
+      B: neighbour,
+    });
+    assert.ok(broken.failures.some((f) => /different publications/.test(f)),
+      'the replaced logic must leave a score and percentile drawn from different publications');
+
+    const fixed = runGate({
+      A: applyTo(local(), epssTripleDiffs('A', local(), row, EPSS_DRIFT)),
+      B: neighbour,
+    });
+    assert.deepEqual(fixed.failures.filter((f) => /different publications/.test(f)), [],
+      'writing the row as a unit keeps the cohort ranking monotonically');
+  });
+
+  test('neither number past the threshold refreshes nothing — noise control is preserved', () => {
+    const nudged = { score: 0.85, percentile: 0.997, date: '2026-08-13' };
+    assert.deepEqual(epssTripleDiffs('CVE-2099-0001', local(), nudged, EPSS_DRIFT), [],
+      'a sub-threshold day must not churn the catalog');
+  });
+
+  test('an entry carrying only half the pair gets the missing half from the same row', () => {
+    const halved = { epss_score: 0.84793, epss_date: '2026-08-07' };
+    const diffs = epssTripleDiffs('CVE-2099-0001', halved, row, EPSS_DRIFT);
+    const pct = diffs.find((d) => d.field === 'epss_percentile');
+    assert.ok(pct, 'the absent percentile is supplied rather than left absent');
+    assert.equal(pct.after, row.percentile);
+    assert.equal(pct.before, null, 'a missing field reports null, not undefined');
+  });
+
+  test('a half-populated entry is repaired even when the field it does have has barely moved', () => {
+    // The test above passes for the wrong reason on its own: its score also
+    // crosses the drift threshold, so the entry would refresh anyway. The
+    // failing shape is a half-populated entry whose present field is STABLE —
+    // the absent side can never register as moved, so a drift-only rule leaves
+    // the entry incomplete forever while the consistency gate keeps failing it.
+    const halved = { epss_score: 0.84793, epss_date: '2026-08-07' };
+    const barelyMoved = { score: 0.85, percentile: 0.9971, date: '2026-08-13' };
+    assert.ok(Math.abs(barelyMoved.score - halved.epss_score) < EPSS_DRIFT,
+      'precondition: the present field is inside the drift threshold, so drift alone would not refresh');
+
+    const diffs = epssTripleDiffs('CVE-2099-0001', halved, barelyMoved, EPSS_DRIFT);
+    const pct = diffs.find((d) => d.field === 'epss_percentile');
+    assert.ok(pct, 'the missing percentile must be supplied even though nothing crossed the threshold');
+    assert.equal(pct.after, barelyMoved.percentile);
+
+    // And a COMPLETE entry with the same sub-threshold movement must still be
+    // left alone, so the repair path cannot become a daily-churn path.
+    const complete = { epss_score: 0.84793, epss_percentile: 0.99688, epss_date: '2026-08-07' };
+    assert.deepEqual(epssTripleDiffs('CVE-2099-0002', complete, barelyMoved, EPSS_DRIFT), [],
+      'a complete, stable entry must not churn');
+  });
+
+  test('a partial fetched row never refreshes a COMPLETE entry either', () => {
+    // The partial-row guard first sat inside the repair branch, so it only
+    // applied to half-populated entries. A complete entry meeting a row that
+    // carries one number could still refresh on that number crossing the
+    // threshold, writing it beside the previous publication's other half.
+    const complete = { epss_score: 0.84793, epss_percentile: 0.99688, epss_date: '2026-08-07' };
+    const scoreOnlyRow = { score: 0.99311, percentile: null, date: '2026-08-13' };
+    assert.ok(Math.abs(scoreOnlyRow.score - complete.epss_score) > EPSS_DRIFT,
+      'precondition: the one number present HAS crossed the threshold, so only the row guard can stop this');
+    assert.deepEqual(epssTripleDiffs('CVE-2099-0001', complete, scoreOnlyRow, EPSS_DRIFT), [],
+      'a partial row must not refresh a complete entry, however far its one number moved');
+  });
+
+  test('a row with both numbers but no date is refused', () => {
+    // The date is the third member of the triple. Writing the numbers without
+    // it leaves the entry carrying the previous publication's date, and the
+    // regenerated note then states the new numbers "as of" a publication they
+    // did not come from.
+    const complete = { epss_score: 0.84793, epss_percentile: 0.99688, epss_date: '2026-08-07' };
+    const undatedRow = { score: 0.99311, percentile: 0.9995, date: null };
+    assert.ok(Math.abs(undatedRow.score - complete.epss_score) > EPSS_DRIFT,
+      'precondition: the score HAS crossed the threshold, so only the date guard can stop this');
+    assert.deepEqual(epssTripleDiffs('CVE-2099-0001', complete, undatedRow, EPSS_DRIFT), [],
+      'an undated row is not a publication');
+  });
+
+  test('epssDiffFromCache applies the same coherence rule to a real cache payload', () => {
+    // The cache path is what the nightly refresh actually runs, and it is where
+    // the original defect shipped from — so drive it end to end rather than
+    // only unit-testing the rule it delegates to. `forceStale` skips the signed
+    // _index.json requirement, which is about cache integrity rather than the
+    // coherence behaviour under test here.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'epss-cache-'));
+    try {
+      fs.mkdirSync(path.join(dir, 'epss'));
+      const write = (id, epss, percentile, date) => fs.writeFileSync(
+        path.join(dir, 'epss', `${id}.json`),
+        JSON.stringify({ status: 'OK', data: [{ cve: id, epss, percentile, date }] }),
+      );
+      // Moves far past the threshold; its percentile moves barely at all.
+      write('CVE-2099-0001', '0.99311', '0.9995', '2026-08-13');
+      // A row missing its percentile entirely — must not refresh anything.
+      fs.writeFileSync(path.join(dir, 'epss', 'CVE-2099-0002.json'),
+        JSON.stringify({ status: 'OK', data: [{ cve: 'CVE-2099-0002', epss: '0.99311', date: '2026-08-13' }] }));
+
+      const ctx = {
+        cacheDir: dir,
+        forceStale: true,
+        cveCatalog: {
+          'CVE-2099-0001': { epss_score: 0.84793, epss_percentile: 0.99688, epss_date: '2026-08-07' },
+          'CVE-2099-0002': { epss_score: 0.84793, epss_percentile: 0.99688, epss_date: '2026-08-07' },
+        },
+      };
+      const r = epssDiffFromCache(ctx);
+      const fields = (id) => r.diffs.filter((d) => d.id === id).map((d) => d.field).sort();
+
+      assert.deepEqual(fields('CVE-2099-0001'), ['epss_date', 'epss_percentile', 'epss_score'],
+        'a complete cached row refreshes the whole triple, including the percentile that barely moved');
+      assert.deepEqual(fields('CVE-2099-0002'), [],
+        'a cached row missing the percentile refreshes nothing, however far the score moved');
+      assert.equal(r.status, 'ok');
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('applyDiff does not regenerate the note from a partial diff set', async () => {
+    // applyDiff is exported and is also driven by fixtures that carry a score
+    // and a date without a percentile, so a diff set can move one half of the
+    // pair alone. Rewriting the note there would state the new score beside the
+    // previous publication's percentile and read as current — masking the only
+    // signal the consistency gate has, since a single-entry date cohort has no
+    // neighbour to rank against.
+    const entry = {
+      epss_score: 0.84793, epss_percentile: 0.99688, epss_date: '2026-08-07',
+      epss_note: renderEpssNote({ epss_score: 0.84793, epss_percentile: 0.99688, epss_date: '2026-08-07' }),
+    };
+    const p = tmpJson({ _meta: {}, 'CVE-2099-0001': entry });
+    try {
+      await ALL_SOURCES.epss.applyDiff({ cvePath: p }, [
+        { id: 'CVE-2099-0001', field: 'epss_score', before: 0.84793, after: 0.99311 },
+        { id: 'CVE-2099-0001', field: 'epss_date', before: '2026-08-07', after: '2026-08-13' },
+      ]);
+      const after = JSON.parse(fs.readFileSync(p, 'utf8'))['CVE-2099-0001'];
+      assert.equal(after.epss_score, 0.99311, 'the diff still applies');
+      assert.equal(after.epss_percentile, 0.99688, 'precondition: the percentile was not in the diff set');
+      assert.equal(after.epss_note, entry.epss_note,
+        'the note must be left describing the old publication so the gate still reports the mismatch');
+      assert.notEqual(after.epss_note, renderEpssNote(after),
+        'and it must NOT match the current fields, which is what the gate keys on');
+    } finally {
+      cleanupTmp();
+    }
+  });
+
+  test('a complete row that moves only the score still refreshes the note', async () => {
+    // The regression this guards: deciding coherence from WHICH fields changed
+    // rather than from where the diff came. A complete upstream row whose
+    // percentile rounds to the same value emits the score alone — legitimately
+    // — and treating that as partial strands the note describing the old
+    // publication for good, because the next refresh finds nothing left to
+    // diff and the consistency gate fails on it forever.
+    const entry = {
+      epss_score: 0.84793, epss_percentile: 0.99688, epss_date: '2026-08-07',
+      epss_note: renderEpssNote({ epss_score: 0.84793, epss_percentile: 0.99688, epss_date: '2026-08-07' }),
+    };
+    const sameDayRow = { score: 0.99311, percentile: 0.99688, date: '2026-08-07' };
+    const diffs = epssTripleDiffs('CVE-2099-0001', entry, sameDayRow, EPSS_DRIFT);
+    assert.deepEqual(diffs.map((d) => d.field), ['epss_score'],
+      'precondition: only the score differs, so a fields-based rule would call this partial');
+    assert.ok(diffs.every((d) => d.coherent === true), 'the emitter vouches for the row');
+
+    const p = tmpJson({ _meta: {}, 'CVE-2099-0001': entry });
+    try {
+      await ALL_SOURCES.epss.applyDiff({ cvePath: p }, diffs);
+      const after = JSON.parse(fs.readFileSync(p, 'utf8'))['CVE-2099-0001'];
+      assert.equal(after.epss_note, renderEpssNote(after),
+        'the note must restate the current fields, not the publication before them');
+      assert.notEqual(after.epss_note, entry.epss_note, 'precondition: it actually changed');
+    } finally {
+      cleanupTmp();
+    }
+  });
+
+  test('a malformed numeric value is refused rather than written as NaN', () => {
+    // Both call sites build these with Number(), so a malformed cached value
+    // arrives as NaN, not null. NaN passes a nullish check, would ride the
+    // repair path, and serialises into the catalog as null — recreating the
+    // half-populated entry the repair exists to fix.
+    const halved = { epss_score: 0.84793, epss_date: '2026-08-07' };
+    const nanRow = { score: Number('not-a-number'), percentile: 0.9995, date: '2026-08-13' };
+    assert.ok(Number.isNaN(nanRow.score), 'precondition: the row really does carry NaN, not null');
+    assert.deepEqual(epssTripleDiffs('CVE-2099-0001', halved, nanRow, EPSS_DRIFT), [],
+      'a NaN must not reach the catalog by way of the repair path');
+  });
+
+  test('an entry with no EPSS at all is left alone', () => {
+    // Absent is not incoherent. Only entries that already carry EPSS are
+    // refreshed, which is the behaviour that predates this change.
+    assert.deepEqual(epssTripleDiffs('CVE-2099-0004', { last_verified: '2026-08-07' }, row, EPSS_DRIFT), [],
+      'a complete row must not introduce EPSS onto an entry that never had it');
+  });
+
+  test('a partial fetched row cannot be used to repair a partial entry', () => {
+    // Filling one side from a row that is missing the other leaves the entry
+    // just as incomplete, and advances the date so the value that survived now
+    // claims a publication it did not come from — the inconsistency is moved,
+    // not repaired.
+    const halved = { epss_score: 0.84793, epss_date: '2026-08-07' };
+    const partialRow = { score: null, percentile: 0.9971, date: '2026-08-13' };
+    assert.deepEqual(epssTripleDiffs('CVE-2099-0001', halved, partialRow, EPSS_DRIFT), [],
+      'a row without both numbers is not a repair source');
+
+    // The mirror case: local has only the percentile, the row has only a score.
+    const halvedPct = { epss_percentile: 0.99688, epss_date: '2026-08-07' };
+    const scoreOnlyRow = { score: 0.85, percentile: null, date: '2026-08-13' };
+    assert.deepEqual(epssTripleDiffs('CVE-2099-0003', halvedPct, scoreOnlyRow, EPSS_DRIFT), [],
+      'the mirror case is refused too');
+
+    // A complete row still repairs the same entry, so the guard narrows the
+    // repair path rather than removing it.
+    const completeRow = { score: 0.85, percentile: 0.9971, date: '2026-08-13' };
+    const fixed = epssTripleDiffs('CVE-2099-0001', halved, completeRow, EPSS_DRIFT);
+    assert.ok(fixed.find((d) => d.field === 'epss_percentile'), 'a complete row still repairs');
+  });
+
+  test('applyDiff regenerates the derived epss_note, and only where one already exists', async () => {
+    const withNote = local();
+    const withoutNote = { epss_score: 0.84793, epss_percentile: 0.99688, epss_date: '2026-08-07' };
+    const p = tmpJson({ _meta: {}, 'CVE-2099-0001': withNote, 'CVE-2099-0002': withoutNote });
+    try {
+      const diffs = [
+        ...epssTripleDiffs('CVE-2099-0001', withNote, row, EPSS_DRIFT),
+        ...epssTripleDiffs('CVE-2099-0002', withoutNote, row, EPSS_DRIFT),
+      ];
+      await ALL_SOURCES.epss.applyDiff({ cvePath: p }, diffs);
+      const after = JSON.parse(fs.readFileSync(p, 'utf8'));
+
+      assert.equal(after['CVE-2099-0001'].epss_note, renderEpssNote(after['CVE-2099-0001']),
+        'the note must restate the fields it now sits beside');
+      assert.notEqual(after['CVE-2099-0001'].epss_note, withNote.epss_note,
+        'precondition: the note actually changed, so the assertion above is not vacuous');
+      assert.equal('epss_note' in after['CVE-2099-0002'], false,
+        'a refresh must not add a note to an entry that never carried one');
+    } finally {
+      cleanupTmp();
+    }
+  });
+});

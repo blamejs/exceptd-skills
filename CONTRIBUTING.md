@@ -58,7 +58,7 @@ When a framework update closes a gap:
 
 ## PR Process
 
-1. **Open an issue first** for non-trivial work — design discussion catches scope problems before code is written. Trivial fixes (typos, doc tweaks, a single field on one CVE) can skip the issue.
+1. **Open an issue first** for non-trivial work — design discussion catches scope problems before anyone writes code. Trivial fixes (typos, doc tweaks, a single field on one CVE) can skip the issue.
 2. **Branch off `main`.** Branch name doesn't matter; we squash on merge.
 3. **One concern per PR.** A new skill + its CVEs + its framework gap mappings + the manifest registration is one PR. A new skill + an unrelated CVE addition is two.
 4. **Fail-loud verification before push** — the same gates CI runs. Skip none of these:
@@ -115,7 +115,7 @@ node scripts/release.js help      # full banner
 - Framework gap claims without specific evidence CVEs or demonstrated exploitation
 - RWEP scores without documented factor breakdowns
 - Skills that produce generic output ("assess your security posture") rather than specific analysis
-- Anything that would make a passing compliance audit look like actual security when it isn't — we expose theater, we don't enable it
+- Anything that would make a passing compliance audit look like actual security when it isn't
 - Direct exploit code or PoC payloads — reference existence, describe technique, never ship functional exploits
 
 ## Contributing Without Writing Code
@@ -127,7 +127,7 @@ Domain experts — DPOs, GRC analysts, pentesters, incident responders, security
 3. **The compliance gap**: which framework control should have caught it, and why didn't it?
 4. **The jurisdictions or industries** most affected (EU financial sector, AU critical infrastructure, etc.)
 
-Maintainers will convert approved requests into skill files. Contributors are credited in CHANGELOG.md and the skill's frontmatter. You can improve this repository with nothing more than threat intelligence and domain knowledge.
+Maintainers will convert approved requests into skill files. Contributors are credited in CHANGELOG.md and the skill's frontmatter.
 
 ## Code of Conduct
 

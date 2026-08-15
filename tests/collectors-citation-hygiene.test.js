@@ -123,3 +123,31 @@ test("citation-hygiene: a record rejected AS A DUPLICATE of another CVE stays fl
   assert.equal(rec("Carries a documented CVSS scoring dispute.", "CVE-2024-50050"), false,
     "a CVSS scoring dispute is a severity disagreement, not a record rejection");
 });
+
+test("citation-hygiene: 'reject' as an ordinary verb in a mechanism description is not a record rejection", () => {
+  const rec = citationCollector.recordRejectedOrDisputed;
+
+  // A vector description says what the code does with input, and "reject" is
+  // the ordinary word for it. Flagging these forced a choice between an
+  // accurate mechanism sentence and a clean gate, which is the wrong trade —
+  // both of these are real sentences from curated entries.
+  assert.equal(
+    rec("The resource is retrieved and then rejected by XMLParser::Run as an invalid DTD.", "CVE-2017-0022"),
+    false,
+    "a parser rejecting malformed input says nothing about the CVE record",
+  );
+  assert.equal(
+    rec("UnRAR validates symbolic-link targets with IsRelativeSymLinkSafe(), which rejects targets containing ../ sequences.", "CVE-2022-30333"),
+    false,
+    "a validator rejecting a traversal sequence says nothing about the CVE record",
+  );
+
+  // The record sense always names what was rejected, or who rejected it. Those
+  // must still flag, or the suppression above would have gutted the check.
+  assert.equal(rec("The CVE record was rejected by the CNA.", "CVE-2000-0001"), true,
+    "a record rejected by an authority is still record-level");
+  assert.equal(rec("NVD rejected this entry.", "CVE-2000-0002"), true,
+    "an authority named beside the rejection is still record-level");
+  assert.equal(rec("This identifier was rejected during assignment.", "CVE-2000-0003"), true,
+    "a rejected identifier is still record-level");
+});

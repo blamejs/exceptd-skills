@@ -58,21 +58,17 @@ function loadCatalog(file) {
   return JSON.parse(fs.readFileSync(file, "utf8"));
 }
 
-function ordinal(n) {
-  const suffixes = ["th", "st", "nd", "rd"];
-  const v = n % 100;
-  return `${n}${suffixes[(v - 20) % 10] || suffixes[v] || suffixes[0]}`;
-}
-
 /**
  * The operator-readable restatement of an entry's EPSS fields. Entries carry it
  * as `epss_note`, and it is derived, not authored — so it must be rebuilt
  * whenever the numbers move.
+ *
+ * The renderer lives in lib/cve-enrich.js because the refresh writer rebuilds
+ * the note from the same definition. A second copy here would let the gate and
+ * the writer disagree about the exact wording, which shows up as this gate
+ * failing on data that was refreshed correctly.
  */
-function renderNote(entry) {
-  const pct = Math.round(entry.epss_percentile * 100);
-  return `FIRST EPSS ${entry.epss_score} (${ordinal(pct)} percentile) as of ${entry.epss_date}.`;
-}
+const { renderEpssNote: renderNote } = require("../lib/cve-enrich.js");
 
 /**
  * Group entries by publication date. Entries missing either field are reported

@@ -18,7 +18,7 @@ Before filing: search existing issues to avoid duplicates.
 
 ## What happened
 
-<!-- One or two sentences. What did exceptd-skills do that you didn't expect. -->
+<!-- One or two sentences. What did exceptd-skills do that you didn't expect? -->
 
 ## What you expected
 
@@ -48,7 +48,7 @@ If the bug is in a skill output, paste the prompt or invocation that triggered i
 
 <details><summary>Click to expand</summary>
 
-```
+```text
 paste relevant log lines or error stack traces here
 ```
 

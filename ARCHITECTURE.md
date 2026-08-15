@@ -4,7 +4,7 @@
 
 exceptd Security is a skills repository. Each skill is a `.md` file with YAML frontmatter that instructs an AI assistant how to perform a specific security analysis task with current threat intelligence.
 
-The platform has three layers:
+The repository has three layers:
 
 ```
 skills/          Instruction layer — tells the AI what to analyze, how to score, what to output
@@ -164,7 +164,7 @@ Schema per entry:
 
 ### `data/global-frameworks.json`
 
-Maps jurisdiction to framework to current coverage and lag assessment. Currently covers 35 jurisdictions including EU member states, UK, AU, SG, IN, JP, CA, and major sectoral regulators (DORA, NIS2, EU AI Act, EU CRA at the EU layer; APRA CPS 234, MAS TRM, CERT-In, SEBI, OSFI B-10 at the national layer). See schema in file.
+Maps jurisdiction to framework to current coverage and lag assessment. Currently covers 35 jurisdictions including EU member states, UK, AU, SG, IN, JP, CA, and major sectoral regulators (DORA, NIS2, EU AI Act, EU CRA at the EU layer; APRA CPS 234, MAS TRM, CERT-In, SEBI, OSFI B-10 at the national layer). See the schema in `data/global-frameworks.json`.
 
 ### `data/zeroday-lessons.json`
 
@@ -176,13 +176,13 @@ Tracks PoC status, weaponization stage, and AI-assist factor per CVE. Updated wh
 
 ### `data/cwe-catalog.json`
 
-199 CWE entries pinned to **CWE v4.20**. Covers the Top 25 Most Dangerous Software Weaknesses (2024 release) plus AI- and supply-chain-relevant weakness classes (prompt-injection-as-trust-boundary failure, training data integrity, dependency confusion, untrusted artifact ingestion). Each entry records root-cause description, common consequences, mitigation patterns, and the CVEs in `cve-catalog.json` that instantiate the weakness. Skills cite CWE IDs in `cwe_refs` to anchor a finding to a stable weakness taxonomy rather than to a single CVE; the CWE provides the durable root-cause lens that survives across exploit generations.
+199 CWE entries pinned to **CWE v4.20**. Covers the Top 25 Most Dangerous Software Weaknesses (2024 release) plus AI- and supply-chain-relevant weakness classes (prompt-injection-as-trust-boundary failure, training data integrity, dependency confusion, untrusted artifact ingestion). Each entry records root-cause description, common consequences, mitigation patterns, and the CVEs in `cve-catalog.json` that instantiate the weakness. Skills cite CWE IDs in `cwe_refs` to anchor a finding to a stable weakness taxonomy rather than to a single CVE.
 
 `_meta.cwe_version` pins the version; on a CWE release, audit IDs for renames or deprecations, bump `last_threat_review` on affected skills, and update `_meta`.
 
 ### `data/d3fend-catalog.json`
 
-468 MITRE D3FEND defensive technique entries pinned to **D3FEND v1.3.0**. Each entry records the defensive technique ID (e.g., `D3-EAL` Executable Allowlisting), the tactic / artifact it defends, the offensive ATLAS / ATT&CK TTPs it counters, defense-in-depth layer position, least-privilege scope assumptions, zero-trust posture compatibility, and AI-pipeline applicability per Hard Rule #9. Skills cite D3FEND IDs in `d3fend_refs` to map offensive findings to a defensive countermeasure rather than to abstract control language. The `defensive-countermeasure-mapping` skill is the canonical consumer; any skill shipped on or after 2026-05-11 includes a Defensive Countermeasure Mapping section referencing this catalog.
+468 MITRE D3FEND defensive technique entries pinned to **D3FEND v1.3.0**. Each entry records the defensive technique ID (for example, `D3-EAL` Executable Allowlisting), the tactic / artifact it defends, the offensive ATLAS / ATT&CK TTPs it counters, defense-in-depth layer position, least-privilege scope assumptions, zero-trust posture compatibility, and AI-pipeline applicability per Hard Rule #9. Skills cite D3FEND IDs in `d3fend_refs` to map offensive findings to a defensive countermeasure rather than to abstract control language. The `defensive-countermeasure-mapping` skill is the canonical consumer; any skill shipped on or after 2026-05-11 includes a Defensive Countermeasure Mapping section referencing this catalog.
 
 `_meta.d3fend_version` pins the version; D3FEND ontology additions are tracked in skill `forward_watch` fields.
 
@@ -192,7 +192,7 @@ Tracks PoC status, weaponization stage, and AI-assist factor per CVE. Updated wh
 
 ### `data/dlp-controls.json`
 
-22 DLP control entries indexed along five axes: **channel** (where data flows — LLM prompt, RAG retrieval, MCP tool response, email, SaaS API, endpoint), **classifier** (how sensitive data is identified — regex, ML, embedding similarity, watermark), **surface** (where enforcement runs — endpoint, network proxy, API gateway, model gateway), **enforcement** mode (block, redact, warn, log-only), and **evidence** type (the audit artifact each control produces). The `dlp-gap-analysis` skill is the canonical consumer; other DLP-relevant skills cite control IDs in `dlp_refs`. Entries explicitly flag classical DLP controls that are architecturally inadequate for LLM/RAG channels (DR-1 framework-as-truth drift applied to DLP).
+22 DLP control entries indexed along five axes: **channel** (where data flows — LLM prompt, RAG retrieval, MCP tool response, email, SaaS API, endpoint), **classifier** (how sensitive data is identified — regex, ML, embedding similarity, watermark), **surface** (where enforcement runs — endpoint, network proxy, API gateway, model gateway), **enforcement** mode (block, redact, warn, log-only), and **evidence** type (the audit artifact each control produces). The `dlp-gap-analysis` skill is the canonical consumer; other DLP-relevant skills cite control IDs in `dlp_refs`. Entries explicitly flag classical DLP controls that are architecturally inadequate for LLM/RAG channels (DR-1 framework-as-truth drift, AGENTS.md §Recurring Drift Rules, applied to DLP).
 
 ---
 
@@ -249,7 +249,7 @@ Packs the project with `npm pack`, extracts the tarball, and runs Ed25519 signat
 
 ### `tests/_helpers/cli.js`
 
-Shared test harness for spawning the CLI under tempdir-isolated state. Tests that exercise verb dispatch should consume this helper rather than spawning subprocesses ad-hoc — the helper enforces the "no mutation outside the tempdir" contract that prevents CI-vs-local state divergence.
+Shared test harness for spawning the CLI under tempdir-isolated state. Tests that exercise verb dispatch should consume this helper rather than spawning subprocesses ad hoc — the helper enforces the "no mutation outside the tempdir" contract that prevents CI-vs-local state divergence.
 
 ---
 
@@ -273,7 +273,7 @@ Central skill registry. Each skill entry:
 
 ## Skill Composition
 
-Skills can be composed. The framework-gap-analysis skill calls out to threat-model-currency context. The compliance-theater skill uses exploit-scoring output. The zeroday-gap-learn skill feeds back into framework-gap-analysis data.
+Skills can be composed. `framework-gap-analysis` calls out to `threat-model-currency` context; `compliance-theater` uses `exploit-scoring` output; `zeroday-gap-learn` feeds back into `framework-gap-analysis` data.
 
 Composition is explicit: skills declare which other skills they depend on in their frontmatter `skill_deps` field. Circular dependencies are not permitted.
 
