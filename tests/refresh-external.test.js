@@ -2042,6 +2042,64 @@ require('node:test').describe('epss-triple-coherence', () => {
     }
   });
 
+  test('applyDiff does not regenerate the note from a partial diff set', async () => {
+    // applyDiff is exported and is also driven by fixtures that carry a score
+    // and a date without a percentile, so a diff set can move one half of the
+    // pair alone. Rewriting the note there would state the new score beside the
+    // previous publication's percentile and read as current — masking the only
+    // signal the consistency gate has, since a single-entry date cohort has no
+    // neighbour to rank against.
+    const entry = {
+      epss_score: 0.84793, epss_percentile: 0.99688, epss_date: '2026-08-07',
+      epss_note: renderEpssNote({ epss_score: 0.84793, epss_percentile: 0.99688, epss_date: '2026-08-07' }),
+    };
+    const p = tmpJson({ _meta: {}, 'CVE-2099-0001': entry });
+    try {
+      await ALL_SOURCES.epss.applyDiff({ cvePath: p }, [
+        { id: 'CVE-2099-0001', field: 'epss_score', before: 0.84793, after: 0.99311 },
+        { id: 'CVE-2099-0001', field: 'epss_date', before: '2026-08-07', after: '2026-08-13' },
+      ]);
+      const after = JSON.parse(fs.readFileSync(p, 'utf8'))['CVE-2099-0001'];
+      assert.equal(after.epss_score, 0.99311, 'the diff still applies');
+      assert.equal(after.epss_percentile, 0.99688, 'precondition: the percentile was not in the diff set');
+      assert.equal(after.epss_note, entry.epss_note,
+        'the note must be left describing the old publication so the gate still reports the mismatch');
+      assert.notEqual(after.epss_note, renderEpssNote(after),
+        'and it must NOT match the current fields, which is what the gate keys on');
+    } finally {
+      cleanupTmp();
+    }
+  });
+
+  test('a complete row that moves only the score still refreshes the note', async () => {
+    // The regression this guards: deciding coherence from WHICH fields changed
+    // rather than from where the diff came. A complete upstream row whose
+    // percentile rounds to the same value emits the score alone — legitimately
+    // — and treating that as partial strands the note describing the old
+    // publication for good, because the next refresh finds nothing left to
+    // diff and the consistency gate fails on it forever.
+    const entry = {
+      epss_score: 0.84793, epss_percentile: 0.99688, epss_date: '2026-08-07',
+      epss_note: renderEpssNote({ epss_score: 0.84793, epss_percentile: 0.99688, epss_date: '2026-08-07' }),
+    };
+    const sameDayRow = { score: 0.99311, percentile: 0.99688, date: '2026-08-07' };
+    const diffs = epssTripleDiffs('CVE-2099-0001', entry, sameDayRow, EPSS_DRIFT);
+    assert.deepEqual(diffs.map((d) => d.field), ['epss_score'],
+      'precondition: only the score differs, so a fields-based rule would call this partial');
+    assert.ok(diffs.every((d) => d.coherent === true), 'the emitter vouches for the row');
+
+    const p = tmpJson({ _meta: {}, 'CVE-2099-0001': entry });
+    try {
+      await ALL_SOURCES.epss.applyDiff({ cvePath: p }, diffs);
+      const after = JSON.parse(fs.readFileSync(p, 'utf8'))['CVE-2099-0001'];
+      assert.equal(after.epss_note, renderEpssNote(after),
+        'the note must restate the current fields, not the publication before them');
+      assert.notEqual(after.epss_note, entry.epss_note, 'precondition: it actually changed');
+    } finally {
+      cleanupTmp();
+    }
+  });
+
   test('a malformed numeric value is refused rather than written as NaN', () => {
     // Both call sites build these with Number(), so a malformed cached value
     // arrives as NaN, not null. NaN passes a nullish check, would ride the
