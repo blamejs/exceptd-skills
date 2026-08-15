@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "last_updated": "2026-08-06",
+    "last_updated": "2026-08-15",
     "cwe_version": "4.20",
     "cwe_version_release_date": "2026-04-30",
     "source": "https://cwe.mitre.org",
@@ -49,12 +49,19 @@
     ],
     "evidence_cves": [
       "CVE-2010-2568",
+      "CVE-2012-0151",
+      "CVE-2013-3896",
       "CVE-2013-6282",
       "CVE-2015-2291",
+      "CVE-2016-0034",
       "CVE-2016-3714",
+      "CVE-2017-15944",
+      "CVE-2018-19949",
+      "CVE-2019-7193",
       "CVE-2021-25489",
       "CVE-2022-1471",
       "CVE-2022-2856",
+      "CVE-2022-29499",
       "CVE-2022-3075",
       "CVE-2022-47966",
       "CVE-2023-22515",
@@ -115,19 +122,28 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2013-3993",
+      "CVE-2015-0016",
       "CVE-2017-12637",
       "CVE-2018-18809",
       "CVE-2018-5430",
       "CVE-2019-16278",
       "CVE-2019-5418",
+      "CVE-2019-7194",
+      "CVE-2019-7195",
       "CVE-2020-36193",
       "CVE-2021-20123",
       "CVE-2021-20124",
       "CVE-2021-26086",
+      "CVE-2021-38163",
       "CVE-2021-41277",
       "CVE-2021-43798",
       "CVE-2022-26352",
       "CVE-2022-26500",
+      "CVE-2022-27925",
+      "CVE-2022-30333",
+      "CVE-2022-34713",
+      "CVE-2022-37042",
       "CVE-2022-41328",
       "CVE-2022-41352",
       "CVE-2023-32315",
@@ -211,6 +227,7 @@
       "CVE-2014-8361",
       "CVE-2016-10033",
       "CVE-2016-20017",
+      "CVE-2018-19949",
       "CVE-2020-25079",
       "CVE-2021-27878",
       "CVE-2021-33515",
@@ -282,6 +299,7 @@
       "CVE-2017-3506",
       "CVE-2017-6884",
       "CVE-2018-14933",
+      "CVE-2018-19949",
       "CVE-2018-6530",
       "CVE-2018-9276",
       "CVE-2019-11001",
@@ -392,7 +410,10 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2012-0767",
       "CVE-2014-2120",
+      "CVE-2018-19943",
+      "CVE-2018-19953",
       "CVE-2020-11023",
       "CVE-2020-13965",
       "CVE-2020-35730",
@@ -483,6 +504,7 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2016-2386",
       "CVE-2020-29574",
       "CVE-2021-44026",
       "CVE-2023-34362",
@@ -499,6 +521,7 @@
       "CVE-2026-21643",
       "CVE-2026-42208",
       "CVE-2026-60137",
+      "CVE-2026-72898",
       "CVE-2026-9082"
     ],
     "framework_controls_partially_addressing": [
@@ -537,10 +560,12 @@
       "CVE-2008-0015",
       "CVE-2009-0238",
       "CVE-2009-0556",
+      "CVE-2009-0557",
       "CVE-2010-3765",
       "CVE-2010-3962",
       "CVE-2011-3402",
       "CVE-2013-3918",
+      "CVE-2014-4148",
       "CVE-2017-1000353",
       "CVE-2017-7494",
       "CVE-2018-14667",
@@ -673,7 +698,10 @@
       "kernel-lpe-triage"
     ],
     "evidence_cves": [
+      "CVE-2016-1646",
+      "CVE-2017-5030",
       "CVE-2021-25487",
+      "CVE-2021-4034",
       "CVE-2023-28204",
       "CVE-2023-36424",
       "CVE-2023-42916",
@@ -725,8 +753,12 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2008-0655",
+      "CVE-2015-0310",
       "CVE-2015-5317",
+      "CVE-2016-2388",
       "CVE-2016-6415",
+      "CVE-2017-0147",
       "CVE-2017-5521",
       "CVE-2018-5430",
       "CVE-2020-25078",
@@ -841,9 +873,14 @@
     ],
     "evidence_cves": [
       "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
+      "CVE-2010-0840",
       "CVE-2013-0643",
+      "CVE-2014-2817",
+      "CVE-2014-3153",
+      "CVE-2014-4123",
       "CVE-2016-0165",
       "CVE-2019-1388",
+      "CVE-2019-3010",
       "CVE-2021-25337",
       "CVE-2021-43226",
       "CVE-2022-38028",
@@ -891,6 +928,8 @@
       "idp-incident-response"
     ],
     "evidence_cves": [
+      "CVE-2013-0422",
+      "CVE-2013-2423",
       "CVE-2016-3427",
       "CVE-2021-27876",
       "CVE-2023-23752",
@@ -1030,6 +1069,7 @@
       "CVE-2022-23227",
       "CVE-2022-24990",
       "CVE-2022-26501",
+      "CVE-2022-26925",
       "CVE-2023-21839",
       "CVE-2023-27532",
       "CVE-2023-28461",
@@ -1502,11 +1542,17 @@
       "kernel-lpe-triage"
     ],
     "evidence_cves": [
+      "CVE-2009-4324",
       "CVE-2010-0249",
       "CVE-2010-0806",
       "CVE-2012-4792",
+      "CVE-2012-4969",
+      "CVE-2014-8439",
+      "CVE-2015-2360",
+      "CVE-2016-0984",
       "CVE-2016-9079",
       "CVE-2019-8526",
+      "CVE-2019-8605",
       "CVE-2020-9715",
       "CVE-2021-25370",
       "CVE-2021-25394",
@@ -1548,7 +1594,8 @@
       "CVE-2025-49844",
       "CVE-2025-62221",
       "CVE-2026-2441",
-      "CVE-2026-5281"
+      "CVE-2026-5281",
+      "CVE-2026-68820"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-16",
@@ -1577,6 +1624,7 @@
     "skills_referencing": [],
     "evidence_cves": [
       "CVE-2012-1854",
+      "CVE-2022-22047",
       "CVE-2022-23748",
       "CVE-2025-23266"
     ],
@@ -1703,6 +1751,7 @@
       "CVE-2018-15133",
       "CVE-2018-2628",
       "CVE-2019-0344",
+      "CVE-2019-15271",
       "CVE-2019-9874",
       "CVE-2019-9875",
       "CVE-2020-0618",
@@ -2048,13 +2097,29 @@
       "kernel-lpe-triage"
     ],
     "evidence_cves": [
+      "CVE-2009-0563",
       "CVE-2009-1537",
+      "CVE-2009-1862",
+      "CVE-2009-3953",
+      "CVE-2010-1297",
+      "CVE-2010-2883",
+      "CVE-2011-2462",
+      "CVE-2012-0754",
+      "CVE-2012-1889",
       "CVE-2013-0648",
       "CVE-2013-3163",
+      "CVE-2015-2425",
+      "CVE-2016-3393",
+      "CVE-2016-5198",
+      "CVE-2018-17480",
+      "CVE-2019-5825",
+      "CVE-2020-3837",
+      "CVE-2020-9907",
       "CVE-2021-22555",
       "CVE-2021-25372",
       "CVE-2021-30900",
       "CVE-2021-38406",
+      "CVE-2021-4034",
       "CVE-2022-2294",
       "CVE-2022-32893",
       "CVE-2022-32894",
@@ -2152,6 +2217,7 @@
     "evidence_cves": [
       "CVE-2019-6693",
       "CVE-2021-44207",
+      "CVE-2022-26138",
       "CVE-2022-28810",
       "CVE-2023-6448",
       "CVE-2024-20439",
@@ -2281,6 +2347,8 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2019-7192",
+      "CVE-2021-30533",
       "CVE-2021-3493",
       "CVE-2021-3560",
       "CVE-2021-40655",
@@ -2618,6 +2686,7 @@
     ],
     "evidence_cves": [
       "CVE-2011-0411",
+      "CVE-2015-1769",
       "CVE-2026-31635"
     ],
     "last_verified": "2026-05-18",
@@ -2693,6 +2762,10 @@
     ],
     "evidence_cves": [
       "BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND",
+      "CVE-2013-0431",
+      "CVE-2014-0546",
+      "CVE-2014-4077",
+      "CVE-2015-0071",
       "CVE-2020-9934",
       "CVE-2023-32049",
       "CVE-2023-36025",
@@ -2767,6 +2840,7 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2020-36193",
+      "CVE-2022-30333",
       "CVE-2023-36874",
       "CVE-2025-21391",
       "CVE-2025-48384",
@@ -2835,8 +2909,16 @@
       "CVE-2008-4250",
       "CVE-2013-0648",
       "CVE-2014-3931",
+      "CVE-2014-8439",
+      "CVE-2015-1671",
+      "CVE-2015-2360",
+      "CVE-2015-6175",
+      "CVE-2016-7256",
+      "CVE-2017-0022",
       "CVE-2017-1000253",
+      "CVE-2017-15944",
       "CVE-2017-6742",
+      "CVE-2018-4344",
       "CVE-2018-7445",
       "CVE-2022-22706",
       "CVE-2023-33106",
@@ -2870,7 +2952,13 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2006-2492",
+      "CVE-2007-5659",
+      "CVE-2010-2572",
+      "CVE-2013-1331",
+      "CVE-2017-6862",
       "CVE-2020-15069",
+      "CVE-2021-30983",
       "CVE-2022-37055",
       "CVE-2023-33009",
       "CVE-2023-33010",
@@ -2921,8 +3009,13 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2011-1823",
+      "CVE-2012-5054",
       "CVE-2013-2596",
+      "CVE-2015-8651",
+      "CVE-2016-1010",
+      "CVE-2016-3393",
       "CVE-2018-14634",
+      "CVE-2018-6065",
       "CVE-2021-30952",
       "CVE-2022-0185",
       "CVE-2023-2136",
@@ -2953,6 +3046,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2013-7331",
       "CVE-2024-29059",
       "CVE-2025-47813"
     ],
@@ -3241,6 +3335,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2013-0074",
       "CVE-2023-29360",
       "CVE-2023-36033",
       "CVE-2024-21338",
@@ -3264,6 +3359,8 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2017-5070",
+      "CVE-2018-17463",
       "CVE-2022-3723",
       "CVE-2022-41033",
       "CVE-2022-4262",
@@ -3379,6 +3476,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2012-1710",
       "CVE-2024-43451",
       "CVE-2025-0111",
       "CVE-2025-24054",
@@ -3403,6 +3501,7 @@
     "evidence_cves": [
       "CVE-2020-28949",
       "CVE-2021-38371",
+      "CVE-2022-27924",
       "CVE-2022-35914",
       "CVE-2022-43769",
       "CVE-2022-46169",
@@ -3713,6 +3812,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2015-4495",
       "CVE-2025-34291",
       "CVE-2025-49596"
     ],
@@ -4305,6 +4405,8 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2010-0738",
+      "CVE-2010-1428",
       "CVE-2018-19322"
     ],
     "last_verified": "2026-05-19",
@@ -4526,6 +4628,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2011-0609",
       "CVE-2024-29745",
       "CVE-2024-50302"
     ],
@@ -4587,7 +4690,8 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2021-45046",
-      "CVE-2022-22963"
+      "CVE-2022-22963",
+      "CVE-2022-26134"
     ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
@@ -5582,6 +5686,7 @@
     "related_attack_patterns_capec": [],
     "skills_referencing": [],
     "evidence_cves": [
+      "CVE-2018-8611",
       "CVE-2018-8639"
     ]
   },
@@ -5618,6 +5723,7 @@
     "skills_referencing": [],
     "evidence_cves": [
       "CVE-2022-27593",
+      "CVE-2022-30190",
       "CVE-2025-0111"
     ]
   },
@@ -5830,6 +5936,8 @@
     ],
     "skills_referencing": [],
     "evidence_cves": [
+      "CVE-2018-19943",
+      "CVE-2018-19953",
       "CVE-2020-13965"
     ],
     "framework_controls_partially_addressing": [
@@ -6019,7 +6127,8 @@
     "related_attack_patterns_capec": [],
     "skills_referencing": [],
     "evidence_cves": [
-      "CVE-2014-0502"
+      "CVE-2014-0502",
+      "CVE-2018-4990"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-16",
@@ -6712,5 +6821,30 @@
     "real_requirement": "Software-integrity and application-control policy answer whether a driver is validly signed, and a vulnerable driver is: the vendor signed it, the signature verifies, and code integrity admits it. What closes this is a blocklist enforced in the kernel — the Microsoft vulnerable-driver blocklist with HVCI, or an equivalent allowlist of driver hashes — together with a rule that a driver exposing a privilege-boundary IOCTL must itself check the caller's identity.",
     "lag_notes": "Application control and integrity verification are written around provenance, not capability. Every framework in scope passes a correctly signed driver that hands arbitrary physical-memory access to any local process, and none requires enumerating what a loaded driver exposes.",
     "last_verified": "2026-08-06"
+  },
+  "CWE-244": {
+    "id": "CWE-244",
+    "name": "Improper Clearing of Heap Memory Before Release ('Heap Inspection')",
+    "abstraction": "Variant",
+    "category": "Memory Safety",
+    "description": "Using realloc() to resize buffers that store sensitive information can leave the sensitive information exposed to attack, because it is not removed from memory. realloc() copies the contents of an undersized block into a larger one and leaves the original block intact but no longer reachable by the program, so the process cannot scrub it; the residue survives until the allocator hands the pages to something else, and a later memory dump or heap read exposes it. Vendors also apply this identifier to appliance code paths where a heap buffer's lifetime is mishandled around an error branch, so the stale allocation is reachable in a state the code did not intend.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2026-20349"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SC-28",
+      "NIST-800-53-SI-2",
+      "ISO-27001-2022-A.8.8"
+    ],
+    "real_requirement": "Sensitive buffers must be scrubbed before any reallocation that can relocate them — allocate at final size, or copy-then-zero-then-free explicitly rather than relying on realloc(), using a wipe the compiler cannot elide. On appliance firmware the equivalent requirement is that every error branch releases what it allocated: allocation lifetime has to be tested along the failure paths, not only the success path, because that is where the stale heap state becomes reachable.",
+    "lag_notes": "SC-28 protects information at rest and A.8.8 manages technical vulnerabilities by risk score; neither reaches process memory during normal operation, which is where this weakness lives. No control in scope asks whether a buffer holding secret material can be relocated by the allocator, and none requires error-path allocation testing — so a product can satisfy every applicable control and still leave the residue, or still mishandle the heap on the branch an attacker chooses to trigger.",
+    "last_verified": "2026-08-15"
   }
 }

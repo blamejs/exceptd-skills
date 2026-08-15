@@ -6,7 +6,7 @@ blamejs/exceptd-skills`, then re-run them after any maintainer-team
 change. All commands assume you are authenticated as a maintainer with
 admin rights on the repo.
 
-The settings here match the posture of `blamejs/blamejs`. The same
+The settings here match the posture of `blamejs/blamejs`: the same
 required-check names, the same branch-protection shape, the same
 security features. A repo in the `blamejs` org should look the same
 from a downstream perspective.
@@ -217,7 +217,7 @@ gate is working as intended.
 
 ---
 
-## 9. Re-running this document
+## 9. Keeping these settings current
 
 These settings drift over time as GitHub adds features and the project's
 posture matures. The expectation is:

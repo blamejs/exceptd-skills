@@ -85,6 +85,6 @@ What's explicitly OUT (and why each "out" is a complete decision, not a deferred
 
 ## Alternatives considered
 
-<!-- What did you rule out and why. Saves the reviewer asking. -->
+<!-- What did you rule out, and why? Saves the reviewer asking. -->
 
 ## Additional context

@@ -43,13 +43,13 @@ All threat data lives in `data/`. Do not fabricate CVE or framework data:
 ## Orchestrator
 
 The `orchestrator/` directory coordinates scanning → skill dispatch → report generation:
-```
+```bash
 node orchestrator/index.js [scan|dispatch|report|pipeline]
 ```
 
 ## Library Code
 
-```
+```text
 lib/scoring.js        — RWEP scoring engine, schema validation
 lib/ttp-mapper.js     — Control ID → TTP gap mapper
 lib/framework-gap.js  — Framework lag scorer, theater detection

@@ -62,20 +62,20 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 1025,
+      "entry_count": 1125,
       "sample_keys": [
-        "CVE-2025-68686",
-        "CVE-2026-16812",
-        "CVE-2026-16232",
-        "CVE-2026-50522",
-        "CVE-2023-32315"
+        "CVE-2006-2492",
+        "CVE-2007-5659",
+        "CVE-2008-0655",
+        "CVE-2009-0557",
+        "CVE-2009-0563"
       ]
     },
     "cwe-catalog.json": {
       "path": "data/cwe-catalog.json",
       "purpose": "MITRE CWE entries used by the project (subset with skill citations), with severity hint and category. Pinned to a CWE catalog version.",
       "schema_version": "1.0.0",
-      "last_updated": "2026-08-06",
+      "last_updated": "2026-08-15",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -84,7 +84,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 232,
+      "entry_count": 233,
       "sample_keys": [
         "CWE-20",
         "CWE-22",
@@ -238,7 +238,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 1025,
+      "entry_count": 1125,
       "sample_keys": [
         "CVE-2026-31431",
         "CVE-2025-53773",

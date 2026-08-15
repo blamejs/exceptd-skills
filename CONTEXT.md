@@ -1,6 +1,6 @@
 # exceptd Security — AI Context
 
-This file gives any AI assistant the context it needs to use this repository effectively. It is AI-system-agnostic and does not assume any particular assistant runtime.
+This file gives any AI assistant the context it needs to use this repository. It assumes no particular assistant runtime.
 
 ---
 
@@ -11,7 +11,7 @@ exceptd Security ships two interlocking surfaces grounded in mid-2026 threat rea
 1. **Skills** — Markdown instruction files telling an AI assistant how to perform a specific security analysis (what questions to ask, what data to query, how to score risk, what output to produce).
 2. **Playbooks** — JSON specifications of attack-class investigations executed by the CLI engine through a seven-phase contract (govern → direct → look → detect → analyze → validate → close).
 
-**The core insight:** Every major compliance framework (NIST 800-53, ISO 27001, SOC 2, PCI-DSS) was written for environments that no longer describe how attacks happen. Both skills and playbooks explicitly map where framework coverage ends and real attacker capability begins.
+Every major compliance framework (NIST 800-53, ISO 27001, SOC 2, PCI-DSS) was written for environments that no longer describe how attacks happen. Both skills and playbooks explicitly map where framework coverage ends and real attacker capability begins.
 
 ---
 
@@ -69,7 +69,7 @@ Required 8th section for skills shipped on or after 2026-05-11 (pre-existing ski
 
 ## Playbooks and the Seven-Phase Contract
 
-Playbooks live at `data/playbooks/<id>.json` and are executed by the CLI engine. Each playbook is an attack-class investigation that walks a govern → direct → look → detect → analyze → validate → close loop.
+Playbooks live at `data/playbooks/<id>.json`; the CLI engine executes them. Each playbook is an attack-class investigation that walks a govern → direct → look → detect → analyze → validate → close loop.
 
 Thirteen playbooks ship today:
 
@@ -235,7 +235,7 @@ The `researcher` **skill** (front-door dispatcher) and `threat-researcher` **age
 - No code that executes automatically in your environment
 - No outbound network calls; all data is local and static (the watchlist surface is read-only)
 - No credentials or keys
-- Skills are instruction text — the AI implements them; playbook execution is governed by the CLI engine
+- Skills are instruction text — the AI implements them; the CLI engine governs playbook execution
 
 ---
 
