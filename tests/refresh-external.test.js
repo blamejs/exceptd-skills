@@ -1839,7 +1839,7 @@ test('de-listing an entry that never carried a date leaves no spurious key', asy
 });
 
 require('node:test').describe('epss-triple-coherence', () => {
-  const { epssTripleDiffs, EPSS_DRIFT, ALL_SOURCES } = require(path.join(ROOT, 'lib', 'refresh-external.js'));
+  const { epssTripleDiffs, EPSS_DRIFT, ALL_SOURCES, epssDiffFromCache } = require(path.join(ROOT, 'lib', 'refresh-external.js'));
   const { renderEpssNote } = require(path.join(ROOT, 'lib', 'cve-enrich.js'));
   const gate = require(path.join(ROOT, 'scripts', 'check-epss-consistency.js'));
 
@@ -1879,14 +1879,27 @@ require('node:test').describe('epss-triple-coherence', () => {
     for (const d of diffs) out[d.field] = d.after;
     return out;
   };
+  // mkdtempSync, not a composed path in the shared temp directory. It creates
+  // the directory atomically with owner-only permissions, so nothing can
+  // pre-create or swap the file between the name being chosen and the write —
+  // which a pid-plus-timestamp name does not prevent, however unlikely the
+  // collision. Each caller gets its own directory and removes it afterwards.
+  const tmpDirs = [];
   const tmpJson = (obj) => {
-    const p = path.join(os.tmpdir(), `epss-coh-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}.json`);
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'epss-coh-'));
+    tmpDirs.push(dir);
+    const p = path.join(dir, 'catalog.json');
     fs.writeFileSync(p, JSON.stringify(obj));
     return p;
   };
+  const cleanupTmp = () => {
+    while (tmpDirs.length) {
+      try { fs.rmSync(tmpDirs.pop(), { recursive: true, force: true }); } catch { /* best effort */ }
+    }
+  };
   const runGate = (catalog) => {
     const p = tmpJson(catalog);
-    try { return gate.check(p); } finally { fs.unlinkSync(p); }
+    try { return gate.check(p); } finally { cleanupTmp(); }
   };
 
   test('the drift threshold decides whether an entry refreshes, not which of its fields does', () => {
@@ -1989,6 +2002,46 @@ require('node:test').describe('epss-triple-coherence', () => {
       'an undated row is not a publication');
   });
 
+  test('epssDiffFromCache applies the same coherence rule to a real cache payload', () => {
+    // The cache path is what the nightly refresh actually runs, and it is where
+    // the original defect shipped from — so drive it end to end rather than
+    // only unit-testing the rule it delegates to. `forceStale` skips the signed
+    // _index.json requirement, which is about cache integrity rather than the
+    // coherence behaviour under test here.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'epss-cache-'));
+    try {
+      fs.mkdirSync(path.join(dir, 'epss'));
+      const write = (id, epss, percentile, date) => fs.writeFileSync(
+        path.join(dir, 'epss', `${id}.json`),
+        JSON.stringify({ status: 'OK', data: [{ cve: id, epss, percentile, date }] }),
+      );
+      // Moves far past the threshold; its percentile moves barely at all.
+      write('CVE-2099-0001', '0.99311', '0.9995', '2026-08-13');
+      // A row missing its percentile entirely — must not refresh anything.
+      fs.writeFileSync(path.join(dir, 'epss', 'CVE-2099-0002.json'),
+        JSON.stringify({ status: 'OK', data: [{ cve: 'CVE-2099-0002', epss: '0.99311', date: '2026-08-13' }] }));
+
+      const ctx = {
+        cacheDir: dir,
+        forceStale: true,
+        cveCatalog: {
+          'CVE-2099-0001': { epss_score: 0.84793, epss_percentile: 0.99688, epss_date: '2026-08-07' },
+          'CVE-2099-0002': { epss_score: 0.84793, epss_percentile: 0.99688, epss_date: '2026-08-07' },
+        },
+      };
+      const r = epssDiffFromCache(ctx);
+      const fields = (id) => r.diffs.filter((d) => d.id === id).map((d) => d.field).sort();
+
+      assert.deepEqual(fields('CVE-2099-0001'), ['epss_date', 'epss_percentile', 'epss_score'],
+        'a complete cached row refreshes the whole triple, including the percentile that barely moved');
+      assert.deepEqual(fields('CVE-2099-0002'), [],
+        'a cached row missing the percentile refreshes nothing, however far the score moved');
+      assert.equal(r.status, 'ok');
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   test('a malformed numeric value is refused rather than written as NaN', () => {
     // Both call sites build these with Number(), so a malformed cached value
     // arrives as NaN, not null. NaN passes a nullish check, would ride the
@@ -2050,7 +2103,7 @@ require('node:test').describe('epss-triple-coherence', () => {
       assert.equal('epss_note' in after['CVE-2099-0002'], false,
         'a refresh must not add a note to an entry that never carried one');
     } finally {
-      fs.unlinkSync(p);
+      cleanupTmp();
     }
   });
 });
