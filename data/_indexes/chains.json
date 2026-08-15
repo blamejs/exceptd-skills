@@ -141089,7 +141089,7 @@
     "rwep": 77,
     "cvss": 7.2,
     "cisa_kev": true,
-    "epss_score": 0.4638,
+    "epss_score": 0.54056,
     "epss_percentile": 0.98682,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -524194,7 +524194,7 @@
     "rwep": 79,
     "cvss": 10,
     "cisa_kev": true,
-    "epss_score": 0.61906,
+    "epss_score": 0.85194,
     "epss_percentile": 0.99094,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -525264,7 +525264,7 @@
     "rwep": 70,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.55914,
+    "epss_score": 0.66013,
     "epss_percentile": 0.98948,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -542100,7 +542100,7 @@
     "rwep": 78,
     "cvss": 5.9,
     "cisa_kev": true,
-    "epss_score": 0.79029,
+    "epss_score": 0.731,
     "epss_percentile": 0.9956,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -600158,8 +600158,8 @@
     "rwep": 72,
     "cvss": 9.8,
     "cisa_kev": true,
-    "epss_score": 0.0101,
-    "epss_percentile": 0.59827,
+    "epss_score": 0.10722,
+    "epss_percentile": 0.95418,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -600654,7 +600654,7 @@
     "rwep": 79,
     "cvss": 9.6,
     "cisa_kev": true,
-    "epss_score": 0.84793,
+    "epss_score": 0.99311,
     "epss_percentile": 0.99688,
     "referencing_skills": [
       "kernel-lpe-triage",
@@ -601143,6 +601143,1706 @@
         "RFC-7296",
         "RFC-9116"
       ]
+    }
+  },
+  "CVE-2026-20349": {
+    "name": "Cisco Secure Firewall Adaptive Security Appliance (ASA) and Secure Firewall Threat Defense (FTD) Heap Inspection Vulnerability",
+    "rwep": 75,
+    "cvss": 8.6,
+    "cisa_kev": true,
+    "epss_score": 0.00874,
+    "epss_percentile": 0.55814,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-68820": {
+    "name": "Microsoft Windows Ancillary Function Driver for WinSock Use-After-Free Vulnerability",
+    "rwep": 75,
+    "cvss": 7,
+    "cisa_kev": true,
+    "epss_score": 0.00332,
+    "epss_percentile": 0.25983,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-72898": {
+    "name": "Metabase SQL Injection Vulnerability",
+    "rwep": 75,
+    "cvss": 10,
+    "cisa_kev": true,
+    "epss_score": 0.104,
+    "epss_percentile": 0.95317,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2017-15944": {
+    "name": "Palo Alto Networks PAN-OS Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.9834,
+    "epss_percentile": 0.99914,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-27925": {
+    "name": "Synacor Zimbra Collaboration Suite (ZCS) Arbitrary File Upload Vulnerability",
+    "rwep": 75,
+    "cvss": 7.2,
+    "cisa_kev": true,
+    "epss_score": 0.98586,
+    "epss_percentile": 0.99919,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-37042": {
+    "name": "Synacor Zimbra Collaboration Suite (ZCS) Authentication Bypass Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.91893,
+    "epss_percentile": 0.9981,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-34713": {
+    "name": "Microsoft Windows Support Diagnostic Tool (MSDT) Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.6798,
+    "epss_percentile": 0.99261,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-30333": {
+    "name": "RARLAB UnRAR Directory Traversal Vulnerability",
+    "rwep": 75,
+    "cvss": 7.5,
+    "cisa_kev": true,
+    "epss_score": 0.99085,
+    "epss_percentile": 0.99929,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-27924": {
+    "name": "Synacor Zimbra Collaboration Suite (ZCS) Command Injection Vulnerability",
+    "rwep": 75,
+    "cvss": 7.5,
+    "cisa_kev": true,
+    "epss_score": 0.85398,
+    "epss_percentile": 0.99701,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-26138": {
+    "name": "Atlassian Questions For Confluence App Hard-coded Credentials Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.9817,
+    "epss_percentile": 0.99911,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-22047": {
+    "name": "Microsoft Windows Client Server Runtime Subsystem (CSRSS) Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.17087,
+    "epss_percentile": 0.96801,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-26925": {
+    "name": "Microsoft Windows LSA Spoofing Vulnerability",
+    "rwep": 75,
+    "cvss": 5.9,
+    "cisa_kev": true,
+    "epss_score": 0.10808,
+    "epss_percentile": 0.95447,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-29499": {
+    "name": "Mitel MiVoice Connect Data Validation Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.55404,
+    "epss_percentile": 0.98947,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-30533": {
+    "name": "Google Chromium PopupBlocker Security Bypass Vulnerability",
+    "rwep": 75,
+    "cvss": 6.5,
+    "cisa_kev": true,
+    "epss_score": 0.16611,
+    "epss_percentile": 0.96728,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-4034": {
+    "name": "Red Hat Polkit Out-of-Bounds Read and Write Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.94921,
+    "epss_percentile": 0.99854,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-30983": {
+    "name": "Apple iOS and iPadOS Buffer Overflow Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.02923,
+    "epss_percentile": 0.85833,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-3837": {
+    "name": "Apple Multiple Products Memory Corruption Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.145,
+    "epss_percentile": 0.9632,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-9907": {
+    "name": "Apple Multiple Products Memory Corruption Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.03875,
+    "epss_percentile": 0.89277,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2019-8605": {
+    "name": "Apple Multiple Products Use-After-Free Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.17513,
+    "epss_percentile": 0.96862,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2018-4344": {
+    "name": "Apple Multiple Products Memory Corruption Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.02908,
+    "epss_percentile": 0.85762,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-30190": {
+    "name": "Microsoft Windows Support Diagnostic Tool (MSDT) Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.99374,
+    "epss_percentile": 0.99937,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-38163": {
+    "name": "SAP NetWeaver Unrestricted File Upload Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.36018,
+    "epss_percentile": 0.98336,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2016-2386": {
+    "name": "SAP NetWeaver SQL Injection Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.7106,
+    "epss_percentile": 0.9935,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2016-2388": {
+    "name": "SAP NetWeaver Information Disclosure Vulnerability",
+    "rwep": 75,
+    "cvss": 5.3,
+    "cisa_kev": true,
+    "epss_score": 0.51553,
+    "epss_percentile": 0.98845,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2019-7195": {
+    "name": "QNAP Photo Station Path Traversal Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.89681,
+    "epss_percentile": 0.99777,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2019-7194": {
+    "name": "QNAP Photo Station Path Traversal Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.83124,
+    "epss_percentile": 0.99649,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2019-7193": {
+    "name": "QNAP QTS Improper Input Validation Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.14367,
+    "epss_percentile": 0.96293,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2019-7192": {
+    "name": "QNAP Photo Station Improper Access Control Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.88213,
+    "epss_percentile": 0.99754,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2019-5825": {
+    "name": "Google Chromium V8 Out-of-Bounds Write Vulnerability",
+    "rwep": 75,
+    "cvss": 6.5,
+    "cisa_kev": true,
+    "epss_score": 0.55925,
+    "epss_percentile": 0.98957,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2019-15271": {
+    "name": "Cisco RV Series Routers Deserialization of Untrusted Data Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.05979,
+    "epss_percentile": 0.92646,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2018-6065": {
+    "name": "Google Chromium V8 Integer Overflow Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.60304,
+    "epss_percentile": 0.99061,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2018-4990": {
+    "name": "Adobe Acrobat and Reader Double Free Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.36614,
+    "epss_percentile": 0.98359,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2018-17480": {
+    "name": "Google Chromium V8 Out-of-Bounds Write Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.3564,
+    "epss_percentile": 0.98318,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2018-17463": {
+    "name": "Google Chromium V8 Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.84564,
+    "epss_percentile": 0.99683,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2017-6862": {
+    "name": "NETGEAR Multiple Devices Buffer Overflow Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.42696,
+    "epss_percentile": 0.98596,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2017-5070": {
+    "name": "Google Chromium V8 Type Confusion Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.31212,
+    "epss_percentile": 0.98112,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2017-5030": {
+    "name": "Google Chromium V8 Memory Corruption Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.41603,
+    "epss_percentile": 0.98559,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2016-5198": {
+    "name": "Google Chromium V8 Out-of-Bounds Memory Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.34814,
+    "epss_percentile": 0.98285,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2016-1646": {
+    "name": "Google Chromium V8 Out-of-Bounds Read Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.4811,
+    "epss_percentile": 0.98752,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2013-1331": {
+    "name": "Microsoft Office Buffer Overflow Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.81877,
+    "epss_percentile": 0.99619,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2012-5054": {
+    "name": "Adobe Flash Player Integer Overflow Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.21194,
+    "epss_percentile": 0.97369,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2012-4969": {
+    "name": "Microsoft Internet Explorer Use-After-Free Vulnerability",
+    "rwep": 75,
+    "cvss": 8.1,
+    "cisa_kev": true,
+    "epss_score": 0.81716,
+    "epss_percentile": 0.99613,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2012-1889": {
+    "name": "Microsoft XML Core Services Memory Corruption Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.83638,
+    "epss_percentile": 0.99664,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2012-0767": {
+    "name": "Adobe Flash Player Cross-Site Scripting (XSS) Vulnerability",
+    "rwep": 75,
+    "cvss": 6.1,
+    "cisa_kev": true,
+    "epss_score": 0.06662,
+    "epss_percentile": 0.9328,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2012-0754": {
+    "name": "Adobe Flash Player Memory Corruption Vulnerability",
+    "rwep": 75,
+    "cvss": 8.1,
+    "cisa_kev": true,
+    "epss_score": 0.9203,
+    "epss_percentile": 0.99812,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2012-0151": {
+    "name": "Microsoft Windows Authenticode Signature Verification Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.83534,
+    "epss_percentile": 0.9966,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2011-2462": {
+    "name": "Adobe Reader and Acrobat Universal 3D Memory Corruption Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.86563,
+    "epss_percentile": 0.99721,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2011-0609": {
+    "name": "Adobe Flash Player Unspecified Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.66821,
+    "epss_percentile": 0.99228,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2010-2883": {
+    "name": "Adobe Acrobat and Reader Stack-Based Buffer Overflow Vulnerability",
+    "rwep": 75,
+    "cvss": 7.3,
+    "cisa_kev": true,
+    "epss_score": 0.82485,
+    "epss_percentile": 0.99635,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2010-2572": {
+    "name": "Microsoft PowerPoint Buffer Overflow Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.62598,
+    "epss_percentile": 0.99118,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2010-1297": {
+    "name": "Adobe Flash Player Memory Corruption Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.82365,
+    "epss_percentile": 0.99632,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2009-4324": {
+    "name": "Adobe Acrobat and Reader Use-After-Free Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.81933,
+    "epss_percentile": 0.99621,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2009-3953": {
+    "name": "Adobe Acrobat and Reader Universal 3D Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.83855,
+    "epss_percentile": 0.99668,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2009-1862": {
+    "name": "Adobe Acrobat and Reader, Flash Player Unspecified Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.25006,
+    "epss_percentile": 0.97723,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2009-0563": {
+    "name": "Microsoft Office Buffer Overflow Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.63081,
+    "epss_percentile": 0.9913,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2009-0557": {
+    "name": "Microsoft Office Object Record Corruption Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.58551,
+    "epss_percentile": 0.9902,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2008-0655": {
+    "name": "Adobe Acrobat and Reader Unspecified Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.36844,
+    "epss_percentile": 0.98372,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2007-5659": {
+    "name": "Adobe Acrobat and Reader Buffer Overflow Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.94222,
+    "epss_percentile": 0.99841,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2006-2492": {
+    "name": "Microsoft Word Malformed Object Pointer Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.48387,
+    "epss_percentile": 0.9876,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2022-26134": {
+    "name": "Atlassian Confluence Server and Data Center Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.99999,
+    "epss_percentile": 0.99994,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2019-3010": {
+    "name": "Oracle Solaris Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.13399,
+    "epss_percentile": 0.96078,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2016-3393": {
+    "name": "Microsoft Windows Graphics Device Interface (GDI) Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.68684,
+    "epss_percentile": 0.9928,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2016-7256": {
+    "name": "Microsoft Windows Open Type Font Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.64835,
+    "epss_percentile": 0.99176,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2016-1010": {
+    "name": "Adobe Flash Player and AIR Integer Overflow Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.19785,
+    "epss_percentile": 0.97169,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2016-0984": {
+    "name": "Adobe Flash Player and AIR Use-After-Free Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.55375,
+    "epss_percentile": 0.98946,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2016-0034": {
+    "name": "Microsoft Silverlight Runtime Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.58541,
+    "epss_percentile": 0.99019,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2015-0310": {
+    "name": "Adobe Flash Player ASLR Bypass Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.15217,
+    "epss_percentile": 0.96451,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2015-0016": {
+    "name": "Microsoft Windows TS WebProxy Directory Traversal Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.7594,
+    "epss_percentile": 0.99485,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2015-0071": {
+    "name": "Microsoft Internet Explorer ASLR Bypass Vulnerability",
+    "rwep": 75,
+    "cvss": 6.5,
+    "cisa_kev": true,
+    "epss_score": 0.33581,
+    "epss_percentile": 0.98236,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2015-2360": {
+    "name": "Microsoft Win32k Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.14958,
+    "epss_percentile": 0.96405,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2015-2425": {
+    "name": "Microsoft Internet Explorer Memory Corruption Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.44851,
+    "epss_percentile": 0.98663,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2015-1769": {
+    "name": "Microsoft Windows Mount Manager Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 6.6,
+    "cisa_kev": true,
+    "epss_score": 0.04111,
+    "epss_percentile": 0.89875,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2015-4495": {
+    "name": "Mozilla Firefox Security Feature Bypass Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.68657,
+    "epss_percentile": 0.99279,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2015-8651": {
+    "name": "Adobe Flash Player Integer Overflow Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.67922,
+    "epss_percentile": 0.9926,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2015-6175": {
+    "name": "Microsoft Windows Kernel Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.05169,
+    "epss_percentile": 0.91702,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2015-1671": {
+    "name": "Microsoft Windows Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.54628,
+    "epss_percentile": 0.98928,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2014-4148": {
+    "name": "Microsoft Windows Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.59776,
+    "epss_percentile": 0.9905,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2014-8439": {
+    "name": "Adobe Flash Player Dereferenced Pointer Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.20008,
+    "epss_percentile": 0.97201,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2014-4123": {
+    "name": "Microsoft Internet Explorer Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.47259,
+    "epss_percentile": 0.98733,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2014-0546": {
+    "name": "Adobe Reader and Acrobat Sandbox Bypass Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.2233,
+    "epss_percentile": 0.97475,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2014-2817": {
+    "name": "Microsoft Internet Explorer Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.26349,
+    "epss_percentile": 0.97824,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2014-4077": {
+    "name": "Microsoft IME Japanese Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.47679,
+    "epss_percentile": 0.98743,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2014-3153": {
+    "name": "Linux Kernel Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.37233,
+    "epss_percentile": 0.98392,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2013-7331": {
+    "name": "Microsoft Internet Explorer Information Disclosure Vulnerability",
+    "rwep": 75,
+    "cvss": 6.5,
+    "cisa_kev": true,
+    "epss_score": 0.58023,
+    "epss_percentile": 0.99007,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2013-3993": {
+    "name": "IBM InfoSphere BigInsights Invalid Input Vulnerability",
+    "rwep": 75,
+    "cvss": 6.5,
+    "cisa_kev": true,
+    "epss_score": 0.05236,
+    "epss_percentile": 0.91793,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2013-3896": {
+    "name": "Microsoft Silverlight Information Disclosure Vulnerability",
+    "rwep": 75,
+    "cvss": 5.5,
+    "cisa_kev": true,
+    "epss_score": 0.6961,
+    "epss_percentile": 0.99305,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2013-2423": {
+    "name": "Oracle JRE Unspecified Vulnerability",
+    "rwep": 75,
+    "cvss": 3.7,
+    "cisa_kev": true,
+    "epss_score": 0.85333,
+    "epss_percentile": 0.99699,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2013-0431": {
+    "name": "Oracle JRE Sandbox Bypass Vulnerability",
+    "rwep": 75,
+    "cvss": 5.3,
+    "cisa_kev": true,
+    "epss_score": 0.89987,
+    "epss_percentile": 0.99783,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2013-0422": {
+    "name": "Oracle JRE Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.97612,
+    "epss_percentile": 0.99897,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2013-0074": {
+    "name": "Microsoft Silverlight Double Dereference Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.81868,
+    "epss_percentile": 0.99618,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2012-1710": {
+    "name": "Oracle Fusion Middleware Unspecified Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.11636,
+    "epss_percentile": 0.95663,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2010-1428": {
+    "name": "Red Hat JBoss Information Disclosure Vulnerability",
+    "rwep": 75,
+    "cvss": 7.5,
+    "cisa_kev": true,
+    "epss_score": 0.62308,
+    "epss_percentile": 0.99111,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2010-0840": {
+    "name": "Oracle JRE Unspecified Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.96319,
+    "epss_percentile": 0.99876,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2010-0738": {
+    "name": "Red Hat JBoss Authentication Bypass Vulnerability",
+    "rwep": 75,
+    "cvss": 5.3,
+    "cisa_kev": true,
+    "epss_score": 0.79415,
+    "epss_percentile": 0.99567,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2018-8611": {
+    "name": "Microsoft Windows Kernel Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.04196,
+    "epss_percentile": 0.90059,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2018-19953": {
+    "name": "QNAP NAS File Station Cross-Site Scripting Vulnerability",
+    "rwep": 75,
+    "cvss": 6.1,
+    "cisa_kev": true,
+    "epss_score": 0.23894,
+    "epss_percentile": 0.9763,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2018-19949": {
+    "name": "QNAP NAS File Station Command Injection Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.24449,
+    "epss_percentile": 0.97678,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2018-19943": {
+    "name": "QNAP NAS File Station Cross-Site Scripting Vulnerability",
+    "rwep": 75,
+    "cvss": 5.4,
+    "cisa_kev": true,
+    "epss_score": 0.17705,
+    "epss_percentile": 0.96885,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2017-0147": {
+    "name": "Microsoft Windows SMBv1 Information Disclosure Vulnerability",
+    "rwep": 75,
+    "cvss": 7.5,
+    "cisa_kev": true,
+    "epss_score": 0.99693,
+    "epss_percentile": 0.9995,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2017-0022": {
+    "name": "Microsoft XML Core Services Information Disclosure Vulnerability",
+    "rwep": 75,
+    "cvss": 6.5,
+    "cisa_kev": true,
+    "epss_score": 0.18069,
+    "epss_percentile": 0.96931,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
     }
   },
   "CWE-20": {
