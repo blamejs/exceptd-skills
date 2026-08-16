@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.19.27 — 2026-08-15
+
+`docs/REPO-SETTINGS.md` describes the repository it is applied to. It is the recovery path for the branch protection, tag protection and Actions allowlist, and it had drifted from all three, so re-applying it would have changed the repository rather than restored it.
+
+The branch-protection block specified an approval minimum of one against a live zero. On a single-maintainer project that minimum cannot be satisfied — the only person who could approve is the author — so applying it locks `main` against its own owner. The same block turned admin enforcement off, where it is on and is what carries the weight given there is no approval requirement, and it required two checks that no workflow produces. Those fields, and the code-owner and last-push settings beside them, now match the live protection, with the reason the count is zero written down so the next reader does not correct it back.
+
+The Actions allowlist is a replace, not an append. The documented list named an action no workflow uses and omitted the two that publish the release and open the nightly data pull request, so applying it removed them — and a missing allowlist entry does not fail until the workflow that needs it next runs. It also admitted every action in the Marketplace verified-creator programme, which is the opposite of what an allowlist is for.
+
+Tag protection moved to a ruleset some time ago; the documented command called the retired endpoint, which now answers 404. The ruleset is recorded instead, including its empty bypass list, because an admin exemption would make the protection advisory.
+
+The verification section read a field the API does not return on that path — the write side takes `checks`, the read side answers `contexts` — so it reported an empty required-check list on a repository that had eight. And every command carried a leading slash on its endpoint, which a POSIX-style shell on Windows rewrites into a filesystem path, so the whole file was unrunnable there. Both are fixed, and the commands were run as written to confirm it.
+
+Counts that had drifted from the catalogs they describe are corrected: the CWE and RFC totals in the architecture overview, the CVE, lesson and CWE rows in the context file's inventory table, and the playbook count, which said thirteen against thirty-three shipping. The playbook table now says it lists the thirteen keyed to a single attack class and points at `exceptd brief --all` for the rest, and the skill inventory says it describes seventeen of fifty-one rather than leaving a reader to assume it is complete. The data-catalog list was missing `attack-techniques.json` while claiming eleven catalogs; it now lists all eleven.
+
+The CVE-addition issue template collected six of the eight factors the scoring module sums, with live-patch availability and reboot requirement folded into "Other", so a filer had nowhere to put two values the score depends on. All eight are named, in the order the module applies them.
+
+The maintainer release runbook regenerated the SBOM before the indexes. The SBOM digests the shipped tree, so taking it first records hashes for files the next step rewrites, and the currency gate then fails on ordering rather than on anything wrong. It runs last, and the runbook points at the release orchestrator as the supported path.
+
 ## 0.19.26 — 2026-08-15
 
 The catalog reaches 1,125 CVEs with 100 additions from the earliest CISA KEV listings. Ninety-seven were published between 2006 and 2022 — the client-side and appliance flaws that pre-date most vulnerability programmes: Adobe Reader, Acrobat and Flash Player, Microsoft Office, Internet Explorer and the Windows kernel, Oracle Java SE and Solaris, QNAP NAS appliances, Cisco small-business routers, and Zimbra. Twenty-three carry CISA's ransomware flag and 56 have an obtainable public exploit.

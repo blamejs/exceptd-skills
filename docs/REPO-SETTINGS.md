@@ -49,21 +49,21 @@ Why these choices:
 # Enable secret scanning + push protection. Push protection blocks a
 # push that contains a detectable secret, rather than only alerting
 # after the secret is already on GitHub.
-gh api -X PATCH /repos/blamejs/exceptd-skills \
+gh api -X PATCH repos/blamejs/exceptd-skills \
   --field 'security_and_analysis[secret_scanning][status]=enabled' \
   --field 'security_and_analysis[secret_scanning_push_protection][status]=enabled'
 
 # Enable Dependabot security updates (auto-PRs on vulnerable deps).
 # The project is zero-dep by design, so the immediate value is the
 # GitHub Actions ecosystem updates configured in .github/dependabot.yml.
-gh api -X PATCH /repos/blamejs/exceptd-skills \
+gh api -X PATCH repos/blamejs/exceptd-skills \
   --field 'security_and_analysis[dependabot_security_updates][status]=enabled'
 
 # Enable private vulnerability reporting. Researchers click "Report a
 # vulnerability" on the Security tab; the report lands in a private
 # advisory thread, not a public issue. Backs SECURITY.md's disclosure
 # process.
-gh api -X PATCH /repos/blamejs/exceptd-skills \
+gh api -X PATCH repos/blamejs/exceptd-skills \
   --field 'security_and_analysis[private_vulnerability_reporting][status]=enabled'
 ```
 
@@ -72,11 +72,20 @@ gh api -X PATCH /repos/blamejs/exceptd-skills \
 ## 3. Branch protection on `main`
 
 Required: every push to `main` goes through a PR; every PR passes the CI
-gates; signed commits required; force-pushes blocked; one approval
-minimum.
+gates; signed commits required; force-pushes blocked; every conversation
+resolved.
+
+The approval count is **0**, not 1. On a single-maintainer project an
+approval minimum cannot be satisfied — the only person who could approve
+is the author — so requiring one locks `main` against its own maintainer.
+The protection that does the work here is the check set plus
+`enforce_admins`, which applies to the maintainer too. Raise the count to
+1 and re-enable `require_code_owner_reviews` and
+`require_last_push_approval` at the point a second maintainer joins;
+`dismiss_stale_reviews` is already on so that flip needs no other change.
 
 ```bash
-gh api -X PUT /repos/blamejs/exceptd-skills/branches/main/protection \
+gh api -X PUT repos/blamejs/exceptd-skills/branches/main/protection \
   --input - <<'JSON'
 {
   "required_status_checks": {
@@ -89,17 +98,15 @@ gh api -X PUT /repos/blamejs/exceptd-skills/branches/main/protection \
       { "context": "Data integrity (catalog + manifest snapshot)" },
       { "context": "Lint skill files" },
       { "context": "Secret scan (gitleaks)" },
-      { "context": "Lint summary" },
-      { "context": "Scorecard analysis" },
-      { "context": "Threshold gate" }
+      { "context": "Lint summary" }
     ]
   },
-  "enforce_admins": false,
+  "enforce_admins": true,
   "required_pull_request_reviews": {
     "dismiss_stale_reviews": true,
-    "require_code_owner_reviews": true,
-    "required_approving_review_count": 1,
-    "require_last_push_approval": true
+    "require_code_owner_reviews": false,
+    "required_approving_review_count": 0,
+    "require_last_push_approval": false
   },
   "restrictions": null,
   "required_linear_history": true,
@@ -121,12 +128,16 @@ Why each setting:
 - **`strict: true`** — PRs must be up-to-date with `main` before merge.
   Catches "merged stale" regressions where two PRs each pass CI in
   isolation but conflict semantically.
-- **`require_code_owner_reviews`** — CODEOWNERS-listed paths require a
-  code-owner approval, not just any approval.
-- **`enforce_admins: false`** — admins can bypass in genuine emergencies
-  (rollbacks of a broken `main`), but `required_signatures: true` and
-  the audit trail still apply. Set this to `true` once the project has
-  more than one maintainer.
+- **`require_code_owner_reviews: false`** — off while the project has one
+  maintainer, for the same reason the approval count is 0. Turn it on
+  with the approval count when a second maintainer joins, at which point
+  CODEOWNERS-listed paths start requiring a code-owner approval rather
+  than any approval.
+- **`enforce_admins: true`** — the rules apply to admins as well, so the
+  maintainer cannot bypass the check set on their own repository. This is
+  what carries the weight given the approval count is 0. An emergency
+  rollback means turning it off deliberately and turning it back on,
+  which leaves a trail, rather than a standing exemption that does not.
 - **`required_signatures: true`** — every commit on `main` must be
   signed (GPG / SSH / GitHub web-edit). Aligns with the project's
   threat-intel-trust posture: the commit log must be verifiable.
@@ -137,12 +148,36 @@ Why each setting:
 
 ## 4. Tag protection
 
-Protects release tags from being deleted or overwritten.
+Protects release tags from being deleted or overwritten. A published version
+is a fixed point: if a published tag can be moved, every consumer who pinned it
+is holding a reference that no longer means what it meant. Bumping the version
+is the only way to correct a bad release.
+
+This is a **ruleset**, not the old per-repo tag-protection API — that endpoint
+is deprecated and now returns 404, so the command previously documented here
+would fail without saying why.
 
 ```bash
-gh api -X POST /repos/blamejs/exceptd-skills/tags/protection \
-  --field 'pattern=v*'
+gh api -X POST repos/blamejs/exceptd-skills/rulesets \
+  --input - <<'JSON'
+{
+  "name": "Protect release tags (v*)",
+  "target": "tag",
+  "enforcement": "active",
+  "conditions": { "ref_name": { "include": ["refs/tags/v*"], "exclude": [] } },
+  "rules": [
+    { "type": "deletion" },
+    { "type": "non_fast_forward" },
+    { "type": "update" }
+  ],
+  "bypass_actors": []
+}
+JSON
 ```
+
+`bypass_actors` is empty on purpose: an admin exemption would make the
+protection advisory. Verify with
+`gh api repos/:owner/:repo/rulesets --jq '.[] | select(.target=="tag")'`.
 
 ---
 
@@ -154,21 +189,42 @@ gh api -X POST /repos/blamejs/exceptd-skills/tags/protection \
 # This is the org-default in blamejs/blamejs already, so on a fresh
 # blamejs-org repo the setting may already be applied — re-running
 # is idempotent.
-gh api -X PUT /repos/blamejs/exceptd-skills/actions/permissions/workflow \
+gh api -X PUT repos/blamejs/exceptd-skills/actions/permissions/workflow \
   --field 'default_workflow_permissions=read' \
   --field 'can_approve_pull_request_reviews=false'
 
 # Restrict which actions can run. The allowlist matches the SHA-pinned
 # actions used in our workflows.
-gh api -X PUT /repos/blamejs/exceptd-skills/actions/permissions \
+gh api -X PUT repos/blamejs/exceptd-skills/actions/permissions \
   --field 'enabled=true' \
   --field 'allowed_actions=selected'
 
-gh api -X PUT /repos/blamejs/exceptd-skills/actions/permissions/selected-actions \
+gh api -X PUT repos/blamejs/exceptd-skills/actions/permissions/selected-actions \
   --field 'github_owned_allowed=true' \
-  --field 'verified_allowed=true' \
+  --field 'verified_allowed=false' \
   --field 'patterns_allowed[]=ossf/scorecard-action@*' \
-  --field 'patterns_allowed[]=hadolint/hadolint-action@*'
+  --field 'patterns_allowed[]=softprops/action-gh-release@*' \
+  --field 'patterns_allowed[]=peter-evans/create-pull-request@*'
+```
+
+The pattern list is a replace, not an append, so it has to name every
+third-party action in use or the next run of the workflow that needs the
+missing one fails on a permissions error rather than on anything it did.
+`softprops/action-gh-release` publishes the GitHub Release from `release.yml`
+and `peter-evans/create-pull-request` opens the nightly data PR from
+`refresh.yml`; both are required. `hadolint/hadolint-action` is not in the
+allowlist because no workflow uses it.
+
+`verified_allowed=false` keeps the list to actions that were chosen
+deliberately. Admitting everything in the Marketplace verified-creator
+programme would widen the set to publishers this project has never reviewed,
+which is the opposite of what an allowlist is for. `github_owned_allowed`
+covers `actions/*` and `github/codeql-action/*`, so those need no pattern.
+
+Check the live list before editing it:
+
+```bash
+gh api repos/:owner/:repo/actions/permissions/selected-actions
 ```
 
 ---
@@ -176,7 +232,7 @@ gh api -X PUT /repos/blamejs/exceptd-skills/actions/permissions/selected-actions
 ## 6. Topics and discoverability
 
 ```bash
-gh api -X PUT /repos/blamejs/exceptd-skills/topics \
+gh api -X PUT repos/blamejs/exceptd-skills/topics \
   --field 'names[]=security' \
   --field 'names[]=ai-security' \
   --field 'names[]=mitre-atlas' \
@@ -207,9 +263,15 @@ After applying all of the above, confirm:
 
 ```bash
 gh repo view blamejs/exceptd-skills --json visibility,defaultBranchRef,hasIssuesEnabled,hasDiscussionsEnabled,securityAndAnalysis
-gh api /repos/blamejs/exceptd-skills/branches/main/protection | jq '.required_status_checks.checks, .required_pull_request_reviews, .required_signatures'
-gh api /repos/blamejs/exceptd-skills/tags/protection
+gh api repos/blamejs/exceptd-skills/branches/main/protection | jq '.required_status_checks.contexts, .required_pull_request_reviews, .required_signatures, .enforce_admins'
+gh api repos/blamejs/exceptd-skills/rulesets --jq '.[] | select(.target=="tag")'
+gh api repos/blamejs/exceptd-skills/actions/permissions/selected-actions
 ```
+
+Read the protection back as `.required_status_checks.contexts`. The write
+side takes `checks` (context plus an optional app id); the read side returns
+`contexts`, so querying the field you sent gets you `null` and an apparently
+empty required-check list.
 
 The first push to `main` after this setup should land green if and only
 if every required check passes. A red check there is the signal that the
@@ -220,13 +282,25 @@ gate is working as intended.
 ## 9. Keeping these settings current
 
 These settings drift over time as GitHub adds features and the project's
-posture matures. The expectation is:
+posture matures, and the drift is silent: nothing fails until someone
+re-applies this file and finds it describes a repository that no longer
+exists. Read the live value before editing any section — every one of them
+has a matching read command in section 8.
 
 - Re-run sections 1, 2, 5, 6 quarterly to refresh against any new
   GitHub defaults.
 - Re-run section 3 whenever a CI job is renamed or a new required
   check is added in `.github/workflows/*.yml`.
 - Re-run section 4 whenever the release tag scheme changes.
+
+Two things about the commands themselves. The endpoints are written without
+a leading slash — `gh api repos/...`, not `gh api /repos/...` — because a
+POSIX-style shell on Windows rewrites a leading-slash argument into a
+filesystem path, and `gh` then reports an invalid endpoint under the Git
+installation directory. The no-slash form behaves identically everywhere.
+And section 5's `patterns_allowed` is a replace rather than an append, so it
+has to name every third-party action currently in use; dropping one there
+does not fail until the workflow that needs it next runs.
 
 If the org adopts a "settings as code" tool (Probot Settings, Repository
 Settings Configurator, etc.), migrate the above into a tracked

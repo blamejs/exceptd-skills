@@ -74,13 +74,19 @@ The project publishes `@blamejs/exceptd-skills` to npm with provenance attestati
 
 1. Bump `package.json` version + `manifest.json` version to the new semver (e.g. `0.9.0`).
 2. Add a `## 0.9.0 — YYYY-MM-DD` section at the top of `CHANGELOG.md`.
-3. Re-sign skills + refresh derived artifacts:
+3. Re-sign skills + refresh derived artifacts. `node scripts/release.js prepare`
+   runs these in order and is the supported path; the sequence is written out
+   here for the case where you need to run one of them on its own.
    ```
    node lib/sign.js sign-all
-   node scripts/refresh-manifest-snapshot.js
-   node scripts/refresh-sbom.js
-   node scripts/build-indexes.js
+   npm run build-indexes
+   npm run refresh-snapshot
+   npm run refresh-sbom
    ```
+   `refresh-sbom` goes last. It digests the shipped tree, so running it before
+   the indexes and the snapshot are rebuilt records hashes for files the next
+   two steps then rewrite, and the currency gate fails on artifacts that were
+   generated in the wrong order rather than on anything actually wrong.
 4. Run the full predeploy gate sequence:
    ```
    npm run predeploy

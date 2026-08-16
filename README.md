@@ -36,6 +36,13 @@ Pre-1.0. Latest release lives on [GitHub Releases](https://github.com/blamejs/ex
 
 ## Skill Inventory
 
+Seventeen of the fifty-one shipped skills are described below. Run `exceptd skill`
+with no argument for the full list with one-line summaries, or `exceptd skill <name>`
+for one skill's description, triggers and data dependencies; the body itself is
+`skills/<name>/skill.md`. Skills named elsewhere in this file but absent here —
+`pqc-first` and `security-maturity-tiers` among them — ship too; this section is a
+selection, not the inventory.
+
 ### Triage & Dispatch
 
 **[researcher](skills/researcher/skill.md)**
@@ -623,6 +630,7 @@ To resolve a single citation rather than refresh the whole catalog, `exceptd cve
 
 - `cve-catalog.json` — CVE metadata with RWEP scores, CISA KEV status, PoC availability, live-patch info
 - `atlas-ttps.json` — MITRE ATLAS v2026.07 TTPs with gap flags and exploitation examples. Each TTP now carries a `cve_refs[]` back-edge — operators reading an ATLAS entry see the catalogued CVEs that cite it without grepping `cve-catalog.json`. The same back-edge is populated on `attack-techniques.json`, and each playbook carries a `_meta.fed_by[]` reverse field naming the upstream playbooks that chain into it.
+- `attack-techniques.json` — MITRE ATT&CK enterprise and ICS techniques, each carrying the catalogued CVEs that cite it in `cve_refs[]`
 - `framework-control-gaps.json` — Per-framework, per-control: what it was designed for vs. what it misses
 - `exploit-availability.json` — PoC locations, weaponization status, AI-assist factor
 - `global-frameworks.json` — All major global compliance frameworks (35 jurisdictions) with control inventories and lag scores
