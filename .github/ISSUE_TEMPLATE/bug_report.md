@@ -54,6 +54,10 @@ paste relevant log lines or error stack traces here
 
 </details>
 
+## What you've already tried
+
+<!-- Helpful for ruling out duplicates / known interactions. -->
+
 ## Threat-intel grounding (when relevant)
 
 <!--
@@ -66,9 +70,5 @@ re-doing the research:
 - CISA KEV status (if relevant):
 - ATLAS TTP ID (if relevant): AML.TXXXX
 - Framework control ID (if relevant):
-
-## What you've already tried
-
-<!-- Helpful for ruling out duplicates / known interactions. -->
 
 ## Additional context

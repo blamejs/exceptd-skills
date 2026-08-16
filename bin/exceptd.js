@@ -735,8 +735,10 @@ function main() {
     // piping through `jq` get one consistent shape across the CLI surface.
     // emitError() sets exitCode + returns rather than calling process.exit()
     // so the stderr JSON drains before teardown; promote the exit code to
-    // UNKNOWN_COMMAND (10) afterwards. Cycle 9 split this away from
-    // DETECTED_ESCALATE (2) — the two semantics had collided since v0.12.24.
+    // UNKNOWN_COMMAND (10) afterwards. This code is deliberately distinct
+    // from DETECTED_ESCALATE (2): an unknown verb and a detected finding are
+    // different outcomes, and sharing one code made them indistinguishable to
+    // a caller branching on the exit status.
     //
     // add a did-you-mean suggestion when the
     // unknown verb is within Levenshtein-1 of a real verb (catches the
@@ -1041,8 +1043,8 @@ function readEvidence(evidenceFlag, opts = {}) {
   // operator accidentally passing a multi-gigabyte file (binary, log, or
   // adversarial JSON bomb). 32 MB is well beyond any legitimate
   // submission and still drains in a single read on modern hardware.
-  // v0.12.35 (cycle 15 security F1): apply the SAME cap to the stdin
-  // branch. Pre-fix `--evidence -` was uncapped — an attacker piping
+  // The SAME cap applies to the stdin branch. Previously `--evidence -`
+  // was uncapped — an attacker piping
   // multi-GB JSON would OOM the runner. Read in 1 MB chunks and bail
   // at the limit rather than letting Node grow the heap unbounded.
   const MAX_EVIDENCE_BYTES = 32 * 1024 * 1024;
@@ -5673,8 +5675,9 @@ function cmdReattest(runner, args, runOpts, pretty) {
       const suffix = i === 0 ? "" : "-" + crypto.randomBytes(3).toString("hex");
       const candidate = path.join(dir, replayBaseName + suffix + ".json");
       try {
-        // v0.12.38 cycle 18 P1 F2: mode 0o600 + Windows ACL hardening
-        // (matches the primary attestation write site).
+        // mode 0o600 + Windows ACL hardening, matching the primary
+        // attestation write site — a replay file carries the same evidence
+        // and must not be readable by other local accounts.
         fs.writeFileSync(candidate, JSON.stringify(replayBody, null, 2), { flag: "wx", mode: 0o600 });
         try {
           const { restrictWindowsAcl } = require(path.join(PKG_ROOT, "lib", "sign.js"));

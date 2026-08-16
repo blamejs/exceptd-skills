@@ -25,6 +25,12 @@ Include:
 | Medium (incorrect framework gap mapping, wrong control ID) | 7d | 14d | 30d |
 | Low (missing data, incomplete entries) | 14d | 30d | next minor |
 
+## Supported Versions
+
+Pre-1.0: Latest patch on the most recent minor receives data updates (CVE catalog, framework gap updates, new ATLAS TTPs). All versions receive critical accuracy corrections.
+
+Once 1.0: 18-month data update support after each major version.
+
 ## Threat Model
 
 ### What This Repo Defends
@@ -53,12 +59,6 @@ CVE catalog entries and RWEP scores are not authoritative sources — they are a
 - MITRE ATT&CK: https://attack.mitre.org/
 
 For critical security decisions, verify CISA KEV status directly. RWEP scores are a prioritization heuristic, not a compliance instrument.
-
-## Supported Versions
-
-Pre-1.0: Latest patch on the most recent minor receives data updates (CVE catalog, framework gap updates, new ATLAS TTPs). All versions receive critical accuracy corrections.
-
-Once 1.0: 18-month data update support after each major version.
 
 ## Supply Chain
 

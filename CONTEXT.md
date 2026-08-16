@@ -232,7 +232,7 @@ The `researcher` **skill** (front-door dispatcher) and `threat-researcher` **age
 - Individual skill files — 15–40 KB each; load on match, not preemptively
 - Playbook JSON — load on demand via `exceptd brief <playbook>` (or `--phase look` for just the artifact spec); the engine handles phase orchestration
 
-### What This Repo Does Not Contain
+### What This Repository Does Not Contain
 
 - No code that executes automatically in your environment
 - No outbound network calls; all data is local and static (the watchlist surface is read-only)
