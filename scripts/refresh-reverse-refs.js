@@ -117,8 +117,8 @@ const CATALOGS = [
   // technique gets a `cve_refs` array carrying the CVE ids that cite it.
   // Pre-v0.13 these catalogs had only forward refs (CVE → TTP); operators
   // reading an ATLAS / ATT&CK entry could not see which CVEs cite it
-  // without grepping the whole catalog. New back-edges close the
-  // asymmetric-edges cluster the cycle 20 audit B flagged.
+  // without grepping the whole catalog. These back-edges make the
+  // relationship symmetric: a citation is readable from either end.
   {
     file: 'atlas-ttps.json',
     forwardField: 'atlas_refs',

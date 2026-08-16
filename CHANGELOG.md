@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.19.28 — 2026-08-16
+
+The project-rules file opens with a table instead of a seven-sentence paragraph. Which assistants load `AGENTS.md` on their own, which take a pointer stub, and which need it added by hand was written as running prose, so the reader had to parse three categories out of one block to find their own tool. The rows carry the same tool names and config paths as before.
+
+Two more places in that file put a procedure where a reader can follow it. The external-data pinning rule listed its five steps inside a paragraph, which is the one rule in the file that has to be executed in order; the steps are now a list. The seven-phase worked example ran all seven phases together in a single block directly below a numbered list of those same phases; it is now seven numbered blocks, in the same order, with every artifact literal unchanged.
+
+The control-requirements table sorts by its own key again — two rows sat out of sequence, so looking up an ID meant scanning past them. It also gained a column: five rows were appending how the requirement is enforced in this codebase to a column headed "Coverage gap closed", which promises framework references. The enforcement notes moved to a column of their own, and rows without one are blank rather than filled in.
+
+`SECURITY.md` answers a reporter's first two questions first. Supported versions sat four sections below the reporting address, under the threat model; it now follows the response targets directly. The bug-report template no longer interrupts its general path with a threat-intelligence block a filer with an ordinary CLI bug cannot answer — that section moved to the end, next to the free-text prompts.
+
+Comments that shipped in the tarball named internal work cycles — "Cycle 20 A P1", "cycle 15 security F2", "the cycle 20 audit B flagged" — which identify nothing a reader can look up. They describe why the current code is the way it is instead. One comment pointed at a test file under the wrong name, so anyone checking whether the manifest cache is guarded against drift would have found no such file and concluded it was unguarded; it names the real test, and says which fields that test does and does not cover.
+
 ## 0.19.27 — 2026-08-15
 
 `docs/REPO-SETTINGS.md` describes the repository it is applied to. It is the recovery path for the branch protection, tag protection and Actions allowlist, and it had drifted from all three, so re-applying it would have changed the repository rather than restored it.

@@ -27,9 +27,11 @@
  * cross-ref arrays changed, refresh-reverse-refs + build-indexes) so the
  * refreshed manifest is signed and the derived surfaces pick up the refs.
  *
- * tests/manifest-frontmatter-sync.test.js fails the suite if the cache ever
+ * tests/sync-manifest-metadata.test.js fails the suite if the cache ever
  * drifts again, so a missed run is caught before release rather than shipping
- * a manifest that contradicts its own skill bodies.
+ * a manifest that contradicts its own skill bodies. It covers the fields named
+ * above; `description` is cached in the manifest but is NOT one of them, so a
+ * frontmatter description edit does not propagate and is not caught here.
  *
  * Exit codes: 0 = wrote (or already in sync), 1 = a skill file was missing or
  * its frontmatter failed to parse.

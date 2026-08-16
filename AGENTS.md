@@ -1,6 +1,12 @@
 # exceptd Security — Development Standards
 
-> **This is the canonical development guide and the only project-rules file shipped in this repo.** It is AI-system-agnostic — internal citations throughout the repo all reference `AGENTS.md` (this file). The project does not ship per-vendor mirrors; tool users configure their tool to load `AGENTS.md`. Multiple tools auto-load `AGENTS.md` directly under the cross-vendor convention (OpenAI Codex CLI, Sourcegraph amp, Aider, Continue, Cline, Roo Code, Q Developer). Cursor (`.cursorrules`), GitHub Copilot (`.github/copilot-instructions.md`), and Windsurf (`.windsurfrules`) get small pointer stubs that reference this file. Claude Code / Gemini CLI / JetBrains AI / Replit Agent users should add `AGENTS.md` to their tool's context manually (Claude Code: `@AGENTS.md`, or symlink their own local `~/.claude/CLAUDE.md` to it).
+> **This is the canonical development guide and the only project-rules file shipped in this repo.** It is AI-system-agnostic — internal citations throughout the repo all reference `AGENTS.md` (this file). The project does not ship per-vendor mirrors; tool users configure their tool to load `AGENTS.md`.
+
+| How it loads | Tools | Mechanism |
+|---|---|---|
+| Automatically | OpenAI Codex CLI, Sourcegraph amp, Aider, Continue, Cline, Roo Code, Q Developer | auto-loads `AGENTS.md` directly under the cross-vendor convention |
+| Via a pointer stub | Cursor (`.cursorrules`), GitHub Copilot (`.github/copilot-instructions.md`), Windsurf (`.windsurfrules`) | small pointer stub that references this file |
+| Manually | Claude Code, Gemini CLI, JetBrains AI, Replit Agent | add `AGENTS.md` to the tool's context (Claude Code: `@AGENTS.md`, or symlink their own local `~/.claude/CLAUDE.md` to it) |
 
 Also read [CONTEXT.md](CONTEXT.md) for a complete orientation to the skill system.
 
@@ -41,7 +47,15 @@ Each rule below carries a **Forcing function** annotation declaring whether it i
 11. **No-MVP ban** — A half-implemented skill is worse than no skill. Every shipped skill has: complete frontmatter, all required body sections, real data deps populated, a compliance theater check, and a concrete output format. Partial skills are not merged — they are finished or removed.
     *Forcing function:* covered by `lib/lint-skills.js` (required-section list) plus Hard Rule #15 (diff coverage); predeploy gate.
 
-12. **External data version pinning** — Every reference to external data (MITRE ATLAS, MITRE ATT&CK, NIST frameworks, CISA KEV, IETF RFCs and Internet-Drafts) must pin to a specific version. When a new version is released: (a) audit for breaking changes (renamed TTPs, tactic-split moves, replaced RFCs, deprecated controls), (b) bump `last_threat_review` in all affected skills, (c) update `_meta` version fields in the relevant `data/*.json` file, (d) update `last_verified` on affected `data/rfc-references.json` entries, (e) never silently inherit version changes. Frameworks lag RFCs; RFCs lag attacker innovation — skills must track lag at every layer.
+12. **External data version pinning** — Every reference to external data (MITRE ATLAS, MITRE ATT&CK, NIST frameworks, CISA KEV, IETF RFCs and Internet-Drafts) must pin to a specific version. When a new version is released:
+
+    (a) audit for breaking changes (renamed TTPs, tactic-split moves, replaced RFCs, deprecated controls),
+    (b) bump `last_threat_review` in all affected skills,
+    (c) update `_meta` version fields in the relevant `data/*.json` file,
+    (d) update `last_verified` on affected `data/rfc-references.json` entries,
+    (e) never silently inherit version changes.
+
+    Frameworks lag RFCs; RFCs lag attacker innovation — skills must track lag at every layer.
     *Forcing function:* `_meta` version fields are schema-required; reviewer-checked for cross-file version consistency.
 
     **Pinned ATLAS version: v2026.07 (released 2026-08-07), Secure AI v2 layer (May 2026). Audit cadence: monthly** (ATLAS now ships monthly per CTID; the Secure AI v2 layered set and per-technique maturity classification are tracked separately in `data/atlas-ttps.json` via the `secure_ai_v2_layer` and `maturity` fields).
@@ -107,7 +121,17 @@ exceptd ships investigation playbooks under `data/playbooks/*.json` (schema: `li
 
 ### Worked example (kernel playbook)
 
-Operator asks: "is this host vulnerable to Copy Fail?" AI invokes `node lib/playbook-runner.js data/playbooks/kernel.json`. **govern** returns NIS2 24h incident notification + DORA 4h major-ICT-incident notification obligations and preloads `kernel-lpe-triage`, `exploit-scoring`, `global-grc`; AI surfaces both deadlines to the operator. **direct** emits threat_context anchored on real 2026 kernel CVEs and rwep_threshold bands 90 (live-patch) / 70 (urgent) / 30 (scheduled). **look** directs the AI to capture `uname -r` and `/etc/os-release`; AI uses Bash to read both and submits `artifacts: { kernel_version: { value: "5.15.0-101-generic", captured: true }, os_release: { value: "Ubuntu 22.04.4 LTS", captured: true } }`. **detect** evaluates the `kver-in-affected-range` indicator; AI confirms 5.15.0 falls in the affected range and submits `signal_overrides: { 'kver-in-affected-range': 'hit' }` after running its false-positive checks; the playbook classifies the host as "detected". **analyze** matches three catalogued CVEs (including CVE-2026-31431, KEV-listed, RWEP 90), computes `blast_radius_score=3`, runs the theater check and returns `verdict=theater` (paper SI-2 compliance does not address sub-hour live-patch reality). **validate** selects remediation path `live-patch-deploy` (priority 1) over `kernel-upgrade` (priority 2), returns validation_tests and a residual_risk_statement. **close** emits a signed CSAF-2.0 evidence_package, draft NIS2 (24h from operator-confirmed detection time) and DORA (4h from same anchor) notification text, and a learning_loop lesson queued for `data/zeroday-lessons.json`. AI shows the operator both notification drafts and asks whether to persist the evidence_package — does not auto-send either.
+Operator asks: "is this host vulnerable to Copy Fail?" AI invokes `node lib/playbook-runner.js data/playbooks/kernel.json`.
+
+1. **govern** returns NIS2 24h incident notification + DORA 4h major-ICT-incident notification obligations and preloads `kernel-lpe-triage`, `exploit-scoring`, `global-grc`; AI surfaces both deadlines to the operator.
+2. **direct** emits threat_context anchored on real 2026 kernel CVEs and rwep_threshold bands 90 (live-patch) / 70 (urgent) / 30 (scheduled).
+3. **look** directs the AI to capture `uname -r` and `/etc/os-release`; AI uses Bash to read both and submits `artifacts: { kernel_version: { value: "5.15.0-101-generic", captured: true }, os_release: { value: "Ubuntu 22.04.4 LTS", captured: true } }`.
+4. **detect** evaluates the `kver-in-affected-range` indicator; AI confirms 5.15.0 falls in the affected range and submits `signal_overrides: { 'kver-in-affected-range': 'hit' }` after running its false-positive checks; the playbook classifies the host as "detected".
+5. **analyze** matches three catalogued CVEs (including CVE-2026-31431, KEV-listed, RWEP 90), computes `blast_radius_score=3`, runs the theater check and returns `verdict=theater` (paper SI-2 compliance does not address sub-hour live-patch reality).
+6. **validate** selects remediation path `live-patch-deploy` (priority 1) over `kernel-upgrade` (priority 2), returns validation_tests and a residual_risk_statement.
+7. **close** emits a signed CSAF-2.0 evidence_package, draft NIS2 (24h from operator-confirmed detection time) and DORA (4h from same anchor) notification text, and a learning_loop lesson queued for `data/zeroday-lessons.json`.
+
+AI shows the operator both notification drafts and asks whether to persist the evidence_package — does not auto-send either.
 
 ### CLI invocation
 
@@ -220,38 +244,38 @@ When a zero-day surfaces a control class no existing framework covers, the learn
 
 Recently added (use the IDs in skill prose and operator briefings; full text in `data/zeroday-lessons.json`):
 
-| ID | Name | Surfacing zero-day | Coverage gap closed |
-|---|---|---|---|
-| `NEW-CTRL-048` | NPM-MAINTAINER-MFA-ENFORCEMENT | `MAL-2026-NODE-IPC-STEALER` | NIST-800-218 SSDF, NIST-800-53 IA-5, NIS2 Art.21 supply-chain |
-| `NEW-CTRL-049` | LOCKFILE-INTEGRITY-VERIFIED-AT-CI-BOOT | `MAL-2026-NODE-IPC-STEALER` | NIST-800-218 SSDF, EU CRA Art.13, SLSA Build L3 |
-| `NEW-CTRL-141` | KERNEL-EXIT-RACE-CVE-CLASS-MONITORING | `CVE-2026-46333` | NIST-800-53 AU-2/SI-4 |
-| `NEW-CTRL-142` | SUID-MINIMIZATION-FOR-KERNEL-LPE-CARRIER-BINARIES | `CVE-2026-46333` | NIST-800-53 CM-6/AC-3 |
-| `NEW-CTRL-050` | AI-ASSISTANT-CONFIG-FILE-PERMISSION-LOCKDOWN | `MAL-2026-SHAI-HULUD-OSS` | NIST-800-53 AC-3/CM-6. Enforced operationally by `exceptd doctor --ai-config`. |
-| `NEW-CTRL-051` | NPM-PUBLISH-TOKEN-WORKSTATION-ISOLATION | `MAL-2026-SHAI-HULUD-OSS` | NIST-800-53 IA-5, NIST-800-218 SSDF PW.4 |
-| `NEW-CTRL-052` | GITHUB-REPO-PATTERN-MONITORING-FOR-EXFIL-CHANNELS | `MAL-2026-SHAI-HULUD-OSS` | NIST-800-53 SI-4. Enforced operationally by `exceptd watchlist --org-scan`. |
-| `NEW-CTRL-053` | MCP-SERVER-CONFIG-ALLOWLIST | `CVE-2026-30623` (Anthropic MCP SDK stdio injection) | NIST AI RMF MEASURE 2.7, OWASP LLM Top 10 2025 LLM05 |
-| `NEW-CTRL-054` | BACKUP-TIER-NETWORK-ISOLATION | `CVE-2025-59389` (QNAP Hyper Data Protector preauth RCE) | ISO-27001-2022 A.8.13, NIS2 Art.21 business-continuity |
-| `NEW-CTRL-055` | SECURITY-TOOL-INTEGRITY-VERIFICATION | `CVE-2025-11837` (QNAP Malware Remover code-injection) | NIST-800-53 SI-3, ISO-27001-2022 A.8.7, PCI-DSS 4.0 §5.1 |
-| `NEW-CTRL-056` | MOBILE-ENDPOINT-MDM-ENFORCED-KEV-SLA | `CVE-2025-14174` / `CVE-2025-43529` / `CVE-2025-24201` / `CVE-2025-43300` | NIST-800-53 SI-2, ISO-27001-2022 A.8.8, CIS Benchmarks mobile-OS profiles |
-| `NEW-CTRL-057` | BROWSER-MANAGED-UPDATE-NO-DEFERRAL | `CVE-2025-10585` / `CVE-2025-14174` / `CVE-2025-43529` / `CVE-2025-4919` | NIST-800-53 SI-2, CISA KEV SLA, vendor-channel security-release contracts |
-| `NEW-CTRL-058` | CLOUD-CONTROL-PLANE-CROSS-TENANT-CLAIM-VALIDATION | `CVE-2025-55241` (Entra ID Actor-token impersonation) | NIST-800-53 AC-2/AU-2/AC-16, ISO-27001-2022 A.5.16, CIS Cloud Foundations |
-| `NEW-CTRL-059` | SENSITIVE-DATA-IN-LOGS-LINT | `CVE-2025-21085` (Cisco Duo credential leakage) | NIST-800-53 AU-9/SI-12, ISO-27001-2022 A.8.15, PCI-DSS 4.0 §10.5 |
-| `NEW-CTRL-060` | DATABASE-SERVER-SIDE-SCRIPTING-DEFAULT-DENY | `CVE-2025-49844` (Redis RediShell Lua UAF) | NIST-800-53 CM-6/CM-7, ISO-27001-2022 A.8.9, vendor secure-baseline profiles |
-| `NEW-CTRL-061` | IN-MEMORY-DATASTORE-MEMORY-DISCLOSURE-NETWORK-EXPOSURE-AUDIT | `CVE-2025-14847` (MongoBleed) | NIST-800-53 SC-7/SC-28, PCI-DSS 4.0 §1.4, ISO-27001-2022 A.8.20 |
-| `NEW-CTRL-062` | HTTP2-STREAM-RESET-ACCOUNTING | `CVE-2025-8671` (MadeYouReset) | NIST-800-53 SC-5, ISO-27001-2022 A.8.6, vendor HTTP/2 secure-default profiles |
-| `NEW-CTRL-063` | MULTIMODAL-INFERENCE-INPUT-DECODER-ISOLATION | `CVE-2026-22778` (vLLM heap-overflow RCE) | NIST AI RMF MANAGE 4.1, NIST-800-53 SC-39, OWASP LLM Top 10 2025 LLM10 |
-| `NEW-CTRL-064` | LLM-OUTPUT-DESERIALIZATION-TRUST-ZONE | `CVE-2025-68664` (LangChain LangGrinch) | NIST AI RMF MEASURE 2.7, OWASP LLM Top 10 2025 LLM03/LLM08, NIST-800-53 SI-10 |
-| `NEW-CTRL-065` | AI-MODEL-SERVER-DEFAULT-AUTHENTICATION | `CVE-2026-7482` (Ollama Bleeding Llama) | NIST-800-53 IA-2/AC-3, ISO-27001-2022 A.8.5, NIST AI RMF GOVERN 5.1 |
-| `NEW-CTRL-066` | AGENTIC-IDE-HOST-EXECUTION-SANDBOX | `CVE-2025-55319` (VSCode agentic-AI command-injection) | NIST AI RMF MANAGE 4.1, ISO/IEC 42001 §6.1.4, NIST-800-53 SC-39 |
-| `NEW-CTRL-067` | AI-PLATFORM-CONTROL-PLANE-RBAC-OVERLAY-AUDIT | `CVE-2025-10725` (OpenShift AI privilege escalation) | NIST-800-53 AC-2/AC-6, CIS Kubernetes Benchmark §5, NIST AI RMF GOVERN 1.5 |
-| `NEW-CTRL-068` | HYPERVISOR-VM-ESCAPE-TENANCY-ASSUMPTION | `CVE-2025-22224` / `CVE-2025-22225` / `CVE-2025-22226` (VMSA-2025-0004 ESXi chain) | NIST-800-53 SC-7/SI-2, ISO-27001-2022 A.8.20, CIS VMware ESXi Benchmark |
-| `NEW-CTRL-069` | ECOSYSTEM-PACKAGE-TEMPORAL-TRUST-DRIFT-DETECTION | `MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER` | NIST-800-218 SSDF PW.4, EU CRA Annex I §1(2)(b), SLSA Build L3 |
-| `NEW-CTRL-070` | TYPOSQUAT-INSTALL-TIME-NAME-CONFUSION-GUARD | `MAL-2025-PYPI-COLORAMA-SOLANA-STEALER` | NIST-800-218 SSDF PW.4, NIST-800-53 SI-7, EU CRA Annex I §1(2)(c) |
-| `NEW-CTRL-071` | AI-DISCOVERY-CREDIT-IN-COMPLIANCE-EVIDENCE | `MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP` + `CVE-2025-6965` + `CVE-2025-0133` + ZeroPath quartet | NIST AI RMF MEASURE 2.7, ISO/IEC 42001 §6.1.4 (records of AI use), EU AI Act Art.12 (record-keeping) |
-| `NEW-CTRL-072` | PRIMARY-SOURCE-INTAKE-VENDOR-BLOG-COVERAGE | `CVE-2026-31635` (DirtyDecrypt) | NIST-800-53 SI-5 (security alerts / advisories), ISO-27001-2022 A.5.7 (threat intelligence), CIS Controls v8 7.1 |
-| `NEW-CTRL-073` | RESEARCHER-HANDLE-ACTIVITY-TRACKER | `CVE-2020-17103-REREGRESSION-2026` (MiniPlasma) + Nightmare-Eclipse cluster | NIST-800-53 SI-5, ISO-27001-2022 A.5.7, CIS Controls v8 7.1. Enforced operationally by `lib/source-advisories.js#FEEDS[nightmare-eclipse-gitlab]` (gitlab-activity kind). |
-| `NEW-CTRL-074` | CVE-REGRESSION-WATCHER | `CVE-2020-17103-REREGRESSION-2026` (MiniPlasma) | NIST-800-53 CM-3 (configuration-change control), NIST-800-53 SI-2, ISO-27001-2022 A.8.8 (vulnerability management). Enforced operationally by `lib/cve-regression-watcher.js` — surfaces historical-CVE references in poller diffs as candidate silent-regression cases. |
-| `NEW-CTRL-075` | AV-AGENT-CURRENCY-CROSS-VERIFICATION | `BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND` (UnDefend) | NIST-800-53 SI-3 + SI-4, ISO-27001-2022 A.8.7. Independent control-plane cross-check (Defender for Endpoint cloud telemetry / Intune compliance / SCCM inventory) for AV / EDR signature + platform currency; alert on drift > 7 days. |
+| ID | Name | Surfacing zero-day | Coverage gap closed | Enforced operationally by |
+|---|---|---|---|---|
+| `NEW-CTRL-048` | NPM-MAINTAINER-MFA-ENFORCEMENT | `MAL-2026-NODE-IPC-STEALER` | NIST-800-218 SSDF, NIST-800-53 IA-5, NIS2 Art.21 supply-chain |  |
+| `NEW-CTRL-049` | LOCKFILE-INTEGRITY-VERIFIED-AT-CI-BOOT | `MAL-2026-NODE-IPC-STEALER` | NIST-800-218 SSDF, EU CRA Art.13, SLSA Build L3 |  |
+| `NEW-CTRL-050` | AI-ASSISTANT-CONFIG-FILE-PERMISSION-LOCKDOWN | `MAL-2026-SHAI-HULUD-OSS` | NIST-800-53 AC-3/CM-6. | Enforced operationally by `exceptd doctor --ai-config`. |
+| `NEW-CTRL-051` | NPM-PUBLISH-TOKEN-WORKSTATION-ISOLATION | `MAL-2026-SHAI-HULUD-OSS` | NIST-800-53 IA-5, NIST-800-218 SSDF PW.4 |  |
+| `NEW-CTRL-052` | GITHUB-REPO-PATTERN-MONITORING-FOR-EXFIL-CHANNELS | `MAL-2026-SHAI-HULUD-OSS` | NIST-800-53 SI-4. | Enforced operationally by `exceptd watchlist --org-scan`. |
+| `NEW-CTRL-053` | MCP-SERVER-CONFIG-ALLOWLIST | `CVE-2026-30623` (Anthropic MCP SDK stdio injection) | NIST AI RMF MEASURE 2.7, OWASP LLM Top 10 2025 LLM05 |  |
+| `NEW-CTRL-054` | BACKUP-TIER-NETWORK-ISOLATION | `CVE-2025-59389` (QNAP Hyper Data Protector preauth RCE) | ISO-27001-2022 A.8.13, NIS2 Art.21 business-continuity |  |
+| `NEW-CTRL-055` | SECURITY-TOOL-INTEGRITY-VERIFICATION | `CVE-2025-11837` (QNAP Malware Remover code-injection) | NIST-800-53 SI-3, ISO-27001-2022 A.8.7, PCI-DSS 4.0 §5.1 |  |
+| `NEW-CTRL-056` | MOBILE-ENDPOINT-MDM-ENFORCED-KEV-SLA | `CVE-2025-14174` / `CVE-2025-43529` / `CVE-2025-24201` / `CVE-2025-43300` | NIST-800-53 SI-2, ISO-27001-2022 A.8.8, CIS Benchmarks mobile-OS profiles |  |
+| `NEW-CTRL-057` | BROWSER-MANAGED-UPDATE-NO-DEFERRAL | `CVE-2025-10585` / `CVE-2025-14174` / `CVE-2025-43529` / `CVE-2025-4919` | NIST-800-53 SI-2, CISA KEV SLA, vendor-channel security-release contracts |  |
+| `NEW-CTRL-058` | CLOUD-CONTROL-PLANE-CROSS-TENANT-CLAIM-VALIDATION | `CVE-2025-55241` (Entra ID Actor-token impersonation) | NIST-800-53 AC-2/AU-2/AC-16, ISO-27001-2022 A.5.16, CIS Cloud Foundations |  |
+| `NEW-CTRL-059` | SENSITIVE-DATA-IN-LOGS-LINT | `CVE-2025-21085` (Cisco Duo credential leakage) | NIST-800-53 AU-9/SI-12, ISO-27001-2022 A.8.15, PCI-DSS 4.0 §10.5 |  |
+| `NEW-CTRL-060` | DATABASE-SERVER-SIDE-SCRIPTING-DEFAULT-DENY | `CVE-2025-49844` (Redis RediShell Lua UAF) | NIST-800-53 CM-6/CM-7, ISO-27001-2022 A.8.9, vendor secure-baseline profiles |  |
+| `NEW-CTRL-061` | IN-MEMORY-DATASTORE-MEMORY-DISCLOSURE-NETWORK-EXPOSURE-AUDIT | `CVE-2025-14847` (MongoBleed) | NIST-800-53 SC-7/SC-28, PCI-DSS 4.0 §1.4, ISO-27001-2022 A.8.20 |  |
+| `NEW-CTRL-062` | HTTP2-STREAM-RESET-ACCOUNTING | `CVE-2025-8671` (MadeYouReset) | NIST-800-53 SC-5, ISO-27001-2022 A.8.6, vendor HTTP/2 secure-default profiles |  |
+| `NEW-CTRL-063` | MULTIMODAL-INFERENCE-INPUT-DECODER-ISOLATION | `CVE-2026-22778` (vLLM heap-overflow RCE) | NIST AI RMF MANAGE 4.1, NIST-800-53 SC-39, OWASP LLM Top 10 2025 LLM10 |  |
+| `NEW-CTRL-064` | LLM-OUTPUT-DESERIALIZATION-TRUST-ZONE | `CVE-2025-68664` (LangChain LangGrinch) | NIST AI RMF MEASURE 2.7, OWASP LLM Top 10 2025 LLM03/LLM08, NIST-800-53 SI-10 |  |
+| `NEW-CTRL-065` | AI-MODEL-SERVER-DEFAULT-AUTHENTICATION | `CVE-2026-7482` (Ollama Bleeding Llama) | NIST-800-53 IA-2/AC-3, ISO-27001-2022 A.8.5, NIST AI RMF GOVERN 5.1 |  |
+| `NEW-CTRL-066` | AGENTIC-IDE-HOST-EXECUTION-SANDBOX | `CVE-2025-55319` (VSCode agentic-AI command-injection) | NIST AI RMF MANAGE 4.1, ISO/IEC 42001 §6.1.4, NIST-800-53 SC-39 |  |
+| `NEW-CTRL-067` | AI-PLATFORM-CONTROL-PLANE-RBAC-OVERLAY-AUDIT | `CVE-2025-10725` (OpenShift AI privilege escalation) | NIST-800-53 AC-2/AC-6, CIS Kubernetes Benchmark §5, NIST AI RMF GOVERN 1.5 |  |
+| `NEW-CTRL-068` | HYPERVISOR-VM-ESCAPE-TENANCY-ASSUMPTION | `CVE-2025-22224` / `CVE-2025-22225` / `CVE-2025-22226` (VMSA-2025-0004 ESXi chain) | NIST-800-53 SC-7/SI-2, ISO-27001-2022 A.8.20, CIS VMware ESXi Benchmark |  |
+| `NEW-CTRL-069` | ECOSYSTEM-PACKAGE-TEMPORAL-TRUST-DRIFT-DETECTION | `MAL-2026-RUBYGEMS-BUFFERZONECORP-SLEEPER` | NIST-800-218 SSDF PW.4, EU CRA Annex I §1(2)(b), SLSA Build L3 |  |
+| `NEW-CTRL-070` | TYPOSQUAT-INSTALL-TIME-NAME-CONFUSION-GUARD | `MAL-2025-PYPI-COLORAMA-SOLANA-STEALER` | NIST-800-218 SSDF PW.4, NIST-800-53 SI-7, EU CRA Annex I §1(2)(c) |  |
+| `NEW-CTRL-071` | AI-DISCOVERY-CREDIT-IN-COMPLIANCE-EVIDENCE | `MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP` + `CVE-2025-6965` + `CVE-2025-0133` + ZeroPath quartet | NIST AI RMF MEASURE 2.7, ISO/IEC 42001 §6.1.4 (records of AI use), EU AI Act Art.12 (record-keeping) |  |
+| `NEW-CTRL-072` | PRIMARY-SOURCE-INTAKE-VENDOR-BLOG-COVERAGE | `CVE-2026-31635` (DirtyDecrypt) | NIST-800-53 SI-5 (security alerts / advisories), ISO-27001-2022 A.5.7 (threat intelligence), CIS Controls v8 7.1 |  |
+| `NEW-CTRL-073` | RESEARCHER-HANDLE-ACTIVITY-TRACKER | `CVE-2020-17103-REREGRESSION-2026` (MiniPlasma) + Nightmare-Eclipse cluster | NIST-800-53 SI-5, ISO-27001-2022 A.5.7, CIS Controls v8 7.1. | Enforced operationally by `lib/source-advisories.js#FEEDS[nightmare-eclipse-gitlab]` (gitlab-activity kind). |
+| `NEW-CTRL-074` | CVE-REGRESSION-WATCHER | `CVE-2020-17103-REREGRESSION-2026` (MiniPlasma) | NIST-800-53 CM-3 (configuration-change control), NIST-800-53 SI-2, ISO-27001-2022 A.8.8 (vulnerability management). | Enforced operationally by `lib/cve-regression-watcher.js` — surfaces historical-CVE references in poller diffs as candidate silent-regression cases. |
+| `NEW-CTRL-075` | AV-AGENT-CURRENCY-CROSS-VERIFICATION | `BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND` (UnDefend) | NIST-800-53 SI-3 + SI-4, ISO-27001-2022 A.8.7. | Independent control-plane cross-check (Defender for Endpoint cloud telemetry / Intune compliance / SCCM inventory) for AV / EDR signature + platform currency; alert on drift > 7 days. |
+| `NEW-CTRL-141` | KERNEL-EXIT-RACE-CVE-CLASS-MONITORING | `CVE-2026-46333` | NIST-800-53 AU-2/SI-4 |  |
+| `NEW-CTRL-142` | SUID-MINIMIZATION-FOR-KERNEL-LPE-CARRIER-BINARIES | `CVE-2026-46333` | NIST-800-53 CM-6/AC-3 |  |
 
 When you cite a `NEW-CTRL-*` ID in a skill body, the lint reads the upstream `zeroday-lessons.json` entry as the authoritative source for the requirement text — do not paraphrase the description in the skill body; link to the ID instead.
 
@@ -403,6 +427,8 @@ A new playbook **should not** ship a collector when:
 - Evidence collection requires credentials the tool shouldn't ask for (cloud API keys, identity-provider admin tokens). Those stay AI-driven for now.
 
 When in doubt, ship the playbook without a collector and open the gap as a follow-up.
+
+---
 
 ## Pre-Ship Checklist
 
