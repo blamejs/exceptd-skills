@@ -71,7 +71,9 @@ Required 8th section for skills shipped on or after 2026-05-11 (pre-existing ski
 
 Playbooks live at `data/playbooks/<id>.json`; the CLI engine executes them. Each playbook is an attack-class investigation that walks a govern → direct → look → detect → analyze → validate → close loop.
 
-Thirteen playbooks ship today:
+Thirty-three playbooks ship today. `exceptd brief --all` lists every one,
+grouped by scope; the table below names the thirteen keyed to a single attack
+class, which are the ones most investigations start from.
 
 | Playbook | Attack class |
 |---|---|
@@ -113,14 +115,14 @@ Skills and playbooks read from `data/`. Authoritative catalog inventory:
 
 | File | Entries | Purpose |
 |------|---------|---------|
-| `cve-catalog.json` | 1025 | CVEs with CVSS, RWEP score, EPSS estimates, CISA KEV flags, PoC and live-patch availability |
+| `cve-catalog.json` | 1125 | CVEs with CVSS, RWEP score, EPSS estimates, CISA KEV flags, PoC and live-patch availability |
 | `atlas-ttps.json` | 174 | MITRE ATLAS v2026.07 (August 2026) techniques with framework gap flags |
 | `attack-techniques.json` | 794 | MITRE ATT&CK techniques with framework coverage mappings |
 | `framework-control-gaps.json` | 194 | Framework control gap entries: designed-for vs. what each control misses |
 | `exploit-availability.json` | 28 | Per-CVE PoC locations, weaponization stage, AI-acceleration factor, live-patch status |
 | `global-frameworks.json` | 35 jurisdictions | Patch SLAs and notification windows across global regulatory regimes |
-| `zeroday-lessons.json` | 1025 | Learning-loop entries: zero-day → attack vector → control gap → framework gap → new control |
-| `cwe-catalog.json` | 232 | CWE v4.20 entries (Top 25 2024 plus AI- and supply-chain-relevant weaknesses) |
+| `zeroday-lessons.json` | 1125 | Learning-loop entries: zero-day → attack vector → control gap → framework gap → new control |
+| `cwe-catalog.json` | 233 | CWE v4.20 entries (Top 25 2024 plus AI- and supply-chain-relevant weaknesses) |
 | `d3fend-catalog.json` | 468 | MITRE D3FEND v1.3.0 defensive techniques for offensive → defensive mapping |
 | `rfc-references.json` | 8889 | IETF RFC / Internet-Draft references with status, errata count, replaces / replaced-by, `last_verified` dates |
 | `dlp-controls.json` | 22 | DLP control entries indexed by channel, classifier, surface, enforcement mode, evidence type |
