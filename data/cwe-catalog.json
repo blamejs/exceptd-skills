@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "last_updated": "2026-08-15",
+    "last_updated": "2026-08-17",
     "cwe_version": "4.20",
     "cwe_version_release_date": "2026-04-30",
     "source": "https://cwe.mitre.org",
@@ -55,10 +55,14 @@
       "CVE-2015-2291",
       "CVE-2016-0034",
       "CVE-2016-3714",
+      "CVE-2017-0148",
       "CVE-2017-15944",
       "CVE-2018-19949",
+      "CVE-2019-11708",
       "CVE-2019-7193",
       "CVE-2021-25489",
+      "CVE-2021-38646",
+      "CVE-2021-42278",
       "CVE-2022-1471",
       "CVE-2022-2856",
       "CVE-2022-29499",
@@ -123,6 +127,7 @@
     ],
     "evidence_cves": [
       "CVE-2013-3993",
+      "CVE-2014-0780",
       "CVE-2015-0016",
       "CVE-2017-12637",
       "CVE-2018-18809",
@@ -141,6 +146,7 @@
       "CVE-2022-26352",
       "CVE-2022-26500",
       "CVE-2022-27925",
+      "CVE-2022-29464",
       "CVE-2022-30333",
       "CVE-2022-34713",
       "CVE-2022-37042",
@@ -223,12 +229,15 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2007-3010",
       "CVE-2011-0411",
       "CVE-2014-8361",
       "CVE-2016-10033",
       "CVE-2016-20017",
+      "CVE-2016-6367",
       "CVE-2018-19949",
       "CVE-2020-25079",
+      "CVE-2020-2509",
       "CVE-2021-27878",
       "CVE-2021-33515",
       "CVE-2022-40765",
@@ -298,22 +307,29 @@
       "CVE-2017-18368",
       "CVE-2017-3506",
       "CVE-2017-6884",
+      "CVE-2018-10562",
       "CVE-2018-14933",
       "CVE-2018-19949",
+      "CVE-2018-20753",
       "CVE-2018-6530",
       "CVE-2018-9276",
       "CVE-2019-11001",
+      "CVE-2019-16057",
       "CVE-2019-17621",
       "CVE-2019-20500",
+      "CVE-2019-3929",
       "CVE-2019-7256",
       "CVE-2020-12641",
       "CVE-2020-15415",
+      "CVE-2020-2509",
       "CVE-2021-20035",
       "CVE-2021-36380",
       "CVE-2021-40407",
+      "CVE-2021-45382",
       "CVE-2022-26258",
       "CVE-2022-28810",
       "CVE-2022-29303",
+      "CVE-2022-30525",
       "CVE-2022-33891",
       "CVE-2022-36804",
       "CVE-2022-44877",
@@ -414,6 +430,9 @@
       "CVE-2014-2120",
       "CVE-2018-19943",
       "CVE-2018-19953",
+      "CVE-2018-6882",
+      "CVE-2019-18426",
+      "CVE-2019-3929",
       "CVE-2020-11023",
       "CVE-2020-13965",
       "CVE-2020-35730",
@@ -505,6 +524,8 @@
     ],
     "evidence_cves": [
       "CVE-2016-2386",
+      "CVE-2017-18362",
+      "CVE-2018-7841",
       "CVE-2020-29574",
       "CVE-2021-44026",
       "CVE-2023-34362",
@@ -569,10 +590,14 @@
       "CVE-2017-1000353",
       "CVE-2017-7494",
       "CVE-2018-14667",
+      "CVE-2018-7602",
       "CVE-2021-3129",
       "CVE-2021-39144",
       "CVE-2021-44529",
+      "CVE-2022-22947",
+      "CVE-2022-22954",
       "CVE-2022-22963",
+      "CVE-2022-22965",
       "CVE-2022-24816",
       "CVE-2022-3236",
       "CVE-2022-41223",
@@ -698,7 +723,10 @@
       "kernel-lpe-triage"
     ],
     "evidence_cves": [
+      "CVE-2014-0160",
       "CVE-2016-1646",
+      "CVE-2016-4523",
+      "CVE-2016-4655",
       "CVE-2017-5030",
       "CVE-2021-25487",
       "CVE-2021-4034",
@@ -756,15 +784,22 @@
       "CVE-2008-0655",
       "CVE-2015-0310",
       "CVE-2015-5317",
+      "CVE-2016-0162",
       "CVE-2016-2388",
+      "CVE-2016-3298",
+      "CVE-2016-3351",
+      "CVE-2016-4655",
       "CVE-2016-6415",
       "CVE-2017-0147",
       "CVE-2017-5521",
       "CVE-2018-5430",
+      "CVE-2019-0676",
+      "CVE-2019-0703",
       "CVE-2020-25078",
       "CVE-2020-3259",
       "CVE-2021-25369",
       "CVE-2021-41277",
+      "CVE-2022-20821",
       "CVE-2023-21237",
       "CVE-2023-28432",
       "CVE-2023-43791",
@@ -882,7 +917,13 @@
       "CVE-2019-1388",
       "CVE-2019-3010",
       "CVE-2021-25337",
+      "CVE-2021-34484",
+      "CVE-2021-40450",
+      "CVE-2021-41357",
+      "CVE-2021-42287",
       "CVE-2021-43226",
+      "CVE-2022-22718",
+      "CVE-2022-23176",
       "CVE-2022-38028",
       "CVE-2023-28434",
       "CVE-2023-32046",
@@ -996,6 +1037,7 @@
       "CVE-2015-7755",
       "CVE-2016-7836",
       "CVE-2017-7921",
+      "CVE-2018-10561",
       "CVE-2019-19006",
       "CVE-2020-10148",
       "CVE-2021-27877",
@@ -1004,6 +1046,7 @@
       "CVE-2021-33045",
       "CVE-2021-39226",
       "CVE-2022-0492",
+      "CVE-2022-1040",
       "CVE-2022-40684",
       "CVE-2023-20867",
       "CVE-2023-27351",
@@ -1065,6 +1108,7 @@
       "CVE-2020-24363",
       "CVE-2021-35587",
       "CVE-2021-39144",
+      "CVE-2022-1388",
       "CVE-2022-21587",
       "CVE-2022-23227",
       "CVE-2022-24990",
@@ -1187,7 +1231,9 @@
       "CAPEC-97"
     ],
     "skills_referencing": [],
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2017-11317"
+    ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SC-13",
       "NIST-SP-800-131A",
@@ -1395,6 +1441,7 @@
       "privacy-consent-ops"
     ],
     "evidence_cves": [
+      "CVE-2022-26871",
       "CVE-2023-38831",
       "CVE-2023-51764",
       "CVE-2023-51765",
@@ -1504,9 +1551,12 @@
     ],
     "evidence_cves": [
       "CVE-2014-0196",
+      "CVE-2018-8589",
       "CVE-2020-17103-REREGRESSION-2026",
+      "CVE-2021-0920",
       "CVE-2021-25394",
       "CVE-2021-25395",
+      "CVE-2022-26904",
       "CVE-2023-36884",
       "CVE-2025-62215",
       "CVE-2026-31635",
@@ -1547,16 +1597,27 @@
       "CVE-2010-0806",
       "CVE-2012-4792",
       "CVE-2012-4969",
+      "CVE-2014-0322",
       "CVE-2014-8439",
+      "CVE-2015-0311",
+      "CVE-2015-0313",
       "CVE-2015-2360",
+      "CVE-2015-5122",
+      "CVE-2015-5123",
       "CVE-2016-0984",
       "CVE-2016-9079",
+      "CVE-2019-13720",
+      "CVE-2019-5786",
       "CVE-2019-8526",
       "CVE-2019-8605",
       "CVE-2020-9715",
+      "CVE-2021-0920",
+      "CVE-2021-1048",
       "CVE-2021-25370",
       "CVE-2021-25394",
       "CVE-2021-29256",
+      "CVE-2021-31166",
+      "CVE-2021-34486",
       "CVE-2022-22071",
       "CVE-2022-2586",
       "CVE-2022-3038",
@@ -1759,6 +1820,7 @@
       "CVE-2020-2551",
       "CVE-2020-2883",
       "CVE-2020-5741",
+      "CVE-2021-27852",
       "CVE-2021-31010",
       "CVE-2021-31196",
       "CVE-2021-39144",
@@ -2004,7 +2066,8 @@
       "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND",
       "BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY",
-      "CVE-2018-13374"
+      "CVE-2018-13374",
+      "CVE-2022-22960"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-3",
@@ -2109,18 +2172,32 @@
       "CVE-2013-0648",
       "CVE-2013-3163",
       "CVE-2015-2425",
+      "CVE-2015-2502",
+      "CVE-2015-3113",
       "CVE-2016-3393",
+      "CVE-2016-4656",
+      "CVE-2016-4657",
       "CVE-2016-5198",
+      "CVE-2017-0149",
       "CVE-2018-17480",
+      "CVE-2018-5002",
+      "CVE-2019-3568",
       "CVE-2019-5825",
+      "CVE-2019-7286",
+      "CVE-2019-7287",
+      "CVE-2020-1027",
       "CVE-2020-3837",
       "CVE-2020-9907",
       "CVE-2021-22555",
       "CVE-2021-25372",
+      "CVE-2021-30883",
       "CVE-2021-30900",
       "CVE-2021-38406",
+      "CVE-2021-39793",
       "CVE-2021-4034",
+      "CVE-2022-22675",
       "CVE-2022-2294",
+      "CVE-2022-24521",
       "CVE-2022-32893",
       "CVE-2022-32894",
       "CVE-2022-32917",
@@ -2301,6 +2378,7 @@
     "evidence_cves": [
       "CVE-2021-39226",
       "CVE-2022-0492",
+      "CVE-2022-0543",
       "CVE-2023-48022",
       "CVE-2023-52163",
       "CVE-2023-6038",
@@ -2766,6 +2844,7 @@
       "CVE-2014-0546",
       "CVE-2014-4077",
       "CVE-2015-0071",
+      "CVE-2019-1003029",
       "CVE-2020-9934",
       "CVE-2023-32049",
       "CVE-2023-36025",
@@ -2839,7 +2918,11 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2019-1130",
+      "CVE-2019-1385",
+      "CVE-2020-0638",
       "CVE-2020-36193",
+      "CVE-2021-34484",
       "CVE-2022-30333",
       "CVE-2023-36874",
       "CVE-2025-21391",
@@ -2920,6 +3003,7 @@
       "CVE-2017-6742",
       "CVE-2018-4344",
       "CVE-2018-7445",
+      "CVE-2019-8720",
       "CVE-2022-22706",
       "CVE-2023-33106",
       "CVE-2023-36033",
@@ -2956,6 +3040,7 @@
       "CVE-2007-5659",
       "CVE-2010-2572",
       "CVE-2013-1331",
+      "CVE-2016-6366",
       "CVE-2017-6862",
       "CVE-2020-15069",
       "CVE-2021-30983",
@@ -2984,6 +3069,8 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2013-2597",
+      "CVE-2014-9163",
+      "CVE-2018-5002",
       "CVE-2021-27137",
       "CVE-2025-0282",
       "CVE-2025-20352",
@@ -3207,6 +3294,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2014-4113",
       "CVE-2026-21525"
     ],
     "last_verified": "2026-05-18",
@@ -3336,6 +3424,7 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2013-0074",
+      "CVE-2019-0880",
       "CVE-2023-29360",
       "CVE-2023-36033",
       "CVE-2024-21338",
@@ -3360,7 +3449,13 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2017-5070",
+      "CVE-2017-8291",
       "CVE-2018-17463",
+      "CVE-2019-11707",
+      "CVE-2019-8506",
+      "CVE-2021-1789",
+      "CVE-2022-1096",
+      "CVE-2022-1364",
       "CVE-2022-3723",
       "CVE-2022-41033",
       "CVE-2022-4262",
@@ -3527,6 +3622,9 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2009-3459",
+      "CVE-2015-3113",
+      "CVE-2017-0005",
+      "CVE-2019-3568",
       "CVE-2023-23376",
       "CVE-2023-27997",
       "CVE-2023-28252",
@@ -3578,6 +3676,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2022-1040",
       "CVE-2025-47812"
     ],
     "last_verified": "2026-05-18",
@@ -3753,6 +3852,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2021-28799",
       "CVE-2026-22252"
     ],
     "last_verified": "2026-05-19",
@@ -3813,6 +3913,7 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2015-4495",
+      "CVE-2017-0210",
       "CVE-2025-34291",
       "CVE-2025-49596"
     ],
@@ -4690,6 +4791,7 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2021-45046",
+      "CVE-2022-22947",
       "CVE-2022-22963",
       "CVE-2022-26134"
     ],
@@ -5880,6 +5982,7 @@
     ],
     "skills_referencing": [],
     "evidence_cves": [
+      "CVE-2021-26085",
       "CVE-2024-45195"
     ],
     "framework_controls_partially_addressing": [
@@ -6022,6 +6125,8 @@
     ],
     "skills_referencing": [],
     "evidence_cves": [
+      "CVE-2016-3298",
+      "CVE-2016-3351",
       "CVE-2024-39891"
     ],
     "framework_controls_partially_addressing": [
@@ -6128,7 +6233,8 @@
     "skills_referencing": [],
     "evidence_cves": [
       "CVE-2014-0502",
-      "CVE-2018-4990"
+      "CVE-2018-4990",
+      "CVE-2021-22600"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-16",
@@ -6809,7 +6915,8 @@
     "evidence_cves": [
       "CVE-2018-19320",
       "CVE-2018-19321",
-      "CVE-2018-19323"
+      "CVE-2018-19323",
+      "CVE-2021-21551"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-7",
@@ -6846,5 +6953,83 @@
     "real_requirement": "Sensitive buffers must be scrubbed before any reallocation that can relocate them — allocate at final size, or copy-then-zero-then-free explicitly rather than relying on realloc(), using a wipe the compiler cannot elide. On appliance firmware the equivalent requirement is that every error branch releases what it allocated: allocation lifetime has to be tested along the failure paths, not only the success path, because that is where the stale heap state becomes reachable.",
     "lag_notes": "SC-28 protects information at rest and A.8.8 manages technical vulnerabilities by risk score; neither reaches process memory during normal operation, which is where this weakness lives. No control in scope asks whether a buffer holding secret material can be relocated by the allocator, and none requires error-path allocation testing — so a product can satisfy every applicable control and still leave the residue, or still mishandle the heap on the branch an attacker chooses to trigger.",
     "last_verified": "2026-08-15"
+  },
+  "CWE-193": {
+    "id": "CWE-193",
+    "name": "Off-by-one Error",
+    "abstraction": "Base",
+    "category": "Numeric Errors",
+    "description": "A product calculates or uses an incorrect maximum or minimum value that is 1 more, or 1 less, than the correct value. The classic forms are a buffer sized without room for its terminating null, a loop bound written with <= where < was meant, and a length check that admits exactly one byte past the end. The single byte is enough: it is frequently a length field, a pointer's low byte, or a metadata flag in the adjacent allocation, so an overflow that looks trivially small converts into control of the next object.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2021-3156"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-2",
+      "NIST-800-53-SI-10",
+      "ISO-27001-2022-A.8.28"
+    ],
+    "real_requirement": "Length arithmetic has to be tested at its boundaries rather than in its middle: a test suite that exercises a buffer at half capacity never reaches the defect. What closes this class is a fuzzing corpus seeded at exactly the boundary and one byte either side, plus bounds-checked string and buffer APIs that carry the size rather than trusting a separately-computed length.",
+    "lag_notes": "SI-2 schedules the fix once a flaw is known and A.8.28 asks for secure coding in general terms; neither requires the boundary-value testing that finds an off-by-one before an attacker does. The defect also reviews well — the code reads as correct arithmetic — so a control satisfied by peer review can pass over it repeatedly.",
+    "last_verified": "2026-08-17"
+  },
+  "CWE-281": {
+    "id": "CWE-281",
+    "name": "Improper Preservation of Permissions",
+    "abstraction": "Base",
+    "category": "Access Control",
+    "description": "The product does not preserve permissions or incorrectly preserves permissions when copying, restoring, or sharing objects, which can cause them to have less restrictive permissions than intended. The loss happens at a transition — a restore from backup, a clone, an extraction, a move across a boundary — so the object is correct where it was authored and wrong where it lands.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2017-8543"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-AC-3",
+      "NIST-800-53-CM-6",
+      "ISO-27001-2022-A.8.9"
+    ],
+    "real_requirement": "Permissions must be asserted at the destination rather than inherited from the operation: a restore, an extraction or a copy sets the access control it intends instead of trusting what the transfer carried. Detecting the class needs a check that compares the effective permission after the transition against the policy, because the source object and the policy both look correct and only the result is wrong.",
+    "lag_notes": "AC-3 governs what access is enforced and CM-6 governs configuration baselines, and both describe an object's steady state. Neither reaches the moment a permission is transferred, which is where this weakness lives — an estate can be fully compliant on every audited object while a restore path quietly widens the ones it touches.",
+    "last_verified": "2026-08-17"
+  },
+  "CWE-665": {
+    "id": "CWE-665",
+    "name": "Improper Initialization",
+    "abstraction": "Class",
+    "category": "Resource Management",
+    "description": "The product does not initialize or incorrectly initializes a resource, which might leave the resource in an unexpected state when it is accessed or used. This has security implications when the resource is expected to carry a particular property or value — a flag that records whether a caller has been authenticated, or a field that records whether a buffer may be written to — because the uninitialized value is whatever the previous user of that memory left behind, and an attacker who controls that predecessor controls the state the code then trusts.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-26",
+      "CAPEC-29"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2022-0847"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-2",
+      "NIST-800-53-SC-4",
+      "ISO-27001-2022-A.8.28"
+    ],
+    "real_requirement": "A structure that carries a security-relevant flag must be zeroed or fully assigned on every allocation path, not only the common one — the defect usually sits on a path added later that reuses an allocator the original author always initialised by hand. Compiler and allocator instrumentation that poisons fresh memory turns the class from silent into loud, and is what testing needs in order to see it at all.",
+    "lag_notes": "SC-4 requires that information not leak through shared resources and reads as satisfied when nothing is deliberately shared; SI-2 treats the result as an ordinary defect on a patch cycle. Neither asks whether a security-relevant field is guaranteed to be written before it is read, so the flaw passes review and testing as long as the uninitialised value happens to be benign on the machine the tests run on.",
+    "last_verified": "2026-08-17"
   }
 }
