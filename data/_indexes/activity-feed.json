@@ -19,7 +19,15 @@
       "artifact": "data/cve-catalog.json",
       "path": "data/cve-catalog.json",
       "schema_version": "1.0.0",
-      "entry_count": 1222
+      "entry_count": 1225
+    },
+    {
+      "date": "2026-08-18",
+      "type": "catalog_update",
+      "artifact": "data/cwe-catalog.json",
+      "path": "data/cwe-catalog.json",
+      "schema_version": "1.0.0",
+      "entry_count": 236
     },
     {
       "date": "2026-08-18",
@@ -35,15 +43,7 @@
       "artifact": "data/zeroday-lessons.json",
       "path": "data/zeroday-lessons.json",
       "schema_version": "1.1.0",
-      "entry_count": 1222
-    },
-    {
-      "date": "2026-08-17",
-      "type": "catalog_update",
-      "artifact": "data/cwe-catalog.json",
-      "path": "data/cwe-catalog.json",
-      "schema_version": "1.0.0",
-      "entry_count": 236
+      "entry_count": 1225
     },
     {
       "date": "2026-08-08",

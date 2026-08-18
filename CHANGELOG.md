@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.19.30 — 2026-08-18
+
+Three CISA KEV entries join the catalog, taking it to 1,225. Each of them turns on a question its sources answer differently, which is why they landed a release later than the rest of their set.
+
+The Ubiquiti AirOS command injection (CVE-2010-5330) is recorded as pre-authentication on the vendor's own words — Ubiquiti's advisory says the flaw grants access "without requiring authentication" and describes an HTTP server bug "allowing users to bypass authentication and run commands". The only published exploit reaches the injection from a read-only account, and an entry that treated that as the privilege boundary would tell an operator a radio behind a changed management password is lower priority. It is not: authentication is what the flaw bypasses. The entry also carries the self-propagating worm the same advisory documents, with the artefacts it leaves — a renamed CGI, a persistence script and a startup hook — and the vendor's removal tool, because upgrading firmware stops reinfection without clearing an existing infection.
+
+The Windows User Profile Service escalation (CVE-2022-21919) records a vendor and a catalog that disagree. Microsoft's record still reports the flaw as not exploited while flagging it publicly disclosed with proof-of-concept code; CISA listed it three and a half months later. An operator checking the vendor feed to justify the remediation clock finds public exploit code and no vendor claim of in-the-wild use, so the entry states both rather than resolving them. It also separates the two remediations: the January 2022 rollup fixes it but every affected product is marked restart-required, while the third-party micropatch applies without a reboot and covers a narrower set of builds than the CVE does.
+
+The macOS graphics driver out-of-bounds read (CVE-2022-22674) is scoped to every Mac below the fixed build, not to Intel hardware. Apple names the affected component "Intel Graphics Driver" on macOS Monterey but files the same CVE under the generic "Graphics Drivers" on Big Sur and Catalina — advisories that use the Intel-specific heading for other CVEs on the same page — and Big Sur is the first macOS release that runs on Apple silicon. Nothing Apple published places Apple silicon out of scope, so an estate that excluded those machines on the component name would have left them unpatched against a flaw Apple acknowledged as exploited.
+
+A batch curation run that adds an entry already in the catalog is now refused instead of writing it twice. The apply step splices new members into the catalog file and cannot replace an existing one, so re-running it produced duplicate JSON keys; the parser keeps the last of those, which is the copy already on disk, and the newer entry was discarded while the entry count, the schema check and the orphan scan all still passed. Both the dry run and the write now report the collision and name the entries, so the condition is visible before anything is written.
+
 ## 0.19.29 — 2026-08-17
 
 The catalog reaches 1,222 CVEs with 97 additions drawn from CISA KEV, weighted towards the recent end of the backlog: 19 from 2022, 20 from 2021, 18 from 2019, and a long tail back to 2007. Microsoft accounts for 30, Apple 9, Adobe 7 and Google 5, with the rest spread across Cisco, VMware, Kaseya, QNAP, Zyxel, D-Link and the router and storage-appliance vendors whose products dominate the older listings. Twenty carry CISA's ransomware designation and 63 have an obtainable public exploit.
