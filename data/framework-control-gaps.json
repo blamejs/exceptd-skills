@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "last_updated": "2026-08-15",
+    "last_updated": "2026-08-18",
     "note": "status: open = gap still exists. status: closed = framework update closed the gap. Never delete entries — preserve gap history.",
     "tlp": "CLEAR",
     "source_confidence": {

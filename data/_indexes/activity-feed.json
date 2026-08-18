@@ -8,9 +8,33 @@
     {
       "date": "2026-08-18",
       "type": "catalog_update",
+      "artifact": "data/attack-techniques.json",
+      "path": "data/attack-techniques.json",
+      "schema_version": "1.0.0",
+      "entry_count": 794
+    },
+    {
+      "date": "2026-08-18",
+      "type": "catalog_update",
       "artifact": "data/cve-catalog.json",
       "path": "data/cve-catalog.json",
       "schema_version": "1.0.0",
+      "entry_count": 1222
+    },
+    {
+      "date": "2026-08-18",
+      "type": "catalog_update",
+      "artifact": "data/framework-control-gaps.json",
+      "path": "data/framework-control-gaps.json",
+      "schema_version": "1.0.0",
+      "entry_count": 194
+    },
+    {
+      "date": "2026-08-18",
+      "type": "catalog_update",
+      "artifact": "data/zeroday-lessons.json",
+      "path": "data/zeroday-lessons.json",
+      "schema_version": "1.1.0",
       "entry_count": 1222
     },
     {
@@ -20,30 +44,6 @@
       "path": "data/cwe-catalog.json",
       "schema_version": "1.0.0",
       "entry_count": 236
-    },
-    {
-      "date": "2026-08-15",
-      "type": "catalog_update",
-      "artifact": "data/attack-techniques.json",
-      "path": "data/attack-techniques.json",
-      "schema_version": "1.0.0",
-      "entry_count": 794
-    },
-    {
-      "date": "2026-08-15",
-      "type": "catalog_update",
-      "artifact": "data/framework-control-gaps.json",
-      "path": "data/framework-control-gaps.json",
-      "schema_version": "1.0.0",
-      "entry_count": 194
-    },
-    {
-      "date": "2026-08-15",
-      "type": "catalog_update",
-      "artifact": "data/zeroday-lessons.json",
-      "path": "data/zeroday-lessons.json",
-      "schema_version": "1.1.0",
-      "entry_count": 1222
     },
     {
       "date": "2026-08-08",

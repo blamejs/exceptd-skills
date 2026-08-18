@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.1.0",
-    "last_updated": "2026-08-15",
+    "last_updated": "2026-08-18",
     "last_threat_review": "2026-05-17",
     "purpose": "Zero-day learning loop output. Each entry maps a CVE to: attack vector, defense chain analysis, framework coverage, new control requirements generated, and exposure scoring. v1.1.0 (2026-05-15): every entry now carries ai_discovered_zeroday boolean + ai_discovery_source enum + ai_discovery_date + ai_assist_factor ladder, per AGENTS.md Hard Rule #7.",
     "note": "Never delete entries. Closed gaps are marked status: closed. History is data.",
@@ -87734,7 +87734,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-15",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An unauthenticated HTTP GET to the OmniPCX Enterprise web management interface reaches masterCGI's ping action, whose 'user' parameter is passed to a shell without metacharacter filtering. A semicolon and a second command run on the call server as the web server account, giving the attacker a foothold on the telephony control plane along with the dial plan, trunk credentials and voicemail stores held there.",
@@ -87823,7 +87823,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-04",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An unauthenticated peer completes an ordinary TLS or DTLS handshake and sends a heartbeat request whose declared payload length far exceeds the bytes actually supplied. OpenSSL copies the response using the declared length, returning up to 64KB of adjacent process memory. The read is repeatable, invisible to application logging, and yields whatever the process was holding: session tokens, credentials in flight, decrypted request bodies, and sometimes the private key.",
@@ -87911,7 +87911,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-04",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A page loaded in Internet Explorer 9 or 10 mutates the document from an onpropertychange handler on a script element, causing the browser to keep using a CMarkup object after it has been freed. The exploit converts that into a one-byte write at a chosen address and uses a loaded Flash SWF to arrange the heap and defeat ASLR and DEP, running code as the browsing user. In the observed campaign the page was reached through an iframe injected into a legitimate site the victim already visited.",
@@ -87995,7 +87995,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-15",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An unauthenticated web request to NTWebServer escapes the document root and returns an arbitrary readable file. Pointed at the loaded project's .APP file it returns the HMI/SCADA application's administrative passwords, and the attacker then configures the application through its own legitimate interface to execute code — so the compromise completes as authorised product use on an engineering or HMI node.",
@@ -88079,7 +88079,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-04",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A crafted application run by any logged-on user drives win32k.sys, through TrackPopupMenu window-message handling, into dereferencing a pointer the attacker has arranged to be NULL. Where user mode may map the NULL page, the attacker plants a crafted object at address zero and redirects the kernel's dereference into their own code, ending with SYSTEM privileges on the host — the escalation step that turns a single compromised user account into control of the machine.",
@@ -88169,7 +88169,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "unknown",
-    "ai_discovery_date": "2022-04-13",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A crafted SWF, delivered as web content, an advertisement, or Flash embedded in an Office document, overruns a stack buffer while Adobe Flash Player parses it. Code then executes in whichever process hosts the player — a browser tab or the Office application — with the logged-on user's rights, from which the attacker proceeds as that user. The victim's only action is opening content they had reason to open.",
@@ -88257,7 +88257,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-13",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A malicious advertisement loads a SWF that calls ByteArray.uncompress() on a broken zlib stream. Flash frees the array's buffer on the failed inflate but keeps the object usable, and the attacker reads and writes through the dangling allocation until a sprayed Vector's length field is corrupted, giving arbitrary memory access inside the browser and then code execution as the logged-on user.",
@@ -88342,7 +88342,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-13",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A malicious ad delivers a SWF that maps a ByteArray as domainMemory, then frees it from a separate ActionScript Worker while the main thread still addresses it directly. Reads and writes then hit freed heap; sprayed Vector objects reoccupy it, one length field is corrupted, and the attacker has arbitrary memory access inside the browser and code execution as the logged-on user.",
@@ -88427,7 +88427,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "unknown",
-    "ai_discovery_date": "2022-04-13",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An attacker who has compromised a site the target population already visits injects an iframe that redirects the browser to exploit content. Internet Explorer mishandles an object in memory while rendering it, the resulting out-of-bounds write is steered into code execution in the browser process, and the payload — PlugX in the observed campaign — is installed with the logged-on user's rights.",
@@ -88511,7 +88511,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-13",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A crafted FLV declares a Nellymoser audio DataSize the decoder does not validate, so decoding writes past the end of a heap buffer. The exploit corrupts neighbouring vector metadata for arbitrary read/write, uses it to locate modules despite ASLR, builds a ROP chain to get past DEP, and runs its payload as the user hosting the Flash runtime.",
@@ -88596,7 +88596,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-13",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A page delivers a SWF that sets DisplayObject.opaqueBackground to an object whose valueOf() the attacker controls. Flash calls that callback inside the setter, the callback frees the object's backing storage, and the setter continues on the dangling pointer. Sprayed Vector objects take the freed chunk, one length field is overwritten, and the attacker reads and writes process memory freely before executing code as the logged-on user.",
@@ -88681,7 +88681,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-13",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A crafted SWF passes an object with an attacker-controlled valueOf() into a BitmapData method. Flash calls that override to coerce the argument, the callback frees or moves the BitmapData's backing buffer, and the method carries on using the stale pointer. Reoccupying the freed chunk and corrupting length metadata gives arbitrary read and write in the Flash process, then code execution as the user running it.",
@@ -88765,7 +88765,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "unknown",
-    "ai_discovery_date": "2022-05-24",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "Crafted JavaScript in a page rendered by Internet Explorer 9-11 learns whether a named local file exists, because the browser returns more about a failed resource load than it should. An attacker enumerates hundreds of paths to inventory security products, hypervisors, debuggers and packet-capture tools, then decides whether the visitor is worth exploiting — serving the real chain only to hosts that look unmonitored.",
@@ -88850,7 +88850,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-24",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A page rendered in Internet Explorer calls into the Microsoft Internet Messaging API in a way the API mishandles, and the response differs according to whether a named path exists on the victim's disk. Repeat the call across a path list and the browser reports the endpoint's software inventory to the attacker. Malvertising operators read that inventory as a go/no-go signal, aborting the chain on any machine that looked like a research host.",
@@ -88934,7 +88934,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-24",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "Script in an ordinary web page asks Internet Explorer or Edge which file extensions are associated with installed applications, and the browser answers. The operator reads the answer as an identity check: analysis tooling registers extensions that consumer machines never carry, so the presence of .py, .pcap, .saz or .har associations marks the host as a research environment and the chain is terminated before any exploit is served.",
@@ -89018,7 +89018,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-15",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An unauthenticated request carrying a crafted path reaches VTScada's legacy WAP listener on 9201/TCP. The path handling indexes outside the intended buffer, the read runs past the allocation, and the component crashes. It does not restart itself, so the alarm-notification and mobile-monitoring function stays down until someone relaunches it by hand on the operator station.",
@@ -89108,7 +89108,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-24",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "Code already running inside an application sandbox sends IOKit a binary-serialized dictionary whose OSNumber declares a larger size than it was given storage for. Reading the property back copies the declared length out of the kernel, returning adjacent stack memory containing saved return addresses. From those the caller computes the KASLR slide — the piece of knowledge that turns a kernel memory-corruption bug into a usable kernel write.",
@@ -89191,7 +89191,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-24",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An application sends IOKit a binary-serialized dictionary. The kernel indexes every deserialized object without taking a reference, and when a key arrives as an OSString it converts it to an OSSymbol and frees the OSString while the freed pointer stays in the index. A later back-reference to that index entry retains and uses freed memory the attacker has re-filled, and the resulting use-after-free becomes code execution with kernel privileges — enough to jailbreak the device and install a persistent implant without the user seeing anything.",
@@ -89275,7 +89275,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-24",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A page defines properties on a JavaScript object in a way that leaves JavaScriptCore holding a stale reference. Script reclaims that memory with a typed array it controls, overwrites the array's backing pointer, and gains arbitrary read and write inside the renderer, then native code execution in the browser process. Delivered as a link, it needs one tap; in the Pegasus chain the code it ran then fetched the kernel stages that jailbroke the device.",
@@ -89359,7 +89359,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "unknown",
-    "ai_discovery_date": "2022-05-24",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A crafted IPv4 SNMP packet sent to an SNMP-enabled ASA interface overflows a buffer in the appliance's SNMP parser. The leaked EXTRABACON tool uses that to take control of the LINA process and patch the authentication check in memory, after which management logins are accepted without a valid password while the firewall carries on forwarding and filtering as normal.",
@@ -89443,7 +89443,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-24",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An attacker holding valid telnet/SSH credentials, connecting from a permitted source address, submits invalid CLI commands that the ASA parser mishandles to force a reload or execute code with elevated privilege — the mechanism the Equation Group's EPICBANANA tool automated.",
@@ -89538,7 +89538,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-24",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A crafted application overflows a GDI heap allocation to corrupt a PALETTE object's pfnGetNearestFromPalentry pointer, then calls NtGdiEngBitBlt so win32k invokes the corrupted handler in kernel context, and a token swap yields SYSTEM — the ZIRCONIUM in-the-wild GDI elevation of privilege.",
@@ -89634,7 +89634,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-06",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An unauthenticated attacker sends crafted SMB_COM_TRANSACTION2 packets whose OS/2 FEA list triggers the DWORD-into-WORD size miscalculation in SrvOs2FeaListSizeToNt, so SrvOs2FeaToNt overflows the non-paged pool and executes code in the kernel — EternalBlue, the engine of WannaCry and NotPetya.",
@@ -89729,7 +89729,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_discovery_date": "2022-05-24",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A victim views a crafted page in IE 9-11; the browser mishandles objects in memory, an out-of-bounds write corrupts memory, and the attacker runs code as the current user — full control if that user is an administrator.",
@@ -89818,7 +89818,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-24",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A victim opens a crafted page in IE 10/11; the browser fails to enforce its cross-domain policy, so the attacker reads one domain's data, injects content back into it, and lifts script from low to medium integrity — most potent chained with a code-execution bug to escape protected mode.",
@@ -89908,7 +89908,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-11",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An unauthenticated attacker encrypts a malicious RadAsyncUpload configuration with the hardcoded default key and POSTs it to Telerik.Web.UI.WebResource.axd?type=rau, writing a webshell to a chosen path and executing code on the server.",
@@ -90009,7 +90009,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-24",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An unauthenticated attacker reaches KaseyaCwWebService/ManagedIT.asmx on a Kaseya VSA server and runs arbitrary SQL through ExecuteSQL/GetDataSet (including EXEC xp_cmdshell), resets the kaseyasupport admin, and uses the RMM's SYSTEM-level agent procedures to deploy ransomware to every managed endpoint — the February 2019 GandCrab campaign.",
@@ -90104,7 +90104,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-24",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A crafted EPS/PostScript document abuses .rsdparams type confusion to bypass the -dSAFER guard and set an /OutputFile of '%pipe%<command>', executing OS commands as the Ghostscript process — typically triggered server-side when ImageMagick or Pillow renders an uploaded file.",
@@ -90198,7 +90198,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "unknown",
-    "ai_discovery_date": "2022-05-24",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "Crafted Windows Search Protocol messages delivered to the WSearch service over the SMB named pipe \\pipe\\MsFteWds make it mishandle objects in memory, giving an unauthenticated remote attacker code execution as the high-privileged service and the ability to create accounts on the host. Microsoft never published the underlying corruption primitive, and NVD's CWE-281 assignment does not name one.",
@@ -90287,7 +90287,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-03-31",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "Appending '?images' to any protected URL on a Dasan GPON router's web interface makes the device treat the request as a public image resource and skip authentication, giving an unauthenticated attacker access to management functions and, chained with CVE-2018-10562, root command execution.",
@@ -90375,7 +90375,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-03-31",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A POST to /GponForm/diag_Form?images/ injects shell commands through the 'dest_host' ping parameter, running them as root; the router saves output to /tmp and returns it on a later /diag.html request. Chained with the '?images' auth bypass it is unauthenticated root RCE.",
@@ -90463,7 +90463,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "unknown",
-    "ai_discovery_date": "2022-04-13",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An unprivileged remote attacker reaches Kaseya VSA's managed-script path and executes arbitrary PowerShell across every endpoint the VSA server manages, because the control plane does not properly authorize the execution request — turning one request into fleet-wide code execution.",
@@ -90566,7 +90566,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-23",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A malformed try-catch-with-static-initializer construct in ActionScript overflows a stack buffer in Adobe Flash Player, running code as the current user; in the wild the lure .xlsx contained no exploit at all — only an OLE object pointing Office's Flash ActiveX control at a remote SWF, which was fetched and decrypted on open and then staged shellcode over the same RSA+AES channel.",
@@ -90659,7 +90659,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-19",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An email attachment's crafted Content-Location header is rendered unescaped by Zimbra webmail's getAttachmentLinkHtml, so opening the message executes attacker HTML/JavaScript in the victim's authenticated session — used in the wild to silently create auto-forwarding rules and exfiltrate mail.",
@@ -90752,7 +90752,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_discovery_date": "2022-04-13",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An attacker holding any Drupal account that can reach a confirmation form appends render-array keys to the `destination` query parameter. Those keys are cached with the form, and a follow-up request to the AJAX file endpoint with the returned form_build_id makes Drupal's renderer invoke the PHP callable named in `#post_render` with the attacker's `#markup` string, producing command execution as the web-server user.",
@@ -90843,7 +90843,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-15",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "One unauthenticated HTTP request to the reporting module's export endpoint carries an `object_id` value that is concatenated into a SQLite query, and that query is then interpolated into the shell command line used to invoke the sqlite3 binary through PHP `exec()`. A backtick expression in `object_id` therefore executes as an OS command on the building-automation server, with the vendor's `$`-stripping filter left intact and irrelevant.",
@@ -90934,7 +90934,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-23",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A local process spins up two threads sharing one window class and window procedure, then has each move the other's window from inside a WM_NCCALCSIZE callback. Killing the opposite thread at maximum recursion makes win32k copy in the attacker's lParam structure after validation, so user-supplied pointers are consumed with kernel privilege and code runs as LOCAL SYSTEM.",
@@ -91032,7 +91032,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-23",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A visitor loads an attacker-controlled page in Internet Explorer. Faulty handling of objects in memory lets the page's script establish whether a nominated path exists on the local disk, giving the attacker a repeatable yes/no oracle over the victim's filesystem — enough to fingerprint installed security tooling, sandbox artefacts and applications before deciding whether to deliver a code-execution stage.",
@@ -91127,7 +91127,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-23",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An attacker holding any credential that can open an SMB session sends a crafted request to the Windows SMB Server, which returns memory contents the request should not have exposed. In the tooling Symantec recovered, that leak supplied the state needed to drive a separate SMBv1 memory-corruption bug to reliable remote kernel code execution on 64-bit and newer Windows.",
@@ -91223,7 +91223,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-23",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "Code already running at low integrity — typically inside a browser sandbox — spawns splwow64.exe, connects to the LPC port it opens, and maps a shared section. A crafted value at one offset steers GdiPrinterThunk into a memcpy whose destination, source and length all come from attacker-controlled shared memory, giving an arbitrary write inside a medium-integrity process and with it control of that process.",
@@ -91319,7 +91319,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-25",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A user with Overall/Read posts a crafted Groovy script to the Script Security plugin's own form-validation endpoint. The sandbox intercepts operations at execution time, so a payload placed in a class initialiser, constructor, annotation or meta-programming construct runs during parsing, compilation or instantiation — before interception applies — and executes unsandboxed in the Jenkins controller's JVM, where the credentials store and agent secrets live.",
@@ -91423,7 +91423,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-23",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A local, non-admin user hard-links a path AppXSVC will act on to a protected system file and races the service; AppXSVC follows the link and performs its privileged file operation on the target, letting the user overwrite a SYSTEM-owned file and execute as SYSTEM.",
@@ -91512,7 +91512,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-23",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "Attacker JavaScript installs an indexed accessor on an array prototype and calls Array.pop; IonMonkey mis-predicts the return type, producing a type confusion, OOB access and an arbitrary read/write in the Firefox content process — renderer RCE that is paired with a sandbox escape for full compromise.",
@@ -91601,7 +91601,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-23",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A compromised content process sends an under-vetted Prompt:Open IPC message to the non-sandboxed parent, which opens web content of the child's choosing outside the sandbox; chained with a renderer bug this turns content-process execution into full host code execution.",
@@ -91690,7 +91690,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-23",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A crafted page drives Chrome WebAudio (ConvolverNode) into a use-after-free, reclaiming the freed object with attacker data to gain a read/write primitive and renderer RCE; delivered from a watering-hole page needing only that the victim's Chrome load the script.",
@@ -91779,7 +91779,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-23",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A local non-admin user runs a crafted application that steers the AppX Deployment Extensions' privileged link/file resolution onto a protected system file, gaining access to system files and a path toward SYSTEM — a privilege-management flaw in the deployment path, not memory corruption.",
@@ -91868,7 +91868,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-15",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "One unauthenticated GET to /cgi-bin/login_mgr.cgi with a shell metacharacter in the 'port' parameter injects a command that runs on the DNS-320 with web-server privileges, giving remote command execution on the NAS with no credentials or interaction.",
@@ -91958,7 +91958,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-23",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An attacker crafts a WhatsApp message so its link-preview is a javascript: URI masked behind an https prefix; on the victim's WhatsApp Desktop, clicking it runs script in the web.whatsapp.com origin (persistent XSS), a missing object-src CSP lets it pull a remote payload, and the Electron app turns that XSS into local file reads.",
@@ -92037,7 +92037,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_discovery_date": "2022-04-19",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A call to the target's number carrying crafted RTCP control packets overflows a fixed buffer in WhatsApp's native VOIP parser before the call is answered, giving code execution in the messaging app and, in the observed campaign, installation of the Pegasus implant.",
@@ -92133,7 +92133,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-15",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "One unauthenticated HTTP POST to /cgi-bin/file_transfer.cgi with shell metacharacters in the dir parameter runs arbitrary commands as root on a wireless-presentation appliance sitting on the meeting-room network.",
@@ -92231,7 +92231,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_discovery_date": "2022-05-23",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A page that gets two references to one ArrayBuffer through FileReader and frees one of them leaves script reading and writing freed heap memory, which the public exploit turns into shellcode execution inside the Chrome renderer.",
@@ -92320,7 +92320,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-23",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "Code already running on the device sends bundled XPC messages to cfprefsd whose handlers never fire the reply block, causing the daemon to release pointers it never retained; a heap spray then puts a fake Objective-C object in the freed slot and the next method call pivots into a ROP chain with the daemon's privileges.",
@@ -92416,7 +92416,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-23",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A process holding a send right to ProvInfoIOKitUserClient calls ucEncryptSUInfo with an oversized length field; the driver passes it straight to memmove and writes attacker data past the end of a kernel heap buffer, which the in-the-wild chain turned into arbitrary kernel read and write.",
@@ -92510,7 +92510,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-04",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A page builds a regular-expression match array whose property is written with putDirect in violation of the structure's inferred type, then gets the JIT to trust that inference — turning a pointer into a readable double and a double into a writable pointer, which is arbitrary memory access from JavaScript.",
@@ -92600,7 +92600,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-23",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "Crafted web content processed by WebKitGTK or WPE WebKit corrupts memory in the rendering process and leads to arbitrary code execution; the upstream advisory publishes no further detail, and on a Linux desktop the content need not arrive through a browser at all.",
@@ -92702,7 +92702,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-23",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A user-level foothold plants a link where a SYSTEM-context Windows update-notification component expects a real file; the component follows the link and performs its file operation against the attacker's chosen target, converting an ordinary account into SYSTEM.",
@@ -92799,7 +92799,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-23",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "Any local process, including a sandboxed browser renderer, sends CSRSS an ALPC message whose UNICODE_STRING carries an oversized MaximumLength; the side-by-side manifest parser trusts that field for a memcpy and overflows the heap with fully controlled content, which the in-the-wild exploit turned into a write-what-where against PEB_LDR_DATA and a CFG-bypassing ROP chain.",
@@ -92900,7 +92900,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-11",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An unauthenticated request to the QTS or QuTS hero web management stack carries shell metacharacters into a command the appliance builds and runs, so the attacker's own commands execute on the NAS — the same box that holds the primary shares and, in most deployments, the backup copy of them.",
@@ -93006,7 +93006,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-23",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "Two threads race recvmsg with MSG_PEEK against the af_unix garbage collector over descriptors passed with SCM_RIGHTS, so the collector frees a socket whose reference count is being raised outside the lock; the freed sk_buff is then reoccupied with fake pipe_buffer structures to give arbitrary kernel read and write, and root.",
@@ -93106,7 +93106,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-23",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An unprivileged local process arranges epoll instances so the kernel's loop check reaches a file object already being destroyed, and ep_loop_check_proc calls get_file on it despite holding only a weak reference — resurrecting a dying struct file into a use-after-free that yields kernel control flow and root.",
@@ -93207,7 +93207,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-04",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A page of crafted script pushes WebKit into treating an object as a type it is not; the confused state becomes a memory read and write inside the renderer and then code execution in the process handling the content, reached through Safari, any iOS browser, or any embedded web view that loads remote content.",
@@ -93309,7 +93309,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-03-31",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A local process opens the dbutil_2_3.sys device, which is created without an ACL restricting access, and issues IOCTL 0x9B0C1EC8 with chosen source, destination and length; the driver performs the memmove in kernel context, giving arbitrary kernel read and write that the public exploits convert into a SYSTEM token swap — and because the driver stays validly signed, it can be brought to any Windows host and loaded there.",
@@ -93426,7 +93426,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "unknown",
-    "ai_discovery_date": "2022-04-11",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A local process drives the AF_PACKET ring-buffer setup through an error path that frees the rx_owner_map allocation which the caller then frees again. The attacker reclaims the freed slab slot with pipe_buffer objects, corrupts one into an arbitrary kernel read/write primitive, overwrites modprobe_path and gets a script executed as root. The reachable precondition is CAP_NET_RAW in the socket's network namespace, which an ordinary user obtains through an unprivileged user namespace.",
@@ -93535,7 +93535,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-03-28",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An anonymous GET to /s/<token>/_/;/WEB-INF/... exploits a disagreement between Confluence's security filter and its static-resource loader about where a URL path ends when a semicolon path parameter appears. The filter authorises the request as a static asset; the loader serves a protected application file. The attacker gets web.xml, the Seraph authentication configuration, the decorator configuration and the exact Maven build version, from a webapp that has never seen a credential.",
@@ -93628,7 +93628,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-11",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "Checkbox Survey 6.x rolls its own view state: CheckboxWeb.dll reads the _VSTATE request argument and reconstructs it with LosFormatter. Because the product handles the blob itself, ASP.NET's ViewState MAC is never applied, so an unauthenticated attacker supplies a crafted serialized object graph and the framework builds it — executing a gadget chain as the IIS application-pool identity. No credential, no machineKey, no user interaction.",
@@ -93723,7 +93723,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-03-31",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "HBS 3 shipped with a credential compiled into the application instead of provisioned per device. Anyone who could reach the appliance's login surface authenticated as that account without holding anything the owner issued, and QNAP's fix was to remove the account. Qlocker used that access to enumerate shares, move their contents into password-protected 7z archives, delete snapshots and leave ransom notes — encrypting the primary data and its backups in one session.",
@@ -93822,7 +93822,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "unknown",
-    "ai_discovery_date": "2022-05-23",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An application running inside the sandbox calls external method 78 on AppleCLCD with operands chosen so that the driver's 32-bit allocation-size calculation wraps. The undersized allocation is then written past its end, corrupting adjacent kernel heap objects, and the application ends up executing with kernel privileges. The same driver ships across iOS, iPadOS, macOS, tvOS and watchOS, so one defect crosses every Apple platform in the fleet.",
@@ -93921,7 +93921,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_discovery_date": "2022-04-06",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A single unauthenticated HTTP request with a malformed Accept-Encoding value — an empty element between commas — drives http.sys down a path that frees the parsed content-coding entries while a stack-resident LIST_ENTRY root still points at them. The dangling pointers are dereferenced in kernel mode, producing at minimum a bugcheck and at most kernel code execution. Every service terminating HTTP through http.sys is a route to the same driver, IIS and WinRM alike.",
@@ -94015,7 +94015,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-06",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "Running sudoedit -s sets MODE_EDIT and MODE_SHELL together and skips the escaping guard, so an argument ending in a single backslash makes set_cmnd()'s unescape loop step past the argument's NUL terminator and copy uncounted bytes into user_args. The attacker controls the length and content of the resulting heap overflow, and the whole sequence completes before sudoers is consulted — so no sudo rights and no password are needed to reach root.",
@@ -94109,7 +94109,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-03-31",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An unprivileged local user swaps a directory in the temporary profile the User Profile Service is building for a junction, so the SYSTEM-context copy follows the link and creates a writable directory in a protected location; that write is then used to get code running as SYSTEM. Microsoft's first fix blocked the reported proof of concept rather than the link-following behaviour, so the primitive returned twice more under new CVE identifiers.",
@@ -94207,7 +94207,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-03-28",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A local user drives NtTraceControl()'s periodic capture-state path through three requests: allocate and arm a 0x30-byte ETW timer context, force it to be freed early with invalid GUIDs, then set a new timer that reuses the freed block. The reclaimed object supplies a WorkerRoutine function pointer the kernel calls, turning an ordinary user account into kernel-mode code execution.",
@@ -94297,7 +94297,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-03-28",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "The victim opens an attacker-supplied data-source file; Office hands it to the Access Connectivity Engine, whose parser reaches a state Microsoft classifies as remote code execution, and the attacker's code runs inside the Office process at the user's own privilege. No macro is enabled and no elevation is involved, so nothing in the sequence looks like a security prompt to the user. Microsoft states the Preview Pane is not an attack vector for this CVE, so the open is a real user action rather than a mail-client render.",
@@ -94387,7 +94387,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "unknown",
-    "ai_discovery_date": "2022-04-11",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An unprivileged Android application creates a Mali memory object marked CPU-writable but not GPU-writable and imports read-only pages through it. Because kbase_jd_user_buf_pin_pages() checks only KBASE_REG_GPU_WR when deciding whether to pin for write, the driver returns a writable CPU mapping of read-only pages — shared-library text and file-backed page-cache pages included — and the attacker rewrites privileged content in memory without touching disk.",
@@ -94477,7 +94477,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-25",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A local user with an ordinary account drives the win32k syscall surface — the kernel-mode window manager and GDI, reachable from any interactive-session process including sandboxed ones — into mishandling a kernel object, and turns that into kernel-mode code execution as SYSTEM. Microsoft published the impact and nothing else, so the specific object and syscall remain undisclosed; the affected range is what distinguishes this defect from its October 2021 siblings, reaching back to Windows 10 1809 and Windows Server 2019.",
@@ -94567,7 +94567,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "unknown",
-    "ai_discovery_date": "2022-04-25",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A local user exercises the kernel-mode Win32k syscall surface to corrupt kernel object handling and lands as SYSTEM. Microsoft disclosed only the impact and the fact that this defect is distinct from CVE-2021-40449 and CVE-2021-40450, and the affected list starts at Windows 10 version 2004 — so this is the newer-code sibling of the three Win32k elevations that shipped in the October 2021 rollup, and a Windows Server 2019 estate is outside its scope entirely.",
@@ -94657,7 +94657,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-11",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "Any authenticated domain user creates a computer account using the default machine-account quota of ten, renames its sAMAccountName to a domain controller's name with the trailing dollar sign removed, obtains a TGT under that name, renames the account back, and requests a service ticket — the KDC cannot find the original principal, appends a dollar sign, and issues a ticket for the real domain controller. Chained with CVE-2021-42287, the result is domain administrator from a standard user account.",
@@ -94747,7 +94747,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-11",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A standard domain user creates and renames a machine account to impersonate a domain controller, then abuses the KDC's principal re-resolution (append-'$') during S4U2self to obtain a service ticket in the DC's privilege context, achieving Domain Admin from a low-privileged account.",
@@ -94825,7 +94825,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-04",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An unauthenticated attacker POSTs shell metacharacters in the DDNS ddnsHostName/ddnsUsername fields to /ddns_check.ccp; the ncc2 binary concatenates them into a system() call, executing arbitrary commands on the router.",
@@ -94908,7 +94908,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-03-28",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An attacker sends an EVAL Lua script to a reachable Debian/Ubuntu Redis; the packaged interpreter leaves the 'package' global reachable, so package.loadlib pulls luaopen_io back in and io.popen runs shell commands as the redis process.",
@@ -94991,7 +94991,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-25",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An unprivileged local user primes a pipe so its buffers carry a stale PIPE_BUF_FLAG_CAN_MERGE flag, splices bytes from a read-only file into the pipe, and writes attacker data that the kernel merges into the file's page-cache page, overwriting content the user cannot write — e.g. /etc/passwd — for local root.",
@@ -95078,7 +95078,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-03-31",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An unauthenticated attacker sends a POST to the Sophos Firewall User Portal/Webadmin Controller servlet with non-printable or non-ASCII characters in the JSON keys, bypassing the authentication filter to reach privileged handlers and chain to remote code execution on the appliance.",
@@ -95166,7 +95166,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-03-28",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A crafted HTML page triggers a V8 property-access interceptor type confusion (via a toString callback during property assignment on an interceptor object) that duplicates an owned property and corrupts the object, giving heap corruption a remote attacker can develop into renderer code execution.",
@@ -95249,7 +95249,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_discovery_date": "2022-04-15",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A crafted HTML page drives a V8 Turbofan escape-analysis inconsistency that materializes an ArgumentsObject multiple times over a shared backing store, corrupting the heap in a way a remote attacker develops into renderer code execution.",
@@ -95332,7 +95332,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "unknown",
-    "ai_discovery_date": "2022-05-10",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "Two authentication checks in front of the same service, each believing the other performed the check. A request that names the admin user, attaches a junk auth token and asks the reverse proxy to strip that token before forwarding satisfies the proxy's presence test and then arrives at a back end that treats a token-free request as pre-authenticated. The caller then runs shell commands as root through /mgmt/tm/util/bash.",
@@ -95423,7 +95423,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "vendor_research",
-    "ai_discovery_date": "2022-05-23",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A monitoring feature brings its own datastore. Turning on the IOS XR health check installs an RPM that starts Redis inside the NOSi container listening on TCP/6379 with authentication disabled, so anyone who can route to the router speaks to it directly — reading the health-check database, writing keys, and using Redis persistence commands to drop files into the container. The sandbox around that container is what keeps it out of the IOS XR host.",
@@ -95513,7 +95513,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-04",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A kernel media decoder that writes more than it measured. An application feeds AppleAVD a crafted stream, the extension writes past the end of its kernel buffer, and controlled corruption of kernel memory becomes execution at kernel privilege — at which point the sandbox that was supposed to contain the application and the code-signing that was supposed to vouch for it are both being enforced by code the attacker owns.",
@@ -95603,7 +95603,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-19",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A SYSTEM service that every ordinary user is entitled to talk to. The Print Spooler accepts printer, driver and port management from unprivileged callers by design, and one of those paths performs a privileged operation it should have refused for the caller, ending with code execution as SYSTEM. Microsoft never published which path, so the mechanism is known by its boundary rather than by its primitive.",
@@ -95693,7 +95693,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-16",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A management endpoint that accepts route definitions, and a routing engine that treats those definitions as expressions to evaluate. An unauthenticated caller posts a route whose filter argument is a SpEL expression, asks the gateway to refresh, and the expression runs inside the gateway JVM with that process's privileges and network position. Deleting the route afterwards removes the definition while the code has already executed.",
@@ -95783,7 +95783,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-14",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A single unauthenticated GET to the Workspace ONE Access catalog-portal carries a FreeMarker expression in deviceUdid or deviceType; the appliance evaluates it and runs the attacker's shell command as the horizon account, which owns the organisation's SSO configuration, master keys and directory credentials.",
@@ -95886,7 +95886,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-15",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An attacker already running as the appliance's horizon service account writes into /opt/vmware/certproxy/bin/certproxyService.sh, then triggers it through a sudo-permitted support script — publishCaCert.hzn or gatherConfig.hzn — so the appliance runs the injected content as root and hands over the identity tier, including the ability to delete the evidence.",
@@ -95979,7 +95979,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-04",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An unauthenticated request names object properties that Spring's data binder walks, reaching the class loader through class.module.classLoader — a path the JDK 9 module system opened and Spring's denylist did not cover. On a WAR deployment under Tomcat that reaches the AccessLogValve, and reconfiguring the valve makes the access log itself into a JSP web shell in webapps/ROOT.",
@@ -96073,7 +96073,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "unknown",
-    "ai_discovery_date": "2022-04-11",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A caller holding credentials for an unprivileged Firebox or XTM account reaches the appliance's management surface and receives a privileged management session instead of one scoped to the account's role, taking control of the device that terminates the organisation's VPNs and enforces its rule base.",
@@ -96186,7 +96186,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-13",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A standard user hands the Common Log File System driver a malformed Base Log File whose container metadata is trusted as an offset, corrupting the pContainer field into a controlled kernel write; the exploit grooms the pool with named-pipe attributes so the write lands where it wants, then steals the SYSTEM token and keeps executing as SYSTEM.",
@@ -96274,7 +96274,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "unknown",
-    "ai_discovery_date": "2022-03-31",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An unauthenticated request uploads a file to Apex Central, whose content check tests against an incomplete set of rejected cases rather than an allowed set, so content the server will subsequently execute passes; the outcome is remote code execution on the console that manages every Apex One agent in the estate.",
@@ -96383,7 +96383,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-25",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A standard user races the SYSTEM-privileged User Profile Service between its validation of a directory and its use of it, substituting a junction so the service writes where the user cannot; the published chain uses that to plant a DLL in a system directory and triggers a UAC prompt so ProfSvc loads and executes it as SYSTEM.",
@@ -96476,7 +96476,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-04-25",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "An unauthenticated caller posts a multipart form to the Carbon management console's file-upload endpoint with a filename that walks out of the staging directory and into the Tomcat webapp tree. The next request to that path executes the uploaded JSP inside the WSO2 JVM. From there the attacker is running code on the box that terminates API traffic or issues identity tokens for everything downstream of it.",
@@ -96588,7 +96588,7 @@
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": "2022-05-16",
+    "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
       "description": "A JSON POST to the firewall's provisioning handler asks it to set a WAN port's MTU, and that MTU value is pasted into a shell command. The attacker supplies a semicolon and their own command instead of a number, and the firewall runs it as the nobody user. Everything the site's segmentation and VPN policy depends on is then being enforced by a device an anonymous internet host executes commands on.",
