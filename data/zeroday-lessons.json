@@ -17,7 +17,7 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "entry_count": 1222
+    "entry_count": 1225
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -96689,6 +96689,269 @@
         "gap_closes": [
           "NIST-800-53-SI-2",
           "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2010-5330": {
+    "name": "Ubiquiti AirOS Command Injection Vulnerability",
+    "lesson_date": "2026-08-17",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": null,
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "A single GET to /stainfo.cgi on an AirOS radio puts shell metacharacters into the ifname parameter, which reaches a shell unfiltered. The caller needs no account: Ubiquiti's advisory for this flaw says it grants remote users administrative access to AirOS v3/4 and v5 'without requiring authentication' and describes an http-server bug 'allowing users to bypass authentication and run commands', and NVD scores it PR:N. Changing the radio's management password is therefore not a partial mitigation — authentication is the thing being bypassed, and a radio behind a fresh credential is exposed exactly as much as one on the default. Exploit-DB 14146 happens to fire the request from a read-only account; that is how one write-up demonstrated it, not the boundary. The proof-of-concept reads the users block out of /tmp/system.cfg on that first request, handing over the administrative credential, and the same parameter executes anything else on the device thereafter. On 2011-12-19 Ubiquiti reported a worm spreading between AirOS radios through that same authentication bypass.",
+      "privileges_required": "none — PR:N in NVD's v3.1 vector and Au:N in its v2 vector, matching the vendor's own statement that the AirOS http server can be reached 'without requiring authentication'. The read-only account used in Exploit-DB 14146 is that write-up's convenience rather than a precondition, and no credential the operator controls stands between an attacker and the shell",
+      "complexity": "low — AC:L; one HTTP GET, no timing and no second stage, and CISA's SSVC decision of 2025-02-07 records automatable yes. The binding constraint is which networks can reach the AirOS management interface, and on subscriber CPE the served client network reaches it by construction",
+      "ai_factor": "None. Published as a hand-found zero-day on Exploit-DB in 2010 by an individual researcher; no vendor research arm and no automated discovery appear anywhere in the record."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrading each radio to its own line's fixed build — v4.0.1, v5.3.5 or v5.4.5 — and binding the AirOS HTTP/HTTPS management interface to an address the subscriber and wireless-facing networks cannot route to.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2022-04-15, due 2022-05-06)",
+        "adequacy": "Partial by construction. The management-address restriction is unavailable on subscriber CPE, whose whole purpose is serving the network the attacker is on, and the firmware upgrade only takes effect after a reboot that drops the link a backhaul radio carries — so on the units hardest to take out of service the remaining prevention carries a customer outage as its price, and for as long as that price goes unpaid the radio keeps answering stainfo.cgi from the pre-fix build."
+      },
+      "detection": {
+        "what_would_have_worked": "Central syslog from the radio fleet with alerting on shell metacharacters in stainfo.cgi requests, configuration-drift monitoring that flags an administrative password change outside a change window, and a fleet-wide sweep for the artefacts Ubiquiti published — adm.cgi in place of admin.cgi, and .skynet and rc.poststart under /etc/persistent.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "A unit that forwards nothing gives an alerting rule nothing to fire on, and one that does forward can stop the moment the attacker has shell on the device generating the log. The artefact sweep asks that same unit what is on it, and it finds only what Ubiquiti documented for its worm — adm.cgi, .skynet, rc.poststart — not a hand-driven use of the same GET, which leaves none of those marks."
+      },
+      "response": {
+        "what_would_have_worked": "Rebuilding an exposed radio from a known-good configuration rather than upgrading in place, rotating the administrative credential across every unit that shared it, and running the vendor's documented cleanup — removing /etc/persistent/rc.poststart and .skynet, then cfgmtd -w -p /etc/ and a reboot — on anything reachable while unpatched.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Firmware upgrade alone is not remediation here: the credential left the device before the upgrade and stays valid afterwards, and Ubiquiti's own instructions say the new firmware prevents the worm returning without removing an infection already present — which is why the vendor shipped a separate removal tool. A WISP that reuses one administrative password across the fleet has a rotation scope equal to the whole fleet."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A flaw-remediation programme that tracks 'AirOS version' as one field cannot express this CVE, because the fixed level is v4.0.1 on one product line, v5.3.5 on another and v5.4.5 on a third."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Article 21's network security measures are satisfied by segmenting an entity's networks from untrusted ones, and that framing has no place to put a subscriber CPE, which is simultaneously the operator's asset and a device whose management interface faces the untrusted network by design. An operator can hold a complete Article 21 attestation while every subscriber sits one unauthenticated GET away from shell on their own radio: Ubiquiti's 2011-12-19 advisory for CVE-2010-5330 states the AirOS http server grants administrative access without requiring authentication, and the worm described in the same thread moved between radios on that basis rather than by defeating any segmentation."
+      },
+      "UK-CAF-B5": {
+        "covered": true,
+        "adequate": false,
+        "gap": "B5's resilience outcomes are met by redundant wireless paths and tested failover, neither of which helps against a defect that is identical on both paths. A fleet built entirely from AirOS radios below v5.3.5 has a single correlated failure mode that redundancy amplifies rather than mitigates, and the CAF assessment records the redundancy without ever asking whether the two paths fail independently."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Essential Eight measures patching as elapsed time from a vendor release, and Ubiquiti's releases here — v4.0.1, v5.3.5 and v5.4.5 — long predate the 2022-04-15 KEV listing, so any radio below them is years outside every timeframe the model defines. The measurement records the deployment date and not the reboot that puts the new firmware in service, which on a point-to-point link is the step the operator schedules around a customer outage. A WISP can hold the maturity rating while the AP-info page on a subscriber radio still passes an unsanitized ifname to a shell."
+      },
+      "ISO-27001-2022-A.8.21": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.21 is evidenced through identified security mechanisms and service levels for network services, which an ISMS will document for the carrier links and the managed monitoring. None of that documentation reaches the CGI on the operator's own radios, so an organisation can hold a clean A.8.21 finding while stainfo.cgi passes an unsanitized ifname to a shell on every unit in the fleet."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "Pre-rehearsed IR runbook for any perimeter device that suffers a pre-auth RCE CVE in active exploitation MUST default to config-exfil + rebuild + credential rotation, not patch-in-place. Patch-in-place leaves attacker-installed implants intact.",
+        "evidence": "A Ubiquiti AirOS radio is the perimeter for the network behind it, and CVE-2010-5330 satisfies both halves of this control's trigger outright. Pre-auth: Ubiquiti's advisory of 2011-12-19 — the reference NVD tags Vendor Advisory and Patch for this CVE — says the flaw grants remote users administrative access to AirOS v3/4 and v5 'without requiring authentication', matching NVD's AV:N/AC:L/PR:N/UI:N and its v2 Au:N. Active exploitation: CISA listed it on 2022-04-15 with a 2022-05-06 due date and recorded an SSVC decision of exploitation active, automatable yes on 2025-02-07, and the same vendor advisory documents a self-propagating worm that renamed admin.cgi to adm.cgi and wrote .skynet and rc.poststart into /etc/persistent. That worm is the implant case this control exists for: Ubiquiti had to publish manual removal steps and a removal tool because the fixed firmware prevents reinfection without clearing what is already on the device, so uploading v5.3.5 to an airMAX unit that was reachable while unpatched restores the code and preserves everything the attacker left and took — persistence, configuration changes, and the administrative credential the proof-of-concept reads out of /tmp/system.cfg on its very first request. Rebuild and rotate is what turns a firmware upgrade into remediation, and on a WISP that reuses one administrative password the rotation scope is the entire fleet, not the one radio.",
+        "gap_closes": [
+          "UK-CAF-B5"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "Ubiquiti published fixed AirOS builds long before CISA listed this on 2022-04-15, so for every radio whose hardware can take one the SLA clock started at the KEV listing and the 2022-05-06 due date is already years past. The control's value on this product is that it forces per-line verification rather than a fleet-wide version assertion: v4.0.1 on the 802.11 line, v5.3.5 on airMAX and v5.4.5 on AirSync, each confirmed after the reboot the firmware upload requires. Where a legacy radio's fixed build can no longer be obtained, the same clock forces the documented compensating control — management-interface binding — instead of an open exception against an exploit that is a single URL.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.21"
+        ]
+      }
+    ]
+  },
+  "CVE-2022-21919": {
+    "name": "Microsoft Windows User Profile Service Privilege Escalation Vulnerability",
+    "lesson_date": "2026-08-17",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": null,
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "A SYSTEM service that copies files into a directory a standard user controls, and a user who decides what the paths inside it point to. Holding the second account's profile hive open forces the User Profile Service to fall back to a temporary profile under C:\\Users\\TEMP; a symbolic link planted partway down the destination path then redirects the Local System copy into C:\\Windows\\System32\\osk.exe.local, and a comctl32.dll dropped in that DotLocal directory is loaded by the On-Screen Keyboard as SYSTEM when a UAC prompt is raised.",
+      "privileges_required": "low — PR:L; an ordinary interactive local account, plus the credentials of a second non-administrative user who can log on locally and already has a profile directory under C:\\Users for the exploit to lock open",
+      "complexity": "high — AC:H; the symlink has to be swapped in while the Local System copy into C:\\Users\\TEMP is still running, and 0patch records that reproducing that race 'depends on lots of factors' and that on older Windows builds the vulnerable code differs and the window is extremely narrow",
+      "ai_factor": "None recorded. Microsoft lists no acknowledged finder and marks the issue publicly disclosed before the January 2022 fix, so the route into the public record was discussion of the previous patch in this family rather than any tooling-assisted discovery."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Installing the January 2022 cumulative update and rebooting, verified by installed build rather than by the management console's approval state — 6.3.9600.20246, 6.2.9200.23584, 6.1.7601.25829, 6.0.6003.21349 or the branch's 2022-01-11 build.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2022-04-25, due 2022-05-16)",
+        "adequacy": "There is no configuration workaround to fall back on — the User Profile Service cannot be disabled on a machine that logs users in — so for most of the estate the rollup is the whole remediation. The one alternative is 0patch's micropatch, which applies without a reboot but only to Windows 10 v1809 through v21H1 and Server 2016 / 2019 at their late-2021 patch levels, leaving Windows 11, Server 2022 and the 8.1-and-earlier lines with the update as their only route. The deeper limit is that this code path was fixed and bypassed twice around this CVE, so a host correctly on the January build was exposed again to CVE-2022-26904 on 2022-04-12."
+      },
+      "detection": {
+        "what_would_have_worked": "Auditing junction and symbolic-link creation by standard users under profile paths, and alerting when the User Profile Service writes outside the profile tree it was invoked for.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Link creation under a user's own profile is not rare enough to alert on by itself, so this only works paired with the SYSTEM-context process creation that follows. On workstations with no host-level audit policy shipped off-box there is nothing to key on at all."
+      },
+      "response": {
+        "what_would_have_worked": "Treating a confirmed escalation on a multi-user host as a credential-exposure event: rotating every account whose session or cached credential lived on that machine, not just remediating the build.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Scoped correctly this contains the blast radius, but it depends on knowing the escalation happened, and this technique compiles nothing, loads no driver and crashes no process. Without pre-existing audit telemetry there is no artefact to trigger the response at all."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "An estate with documented flaw remediation was compliant on this CVE from the moment it absorbed the January 2022 rollup, and compliant equally if it deferred that rollup into its normal testing cycle. The control gives no way to distinguish those two states against a bug CISA only listed on 2022-04-25, three and a half months after the fix shipped. Its second limit is measurement: SI-2 evidence is the update record, while Microsoft marks every affected product restart-required, so an unrebooted host reports remediated and runs the vulnerable service."
+      },
+      "NIST-800-53-AC-6": {
+        "covered": true,
+        "adequate": false,
+        "gap": "An estate can satisfy least privilege completely — no standing local administrators, tiered administration, separate accounts for privileged work — and every bit of that remains true while an ordinary user takes SYSTEM. The escalation happens inside the User Profile Service, which runs as SYSTEM by design, so the account model is never consulted. Worse for the attestation, the published exploit needs a second ordinary user profile on the host, which a well-run shared workstation supplies as a matter of course."
+      },
+      "NIS2-Art21-vulnerability-handling": {
+        "covered": true,
+        "adequate": false,
+        "gap": "An entity running a documented handling process ingested Microsoft's 2022-01-11 advisory, read exploited: No on the vendor record, and scheduled the January rollup accordingly — which is what that record still says today, even though it also flags the CVE publicly disclosed with a proof-of-concept exploit. The obligation contains nothing that forces a re-rating when CISA lists the same CVE on 2022-04-25 with a 2022-05-16 deadline. Where vendor and catalog disagree on exploitation status, a compliant process silently follows the vendor and under-prioritises the entry."
+      },
+      "UK-CAF-B2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "B2 is achieved through account lifecycle management, privilege separation and control of administrative rights, and none of that changes state while this flaw is exploited. The privilege boundary that fails sits inside a SYSTEM service, not in the identity system, so an assessor could examine every account on the host and find nothing wrong. The outcome is inverted here as well: the second standard user profile that good access management produces on a shared machine is the precondition the published exploit requires."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Operating-system patching under the Essential Eight is straightforward to evidence, and its monthly window for non-internet-facing systems makes mid-February 2022 a compliant remediation date for a 2022-01-11 update — before the KEV listing existed, which reads as adequate until you notice the model would say the same about a host patched after 2022-05-16. It records the update rather than the required reboot, and it draws no distinction between a single-user laptop and a session host where dozens of standard accounts satisfy this exploit's own precondition."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The control was met on 2022-01-11 when the January bulletin was received, assessed and scheduled, and the exploitation input that assessment had was the vendor's exploited: No — a field Microsoft has never changed. Nothing in A.8.8 obliges the organisation to revisit the decision when the same CVE appears in an external exploited-vulnerability catalog on 2022-04-25 carrying a 2022-05-16 deadline. The result is a documented risk decision, still traceable to its evidence, that has quietly become wrong and that no scheduled review will surface."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-042",
+        "name": "INCOMPLETE-PATCH-SEQUENCE-SEVERITY-MULTIPLIER",
+        "description": "Vulnerability-management programs must apply a severity multiplier when a CVE is the Nth in an incomplete-patch sequence on the same primitive (third MOTW bypass, second AMSI bypass, etc.). Framework controls treating each CVE as discrete obscure the structural defect; the Nth CVE in a sequence implies that future bypasses on the same primitive are likely.",
+        "evidence": "The Windows User Profile Service produced three CVEs on one primitive across eight months: CVE-2021-34484 on 2021-08-10, then CVE-2022-21919 on 2022-01-11 closing the bypass of that fix, then CVE-2022-26904 on 2022-04-12, which Rapid7's module documentation states is a patch bypass for both of the earlier two. Rating this CVE on its own merits gives Important, a 7.0 base score and exploited: No; rating it as the second entry in a live bypass sequence predicts the third, which is the one that carries a functional-exploit temporal rating and a Metasploit module with full source. CISA's listing on 2022-04-25 landed thirteen days after that third CVE shipped.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-vulnerability-handling",
+          "ISO-27001-2022-A.8.8"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "Microsoft's record for CVE-2022-21919 still reports exploited: No, so nothing in the vendor feed would ever start a clock on this bug — the 2022-04-25 KEV listing is the only trigger that exists, and it arrived three and a half months after the 2022-01-11 fix. Keying the SLA to the KEV listing rather than to the vendor's exploitation field is what makes the deferred January rollup visible as an overdue item on shared workstations and session hosts, which is where the second standard-user profile this exploit needs is the normal state. Where a host cannot take the rollup inside the window, the only reboot-free option is 0patch's micropatch, and it reaches Windows 10 v1809 through v21H1 and Server 2016 / 2019 at their late-2021 patch levels and nothing beyond them.",
+        "gap_closes": [
+          "NIST-800-53-AC-6",
+          "UK-CAF-B2",
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
+  },
+  "CVE-2022-22674": {
+    "name": "Apple macOS Out-of-Bounds Read Vulnerability",
+    "lesson_date": "2026-08-17",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": null,
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "A kernel graphics driver reads beyond the end of a buffer and returns the surplus to whoever asked. An ordinary application running as a local user calls into the graphics driver kernel extension — 'Intel Graphics Driver' in Apple's Monterey advisory, 'Graphics Drivers' in the Big Sur one — receives kernel memory it should never see, and reads kernel pointers out of it — the layout information that makes the next stage of a kernel exploit reliable.",
+      "privileges_required": "low — PR:L; the attacker needs code already running as some local user on the Mac, which means this sits behind an initial-access step and is never the entry point",
+      "complexity": "low — AC:L; no race, no heap shaping, no information leak needed first, because this bug is the information leak. Whether hardware constrains it is unsettled: Apple names the component 'Intel Graphics Driver' on Monterey but 'Graphics Drivers' on Big Sur and Catalina",
+      "ai_factor": "None. Apple credits an anonymous researcher and publishes nothing about method; there is no research-lab brand on this entry that could be mistaken for evidence of automated discovery."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Moving Macs to macOS 12.3.1 or 11.6.6, or applying Security Update 2022-004 on Catalina, and confirming each machine restarted into the new build rather than merely staging it.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2022-04-04, due 2022-04-25)",
+        "adequacy": "This is the only remediation — the driver cannot be unloaded on a Mac with a display, so there is no compensating control to hold the line while the update rolls out. Its limit is enforcement: without management that can require the restart, the fixed build sits downloaded on laptops that keep running the vulnerable extension."
+      },
+      "detection": {
+        "what_would_have_worked": "Endpoint telemetry that records unprivileged processes making sustained low-level graphics driver calls, correlated with application provenance so a newly arrived binary doing so stands out.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Weak on its own. A kernel read produces no crash, no file and no network artefact, and macOS endpoint tooling has limited visibility below the userland boundary — so this detects an unusual pattern rather than the exploitation itself, and only where such telemetry was already being collected."
+      },
+      "response": {
+        "what_would_have_worked": "Treating a Mac that ran an unvetted application while below the fixed build as a chain-exposure case: reviewing what else that application did, and rotating credentials the machine held rather than closing the ticket on the OS update.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Proportionate given that this CVE alone yields only a read, but it depends on knowing which application to look at. There is no hash or signature to hunt with and the response has to start from behaviour rather than indicators."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A Mac estate under a documented flaw-remediation programme absorbed macOS 12.3.1 within its normal cycle and was compliant either way. The control's measurement is the problem on Apple endpoints specifically: SI-2 evidence comes from the management console's update record, and a kernel-extension fix does nothing until the machine reboots. SI-2 also has no state to describe a Catalina Mac, which Security Update 2022-004 remediated in 2022, which Apple has kept issuing occasional updates for since, and whose latest such update — Security Update 2026-001 Catalina, 02 Feb 2026 — Apple annotates as having no published CVE entries. That machine is patched for this CVE, still receiving something from the vendor, and evidenced by nothing that shows it is still getting CVE fixes; SI-2 records the install date and none of that."
+      },
+      "NIST-800-53-SC-39": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Process isolation is provided by macOS and any assessment of it passes on both a vulnerable and a fixed Mac, because the architecture that separates address spaces is untouched. What fails is a single driver's bounds check, which hands kernel bytes to a caller through an interface the isolation model expects to be safe. The control is nominally met and structurally blind: there is no SC-39 test whose result differs between macOS 12.3 and 12.3.1, and the entire security value of this CVE's fix lives in that difference."
+      },
+      "NIS2-Art21-vulnerability-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "An entity with a risk-proportionate vulnerability-management process received Apple's 2022-03-31 advisory and ranked a CVSS 5.5 local read below the remote critical items in the same queue, which is what proportionality instructs. That ranking is defensible on the CVE's own impact and wrong on its role, because a kernel-memory disclosure exists to make the next stage of someone else's exploit reliable. Apple's own actively-exploited notice was in the same advisory and carries no weight in a scoring model driven by CVSS."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A managed Mac fleet evidences B4 convincingly — hardened baseline, System Integrity Protection enabled, Gatekeeper enforcing provenance, disk encryption on. Every one of those remains true while an application already running as a local user reads kernel memory through a driver call, because SIP does not police what a kernel extension returns and Gatekeeper's decision was made before execution. B4 also has no field in which to record that the fleet's exposure boundary is itself unresolved — Apple files this CVE under an Intel-specific component on one macOS line and a generic one on the two others, so 'which Macs on this build are affected' has no evidenced answer and the fleet has to be patched as though all of them are."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Workstation operating systems get one month from release at Maturity Levels One and Two, where the clause carries no conditions. At Maturity Level Three it reads, verbatim from the ACSC Essential Eight maturity model, Appendix C: 'Patches, updates or other vendor mitigations for vulnerabilities in operating systems of workstations, non-internet-facing servers and non-internet-facing network devices are applied within one month of release when vulnerabilities are assessed as non-critical by vendors and no working exploits exist.' Neither limb of that clause is settled on Apple's advisory wording: Apple's advisories carry no severity rating at all, so no vendor has assessed this vulnerability as non-critical, and no exploit code for CVE-2022-22674 was ever published while Apple's 2022-03-31 advisory says the issue may have been actively exploited. Catalina is a second unsettled edge — Apple still shipped that line an update on 02 Feb 2026, so calling it vendor-unsupported is a judgement, while Maturity Level Three's 'latest or previous release' rule reaches those Macs whichever way it goes. What no maturity level distinguishes is a downloaded update from a rebooted Mac — which is the whole difference between a fixed kernel extension and a vulnerable one still resident in memory."
+      },
+      "ISO-27001-2022-A.8.28": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Secure coding is the control that names this defect precisely — an unvalidated length reaching a kernel buffer read — and it is also the one the operator has no way to exercise. A.8.28 applies to software the organisation writes or procures against its own requirements, and the Intel Graphics Driver ships inside a closed operating system with no source, no review and no operator-side test. The control is genuinely in place for the organisation's own code and contributes nothing to assurance about the kernel extension that actually failed."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-056",
+        "name": "MOBILE-ENDPOINT-MDM-ENFORCED-KEV-SLA",
+        "description": "iOS / iPadOS / macOS estates must enforce KEV-class updates within 24h via DDM; user-deferral disallowed.",
+        "evidence": "Apple shipped macOS Monterey 12.3.1 and macOS Big Sur 11.6.6 with this graphics-driver fix, and CISA listed the CVE on 2022-04-04 with a 2022-04-25 due date, four days after Apple's advisory said the issue may have been actively exploited. The fix is a kernel extension, so a Mac remains vulnerable until it restarts into the new build — which makes user deferral, not download failure, the mechanism by which an estate stays exposed. Enforcing the update and the restart through management is the only way the remediation record and the running state agree.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "AU-Essential-8-Patch",
+          "UK-CAF-B4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVSS 5.5 with C:H/I:N/A:N puts this Intel Graphics Driver read at the bottom of any severity-ordered queue. Keying the clock to the 2022-04-04 KEV listing instead removes the scoring judgement from the decision entirely, which is the right outcome for a bug whose value is supplying kernel addresses to another exploit rather than causing damage itself. There are no compensating controls to fall back on here — the driver cannot be unloaded — so the patch and its restart are the only mitigation the SLA can accept.",
+        "gap_closes": [
+          "NIS2-Art21-vulnerability-management",
+          "NIST-800-53-SC-39",
+          "ISO-27001-2022-A.8.28"
         ]
       }
     ]
