@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.19.29 — 2026-08-17
+
+The catalog reaches 1,222 CVEs with 97 additions drawn from CISA KEV, weighted towards the recent end of the backlog: 19 from 2022, 20 from 2021, 18 from 2019, and a long tail back to 2007. Microsoft accounts for 30, Apple 9, Adobe 7 and Google 5, with the rest spread across Cisco, VMware, Kaseya, QNAP, Zyxel, D-Link and the router and storage-appliance vendors whose products dominate the older listings. Twenty carry CISA's ransomware designation and 63 have an obtainable public exploit.
+
+For fourteen of them CISA's required action is not "patch" but "disconnect": the product is end-of-life and the terminal state is removal. Six have no vendor fix at all. Those entries name removal as the remediation rather than describing an upgrade path that does not exist, and where a vendor published nothing the entry cites the distribution or coordinating advisory that did — Ubuntu's for the Debian-specific Redis packaging flaw, Red Hat's for Dirty Pipe, Kaseya's own bulletin for the ConnectWise integration that shipped on its server.
+
+Fifty-seven of the additions need a restart before the fix is running, and the entries separate that from the update being installed. A kernel extension or a graphics driver keeps serving the vulnerable code until the process or the machine restarts, so a remediation record keyed to the deployed version reports hosts as done while the pre-patch code is still executing. Where the restart is the step users defer, the entry says so and tells you to verify against the running build.
+
+Where sources disagree, the entries carry the disagreement rather than choosing the convenient reading. For CVE-2022-26904 Microsoft records the flaw as not exploited while CISA added it to KEV thirteen days later, and the entry states both. NVD's CPE list for CVE-2022-22954 names vRealize Automation 7.6 while VMware's own advisory records it as unaffected, so the entry scopes vRealize Automation out of that CVE and keeps it in scope for CVE-2022-22960. Adobe withdrew Flash Player 11.x for Windows and macOS from its CVE-2015-0313 advisory in February 2015, on the grounds that those builds do not support the affected functionality — and the entry records that the withdrawal does not carry to the Linux line, which Adobe's own patch bulletin and NVD both still place in scope below 11.2.202.442.
+
+Public-exploit availability is recorded as a finding in both directions. A negative is earned by searching Exploit-DB, the Metasploit module tree, the Nuclei templates and public repositories and saying what was checked, because that flag drives a fifth of the priority score. Several entries record a near miss explicitly — a Metasploit module that belongs to an adjacent CVE, a research write-up with no code, an exploit whose author withheld it — so the absence can be re-checked rather than taken on trust.
+
+CWE-193, CWE-281 and CWE-665 join the weakness catalog to carry the off-by-one, permission-preservation and uninitialised-memory entries among these additions, taking it to 236.
+
 ## 0.19.28 — 2026-08-16
 
 The project-rules file opens with a table instead of a seven-sentence paragraph. Which assistants load `AGENTS.md` on their own, which take a pointer stub, and which need it added by hand was written as running prose, so the reader had to parse three categories out of one block to find their own tool. The rows carry the same tool names and config paths as before.
