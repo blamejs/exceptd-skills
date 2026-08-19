@@ -6,7 +6,7 @@
   },
   "events": [
     {
-      "date": "2026-08-18",
+      "date": "2026-08-19",
       "type": "catalog_update",
       "artifact": "data/attack-techniques.json",
       "path": "data/attack-techniques.json",
@@ -14,15 +14,15 @@
       "entry_count": 794
     },
     {
-      "date": "2026-08-18",
+      "date": "2026-08-19",
       "type": "catalog_update",
       "artifact": "data/cve-catalog.json",
       "path": "data/cve-catalog.json",
       "schema_version": "1.0.0",
-      "entry_count": 1225
+      "entry_count": 1323
     },
     {
-      "date": "2026-08-18",
+      "date": "2026-08-19",
       "type": "catalog_update",
       "artifact": "data/cwe-catalog.json",
       "path": "data/cwe-catalog.json",
@@ -30,7 +30,7 @@
       "entry_count": 236
     },
     {
-      "date": "2026-08-18",
+      "date": "2026-08-19",
       "type": "catalog_update",
       "artifact": "data/framework-control-gaps.json",
       "path": "data/framework-control-gaps.json",
@@ -38,12 +38,12 @@
       "entry_count": 194
     },
     {
-      "date": "2026-08-18",
+      "date": "2026-08-19",
       "type": "catalog_update",
       "artifact": "data/zeroday-lessons.json",
       "path": "data/zeroday-lessons.json",
       "schema_version": "1.1.0",
-      "entry_count": 1225
+      "entry_count": 1323
     },
     {
       "date": "2026-08-08",

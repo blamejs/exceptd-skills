@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.19.31 — 2026-08-19
+
+The catalog reaches 1,323 CVEs with 98 additions from CISA KEV, spanning 2005 to 2025 with the weight in the middle years: 15 from 2019, 11 from 2016, 10 each from 2018 and 2020. Microsoft accounts for 29, with Adobe, Cisco, D-Link, Oracle, Apache, Citrix, NETGEAR and VMware behind it. Twenty-four carry CISA's ransomware designation and 76 have an obtainable public exploit.
+
+Fifty-one need a restart before the fix is running, and the entries keep that separate from the update being installed. A browser engine, a kernel extension or a service DLL keeps serving the vulnerable code until the process or the host restarts, so a remediation record keyed to the deployed version reports hosts as done while the pre-patch code executes. For nine of the additions CISA's required action is removal rather than patching, and five have no vendor fix at all; those entries name removal as the remediation instead of describing an upgrade path that does not exist.
+
+Where sources disagree, the entries carry the disagreement. A Metasploit module frames CVE-2013-2551 as an integer overflow while NVD and Microsoft classify it as a use-after-free, and the entry leads with the vendor classification while describing the path the public tooling drives. Where a vendor publishes an unspecified-vulnerability row and nothing more, as Oracle does for CVE-2012-0518, the entry says the mechanism is not on the public record rather than inventing one.
+
+Public-exploit availability is recorded as a finding in both directions, and a negative names the check that produced it: which index was searched, and a public CVE whose entries that same search returns, so a reader can tell a real absence from a broken query. Several entries record a near miss explicitly — a Metasploit module belonging to an adjacent CVE, a write-up with no code, an exploit whose author withheld it.
+
+Framework-gap statements now rest on each CVE's own dates, versions, KB numbers and vendor wording. Claims about what organisations typically do — which patches get deferred, which assets sit outside an inventory, what a monitoring programme usually collects — are gone, because none of them could be sourced and each was load-bearing for the conclusion it supported.
+
 ## 0.19.30 — 2026-08-18
 
 Three CISA KEV entries join the catalog, taking it to 1,225. Each of them turns on a question its sources answer differently, which is why they landed a release later than the rest of their set.
