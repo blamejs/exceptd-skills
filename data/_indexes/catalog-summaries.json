@@ -31,7 +31,7 @@
       "path": "data/attack-techniques.json",
       "purpose": null,
       "schema_version": "1.0.0",
-      "last_updated": "2026-08-18",
+      "last_updated": "2026-08-19",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -53,7 +53,7 @@
       "path": "data/cve-catalog.json",
       "purpose": "Per-CVE record (CVSS, EPSS, CISA KEV, RWEP, AI-discovery, vendor advisories, framework gaps, ATLAS/ATT&CK mappings). Cross-validated against NVD + CISA KEV + FIRST EPSS via validate-cves.",
       "schema_version": "1.0.0",
-      "last_updated": "2026-08-18",
+      "last_updated": "2026-08-19",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -62,20 +62,20 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 1225,
+      "entry_count": 1323,
       "sample_keys": [
-        "CVE-2010-5330",
-        "CVE-2022-21919",
-        "CVE-2022-22674",
-        "CVE-2007-3010",
-        "CVE-2014-0160"
+        "CVE-2005-2773",
+        "CVE-2009-0927",
+        "CVE-2009-1151",
+        "CVE-2009-2055",
+        "CVE-2010-2861"
       ]
     },
     "cwe-catalog.json": {
       "path": "data/cwe-catalog.json",
       "purpose": "MITRE CWE entries used by the project (subset with skill citations), with severity hint and category. Pinned to a CWE catalog version.",
       "schema_version": "1.0.0",
-      "last_updated": "2026-08-18",
+      "last_updated": "2026-08-19",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -163,7 +163,7 @@
       "path": "data/framework-control-gaps.json",
       "purpose": "Per-control framework gap declarations: SI-2, A.8.8, PCI 6.3.3, etc. Each entry names the control, the lag, the evidence CVE, and remediation guidance.",
       "schema_version": "1.0.0",
-      "last_updated": "2026-08-18",
+      "last_updated": "2026-08-19",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -229,7 +229,7 @@
       "path": "data/zeroday-lessons.json",
       "purpose": "Distilled lessons from notable zero-days and campaigns (SesameOp, Copy Fail, Dirty Frag, Copilot RCE, Windsurf MCP). Each entry: technique, distinguishing characteristic, what it means for the framework lag.",
       "schema_version": "1.1.0",
-      "last_updated": "2026-08-18",
+      "last_updated": "2026-08-19",
       "tlp": "CLEAR",
       "source_confidence_default": "B2",
       "freshness_policy": {
@@ -238,7 +238,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 1225,
+      "entry_count": 1323,
       "sample_keys": [
         "CVE-2026-31431",
         "CVE-2025-53773",
