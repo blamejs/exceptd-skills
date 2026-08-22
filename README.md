@@ -28,9 +28,27 @@
 
 Every skill explicitly flags where a compliance framework's control is insufficient for current attack patterns. The framework is often the problem, not the org.
 
-## Status
+## What ships
 
-Pre-1.0. Latest release lives on [GitHub Releases](https://github.com/blamejs/exceptd-skills/releases) and on npm as [`@blamejs/exceptd-skills`](https://www.npmjs.com/package/@blamejs/exceptd-skills) with signed npm provenance attestation and Ed25519-signed skill bodies. The package ships 51 skills across kernel LPE, MCP supply chain, AI-as-C2, prompt injection, post-quantum crypto, SBOM integrity, identity-incident response, and 35 other AI/security domains, plus 11 intelligence catalogs (CVE / ATLAS / ATT&CK / CWE / D3FEND / DLP / RFC / framework gaps / global frameworks / zero-day lessons / exploit availability) covering 35 jurisdictions; the CVE catalog holds 1025 actively-exploited and high-priority entries, each carrying behavioral indicators, an ATT&CK technique mapping, and a defense-chain zero-day lesson. 33 investigation playbooks (kernel, MCP, AI-API, framework, SBOM, runtime, hardening, secrets, cred-stores, containers, crypto, plus `webhook-callback-abuse`, `cicd-pipeline-compromise`, `identity-sso-compromise`, `llm-tool-use-exfil`, `post-quantum-migration`, `ai-discovered-cve-triage`, `supply-chain-recovery`, `citation-hygiene`, `vc-wallet-trust`, `mail-server-hardening`, `network-trust`, `audit-log-integrity`, `self-update-integrity`, `multitenancy-isolation`, `decompression-dos`, `log-injection-telemetry`, `privacy-consent-ops`, and more), a CLI for discovery and investigation built around `discover → brief → run → attest` (each run executes the playbook's seven-phase contract), and a nightly auto-refresh job that pulls KEV / NVD / EPSS / GHSA / OSV / IETF deltas plus 15 primary-source advisory, research-blog, and tech-press feeds (Qualys TRU, Red Hat RHSA, Ubuntu USN, ZDI, kernel.org, oss-security, JFrog, CISA, Microsoft Security Blog, Sysdig, Trail of Bits, Embrace the Red, BleepingComputer security, and The Hacker News) into auto-PRs for editorial review, alongside a silent-regression watcher that flags historical CVEs re-broken without a new identifier.
+Pre-1.0. Released on [GitHub](https://github.com/blamejs/exceptd-skills/releases)
+and on npm as [`@blamejs/exceptd-skills`](https://www.npmjs.com/package/@blamejs/exceptd-skills),
+with npm provenance attestation and an Ed25519 signature on every skill body.
+
+51 skills across kernel LPE, MCP supply chain, AI-as-C2, prompt injection,
+post-quantum crypto, SBOM integrity, identity incident response and 35 further
+domains.
+
+| | |
+|---|---|
+| **11 catalogs** | CVE, ATLAS, ATT&CK, CWE, D3FEND, DLP, RFC, framework gaps, global frameworks, zero-day lessons, exploit availability — across 35 jurisdictions |
+| **1,323 CVEs** | Each with behavioral indicators, an ATT&CK technique mapping, and a defense-chain zero-day lesson |
+| **33 playbooks** | Seven-phase investigations: `kernel`, `mcp`, `ai-api`, `sbom`, `containers`, `crypto`, `secrets` and the rest, through `webhook-callback-abuse`, `cicd-pipeline-compromise`, `identity-sso-compromise`, `llm-tool-use-exfil` and `post-quantum-migration`. `exceptd brief --all` is the live list |
+| **A CLI** | `discover → brief → run → attest`, where each run executes the playbook's seven-phase contract |
+
+A nightly job pulls KEV, NVD, EPSS, GHSA, OSV and IETF deltas alongside 15
+advisory, vendor-research and tech-press feeds, and opens a pull request for
+editorial review rather than merging. A companion watcher flags historical CVEs
+re-broken without a new identifier being assigned.
 
 ---
 
@@ -159,20 +177,6 @@ Verify on npm: `npm view @blamejs/exceptd-skills@<version> dist.signatures` show
 
 Air-gapped operation: run `exceptd refresh --prefetch` on a connected host, copy the resulting `.cache/upstream/` to the airgap, run `exceptd refresh --from-cache <path> --apply` over there. The vendored upstream snapshots replace every network call.
 
-Fresh-disclosure workflow (v0.12.0): the nightly auto-PR job pulls KEV / NVD / EPSS / IETF / **GHSA** (added in v0.12.0) / **OSV** (added in v0.12.10). KEV typically takes days; NVD ~10 days; GHSA fires within hours of disclosure and covers npm + PyPI + Maven + Go + NuGet + …; OSV aggregates the OSSF Malicious Packages dataset (`MAL-*` keys) + Snyk + RustSec + Mageia + Ubuntu USN + Go Vuln DB + PYSEC + UVI on top of GHSA — useful for malicious-package compromises that don't have CVEs yet (`exceptd refresh --advisory MAL-2026-3083`). New IDs land as drafts (`_auto_imported: true`, `_draft: true`) that the catalog validator treats as warnings, not errors — operators get the fresh entry immediately, editorial review (framework gaps, IoCs, ATLAS/ATT&CK refs) follows via `exceptd refresh --curate <ID>`. To pull one advisory immediately: `exceptd refresh --advisory <CVE-or-GHSA-or-MAL-or-SNYK-or-RUSTSEC-ID> --apply`.
-
-Primary-source advisory polling: `exceptd refresh --check-advisories` polls 15 vendor and coordinated-disclosure feeds — 8 advisory/coordinated-disclosure venues (Qualys TRU, Red Hat RHSA, Ubuntu USN, Zero Day Initiative, kernel.org commits, oss-security mailing list, JFrog SecOps, CISA current advisories), 4 vendor security research blogs (Microsoft Security Blog, Sysdig, Trail of Bits, Embrace the Red), and 3 more (BleepingComputer security, The Hacker News, and a researcher activity-feed tracker). Combined coverage publishes CVE IDs at T+0 to T+1 — typically 3–14 days ahead of NVD enrichment. The command is report-only: it returns a structured `diffs[]` listing each newly-seen CVE ID with its source attributions and advisory URLs, but does not mutate the catalog. A complementary silent-regression watcher (`lib/cve-regression-watcher.js`) cross-checks poller diffs for historical-CVE references (year ≤ currentYear − 2) and surfaces candidate silent-regression cases — historical CVEs re-broken by a new proof-of-concept without a new ID being assigned. Operators triage the output and route promising IDs through `exceptd refresh --advisory <CVE-ID> --apply`. Pairs with the daily scheduled remote agent below.
-
-CVE-class alert surfacing: `exceptd watchlist --alerts` matches the live `cve-catalog.json` against five operational patterns (`kernel_lpe_with_poc`, `supply_chain_family`, `ai_discovered_kev`, `active_exploitation_unpatched`, `recent_poc_no_kev_yet`) and returns the matches sorted critical-severity-first, then by RWEP. Use it to triage a refreshed catalog without scanning every entry by hand.
-
-GitHub repo-pattern monitoring: `exceptd watchlist --org-scan --org <login>` probes GitHub Search for repositories matching known threat-actor naming patterns ("A Gift From TeamPCP", "Shai-Hulud", "TeamPCP") scoped to one org. Custom patterns via repeatable `--pattern <s>`. Implements the canonical detection for the Shai-Hulud / TeamPCP supply-chain framework class — the attacker uses GitHub itself as the exfil channel. Set `GITHUB_TOKEN` for private-repo coverage and rate-limit headroom; public-repo search works without auth.
-
-AI-assistant config-file audit: `exceptd doctor --ai-config` walks `~/.claude`, `~/.cursor`, `~/.codeium`, `~/.aider`, and `~/.continue`, flagging sensitive files (`settings.json`, `mcp.json`, `*.mcp_config.json`, `api_key*`, `*.token`, `*.credentials`) not at mode 0600 on POSIX. On Windows the mode bits aren't load-bearing; each finding is surfaced with an info-level "manual ACL review" note. Catches the AI-config-credential-exfil class that the Shai-Hulud framework targets. Opt-in — does not run as part of the default no-flag `doctor` pass.
-
-Evidence-collection layer: `exceptd collect <playbook>` invokes a companion script under `lib/collectors/<playbook>.js` that walks cwd, applies the catalogued regex set, stats permissions, and emits the submission JSON in the same shape `exceptd run --evidence -` accepts. 14 of 33 playbooks have collectors today (`ai-api`, `cicd-pipeline-compromise`, `citation-hygiene`, `containers`, `cred-stores`, `crypto`, `crypto-codebase`, `hardening`, `kernel`, `library-author`, `mcp`, `runtime`, `sbom`, `secrets`); the remaining 19 are policy-skipped per AGENTS.md (judgement-shaped incident / governance / pure-analyze playbooks where AI-driven evidence collection is the design). Canonical operator pipe: `exceptd collect <pb> | exceptd run <pb> --evidence -`. `exceptd doctor --collectors` enumerates the layer; `exceptd discover` tags applicable playbooks with `[collector]` when one ships. `cicd-pipeline-compromise` requires `--attest-ownership` on the collect call (the playbook's `operator-owns-ci-fleet` precondition is opt-in to prevent unauthorized CI assessments).
-
-Daily scheduled threat intake: a `routine: exceptd-threat-intake` (claude.ai remote agent) runs daily at 14:00 UTC. Sequence: `npm install` → `refresh --check-advisories` → `watchlist --alerts` → `refresh --apply` → `refresh --advisory <CVE-ID>` for up to 5 new CVE IDs from the primary-source feeds → re-sign + rebuild-indexes if the catalog mutated → commit on `intake/<YYYY-MM-DD>` branch with the full diff in the report. Fresh disclosures no longer wait for an operator to trigger an intake run. Operator-managed at <https://claude.ai/code/routines>.
-
 Optional env vars for higher rate budgets:
 
 | Variable | Purpose |
@@ -202,11 +206,83 @@ npm run predeploy          # full predeploy gate sequence locally
 
 Direct invocations also available: `npm run verify`, `node lib/sign.js sign-all`.
 
+## Keeping the catalog current
+
+A CVE reaches the catalog through one of three paths, at different speeds.
+
+**The nightly job** pulls KEV, NVD, EPSS, IETF, GHSA and OSV. They arrive at
+different times: KEV takes days and NVD around ten, while GHSA fires within hours
+of disclosure across npm, PyPI, Maven, Go and NuGet. OSV layers Snyk, RustSec,
+Mageia, Ubuntu USN, the Go vulnerability database, PYSEC and UVI on top, plus the
+OSSF Malicious Packages dataset — which is where a compromised package with no
+CVE shows up at all. New IDs land as drafts flagged `_auto_imported`, which the
+catalog validator reports as warnings rather than errors: the entry is available
+immediately and the editorial work follows.
+
+```bash
+exceptd refresh --advisory CVE-2026-45321 --apply   # pull one ID now
+exceptd refresh --curate CVE-2026-45321             # editorial questions for a draft
+exceptd refresh --drift-only --apply                # reconcile what is already held
+```
+
+**Primary-source polling** runs ahead of all of them. `exceptd refresh
+--check-advisories` reads 15 feeds — eight advisory and coordinated-disclosure
+venues (Qualys TRU, Red Hat RHSA, Ubuntu USN, ZDI, kernel.org commits,
+oss-security, JFrog SecOps, CISA), four vendor research blogs (Microsoft
+Security, Sysdig, Trail of Bits, Embrace the Red), and three press and researcher
+trackers. Between them they publish CVE IDs three to fourteen days ahead of NVD
+enrichment. The command is report-only: it returns each newly-seen ID with its
+sources and advisory URLs and changes nothing. `lib/cve-regression-watcher.js`
+reads the same diffs for references to CVEs two or more years old, which is what
+a silently re-broken historical flaw looks like before anyone assigns it a new
+identifier.
+
+**A daily agent** (`routine: exceptd-threat-intake`, 14:00 UTC) chains those
+steps — poll, alert, refresh, enrich up to five new IDs, re-sign and rebuild if
+the catalog moved — and commits to an `intake/<date>` branch. Managed at
+<https://claude.ai/code/routines>.
+
+Once a refresh lands, `exceptd watchlist --alerts` matches the catalog against
+five operational patterns — `kernel_lpe_with_poc`, `supply_chain_family`,
+`ai_discovered_kev`, `active_exploitation_unpatched`, `recent_poc_no_kev_yet` —
+sorted critical-first, then by RWEP, so a refreshed catalog can be triaged
+without reading every entry.
+
+## Evidence collection
+
+`exceptd collect <playbook>` walks the working directory, applies the playbook's
+catalogued patterns, stats permissions, and emits submission JSON in the shape
+`exceptd run --evidence -` accepts:
+
+```bash
+exceptd collect <playbook> | exceptd run <playbook> --evidence -
+exceptd doctor --collectors            # which playbooks ship one, and which do not
+```
+
+14 of the 33 playbooks ship a collector. The other 19 are deliberately without
+one: they are judgement-shaped incident, governance and pure-analyze playbooks
+where the evidence is an assessment rather than a file on disk.
+`cicd-pipeline-compromise` additionally requires `--attest-ownership`, because
+its `operator-owns-ci-fleet` precondition is what stops it being pointed at
+someone else's CI.
+
+Two scans sit outside the playbook contract:
+
+- `exceptd watchlist --org-scan --org <login>` searches one GitHub org for
+  repositories matching known threat-actor naming patterns. This is the
+  detection for the supply-chain class that uses GitHub itself as the exfil
+  channel. Set `GITHUB_TOKEN` for private repositories and rate-limit headroom.
+- `exceptd doctor --ai-config` checks `~/.claude`, `~/.cursor`, `~/.codeium`,
+  `~/.aider` and `~/.continue` for credential-bearing files — `settings.json`,
+  `mcp.json`, `api_key*`, `*.token`, `*.credentials` — left readable beyond mode
+  0600. Windows has no equivalent bit, so findings there are raised for manual
+  ACL review. Opt-in; the bare `doctor` pass does not run it.
+
 ## CLI command reference
 
 Every command works the same via `npx @blamejs/exceptd-skills`, a global install (`exceptd`), or a local `node bin/exceptd.js`.
 
-### v0.11.0 canonical verbs
+### Canonical verbs
 
 ```
 exceptd                               First-run welcome — two ways to start
@@ -415,6 +491,11 @@ exceptd refresh                       Refresh upstream catalogs + indexes.
                                       upstream artifact now (network required).
                                       Run on a connected host, then point
                                       --from-cache at the result on the air-gap.
+  --drift-only                        Reconcile the entries the catalog already
+                                      holds; skip discovery of new ones. Use it
+                                      to correct stale fields on shipped entries
+                                      without pulling in drafts that still need
+                                      curation.
   --no-network                        Report-only dry-run: list what would be
                                       fetched without touching the network.
   --network                           (v0.11.14) Fetch latest signed catalog
@@ -506,7 +587,7 @@ exceptd <verb> --help                 Most verbs print per-verb usage with flag
                                       descriptions.
 ```
 
-### Legacy v0.10.x verbs
+### Deprecated and removed verbs
 
 Five verbs removed in v0.13.0 after deprecation since v0.11.0. Invoking any of these now returns a structured `ok:false` refusal pointing at the replacement; pre-v0.13 scripts must migrate.
 

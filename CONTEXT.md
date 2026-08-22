@@ -115,14 +115,14 @@ Skills and playbooks read from `data/`. Authoritative catalog inventory:
 
 | File | Entries | Purpose |
 |------|---------|---------|
-| `cve-catalog.json` | 1125 | CVEs with CVSS, RWEP score, EPSS estimates, CISA KEV flags, PoC and live-patch availability |
+| `cve-catalog.json` | 1323 | CVEs with CVSS, RWEP score, EPSS estimates, CISA KEV flags, PoC and live-patch availability |
 | `atlas-ttps.json` | 174 | MITRE ATLAS v2026.07 (August 2026) techniques with framework gap flags |
 | `attack-techniques.json` | 794 | MITRE ATT&CK techniques with framework coverage mappings |
 | `framework-control-gaps.json` | 194 | Framework control gap entries: designed-for vs. what each control misses |
 | `exploit-availability.json` | 28 | Per-CVE PoC locations, weaponization stage, AI-acceleration factor, live-patch status |
 | `global-frameworks.json` | 35 jurisdictions | Patch SLAs and notification windows across global regulatory regimes |
-| `zeroday-lessons.json` | 1125 | Learning-loop entries: zero-day → attack vector → control gap → framework gap → new control |
-| `cwe-catalog.json` | 233 | CWE v4.20 entries (Top 25 2024 plus AI- and supply-chain-relevant weaknesses) |
+| `zeroday-lessons.json` | 1323 | Learning-loop entries: zero-day → attack vector → control gap → framework gap → new control |
+| `cwe-catalog.json` | 236 | CWE v4.20 entries (Top 25 2024 plus AI- and supply-chain-relevant weaknesses) |
 | `d3fend-catalog.json` | 468 | MITRE D3FEND v1.3.0 defensive techniques for offensive → defensive mapping |
 | `rfc-references.json` | 8889 | IETF RFC / Internet-Draft references with status, errata count, replaces / replaced-by, `last_verified` dates |
 | `dlp-controls.json` | 22 | DLP control entries indexed by channel, classifier, surface, enforcement mode, evidence type |
@@ -154,16 +154,24 @@ researcher                  — front-door dispatcher for raw threat intel
 
 The repository uses Real-World Exploit Priority (RWEP) scoring, not CVSS alone. CVSS is reported alongside RWEP but never as the sole score.
 
-RWEP formula (0–100):
-```
-base = cisa_kev(+25) + poc_public(+20) + ai_factor(+15)
-     + active_exploitation(+20) + blast_radius(0-30)
-     - patch_available(-15) - live_patch(-10) + reboot_required(+5)
+RWEP is the sum of eight weighted factors, clamped to 0–100. The two mitigating
+factors carry negative weights, so every term is added:
 
-ai_factor = ai_discovered OR ai_assisted_weaponization
-blast_radius = 0-30 scale (30 = all-Linux or 150M+ installations)
-reboot_required = +5 always when patch requires reboot
 ```
+rwep_score = cisa_kev(+25) + poc_available(+20) + ai_factor(+15)
+           + active_exploitation(+20) + blast_radius(0..+30)
+           + patch_available(-15) + live_patch_available(-10)
+           + reboot_required(+5)
+
+ai_factor            = ai_discovered OR ai_assisted_weaponization
+blast_radius         = 0-30 (30 = all-Linux, or an install base in the 150M range)
+active_exploitation  = +20 confirmed, +10 suspected, +5 unknown
+reboot_required      = +5 whenever the patch needs a reboot
+```
+
+The stored `rwep_factors` must sum to the stored `rwep_score`; the catalog
+validator fails the entry when they disagree. `lib/scoring.js` holds the weights,
+and its key names are the ones the catalog must use.
 
 Example: CVE-2026-31431 (Copy Fail) — CVSS 7.8 / **RWEP 90**
 - CVSS 7.8 suggests "high, patch within 30 days"

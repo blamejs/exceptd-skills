@@ -1,73 +1,93 @@
 # Security Policy
 
+## Reporting a vulnerability
+
+Two private channels, either is fine:
+
+- **GitHub** — open a draft advisory from the repository's Security tab
+  ([Report a vulnerability](https://github.com/blamejs/exceptd-skills/security/advisories/new)).
+  Private vulnerability reporting is enabled, so the report stays between you and
+  the maintainers until an advisory is published.
+- **Email** — security@exceptd.com
+
+**Do not open a public GitHub issue.** A public issue is the one channel that
+tells everyone else before the fix exists.
+
+Include what you have:
+
+- What the issue is
+- How to reproduce it
+- What an attacker gets
+- Whether you believe it is being exploited now
+
+## What to expect
+
+| Severity | First response | Triage | Fix |
+|---|---|---|---|
+| Critical — data-integrity attack on the CVE catalog, RWEP score manipulation | 24h | 72h | 7d |
+| High — a skill that produces incorrect remediation for a CISA KEV entry | 72h | 7d | 14d |
+| Medium — an incorrect framework gap mapping or wrong control ID | 7d | 14d | 30d |
+| Low — missing data, incomplete entries | 14d | 30d | next minor |
+
+## Supported versions
+
+Pre-1.0, the latest patch on the most recent minor receives data updates: CVE
+catalog, framework gap changes, new ATLAS TTPs. Every version receives critical
+accuracy corrections.
+
+From 1.0, each major version receives data updates for 18 months.
+
 ## Scope
 
-This security policy covers the exceptd Security skills repository itself — the skill files, data catalogs, and library code. It does not cover downstream applications that use these skills.
+This policy covers the repository itself — the skill files, the data catalogs,
+and the library code. It does not cover applications built on top of them.
 
-## Reporting a Vulnerability
+The repository has no npm runtime dependencies; `lib/` is self-contained and the
+skills and catalogs are plain text and JSON. Loaded through an AI assistant, the
+skills are instruction text: nothing here executes in your environment unless
+your assistant chooses to run it.
 
-Email: security@exceptd.com
+Out of scope:
 
-Include:
-- Description of the issue
-- Steps to reproduce
-- Impact assessment
-- Whether you believe this is being actively exploited
+- Runtime security of applications that consume these skills
+- Accuracy of the upstream frameworks themselves — NIST, ISO and MITRE lag is
+  tracked here, not controlled here
+- Physical access to the machine this runs on
 
-**Do not file public GitHub issues for security vulnerabilities.**
+## What the repository defends
 
-## Response SLAs
+**The CVE catalog and its RWEP scores.** Tampered scores deprioritize
+vulnerabilities that are genuinely critical. Every RWEP score is reproducible
+from the inputs in `data/cve-catalog.json` and the formula in `lib/scoring.js`;
+recompute it yourself when the decision is a large one.
 
-| Severity | First Response | Triage | Fix |
-|---|---|---|---|
-| Critical (data integrity attack on CVE catalog, RWEP score manipulation) | 24h | 72h | 7d |
-| High (skill instruction that produces incorrect remediation for CISA KEV) | 72h | 7d | 14d |
-| Medium (incorrect framework gap mapping, wrong control ID) | 7d | 14d | 30d |
-| Low (missing data, incomplete entries) | 14d | 30d | next minor |
+**Framework gap declarations.** A gap recorded as closed while it remains open
+tells an organization it is covered when it is not. Changing a gap's status
+requires evidence — a framework update reference and the control text it turns
+on — not an assertion.
 
-## Supported Versions
+**Exploit-availability freshness.** An exploit marked not-public when it is
+public understates RWEP by a fifth of the scale. `data/exploit-availability.json`
+is versioned and every entry carries `last_verified`.
 
-Pre-1.0: Latest patch on the most recent minor receives data updates (CVE catalog, framework gap updates, new ATLAS TTPs). All versions receive critical accuracy corrections.
+**Skill instruction correctness.** A skill that recommends a patch which does not
+exist for a given kernel version, or cites the wrong ATLAS technique, does direct
+harm. Skills carry a `last_threat_review` date and are re-reviewed when the CVEs
+or techniques they cite change.
 
-Once 1.0: 18-month data update support after each major version.
+## Using the data
 
-## Threat Model
+Catalog entries and RWEP scores are analytical summaries for operational use, not
+authoritative sources. Cross-reference before acting:
 
-### What This Repo Defends
+- CISA KEV — https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+- NVD — https://nvd.nist.gov/
+- MITRE ATLAS — https://atlas.mitre.org/
+- MITRE ATT&CK — https://attack.mitre.org/
 
-**Data integrity of the CVE catalog and RWEP scores.** Tampered scores could cause security teams to deprioritize genuinely critical vulnerabilities. Every RWEP calculation is reproducible from `data/cve-catalog.json` inputs and the formula in `lib/scoring.js`. Auditors should verify scores independently for high-stakes decisions.
+Verify KEV status against CISA directly for critical decisions. RWEP is a
+prioritization heuristic, not a compliance instrument.
 
-**Accuracy of framework gap declarations.** If a gap is incorrectly declared as "closed" when it remains open, organizations may believe they are protected when they are not. Gap status changes require evidence (framework update reference + control text analysis) not assertions.
-
-**Freshness of exploit availability data.** Stale PoC status (marking an exploit as not-public when it is) causes teams to use incorrect RWEP scores. `data/exploit-availability.json` is versioned and dated. Every entry has a `last_verified` field.
-
-**Skill instruction correctness.** A skill that produces incorrect remediation guidance (e.g., recommending a patch that doesn't exist for a kernel version, citing a wrong ATLAS TTP ID) creates direct harm. Skills are pinned to `last_threat_review` dates and reviewed when referenced CVEs or TTPs change.
-
-### What This Repo Does Not Defend
-
-- Runtime security of applications that use these skills (that's blamejs's scope)
-- Upstream framework accuracy (NIST, ISO, MITRE ATLAS) — we track lag, we don't control it
-- Physical access to systems this runs on
-
-## Data Integrity
-
-CVE catalog entries and RWEP scores are not authoritative sources — they are analytical summaries for operational use. Always cross-reference:
-
-- CISA KEV: https://www.cisa.gov/known-exploited-vulnerabilities-catalog
-- NVD: https://nvd.nist.gov/
-- MITRE ATLAS: https://atlas.mitre.org/
-- MITRE ATT&CK: https://attack.mitre.org/
-
-For critical security decisions, verify CISA KEV status directly. RWEP scores are a prioritization heuristic, not a compliance instrument.
-
-## Supply Chain
-
-This repository has no npm runtime dependencies. The library code in `lib/` is self-contained. Skills and data files are plain text/JSON.
-
-When using these skills via an AI assistant, the skills are loaded as instruction text. No code from this repository executes in your environment beyond what your AI assistant chooses to implement.
-
-## Accuracy Disclaimer
-
-Security threat intelligence has a short shelf life. CVE data, PoC availability status, and framework coverage assessments in this repository reflect the state of knowledge at the `last_threat_review` date in each skill's frontmatter. Verify current status with primary sources before making production security decisions.
-
-RWEP scores are analytical tools, not authoritative risk assessments. They are designed to surface prioritization signal beyond CVSS, not to replace professional security judgment.
+Threat intelligence has a short shelf life. What this repository asserts reflects
+the state of knowledge at each skill's `last_threat_review` date. Check the
+primary source before a production decision rests on it.

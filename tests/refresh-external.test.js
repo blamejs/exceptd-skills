@@ -349,6 +349,17 @@ test('refresh parseArgs: --check-advisories is report-only and source-scoped', (
   assert.equal(b.apply, false);
 });
 
+test('refresh parseArgs: --drift-only is recognised and defaults off', () => {
+  const { parseArgs } = require(path.join(ROOT, 'lib', 'refresh-external.js'));
+  assert.equal(parseArgs(['node', 'x', '--from-cache']).driftOnly, undefined,
+    'discovery stays on unless the operator asks for drift alone');
+  assert.equal(parseArgs(['node', 'x', '--from-cache', '--drift-only']).driftOnly, true);
+  // An unrecognised flag is refused rather than silently dropped, so a typo
+  // cannot quietly run a full refresh. Confirm --drift-only is not landing in
+  // that bucket.
+  assert.equal((parseArgs(['node', 'x', '--drift-only'])._unknownFlags || []).length, 0);
+});
+
 const test_describe = typeof test.describe === 'function' ? test.describe : (name, fn) => fn();
 
 // ===========================================================================
@@ -460,7 +471,11 @@ test_describe('refresh-curated-kev-protection', () => {
   function writeKevCache(dir, { feedSize = 800, includeCves = [] } = {}) {
     const vulnerabilities = [];
     for (const c of includeCves) {
-      vulnerabilities.push({ cveID: c.cveID, dateAdded: c.dateAdded || '2025-01-01' });
+      // Spread the caller's record so a test can carry dueDate,
+      // knownRansomwareCampaignUse or any other KEV field; a record that omits
+      // one is a record the feed genuinely does not carry it on, which is the
+      // input several of these tests are built around.
+      vulnerabilities.push({ dateAdded: '2025-01-01', ...c, cveID: c.cveID });
     }
     let n = vulnerabilities.length;
     while (vulnerabilities.length < feedSize) {
@@ -621,6 +636,236 @@ test_describe('refresh-curated-kev-protection', () => {
     }
   });
 
+  test('a due date CISA has moved is diffed and applied', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'kev-prot-'));
+    try {
+      const cve = 'CVE-2026-0300';
+      writeKevCache(tmp, { feedSize: 800, includeCves: [
+        { cveID: cve, dateAdded: '2026-05-06', dueDate: '2026-05-09', knownRansomwareCampaignUse: 'Unknown' },
+      ] });
+      // Curated on the day of listing with a 21-day deadline assumed; CISA's
+      // own record says three days.
+      const catalog = { [cve]: {
+        cisa_kev: true, cisa_kev_date: '2026-05-06', cisa_kev_due_date: '2026-05-27',
+        known_ransomware_use: false, rwep_factors: { cisa_kev: 25 }, rwep_score: 70,
+      }, _meta: {} };
+      const ctx = makeCtx(tmp, catalog);
+
+      const { diffs } = kevDiffFromCache(ctx);
+      const due = diffs.find((d) => d.id === cve && d.field === 'cisa_kev_due_date');
+      assert.ok(due, 'a stale remediation deadline must produce a diff');
+      assert.equal(due.before, '2026-05-27');
+      assert.equal(due.after, '2026-05-09');
+      assert.notEqual(due.review_only, true, 'an upstream deadline correction applies directly');
+
+      await ALL_SOURCES.kev.applyDiff(ctx, diffs);
+      const after = JSON.parse(fs.readFileSync(ctx.cvePath, 'utf8'))[cve];
+      assert.equal(after.cisa_kev_due_date, '2026-05-09', 'the catalog carries CISA’s deadline, not an assumed one');
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  test('a ransomware designation CISA has added is diffed and applied', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'kev-prot-'));
+    try {
+      const cve = 'CVE-2021-4034';
+      writeKevCache(tmp, { feedSize: 800, includeCves: [
+        { cveID: cve, dateAdded: '2022-06-27', dueDate: '2022-07-18', knownRansomwareCampaignUse: 'Known' },
+      ] });
+      const catalog = { [cve]: {
+        cisa_kev: true, cisa_kev_date: '2022-06-27', cisa_kev_due_date: '2022-07-18',
+        known_ransomware_use: false, rwep_factors: { cisa_kev: 25 }, rwep_score: 70,
+      }, _meta: {} };
+      const ctx = makeCtx(tmp, catalog);
+
+      const { diffs } = kevDiffFromCache(ctx);
+      const r = diffs.find((d) => d.id === cve && d.field === 'known_ransomware_use');
+      assert.ok(r, 'a designation added after listing must produce a diff');
+      assert.equal(r.before, false);
+      assert.equal(r.after, true);
+      assert.notEqual(r.review_only, true, 'an added designation applies directly');
+
+      await ALL_SOURCES.kev.applyDiff(ctx, diffs);
+      const after = JSON.parse(fs.readFileSync(ctx.cvePath, 'utf8'))[cve];
+      assert.equal(after.known_ransomware_use, true);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  test('an entry omitting the ransomware field has it filled from the feed, in both directions', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'kev-prot-'));
+    try {
+      const designated = 'CVE-2023-3519';
+      const plain = 'CVE-2019-11510';
+      writeKevCache(tmp, { feedSize: 800, includeCves: [
+        { cveID: designated, dateAdded: '2023-07-19', dueDate: '2023-07-21', knownRansomwareCampaignUse: 'Known' },
+        { cveID: plain, dateAdded: '2019-11-03', dueDate: '2022-01-24', knownRansomwareCampaignUse: 'Unknown' },
+      ] });
+      // Neither entry carries known_ransomware_use at all — the shape older
+      // hand-curated entries were written in.
+      const catalog = {
+        [designated]: { cisa_kev: true, cisa_kev_date: '2023-07-19', cisa_kev_due_date: '2023-07-21', rwep_factors: { cisa_kev: 25 }, rwep_score: 70 },
+        [plain]: { cisa_kev: true, cisa_kev_date: '2019-11-03', cisa_kev_due_date: '2022-01-24', rwep_factors: { cisa_kev: 25 }, rwep_score: 70 },
+        _meta: {},
+      };
+      const ctx = makeCtx(tmp, catalog);
+
+      const { diffs } = kevDiffFromCache(ctx);
+      const dD = diffs.find((d) => d.id === designated && d.field === 'known_ransomware_use');
+      const dP = diffs.find((d) => d.id === plain && d.field === 'known_ransomware_use');
+      assert.ok(dD, 'an omitted field on a designated CVE must be filled');
+      assert.equal(dD.before, null, 'the diff records the omission as null, not as false');
+      assert.equal(dD.after, true);
+      assert.ok(dP, 'an omitted field is filled even when the answer is false');
+      assert.equal(dP.after, false);
+      assert.notEqual(dD.review_only, true, 'filling an omission is not a removal and is not held for review');
+
+      await ALL_SOURCES.kev.applyDiff(ctx, diffs);
+      const after = JSON.parse(fs.readFileSync(ctx.cvePath, 'utf8'));
+      assert.equal(after[designated].known_ransomware_use, true);
+      assert.equal(after[plain].known_ransomware_use, false);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  test('a feed record carrying no ransomware field produces no diff — absence is not a negative', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'kev-prot-'));
+    try {
+      const cve = 'CVE-2023-4863';
+      // No knownRansomwareCampaignUse key at all, and no dueDate. Reading the
+      // missing field as "Unknown" would propose erasing a curated designation
+      // on the strength of data the feed never carried.
+      writeKevCache(tmp, { feedSize: 800, includeCves: [{ cveID: cve, dateAdded: '2023-09-13' }] });
+      const catalog = { [cve]: {
+        cisa_kev: true, cisa_kev_date: '2023-09-13', cisa_kev_due_date: '2023-10-04',
+        known_ransomware_use: true, rwep_factors: { cisa_kev: 25 }, rwep_score: 70,
+      }, _meta: {} };
+      const ctx = makeCtx(tmp, catalog);
+
+      const { diffs } = kevDiffFromCache(ctx);
+      assert.equal(diffs.filter((d) => d.field === 'known_ransomware_use').length, 0,
+        'an absent ransomware field must produce no diff in either direction');
+      assert.equal(diffs.filter((d) => d.field === 'cisa_kev_due_date').length, 0,
+        'an absent dueDate must not clear a stored deadline');
+
+      await ALL_SOURCES.kev.applyDiff(ctx, diffs);
+      const after = JSON.parse(fs.readFileSync(ctx.cvePath, 'utf8'))[cve];
+      assert.equal(after.known_ransomware_use, true, 'the curated designation survives');
+      assert.equal(after.cisa_kev_due_date, '2023-10-04', 'the stored deadline survives');
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  test('a ransomware designation REMOVAL is held for review against a truncated feed', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'kev-prot-'));
+    try {
+      const cve = 'CVE-2024-1709';
+      writeKevCache(tmp, { feedSize: 50, includeCves: [
+        { cveID: cve, dateAdded: '2024-02-22', dueDate: '2024-02-29', knownRansomwareCampaignUse: 'Unknown' },
+      ] });
+      const catalog = { [cve]: {
+        cisa_kev: true, cisa_kev_date: '2024-02-22', cisa_kev_due_date: '2024-02-29',
+        known_ransomware_use: true, rwep_factors: { cisa_kev: 25 }, rwep_score: 70,
+      }, _meta: {} };
+      const ctx = makeCtx(tmp, catalog);
+
+      const { diffs } = kevDiffFromCache(ctx);
+      const r = diffs.find((d) => d.id === cve && d.field === 'known_ransomware_use');
+      assert.ok(r, 'the removal is still surfaced');
+      assert.equal(r.after, false);
+      assert.equal(r.review_only, true, 'a removal against a truncated feed is held for review');
+
+      await ALL_SOURCES.kev.applyDiff(ctx, diffs);
+      const after = JSON.parse(fs.readFileSync(ctx.cvePath, 'utf8'))[cve];
+      assert.equal(after.known_ransomware_use, true, 'the curated designation is not erased');
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  test('--drift-only keeps the reconciliation and drops the discovery adds', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'kev-prot-'));
+    try {
+      const held = 'CVE-2022-1234';      // in the catalog, with a stale deadline
+      const unknown = 'CVE-2026-5555';   // upstream only — discovery would import it
+      writeKevCache(tmp, { feedSize: 800, includeCves: [
+        { cveID: held, dateAdded: '2022-04-01', dueDate: '2022-04-15', knownRansomwareCampaignUse: 'Unknown' },
+        { cveID: unknown, dateAdded: '2026-08-01', dueDate: '2026-08-22', knownRansomwareCampaignUse: 'Known',
+          vulnerabilityName: 'Example RCE', shortDescription: 'x', vendorProject: 'Example', product: 'Thing' },
+      ] });
+      const catalog = { [held]: {
+        cisa_kev: true, cisa_kev_date: '2022-04-01', cisa_kev_due_date: '2022-05-01',
+        known_ransomware_use: false, rwep_factors: { cisa_kev: 25 }, rwep_score: 70,
+      }, _meta: {} };
+
+      const withDiscovery = await ALL_SOURCES.kev.fetchDiff(makeCtx(tmp, JSON.parse(JSON.stringify(catalog))));
+      assert.ok(withDiscovery.diffs.some((d) => d.op === 'add'),
+        'the default cache path still discovers entries the catalog lacks');
+
+      const ctx = makeCtx(tmp, JSON.parse(JSON.stringify(catalog)));
+      ctx.driftOnly = true;
+      const driftOnly = await ALL_SOURCES.kev.fetchDiff(ctx);
+      assert.equal(driftOnly.diffs.filter((d) => d.op === 'add').length, 0,
+        '--drift-only imports nothing new');
+      assert.ok(driftOnly.diffs.some((d) => d.id === held && d.field === 'cisa_kev_due_date'),
+        'the reconciliation of entries already held is unaffected');
+      assert.equal(driftOnly.spilled, 0, 'nothing spills when nothing is discovered');
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  test('a de-listing clears the ransomware designation along with the dates', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'kev-prot-'));
+    try {
+      const cve = 'CVE-2025-9997';
+      writeKevCache(tmp, { feedSize: 800, includeCves: [] });
+      // Weak entry, so the de-listing applies rather than being held.
+      const catalog = { [cve]: {
+        cisa_kev: true, cisa_kev_date: '2024-06-01', cisa_kev_due_date: '2024-06-22',
+        known_ransomware_use: true, active_exploitation: null,
+        rwep_factors: { cisa_kev: 25 }, rwep_score: 60,
+      }, _meta: {} };
+      const ctx = makeCtx(tmp, catalog);
+
+      const { diffs } = kevDiffFromCache(ctx);
+      await ALL_SOURCES.kev.applyDiff(ctx, diffs);
+      const after = JSON.parse(fs.readFileSync(ctx.cvePath, 'utf8'))[cve];
+      assert.equal(after.cisa_kev, false);
+      assert.equal(after.known_ransomware_use, null,
+        'a designation restating a KEV record that no longer exists cannot survive it');
+      assert.equal(after.cisa_kev_date, null);
+      assert.equal(after.cisa_kev_due_date, null);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  test('an entry upstream no longer lists gets no due-date or ransomware diff', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'kev-prot-'));
+    try {
+      const cve = 'CVE-2025-9998';
+      writeKevCache(tmp, { feedSize: 800, includeCves: [] });
+      const catalog = { [cve]: {
+        cisa_kev: true, cisa_kev_date: '2024-06-01', cisa_kev_due_date: '2024-06-22',
+        known_ransomware_use: false, active_exploitation: null,
+        rwep_factors: { cisa_kev: 25 }, rwep_score: 60,
+      }, _meta: {} };
+      const ctx = makeCtx(tmp, catalog);
+
+      const { diffs } = kevDiffFromCache(ctx);
+      assert.equal(diffs.filter((d) => d.field === 'cisa_kev_due_date' || d.field === 'known_ransomware_use').length, 0,
+        'a de-listing is the only thing to say about an entry the feed dropped');
+      assert.ok(diffs.some((d) => d.field === 'cisa_kev' && d.after === false), 'the de-listing itself still fires');
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
   test('RC-1: the LIVE KEV path holds a curated-exploitation de-listing for review (not just --from-cache)', async () => {
     // fetchDiff lazily requires ../sources/validators; swap it in require.cache so
     // we can drive a de-listing discrepancy without any network call.
@@ -648,6 +893,68 @@ test_describe('refresh-curated-kev-protection', () => {
       const weak = await kev.fetchDiff({ cveCatalog: { 'CVE-2099-0001': { cisa_kev: true } } });
       const dw = weak.diffs.find((x) => x.field === 'cisa_kev');
       assert.ok(!dw.review_only, 'a weak-signal de-listing is not held for review');
+    } finally {
+      if (orig) require.cache[validatorsPath] = orig; else delete require.cache[validatorsPath];
+    }
+  });
+
+  test('the LIVE KEV path reconciles the deadline and the ransomware designation, not just the flag', async () => {
+    // The cache path and the live path must cover the same field set. Filtering
+    // the live discrepancies to cisa_kev/cisa_kev_date left the other two
+    // reconciling only under --from-cache, which is not the default.
+    const validatorsPath = require.resolve('../sources/validators');
+    const orig = require.cache[validatorsPath];
+    require.cache[validatorsPath] = {
+      id: validatorsPath, filename: validatorsPath, loaded: true, exports: {
+        validateAllCves: async () => ({
+          total: 1,
+          results: [{
+            cve_id: 'CVE-2099-0002', status: 'drift',
+            fetched: { sources: { kev: { reachable: true, total_entries: 1600 } } },
+            discrepancies: [
+              { field: 'cisa_kev_due_date', local: '2026-05-27', fetched: '2026-05-09', severity: 'medium' },
+              { field: 'known_ransomware_use', local: false, fetched: true, severity: 'medium' },
+            ],
+          }],
+        }),
+      },
+    };
+    try {
+      const kev = ALL_SOURCES['kev'];
+      const r = await kev.fetchDiff({ cveCatalog: { 'CVE-2099-0002': { cisa_kev: true } } });
+      const due = r.diffs.find((d) => d.field === 'cisa_kev_due_date');
+      const ransom = r.diffs.find((d) => d.field === 'known_ransomware_use');
+      assert.ok(due, 'the live path must emit a due-date diff');
+      assert.equal(due.after, '2026-05-09');
+      assert.ok(ransom, 'the live path must emit a ransomware diff');
+      assert.equal(ransom.after, true);
+      assert.notEqual(ransom.review_only, true, 'an added designation applies against a plausible feed');
+    } finally {
+      if (orig) require.cache[validatorsPath] = orig; else delete require.cache[validatorsPath];
+    }
+  });
+
+  test('the LIVE path holds a ransomware designation REMOVAL against an implausibly small feed', async () => {
+    const validatorsPath = require.resolve('../sources/validators');
+    const orig = require.cache[validatorsPath];
+    require.cache[validatorsPath] = {
+      id: validatorsPath, filename: validatorsPath, loaded: true, exports: {
+        validateAllCves: async () => ({
+          total: 1,
+          results: [{
+            cve_id: 'CVE-2099-0003', status: 'drift',
+            fetched: { sources: { kev: { reachable: true, total_entries: 12 } } },
+            discrepancies: [{ field: 'known_ransomware_use', local: true, fetched: false, severity: 'medium' }],
+          }],
+        }),
+      },
+    };
+    try {
+      const kev = ALL_SOURCES['kev'];
+      const r = await kev.fetchDiff({ cveCatalog: { 'CVE-2099-0003': { cisa_kev: true } } });
+      const ransom = r.diffs.find((d) => d.field === 'known_ransomware_use');
+      assert.ok(ransom, 'the removal is still surfaced');
+      assert.equal(ransom.review_only, true, 'a truncated live feed must not erase a curated designation');
     } finally {
       if (orig) require.cache[validatorsPath] = orig; else delete require.cache[validatorsPath];
     }
