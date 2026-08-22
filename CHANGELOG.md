@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.19.32 — 2026-08-21
+
+A KEV entry stores four fields from CISA's record and the refresh compared two of them. The listing flag and its date tracked upstream; the remediation deadline and the ransomware designation were written once, at curation, and never looked at again. Both now reconcile on every refresh, on the live path and the cached one alike, which closes a gap that had been widening since the fields were first stored.
+
+The catalog is corrected accordingly. Fifty-one entries carried no ransomware designation where CISA now records one, and forty-three of those had no such field at all — which every consumer reads as a denial rather than as an absence. All 1,167 KEV-listed entries now carry the boolean explicitly, and the catalog validator refuses one that does not, so the field cannot go back to being sometimes-absent. Four entries stated a remediation deadline of twenty-one days after listing where CISA required three or fourteen; that date is rendered into remediation output and regulator notification drafts, so it was telling operators they had time the directive does not give them. Eleven more had no deadline stored at all.
+
+Six entries said in prose that CISA recorded no ransomware association while their own corrected flag said otherwise. An entry that contradicts itself is worse than one that is simply wrong, because the reader cannot tell which half to believe; those sentences now state what the record states.
+
+A designation no longer outlives the listing it came from. When CISA removes a CVE, the refresh already cleared the listing dates but left the ransomware flag standing on a record that no longer exists; it is cleared to unknown rather than to false, since false would assert something upstream is no longer there to say.
+
+`refresh --drift-only` reconciles the entries the catalog already holds and skips discovery of new ones. Discovery imports drafts that still need curation, so correcting stale fields on shipped entries previously meant either taking that work in the same change or leaving the fields stale.
+
+The repository documentation describes the repository again. `ARCHITECTURE.md` carried a CVE schema example — the block a contributor copies — whose `active_exploitation` was a boolean where the schema defines a five-value string, whose factor keys were `ai_assisted` and `live_patch` where the scorer reads `ai_factor` and `live_patch_available`, and whose patch weights were −7 and −5 against the real −15 and −10. It also cited an ISO control under its superseded 2013 numbering, which resolves against nothing. `CONTEXT.md` wrote the RWEP formula with a minus in front of two already-negative weights, turning both mitigating factors into penalties. `MAINTAINERS.md` told a maintainer to commit and push to `main`, which requires a pull request and rejects the push, and restated upstream version pins that had drifted from the catalogs that own them. `SECURITY.md` told reporters not to open a public issue without naming the private advisory channel that is enabled. Counts across all six files now match the data they describe.
+
+Comment volume is down across the scoring engine and the curation modules, with every surviving comment either a contract the signature cannot state or a trap worth naming. No behavior changed.
+
 ## 0.19.31 — 2026-08-19
 
 The catalog reaches 1,323 CVEs with 98 additions from CISA KEV, spanning 2005 to 2025 with the weight in the middle years: 15 from 2019, 11 from 2016, 10 each from 2018 and 2020. Microsoft accounts for 29, with Adobe, Cisco, D-Link, Oracle, Apache, Citrix, NETGEAR and VMware behind it. Twenty-four carry CISA's ransomware designation and 76 have an obtainable public exploit.

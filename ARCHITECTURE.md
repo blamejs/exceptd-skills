@@ -6,7 +6,7 @@ exceptd Security is a skills repository. Each skill is a `.md` file with YAML fr
 
 The repository has three layers:
 
-```
+```text
 skills/          Instruction layer — tells the AI what to analyze, how to score, what to output
 data/            Intelligence layer — CVE metadata, ATLAS TTPs, framework gap mappings
 lib/             Logic layer — scoring algorithms, TTP mapper, framework gap analyzer
@@ -16,7 +16,7 @@ lib/             Logic layer — scoring algorithms, TTP mapper, framework gap a
 
 ## Skill File Anatomy
 
-```
+```text
 skills/
 └── <skill-name>/
     └── skill.md          Single file per skill. Frontmatter + body.
@@ -42,7 +42,7 @@ attack_refs:
   - T1068                     # MITRE ATT&CK TTP IDs
 framework_gaps:
   - NIST-800-53-SI-2          # control IDs documented as insufficient in this skill
-  - ISO-27001-A.12.6.1
+  - ISO-27001-2022-A.8.8      # must resolve against data/framework-control-gaps.json
 last_threat_review: "2026-05-01"
 ---
 ```
@@ -84,7 +84,7 @@ Schema per entry:
     "poc_description": "Public PoC description — no direct exploit links",
     "ai_discovered": false,
     "ai_assisted_weaponization": false,
-    "active_exploitation": true,
+    "active_exploitation": "confirmed | suspected | theoretical | none | unknown",
     "affected": "Human-readable scope description",
     "affected_versions": ["kernel >= 4.14", "kernel < 6.8.10"],
     "vector": "Attack vector description",
@@ -95,25 +95,32 @@ Schema per entry:
     "live_patch_tools": ["kpatch", "livepatch", "kGraft"],
     "framework_control_gaps": {
       "NIST-800-53-SI-2": "Why this control is insufficient for this CVE",
-      "ISO-27001-A.12.6.1": "Why this control is insufficient"
+      "ISO-27001-2022-A.8.8": "Why this control is insufficient"
     },
     "atlas_refs": ["AML.T0043"],
     "attack_refs": ["T1068"],
-    "rwep_score": 96,
+    "rwep_score": 85,
     "rwep_factors": {
       "cisa_kev": 25,
       "poc_available": 20,
-      "ai_assisted": 0,
+      "ai_factor": 0,
       "active_exploitation": 20,
-      "blast_radius": 15,
-      "patch_available": -7,
-      "live_patch": -5,
-      "reboot_required": 5
+      "blast_radius": 20,
+      "patch_available": 0,
+      "live_patch_available": 0,
+      "reboot_required": 0
     },
     "last_updated": "YYYY-MM-DD"
   }
 }
 ```
+
+Two invariants the schema cannot express and the validator enforces:
+`rwep_factors` must sum to `rwep_score`, and every key must match the weight
+names in `lib/scoring.js` — `ai_factor` and `live_patch_available`, not
+`ai_assisted` and `live_patch`. The weights are `cisa_kev` 25, `poc_available`
+20, `ai_factor` 15, `active_exploitation` 20, `blast_radius` 0–30,
+`patch_available` −15, `live_patch_available` −10, `reboot_required` +5.
 
 ### `data/atlas-ttps.json`
 
@@ -176,7 +183,7 @@ Tracks PoC status, weaponization stage, and AI-assist factor per CVE. Updated wh
 
 ### `data/cwe-catalog.json`
 
-233 CWE entries pinned to **CWE v4.20**. Covers the Top 25 Most Dangerous Software Weaknesses (2024 release) plus AI- and supply-chain-relevant weakness classes (prompt-injection-as-trust-boundary failure, training data integrity, dependency confusion, untrusted artifact ingestion). Each entry records root-cause description, common consequences, mitigation patterns, and the CVEs in `cve-catalog.json` that instantiate the weakness. Skills cite CWE IDs in `cwe_refs` to anchor a finding to a stable weakness taxonomy rather than to a single CVE.
+236 CWE entries pinned to **CWE v4.20**. Covers the Top 25 Most Dangerous Software Weaknesses (2024 release) plus AI- and supply-chain-relevant weakness classes (prompt-injection-as-trust-boundary failure, training data integrity, dependency confusion, untrusted artifact ingestion). Each entry records root-cause description, common consequences, mitigation patterns, and the CVEs in `cve-catalog.json` that instantiate the weakness. Skills cite CWE IDs in `cwe_refs` to anchor a finding to a stable weakness taxonomy rather than to a single CVE.
 
 `_meta.cwe_version` pins the version; on a CWE release, audit IDs for renames or deprecations, bump `last_threat_review` on affected skills, and update `_meta`.
 
@@ -207,16 +214,18 @@ RWEP (Real-World Exploit Priority) scoring engine.
 - `validate()` — Schema validation: check all skill data_deps resolve, all CVE entries are complete, all ATLAS refs are valid v2026.07 IDs
 - `compare(cveId)` — Return CVSS vs. RWEP comparison with explanation of the delta
 
-RWEP factor weights:
-```
-cisa_kev              +25  (binary)
-poc_available         +20  (binary)
-ai_assisted_weapon    +15  (binary)
-active_exploitation   +20  (binary)
-blast_radius          +30  (0–30 scaled)
-patch_available       -15  (binary)
-live_patch_available  -10  (binary: additional reduction if no reboot required)
-reboot_required       +5   (binary penalty: patch exists but requires reboot)
+RWEP factor weights. The key names here are the ones a catalog entry's
+`rwep_factors` must use, and the factors must sum to `rwep_score`:
+
+```text
+cisa_kev              +25  binary
+poc_available         +20  binary
+ai_factor             +15  binary — ai_discovered OR ai_assisted_weaponization
+active_exploitation   +20  graded — confirmed 20, suspected 10, unknown 5, none 0
+blast_radius          0-30 scaled
+patch_available       -15  binary
+live_patch_available  -10  binary
+reboot_required        +5  binary — the patch exists but needs a reboot
 ```
 
 ### `lib/ttp-mapper.js`
@@ -277,7 +286,7 @@ Skills can be composed. `framework-gap-analysis` calls out to `threat-model-curr
 
 Composition is explicit: skills declare which other skills they depend on in their frontmatter `skill_deps` field. Circular dependencies are not permitted.
 
-```
+```text
 zeroday-gap-learn  →  framework-control-gaps.json (writes)
 framework-gap-analysis  →  framework-control-gaps.json (reads)
 compliance-theater  →  exploit-scoring (depends on RWEP)

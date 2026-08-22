@@ -1,136 +1,161 @@
 # Contributing
 
-## What Needs Contributing
+## What needs contributing
 
-1. **New CVE entries** — When a significant kernel, AI-platform, or supply-chain CVE drops, add it to `data/cve-catalog.json` and run the zero-day learning loop.
-2. **Framework gap updates** — When a framework publishes new guidance that closes (or fails to close) a documented gap, update `data/framework-control-gaps.json`.
-3. **New skill files** — When an attack class or compliance domain emerges that isn't covered by existing skills.
-4. **ATLAS version updates** — When MITRE ATLAS publishes a new version, audit TTP IDs and descriptions across all skills.
-5. **Global framework additions** — New jurisdiction-specific frameworks or updates to existing ones in `data/global-frameworks.json`.
+1. **New CVE entries** — a significant kernel, AI-platform or supply-chain CVE
+   lands in `data/cve-catalog.json` and runs the zero-day learning loop.
+2. **Framework gap updates** — when a framework publishes guidance that closes,
+   or fails to close, a documented gap in
+   `data/framework-control-gaps.json`.
+3. **New skills** — an attack class or compliance domain the shipped skills do
+   not cover.
+4. **Upstream version bumps** — when MITRE publishes a new ATLAS, ATT&CK, CWE or
+   D3FEND release, audit the technique IDs and descriptions across every skill.
+5. **Global framework additions** — new jurisdictions, or changes to the ones
+   already in `data/global-frameworks.json`.
 
-## Quality Bar
+## The quality bar
 
-The quality bar is: a senior security practitioner could use this output to make a real decision. Not a generic checklist — specific, current, actionable.
+A senior security practitioner can act on the output. Not a generic checklist —
+specific, current, and decidable.
 
-That means:
-
-- CVE references include real exploit availability data, not "a PoC may exist"
-- Framework gaps explain *why* the control fails for *this* specific TTP, not just "this control is insufficient"
-- RWEP scores are justified by the factor breakdown, not asserted
-- Remediation guidance accounts for real operational constraints: patching windows, live systems, production reboots, ephemeral infrastructure
-- Compliance theater checks are concrete: "ask the auditor whether X is covered" is not concrete; "run `uname -r` and cross-reference against the patched kernel version for CVE-2026-31431; if unpatched, the org's patch management control is theater" is concrete
+- A CVE reference carries real exploit-availability data. "A PoC may exist" is
+  not data.
+- A framework gap says why *this* control fails against *this* technique, not
+  that the control is insufficient.
+- An RWEP score is justified by its factor breakdown, not asserted.
+- Remediation guidance survives contact with operations: patch windows, live
+  systems, production reboots, infrastructure that no longer exists by morning.
+- A compliance-theater check is executable. "Ask the auditor whether X is
+  covered" is not. "Run `uname -r`, cross-reference the patched kernel version
+  for CVE-2026-31431, and if it is unpatched the patch-management control is
+  theater" is.
 
 ## Adding a CVE
 
-1. Verify: NVD entry exists and has a CVSS score.
+1. Confirm the NVD entry exists and carries a CVSS score.
 2. Check CISA KEV: https://www.cisa.gov/known-exploited-vulnerabilities-catalog
-3. Assess PoC availability. Do not include direct exploit links. Include a plain-language description of what exists publicly.
-4. Document AI-discovery and AI-assisted-weaponization if relevant.
-5. Add to `data/cve-catalog.json` with all required fields. Partial entries fail schema validation.
-6. Run the zero-day learning loop: add corresponding entry to `data/zeroday-lessons.json`.
-7. Add to `data/exploit-availability.json` with `last_verified` date.
-8. Calculate RWEP score using the formula in `lib/scoring.js` and document the factor breakdown.
-9. Update any skill files that cover the affected technology class (`last_threat_review` bump).
+3. Establish whether a public exploit exists. Describe what is public in plain
+   language; do not link exploit code.
+4. Record AI discovery and AI-assisted weaponization where they apply.
+5. Add the entry to `data/cve-catalog.json` with every required field. A partial
+   entry fails schema validation.
+6. Add the matching entry to `data/zeroday-lessons.json`.
+7. Add the exploit status to `data/exploit-availability.json` with a
+   `last_verified` date.
+8. Compute RWEP with the formula in `lib/scoring.js` and record the factor
+   breakdown. The factors must sum to the score.
+9. Bump `last_threat_review` on every skill covering the affected technology.
 
-## Adding a Framework Gap
+## Adding a framework gap
 
-1. Identify the specific control ID (e.g., `NIST-800-53-SI-2`, `ISO-27001-2022-A.8.8`).
-2. Document what the control was actually designed for (cite the framework version and original context).
-3. Document which specific CVE or ATLAS TTP exposes the gap. No hypothetical gaps — evidence required.
-4. Document what a real control would require to address the gap.
-5. Add to `data/framework-control-gaps.json` with `status: "open"` and `opened_date`.
-6. Add the control ID to `framework_gaps` in any skill that references it.
+1. Name the control (`NIST-800-53-SI-2`, `ISO-27001-2022-A.8.8`).
+2. Record what the control was designed for, citing the framework version and
+   the original context.
+3. Name the CVE or technique that exposes the gap. Evidence, not hypothesis.
+4. Say what a control that actually closed it would require.
+5. Add it to `data/framework-control-gaps.json` with `status: "open"` and an
+   `opened_date`.
+6. Add the control ID to `framework_gaps` on every skill that cites it.
 
-When a framework update closes a gap:
-- Set `status: "closed"` with the update reference
-- Do NOT delete the entry — the history of framework lag is data
+When an update closes a gap, set `status: "closed"` with the reference. Do not
+delete the entry — the record of how long the framework lagged is itself data.
 
-## Adding a Skill
+## Adding a skill
 
 1. Create `skills/<skill-name>/skill.md`.
-2. Complete all frontmatter fields — no empty arrays for `data_deps`, `atlas_refs`, or `framework_gaps` unless genuinely not applicable (document why in a comment).
-3. Complete all required body sections (see ARCHITECTURE.md).
-4. Ensure all CVE references are in `data/cve-catalog.json`.
-5. Ensure all ATLAS refs are valid v2026.07 IDs.
-6. Ensure all framework control IDs are in `data/framework-control-gaps.json`.
-7. Register in `manifest.json`.
-8. Add an entry to CHANGELOG.md.
+2. Fill in every frontmatter field. `data_deps`, `atlas_refs` and
+   `framework_gaps` are empty only when genuinely inapplicable, and then with a
+   comment saying why.
+3. Write every required body section — [ARCHITECTURE.md](ARCHITECTURE.md) lists
+   them.
+4. Confirm every CVE you cite is in `data/cve-catalog.json`, every technique ID
+   resolves against `data/atlas-ttps.json` or `data/attack-techniques.json`, and
+   every control ID against `data/framework-control-gaps.json`.
+5. Register the skill in `manifest.json`.
+6. Add a CHANGELOG entry.
 
-## PR Process
+## Opening a pull request
 
-1. **Open an issue first** for non-trivial work — design discussion catches scope problems before anyone writes code. Trivial fixes (typos, doc tweaks, a single field on one CVE) can skip the issue.
-2. **Branch off `main`.** Branch name doesn't matter; we squash on merge.
-3. **One concern per PR.** A new skill + its CVEs + its framework gap mappings + the manifest registration is one PR. A new skill + an unrelated CVE addition is two.
-4. **Fail-loud verification before push** — the same gates CI runs. Skip none of these:
+1. **Open an issue first** for anything non-trivial. Design discussion catches a
+   scope problem before the code exists. A typo, a doc tweak or a single field on
+   one CVE can skip it.
+2. **Branch off `main`.** The name does not matter; merges are squashed.
+3. **One concern per PR.** A new skill with its CVEs, its gap mappings and its
+   manifest registration is one PR. A new skill plus an unrelated CVE is two.
+4. **Run the gates before you push** — the same ones CI runs, none skipped:
 
    ```bash
-   npm run verify                              # Ed25519 signatures on every skill
-   npm test                                    # node:test suite under tests/
-   npm run lint                                # skill frontmatter + 7 body sections + cross-refs
-   npm run diff-coverage                       # every changed CLI verb/flag/export/indicator has a covering test
+   npm run verify                              # Ed25519 signature on every skill
+   npm test                                    # the node:test suite
+   npm run lint                                # frontmatter, body sections, cross-refs
+   npm run diff-coverage                       # every changed verb, flag, export or indicator has a test
    node lib/validate-cve-catalog.js            # CVE schema + zero-day learning coverage
-   node orchestrator/index.js validate-cves --offline --no-fail   # local catalog sanity
-   node scripts/check-manifest-snapshot.js     # detect breaking surface removals
+   node scripts/check-manifest-snapshot.js     # breaking-surface detector
    ```
 
-   If your change intentionally narrows the public skill surface (removed skill, removed trigger keyword, removed data_dep), refresh the baseline and commit it alongside:
+   If the change intentionally narrows the public surface — a removed skill,
+   trigger keyword or data dependency — refresh the baseline and commit it in the
+   same PR:
+
    ```bash
    node scripts/refresh-manifest-snapshot.js
    git add manifest-snapshot.json
    ```
 
-   On Windows or macOS, you can reproduce CI's Linux + Node 24.19.0 environment locally with the Docker harness — useful for catching OS-specific regressions before pushing:
+   On Windows or macOS, the Docker harness reproduces CI's Linux environment,
+   which is where OS-specific regressions surface:
+
    ```bash
-   npm run test:docker          # runs predeploy in a clean Linux container
+   npm run test:docker          # predeploy in a clean Linux container
    npm run test:docker:fresh    # also wipes signing state and re-bootstraps
    ```
-   Docker is optional; the native `npm run predeploy` is the primary gate. See [docker/README.md](docker/README.md) for details.
 
-5. **PR description** — for CVE additions: include the NVD URL, CISA KEV status, and your RWEP factor breakdown. For framework gap additions: include the specific control text you're analyzing and why it's insufficient. For new skills: include a worked example showing the skill's output for a real scenario.
-6. **Commit message style:** lowercase imperative. First line is a one-sentence summary; body explains *why* and *what tradeoff*. See git log for examples.
-7. **The `Lint summary` CI check is required to pass before merge** — it aggregates the skill linter results and posts a sticky comment on the PR.
+   Docker is optional; `npm run predeploy` on the host is the primary gate. See
+   [docker/README.md](docker/README.md).
 
-## Releasing (maintainers)
+5. **Say what the reviewer needs.** For a CVE: the NVD URL, the KEV status, and
+   your RWEP factor breakdown. For a framework gap: the control text you
+   analyzed and why it falls short. For a skill: a worked example of its output
+   on a real scenario.
+6. **Commit messages** are lowercase imperative — one summary line, then a body
+   covering why and what it traded off.
+7. **`Lint summary` must pass before merge.** It aggregates the skill linter and
+   posts a sticky comment on the PR.
 
-Releases run through `scripts/release.js`, a phased, idempotent orchestrator — each subcommand performs one phase, prints what it did, and exits with a script-safe code:
+Maintainers cut releases; the runbook is in [MAINTAINERS.md](MAINTAINERS.md).
 
-```bash
-node scripts/release.js prepare   # bump (patch default; --minor opt-in) + sign + indexes + snapshot + sbom + baseline
-node scripts/release.js gates     # full suite + the predeploy gates
-node scripts/release.js commit    # release branch + signed commit
-node scripts/release.js push      # push branch + open PR
-node scripts/release.js watch     # CI watch + flag unresolved review threads
-node scripts/release.js merge     # admin squash-merge once CLEAN + zero unresolved threads
-node scripts/release.js tag       # GUARD (HEAD==origin/main, three-version match, no existing tag) + signed tag
-node scripts/release.js release   # watch release.yml + verify npm / global install / shipped-tarball signature
-node scripts/release.js status    # where the current branch is in the flow
-node scripts/release.js help      # full banner
-```
+## What not to contribute
 
-`prepare` refuses unless `CHANGELOG.md` already carries a `## <next-version>` heading — the release notes are written by hand (terse, behavior-change framed), not generated from a diff. `tag` refuses on a stale `HEAD`, a version-skew between `package.json` / `manifest.json` / the CHANGELOG heading, or an existing tag. Patch is the default bump; `--minor` is an explicit, deliberate choice.
+- Theoretical vulnerabilities with no real-world grounding
+- Framework gap claims with no evidence CVE and no demonstrated exploitation
+- RWEP scores without a factor breakdown
+- Skills that emit generic output — "assess your security posture" is not
+  analysis
+- Anything that makes a passing audit look like security when it is not
+- Exploit code or working payloads. Reference that an exploit exists, describe
+  the technique, ship neither.
 
-## What Not To Contribute
+## Contributing without writing skill files
 
-- Hypothetical or theoretical vulnerabilities without real-world grounding
-- Framework gap claims without specific evidence CVEs or demonstrated exploitation
-- RWEP scores without documented factor breakdowns
-- Skills that produce generic output ("assess your security posture") rather than specific analysis
-- Anything that would make a passing compliance audit look like actual security when it isn't
-- Direct exploit code or PoC payloads — reference existence, describe technique, never ship functional exploits
+Domain experts — data protection officers, GRC analysts, pentesters, incident
+responders, researchers — can contribute the analysis and leave the file format
+to maintainers. Open a **Skill Request** issue with:
 
-## Contributing Without Writing Code
+1. **The scenario**, in plain language: what the attack is, who it reaches, what
+   it achieves.
+2. **The evidence**: CVEs, technique IDs, or documented incidents.
+3. **The compliance gap**: which control should have caught it, and why it did
+   not.
+4. **Who it lands on**: the jurisdictions or sectors most exposed, such as the
+   EU financial sector or Australian critical infrastructure.
 
-Domain experts — DPOs, GRC analysts, pentesters, incident responders, security researchers — can contribute without writing skill files. Open a **Skill Request** GitHub Issue with:
+Maintainers turn accepted requests into skill files. Contributors are credited in
+`CHANGELOG.md` and in the skill's frontmatter.
 
-1. **The threat scenario** in plain language: what is the attack, who is affected, what does it do?
-2. **Evidence**: one or more CVEs, ATLAS TTP IDs, or documented incidents
-3. **The compliance gap**: which framework control should have caught it, and why didn't it?
-4. **The jurisdictions or industries** most affected (EU financial sector, AU critical infrastructure, etc.)
+## Conduct
 
-Maintainers will convert approved requests into skill files. Contributors are credited in CHANGELOG.md and the skill's frontmatter.
-
-## Code of Conduct
-
-The security community benefits from frank, specific, evidence-based analysis. Disagreements about gap severity or RWEP weighting should be resolved with evidence and citations, not authority or volume. Contributions that improve accuracy are welcome regardless of source.
-
-Personal attacks, harassment, or conduct that discourages evidence-based disagreement are not acceptable.
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) is the binding policy. One norm specific
+to this project sits underneath it: disagreements about gap severity or RWEP
+weighting are settled with evidence and citations, not seniority or volume. A
+contribution that improves accuracy is welcome wherever it comes from.
