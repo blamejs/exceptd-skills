@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.19.33 — 2026-08-23
+
+The catalog reaches 1,417 CVEs with 94 additions from CISA KEV, weighted to the years the vendors in question were shipping fastest: 25 from 2017, 18 from 2018, 11 from 2015, and ten each from 2016 and 2019. Cisco accounts for 38, Microsoft 28 and Adobe 12. Sixteen carry CISA's ransomware designation, 42 have an obtainable public exploit, and 61 need a restart before the fix is running — the entries keep that separate from the update being installed, because a remediation record keyed to the deployed version reports a host as done while the pre-patch code is still executing.
+
+Thirty-eight of the additions are Cisco IOS and IOS XE advisories, and most of them publish no fixed-release table. Cisco routes operators to its Software Checker, which answers per image and per train rather than per CVE, so those entries name the Checker and the Cisco bug ID as the lookup key instead of a version number. Where a version boundary does exist it is recorded; where one does not, the entry says so rather than inventing one. The same advisories share bug IDs across CVEs without publishing a per-CVE mapping, and for the nine SNMP entries that means a single configuration change — dropping the MIB view exclusion — reopens all of them at once.
+
+Where sources disagree, the entries carry the disagreement. Microsoft's record for CVE-2019-1297 still rates exploitation less likely while CISA listed it as exploited two and a half years later, and the entry states both rather than resolving them. Cisco's advisory for CVE-2018-0151 has not been revised since 2018 and says its response team is unaware of malicious use, while CISA lists it; the entry scopes its remediation trigger to the KEV listing and records the vendor's position beside it. NVD and Cisco score CVE-2018-0161 differently on attack complexity, and neither publishes the device state that would explain the gap, so both vectors are reported.
+
+Twenty-one entries carry a weakness assigned editorially, and each says so in its attribution along with the reason. Thirteen are CVEs for which NVD published no weakness at all. The other eight are ones where NVD published only CWE-399, a category MITRE prohibits in that position: those name the real weakness the mechanism implies — an unbounded MAC table is a resource-allocation failure, an SNMP walk that pins the CPU is uncontrolled consumption — rather than repeating a classification that resolves to nothing.
+
+Framework-gap statements are written from each CVE's own dates, versions and vendor wording. Claims about what organisations typically do — which patches get deferred, what a monitoring programme usually collects, how much of an estate runs a given configuration — are absent, because none of them could be sourced and each was load-bearing for the conclusion it supported. Where a standard's text carries the argument it is quoted; where the standard could not be reached, the argument rests on something that could.
+
 ## 0.19.32 — 2026-08-21
 
 A KEV entry stores four fields from CISA's record and the refresh compared two of them. The listing flag and its date tracked upstream; the remediation deadline and the ransomware designation were written once, at curation, and never looked at again. Both now reconcile on every refresh, on the live path and the cached one alike, which closes a gap that had been widening since the fields were first stored.
