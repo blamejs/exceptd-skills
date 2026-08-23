@@ -2,30 +2,12 @@
 "use strict";
 
 /**
- * scripts/run-e2e-scenarios.js
+ * Drives the scenario harness under tests/e2e-scenarios/. A scenario directory
+ * stages a synthetic file tree plus an evidence.json and an expect.json; each
+ * one runs in its own temp copy against the real CLI.
  *
- * Drives the end-to-end scenario harness under tests/e2e-scenarios/. Each
- * scenario directory stages a synthetic file tree (real IoC patterns the
- * playbooks check for) + an evidence.json + an expect.json. The runner:
- *
- *   1. mkdtemp a working dir
- *   2. recursive-copy fixtures/ into it
- *   3. recursive-copy any evidence.json next to scenario.json into it
- *   4. cd into the working dir
- *   5. spawnSync the CLI with the scenario's verb + args
- *   6. parse stdout as JSON
- *   7. diff against expect.json (path-based assertions)
- *
- * Container parity: this script is invoked unchanged inside the Docker
- * `e2e` target (npm run test:docker:e2e). The container only adds Linux
- * file-permission realism and Node version pinning; the script itself
- * runs identically on host + container.
- *
- * Release gate: .github/workflows/release.yml runs this BEFORE
- * `npm publish` so a regression that breaks any playbook detection
- * blocks the release.
- *
- * Zero npm deps. Node 24 stdlib only.
+ * The Docker `e2e` target and release.yml run this script unchanged, so host and
+ * container behaviour must not diverge. Node stdlib only, zero npm deps.
  */
 
 const fs = require("fs");
@@ -55,11 +37,8 @@ function getJsonPath(obj, dotted) {
   return dotted.split(".").reduce((acc, key) => acc?.[key], obj);
 }
 
-// Evaluate the negative stderr guard against raw stderr text. Lives here, NOT
-// inside diffExpect, because the ban must hold regardless of whether stdout
-// parsed as JSON — a scenario whose stdout is a human banner (no JSON body,
-// only an expect_exit assertion) must still enforce a forbidden-token ban on
-// stderr. evaluateScenario calls this unconditionally.
+// Separate from diffExpect because the ban has to hold whether or not stdout
+// parsed as JSON; evaluateScenario calls it unconditionally.
 function stderrBanFailures(expect, stderr) {
   const failures = [];
   if (expect.stderr_must_not_match) {
@@ -72,10 +51,7 @@ function stderrBanFailures(expect, stderr) {
   return failures;
 }
 
-// Diff a parsed JSON body against the positive expect matchers. The negative
-// stderr guard is NOT evaluated here (see stderrBanFailures); this function
-// only inspects the JSON body so it cannot be silently skipped when stdout
-// fails to parse.
+// Positive matchers against the parsed JSON body only; the stderr ban is separate.
 function diffExpect(jsonBody, expect, ctx) {
   const failures = [];
   if (expect.json_path_equals) {
@@ -119,11 +95,8 @@ function tryParseJson(s) {
     const v = JSON.parse(s.trim());
     if (v && typeof v === "object") return v;
   } catch { /* ignore */ }
-  // Some verbs may emit trailing logs; pick the LAST complete JSON object or
-  // array on stdout. A verb envelope is always an object/array, so bare
-  // scalars (a trailing JSON-parseable "done"/42/true log line) are skipped —
-  // binding assertions against a trailing scalar would silently test the
-  // wrong value.
+  // Trailing logs are possible, so take the LAST complete object or array. A bare
+  // scalar is never a verb envelope; accepting one would bind to a log line.
   const lines = s.trim().split("\n");
   for (let i = lines.length - 1; i >= 0; i--) {
     try {
@@ -134,11 +107,8 @@ function tryParseJson(s) {
   return null;
 }
 
-// Evaluate a spawnSync result against a scenario's expectations. Pure: takes
-// the raw spawnSync result so the failure logic is unit-testable without
-// spawning a process. Surfaces spawn-level failures (timeout/launch error)
-// that res.status alone hides, and refuses to pass a scenario that binds no
-// assertion.
+// Pure over a raw spawnSync result, so the failure logic is testable without
+// spawning anything. Returns the list of failure strings; empty means pass.
 function evaluateScenario(scenario, expect, res) {
   const stdout = res.stdout || "";
   const stderr = res.stderr || "";
@@ -146,19 +116,14 @@ function evaluateScenario(scenario, expect, res) {
   const body = tryParseJson(stdout);
   const failures = [];
 
-  // spawnSync failure channels: a timeout sets res.error (ETIMEDOUT) +
-  // res.signal 'SIGTERM' with status null; a launch failure (ENOENT/EACCES)
-  // sets res.error with status null. Reading only res.status lets a killed-
-  // or-never-launched run masquerade as a plain non-zero exit or a JSON-parse
-  // failure, hiding the real cause.
+  // A timeout or launch failure sets res.error with status null, so reading only
+  // res.status lets a killed or never-launched run pass as a non-zero exit.
   if (res.error) failures.push(`spawn error: ${res.error.code || res.error.message}`);
   if (res.signal) failures.push(`killed by signal ${res.signal}${res.signal === "SIGTERM" ? " (likely the 60s timeout)" : ""}`);
 
-  // Assertion floor: every scenario must bind at least one positive check.
-  // Without an expect_exit or a json_path_* matcher, both gates below are
-  // skipped and the scenario would pass for ANY CLI behavior, including a
-  // crash. (stderr_must_not_match is a negative guard and cannot bind
-  // behavior on its own, so it does not satisfy the floor.)
+  // Every scenario must bind one positive check: with neither an expect_exit nor
+  // a json_path_* matcher, both gates below skip and the scenario passes for any
+  // behaviour at all. A negative guard like stderr_must_not_match binds nothing.
   const hasExitAssertion = typeof scenario.expect_exit === "number";
   const hasJsonAssertion = !!(expect.json_path_equals || expect.json_path_present || expect.json_path_min || expect.json_path_match);
   if (!hasExitAssertion && !hasJsonAssertion) {
@@ -173,10 +138,7 @@ function evaluateScenario(scenario, expect, res) {
   }
   if (body) failures.push(...diffExpect(body, expect, { stdout, stderr, status }));
 
-  // The forbidden-token ban on stderr runs unconditionally — it does not
-  // depend on stdout parsing as JSON. A scenario with only an expect_exit
-  // assertion (human-banner stdout) must still fail if stderr carries a banned
-  // token.
+  // Unconditional, outside every `if (body)` branch above.
   failures.push(...stderrBanFailures(expect, stderr));
   return failures;
 }
@@ -192,7 +154,6 @@ function runScenario(scenarioPath) {
     ? JSON.parse(fs.readFileSync(path.join(scenarioPath, "expect.json"), "utf8"))
     : {};
 
-  // Stage temp working dir
   const work = fs.mkdtempSync(path.join(os.tmpdir(), `e2e-${name}-`));
   try {
     const fixturesDir = path.join(scenarioPath, "fixtures");
@@ -202,7 +163,7 @@ function runScenario(scenarioPath) {
       fs.copyFileSync(evidenceSrc, path.join(work, "evidence.json"));
     }
 
-    // Resolve env. @@FIXTURE@@ in env values expands to ROOT/tests/fixtures.
+    // @@FIXTURE@@ inside an env value expands to ROOT/tests/fixtures.
     const env = { ...process.env, EXCEPTD_DEPRECATION_SHOWN: "1", EXCEPTD_UNSIGNED_WARNED: "1" };
     if (scenario.env) {
       for (const [k, v] of Object.entries(scenario.env)) {
@@ -210,18 +171,13 @@ function runScenario(scenarioPath) {
       }
     }
 
-    // Resolve args
     const args = (scenario.args || []).slice();
 
-    // Verb routing. `refresh` + `refresh-curate` are not the same as `run` —
-    // the dispatcher in bin/exceptd.js handles the translation, so we just
-    // pass the verb + args verbatim. `refresh-curate` is the internal name
-    // for `refresh --curate`; surfaced here for test directness.
+    // The verb and args pass through verbatim; bin/exceptd.js does the routing.
     const verb = scenario.verb;
     let cmd, cmdArgs;
     if (verb === "refresh-curate") {
-      // Invoke the curation helper directly. Production path is via the
-      // dispatcher in bin/exceptd.js (which dispatches refresh --curate).
+      // The curation helper direct; operators reach it as `refresh --curate`.
       cmd = process.execPath;
       cmdArgs = [path.join(ROOT, "lib", "cve-curation.js"), ...args];
     } else {
@@ -252,12 +208,9 @@ function runScenario(scenarioPath) {
   }
 }
 
-// Select scenario directories under SCENARIO_DIR, optionally narrowed by a
-// filter. The filter is matched as a plain substring (String.includes), NOT
-// compiled with new RegExp: a regex built from a CLI argument is a regex-
-// injection / ReDoS vector, and scenario names are literal NN-name strings, so
-// substring selection is behavior-equivalent for every legitimate filter
-// (e.g. --filter=library-author). Returns sorted basenames.
+// Sorted basenames. The filter is a plain substring, never `new RegExp`: a
+// pattern compiled from a CLI argument is a regex-injection and ReDoS vector,
+// and scenario names are literal NN-name strings anyway.
 function selectScenarios(filterStr, dir = SCENARIO_DIR) {
   return fs.readdirSync(dir)
     .filter(d => /^\d+-/.test(d))

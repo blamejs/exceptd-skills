@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.19.34 — 2026-08-23
+
+Comment volume across the shipped JavaScript falls from 16,627 lines to 5,585, against 36,875 lines of code that are byte-for-byte unchanged. What went is the reasoning that produced a line rather than the constraint on it: pull-request references, version histories, "this used to", and module docblocks that toured a file's exports above the exports themselves. What stayed is what the code cannot say for itself — units and nullability on an exported function, the specification clause an emitter satisfies, the trap whose deletion invites a specific dangerous edit, and the cross-file coupling no grep will surface.
+
+Some of it described behavior the code does not have, and those comments are deleted rather than reworded. `readCached` in the prefetch module documented its `source` argument as one of `kev`, `nvd`, `epss`, `ietf` or `github`, where the registry defines `kev`, `nvd`, `epss`, `rfc` and `pins` — a caller following the documentation would ask for two keys that cannot exist and never learn of two that do. The kernel collector claimed a cross-check against `uname -s` that it does not run. A discovery function documented its spill counter under a field name that has never existed.
+
+The technique-reference gate no longer carries an allowlist. Its one entry excused a placeholder identifier inside a comment describing the extraction pattern; that comment is gone, so the exemption is too, and the next placeholder has to be declared rather than inherited.
+
+The diff-coverage gate no longer reads a command-line flag out of wrapped prose. It scans a file whole, so a comment that broke `--attest-ownership` across a line contributed `--attest-` as a flag in its own right; deleting that comment then registered as removing surface a test still covered. A token ending in a hyphen stopped mid-name and is never a flag, and is now excluded.
+
 ## 0.19.33 — 2026-08-23
 
 The catalog reaches 1,417 CVEs with 94 additions from CISA KEV, weighted to the years the vendors in question were shipping fastest: 25 from 2017, 18 from 2018, 11 from 2015, and ten each from 2016 and 2019. Cisco accounts for 38, Microsoft 28 and Adobe 12. Sixteen carry CISA's ransomware designation, 42 have an obtainable public exploit, and 61 need a restart before the fix is running — the entries keep that separate from the update being installed, because a remediation record keyed to the deployed version reports a host as done while the pre-patch code is still executing.

@@ -1,22 +1,12 @@
 'use strict';
 
 /**
- * Event bus for trigger-driven skill updates.
- *
- * Events are typed and carry structured payloads. Handlers are registered per
- * event type. This bus is in-process only; the event log is held in a bounded
- * ring buffer in memory and is NOT persisted across process restarts. For
- * production deployments where event history must survive restarts, swap the
- * internal emitter for a durable queue (Redis Streams, SQS, NATS JetStream,
- * etc.) without changing the event schema.
- *
- * Bounded log policy:
- *   - The in-memory log is capped at EVENT_LOG_MAX_SIZE entries to prevent
- *     unbounded memory growth on long-running `watch` processes.
- *   - Default cap is 1000 entries; override at process start via the
- *     EXCEPTD_EVENT_LOG_MAX_SIZE env var (positive integer).
- *   - When the cap is reached, the oldest entry is shifted off on each new
- *     emit (FIFO ring buffer semantics).
+ * Event bus for trigger-driven skill updates. This bus is in-process only: the
+ * event log is a bounded in-memory FIFO ring buffer and is NOT persisted across
+ * restarts, so a deployment needing durable history swaps the emitter for a
+ * queue without changing the event schema. The cap keeps a long-running `watch`
+ * from growing without bound — 1000 entries, overridden at process start by
+ * EXCEPTD_EVENT_LOG_MAX_SIZE (positive integer).
  */
 
 const { EventEmitter } = require('events');
@@ -46,7 +36,6 @@ const EVENT_TYPES = {
   SKILL_CURRENCY_LOW_AGGREGATE: 'skill.currency.low.aggregate'
 };
 
-// Maps event types to the skills they should trigger for review
 const EVENT_SKILL_MAP = {
   [EVENT_TYPES.CISA_KEV_ADDED]: ['kernel-lpe-triage', 'exploit-scoring', 'compliance-theater', 'skill-update-loop'],
   [EVENT_TYPES.ATLAS_VERSION_RELEASED]: ['ai-attack-surface', 'mcp-agent-trust', 'rag-pipeline-security', 'ai-c2-detection', 'skill-update-loop'],
@@ -70,12 +59,8 @@ class ExceptdEventBus extends EventEmitter {
     this.maxLogSize = cap;
   }
 
-  /**
-   * Emit a typed event with structured payload.
-   *
-   * @param {string} eventType - One of EVENT_TYPES
-   * @param {object} payload - Event-specific data
-   */
+  // Overrides EventEmitter.emit: `eventType` is one of EVENT_TYPES, and the
+  // return is the constructed event record, not the listener-present boolean.
   emit(eventType, payload) {
     const event = {
       event_id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -86,9 +71,8 @@ class ExceptdEventBus extends EventEmitter {
     };
 
     this.eventLog.push(event);
-    // Bounded ring buffer — shift the oldest entry off when over cap. Loop
-    // rather than `if` so a runtime mutation of maxLogSize (or a burst that
-    // exceeds the cap in a single tick) still leaves the buffer at-cap.
+    // A loop rather than an `if`: a lowered maxLogSize or a burst that clears
+    // the cap in one tick must still leave the buffer at-cap.
     while (this.eventLog.length > this.maxLogSize) {
       this.eventLog.shift();
     }
@@ -97,89 +81,42 @@ class ExceptdEventBus extends EventEmitter {
     return event;
   }
 
-  /**
-   * Register a handler for an event type.
-   *
-   * @param {string} eventType
-   * @param {function} handler - (event) => void
-   */
   on(eventType, handler) {
     super.on(eventType, handler);
     return this;
   }
 
-  /**
-   * Register a handler for all events.
-   *
-   * @param {function} handler - (event) => void
-   */
   onAny(handler) {
     return this.on('*', handler);
   }
 
-  /**
-   * Detach a handler previously registered via onAny().
-   *
-   * @param {function} handler
-   */
   offAny(handler) {
     this.removeListener('*', handler);
     return this;
   }
 
-  /**
-   * Get all events that affected a specific skill.
-   *
-   * @param {string} skillName
-   * @returns {object[]}
-   */
   getSkillEvents(skillName) {
     return this.eventLog.filter(e => e.affected_skills.includes(skillName));
   }
 
-  /**
-   * Get the event log, optionally filtered by type.
-   *
-   * @param {string} [eventType]
-   * @returns {object[]}
-   */
+  // Always a fresh array; mutating it does not touch the live log.
   getLog(eventType) {
     if (eventType) return this.eventLog.filter(e => e.type === eventType);
     return [...this.eventLog];
   }
 
-  /**
-   * Fire a CISA KEV addition event.
-   *
-   * @param {{ cve_id: string, kev_date: string, rwep_score: number }} params
-   */
   kevAdded({ cve_id, kev_date, rwep_score }) {
     return this.emit(EVENT_TYPES.CISA_KEV_ADDED, { cve_id, kev_date, rwep_score });
   }
 
-  /**
-   * Fire an ATLAS version release event.
-   *
-   * @param {{ old_version: string, new_version: string, release_date: string }} params
-   */
   atlasReleased({ old_version, new_version, release_date }) {
     return this.emit(EVENT_TYPES.ATLAS_VERSION_RELEASED, { old_version, new_version, release_date });
   }
 
-  /**
-   * Fire an exploit status change event.
-   *
-   * @param {{ cve_id: string, old_status: string, new_status: string }} params
-   */
   exploitStatusChanged({ cve_id, old_status, new_status }) {
     return this.emit(EVENT_TYPES.EXPLOIT_STATUS_CHANGE, { cve_id, old_status, new_status });
   }
 
-  /**
-   * Fire a skill currency low event (emitted by scheduler).
-   *
-   * @param {{ skill_name: string, currency_score: number, days_since_review: number }} params
-   */
   skillCurrencyLow({ skill_name, currency_score, days_since_review }) {
     return this.emit(EVENT_TYPES.SKILL_CURRENCY_LOW, { skill_name, currency_score, days_since_review });
   }

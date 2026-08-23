@@ -332,6 +332,22 @@ test("Audit G F11: data/*.json edits land in manual-review, not silent allowlist
   assert.ok(m, `expected manual_review entry for data/some-other.json; got ${JSON.stringify(r.json)}`);
 });
 
+test("extractCliSurface ignores a flag name broken across a line, so deleting the comment is not a removed flag", () => {
+  const { extractCliSurface } = require(ANALYZER);
+  // The extractor reads the whole file, prose included. A comment that wraps
+  // mid-name yields `--attest-`; admitting it makes the comment CLI surface, and
+  // removing the comment then reports the flag as removed.
+  const src = [
+    '// halt is opt-in via the collector\'s --attest-',
+    '// ownership flag, and callers supply the precondition themselves.',
+    'const usage = "collect [--attest-ownership] [--air-gap]";',
+  ].join('\n');
+  const { flags } = extractCliSurface(src);
+  assert.ok(flags.has('--attest-ownership'), 'the real flag must still be surface');
+  assert.ok(!flags.has('--attest-'), 'a line-wrapped fragment must not count as a flag');
+  assert.ok(!flags.has('--air-gap-'), 'no trailing-hyphen token may be admitted');
+});
+
 test("extractLibExports is string-aware: a brace/comma inside a string value does not hide later exports", () => {
   const { extractLibExports } = require(ANALYZER);
   // The PATTERN value contains `}` `]` and `,` inside strings/regex; a naive

@@ -1,15 +1,8 @@
 "use strict";
 /**
- * scripts/builders/catalog-summaries.js
- *
- * Builds `data/_indexes/catalog-summaries.json` — for each data/<catalog>.json
- * file, a compact summary: purpose, entry count, version pin (where applicable),
- * source confidence, TLP, last-updated date. Consumers can load this single
- * file (~3-4 KB) instead of every _meta block to learn what catalogs are
- * available and how fresh they are.
- *
- * Curated human-readable purpose strings: keep these in lockstep with the
- * canonical catalog README in `docs/data-catalogs.md` if/when added.
+ * Builds `data/_indexes/catalog-summaries.json`: one compact card per
+ * data/<catalog>.json, so a consumer learns what catalogs exist and how fresh
+ * they are from a single small file rather than every _meta block.
  */
 
 const fs = require("fs");

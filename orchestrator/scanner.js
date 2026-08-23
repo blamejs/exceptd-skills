@@ -1,11 +1,8 @@
 'use strict';
 
 /**
- * Environment scanner. Discovers security posture signals from the current host.
- * Produces structured findings that dispatcher.js routes to relevant skills.
- *
- * Designed to be run by a human operator or an AI assistant — not a background daemon.
- * All discovery is read-only. No writes, no network calls beyond local probes.
+ * Environment scanner: discovers host security-posture signals as structured
+ * findings that dispatcher.js routes to skills.
  */
 
 const fs = require('fs');
@@ -15,22 +12,14 @@ const { execFileSync, spawnSync } = require('child_process');
 
 const DATA_DIR = process.env.EXCEPTD_DATA_DIR || path.join(__dirname, '..', 'data');
 
-// CLI flags that request air-gap (no-egress) operation. `--air-gap` is the
-// documented form; `--offline` / `--no-network` are accepted aliases (the
-// orchestrator's flag allowlists accept all three). The flag MUST be honored
-// equivalently to EXCEPTD_AIR_GAP=1 on the egress path — historically the env
-// var suppressed the outbound TLS probe but the CLI flag did not, so an
-// operator passing `--air-gap` still fired a TLS s_client connect.
+// CLI flags requesting air-gap (no-egress) operation. All three must be honored
+// equivalently to EXCEPTD_AIR_GAP=1 on the egress path.
 const AIR_GAP_FLAGS = ['--air-gap', '--offline', '--no-network'];
 
 /**
- * Resolve whether air-gap mode is active. True when EXCEPTD_AIR_GAP=1, when an
- * explicit `opts.airGap` is passed, OR when any air-gap flag is present on the
- * invoking process's argv. Checking argv makes the CLI flag effective even
- * though the scanner is reached in-process from the orchestrator entry — the
- * flag and the env var are now equivalent on the egress path.
- *
- * @param {{ airGap?: boolean }} [opts]
+ * True for EXCEPTD_AIR_GAP=1, `opts.airGap`, or an air-gap flag on argv. Reading
+ * argv is what makes the CLI flag effective, since the scanner is reached
+ * in-process from the orchestrator entry.
  */
 function isAirGap(opts) {
   if (opts && opts.airGap) return true;
@@ -39,28 +28,12 @@ function isAirGap(opts) {
   return argv.some(a => typeof a === 'string' && AIR_GAP_FLAGS.includes(a));
 }
 
-// --- public API ---
-
 /**
- * Run all scanners and return consolidated findings.
+ * Run all scanners and return consolidated findings. `opts.airGap` suppresses
+ * the outbound TLS probe.
  *
- * DEPRECATED in v0.10.0. This is the pre-seven-phase legacy scanner that
- * shells out from Node — kept as a safety-net path for non-AI operators.
- * New code should call the playbook runner instead:
- *
- *   const runner = require('../lib/playbook-runner');
- *   const result = await runner.run('kernel', 'all-catalogued-kernel-cves', agentSubmission);
- *
- * The runner emits seven-phase findings (govern through close) with full
- * GRC closure: CSAF-2.0 evidence bundles, jurisdiction-aware notification
- * deadlines, auditor-ready exception language, regression schedules.
- * `exceptd scan` will be removed in v1.0.
- *
- * @param {{ airGap?: boolean }} [opts] - When `opts.airGap` is set, the
- *   outbound TLS probe is suppressed exactly as EXCEPTD_AIR_GAP=1 does. The
- *   air-gap CLI flags (--air-gap / --offline / --no-network) are also honored
- *   directly off process.argv, so the flag is equivalent to the env var.
- * @returns {{ timestamp: string, host: object, findings: object[], summary: object }}
+ * Deprecated: new code calls lib/playbook-runner, which emits seven-phase
+ * findings with full GRC closure; this is a safety net for non-AI operators.
  */
 async function scan(opts) {
   const timestamp = new Date().toISOString();
@@ -83,24 +56,15 @@ async function scan(opts) {
   findings.push(...frameworkScan());
 
   const summary = summarize(findings);
-  // _deprecation is a stderr-only banner — it MUST NOT appear in the JSON
-  // shape that downstream consumers ingest. Internal narrative belongs on
-  // stderr (the banner above), never in the structured result body.
   return { timestamp, host, findings, summary };
 }
 
-/**
- * Run a targeted scan for a specific domain.
- * @param {'kernel'|'mcp'|'crypto'|'ai_api'|'framework'} domain
- */
 async function scanDomain(domain, opts) {
   const scanners = { kernel: kernelScan, mcp: mcpScan, crypto: cryptoScan, ai_api: aiApiScan, framework: frameworkScan };
   const fn = scanners[domain];
   if (!fn) throw new Error(`Unknown scan domain: ${domain}. Valid: ${Object.keys(scanners).join(', ')}`);
   return fn(opts);
 }
-
-// --- domain scanners ---
 
 function kernelScan() {
   const findings = [];
@@ -117,8 +81,8 @@ function kernelScan() {
       value: kernel,
       cve_id: cveId,
       rwep_score: cve.rwep_score,
-      // Carry the catalog CVSS so the CSAF report emits a real cvss_v3 block
-      // (base score + vector) instead of a placeholder base_score:0.
+      // Carried so the CSAF report emits a real cvss_v3 block rather than a
+      // placeholder base_score:0.
       cvss_score: cve.cvss_score,
       cvss_vector: cve.cvss_vector,
       cisa_kev: cve.cisa_kev,
@@ -161,13 +125,8 @@ function mcpScan() {
 
         for (const serverName of serverList) {
           const server = mcpServers[serverName];
-          // A null / non-object / array server entry can't be probed for
-          // signature or pinned-version the way a real server config can.
-          // Dereferencing its fields would throw inside this per-server loop,
-          // which the outer catch would mis-report as a whole-file config
-          // parse error — dropping every sibling server's finding. Emit a
-          // per-server malformed marker and continue so siblings still scan,
-          // mirroring how a genuine parse failure is surfaced per-file.
+          // A non-object entry would throw into the outer catch, mis-reported as
+          // a whole-file parse error that drops every sibling server's finding.
           if (server === null || typeof server !== 'object' || Array.isArray(server)) {
             findings.push({
               domain: 'mcp',
@@ -210,9 +169,8 @@ function mcpScan() {
           tool,
           config_path: p,
           severity: 'low',
-          // Route directly like the successful mcp_server_detected finding, so a
-          // parse-error finding reaches mcp-agent-trust even if the domain
-          // routing table changes — domain fallback alone left it brittle.
+          // Routed directly, so the finding reaches mcp-agent-trust whatever the
+          // domain routing table does.
           skill_hint: 'mcp-agent-trust',
           action_required: 'MCP config file exists but could not be parsed'
         });
@@ -233,10 +191,7 @@ function cryptoScan(opts) {
     const [major, minor] = version.split('.').map(Number);
     const isPqcReady = major > 3 || (major === 3 && minor >= 5);
 
-    // Probe the full NIST PQC suite + stateful hash signatures.
-    // Reports per-algo via boolean flags so downstream callers can
-    // decide which gaps matter for their threat model (ML-KEM for
-    // HNDL exposure, LMS/XMSS for firmware signing, etc.).
+    // Per-algo flags: the caller decides which gaps matter for its threat model.
     const pqc = probePqcAlgorithms();
     const pqcDetail = [
       `ML-KEM=${pqc.ml_kem ? 'avail' : 'missing'}`,    // FIPS 203
@@ -264,12 +219,8 @@ function cryptoScan(opts) {
     });
   }
 
-  // Air-gap mode short-circuits the outbound TLS probe entirely; emit a
-  // skipped annotation so operators can see the probe was intentionally
-  // suppressed rather than failing silently. Honored equivalently for the
-  // EXCEPTD_AIR_GAP=1 env var AND the --air-gap / --offline / --no-network CLI
-  // flags (isAirGap inspects opts, env, and process.argv) — the flag is NOT a
-  // no-op on this egress path.
+  // Air-gap short-circuits the outbound TLS probe; the skipped annotation makes
+  // the suppression visible rather than a silent absence.
   if (isAirGap(opts)) {
     findings.push({
       domain: 'crypto',
@@ -376,8 +327,6 @@ function frameworkScan() {
   return findings;
 }
 
-// --- helpers ---
-
 function hostInfo() {
   return {
     platform: os.platform(),
@@ -415,68 +364,24 @@ function safeExecFile(cmd, args) {
 }
 
 /**
- * Probe runtime for PQC algorithm availability across the full
- * emerging-standards landscape. Returns boolean flags per algorithm
- * + a `provider_hint` indicating which surface confirmed each one.
- *
- *   --- NIST PQC finalized (FIPS 203/204/205, 2024) ---
- *   ml_kem      ML-KEM (Kyber) — FIPS 203, key encapsulation
- *   ml_dsa      ML-DSA (Dilithium) — FIPS 204, signatures
- *   slh_dsa     SLH-DSA (SPHINCS+) — FIPS 205, stateless hash sigs
- *
- *   --- NIST PQC draft / alternate (2025+) ---
- *   fn_dsa      FN-DSA (Falcon) — FIPS 206 draft, compact lattice sigs
- *   hqc         HQC — alternate KEM selected March 2025
- *
- *   --- NIST PQC Round-4 alternates (still relevant in niche / archival) ---
- *   frodo       FrodoKEM — conservative lattice KEM
- *   ntru        NTRU / NTRU-Prime / sNTRU — original lattice KEM family
- *   mceliece    Classic McEliece — code-based, long-term archival use
- *   bike        BIKE — code-based KEM, OQS-Provider exposed
- *
- *   --- NIST additional signature on-ramp (2023+ Round 2) ---
- *   hawk        HAWK — NTRU-based lattice signatures
- *   mayo        MAYO — multivariate
- *   sqisign     SQIsign — isogeny-based, small signatures
- *   cross       CROSS — code-based
- *   uov         UOV / SNOVA — Unbalanced Oil & Vinegar multivariate
- *   sdith       SDitH — code-based (Syndrome Decoding in the Head)
- *   mirath      MIRATH — code-based (rank metric)
- *   faest       FAEST — symmetric-key/AES-based signatures
- *   perk        PERK — code-based (Permuted Kernel Problem)
- *
- *   --- Stateful hash signatures (RFC 8391 / 8554) ---
- *   lms         LMS — Leighton-Micali Signatures (firmware)
- *   xmss        XMSS — eXtended Merkle Signature Scheme
- *   hss         HSS — Hierarchical Signature System
- *
- *   --- IETF hybrid / composite sigs (emerging RFC drafts) ---
- *   composite_sig   Composite Signatures (e.g. RSA+ML-DSA, ECDSA+ML-DSA)
- *   composite_kem   Composite KEMs (e.g. X25519+ML-KEM)
+ * Probes the runtime for PQC algorithm availability. Returns a boolean flag per
+ * algorithm plus a `provider_hint` naming the surface that confirmed each one.
  */
 function probePqcAlgorithms() {
   const result = {
-    // NIST finalized
     ml_kem: false, ml_dsa: false, slh_dsa: false,
-    // NIST draft / alternate
     fn_dsa: false, hqc: false,
-    // NIST Round-4 / niche
     frodo: false, ntru: false, mceliece: false, bike: false,
-    // NIST signature on-ramp (Round 2)
     hawk: false, mayo: false, sqisign: false, cross: false,
     uov: false, sdith: false, mirath: false, faest: false, perk: false,
-    // Stateful hash sigs
     lms: false, xmss: false, hss: false,
-    // IETF composite / hybrid
     composite_sig: false, composite_kem: false,
     provider_hint: {},
   };
   const crypto = require('crypto');
 
-  // Pattern table — values are regexes matching common spellings
-  // emitted by Node / OpenSSL / OQS-Provider / Bouncy Castle. Tested
-  // against algorithm-list output specifically (no English-prose
-  // false positives expected; the lists contain only algo names).
+  // Spellings Node / OpenSSL / OQS-Provider / Bouncy Castle emit. Matched only
+  // against algorithm-list output, never prose, which would false-positive.
   const PATTERNS = {
     // NIST finalized
     ml_kem:        /\b(ml-?kem|kyber)\b/i,
@@ -490,7 +395,7 @@ function probePqcAlgorithms() {
     ntru:          /\b(s?ntru(-?prime)?(-?\d+)?|hrss\d*|hps\d+)\b/i,
     mceliece:      /\b(classic-?)?mceliece(-?\d+)?\b/i,
     bike:          /\bbike(-?l?\d+)?\b/i,
-    // NIST signature on-ramp (Round 2, 2024+)
+    // NIST signature on-ramp (Round 2)
     hawk:          /\bhawk(-?\d+)?\b/i,
     mayo:          /\bmayo(-?\d+)?\b/i,
     sqisign:       /\bsqi-?sign(?:hd)?\b/i,
@@ -516,9 +421,8 @@ function probePqcAlgorithms() {
     }
   }
 
-  // Channel 1 — Node's crypto APIs (no shellouts). Node 24+ exposes
-  // crypto.kemEncapsulate as an experimental ML-KEM gateway; its
-  // presence is itself an ML-KEM availability signal.
+  // Channel 1 — Node's crypto APIs, no shellouts. crypto.kemEncapsulate is an
+  // experimental ML-KEM gateway, so its presence is itself an ML-KEM signal.
   try {
     if (typeof crypto.kemEncapsulate === 'function') {
       record('ml_kem', 'node:crypto.kemEncapsulate');
@@ -535,9 +439,7 @@ function probePqcAlgorithms() {
     }
   } catch (_) { /* probe failure → fall through to openssl */ }
 
-  // Channel 2 — `openssl list` enumerations. KEMs and signature
-  // algorithms split across two list commands; OQS-Provider exposes
-  // the on-ramp / niche algos when installed.
+  // Channel 2 — `openssl list`: KEMs and signatures split across two commands.
   const kemList = safeExecFile('openssl', ['list', '-kem-algorithms']);
   if (kemList) {
     const kemAlgos = ['ml_kem', 'hqc', 'frodo', 'ntru', 'mceliece', 'bike', 'composite_kem'];
@@ -562,8 +464,7 @@ function probePqcAlgorithms() {
 }
 
 function probeTls(target) {
-  // Target is "host:port"; default lives at the call site so the env var
-  // is read once per scan rather than baked in here.
+  // Target is "host:port"; the call site owns the env-var default.
   const t = typeof target === 'string' && target.length > 0 ? target : 'registry.npmjs.org:443';
   const result = spawnSync('openssl', ['s_client', '-connect', t, '-brief'], {
     input: '',
@@ -576,14 +477,11 @@ function probeTls(target) {
   return match ? match[1] : null;
 }
 
-// Key names that signal a credential value, matched case-insensitively at any
-// nesting depth. MCP server configs place real secrets inside `env` and
-// `headers` sub-objects (e.g. env.OPENAI_API_KEY, headers.Authorization), so a
-// top-level-only sweep leaks them into emitted findings.
+// Key names that signal a credential value, matched at any nesting depth: MCP
+// configs put real secrets inside `env` and `headers` sub-objects.
 const SECRET_KEY_RE = /token|key|secret|password|credential|auth|bearer|api[-_]?key|access[-_]?key/i;
 
-// Value shapes that look like live credentials even under an innocuous key name
-// (e.g. args: ['--token', 'sk-...'] or a positional bearer string).
+// Value shapes that look like live credentials under an innocuous key name.
 const SECRET_VALUE_RES = [
   /\bsk-[A-Za-z0-9_-]{8,}/,            // OpenAI-style keys
   /\bAKIA[0-9A-Z]{12,}/,              // AWS access key id
@@ -599,10 +497,8 @@ function looksLikeSecretValue(value) {
   return SECRET_VALUE_RES.some((re) => re.test(value));
 }
 
-// Recursively redact credential-shaped data so nothing emitted to stdout or
-// persisted carries an operator's live secrets. Redacts values of secret-named
-// keys at any depth and any standalone string value that matches a known
-// credential shape. Cycles are guarded with a seen-set.
+// Redacts credential-shaped data at any depth so nothing emitted or persisted
+// carries an operator's live secrets. Cycle-guarded.
 function redactDeep(value, seen) {
   if (value === null || typeof value !== 'object') {
     return looksLikeSecretValue(value) ? '[REDACTED]' : value;

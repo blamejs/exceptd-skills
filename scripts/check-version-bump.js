@@ -2,45 +2,9 @@
 'use strict';
 
 /**
- * scripts/check-version-bump.js — patch-only-cadence predeploy gate.
- *
- * Why this exists. The project cadence is "patch is the only default bump; a
- * minor or major requires explicit human authorization." That rule lived in
- * the contributor guide and in maintainer memory — and was violated anyway
- * (two releases shipped as minors that should have been patches). A written
- * rule the tooling does not enforce is one a tired/automated contributor will
- * eventually skip. This gate makes the rule mechanical: an unauthorized
- * minor/major version bump fails predeploy and cannot ship.
- *
- * Hermetic by design. Authorization is a COMMITTED artifact
- * (tests/.version-bump-ack.json), not an environment variable, because
- * `npm run predeploy` runs in the release.yml validate job as well as locally.
- * An env-var scheme would either false-fail a legitimately-authorized minor in
- * CI or require per-release CI config. A committed ack file travels with the
- * checkout, so the gate enforces identically everywhere — and a minor bump
- * becomes a loud, reviewable line in the PR diff instead of a silent change to
- * a version string.
- *
- * Mechanism:
- *   prev = the most recent OTHER `## X.Y.Z` heading in CHANGELOG.md
- *   cur  = package.json version (== the top CHANGELOG heading; the version-sync
- *          gate enforces that match separately)
- *   classify prev -> cur as patch | minor | major | none | downgrade
- *     - patch / none      -> pass (the default; zero ceremony)
- *     - downgrade / bad   -> fail (versions only move forward)
- *     - minor / major     -> pass ONLY if tests/.version-bump-ack.json names
- *                            the exact `cur` version with the matching type;
- *                            otherwise fail with remediation.
- *
- * To authorize a minor (only after the user explicitly asks for one):
- *   echo '{"version":"0.19.0","type":"minor"}' > tests/.version-bump-ack.json
- * and commit it. The ack is version-specific, so a stale ack cannot authorize
- * a different future bump.
- *
- * Output:
- *   stdout: structured JSON when --json, else a one-line summary
- *   exit 0: patch/none, or an authorized minor/major
- *   exit 1: unauthorized minor/major, downgrade, or unparseable version
+ * Patch-only-cadence gate. A minor or major fails unless the committed
+ * tests/.version-bump-ack.json names that exact version, so an ack travels with
+ * the checkout and a stale one cannot authorize a later bump.
  */
 
 const fs = require('fs');
@@ -57,7 +21,6 @@ function parseSemver(v) {
   return { major: Number(m[1]), minor: Number(m[2]), patch: Number(m[3]) };
 }
 
-// Classify the transition prev -> cur. Pure; exported for unit tests.
 function classifyBump(prev, cur) {
   const a = parseSemver(prev);
   const b = parseSemver(cur);
@@ -68,8 +31,7 @@ function classifyBump(prev, cur) {
   return 'none';
 }
 
-// Decide whether a bump is allowed given the committed ack (or null). Pure;
-// exported for unit tests. ack = { version, type } | null.
+// `ack` is { version, type } or null.
 function checkBump(prev, cur, ack) {
   if (!prev) return { ok: true, bump: 'initial', reason: 'no previous version recorded' };
   const bump = classifyBump(prev, cur);
@@ -82,7 +44,6 @@ function checkBump(prev, cur, ack) {
   if (bump === 'patch' || bump === 'none') {
     return { ok: true, bump, reason: `${bump} bump (${prev} -> ${cur})` };
   }
-  // minor or major — requires explicit committed authorization for this exact version.
   if (ack && ack.version === cur && ack.type === bump) {
     return { ok: true, bump, reason: `${bump} bump authorized for ${cur} via tests/.version-bump-ack.json` };
   }
@@ -93,7 +54,7 @@ function checkBump(prev, cur, ack) {
   };
 }
 
-// Extract `## X.Y.Z` version headings from CHANGELOG.md, in document order.
+// Document order — newest first, which determinePrevious relies on.
 function changelogVersions(text) {
   const out = [];
   const re = /^##\s+(\d+\.\d+\.\d+)\b/gm;
@@ -107,14 +68,8 @@ function suggestPatch(prev) {
   return a ? `${a.major}.${a.minor}.${a.patch + 1}` : null;
 }
 
-// Resolve the previous version from CHANGELOG text, or fail closed. Pure;
-// exported for unit tests. A release gate must NOT treat an unreadable or
-// heading-less CHANGELOG as a "first release" — doing so silently authorized
-// ANY bump (including an unapproved major), because checkBump(null, ...) takes
-// the initial-release pass. `text` is the CHANGELOG contents, or null when the
-// read failed. Returns { ok, prev?, reason? }: ok:false fails the gate; ok:true
-// yields prev, which is null ONLY for a genuine first release whose sole
-// `## X.Y.Z` heading equals cur (versions === [cur]).
+// Fails closed: an unreadable or heading-less CHANGELOG must not look like a
+// first release, because checkBump(null, ...) then authorizes any bump.
 function determinePrevious(text, cur) {
   if (text == null) {
     return { ok: false, reason: 'CHANGELOG.md could not be read' };
@@ -149,12 +104,7 @@ function main() {
   }
   const cur = pkg.version;
 
-  // Fail closed when CHANGELOG is unreadable or carries no version headings.
-  // Swallowing a read error to '' previously made versions=[] -> prev=null ->
-  // checkBump's initial-release pass, so a missing/malformed CHANGELOG silently
-  // authorized any bump. A genuine first release still passes: its sole
-  // `## X.Y.Z` heading equals cur, so determinePrevious returns prev=null with
-  // ok:true and checkBump takes the legitimate initial path.
+  // null on a read failure, never '' — determinePrevious fails closed on null.
   let changelogText = null;
   try { changelogText = fs.readFileSync(CHANGELOG_PATH, 'utf8'); } catch (_e) { changelogText = null; }
   const prevRes = determinePrevious(changelogText, cur);
@@ -163,7 +113,6 @@ function main() {
     process.exitCode = 1;
     return;
   }
-  // prev = the most recent heading that differs from the current version.
   const prev = prevRes.prev;
 
   const ack = readAck();
@@ -191,8 +140,7 @@ function main() {
       if (patch) process.stderr.write(`[check-version-bump] If this should be a patch, set the version to ${patch}.\n`);
       process.stderr.write(`[check-version-bump] If the user explicitly authorized a ${res.bump}, commit tests/.version-bump-ack.json = {"version":"${cur}","type":"${res.bump}"}.\n`);
     }
-    // process.exitCode (not process.exit) so the buffered stdout write above
-    // is not truncated when stdout is piped (the stdout-flush-truncation class).
+    // `process.exitCode`, not process.exit(): exit truncates the buffered stdout write.
     process.exitCode = 1;
     return;
   }

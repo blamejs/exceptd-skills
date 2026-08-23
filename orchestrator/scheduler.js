@@ -1,31 +1,9 @@
 'use strict';
 
 /**
- * Scheduled task coordinator for skill currency maintenance.
- *
- * Schedules: weekly currency check, monthly CVE validation reminder, annual
- * full audit reminder. Emits events via event-bus.js when currency thresholds
- * are breached.
- *
- * This is a simple interval-based scheduler. For production use, swap for a
- * proper cron daemon or cloud scheduler without changing the task definitions.
- *
- * Bootstrap-fire policy. Long-cadence tasks (monthly, annual) are also
- * evaluated on `start()` so a freshly-restarted watcher does not silently
- * skip a due interval. Whether a task fires on bootstrap is gated by a
- * persisted "last fired" timestamp store at
- * `~/.exceptd/scheduler-last-fired.json` — the task fires only when the
- * elapsed time since the persisted timestamp exceeds the interval. The
- * weekly currency check always fires on bootstrap (legacy behavior).
- *
- * Implementation note — INT32 overflow guard. `setInterval` / `setTimeout`
- * delay values are coerced to a signed 32-bit integer; any value above
- * 2^31 - 1 ms (~24.8 days) is silently clamped to 1 ms by Node, which
- * causes the handler to fire ~1000×/sec. The MONTHLY_CVE_VALIDATION and
- * ANNUAL_AUDIT intervals both exceed that limit. `scheduleEvery` wraps the
- * underlying timer with a short tick interval (capped at SAFE_MAX_MS) and
- * compares wall-clock elapsed time against the requested interval, so any
- * delay — including multi-year intervals — fires exactly when due.
+ * Interval-based coordinator for skill currency maintenance: weekly currency
+ * check, monthly CVE validation reminder, annual full audit. Breached currency
+ * thresholds are emitted on event-bus.js.
  */
 
 const fs = require('fs');
@@ -36,7 +14,7 @@ const { bus, EVENT_TYPES } = require('./event-bus');
 const { currencyCheck } = require('./pipeline');
 
 const SAFE_MAX_MS = 2_147_483_647;            // INT32 max — Node's setTimeout/setInterval ceiling.
-const TICK_MS = Math.min(SAFE_MAX_MS, 24 * 60 * 60 * 1000);  // 24h tick by default.
+const TICK_MS = Math.min(SAFE_MAX_MS, 24 * 60 * 60 * 1000);
 
 const INTERVALS = {
   WEEKLY_CURRENCY: 7 * 24 * 60 * 60 * 1000,
@@ -58,13 +36,7 @@ const LAST_FIRED_KEYS = {
 let unschedulers = [];
 let running = false;
 
-// --- persistent last-fired store ---
-
-/**
- * Resolve the path of the last-fired persistence file. Defaults to
- * `~/.exceptd/scheduler-last-fired.json`. Honors EXCEPTD_HOME for the test
- * suite so unit tests stay isolated from the maintainer's real home dir.
- */
+/** EXCEPTD_HOME overrides the root so tests stay off the real home dir. */
 function _lastFiredStorePath() {
   const root = process.env.EXCEPTD_HOME || path.join(os.homedir(), '.exceptd');
   return path.join(root, 'scheduler-last-fired.json');
@@ -85,9 +57,7 @@ function _saveLastFired(store) {
     fs.mkdirSync(path.dirname(p), { recursive: true });
     fs.writeFileSync(p, JSON.stringify(store, null, 2));
   } catch (err) {
-    // Persistence is best-effort. A failed write only means the next start
-    // can't tell whether the task fired; it does not break the running
-    // scheduler.
+    // Best-effort: a failed write only costs the next start its last-fired knowledge.
     console.error('[scheduler] could not persist last-fired:', err.message);
   }
 }
@@ -107,24 +77,16 @@ function _shouldBootstrapFire(key, intervalMs) {
   return (Date.now() - last) >= intervalMs;
 }
 
-// --- scheduling primitive ---
-
 /**
- * Schedule `handler` to fire every `intervalMs`, safely for intervals that
- * exceed Node's INT32 setTimeout ceiling. Returns an unschedule function.
+ * Schedule `handler` every `intervalMs` ms, returning an unschedule function.
+ * Throws RangeError unless intervalMs is a positive finite number.
  *
- * @param {number} intervalMs   Desired interval in milliseconds (any positive value).
- * @param {Function} handler    Function to invoke on each interval.
- * @returns {Function}          Call to stop further firings.
+ * setInterval coerces its delay to signed 32-bit — above 2^31-1 ms it clamps to
+ * 1 ms and fires ~1000x/sec, which the monthly and annual intervals would hit.
+ * So the timer ticks at TICK_MS or less and compares wall-clock elapsed.
  */
 function scheduleEvery(intervalMs, handler) {
-  // T P1-4: lower-bound guard. v0.12.12 added the INT32 overflow clamp
-  // (upper bound) but never asserted intervalMs > 0. `scheduleEvery(0, fn)`
-  // would set a 0ms interval that fires ~10k times per second; negatives
-  // (-100) coerce the same way and NaN drives setInterval into a 1ms tick.
-  // All three exhaust the event loop. Refuse the call rather than silently
-  // floor — the scheduler is a long-lived primitive and a footgun here
-  // poisons every periodic task in the watcher.
+  // Zero, negative and NaN drive a ~1 ms tick, so refuse rather than floor.
   if (!Number.isFinite(intervalMs) || intervalMs <= 0) {
     throw new RangeError(`scheduleEvery: intervalMs must be a positive finite number, got ${intervalMs}`);
   }
@@ -138,23 +100,15 @@ function scheduleEvery(intervalMs, handler) {
     }
   };
   const id = setInterval(tick, Math.min(intervalMs, TICK_MS));
-  // Deliberately NOT calling id.unref(): the `watch` orchestrator verb
-  // is long-running and relies on the scheduler timers to keep the event
-  // loop alive (the event bus has no I/O of its own). Callers that don't
-  // want the timer to hold the loop open should call the returned
-  // unschedule function in their teardown path.
+  // No id.unref(): `watch` is long-running and relies on these timers to hold the
+  // event loop open — the event bus has no I/O of its own.
   return () => clearInterval(id);
 }
 
-// --- public API ---
-
 /**
- * Start the scheduler. Runs the weekly task immediately, then schedules all
- * three on their intervals. Monthly and annual tasks are also "bootstrap
- * fired" on start when the persisted last-fired timestamp is older than the
- * interval (or absent), so a restarted watcher does not silently skip a due
- * window. Bootstrap-fire happens inside the same try/catch the periodic
- * wrapper uses so a single thrown task cannot crash the watcher.
+ * Start the scheduler: the weekly task runs immediately, then all three run on
+ * their intervals. Monthly and annual also bootstrap-fire when the persisted
+ * last-fired timestamp is absent or older than the interval.
  */
 function start() {
   if (running) return;
@@ -165,15 +119,12 @@ function start() {
     catch (e) { console.error('[scheduler] ' + label + ' failed:', e); }
   };
 
-  // Weekly always fires on bootstrap (legacy behavior).
+  // Weekly always fires on bootstrap — ungated, unlike the two below.
   safeRun('weekly currency bootstrap', () => {
     runWeeklyCurrencyCheck();
     _markFired(LAST_FIRED_KEYS.WEEKLY_CURRENCY);
   });
 
-  // Monthly + annual bootstrap-fire only when the persisted timestamp is
-  // older than the interval. This closes the "freshly-restarted watcher
-  // never fires the long-cadence task" gap.
   if (_shouldBootstrapFire(LAST_FIRED_KEYS.MONTHLY_CVE_VALIDATION, INTERVALS.MONTHLY_CVE_VALIDATION)) {
     safeRun('monthly CVE bootstrap', () => {
       runMonthlyCveValidation();
@@ -203,9 +154,6 @@ function start() {
   console.log('[scheduler] Started. Weekly currency check, monthly CVE validation, annual audit scheduled.');
 }
 
-/**
- * Stop the scheduler and clear all timers.
- */
 function stop() {
   for (const off of unschedulers) {
     try { off(); } catch { /* ignore */ }
@@ -215,15 +163,9 @@ function stop() {
   console.log('[scheduler] Stopped.');
 }
 
-/**
- * Run just the currency check immediately (for CLI use).
- * @returns {object} Currency report
- */
 function runCurrencyNow() {
   return runWeeklyCurrencyCheck();
 }
-
-// --- task implementations ---
 
 function runWeeklyCurrencyCheck() {
   const timestamp = new Date().toISOString();
@@ -231,14 +173,8 @@ function runWeeklyCurrencyCheck() {
 
   const { currency_report, action_required, critical_count } = currencyCheck();
 
-  // Emit ONE aggregated SKILL_CURRENCY_LOW_AGGREGATE event per run instead
-  // of N per-skill events. Per-run aggregate prevents downstream consumers
-  // (`watch`, dashboards, alerting webhooks) from receiving an event storm
-  // when N skills are simultaneously stale — common after a long pause
-  // between runs or on first bootstrap. The aggregate payload carries
-  // critical_count + the full array of stale skills so consumers can still
-  // drill in. The legacy per-skill SKILL_CURRENCY_LOW signature is preserved
-  // for callers (and tests) that consume bus.skillCurrencyLow() directly.
+  // ONE aggregate event per run, not N per-skill: per-skill events storm every
+  // consumer. The payload carries the full stale list so a consumer can drill in.
   const critical = currency_report.filter(s => s.currency_score < CURRENCY_THRESHOLDS.critical);
   if (critical.length > 0) {
     bus.emit(EVENT_TYPES.SKILL_CURRENCY_LOW_AGGREGATE, {

@@ -1,29 +1,18 @@
 "use strict";
 /**
- * scripts/builders/currency.js
- *
- * Builds `data/_indexes/currency.json` — pre-computed currency scores for
- * every skill against a deterministic reference date (manifest's
- * `threat_review_date`). Saves the watchlist/scheduler from re-running
- * `orchestrator currency` to produce the same answer.
- *
- * The reference date is deterministic so the file hash stays stable until
- * skills or the reference change — which is what `validate-indexes`
- * requires. The orchestrator's interactive `currency` command remains the
- * source-of-truth for live decay; this index is the snapshot view.
- *
- * Decay formula matches pipeline.js _currencyScore() exactly:
- *   >180 days → -30, >90 → -20, >60 → -10, >30 → -5
- *   -5 per forward_watch entry
+ * Builds `data/_indexes/currency.json` — per-skill currency scored against
+ * manifest.threat_review_date rather than today, so the file hash stays
+ * stable until skills or the reference change, which is what
+ * `validate-indexes` requires. The orchestrator's `currency` command is the
+ * live-decay view; this index is the snapshot.
  */
 
 const fs = require("fs");
 const path = require("path");
 
 function currencyScore(daysSinceReview, _forwardWatchCount) {
-  // See orchestrator/pipeline.js — forward_watch count no longer
-  // affects currency score (it's a maintenance signal, not staleness).
-  // Param retained for ABI compatibility with callers.
+  // Scoring matches orchestrator/pipeline.js _currencyScore(). forward_watch
+  // count is a maintenance signal, not staleness, so the param is unused.
   let score = 100;
   if (daysSinceReview > 180) score -= 30;
   else if (daysSinceReview > 90) score -= 20;
@@ -43,8 +32,6 @@ function parseFrontmatterForwardWatchCount(body) {
   const m = body.match(/^---\n([\s\S]*?)\n---/);
   if (!m) return 0;
   const fm = m[1];
-  // Counts top-level "forward_watch:" list items. Lines starting with "  - "
-  // immediately after a "forward_watch:" line until the next non-indented key.
   const lines = fm.split(/\r?\n/);
   let inFw = false;
   let count = 0;

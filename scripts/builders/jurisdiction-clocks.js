@@ -2,31 +2,12 @@
 /**
  * scripts/builders/jurisdiction-clocks.js
  *
- * Builds `data/_indexes/jurisdiction-clocks.json` — the normalized
- * jurisdiction × obligation × clock matrix. Today consumers asking
- * "what's the breach-notification clock in jurisdiction X?" have to
- * scan `data/global-frameworks.json` and pull `notification_sla` off
- * specific framework entries. This index flattens the dimension.
- *
- * Obligation types covered:
- *   - breach_notification (hours from awareness)
- *   - patch_sla            (hours from disclosure for Critical/High)
- *   - incident_reporting   (regulator + clock + trigger)
- *
- * Per-jurisdiction shape:
- *   {
- *     jurisdiction_name:
- *     frameworks: {
- *       <fwName>: {
- *         authority,
- *         breach_notification: { hours, trigger, stages?, source }
- *         patch_sla: { hours, note?, source }
- *         incident_reporting: { hours, trigger, source }
- *       }
- *     }
- *     fastest_breach_notification: { hours, framework }   // null when none specified
- *     fastest_patch_sla:           { hours, framework }
- *   }
+ * Builds `data/_indexes/jurisdiction-clocks.json` — the normalized jurisdiction
+ * × obligation × clock matrix, so a consumer asking "what is the breach-
+ * notification clock in jurisdiction X?" need not scan
+ * `data/global-frameworks.json` for `notification_sla` on each framework entry.
+ * All times are in hours; a `fastest_*` slot is null when no framework in the
+ * jurisdiction specifies that clock.
  */
 
 function buildJurisdictionClocks({ globalFrameworks }) {

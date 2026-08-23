@@ -1,37 +1,16 @@
 #!/usr/bin/env node
 "use strict";
 /**
- * scripts/sync-manifest-metadata.js
+ * Syncs the per-skill fields manifest.json caches from each skill's
+ * frontmatter, the authoritative source the linter and staleness gate read.
+ * Run it whenever frontmatter changes, then re-run sign-all — and, when a
+ * cross-ref array changed, refresh-reverse-refs + build-indexes.
  *
- * Several per-skill fields in manifest.json are a cache of the authoritative
- * values in each skill's frontmatter (the linter and the staleness gate read
- * frontmatter, so frontmatter is the single source of truth). Nothing kept
- * the cache in sync, so editing frontmatter left the manifest copy stale.
- *
- * Two sync disciplines, because the fields differ in kind:
- *
- *   - MIRROR (exact): `last_threat_review` (scalar) and `forward_watch`
- *     (array) are an exact copy of frontmatter. Synced by replace.
- *
- *   - COVER (union): the cross-reference arrays (`data_deps`,
- *     `framework_gaps`, `atlas_refs`, `attack_refs`, `rfc_refs`, `cwe_refs`,
- *     `d3fend_refs`) are an ENRICHED SUPERSET — the manifest may carry extra
- *     curated refs that the derived indexes (build-indexes) and the
- *     reverse-ref refresh (refresh-reverse-refs) read. The invariant is that
- *     every frontmatter-declared ref MUST appear in the manifest, or it
- *     silently vanishes from those surfaces. Synced by UNION (append the
- *     missing frontmatter refs, preserve the manifest's order + enrichment) —
- *     never by replace, which would drop curated refs.
- *
- * Run it whenever skill frontmatter changes, then re-run sign-all (and, when
- * cross-ref arrays changed, refresh-reverse-refs + build-indexes) so the
- * refreshed manifest is signed and the derived surfaces pick up the refs.
- *
- * tests/sync-manifest-metadata.test.js fails the suite if the cache ever
- * drifts again, so a missed run is caught before release rather than shipping
- * a manifest that contradicts its own skill bodies. It covers the fields named
- * above; `description` is cached in the manifest but is NOT one of them, so a
- * frontmatter description edit does not propagate and is not caught here.
+ * `last_threat_review` and `forward_watch` MIRROR frontmatter exactly and sync
+ * by replace. The cross-reference arrays are an enriched superset — the
+ * manifest carries curated refs frontmatter does not — so they sync by UNION;
+ * replacing them drops the curated refs build-indexes and refresh-reverse-refs
+ * read. `description` is cached in the manifest but is not synced here.
  *
  * Exit codes: 0 = wrote (or already in sync), 1 = a skill file was missing or
  * its frontmatter failed to parse.
@@ -44,12 +23,9 @@ const lint = require("../lib/lint-skills.js");
 const ROOT = path.resolve(__dirname, "..");
 const MANIFEST = path.join(ROOT, "manifest.json");
 
-// The frontmatter fields the manifest caches and must mirror verbatim.
 const MIRRORED_SCALAR = ["last_threat_review"];
 const MIRRORED_ARRAY = ["forward_watch"];
-// Cross-reference arrays: the manifest is an enriched superset, so sync by
-// UNION (cover) — append frontmatter refs the manifest is missing, keep the
-// manifest's own curated refs. See the header for why replace would regress.
+// Union, never replace — a replace drops the manifest's curated refs.
 const MIRRORED_COVER = ["data_deps", "framework_gaps", "atlas_refs", "attack_refs", "rfc_refs", "cwe_refs", "d3fend_refs"];
 
 function skillFrontmatter(id) {

@@ -1,56 +1,9 @@
 "use strict";
 /**
- * scripts/build-indexes.js
- *
- * Produces pre-computed indexes under `data/_indexes/` so AI consumers
- * and downstream tooling don't have to scan every skill + catalog
- * to answer routine cross-reference questions.
- *
- * Outputs (17 total):
- *   xref.json                — inverted index over cwe/d3fend/framework_gap/
- *                              atlas/attack/rfc/dlp citations
- *   trigger-table.json       — flat trigger → [skills]
- *   chains.json              — pre-computed cross-walks per CVE and per CWE
- *   jurisdiction-map.json    — jurisdiction → skills that reference it
- *   handoff-dag.json         — cross-skill mention graph
- *   summary-cards.json       — per-skill 100-word abstract
- *   section-offsets.json     — per-skill byte/line offsets of every H2
- *   token-budget.json        — approximate token cost per skill + section
- *   recipes.json             — curated multi-skill recipes
- *   jurisdiction-clocks.json — normalized obligation × hours matrix
- *   did-ladders.json         — canonical defense-in-depth ladders
- *   theater-fingerprints.json — structured compliance-theater pattern records
- *   currency.json            — pre-computed skill currency snapshot
- *   frequency.json           — citation-count tables per catalog field
- *   activity-feed.json       — "what changed when" feed
- *   catalog-summaries.json   — compact per-catalog summary cards
- *   stale-content.json       — persisted stale-content findings
- *   _meta.json               — SHA-256 of every source file for staleness
- *
- * Flags:
- *   (default)              build all outputs
- *   --only <names>         build only the comma-separated outputs (and
- *                          anything they depend on)
- *   --changed              build only outputs whose declared deps changed
- *                          since the last _meta.json snapshot. Safe in CI:
- *                          identical inputs always produce identical outputs.
- *   --parallel             run independent builders concurrently via
- *                          Promise.all (I/O concurrency, no worker threads).
- *                          For CPU-bound fan-out, callers can compose with
- *                          lib/worker-pool.js directly.
- *   --quiet                suppress per-output log lines
- *
- * Re-build conditions:
- *   _meta.json records sha256 of every source file. validate-indexes
- *   (predeploy gate) re-hashes those and fails if any source changed
- *   after the last build. --changed reads that same table to decide what
- *   to rebuild.
- *
- * Index file naming convention: leading underscore marks them as derived
- * (mirroring `_meta` in catalog files), so anyone scanning `data/` for
- * primary data filters them out.
- *
- * Node 24 stdlib only — zero npm deps.
+ * Produces the pre-computed indexes under `data/_indexes/`. Identical inputs must
+ * always produce identical outputs: --changed and the validate-indexes predeploy
+ * gate both key on the sha256 table in _meta.json, so a no-op run must not
+ * re-stamp.
  */
 
 const fs = require("fs");
@@ -69,20 +22,13 @@ function sha256(buf) {
 }
 
 function writeJson(name, obj) {
-  // Atomic write: a crash / disk-full / SIGKILL mid-write would otherwise leave
-  // a truncated JSON output on disk. Write to a temp sibling and rename — rename
-  // is atomic on POSIX and Windows, so a reader (or the next build's
-  // parse-check) only ever sees the complete old or complete new file.
+  // Temp sibling then rename, so a crash mid-write cannot leave a truncated index.
   const abs = path.join(IDX, name);
-  // Random suffix (not just pid) so a Promise.all fan-out (--parallel) sharing
-  // a pid can't race the same tmp path, and the in-repo temp name isn't
-  // predictable. Mirrors lib/citation-resolve.js cachePut.
+  // The random suffix keeps a --parallel fan-out sharing one pid off this path.
   const tmp = `${abs}.tmp-${process.pid}.${crypto.randomBytes(4).toString("hex")}`;
   fs.writeFileSync(tmp, JSON.stringify(obj, null, 2) + "\n", "utf8");
-  // rename-over-existing is atomic, but on Windows a sync client / AV / indexer
-  // (e.g. Dropbox holding the target open for a few ms) can make it transiently
-  // EPERM/EACCES/EBUSY. Retry with short backoff so a build doesn't fail on a
-  // lock that clears in milliseconds; on POSIX the first attempt always wins.
+  // On Windows a sync client or indexer holding the target open makes the rename
+  // transiently EPERM/EACCES/EBUSY, so it is retried with backoff.
   let lastErr;
   for (let attempt = 0; attempt < 10; attempt++) {
     try { fs.renameSync(tmp, abs); return; }
@@ -92,7 +38,6 @@ function writeJson(name, obj) {
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20 * (attempt + 1));
     }
   }
-  // Persistent failure: drop the temp sibling so it doesn't orphan, then surface.
   try { fs.unlinkSync(tmp); } catch { /* best effort */ }
   throw lastErr;
 }
@@ -133,15 +78,9 @@ Examples:
 `);
 }
 
-// --- Source loading (shared in-memory snapshot) -------------------------
-
-// Cross-reference fields the derived indexes key on. The manifest carries a
-// cache of these, but the skill frontmatter is the authoritative source — the
-// linter and staleness gate read frontmatter. Overlaying the parsed
-// frontmatter onto each skill record here means the indexes reflect the skill
-// bodies even when the manifest cache has drifted (e.g. dropping UK-CAF / AU
-// control mappings from framework_gaps). Array fields are overlaid only when
-// present in frontmatter; description is a scalar.
+// Skill frontmatter, not the manifest cache, is authoritative for these fields,
+// so the indexes stay aligned with the skill bodies when the cache drifts. A
+// field is overlaid only when frontmatter carries it.
 const FRONTMATTER_ARRAY_FIELDS = [
   "framework_gaps", "d3fend_refs", "cwe_refs", "atlas_refs",
   "attack_refs", "rfc_refs", "triggers", "data_deps",
@@ -169,11 +108,8 @@ function loadSources() {
   const skillBodies = {};
   for (const s of manifest.skills) skillBodies[s.name] = fs.readFileSync(ABS(s.path), "utf8");
 
-  // Build the skill records from the authoritative frontmatter, falling back
-  // to the manifest cache for fields frontmatter doesn't carry (signatures,
-  // dlp_refs, etc.). Downstream builders read cross-reference arrays from
-  // these records, so this is the single point that keeps the indexes aligned
-  // with the skill bodies.
+  // Frontmatter first, manifest cache for the fields frontmatter doesn't carry
+  // (signatures, dlp_refs). Every downstream builder reads these records.
   const skills = manifest.skills.map((s) => authoritativeSkill(s, skillBodies[s.name]));
   const skillNames = new Set(skills.map((s) => s.name));
 
@@ -196,15 +132,10 @@ function loadSources() {
   return ctx;
 }
 
-// --- Outputs registry ---------------------------------------------------
-// Each entry: { name, file, deps, build, dependsOn?: [name, ...] }
-//   deps: list of source-file pattern functions. A pattern is a function that
-//         returns true if a given relative path counts as a dep for this
-//         output. The --changed planner walks every changed source and
-//         flags every output whose deps match.
-//   dependsOn: names of other outputs that must be built first (used by
-//              chains.json which composes CVE + CWE halves, and
-//              token-budget.json which consumes section-offsets).
+// Registry entry: { name, file, deps, build, dependsOn?: [name, ...] }
+//   deps      predicates over a relative source path; --changed rebuilds an
+//             output when any changed source matches one.
+//   dependsOn output names built first, because this builder reads their file.
 
 function isAnySkillBody(p) { return p.startsWith("skills/") && p.endsWith("/skill.md"); }
 function isManifest(p) { return p === "manifest.json"; }
@@ -291,12 +222,8 @@ const OUTPUTS = [
       for (const s of ctx.skills) {
         const body = ctx.skillBodies[s.name];
         for (const code of codes) {
-          // Skip bare 2-letter ISO codes in free-text matching. `\bID\b`,
-          // `\bCA\b`, `\bNO\b` etc. collide with prose words ("the ID",
-          // "US-based") and control/countermeasure id grammar (`\bCA\b` matches
-          // inside `D3-CA`, `\bSA\b` inside `SA-12`), polluting coverage
-          // (Indonesia landed on 41/51 skills). These jurisdictions are mapped
-          // via the curated NAME_TO_CODE regulation-name table below instead.
+          // Bare 2-letter ISO codes never free-text match: `\bCA\b` collides with
+          // prose and with control-id grammar. They reach the map via NAME_TO_CODE.
           if (code.length <= 2) continue;
           const re = new RegExp("\\b" + code + "\\b");
           if (re.test(body) && !out[code].skills.includes(s.name)) out[code].skills.push(s.name);
@@ -361,9 +288,8 @@ const OUTPUTS = [
           entry_types: ["CVE", "CWE"],
         },
       };
-      // CVE half. Skip draft (_draft) CVEs so this derivation agrees with the
-      // reverse-ref index (refresh-reverse-refs.js excludes drafts) — both must
-      // reflect the same operator-queryable, curated truth.
+      // Drafts are skipped so this agrees with the reverse-ref index
+      // (scripts/refresh-reverse-refs.js), which excludes them too.
       for (const cveId of Object.keys(ctx.cveCatalog).filter((k) => !k.startsWith("_") && ctx.cveCatalog[k] && ctx.cveCatalog[k]._draft !== true)) {
         const cve = ctx.cveCatalog[cveId];
         const referencingSkills = ctx.skills
@@ -399,7 +325,6 @@ const OUTPUTS = [
           referencing_skills: referencingSkills, chain: hydrated,
         };
       }
-      // CWE half (delegated to builder)
       const cweChains = buildCweChains({
         skills: ctx.skills, cweCatalog: ctx.cweCatalog, atlasTtps: ctx.atlasTtps,
         cveCatalog: ctx.cveCatalog, frameworkGaps: ctx.frameworkGaps,
@@ -437,8 +362,7 @@ const OUTPUTS = [
     dependsOn: ["section-offsets"],   // needs the produced index
     build: (ctx) => {
       const { buildTokenBudget } = require("./builders/token-budget");
-      // section-offsets output is already on disk (built first by the
-      // dependency planner). Read it back for the token splitter.
+      // Already on disk: the dependency planner builds section-offsets first.
       const sectionOffsets = readJson(path.join(IDX, "section-offsets.json"));
       return buildTokenBudget({ root: ctx.root, skills: ctx.skills, sectionOffsets });
     },
@@ -541,8 +465,6 @@ const OUTPUTS = [
   },
 ];
 
-// --- Plan + run --------------------------------------------------------
-
 function loadPriorMeta() {
   const p = path.join(IDX, "_meta.json");
   if (!fs.existsSync(p)) return null;
@@ -552,9 +474,7 @@ function loadPriorMeta() {
 function liveSourceSet(ctx) {
   const out = new Set();
   out.add("manifest.json");
-  // README.md is consumed by the stale-content builder (badge-count drift), so
-  // it must be a hashed source — otherwise a README edit is invisible to
-  // --changed and the validate-indexes freshness gate.
+  // README.md feeds the stale-content builder, so it has to be a hashed source.
   if (fs.existsSync(ABS("README.md"))) out.add("README.md");
   for (const c of ctx.catalogFiles) out.add(c);
   for (const s of ctx.skills) out.add(s.path);
@@ -562,9 +482,7 @@ function liveSourceSet(ctx) {
 }
 
 function changedSources(ctx, priorMeta) {
-  // Returns the array of source paths whose sha256 differs from prior, OR
-  // every source if there's no prior meta. Also accounts for new + removed
-  // source files (which always force a rebuild).
+  // Every source when there is no prior meta; an appeared or disappeared one counts.
   if (!priorMeta || !priorMeta.source_hashes) {
     return [...liveSourceSet(ctx)];
   }
@@ -575,7 +493,6 @@ function changedSources(ctx, priorMeta) {
     const h = sha256(fs.readFileSync(ABS(p)));
     if (priorMeta.source_hashes[p] !== h) changed.push(p);
   }
-  // Any source that disappeared since last build counts as a change.
   for (const p of recorded) if (!live.has(p)) changed.push(p);
   return changed;
 }
@@ -590,12 +507,8 @@ function outputsAffectedBy(changedPaths) {
   return affected;
 }
 
-// An output's absence/corruption is itself a rebuild trigger. --changed keys
-// on source-hash deltas, but a derived file that was deleted, truncated, or
-// left unparseable must be regenerated even when every source is byte-identical
-// — otherwise the no-op path leaves a broken tree while writeMeta records it as
-// fresh (and reports a 0 count for the file it never rebuilt). Mirrors the
-// existence/parse check in lib/validate-indexes.js verifyOutputs.
+// A deleted, truncated or unparseable output is a rebuild trigger on its own:
+// --changed sees only source-hash deltas, so writeMeta would record it as fresh.
 function outputsMissingOrCorrupt() {
   const broken = new Set();
   for (const o of OUTPUTS) {
@@ -610,7 +523,6 @@ function outputsMissingOrCorrupt() {
 }
 
 function withDependencyClosure(names) {
-  // Pull in any dependsOn entries (e.g. token-budget needs section-offsets).
   const closure = new Set(names);
   let added = true;
   while (added) {
@@ -644,12 +556,10 @@ function topoOrder(names) {
 }
 
 async function runBuilders(ctx, names, opts) {
-  // Build the dependency-respecting execution plan, then dispatch.
   const order = topoOrder(names);
   const log = (s) => opts.quiet || console.log(s);
 
-  // Group by levels — outputs with no produced-output deps go first, then
-  // outputs depending on those, etc. This is the parallelization unit.
+  // A level holds outputs with no unbuilt dependsOn; --parallel fans out over one.
   const remaining = new Set(order);
   const levels = [];
   while (remaining.size > 0) {
@@ -693,13 +603,9 @@ function writeMeta(ctx, results, opts = {}) {
   const computedSourceHashes = {};
   for (const p of sourceFiles) computedSourceHashes[p] = sha256(fs.readFileSync(ABS(p)));
 
-  // A `--only` build regenerates an ARBITRARY subset of outputs (not the set
-  // implied by source changes), so the un-rebuilt outputs are not guaranteed to
-  // be consistent with the current sources. Preserve the prior source_hashes in
-  // that case, so validate-indexes still detects drift and demands a full
-  // rebuild — overwriting them with current hashes would fail OPEN, recording
-  // stale outputs as fresh. (--changed rebuilds exactly the change-affected
-  // outputs and a full build rebuilds all, so their current hashes are accurate.)
+  // A `--only` build touches an arbitrary subset, so keeping the prior hashes
+  // lets validate-indexes still demand a full rebuild. Writing current hashes
+  // here fails open, recording stale outputs as fresh.
   const partial = !!(opts && opts.only);
   const sourceHashes = (partial && prior && prior.source_hashes && typeof prior.source_hashes === "object")
     ? prior.source_hashes
@@ -707,15 +613,8 @@ function writeMeta(ctx, results, opts = {}) {
 
   const outputsList = OUTPUTS.map((o) => o.file).sort();
 
-  // Determinism: preserve the prior `generated_at` when the inputs are
-  // byte-identical to the last build (same source hashes AND same output set).
-  // validate-indexes keys freshness on `source_hashes`/`outputs`, never on the
-  // timestamp, so re-stamping a no-op run with a fresh wall-clock value adds
-  // no freshness signal and only produces a spurious git diff — contradicting
-  // the documented "identical inputs always produce identical outputs"
-  // contract for --changed (and the idempotence the predeploy gate relies on).
-  // Reuse the prior timestamp on a genuine no-op; mint a new one only when the
-  // hashed surface actually moved (or there is no prior meta to inherit from).
+  // `generated_at` carries over when the source hashes and the output set are
+  // identical to the last build, so a no-op run produces no git diff.
   const sourcesUnchanged = prior && prior.source_hashes &&
     JSON.stringify(prior.source_hashes) === JSON.stringify(sourceHashes) &&
     JSON.stringify(prior.outputs || []) === JSON.stringify(outputsList);
@@ -723,8 +622,7 @@ function writeMeta(ctx, results, opts = {}) {
     ? prior.generated_at
     : new Date().toISOString();
 
-  // Stats are computed from in-memory results when available, else from disk
-  // (covers --only / --changed runs that didn't rebuild every output).
+  // In-memory result when this run built it, otherwise from disk.
   function readBack(name) {
     if (results[name]) return results[name];
     const o = OUTPUTS.find((x) => x.name === name);
@@ -764,20 +662,16 @@ function writeMeta(ctx, results, opts = {}) {
     source_hashes: sourceHashes,
     skill_count: ctx.skills.length,
     catalog_count: ctx.catalogFiles.length,
-    // The derived index files this build produces. validate-indexes confirms
-    // every one still exists and parses — source hashes alone do not detect a
-    // deleted/truncated/corrupted OUTPUT (an index file removed from a clean
-    // source tree would otherwise pass the freshness gate as "current").
+    // Source hashes alone miss a deleted output: removed from a clean source
+    // tree, it would pass the freshness gate as current.
     outputs: outputsList,
     index_stats: {
       xref_entries: xrefStats,
       trigger_table_entries: Object.keys(trigger).length,
       chains_cve_entries: cveChainCount,
       chains_cwe_entries: cweChainCount,
-      // The jurisdiction-map indexes EVERY jurisdiction code (including those
-      // with no breach/patch clocks), so it — not the clocks table — is the
-      // count of jurisdictions actually indexed. (`jurisdiction_clocks` below
-      // reports the clocks-only subset.)
+      // Counted off jurisdiction-map, which holds every code; `jurisdiction_clocks`
+      // below is the clocks-only subset.
       jurisdictions_indexed: Object.keys(readBack("jurisdiction-map") || {}).length || Object.keys(jurisdictionClocks.by_jurisdiction || {}).length,
       handoff_dag_nodes: handoff.nodes?.length || 0,
       summary_cards: Object.keys(summaryCards.skills || {}).length,
@@ -806,7 +700,6 @@ async function main() {
   const ctx = loadSources();
   const log = (s) => opts.quiet || console.log(s);
 
-  // Decide which outputs to build.
   let chosen;
   if (opts.only) {
     const wanted = opts.only.split(",").map((s) => s.trim()).filter(Boolean);
@@ -822,22 +715,15 @@ async function main() {
     const changed = changedSources(ctx, prior);
     log(`changed sources: ${changed.length}`);
     const affected = outputsAffectedBy(changed);
-    // Union in any output that no longer exists on disk or fails to parse.
-    // A deleted/corrupt output is a rebuild trigger independent of source
-    // hashes — without this, --changed reports "nothing to do" and writeMeta
-    // would claim freshness for a tree that's actually broken.
+    // Without this union, --changed reports "nothing to do" on a corrupt output.
     const broken = outputsMissingOrCorrupt();
     for (const name of broken) affected.add(name);
     if (broken.size > 0) log(`missing/corrupt outputs to regenerate: ${[...broken].sort().join(", ")}`);
     chosen = withDependencyClosure(affected);
     if (chosen.size === 0) {
       log("build-indexes: no outputs need rebuilding (sources unchanged)");
-      // Rewrite _meta.json so its hash table + outputs list self-heal against
-      // the live source set (e.g. an old-format _meta that predates a field).
-      // writeMeta preserves the prior `generated_at` when the hashed surface is
-      // byte-identical, so a genuine no-op leaves the file unchanged — no
-      // spurious timestamp-only diff. Re-stamping would add no freshness signal
-      // (validate-indexes keys on source_hashes/outputs, not the timestamp).
+      // Still rewritten, so the hash table and outputs list self-heal against the
+      // live source set; a true no-op leaves the file byte-identical.
       writeMeta(ctx, {}, opts);
       return;
     }

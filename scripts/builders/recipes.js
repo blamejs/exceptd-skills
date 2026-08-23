@@ -1,16 +1,9 @@
 "use strict";
 /**
- * scripts/builders/recipes.js
- *
- * Builds `data/_indexes/recipes.json` — curated skill sequences for the
- * most common operator use cases. Each recipe is a vetted chain of skills
- * to invoke, in order, with a brief rationale per step. Saves the
- * researcher skill from re-deriving these on every request.
- *
- * Recipes are content (not derived), so this builder is mostly a
- * declarative table. The build step validates that every referenced
- * skill exists in the manifest, so a renamed/deleted skill surfaces as a
- * build error.
+ * Builds `data/_indexes/recipes.json` — curated skill chains for the common
+ * operator cases, so the researcher skill does not re-derive them per request.
+ * The table below is content, not derived; the build validates every referenced
+ * skill against the manifest, so a rename or deletion fails the build.
  */
 
 const RECIPES = [
@@ -138,9 +131,8 @@ function buildRecipes({ skills }) {
     throw new Error("recipes.js: " + errors.join("; "));
   }
 
-  // Add token-budget hints once we have them — token-budget builder may run
-  // after this one, so we just emit the per-step list and let consumers
-  // join to token-budget.json. The skill_count is cheap to include here.
+  // No token-budget hints here: that builder may run after this one, so
+  // consumers join to token-budget.json themselves.
   const out = {
     _meta: {
       schema_version: "1.0.0",

@@ -1,23 +1,13 @@
 #!/usr/bin/env node
 "use strict";
 /**
- * scripts/check-catalog-gap-budget.js
+ * Predeploy gate: runs the gap detectors and asserts no class exceeds its
+ * budget. Exit 0 within budget, 1 regressed, 2 internal error.
  *
- * Predeploy / CI gate that runs the v0.13.21 extended gap detectors
- * and asserts no class exceeds its budget. Mirrors the budget in
- * tests/shipped-catalog-integrity.test.js but runs as a standalone
- * predeploy gate so the check is visible in the gate summary even
- * when the broader test suite is skipped (or is the gate that's
- * failing for an unrelated reason).
- *
- * Exit codes:
- *   0 — every extended class within budget
- *   1 — at least one class regressed
- *   2 — internal error
- *
- * The budget is intentionally duplicated (here + integrity test) for
- * fail-loud-at-two-levels. Operators see the regression in BOTH the
- * test-suite output AND the predeploy gate-summary table.
+ * The budget is duplicated in tests/shipped-catalog-integrity.test.js so a
+ * regression shows in both the test output and the gate-summary table, and so
+ * the gate still reports when the suite is skipped or failing elsewhere. Both
+ * copies move together.
  */
 
 const path = require("path");
@@ -47,16 +37,13 @@ function loadAll() {
   };
 }
 
-// Per-class regression budgets. Kept in sync with the canonical version
-// in tests/shipped-catalog-integrity.test.js.
+// Per-class regression budgets, mirrored in
+// tests/shipped-catalog-integrity.test.js.
 const BUDGET = {
   "content-quality": 12,
-  // temporal-staleness now measures only maintainer-controllable data-freshness
-  // fields (source_verified > 180d, last_updated > 365d, epss_date > 90d). The
-  // calendar-driven KEV-due-passed sub-check was removed — it was an external
-  // operator-remediation date, not catalog freshness, and grew without bound as
-  // the catalog aged and KEV drafts got curated. Actual is 0 with fresh data;
-  // 10 leaves headroom for entries aging past a threshold before a refresh.
+  // temporal-staleness counts only the maintainer-controllable freshness fields,
+  // which sit at 0 on fresh data; the headroom covers entries aging past a
+  // threshold between refreshes.
   "temporal-staleness": 10,
   "logical-consistency": 5,
   "cross-ref-completeness": 5,
@@ -71,20 +58,16 @@ function main() {
   for (const f of all) byClass[f.class] = (byClass[f.class] || 0) + 1;
   const regressions = [];
 
-  // Fail-closed contract (codex P2 PR #61): every class actually
-  // emitted by the detector must have a budget entry. If a future
-  // 8th detector lands without a budget update, the gate fires with
-  // an unbudgeted-class error instead of silently passing.
+  // Fail-closed: a class the detectors emit without a budget entry fires an
+  // unbudgeted-class error rather than passing unmeasured.
   const unbudgeted = [];
   for (const cls of Object.keys(byClass)) {
     if (!(cls in BUDGET)) {
       unbudgeted.push({ class: cls, count: byClass[cls] });
     }
   }
-  // Inverse check: every class declared by the detector module's
-  // canonical class list must appear in BUDGET (covers the case where
-  // a new class produces zero findings on this run but still needs
-  // an explicit budget so a future regression caps fail-closed).
+  // The inverse: a class declared in DETECTOR_CLASSES needs a budget even when
+  // it emits nothing on this run, or the first regression has no cap to hit.
   const missingBudget = [];
   if (Array.isArray(D.DETECTOR_CLASSES)) {
     for (const cls of D.DETECTOR_CLASSES) {

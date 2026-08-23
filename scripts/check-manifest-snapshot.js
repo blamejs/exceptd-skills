@@ -1,33 +1,9 @@
 "use strict";
 /**
- * scripts/check-manifest-snapshot.js
- *
- * CI gate. Captures the current public skill surface (skill name +
- * version + triggers + data_deps + atlas_refs + attack_refs +
- * framework_gaps) from manifest.json and compares it to the committed
- * manifest-snapshot.json baseline.
- *
- * The skill surface is the public contract this repo offers downstream
- * AI assistants: skill names that downstream prompts may reference,
- * trigger keywords that downstream skill-matchers index on, and the
- * data files that skills rely on. Removing a skill or trigger keyword
- * silently breaks every consumer that pinned that surface.
- *
- * Exit codes:
- *   0  — no breaking changes (additive changes printed but not failing)
- *   1  — breaking changes detected
- *   2  — script-level error (missing baseline, IO failure, etc.)
- *
- * Operators see this gate in SECURITY.md / CONTRIBUTING.md as a CI
- * promise: "removed skills, removed triggers, or removed data deps fail
- * the build before they reach main."
- *
- * Usage:
- *   node scripts/check-manifest-snapshot.js
- *
- * Regenerate the baseline after an intentional removal:
- *   node scripts/refresh-manifest-snapshot.js
- *   git add manifest-snapshot.json && git commit
+ * CI gate: diffs the public skill surface in manifest.json — name, version,
+ * triggers, data_deps, ref arrays — against the committed manifest-snapshot.json.
+ * Exit 0 when nothing broke (additive changes print and still pass), 1 on a
+ * breaking change, 2 on a script-level error such as a missing baseline.
  */
 
 const fs = require("fs");
@@ -39,9 +15,7 @@ const MANIFEST_PATH = path.join(ROOT, "manifest.json");
 const SNAPSHOT_PATH = path.join(ROOT, "manifest-snapshot.json");
 
 function captureSurface(manifest) {
-  // Public surface = the set of facts downstream consumers may have
-  // pinned against. NOT included: sha256 / signature / signed_at —
-  // those change every commit and are not a public contract.
+  // Only what a consumer pins against: sha256, signature and signed_at change every commit.
   const skills = (manifest.skills || []).map(s => ({
     name: s.name,
     version: s.version || null,
@@ -70,30 +44,24 @@ function diff(baseline, current) {
   const bSkills = new Map(baseline.skills.map(s => [s.name, s]));
   const cSkills = new Map(current.skills.map(s => [s.name, s]));
 
-  // Removed skills are breaking.
   for (const name of bSkills.keys()) {
     if (!cSkills.has(name)) {
       breaking.push(`removed skill: ${name}`);
     }
   }
 
-  // Added skills are additive.
   for (const name of cSkills.keys()) {
     if (!bSkills.has(name)) {
       additive.push(`added skill: ${name}`);
     }
   }
 
-  // For each skill present in both, diff the pinned facts.
   for (const [name, b] of bSkills) {
     const c = cSkills.get(name);
     if (!c) continue;
 
-    // version downgrades are breaking; bumps are additive.
     if (b.version && c.version && b.version !== c.version) {
-      // Use a simple lexicographic compare — semver isn't enforced
-      // upstream and the manifest version field is informational. The
-      // operator should bump, not unbump.
+      // Lexicographic, not semver: nothing upstream enforces a semver shape.
       if (c.version < b.version) {
         breaking.push(`${name}: version downgraded ${b.version} -> ${c.version}`);
       } else {
@@ -111,7 +79,7 @@ function diff(baseline, current) {
       additive.push(`${name}: added trigger keywords: ${addedTriggers.join(", ")}`);
     }
 
-    // Removed data deps break the skill at load time. Additions are fine.
+    // Removed data deps break the skill at load time.
     const removedDeps = b.data_deps.filter(d => !c.data_deps.includes(d));
     if (removedDeps.length > 0) {
       breaking.push(`${name}: removed data deps: ${removedDeps.join(", ")}`);
@@ -121,11 +89,7 @@ function diff(baseline, current) {
       additive.push(`${name}: added data deps: ${addedDeps.join(", ")}`);
     }
 
-    // Removed ATLAS/ATT&CK/framework refs are surface narrowing.
-    // Per AGENTS.md rule #4 (no orphaned controls) and #12 (external
-    // data version pinning), narrowing the cited surface is a
-    // deliberate decision worth surfacing in CI. Treat as breaking;
-    // the operator can refresh the baseline alongside the intent.
+    // Narrowing the cited surface is deliberate (AGENTS.md #4, #12), so removal is breaking.
     for (const field of ["atlas_refs", "attack_refs", "framework_gaps", "rfc_refs", "cwe_refs", "d3fend_refs", "dlp_refs"]) {
       const removed = b[field].filter(r => !c[field].includes(r));
       if (removed.length > 0) {
@@ -138,9 +102,6 @@ function diff(baseline, current) {
     }
   }
 
-  // ATLAS pinned-version change is breaking per AGENTS.md rule #12
-  // (never silently inherit version changes). The operator must update
-  // the baseline alongside the audit of TTP ID changes.
   if (baseline.atlas_version && current.atlas_version &&
       baseline.atlas_version !== current.atlas_version) {
     breaking.push(
@@ -171,33 +132,16 @@ function formatDiff(result) {
 }
 
 /**
- * Verify the on-disk snapshot still hashes to the value recorded in its
- * .sha256 sidecar. The sidecar is the only thing that catches a hand-edit
- * of manifest-snapshot.json that bypassed refresh-manifest-snapshot.js
- * (the surface diff alone is defeated by editing manifest.json AND the
- * baseline in lockstep — e.g. to hide a removed skill/trigger). The
- * sidecar pins the baseline's exact bytes so that lockstep edit no longer
- * produces a matching pair.
- *
- * Pairing invariant: refresh-manifest-snapshot.js always writes BOTH the
- * snapshot and its sidecar, and package.json `files` ships them together.
- * So a snapshot present WITHOUT its sidecar is not a benign legacy state
- * for any tree the current gate runs against (CI/predeploy run on the
- * committed tree, where both are present; the shipped tarball ships both).
- * An absent sidecar next to a present snapshot is the integrity-evasion
- * shape — treat it as a failure, symmetric with the present-but-mismatch
- * failure. Returns { ok, error } so callers can surface a hard exit.
- *
- * @param {string} root  repo root containing the snapshot + sidecar
- * @returns {{ok: boolean, error: (string|null)}}
+ * Verify the snapshot still hashes to its .sha256 sidecar. The surface diff
+ * alone is defeated by editing manifest.json and the baseline in lockstep; the
+ * sidecar pins the baseline's exact bytes so that pair no longer matches.
  */
 function checkSnapshotIntegrity(root) {
   const snapshotPath = path.join(root, "manifest-snapshot.json");
   const shaPath = path.join(root, "manifest-snapshot.sha256");
 
   if (!fs.existsSync(snapshotPath)) {
-    // No snapshot at all — the caller's baseline-read handles this as a
-    // distinct error. Nothing for the integrity check to anchor against.
+    // Nothing to anchor against; the caller's baseline read reports this.
     return { ok: true, error: null };
   }
 
@@ -253,11 +197,7 @@ if (require.main === module) {
       process.exit(2);
     }
 
-    // Integrity gate: the snapshot must hash to its recorded sidecar value,
-    // and the sidecar must be present whenever the snapshot is. A missing
-    // sidecar next to a present snapshot is itself a failure — it is the
-    // only thing that would have caught a lockstep hand-edit of manifest.json
-    // + the baseline, so allowing it to be deleted re-opens that bypass.
+    // Before the diff: a tampered baseline must not be diffed as though trustworthy.
     const integrity = checkSnapshotIntegrity(ROOT);
     if (!integrity.ok) {
       console.error("[check-manifest-snapshot] " + integrity.error);

@@ -1,21 +1,8 @@
 "use strict";
 /**
- * scripts/check-sbom-currency.js
- *
- * Predeploy gate: assert sbom.cdx.json is current against the live skill +
- * catalog counts. Drift means an SBOM regen was forgotten — operators
- * downloading the tarball would see counts that disagree with the actual
- * manifest.json and data/*.json contents.
- *
- * Anchors to ROOT in this order of preference:
- *   1. `--root <dir>` on argv (testability — staged tempdir layouts).
- *   2. `EXCEPTD_ROOT` environment variable.
- *   3. `path.join(__dirname, '..')` — the running script's parent dir.
- *
- * Exit 0 on current SBOM, 1 on any drift (catalog count, skill count, or
- * CycloneDX-format mismatch).
- *
- * No external dependencies. Node 24 stdlib only.
+ * Predeploy gate: sbom.cdx.json must be current against the live skill and
+ * catalog counts, the recorded file hashes and the shipped-file set — drift
+ * means the tarball ships an SBOM that disagrees with its own contents.
  */
 
 const fs = require("fs");
@@ -31,16 +18,10 @@ function resolveRoot(argv) {
   return path.join(__dirname, "..");
 }
 
-// Entry count for a data/*.json catalog: keys minus the _meta sentinel. The
-// catalogs are objects keyed by entry id (CVE-…, CWE-…, T…, AML.T…, D3-…,
-// RFC-…) with a single _meta block, so the live entry total is the key count
-// excluding _meta.
+// Live entry total for a data/*.json catalog, or null when the file is absent so
+// a `--root` pointed at a partial tree skips that token instead of crashing.
 function catalogEntryCount(dataDir, file) {
   const p = path.join(dataDir, file);
-  // A --root pointed at a partial tree (no such catalog file) skips that
-  // token's check rather than crashing — catalog PRESENCE is asserted by
-  // the cardinality check above and the per-component hash check below,
-  // not by the description parser.
   if (!fs.existsSync(p)) return null;
   const j = JSON.parse(fs.readFileSync(p, "utf8"));
   if (Array.isArray(j)) return j.length;
@@ -50,18 +31,13 @@ function catalogEntryCount(dataDir, file) {
   return 0;
 }
 
-// Files/prefixes that refresh-sbom's expandAllowlist excludes from the shipped
-// file: component inventory. Kept in sync with scripts/refresh-sbom.js
-// (SELF_EXCLUDED + DERIVABLE_PREFIXES): the SBOM never hashes itself, and the
-// pre-computed index cache under data/_indexes/ is regenerated/test-mutated, so
-// it carries no per-file component. The completeness check below must apply the
-// SAME exclusions or it would demand a component for a file the generator never
-// emits one for.
+// Mirrors scripts/refresh-sbom.js SELF_EXCLUDED + DERIVABLE_PREFIXES: the
+// completeness check must apply the SAME exclusions or it demands a component
+// the generator never emits.
 const SBOM_SELF_EXCLUDED = new Set(["sbom.cdx.json"]);
 const SBOM_DERIVABLE_PREFIXES = ["data/_indexes/"];
 // Mirrors refresh-sbom's ALWAYS_SHIPPED: npm adds package.json to every tarball
-// without it appearing in `files`, so the completeness check has to expect a
-// component for it the same way the generator now emits one.
+// without it appearing in `files`, so a component is expected for it.
 const SBOM_ALWAYS_SHIPPED = ["package.json", "sources/README.md"];
 
 function sbomIsDerivable(rel) {
@@ -70,9 +46,7 @@ function sbomIsDerivable(rel) {
   );
 }
 
-// Recursively list every regular file under absDir, returned as absolute paths.
-// Mirrors refresh-sbom's walkFiles (which is root-agnostic — it walks whatever
-// absolute dir it is given).
+// Mirrors refresh-sbom's walkFiles, walking whatever absolute dir it is handed.
 function walkFilesAbs(absDir) {
   const out = [];
   let entries;
@@ -86,15 +60,9 @@ function walkFilesAbs(absDir) {
   return out;
 }
 
-// Root-aware allowlist expansion: the shipped-file set that must each have a
-// file: component, computed against the TARGET tree (`root`), not the running
-// script's source repo. refresh-sbom's exported expandAllowlist is bound to its
-// own REPO_ROOT (it joins/relativizes against __dirname/..), so under a `--root`
-// target the completeness check would otherwise validate the SOURCE repo's file
-// list against the TARGET SBOM — the wrong tree. Replicating the expansion here
-// (same SELF_EXCLUDED + DERIVABLE_PREFIXES exclusions, same dedupe+sort) keeps
-// the gate honest under `--root` without reaching across into the generator's
-// module-level root.
+// The shipped-file set that must each have a file: component, computed against
+// the TARGET tree. refresh-sbom's expandAllowlist is bound to its own REPO_ROOT,
+// so it would validate the source repo's file list against the target SBOM.
 function expandAllowlistAt(allowlist, root) {
   const abs = [];
   for (const entry of [...allowlist, ...SBOM_ALWAYS_SHIPPED]) {
@@ -114,11 +82,8 @@ function expandAllowlistAt(allowlist, root) {
   return rel;
 }
 
-// The description string embeds per-catalog ENTRY counts as free text, e.g.
-// "11 catalogs (439 CVEs / 177 CWEs / 805 ATT&CK + ICS / 170 ATLAS /
-// 468 D3FEND / 8888 RFCs)". Each token maps to one data/*.json catalog whose
-// live entry count must match. `label` is the regex-escaped text that follows
-// the number in the description.
+// The description embeds per-catalog ENTRY counts as free text ("… 177 CWEs /
+// 805 ATT&CK + ICS …"). `label` is the regex-escaped text after the number.
 const DESCRIPTION_ENTRY_TOKENS = [
   { file: "cve-catalog.json", label: "CVEs" },
   { file: "cwe-catalog.json", label: "CWEs" },
@@ -161,14 +126,8 @@ function checkSbomCurrency(root) {
     errors.push("SBOM is not CycloneDX 1.6");
   }
 
-  // The SBOM ships per-catalog entry counts and a skill count embedded as free
-  // text in metadata.component.description (propagated verbatim from
-  // package.json). The numeric properties above only cover catalog/skill
-  // CARDINALITY (file count + skill count), so a catalog's entry total can
-  // drift past the count baked into the description while the dedicated SBOM
-  // gate still passes. Parse each token out of the description and assert it
-  // against the live entry count so a stale published-SBOM description fails
-  // the gate.
+  // The numeric properties above cover only CARDINALITY, so an entry total can
+  // drift in the description while those still agree.
   const description =
     (sbom.metadata && sbom.metadata.component && sbom.metadata.component.description) || "";
   for (const { file, label } of DESCRIPTION_ENTRY_TOKENS) {
@@ -188,7 +147,6 @@ function checkSbomCurrency(root) {
       );
     }
   }
-  // The skill count is embedded in the same description string ("N skills").
   const skillMatch = description.match(/(\d+)\s+skills\b/);
   if (!skillMatch) {
     errors.push(
@@ -200,15 +158,9 @@ function checkSbomCurrency(root) {
     );
   }
 
-  // The "N catalogs" and "N jurisdictions" free-text counts in the same
-  // description string were never validated — only the per-catalog entry tokens
-  // and the skill count were. Pin them to the live values so a stale
-  // description (e.g. after an auto-refresh changed a count) fails the gate.
   const catalogMatch = description.match(/(\d+)\s+catalogs?\b/i);
   if (!catalogMatch) {
-    // Symmetric with the entry/skill tokens: absence fails CLOSED. A reworded
-    // description (or an auto-refresh that dropped the token) must not silently
-    // skip the count check — that is the asymmetric-absent fail-open class.
+    // Absence fails CLOSED: a reworded description must not skip the check.
     errors.push(
       "SBOM description is missing the catalog-count token (N catalogs) — regenerate via `npm run refresh-sbom`"
     );
@@ -220,21 +172,16 @@ function checkSbomCurrency(root) {
   const liveJurisdictions = (() => {
     try {
       const gf = JSON.parse(fs.readFileSync(path.join(dataDir, "global-frameworks.json"), "utf8"));
-      // Non-underscore top-level keys — the canonical jurisdiction count the
-      // README badge and catalog-summaries use.
+      // Non-underscore top-level keys — the count the README badge reports.
       return Object.keys(gf).filter((k) => !k.startsWith("_")).length;
     } catch {
       return null;
     }
   })();
   const jurisdictionMatch = description.match(/(\d+)\s+jurisdictions?\b/i);
-  // Only enforce the jurisdiction token when the live source exists — a partial
-  // `--root` tree without global-frameworks.json (liveJurisdictions === null)
-  // skips the check rather than failing, matching catalogEntryCount's null-skip.
-  // When the source IS present, absence of the token fails CLOSED (the
-  // description token is the SBOM's only jurisdiction-count assertion — there is
-  // no structured jurisdiction property — so a dropped token would otherwise
-  // leave the count entirely unvalidated).
+  // A partial `--root` tree without global-frameworks.json skips the check. Where
+  // the source IS present the token is the SBOM's only jurisdiction assertion —
+  // no structured property carries it — so a dropped token fails CLOSED.
   if (liveJurisdictions !== null) {
     if (!jurisdictionMatch) {
       errors.push(
@@ -247,15 +194,9 @@ function checkSbomCurrency(root) {
     }
   }
 
-  // Component-level cross-check (defense-in-depth). In normal operation
-  // refresh-sbom emits NO per-skill "skill:" components — skill drift is caught
-  // by the file:skills/<name>/skill.md and file:manifest.json content hashes in
-  // the file: component pass below (a bumped or renamed skill changes those
-  // bytes). This branch is therefore not exercised by a clean SBOM, but it is
-  // retained as a tamper guard: a forged or buggy SBOM that injected a skill
-  // component with a stale version (or a skill name no longer in the manifest)
-  // is still caught here. Vendor components are validated against
-  // vendor/blamejs/_PROVENANCE.json.
+  // A clean SBOM carries no "skill:" components — skill drift shows up in the
+  // file: hashes. This branch is the tamper guard for a forged SBOM that injects
+  // one with a stale version.
   const components = Array.isArray(sbom.components) ? sbom.components : [];
   const skillByName = new Map(
     (manifest.skills || []).map((s) => [s.name, s])
@@ -297,27 +238,17 @@ function checkSbomCurrency(root) {
     }
   }
 
-  // v0.13.9: per-file SHA-256 integrity check. For every CycloneDX
-  // component whose bom-ref begins with "file:", confirm the recorded
-  // SHA-256 hash matches the live bytes on disk. Catches the class of
-  // release-ordering bug where sbom.cdx.json was regenerated BEFORE the
-  // final sign-all pass — the recorded manifest.json hash drifted from
-  // the signed-and-committed bytes, but the count-based check above
-  // could not see it. Codex P2 flag on PR #48 surfaced one instance;
-  // this gate makes it unreachable.
+  // Every "file:" component's recorded hash must match the live bytes. This is
+  // what catches an SBOM regenerated BEFORE the final sign-all, where the
+  // recorded manifest.json hash drifts from the signed-and-committed bytes.
   let fileComponentsChecked = 0;
   const rootResolved = path.resolve(root);
   for (const comp of components) {
     const bomRef = typeof comp["bom-ref"] === "string" ? comp["bom-ref"] : "";
     if (!bomRef.startsWith("file:")) continue;
     const relPath = bomRef.slice("file:".length);
-    // Codex P2 on PR #49: refuse bom-ref entries that escape the repo
-    // root. The earlier implementation trusted `relPath` verbatim, so a
-    // tampered or carelessly-edited sbom.cdx.json with `file:../outside`
-    // would read + hash a path OUTSIDE the checkout — the gate would
-    // either report "exists, hash matches" (silently weakening the
-    // integrity guarantee) or "does not exist" without ever flagging the
-    // attempted escape. Refuse early.
+    // A `file:../outside` bom-ref would otherwise hash a path outside the
+    // checkout and report "exists, hash matches" — never the escape.
     if (relPath.includes("..") || path.isAbsolute(relPath)) {
       errors.push(
         `SBOM file component "${relPath}" rejected: path must be repo-relative without ".." segments (path-traversal guard)`
@@ -325,9 +256,8 @@ function checkSbomCurrency(root) {
       continue;
     }
     const absPath = path.resolve(rootResolved, relPath);
-    // Defense-in-depth: even if the textual check above passed, the
-    // resolved path must still live under the root. Symlinks or future
-    // changes to the textual filter would surface here.
+    // The resolved path must also land under root — a symlink, or a loosening of
+    // the textual filter above, surfaces here.
     const rel = path.relative(rootResolved, absPath);
     if (rel.startsWith("..") || path.isAbsolute(rel)) {
       errors.push(
@@ -341,17 +271,8 @@ function checkSbomCurrency(root) {
       );
       continue;
     }
-    // v0.13.12: verify SHA-256 AND SHA3-512 when present. SHA-256 is
-    // the universal-tool contract (CycloneDX 1.6 default, Anchore /
-    // Trivy / Dependency-Track / GitHub Dependency Graph). SHA3-512
-    // is the SHA-3 family hedge, matching the existing key-fingerprint
-    // pattern (lib/verify.js). Both must agree with the live bytes;
-    // a mismatch on either fires the same drift error. A missing
-    // SHA-256 is a hard error (the universal contract is the floor);
-    // a missing SHA3-512 surfaces as a downgrade-attack warning so an
-    // operator who intentionally strips the second hash from an
-    // SBOM (post-quantum posture relaxation) sees it in the gate
-    // output, not in the JSON downstream.
+    // SHA-256 is the universal-tool contract (CycloneDX 1.6 default, read by
+    // Anchore / Trivy / Dependency-Track); SHA3-512 is the SHA-3 family hedge.
     const sha256Entry = (comp.hashes || []).find((h) => h && h.alg === "SHA-256");
     const sha3Entry = (comp.hashes || []).find((h) => h && h.alg === "SHA3-512");
     if (!sha256Entry || typeof sha256Entry.content !== "string") {
@@ -367,12 +288,8 @@ function checkSbomCurrency(root) {
         `SBOM file component "${relPath}" SHA-256 drift: recorded ${sha256Entry.content.slice(0, 12)}…, live ${liveSha256.slice(0, 12)}… — re-sign skills (\`node $(exceptd path)/lib/sign.js sign-all\` from a contributor checkout) and then \`npm run refresh-sbom\`, in that order (sbom must regenerate AFTER the final sign).`,
       );
     }
-    // Codex P1 on PR #52: the dual-hash contract requires SHA3-512 to be
-    // PRESENT, not just verified when present. An attacker (or a careless
-    // sbom-generator regression) that strips the SHA3-512 column would
-    // silently pass the gate under an `if (sha3Entry)` guard, defeating
-    // the downgrade defense the dual-hash design is supposed to provide.
-    // Refuse absence as a hard error.
+    // Absence is a hard error, never an `if (sha3Entry)` guard: stripping the
+    // SHA3-512 column would otherwise pass and defeat the downgrade defense.
     if (!sha3Entry || typeof sha3Entry.content !== "string") {
       errors.push(
         `SBOM file component "${relPath}" lacks a SHA3-512 hash entry — the dual-hash contract (SHA-256 + SHA3-512) requires both algorithms on every file: component. Regenerate via \`npm run refresh-sbom\` (v0.13.12+).`
@@ -388,20 +305,12 @@ function checkSbomCurrency(root) {
     fileComponentsChecked++;
   }
 
-  // Completeness + bundle-digest integrity. The per-file pass above verifies
-  // every RECORDED file: component, but never checked that every SHIPPED file
-  // (the package.json.files expansion) actually HAS a component — a
-  // newly-shipped file would ship unhashed and silent. And the aggregate
-  // bundle digest in metadata.component.hashes[] was never recomputed. Reuse
-  // refresh-sbom's exact allowlist expansion + digest so the gate can't drift
-  // from the generator.
+  // Completeness plus the aggregate bundle digest. The per-file pass verifies
+  // every RECORDED component, so without this a newly-shipped file carrying no
+  // component would go unhashed and silent.
   try {
-    // bundleDigest operates purely on the file: component objects (no tree
-    // walk), so it is root-agnostic and safe to reuse from the generator. The
-    // allowlist expansion, by contrast, MUST run against the target `root`
-    // (expandAllowlistAt below) — refresh-sbom's exported expandAllowlist is
-    // pinned to its own source-repo REPO_ROOT and would validate the wrong tree
-    // under `--root`.
+    // bundleDigest reads only the file: component objects, so it is
+    // root-agnostic; the allowlist expansion is not, hence expandAllowlistAt.
     const { bundleDigest } = require("./refresh-sbom");
     const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
     const expected = expandAllowlistAt(pkg.files || [], root);
@@ -416,16 +325,11 @@ function checkSbomCurrency(root) {
         );
       }
     }
-    // Recompute the aggregate bundle digest from the file: components' recorded
-    // SHA-256 hashes and compare to metadata.component.hashes[] (the per-file
-    // pass already tied each recorded hash to live bytes).
+    // Recomputed from the recorded per-file SHA-256s, already tied to live bytes.
     const compHashes = (sbom.metadata && sbom.metadata.component && sbom.metadata.component.hashes) || [];
     const recorded = (compHashes.find((h) => h && h.alg === "SHA-256") || {}).content;
     if (fileComps.length) {
-      // A missing aggregate digest is NOT benign: it is the bundle-as-a-whole
-      // verification anchor. An absent one must fail the gate (symmetric with
-      // the per-file SHA3-512 hard-error that defeats downgrade/strip attacks) —
-      // previously an absent digest silently skipped the comparison entirely.
+      // The bundle-as-a-whole anchor: absence fails rather than skipping.
       if (!recorded) {
         errors.push(
           "SBOM metadata.component.hashes lacks a SHA-256 bundle digest — the aggregate verification anchor is missing; run `npm run refresh-sbom`"
@@ -459,9 +363,7 @@ function main() {
   if (!result.ok) {
     for (const e of result.errors) process.stderr.write(e + "\n");
     process.stderr.write("Run `npm run refresh-sbom` to regenerate sbom.cdx.json.\n");
-    // v0.11.13 pattern: set exitCode + return so buffered stdout/stderr
-    // writes drain before the event loop exits. process.exit() can
-    // truncate piped output (CI log capture, JSON consumers).
+    // process.exitCode, not process.exit() — the exit can truncate a piped write.
     process.exitCode = 1;
     return;
   }

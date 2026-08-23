@@ -1,24 +1,8 @@
 "use strict";
 /**
- * scripts/builders/summary-cards.js
- *
- * Builds `data/_indexes/summary-cards.json` — for each skill, a compact
- * abstract that downstream AI consumers (researcher dispatch in particular)
- * can render without loading the full skill body.
- *
- * Card shape per skill:
- *   {
- *     description:           manifest description
- *     threat_context_excerpt: first paragraph of Threat Context section
- *     produces:               first paragraph of Output Format section (if present)
- *     key_xrefs: {
- *       cwe_refs, d3fend_refs, framework_gaps, atlas_refs,
- *       attack_refs, rfc_refs, dlp_refs
- *     }
- *     trigger_count, atlas_count, attack_count, framework_gap_count,
- *     last_threat_review, path,
- *     handoff_targets: skills referenced from this skill's Hand-Off section
- *   }
+ * Builds `data/_indexes/summary-cards.json`: a compact per-skill abstract that
+ * downstream AI consumers — researcher dispatch in particular — render without
+ * loading the full skill body.
  */
 
 const fs = require("fs");
@@ -47,14 +31,11 @@ function locateHeader(lines, headerRegex) {
 }
 
 function firstParagraphAfterHeader(body, headerRegex) {
-  // Locate the first real H2 matching the regex, then find the first prose
-  // paragraph beneath it — skip any H3 / H4 / bold-prefix metadata lines /
-  // horizontal rules / table separators that often sit at the top of a
-  // section. Real H2 means outside of fenced code blocks.
+  // The first prose paragraph beneath the matching H2, skipping the H3/H4,
+  // bold-prefix metadata, rules and table separators that often lead a section.
   const lines = body.split(/\r?\n/);
   const hdrIdx = locateHeader(lines, headerRegex);
   if (hdrIdx < 0) return null;
-  // Find the next real H2 as the section boundary.
   const allH2 = findRealH2Indices(lines);
   const nextH2 = allH2.find((i) => i > hdrIdx);
   const sectionEnd = nextH2 != null ? nextH2 : lines.length;
@@ -106,11 +87,9 @@ function firstChunkAfterHeader(body, headerRegex, maxChars = 600) {
 }
 
 function handoffTargets(body, allSkillNames, selfName) {
-  // Look ONLY in the Hand-Off section; backtick-quoted skill names count as a
-  // target. Bound the scan to [Hand-Off header, next real H2) so unrelated
-  // later sections are not mis-attributed as hand-off targets. Header
-  // detection and the section boundary are both fence-aware (a `## ` line
-  // inside a ```...``` block is not a real H2).
+  // Only the Hand-Off section counts, and a backtick-quoted skill name is a
+  // target. The scan is bounded to [header, next real H2) so a later section is
+  // not mis-attributed, and both bounds are fence-aware.
   const lines = body.split(/\r?\n/);
   const h2 = findRealH2Indices(lines);
   const handoffIdx = h2.find((i) => /^## Hand-?Off/.test(lines[i]));

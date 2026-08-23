@@ -2,30 +2,14 @@
 "use strict";
 
 /**
- * TTP reference-integrity gate.
+ * TTP reference-integrity gate. data/attack-techniques.json and
+ * data/atlas-ttps.json are the pinned copies of ATT&CK and ATLAS; every other file
+ * naming a technique refers into them, and this proves those references resolve.
+ * Resolution runs against the pins, not against MITRE:
+ * scripts/check-ttp-upstream.js is the network check on whether the pins
+ * themselves are current, and it cannot block a release. This one can.
  *
- * data/attack-techniques.json and data/atlas-ttps.json are the pinned copies of
- * ATT&CK and ATLAS. Every other file that names a technique — countermeasure
- * maps, DLP controls, playbooks, skill bodies, CVE entries — is referring INTO
- * those two catalogs. This gate proves those references resolve.
- *
- * The failure it exists for: MITRE retires and renumbers techniques between
- * releases. When a pin is bumped, the two source catalogs get remapped, but
- * references living in other files are easy to miss — nothing dereferences them
- * at runtime, so a stale id keeps rendering in operator output as if it were
- * current. It points at a MITRE page that no longer resolves, and any control
- * claiming to counter it is now mapped to nothing (AGENTS.md Hard Rule #4: no
- * orphaned controls). A bumped pin left exactly this residue in the D3FEND and
- * DLP maps, invisible to every other gate.
- *
- * The check is offline: it resolves references against the pinned catalogs, not
- * against MITRE. That is deliberate — scripts/check-ttp-upstream.js is the
- * network check that asks whether the PINS are current, and it cannot block a
- * release because it needs connectivity. This one can block, because a
- * reference that does not resolve against the pin we ship is broken no matter
- * what upstream says.
- *
- * Exit codes: 0 all references resolve, 1 unresolved references found.
+ * Exit 0 when every reference resolves, 1 when any does not.
  */
 
 const fs = require("node:fs");
@@ -34,11 +18,10 @@ const path = require("node:path");
 const ROOT = path.resolve(__dirname, "..");
 
 /**
- * ATT&CK ids are TNNNN[.NNN]; ATLAS ids are AML.TNNNN[.NNN]. The lookbehind
- * matters: without it the ATT&CK alternative matches the "T0017" inside
- * "AML.T0017" and reports a phantom bare-ATT&CK reference for every ATLAS id in
- * the tree. It covers the hyphen as well, because ATLAS ids also appear in
- * filenames, where the dot is not a legal separator.
+ * ATT&CK ids are TNNNN[.NNN]; ATLAS ids are AML.TNNNN[.NNN]. Without the
+ * lookbehind the ATT&CK alternative matches the "T0017" inside "AML.T0017" and
+ * reports a phantom bare-ATT&CK reference for every ATLAS id. It covers the
+ * hyphen too, since ATLAS ids also appear in filenames.
  */
 const TTP_PATTERN = /\bAML\.T\d{4}(?:\.\d{3})?\b|(?<!AML[.-])\bT\d{4}(?:\.\d{3})?\b/g;
 
@@ -50,17 +33,10 @@ const SEARCH_EXTS = new Set([".json", ".md", ".js"]);
 const SKIP_DIRS = new Set(["node_modules", "_indexes", "vendor", ".git"]);
 
 /**
- * Tokens that match the pattern without being references to a technique.
- * Every entry needs a reason: an unexplained allowlist is how a real stale id
- * eventually gets parked here to make the gate green.
+ * Tokens that match the pattern without referencing a technique. Every entry needs
+ * a reason: an unexplained allowlist is how a real stale id gets parked here.
  */
-const NOT_REFERENCES = [
-  {
-    id: "T1234",
-    file: "lib/gap-detectors.js",
-    why: "placeholder in a comment describing the reference-extraction pattern itself, not a claim about a technique",
-  },
-];
+const NOT_REFERENCES = [];
 
 function loadKnownIds() {
   const known = new Set();

@@ -1,36 +1,9 @@
 "use strict";
 /**
- * scripts/builders/token-budget.js
- *
- * Builds `data/_indexes/token-budget.json` — per-skill approximate token
- * counts using a character-density heuristic. Zero-dep (no tiktoken). The
- * approximation is documented as such so consumers know to recompute with
- * their own tokenizer if precision matters.
- *
- * Heuristic: 1 token ≈ 4 characters for English prose mixed with technical
- * tokens (matches the well-known OpenAI rule-of-thumb). This is an upper
- * bound for Claude (Anthropic's tokenizer is more efficient on common
- * prose) but is good enough for context-budget planning where consumers
- * just need to know "is this load 5K or 50K tokens".
- *
- * Per-skill shape:
- *   {
- *     path:                 skill file path
- *     bytes:                total file bytes
- *     chars:                total character count
- *     lines:                line count
- *     approx_tokens:        chars / 4 (integer)
- *     approx_chars_per_token: 4
- *     sections: {
- *       <normalized_section_name>: { bytes, approx_tokens }
- *     }
- *   }
- *
- * Corpus totals live under the top-level `_meta` block:
- *   {
- *     schema_version, tokenizer_note, approx_chars_per_token,
- *     total_chars, total_approx_tokens, skill_count
- *   }
+ * Builds `data/_indexes/token-budget.json`: per-skill token counts from a
+ * 1-token ≈ 4-characters density heuristic, with no tokenizer dependency. The
+ * result is an upper bound for context-budget planning, never a precise count —
+ * the caveat travels with the data in `_meta.tokenizer_note`.
  */
 
 const fs = require("fs");

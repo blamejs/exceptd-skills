@@ -1,29 +1,7 @@
 "use strict";
 /**
- * scripts/audit-cross-skill.js
- *
- * Comprehensive cross-skill accuracy / bug audit. Run after any
- * skill add / rename / dispatch-rewire. Surfaces:
- *
- *   - manifest paths that don't exist on disk
- *   - skill directories on disk with no manifest entry
- *   - frontmatter `name` drift from manifest `name`
- *   - skills missing from the researcher dispatch table
- *   - skills missing from AGENTS.md Quick Skill Reference
- *   - version drift between package.json / manifest.json / CHANGELOG.md
- *   - manifest-snapshot.json drift from manifest.json
- *   - sbom.cdx.json drift from live skill / catalog counts
- *   - broken ref: any cwe_refs / d3fend_refs / framework_gaps / atlas_refs /
- *     rfc_refs / dlp_refs that doesn't resolve in its catalog
- *   - RFC catalog reverse-references that drift from manifest forward-refs
- *   - skill-update-loop "Affected skills" blocks referencing nonexistent skills
- *   - stale references to renamed skills in any tracked file
- *   - trigger collisions between skills (informational)
- *   - README badge count drift
- *
- * Exit non-zero on any finding (excluding trigger collisions which are informational).
- *
- * Usage: node scripts/audit-cross-skill.js
+ * Cross-skill accuracy audit: manifest, skill files, catalogs and docs must
+ * agree. Exits non-zero on any finding; trigger collisions are informational.
  */
 
 const fs = require("fs");
@@ -196,7 +174,7 @@ for (const f of trackedDocs) {
   const body = fs.readFileSync(ABS(f), "utf8");
   for (const tok of staleTokens) {
     if (body.includes(tok)) {
-      // CHANGELOG legitimately records the rename in the 0.5.4 entry.
+      // The CHANGELOG legitimately records the rename.
       if (f === "CHANGELOG.md") continue;
       note(`STALE RENAME REF in ${f}: contains "${tok}"`);
     }
@@ -228,11 +206,8 @@ if (badgeMatch && Number(badgeMatch[1]) !== skills.length) {
 const jurBadge = readme.match(/jurisdictions-(\d+)-/);
 const liveJurs = (() => {
   const g = JSON.parse(fs.readFileSync(ABS("data/global-frameworks.json"), "utf8"));
-  // Canonical jurisdiction count: every non-metadata top-level entry in the
-  // registry. GLOBAL (the International / Multi-Jurisdiction standards scope:
-  // ISO, CSA, CIS) is a counted entry, matching the README badge and the
-  // catalog-summary index. Only `_`-prefixed keys (_meta, _notification_summary,
-  // _patch_sla_summary) are metadata and excluded.
+  // Every non-metadata top-level entry, GLOBAL included — matches the README
+  // badge and the catalog-summary index.
   return Object.keys(g).filter((k) => !k.startsWith("_")).length;
 })();
 if (jurBadge && Number(jurBadge[1]) !== liveJurs) {
@@ -249,7 +224,6 @@ if (cntClaim) {
   }
 }
 
-// Output
 console.log("\n=== CROSS-SKILL AUDIT ===");
 console.log(`Skills: ${skills.length}`);
 console.log(`Catalogs: ${liveCatalogs}`);
