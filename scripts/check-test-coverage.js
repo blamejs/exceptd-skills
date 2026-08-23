@@ -218,9 +218,15 @@ function extractCliSurface(content) {
   if (removedBlock) {
     for (const m of removedBlock[1].matchAll(/^\s*"?([a-zA-Z][\w-]+)"?\s*:/gm)) verbs.add(m[1]);
   }
+  // Scans the whole file, prose included, so a flag named in a comment counts as
+  // surface. A trailing hyphen means the match stopped at a line break mid-name
+  // (`--attest-` wrapping to `ownership`), which is never a flag — admitting one
+  // makes deleting that comment read as a removed flag.
   const flagRe = /(--[a-zA-Z][\w-]+)/g;
   let m;
-  while ((m = flagRe.exec(content)) !== null) flags.add(m[1]);
+  while ((m = flagRe.exec(content)) !== null) {
+    if (!m[1].endsWith("-")) flags.add(m[1]);
+  }
   for (const f of ["--help", "--version"]) flags.delete(f);
   return { verbs, flags };
 }

@@ -8,6 +8,8 @@ Some of it described behavior the code does not have, and those comments are del
 
 The technique-reference gate no longer carries an allowlist. Its one entry excused a placeholder identifier inside a comment describing the extraction pattern; that comment is gone, so the exemption is too, and the next placeholder has to be declared rather than inherited.
 
+The diff-coverage gate no longer reads a command-line flag out of wrapped prose. It scans a file whole, so a comment that broke `--attest-ownership` across a line contributed `--attest-` as a flag in its own right; deleting that comment then registered as removing surface a test still covered. A token ending in a hyphen stopped mid-name and is never a flag, and is now excluded.
+
 ## 0.19.33 — 2026-08-23
 
 The catalog reaches 1,417 CVEs with 94 additions from CISA KEV, weighted to the years the vendors in question were shipping fastest: 25 from 2017, 18 from 2018, 11 from 2015, and ten each from 2016 and 2019. Cisco accounts for 38, Microsoft 28 and Adobe 12. Sixteen carry CISA's ransomware designation, 42 have an obtainable public exploit, and 61 need a restart before the fix is running — the entries keep that separate from the update being installed, because a remediation record keyed to the deployed version reports a host as done while the pre-patch code is still executing.
