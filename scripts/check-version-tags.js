@@ -2,43 +2,11 @@
 "use strict";
 
 /**
- * scripts/check-version-tags.js
- *
- * Refuses NEW version-stamped lines / filenames in the tracked source
- * tree. "Line" is deliberate and broader than "comment": a 0.x version
- * stamp is residue wherever a stranger reads it, which per the
- * operator-facing-surface rules includes string literals that ship to
- * operators — CLI `--help` text, error messages, and test descriptions —
- * not just `//` comments. The scan therefore tests the WHOLE line, so a
- * `version: '0.18.7'` data literal or a `--flag (v0.18.7)` help string
- * counts the same as a `// v0.18.7` comment. Genuinely-load-bearing
- * version references (real test fixtures, deprecation timelines) get the
- * file added to COMMENT_EXEMPT below. The authoritative version surfaces
- * are:
- *
- *   1. package.json / manifest.json `"version"` field
- *   2. CHANGELOG.md `## X.Y.Z` headings
- *   3. git tags
- *   4. CLI `version` verb output (reads from package.json)
- *
- * Anywhere else, `// v0.13.22` / `Pre-v0.13.22` / `*-v0_13_22.test.js`
- * is phase residue — operators don't have the roadmap, version tags
- * rot the moment the next release lands, and `git clone` ships every
- * comment to operators along with the code.
- *
- * The check uses a baseline snapshot (`tests/.version-tag-baseline.
- * json`) capturing current violation counts per file. Future scans
- * compare against the baseline:
- *
- *   - Filename violations beyond baseline → fail.
- *   - Line violations beyond baseline (in any file)           → fail.
- *   - Violations strictly within baseline                     → ok.
- *   - Violations below baseline (drift reduced)               → ok +
- *     suggestion to refresh the baseline.
- *
- * Refresh: `node scripts/check-version-tags.js --update-baseline`.
- *
- * Wired into `npm run predeploy` as a gate.
+ * Predeploy gate refusing new version-stamped lines and filenames in the tracked
+ * source tree. Whole lines, not just comments: a stamp in a data literal or a
+ * help string is residue too, and a load-bearing one is exempted by path in
+ * COMMENT_EXEMPT rather than by narrowing the scan. Counts must not rise above
+ * tests/.version-tag-baseline.json; refresh it with `--update-baseline`.
  */
 
 const fs = require("node:fs");
@@ -48,24 +16,14 @@ const { execFileSync } = require("node:child_process");
 const ROOT = path.join(__dirname, "..");
 const BASELINE_PATH = path.join(ROOT, "tests", ".version-tag-baseline.json");
 
-// Directories we do not walk at all.
 const SKIP_DIRS = new Set([
   "node_modules", ".git", ".keys", ".cache", ".scratch",
   "data", "vendor", ".husky",
 ]);
 
-// File extensions we scan for comment violations.
 const SCAN_EXTS = new Set([".js", ".cjs", ".mjs", ".md"]);
 
-// Paths that the project intentionally version-stamps:
-//   - CHANGELOG headings are how operators navigate the file
-//   - package.json / manifest.json carry the canonical version field
-//   - manifest-snapshot.json + sbom.cdx.json contain version-pinned
-//     metadata (the SBOM IS a version-stamped manifest)
-//   - lib/version-pins.js is a version-constant lookup table
-//   - This checker itself documents what it forbids
-//   - .git-blame-ignore-revs carries commit hashes, not version tags,
-//     but is conventional config the user maintains
+// Paths where a version reference is load-bearing.
 const COMMENT_EXEMPT = new Set([
   "package.json",
   "manifest.json",
@@ -74,45 +32,20 @@ const COMMENT_EXEMPT = new Set([
   "CHANGELOG.md",
   "lib/version-pins.js",
   "scripts/check-version-tags.js",
-  // The release-notes-extract gate test asserts version-based CHANGELOG
-  // extraction + the shorter-vs-longer prefix-collision guard, so its fixtures
-  // MUST embed real `## X.Y.Z` headings (e.g. 0.15.5 vs 0.15.50) — load-bearing
-  // test data, not sprinkled release tags.
+  // Fixtures embed real `## X.Y.Z` headings, including a prefix collision.
   "tests/check-changelog-extract.test.js",
-  // The extract gate's orphan-tag allowlist must name the exact versions of
-  // tags that exist with no published release (outage-recovery bumps), so the
-  // heading-completeness check can skip them — load-bearing references to git
-  // tags, an authoritative version surface.
+  // Allowlists the exact versions of tags with no published release.
   "scripts/check-changelog-extract.js",
-  // The version-bump cadence gate's subject IS version comparison: its doc
-  // shows an example ack naming a target version, and its test compares real
-  // X.Y.Z transitions (patch vs minor vs major vs downgrade). Those version
-  // literals are load-bearing data, not sprinkled release tags.
+  // Version comparison is the subject: real X.Y.Z transitions under test.
   "scripts/check-version-bump.js",
   "tests/version-bump-cadence.test.js",
-  // The version-tag gate's own regression test asserts the trailing-period /
-  // IPv4 / longer-run boundaries and the PHASE_RESIDUE_RES / FILENAME_VERSION_RE
-  // / countLineViolations exports, so it MUST embed literal stamps like
-  // `0.18.9.`, `0.18.99`, `Pre-0.13.22`, and `foo-v0_13_2.test.js` as the inputs
-  // under test — load-bearing data for the detector's boundary cases, not
-  // sprinkled release tags.
+  // The detector's own boundary cases appear literally as the inputs under test.
   "tests/check-version-tags.test.js",
 ]);
 
-// Git-ignored files (a contributor's local-only working docs, scratch) are
-// never scanned — the gate enforces on the would-be-shipped surface, with no
-// need to name individual local-only files. Untracked-but-NOT-ignored files
-// ARE still scanned: a new file a contributor is about to commit is exactly
-// what the gate must catch. Computed via `git check-ignore` over the walked set.
-// Returns the ignored subset, or NULL when git cannot answer.
-//
-// "No path matched" and "the question could not be asked" are different
-// results and must not collapse into the same empty set. Without a repository
-// — a build context that omits .git/, or git not installed — an empty set
-// silently reclassifies every local-only file as part of the shipped surface,
-// so the gate reports violations in files a clone never contains. Returning
-// null lets the caller say it could not determine the surface instead of
-// asserting a wrong one.
+// The ignored subset of `relPaths`, or null when git cannot answer. "No path
+// matched" and "the question could not be asked" must not collapse into the same
+// empty set, which would reclassify every local-only file as shipped surface.
 function gitIgnoredSet(relPaths) {
   if (!relPaths.length) return new Set();
   try {
@@ -122,9 +55,7 @@ function gitIgnoredSet(relPaths) {
     });
     return new Set(out.split(/\r?\n/).filter(Boolean));
   } catch (e) {
-    // Exit 1 with no stderr is git's way of saying "no path matched" — a real
-    // answer, and an empty set is correct. Anything else (git missing, not a
-    // repository, .git absent) means the question went unanswered.
+    // Exit 1 with no stderr is git's "no path matched" — a real answer, not a failure.
     const status = e && typeof e.status === "number" ? e.status : null;
     const stderr = e && e.stderr ? String(e.stderr).trim() : "";
     const out = e && e.stdout ? String(e.stdout) : "";
@@ -133,20 +64,11 @@ function gitIgnoredSet(relPaths) {
   }
 }
 
-// Pattern: project version like `v0.13.22` or bare `0.13.22`. Matches
-// our pre-1.0 release range. External package versions like ATLAS
-// `v5.6.0` or CycloneDX `1.6` don't match because the major is 0.
-// The trailing lookahead rejects a longer minor/patch digit (so `0.18.99`
-// still matches, but the stamp can't be part of a wider number) and a
-// dot-followed-by-digit (an IPv4 next octet / longer dotted-numeric run, e.g.
-// `127.0.0.1`, whose `0.0.1` tail would otherwise register). A sentence-ending
-// period after the patch (dot followed by non-digit / end-of-line, e.g.
-// `// fixed in 0.18.9.`) is NOT excluded — that is exactly the version residue
-// the gate must catch. The leading `(?<![\d.])` lookbehind keeps the IPv4
-// suppression on the other side.
+// A pre-1.0 project version, `v0.13.22` or bare; a non-0.x external version such
+// as CycloneDX `1.6` misses. The lookarounds keep the stamp out of a wider number
+// or a dotted run like `127.0.0.1`, whose tail would otherwise register.
 const VERSION_TAG_RE = /(?<![\d.])v?0\.\d+\.\d+(?!\d)(?!\.\d)/;
 
-// Phase residue patterns — broader than just version tags.
 const PHASE_RESIDUE_RES = [
   /\bcycle\s+\d+\b/i,        // "cycle 13 P3 F3"
   /\bphase\s+\d+(\.\d+)+\b/i,// "phase 9.11k"
@@ -173,12 +95,6 @@ function walk(dir, results = []) {
   return results;
 }
 
-// Counts version-stamp lines in a file. Intentionally WHOLE-LINE, not
-// comment-only: a 0.x stamp inside a shipped string literal (CLI --help text,
-// an error message, a test description) is operator-readable residue just like
-// a `//` comment, so it counts the same. A file with a genuinely load-bearing
-// version literal (real test fixture, deprecation timeline) is exempted by path
-// in COMMENT_EXEMPT, not by narrowing the scan.
 function countLineViolations(rel) {
   if (COMMENT_EXEMPT.has(rel)) return 0;
   const ext = path.extname(rel);
@@ -199,16 +115,11 @@ function countLineViolations(rel) {
 function scanCurrent() {
   const files = walk(ROOT);
   const ignored = gitIgnoredSet(files);
-  // Without git the shipped surface is unknowable: local-only files are
-  // indistinguishable from tracked ones, so any result would be a guess.
-  // Report that rather than emit findings the baseline cannot be compared to.
+  // Without git, local-only files are indistinguishable from tracked ones.
   if (ignored === null) return { byFile: {}, filenameViolations: [], surfaceUnknown: true };
   const byFile = {};
   const filenameViolations = [];
   for (const rel of files) {
-    // Skip git-ignored, local-only files that `git clone` never ships.
-    // Untracked-but-not-ignored files are still scanned — a new file about to
-    // be committed is exactly what the gate guards.
     if (ignored.has(rel)) continue;
     if (FILENAME_VERSION_RE.test(rel)) filenameViolations.push(rel);
     const n = countLineViolations(rel);
@@ -248,15 +159,8 @@ function main() {
   const current = scanCurrent();
 
   if (current.surfaceUnknown) {
-    // Never write a baseline from a scan that could not tell shipped files from
-    // local ones — that would bake the wrong surface in permanently.
-    //
-    // Automation is the one place this must not degrade to a skip. This gate
-    // runs inside predeploy, and predeploy guards the publish job, so a
-    // silently-skipped run there stops enforcing on exactly the path that
-    // ships. Locally — a container built without .git, a tarball inspection —
-    // skipping is the honest answer, because the shipped surface genuinely is
-    // not knowable there and failing would only punish the harness.
+    // A baseline written from this scan would bake in the wrong surface. In
+    // automation this fails rather than skips: predeploy guards publishing.
     const inAutomation = process.env.CI === "true" || !!process.env.GITHUB_ACTIONS;
     if (inAutomation) {
       console.error("[check-version-tags] FAIL — no git repository available, so the shipped");
@@ -291,8 +195,6 @@ function main() {
 
   const regressions = [];
 
-  // Filename regressions: any new filename matching the pattern that
-  // wasn't in the baseline.
   for (const rel of current.filenameViolations) {
     if (!baseline.filenameViolations.includes(rel)) {
       regressions.push({
@@ -303,7 +205,6 @@ function main() {
     }
   }
 
-  // Comment regressions: per-file count grew.
   for (const [rel, n] of Object.entries(current.byFile)) {
     const prior = baseline.byFile[rel] || 0;
     if (n > prior) {
@@ -317,11 +218,9 @@ function main() {
     }
   }
 
-  // Files newly added to the violation set (not in baseline at all).
   for (const rel of Object.keys(current.byFile)) {
     if (!(rel in baseline.byFile)) {
       const n = current.byFile[rel];
-      // Skip if already captured as a count regression above.
       if (regressions.some(r => r.path === rel)) continue;
       regressions.push({
         kind: "comment",

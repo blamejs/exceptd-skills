@@ -2,41 +2,11 @@
 "use strict";
 
 /**
- * scripts/verify-shipped-tarball.js
+ * Packs with `npm pack`, extracts the tarball, and verifies the EXTRACTED tree
+ * rather than the source working tree: a keys/public.pem swapped between sign
+ * and pack surfaces nowhere else, and every fresh install then fails.
  *
- * Pack the package with `npm pack`, extract the tarball to a temp dir,
- * then run lib/verify.js against the EXTRACTED tree (not the source
- * working tree). This catches the class of bug where:
- *
- *   - CI's verify step against the source tree passes (38/38)
- *   - The tarball that npm publish actually uploads has different
- *     content (e.g. keys/public.pem swapped) and verify-on-tarball fails
- *
- * Every release v0.11.x through v0.12.2 shipped a tarball whose
- * keys/public.pem did not match the Ed25519 signatures in manifest.json.
- * Operators installing from npm saw 0/38 verify on every fresh install.
- * The bug was invisible because CI's verify ran against the SOURCE tree,
- * not the shipped tarball. This gate closes that gap.
- *
- * *   F9  — After the first-pass extraction (using the source-tree parseTar),
- *         re-parse the tarball using the parseTar shipped INSIDE the
- *         extracted tree itself. If the two parses disagree, fail with a
- *         structured error. Catches the class where the shipped parser
- *         silently rejects entries the source parser accepts (or vice
- *         versa), which would mean operators run a different extractor
- *         than CI exercised.
- *   F15 — Invoke `npm pack --offline` so the gate cannot be blocked by
- *         registry reachability problems during predeploy.
- *   F4  — Cross-check the extracted public.pem against
- *         keys/EXPECTED_FINGERPRINT (warn-and-continue when missing, fail
- *         when present-but-mismatched and KEYS_ROTATED != 1).
- *
- * Exit codes:
- *   0  verify passed against the packed tarball
- *   1  verify failed against the packed tarball (the bug class above)
- *   2  pack or extract failed (infrastructure error)
- *
- * Zero npm deps. Node 24 stdlib only.
+ * Exit: 0 verified, 1 verify failed, 2 pack or extract failed.
  */
 
 const fs = require("fs");
@@ -44,26 +14,17 @@ const path = require("path");
 const os = require("os");
 const { spawnSync } = require("child_process");
 
-// v0.12.16: mirror the byte-stability normalize() contract
-// from lib/sign.js + lib/verify.js + lib/refresh-network.js. Duplicated
-// (not require'd) to keep this script's dep surface minimal and to ensure
-// a bug in the normalize() implementation in lib/ doesn't simultaneously
-// disable both the source-tree-verify path AND the shipped-tarball-verify
-// gate (we want at least one independent check). ANY change to normalize()
-// in any of these four files must be mirrored in all of them.
+// Mirrors the normalize() contract in lib/sign.js, lib/verify.js and
+// lib/refresh-network.js. Duplicated deliberately: one bug must not disable the
+// source-tree and shipped-tarball checks together. Change all four together.
 function normalizeSkillBytes(buf) {
   let s = Buffer.isBuffer(buf) ? buf.toString("utf8") : String(buf);
   if (s.length > 0 && s.charCodeAt(0) === 0xFEFF) s = s.slice(1);
   return Buffer.from(s.replace(/\r\n/g, "\n"), "utf8");
 }
 
-// In-line manifest-signature verifier for the extracted tarball. Kept
-// here (rather than imported) for the same defense-in-depth reasoning as
-// normalizeSkillBytes: a bug in lib/verify.js's verifier should not also
-// disable this gate — at least one independent check must remain. The
-// canonical-bytes computation MUST stay in lockstep with lib/sign.js +
-// lib/verify.js + lib/refresh-network.js — enforced by
-// tests/normalize-contract.test.js.
+// Duplicated for the same reason as normalizeSkillBytes; the canonical-bytes
+// computation stays in lockstep, enforced by tests/normalize-contract.test.js.
 function canonicalizeForTarball(value) {
   if (Array.isArray(value)) return value.map(canonicalizeForTarball);
   if (value && typeof value === "object") {
@@ -108,20 +69,9 @@ function verifyExtractedManifestSignature(manifest, publicKeyPem) {
   return ok ? { status: "valid" } : { status: "invalid", reason: "Ed25519 manifest signature did not verify against extracted public.pem" };
 }
 
-// Decide one skill entry's verification outcome. Pulled out as a pure
-// function so the missing-signature guard is unit-testable without
-// spawning `npm pack`. Mirrors lib/verify.js verifySkill()'s missing_sig
-// branch: a manifest skill entry MAY legally omit `signature` (it is not
-// in the schema's skillEntry.required set — a freshly-added skill, or one
-// skipped during a partial sign-all, leaves it absent while the manifest
-// envelope is still validly re-signed over that field-absent state). Such
-// an entry must be a STRUCTURED miss, not Buffer.from(undefined,'base64')
-// throwing a TypeError that the script body's catch re-throws as an
-// uncaught stack trace.
-//   { status: 'missing' }            — no Ed25519 signature in manifest
-//   { status: 'pass' }               — signature verified
-//   { status: 'fail' }               — signature did not verify
-//   { status: 'fail', reason: str }  — malformed base64 / verify threw
+// One skill entry's outcome: { status: 'missing' | 'pass' | 'fail' }, plus a
+// `reason` when the base64 is malformed or verify throws. A manifest entry may
+// legally omit `signature`, so that case is a structured miss, not a throw.
 function verifySkillSignatureOutcome(s, normalizedContent, pubKey) {
   const cryptoMod = require("crypto");
   if (typeof s.signature !== "string" || s.signature.length === 0) {
@@ -142,9 +92,6 @@ function verifySkillSignatureOutcome(s, normalizedContent, pubKey) {
   return ok ? { status: "pass" } : { status: "fail" };
 }
 
-// Exported so tests/normalize-contract.test.js can assert byte-identical
-// normalize() behavior across all four implementations, and so the
-// missing-signature guard above is unit-testable.
 module.exports = {
   normalizeSkillBytes,
   verifyExtractedManifestSignature,
@@ -155,10 +102,8 @@ module.exports = {
 const ROOT = path.resolve(__dirname, "..");
 
 function emit(msg) { process.stdout.write(`[verify-shipped-tarball] ${msg}\n`); }
-// Sentinel thrown by fail() so the script body's try/finally still runs its
-// temp-dir cleanup. process.exit() would preempt the finally, leaking the
-// npm-pack temp dir on every run (predeploy gate + `npm test`). Abort by
-// throwing instead and set the exit code via process.exitCode.
+// Sentinel thrown by fail() so the body's finally still runs its temp-dir
+// cleanup — process.exit() would preempt it and leak the npm-pack temp dir.
 const ABORT = Symbol("verify-shipped-tarball:abort");
 function fail(msg, code = 1) {
   process.stderr.write(`[verify-shipped-tarball] FAIL: ${msg}\n`);
@@ -166,22 +111,15 @@ function fail(msg, code = 1) {
   throw ABORT;
 }
 
-// Gate the script body behind require.main === module so tests can
-// `require()` this file to load the exported helpers (notably
-// normalizeSkillBytes for the byte-stability contract test) without
-// invoking npm pack as a side effect of import.
+// Gated on require.main so a test can require() the helpers without npm pack running.
 if (require.main !== module) {
-  // Loaded as a library (e.g. by tests/normalize-contract.test.js).
-  // Skip the script body; consumers use the module.exports surface above.
   return;
 }
 
 const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "verify-shipped-"));
 try {
   emit(`packing into ${tmpRoot} ...`);
-  // F15 — pass --offline. Predeploy must run without registry
-  // reachability; `npm pack` does not need the network for a local
-  // package and forcing offline mode hard-locks the assumption.
+  // --offline: predeploy must run without registry reachability.
   const pack = spawnSync("npm", ["pack", "--offline", "--pack-destination", tmpRoot], {
     cwd: ROOT,
     encoding: "utf8",
@@ -192,9 +130,7 @@ try {
   }
   const tarballName = pack.stdout.trim().split(/\r?\n/).filter(Boolean).pop();
   const tarballPath = path.join(tmpRoot, tarballName);
-  // Open the packed tarball once and fstat + read via the descriptor so the
-  // existence check, size report, and read all observe the same inode — no
-  // existsSync→statSync→readFileSync TOCTOU on the path.
+  // One descriptor for fstat + read, so both observe the same inode — no TOCTOU.
   let tgz;
   try {
     const fd = fs.openSync(tarballPath, "r");
@@ -229,12 +165,8 @@ try {
   }
   emit(`extracted to ${pkgRoot}`);
 
-  // load the extracted tree's OWN parseTar and re-parse the
-  // tarball. If the two parsers diverge on entry list or content, the
-  // gate trips: this means CI exercised a different parser than operators
-  // will. Defense against drift between source and shipped tarball when
-  // someone edits lib/refresh-network.js without re-vendoring or vice
-  // versa.
+  // Re-parse with the extracted tree's OWN parseTar: a divergence means CI
+  // exercised a different extractor than operators will run.
   const shippedParserPath = path.join(pkgRoot, "lib", "refresh-network.js");
   if (!fs.existsSync(shippedParserPath)) {
     fail(`extracted tree missing lib/refresh-network.js (cannot run F9 cross-parse check)`, 2);
@@ -249,7 +181,6 @@ try {
     fail(`extracted lib/refresh-network.js does not export parseTar`, 2);
   }
   const shippedEntries = parseTarShipped(tarBuf);
-  // Compare counts first — fast bailout.
   const divergences = [];
   if (shippedEntries.length !== entries.length) {
     divergences.push(
@@ -257,8 +188,7 @@ try {
       `shipped parser produced ${shippedEntries.length}`
     );
   } else {
-    // Walk in parallel; tarball entry order is deterministic so positional
-    // compare is correct. Compare name + byte length + body bytes.
+    // Tarball entry order is deterministic, so a positional compare is valid.
     for (let i = 0; i < entries.length; i++) {
       const a = entries[i];
       const b = shippedEntries[i];
@@ -288,9 +218,7 @@ try {
   }
   emit(`F9: source-tree and shipped parseTar agree on ${entries.length} entries`);
 
-  // Run the verifier inline against the extracted package tree. This avoids
-  // having to spawn a separate process whose cwd resolution differs across
-  // platforms.
+  // Inline rather than spawned: cwd resolution differs across platforms.
   const crypto = require("crypto");
   const manifestPath = path.join(pkgRoot, "manifest.json");
   const pubKeyPath = path.join(pkgRoot, "keys", "public.pem");
@@ -301,16 +229,9 @@ try {
   const pubPem = fs.readFileSync(pubKeyPath, "utf8");
   const pubKey = crypto.createPublicKey(pubPem);
 
-  // Verify the top-level manifest_signature on the EXTRACTED
-  // manifest.json. Per-skill signatures only sign the skill body bytes —
-  // they do not sign skill.name / skill.path / skill.atlas_refs or any
-  // other manifest envelope metadata. A tarball whose body bytes are
-  // signed but whose manifest envelope was rewritten (re-routing a skill
-  // path, renaming a skill, changing atlas refs) would pass per-skill
-  // verification but fail this gate. v0.12.17+ shipped tarballs always
-  // include manifest_signature, so a missing signature here is also a
-  // refusal — stricter than the post-install warn-and-continue path,
-  // which tolerates legacy v0.12.16-and-earlier installs.
+  // Per-skill signatures cover only the skill body bytes, not skill.name or
+  // skill.path — a rewritten manifest envelope still passes per-skill verify.
+  // A missing envelope signature is a refusal here, not a warning.
   const manifestSigStatus = verifyExtractedManifestSignature(manifest, pubPem);
   if (manifestSigStatus.status !== "valid") {
     fail(
@@ -324,8 +245,7 @@ try {
     .update(pubKey.export({ type: "spki", format: "der" }))
     .digest("base64");
 
-  // Compute the same fingerprint for the SOURCE-tree public.pem so the log
-  // shows the divergence explicitly.
+  // The same fingerprint for the SOURCE-tree key, so the log names the drift.
   const sourcePubPem = fs.readFileSync(path.join(ROOT, "keys", "public.pem"), "utf8");
   const sourcePubKey = crypto.createPublicKey(sourcePubPem);
   const sourcePubFp = crypto.createHash("sha256")
@@ -339,25 +259,17 @@ try {
     emit(`*** Something between sign and pack is swapping the key. Verify will fail below. ***`);
   }
 
-  // key-pin cross-check against the EXTRACTED tree. The pin
-  // is consumed from keys/EXPECTED_FINGERPRINT in the extracted package —
-  // that's the file operators will actually receive on `npm install`.
-  // Warn when absent, fail when present-but-mismatched (unless KEYS_ROTATED).
+  // The pin is read from the EXTRACTED tree — the file operators receive on
+  // install. Absent warns; mismatched fails unless KEYS_ROTATED=1.
   const expectedFpPath = path.join(pkgRoot, "keys", "EXPECTED_FINGERPRINT");
   if (fs.existsSync(expectedFpPath)) {
-    // Route through the shared lib/verify loader so a BOM-prefixed pin
-    // file (Notepad with files.encoding=utf8bom in the source tree) is
-    // tolerated identically across every verify site. The helper strips
-    // leading U+FEFF + ignores comment lines (`#`).
+    // The shared loader strips a leading U+FEFF, so a BOM-prefixed pin is tolerated.
     const { loadExpectedFingerprintFirstLine } = require(path.join(ROOT, "lib", "verify.js"));
     const firstLine = loadExpectedFingerprintFirstLine(expectedFpPath) || "";
     const liveFpLine = `SHA256:${pubFp}`;
     if (firstLine !== liveFpLine) {
       if (process.env.KEYS_ROTATED === "1") {
-        // Surface the override through the structured warning channel as
-        // well so any caller listening on `process.on('warning')` can
-        // observe the key-rotation acceptance. Matches the three peer
-        // sites (bin/exceptd.js, lib/refresh-network.js, lib/verify.js).
+        // Also on the structured warning channel, so a listener observes it.
         process.emitWarning(
           `extracted public.pem fingerprint ${liveFpLine} differs from pin ${firstLine}; KEYS_ROTATED=1 accepted. ` +
           `Update keys/EXPECTED_FINGERPRINT to lock the new pin.`,
@@ -389,23 +301,12 @@ try {
       failures.push(`${s.name}: file not found at ${s.path}`);
       continue;
     }
-    // v0.12.16: the prior code passed the raw file bytes
-    // directly to crypto.verify. lib/sign.js + lib/verify.js both NORMALIZE
-    // bytes (strip UTF-8 BOM, convert CRLF -> LF) before sign/verify, per
-    // the byte-stability contract in lib/verify.js's normalize() header.
-    // Without the same normalization here, this gate (which was added
-    // specifically to catch the v0.11.x signature regression class!) would
-    // itself report 0/38 on any tree where line-ending normalization
-    // touched the source between sign and pack — a Windows contributor
-    // with `core.autocrlf=true`, or a tool like Prettier between sign and
-    // pack. This is the recurring CRLF/line-ending-bypass class.
+    // Normalize before verify: lib/sign.js signs BOM-stripped, LF-normalized
+    // bytes, so feeding raw bytes here reports 0/N wherever line endings changed
+    // between sign and pack (`core.autocrlf=true`).
     const rawContent = fs.readFileSync(skillPath);
     const normalizedContent = normalizeSkillBytes(rawContent);
     const outcome = verifySkillSignatureOutcome(s, normalizedContent, pubKey);
-    // A skill entry that legally omits `signature` (not in the schema's
-    // required set) must be a STRUCTURED miss — not Buffer.from(undefined,
-    // 'base64') throwing a TypeError that the body's catch re-throws as an
-    // uncaught stack trace. Mirrors lib/verify.js verifySkill()'s missing_sig.
     if (outcome.status === "missing") {
       miss++;
       failures.push(`${s.name}: no Ed25519 signature in manifest`);
@@ -415,13 +316,8 @@ try {
     if (ok) pass++;
     else {
       fail_count++;
-      // Forensic detail: log size + sha256 of tarball-extracted content vs source-tree content
-      // so we can pinpoint which bytes changed between npm pack and what was signed.
-      // v0.12.16: forensic logging uses rawContent (pre-normalization
-      // bytes) so an operator inspecting failures sees the actual on-disk
-      // shape, but tarSha is computed over the NORMALIZED bytes that
-      // were actually fed to crypto.verify — making the comparison to
-      // sign-time bytes meaningful.
+      // Sizes come from rawContent so an operator sees the on-disk shape, but
+      // the hashes cover the NORMALIZED bytes actually fed to crypto.verify.
       const tarSha = crypto.createHash("sha256").update(normalizedContent).digest("hex").slice(0, 16);
       let srcSha = "<missing>", srcSize = 0, srcContent;
       if (fs.existsSync(sourceSkillPath)) {
@@ -447,8 +343,7 @@ try {
     process.exitCode = 1;
   }
 } catch (e) {
-  // ABORT is the fail() sentinel — cleanup still runs via finally below. Any
-  // other error is unexpected: let finally run, then re-propagate it.
+  // ABORT is the fail() sentinel; any other error re-propagates after finally.
   if (e !== ABORT) throw e;
 } finally {
   // Best-effort cleanup; leave on failure for diagnostics.

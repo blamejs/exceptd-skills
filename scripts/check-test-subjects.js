@@ -1,27 +1,13 @@
 #!/usr/bin/env node
 "use strict";
 /**
- * check-test-subjects.js — bidirectional test↔subject gate (and reorg driver).
+ * Bidirectional test↔subject gate. Every tests/<x>.test.js must name a real
+ * subject and every subject must have a test. Subjects are derived from the
+ * codebase, not a hand-maintained list.
  *
- * Every test file must be named after a real SUBJECT the codebase actually has,
- * and every subject must have a test. A "subject" is derived dynamically from
- * the codebase so this list is never hand-maintained:
- *   - a source MODULE basename (lib/x.js -> x; lib/collectors/x.js -> x and
- *     collectors-x; orchestrator/index.js -> orchestrator; bin/exceptd.js -> cli)
- *   - an exported FUNCTION / CLASS name (kebab-cased) — per-function granularity
- *   - a data PRIMITIVE: a data/*.json catalog FILE, plus each catalog ENTRY that
- *     is itself a primitive — every CVE/MAL/GHSA id in data/cve-catalog.json and
- *     every playbook in data/playbooks/ — so one CVE == one test file
- *   - a .github/workflows/*.yml WORKFLOW (release -> release-workflow, etc.)
- *   - a CLI verb dispatched by bin/exceptd.js
- *
- * FORWARD violation : a tests/<x>.test.js where <x> is not a valid subject.
- * REVERSE violation : a subject (module / CVE / playbook / workflow) with no
- *                     tests/<subject>.test.js.
- *
- * Run with --worklist for the machine-readable reorg work list (JSON on stdout).
- * Run with no flag for a human summary; exits non-zero while any violation
- * remains (so once the suite conforms this becomes a standing predeploy gate).
+ * A FORWARD violation is a test file naming no subject; a REVERSE violation is
+ * a subject with no test. --worklist writes the machine-readable list to
+ * stdout; either violation exits non-zero.
  */
 const fs = require("node:fs");
 const path = require("node:path");
@@ -42,22 +28,16 @@ function deriveSubjects() {
       if (e.isDirectory()) { walkSrc(rel); continue; }
       if (!e.name.endsWith(".js")) continue;
       const base = e.name.replace(/\.js$/, "");
-      // index.js is a directory entry point; the directory/canonical subject
-      // covers it, so treat the bare "index" basename as an alias, not a
-      // separately reverse-required module.
+      // A bare "index" is an alias, not a reverse-required module.
       add(base, (base === "index" ? "alias:" : "module:") + rel);
       const parent = path.basename(path.dirname(rel));
-      // parent-prefixed name (collectors-x, builders-x, validators-x) is an
-      // ALIAS of the canonical basename subject — a valid test target, but the
-      // canonical <base>.test.js already satisfies coverage, so don't double-
-      // count the alias as its own reverse gap.
+      // A parent-prefixed name (collectors-x) is an alias of the canonical
+      // basename: a valid test target, never its own reverse gap.
       if (!["lib", "scripts", "orchestrator", "bin"].includes(parent)) add(parent + "-" + base, "alias:" + rel);
       const txt = read(rel);
       for (const m of txt.matchAll(/(?:^|\n)\s*(?:async\s+)?(?:function|class)\s+([A-Za-z_$][\w$]*)/g)) add(camelKebab(m[1]), "fn:" + rel);
-      // Capture the FULL module.exports object via a brace-balanced scan. A
-      // non-greedy /\{([\s\S]*?)\}/ stops at the first nested `}` and drops
-      // every export name after it (the brace-truncation class), under-deriving
-      // subjects so a real export silently has no required test.
+      // Brace-balanced scan, not a non-greedy /\{([\s\S]*?)\}/ — that stops at
+      // the first nested `}` and drops every export after it.
       const expAt = txt.search(/module\.exports\s*=\s*\{/);
       if (expAt >= 0) {
         const open = txt.indexOf("{", expAt);
@@ -70,43 +50,28 @@ function deriveSubjects() {
   ["lib", "orchestrator", "scripts", "bin", "sources/validators"].forEach(walkSrc);
   add("orchestrator", "module:orchestrator/index.js");
   add("cli", "module:bin/exceptd.js");
-  // Vendored (pinned third-party) modules are valid test SUBJECTS but are not
-  // reverse-required — we don't force a dedicated test per vendored file.
+  // Vendored modules are valid test subjects but not reverse-required.
   (function walkVendor(d) { for (const e of ls(d)) { const rel = d + "/" + e.name; if (e.isDirectory()) walkVendor(rel); else if (e.name.endsWith(".js")) add(e.name.replace(/\.js$/, ""), "vendor:" + rel); } })("vendor");
 
-  // CLI verbs — both the switch-case form and the dispatch-table form
-  //   (verb: () => path.join(...)) that bin/exceptd.js uses for most subcommands.
+  // Both dispatch forms bin/exceptd.js uses: switch-case and the `verb: () =>` table.
   const cliSrc = read("bin/exceptd.js");
   for (const m of cliSrc.matchAll(/case\s+['"]([a-z][a-z0-9-]+)['"]/g)) { add("cli-" + m[1], "cli-verb"); add(m[1], "cli-verb"); }
   for (const m of cliSrc.matchAll(/^\s*["']?([a-z][a-z0-9-]+)["']?:\s*\(\)\s*=>/gm)) { add("cli-" + m[1], "cli-verb"); add(m[1], "cli-verb"); }
 
-  // data catalog files
   for (const e of ls("data")) if (e.isFile() && e.name.endsWith(".json")) add(e.name.replace(/\.json$/, ""), "data");
-  // data ENTRY primitives: every CVE id + every playbook
-  // CVE-primitive subjects. An unreadable / malformed / empty catalog must NOT
-  // silently derive zero CVE subjects — that would let the reverse-coverage gate
-  // PASS with no CVE coverage at all (the absent-input false-pass class). Fail
-  // loud instead.
+  // A zero-subject derivation throws rather than passing reverse coverage empty.
   let cveDerived = 0;
   try { const cat = JSON.parse(read("data/cve-catalog.json")); for (const k of Object.keys(cat)) if (k !== "_meta") { add(k.toLowerCase(), "cve-primitive"); cveDerived++; } }
   catch (e) { throw new Error("check-test-subjects: cannot read/parse data/cve-catalog.json — refusing to derive subjects (reverse coverage would falsely pass with no CVE coverage): " + e.message); }
   if (cveDerived === 0) throw new Error("check-test-subjects: data/cve-catalog.json yielded zero CVE entries — refusing to let reverse coverage pass with no CVE coverage.");
-  // Playbook-primitive subjects. Mirror the CVE-catalog guard above: an
-  // unreadable / empty data/playbooks must NOT silently derive zero playbook
-  // subjects — that lets the reverse-coverage gate pass with no playbook
-  // coverage (the same absent-input false-pass class). Fail loud instead.
+  // Same floor for playbooks.
   let pbDerived = 0;
   for (const e of ls("data/playbooks")) if (e.isFile() && e.name.endsWith(".json")) { const b = e.name.replace(/\.json$/, ""); add(b, "playbook-primitive"); add("playbook-" + b, "alias:playbook"); pbDerived++; }
   if (pbDerived === 0) throw new Error("check-test-subjects: data/playbooks/ yielded zero playbooks — refusing to let reverse coverage pass with no playbook coverage.");
-  // workflows
   for (const e of ls(".github/workflows")) if (/\.ya?ml$/.test(e.name)) { const b = e.name.replace(/\.ya?ml$/, ""); add(b, "workflow"); add(b + "-workflow", "workflow"); }
 
-  // Repo-artifact subjects: shipped root config/doc files, the docker build
-  // context, the agents/ directory, and aggregate catalog directories. A test
-  // that pins one of these artifacts (its content, counts, or cross-references)
-  // is named after a durable subject, not a release — so these are valid test
-  // targets. Kind is not module/cve/playbook, so they are NOT reverse-required
-  // (we don't force a dedicated test per doc file).
+  // Repo artifacts — valid test targets, but their kind is not
+  // module/cve/playbook, so none of them is reverse-required.
   for (const f of ["package.json", "manifest.json", "manifest-snapshot.json", "README.md", "AGENTS.md", "SECURITY.md", "ARCHITECTURE.md", "CONTEXT.md", "CHANGELOG.md", "CONTRIBUTING.md", "CODE_OF_CONDUCT.md", "LICENSE", "NOTICE"]) {
     add(f.replace(/\.[^.]*$/, "").toLowerCase().replace(/_/g, "-"), "repo:" + f);
   }
@@ -116,12 +81,8 @@ function deriveSubjects() {
   add("playbooks", "aggregate:data/playbooks");
   add("workflows", "aggregate:.github/workflows");
   add("governance", "repo:governance-files"); // LICENSE/NOTICE/FUNDING/CoC/gitignore/gitleaks presence + integrity
-  // Module-subject floor. The source walk over lib/orchestrator/scripts/bin
-  // uses ls(), which returns [] on a read failure — so an unreadable source
-  // tree would derive zero reverse-required module subjects and let the gate
-  // pass with no module coverage (the absent-input false-pass class, same as
-  // the CVE/playbook guards). The repo always has dozens of modules; zero is an
-  // anomaly. Fail loud.
+  // Module floor: ls() returns [] on a read failure, so an unreadable source
+  // tree would otherwise pass the gate with no module coverage.
   let moduleCount = 0;
   for (const kind of subjects.values()) if (typeof kind === "string" && kind.startsWith("module:")) moduleCount++;
   if (moduleCount === 0) throw new Error("check-test-subjects: zero source-module subjects derived (lib/orchestrator/scripts/bin unreadable?) — refusing to let reverse coverage pass with no module coverage.");
@@ -142,10 +103,8 @@ function run() {
   for (const t of testFiles) if (!subjects.has(t.toLowerCase())) forward.push({ file: "tests/" + t + ".test.js", suggested: suggest(t) });
   const reverse = [];
   for (const [s, kind] of subjects) if (!testSet.has(s)) reverse.push({ subject: s, kind });
-  // Reverse-REQUIRED subset: only module / cve / playbook subjects must have a
-  // test (aliases, data files, cli verbs, repo artifacts are valid targets but
-  // not reverse-required). The exit-code logic gates on THIS, consistently
-  // across --worklist and the human/predeploy paths.
+  // Only module, cve and playbook subjects must have a test; the rest are valid
+  // targets, not requirements. Both output paths take their exit code from this.
   const reverseRequired = reverse.filter((x) => x.kind.startsWith("module:") || x.kind.startsWith("cve-primitive") || x.kind.startsWith("playbook-primitive"));
   return { subjects: subjects.size, forward, reverse, reverseRequired };
 }

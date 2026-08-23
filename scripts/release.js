@@ -1,44 +1,9 @@
 #!/usr/bin/env node
 "use strict";
 /**
- * release.js — orchestrate the exceptd release flow as a sequence of
- * idempotent subcommands. Each subcommand performs ONE phase, prints what
- * it did, and exits with a code that's safe to script against in a terminal
- * or CI runner. It codifies the flow that CONTRIBUTING.md / the repo's
- * release notes describe step by step, so a release can't skip the
- * load-bearing ordering (CHANGELOG entry first, gates before tag, CI green
- * before tag push, GUARD before tag).
- *
- * Usage:
- *   node scripts/release.js prepare [--minor] [--with-content]
- *                                             # bump + sign + indexes + snapshot + sbom + baseline
- *                                             # --with-content: this release ships uncommitted work
- *   node scripts/release.js gates               # npm test + 20-gate predeploy
- *   node scripts/release.js commit              # release branch + signed commit
- *   node scripts/release.js push                # push branch + open PR
- *   node scripts/release.js watch               # CI watch + flag unresolved review threads
- *   node scripts/release.js merge               # admin squash-merge if CLEAN + zero unresolved
- *   node scripts/release.js tag                 # GUARD + signed tag + push tag + verify
- *   node scripts/release.js release             # watch release.yml + npm/global/tarball verify
- *   node scripts/release.js all [--minor]       # all eight in sequence
- *   node scripts/release.js status              # what phase the current branch is in
- *   node scripts/release.js help                # this banner
- *
- * Pre-conditions the script enforces rather than assumes:
- *   - prepare runs only on a clean `main`, and refuses unless CHANGELOG.md
- *     already carries a `## <next-version>` heading (the operator writes the
- *     behavior-framed notes by hand; they don't auto-generate from a diff).
- *   - The three-version invariant (package.json == manifest.json ==
- *     CHANGELOG top heading) is established by prepare and re-checked by tag.
- *   - tag refuses unless local HEAD == origin/main and the version matches
- *     and no such tag exists (the GUARD that prevents tag-on-stale-HEAD).
- *
- * Patch is the default bump. --minor requires the explicit flag AND is a
- * deliberate choice — the project default is patch-only.
- *
- * The judgment-requiring parts stay manual: writing the CHANGELOG entry,
- * reviewing/fixing CI-surfaced review-thread findings (watch flags them and
- * stops), and choosing patch vs minor.
+ * Orchestrates the release as idempotent per-phase subcommands, each enforcing
+ * its own preconditions so the load-bearing ordering cannot be skipped. `help`
+ * lists them.
  */
 
 var fs = require("node:fs");
@@ -49,27 +14,18 @@ var ROOT = path.resolve(__dirname, "..");
 var REPO = "blamejs/exceptd-skills";
 var PKG_NAME = "@blamejs/exceptd-skills";
 
-// Known-flaky CI jobs that warrant an auto-rerun rather than a hard fail:
-// the macOS playbook-runner job and the offline-CLI F1 check both flake on
-// fresh runners. watch reruns them up to twice before surfacing a failure.
 var RERUN_LIMIT = 2;
 
-// ---- Helpers -------------------------------------------------------------
-
-// Windows resolves `npm` / `npx` as `.cmd` shims, which child_process can
-// only invoke through a shell. `git`, `gh`, `node` are native exes that
-// spawn directly — keeping shell off avoids the implicit arg-quoting risk.
+// Windows resolves `npm` / `npx` as `.cmd` shims, which child_process can only
+// invoke through a shell; `git`, `gh` and `node` are native exes that spawn directly.
 function _needsShell(cmd) {
   if (process.platform !== "win32") return false;
   return cmd === "npm" || cmd === "npx";
 }
 
 // spawnSync with shell:true AND an args array concatenates the args without
-// escaping (Node DEP0190 — a real injection surface). When a shell is needed
-// (npm/npx on Windows) we instead pass the whole invocation as one command
-// string with no args array, which is the correct shell-invocation form. The
-// only commands routed through the shell here are npm with static token args
-// (verb names + flags, no spaces), so the single-string join is unambiguous.
+// escaping (Node DEP0190 — an injection surface), so the shell path passes the
+// whole invocation as one command string. Only npm with static token args goes there.
 function _spawn(cmd, args, opts) {
   opts = opts || {};
   var useShell = _needsShell(cmd);
@@ -114,9 +70,8 @@ function _readJsonVersion(file) {
   return JSON.parse(fs.readFileSync(path.join(ROOT, file), "utf8")).version;
 }
 
-// Rewrite only the top-level "version" line so formatting/key-order of the
-// rest of the file is untouched (a full JSON.stringify would reflow
-// manifest.json's hand-maintained shape).
+// Rewrites only the "version" line: a full JSON.stringify would reflow
+// manifest.json's hand-maintained key order and formatting.
 function _writeJsonVersion(file, next) {
   var p = path.join(ROOT, file);
   var content = fs.readFileSync(p, "utf8");
@@ -136,7 +91,6 @@ function _bump(version, kind) {
   return parts[0] + "." + parts[1] + "." + (parts[2] + 1);
 }
 
-// Topmost `## X.Y.Z` heading in CHANGELOG.md.
 function _changelogTopVersion() {
   var lines = fs.readFileSync(path.join(ROOT, "CHANGELOG.md"), "utf8").split(/\r?\n/);
   for (var i = 0; i < lines.length; i++) {
@@ -146,8 +100,6 @@ function _changelogTopVersion() {
   return null;
 }
 
-// Extract the body of a CHANGELOG section (between its `## X.Y.Z` heading
-// and the next `## ` heading) — used to compose the commit + PR body.
 function _changelogSection(version) {
   var lines = fs.readFileSync(path.join(ROOT, "CHANGELOG.md"), "utf8").split(/\r?\n/);
   var out = [];
@@ -164,10 +116,8 @@ function _changelogSection(version) {
   return out.join("\n").trim();
 }
 
-// Derive a concise "vX.Y.Z: <subject>" commit/PR title from a CHANGELOG
-// section. exceptd's entries lead with a prose paragraph (no dedicated
-// headline field), so take the first SENTENCE and cap the length rather than
-// dump the whole paragraph as the subject. The operator can always amend.
+// "vX.Y.Z: <subject>" for the commit and PR title. CHANGELOG entries carry no
+// headline field, so the subject is the first sentence, length-capped.
 function _releaseSubject(version, section) {
   var firstLine = (section.split(/\r?\n/).find(function (l) { return l.trim(); }) || "").trim();
   var firstSentence = firstLine.split(/(?<=[.!?])\s/)[0] || firstLine;
@@ -182,10 +132,8 @@ function _gitOnMain() { return _gitBranch() === "main"; }
 function _gitOnRelease() { return /^release-v\d+\.\d+\.\d+$/.test(_gitBranch()); }
 function _releaseBranchFor(version) { return "release-v" + version; }
 
-// Verify HEAD's commit signature two independent ways: `git verify-commit`
-// (the canonical boolean GitHub's required_signatures ruleset checks) and a
-// human-readable `%G? %GS` line. main is under required_signatures, so an
-// unsigned commit can't be pushed — fail loudly here rather than at push.
+// `git verify-commit` is the boolean GitHub's required_signatures ruleset checks;
+// main is under that ruleset, so fail here rather than at push.
 function _verifyCommitSignature(label) {
   var verify = _capture("git", ["verify-commit", "HEAD"]);
   if (verify.status !== 0) {
@@ -205,9 +153,8 @@ function _openPrNumber(branch) {
     "--json", "number", "--jq", ".[0].number"]).stdout;
 }
 
-// Unresolved review threads on the PR. Codex (chatgpt-codex-connector) posts
-// review threads with P-badge findings; an unresolved thread is a hard
-// branch-protection merge block (conversation-resolution required).
+// Conversation resolution is branch-protection-required, so an unresolved
+// thread is a hard merge block.
 function _unresolvedThreads(prNum) {
   var q = 'query { repository(owner:"blamejs",name:"exceptd-skills") { pullRequest(number:' +
     prNum + ') { reviewThreads(first:50) { nodes { isResolved comments(first:1) ' +
@@ -217,32 +164,11 @@ function _unresolvedThreads(prNum) {
   try { return JSON.parse(rv.stdout || "[]"); } catch (_e) { return []; }
 }
 
-// Open CodeQL code-scanning alerts on the PR's merge ref. CodeQL SAST runs on
-// every PR (.github/workflows/codeql.yml); an open, un-triaged alert is a
-// per-release gate on par with the codex review-thread gate. Returns the alert
-// array (possibly empty) on success, or null when the query can't run (code
-// scanning unavailable, API error, or the GET-param form not supported) so a
-// transient failure fails OPEN rather than blocking a release — the pre-flight
-// checklist is the human backstop.
-// Two refs, and BOTH are load-bearing — each alone has a blind spot that has
-// already bitten:
-//
-//   refs/pull/<N>/merge  answers "did this PR introduce an alert". Scoping to
-//     it ALONE let two medium alerts sitting on refs/heads/main since
-//     2026-08-08 return zero, riding through eight consecutive releases while
-//     the phase printed "zero open CodeQL alerts" — GitHub only annotates a PR
-//     with alerts that PR introduces.
-//   (no ref)             answers against the DEFAULT BRANCH, catching exactly
-//     those pre-existing findings — but on its own it misses an alert this PR
-//     introduces that is not on main yet, which is the case the PR-scoped query
-//     was there for.
-//
-// So the gate blocks on the union. Replacing one query with the other just
-// trades which blind spot you have.
-//
-// Filtered to tool_name=CodeQL deliberately: OpenSSF Scorecard writes to the
-// same code-scanning surface, and its accepted-out-of-scope policy alerts would
-// otherwise make this list permanently non-empty and therefore useless.
+// Open CodeQL alerts. Returns the alert array, or null when the query cannot run
+// at all, so a transient API failure fails OPEN rather than blocking a release.
+// The union of two refs is required: refs/pull/<N>/merge misses an alert already
+// sitting on main, and the default-branch query misses one this PR introduces.
+// tool_name=CodeQL excludes Scorecard's accepted-out-of-scope policy alerts.
 function _codeqlAlertsForRef(ref) {
   var args = ["api", "repos/:owner/:repo/code-scanning/alerts", "-X", "GET",
     "-f", "state=open", "-f", "tool_name=CodeQL", "-f", "per_page=100"];
@@ -258,9 +184,7 @@ function _codeqlAlertsForRef(ref) {
 function _openCodeqlAlerts(prNum) {
   var onDefault = _codeqlAlertsForRef(null);
   var onPr = _codeqlAlertsForRef("refs/pull/" + prNum + "/merge");
-  // Either query failing means the question is unanswered. Never let a failed
-  // lookup read as "no alerts" — that is the same absent-input-passes shape
-  // this whole gate exists to close.
+  // A failed lookup must never read as "no alerts".
   if (onDefault === null || onPr === null) return null;
 
   var byNumber = new Map();
@@ -272,19 +196,11 @@ function _openCodeqlAlerts(prNum) {
   return [...byNumber.values()];
 }
 
-// ---- Subcommands ---------------------------------------------------------
-
-// The derived-artifact regeneration, in the one order that is correct. Shared
-// by `prepare` and `regen` so the two cannot drift: any source edit after a
-// prepare — a review finding fixed on the release branch, most often a data
-// correction — invalidates the signatures, indexes and SBOM hashes, and
-// re-running the four commands from memory is where the ordering gets lost.
+// Shared by `prepare` and `regen` so the two cannot drift.
 function _regenArtifacts() {
   _section("regen artifacts");
-  // Order matters: sign first (re-signs the manifest), then the snapshot/
-  // index/SBOM derivations. refresh-sbom runs LAST because it hashes the
-  // shipped tree (incl. README) — regenerating it before a later source edit
-  // strands the hashes (the recurring "refresh-sbom last" lesson).
+  // sign-all first, since it rewrites the manifest; refresh-sbom LAST, since it
+  // hashes the shipped tree (README included) and any later edit strands the hashes.
   _run("node", ["lib/sign.js", "sign-all"]);
   _run("npm", ["run", "build-indexes"]);
   _run("npm", ["run", "refresh-snapshot"]);
@@ -292,16 +208,12 @@ function _regenArtifacts() {
   _ok("signed + indexes + snapshot + sbom regenerated");
 }
 
-// Re-derive the artifacts after editing source on an already-prepared release
-// branch. No version bump, no CHANGELOG requirement, no clean-tree demand —
-// this phase exists precisely for a dirty tree. It refuses on main, where the
-// bump belongs to `prepare`.
+// Re-derives artifacts after editing an already-prepared release branch: no
+// bump, no CHANGELOG requirement, and a dirty tree is the point.
 function cmdRegen() {
   _section("regen");
-  // Positively require a release branch rather than merely rejecting main: this
-  // re-signs the manifest and rewrites checked-in derived artifacts, so an
-  // accidental run from a feature branch or a detached HEAD would produce
-  // release artifacts from a tree that is not the release.
+  // A release branch is positively required rather than main merely rejected: a
+  // feature branch or detached HEAD would build artifacts out of the wrong tree.
   if (!_gitOnRelease()) {
     throw new Error("release: regen must run on a release-vX.Y.Z branch (on " + _gitBranch() + "). " +
       "On main the regeneration belongs to `prepare`.");
@@ -319,22 +231,10 @@ function cmdRegen() {
 function cmdPrepare(opts) {
   _section("prepare");
   if (!_gitOnMain()) throw new Error("release: prepare must run on main (on " + _gitBranch() + ")");
-  // The documented flow is: write the `## <next>` CHANGELOG entry by hand,
-  // THEN run prepare. That edit makes the tree dirty, so requiring a fully
-  // clean tree here would make the first phase unusable as documented. Allow
-  // a CHANGELOG.md-only dirty tree; refuse if anything else is uncommitted
-  // (prepare is about to bump versions + regenerate artifacts — it must start
-  // from an otherwise-clean main so the release commit captures only the
-  // intended change set).
-  //
-  // `--with-content` widens that to a release which SHIPS an uncommitted change
-  // — a curation batch written into data/, a fix folded in alongside the bump.
-  // Without it, such a release cannot use this phase at all and gets hand-run
-  // instead, which is how the steps below drift: a hand-rolled sequence dropped
-  // the shrinkage gate two lines above the baseline refresh and rebaselined
-  // without ever checking. The flag keeps the phase authoritative for that flow
-  // rather than leaving it to memory. It still prints what it is carrying, so
-  // an unintended file in the tree is visible rather than silently released.
+  // The `## <next>` CHANGELOG entry is written by hand before prepare runs, so a
+  // CHANGELOG.md-only dirty tree is allowed and anything else is refused.
+  // `--with-content` widens that to a release which SHIPS uncommitted work, and
+  // prints what it carries so an unintended file is visible rather than released.
   var dirty = _capture("git", ["status", "--porcelain"]).stdout
     .split(/\r?\n/)
     .filter(function (l) { return l.trim() && !/\bCHANGELOG\.md$/.test(l); });
@@ -352,24 +252,18 @@ function cmdPrepare(opts) {
   var next = _bump(current, opts.minor ? "minor" : "patch");
   console.log("current: " + current + "   next: " + next + " (" + (opts.minor ? "minor" : "patch") + ")");
 
-  // The CHANGELOG entry is written by hand (behavior-framed, no internal
-  // narrative). Refuse if it isn't there — the three-version invariant the
-  // bootstrap-mode test enforces would otherwise fail at gates time.
+  // Without the entry, tests/bootstrap-mode's three-version invariant fails at gates.
   var top = _changelogTopVersion();
   if (top !== next) {
-    // Throw (not process.exit) so a stdout write earlier in this phase can't be
-    // truncated when piped, and so `release all` aborts the whole sequence here
-    // rather than continuing past a failed prepare. Matches the throw-style
-    // guards above (clean-tree / on-main); the dispatcher maps it to exit 1.
+    // Throw, never process.exit: the exit can truncate a piped stdout write, and
+    // `release all` must abort here. The dispatcher maps it to exit 1.
     throw new Error(
       "CHANGELOG.md top heading is '## " + top + "', expected '## " + next + "'. " +
       "Write the " + next + " entry first (terse, behavior-change framed, no internal " +
       "narrative), then re-run prepare. Example heading:  ## " + next + " — <YYYY-MM-DD>");
   }
 
-  // The `## <next>` heading exists; confirm the section extracts cleanly and
-  // passes the operator-facing lint (the release workflow publishes it verbatim
-  // as the GitHub Release body). Fail fast here rather than at the gates phase.
+  // The release workflow publishes this section verbatim as the GitHub Release body.
   _run("node", ["scripts/check-changelog-extract.js", next]);
 
   _writeJsonVersion("package.json", next);
@@ -379,22 +273,14 @@ function cmdPrepare(opts) {
   _regenArtifacts();
 
   _section("test-count baseline");
-  // Check BEFORE refreshing. `--update-baseline` writes whatever it observes,
-  // so calling it unconditionally rebaselined a shrunken suite downward and the
-  // shrinkage gate — which runs later, in `gates` — then compared the new count
-  // against itself and passed. Releasing was the one path that disarmed the
-  // guard, which is the path it exists to guard. Run the gate first so a drop
-  // stops the release here; refresh only once it has agreed nothing was lost,
-  // which still captures growth. A deliberate removal is re-baselined by hand
-  // with the command the gate's own failure message prints.
+  // Check BEFORE refreshing: `--update-baseline` writes whatever it observes, so
+  // refreshing first rebaselines a shrunken suite downward and the shrinkage gate
+  // in `gates` then compares the new count against itself.
   _run("node", ["scripts/check-test-count.js"]);
   _run("node", ["scripts/check-test-count.js", "--update-baseline"]);
 
   _section("codebase-patterns currency (advisory)");
-  // Flag when the upstream pattern catalog (the sibling blamejs codebase-
-  // patterns test) has grown a class exceptd hasn't triaged yet — the same
-  // forcing function the actions/vendor currency checks give those surfaces.
-  // Advisory: never blocks; skips cleanly when the sibling repo is absent.
+  // Flags a pattern class the sibling blamejs catalog grew; never blocks.
   _run("node", ["scripts/check-codebase-patterns-currency.js"], { allowFail: true });
 
   console.log("\nnext: node scripts/release.js gates");
@@ -402,9 +288,6 @@ function cmdPrepare(opts) {
 
 function cmdGates() {
   _section("gates");
-  // predeploy runs the full suite + every publish gate (signatures, catalog
-  // schema, snapshot, lint, sbom currency, indexes, tarball verify, diff
-  // coverage, ...). It is the authoritative pre-publish check.
   _run("npm", ["run", "predeploy"]);
   _ok("predeploy gates passed");
   console.log("\nnext: node scripts/release.js commit");
@@ -416,8 +299,7 @@ function cmdCommit() {
   var branch = _releaseBranchFor(next);
   var current = _gitBranch();
 
-  // Resumable: a prior commit that failed after `checkout -b` leaves the
-  // branch in place — switch to it instead of refusing.
+  // Resumable: a failed commit leaves the branch in place, so switch to it.
   if (current === branch) {
     _ok("already on " + branch + " (resume mode)");
   } else if (current === "main") {
@@ -433,8 +315,7 @@ function cmdCommit() {
     throw new Error("release: commit must run on main or " + branch + " (on " + current + ")");
   }
 
-  // If HEAD already carries this release's commit, don't double-commit —
-  // just verify the signature.
+  // HEAD already carrying this release's commit means verify, not re-commit.
   var headSubject = _capture("git", ["log", "-1", "--pretty=%s"]).stdout;
   if (headSubject.indexOf("v" + next + ":") === 0) {
     _ok("HEAD already carries a v" + next + " commit (resume mode)");
@@ -443,8 +324,6 @@ function cmdCommit() {
     return;
   }
 
-  // Compose the commit body from the CHANGELOG section — the operator can
-  // amend, but the default mirrors the shipped notes.
   var section = _changelogSection(next);
   var subject = _releaseSubject(next, section);
   var bodyPath = path.join(ROOT, ".scratch");
@@ -487,24 +366,16 @@ function cmdWatch() {
   if (!prNum) throw new Error("release: no open PR for " + branch);
   console.log("PR #" + prNum);
 
-  // gh pr checks --watch blocks until checks settle. allowFail so a flaky
-  // run doesn't throw before we get to inspect + rerun it.
+  // Blocks until the checks settle; allowFail so failures are inspected below.
   _run("gh", ["pr", "checks", prNum, "--watch"], { allowFail: true });
 
-  // Gate on check CONCLUSIONS, not only review threads. A red required check
-  // leaves the PR BLOCKED at merge, so surfacing failures here (the whole
-  // point of the watch phase) beats advancing to "next: merge" and letting
-  // cmdMerge reject it. Bucket is gh's normalized verdict: pass / fail /
-  // pending / skipping / cancel.
+  // Gate on check CONCLUSIONS, not only review threads. Bucket is gh's normalized
+  // verdict — pass / fail / pending / skipping / cancel.
   var checksRaw = _capture("gh", ["pr", "checks", prNum, "--json", "name,bucket,link"]).stdout;
   var checks = [];
   try { checks = JSON.parse(checksRaw || "[]"); } catch (_e) { checks = []; }
-  // An empty or still-pending check set is NOT a pass. `gh pr checks --watch`
-  // returns immediately when no check has registered yet — the workflows are
-  // still being scheduled — and the filters below then find nothing wrong,
-  // so the phase printed "next: merge" for a PR whose CI had not started.
-  // Absence of a failure is not evidence of success; require that checks exist
-  // and have settled before reading anything into them.
+  // An empty or still-pending check set is NOT a pass: `gh pr checks --watch`
+  // returns immediately while the workflows are still being scheduled.
   if (checks.length === 0) {
     console.log("\nno checks have registered on this PR yet — they are probably still scheduling.");
     console.log("Wait a moment, then re-run: node scripts/release.js watch");
@@ -526,8 +397,7 @@ function cmdWatch() {
     process.exit(3); // allow:process-exit-after-stdout-write — maintainer-run release orchestrator; the guidance line above is human-read on a TTY, not a piped result channel
   }
 
-  // CodeQL SAST gate — a standing per-release step. An open, un-triaged CodeQL
-  // alert blocks the release the same way an unresolved codex thread does.
+  // An open CodeQL alert blocks the release like an unresolved review thread.
   var codeqlAlerts = _openCodeqlAlerts(prNum);
   if (codeqlAlerts === null) {
     console.log("\nnote: could not query CodeQL alerts (code scanning unavailable / API error) — " +
@@ -578,15 +448,13 @@ function cmdMerge() {
     throw new Error("release: PR #" + prNum + " not mergeable (state=" +
       state.mergeStateStatus + " mergeable=" + state.mergeable + ")");
   }
-  // Re-check threads right before merge — a reviewer (or Codex) can open one
-  // between watch and merge.
+  // A reviewer can open a thread between watch and merge.
   var unresolved = _unresolvedThreads(prNum);
   if (unresolved.length > 0) {
     throw new Error("release: refusing to merge PR #" + prNum + " — " +
       unresolved.length + " unresolved review thread(s); run watch again");
   }
-  // Solo-maintainer protection requires 0 approvals; --admin satisfies the
-  // remaining required checks gate without a second reviewer.
+  // Solo-maintainer protection requires 0 approvals; --admin covers required checks.
   _run("gh", ["pr", "merge", prNum, "--squash", "--admin", "--delete-branch"]);
   _ok("PR #" + prNum + " squash-merged");
 
@@ -601,10 +469,8 @@ function cmdTag() {
   var next = _readJsonVersion("package.json");
   var tag = "v" + next;
 
-  // GUARD against tag-on-stale-HEAD: a transient git index lock can leave
-  // local HEAD behind origin/main after a merge, so a tag would land on the
-  // wrong commit and the release workflow's version-match gate would reject
-  // it (burning a version slot, since the v* ruleset blocks tag rewrites).
+  // GUARD against tag-on-stale-HEAD: a tag on the wrong commit burns a version
+  // slot, since the v* ruleset blocks tag rewrites.
   try { fs.rmSync(path.join(ROOT, ".git", "index.lock"), { force: true }); } catch (_e) { /* ignore */ }
   _run("git", ["fetch", "origin", "main"]);
   var local = _capture("git", ["rev-parse", "HEAD"]).stdout;
@@ -628,12 +494,9 @@ function cmdTag() {
   }
   _ok("GUARD passed (HEAD==origin/main, 3-version match, no existing tag)");
 
-  // `-s` forces a signed tag regardless of whether tag.gpgsign is set in
-  // config; `-a` would silently produce an UNSIGNED annotated tag when the
-  // config is absent, and main's tag ruleset / the release provenance both
-  // expect a signature. Verify BEFORE pushing so an unsigned tag never
-  // reaches origin (the v* ruleset blocks tag rewrites, so a bad push would
-  // burn the version slot).
+  // `-s` forces a signed tag whatever tag.gpgsign is set to; `-a` silently
+  // produces an UNSIGNED annotated tag when the config is absent. Verify before
+  // pushing — an unsigned tag on origin burns the version slot.
   _run("git", ["tag", "-s", tag, "-m", tag]);
   var verify = _capture("git", ["tag", "-v", tag]);
   if (verify.stderr.indexOf("Good") === -1 && verify.stdout.indexOf("Good") === -1) {
@@ -653,13 +516,9 @@ function cmdRelease() {
   var next = _readJsonVersion("package.json");
 
   _section("release workflow");
-  // Select the release.yml run created by THIS tag push — not merely the
-  // newest run. gh exposes the tag ref as headBranch for tag-triggered runs;
-  // event=="push" excludes workflow_dispatch runs. Filtering by headBranch==tag
-  // uniquely identifies this run even when a prior tag points at the same
-  // commit (so it's preferable to headSha matching, and needs no extra git
-  // call). Bounded retries cover the few-seconds window GitHub needs to
-  // register the run after the tag push.
+  // Selects the release.yml run created by THIS tag push: gh reports the tag ref
+  // as headBranch for tag-triggered runs, and event=="push" excludes
+  // workflow_dispatch. The bounded retries cover GitHub registering the run.
   var tag = "v" + next;
   var runId = "";
   for (var _i = 0; _i < 30 && !runId; _i++) {
@@ -667,20 +526,13 @@ function cmdRelease() {
       "--event=push", "--json", "databaseId,headBranch,event",
       "--jq", '[.[] | select(.headBranch=="' + tag + '")] | sort_by(.databaseId) | last | .databaseId']).stdout;
     if (!runId && _i < 29) {
-      // Short bounded wait between polls — the run usually appears within
-      // a few seconds of the tag push.
       _spawn(process.execPath, ["-e", "setTimeout(function(){},2000)"], { stdio: "ignore" });
     }
   }
   if (runId) {
     _run("gh", ["run", "watch", runId, "--exit-status"], { allowFail: true });
-    // Read the conclusion, distinguishing "the workflow failed" from "the
-    // lookup failed". Conflating them reported conclusion=(unknown) on a
-    // release whose three jobs had all succeeded and whose package was already
-    // on npm — a false alarm on a good publish, twice, because an empty stdout
-    // (transient API error, or a run still settling) was treated as a verdict.
-    // Retry a few times before concluding anything: the value we want is a
-    // terminal state, and asking again is cheap next to a wrong answer.
+    // "The workflow failed" and "the lookup failed" are different answers: an
+    // empty stdout is the second, not a verdict. Retry for a terminal state.
     var concl = "";
     var lookupOk = false;
     for (var _c = 0; _c < 5; _c++) {
@@ -688,11 +540,8 @@ function cmdRelease() {
         "--jq", ".status + \"|\" + (.conclusion // \"\")"]);
       if (rv.status === 0 && rv.stdout) {
         var parts = rv.stdout.split("|");
-        // Accept only a completed run WITH a non-empty conclusion. An
-        // in-progress run legitimately reports an empty one, and a completed
-        // run can briefly report one too while the value settles — taking
-        // either as an answer reproduces the false failed-publish this retry
-        // exists to prevent. Keep polling until a real verdict appears.
+        // Only a completed run WITH a non-empty conclusion counts: an in-progress
+        // run reports an empty one, as does a completed one before it settles.
         if (parts[0] === "completed" && parts[1]) { concl = parts[1]; lookupOk = true; break; }
       }
       if (_c < 4) _spawn(process.execPath, ["-e", "setTimeout(function(){},3000)"], { stdio: "ignore" });
@@ -716,20 +565,14 @@ function cmdRelease() {
   _section("verify npm");
   var npmVersion = _capture("npm", ["view", PKG_NAME, "version"]).stdout;
   console.log("npm " + PKG_NAME + ": " + (npmVersion || "(unable to query)") + "   (expected " + next + ")");
-  // Require a POSITIVE confirmation: the queried npm version must equal `next`.
-  // The hard failure is asserted at the end of the phase (after the tarball
-  // verify). An empty stdout (registry/auth/network failure) is treated as a
-  // mismatch — an unconfirmable publish is a failure, not a success.
+  // Positive confirmation only: an empty stdout is a mismatch, not a pass. The
+  // hard failure is asserted at the end of the phase, after the tarball verify.
   if (npmVersion === next) _ok("npm matches " + next);
 
   _section("fresh-tarball signature verify");
-  // Verify against the EXACT bytes a downstream consumer installs — the
-  // source-tree verify is necessary-but-insufficient (the v0.11.x signature
-  // regression was invisible until a fresh install). Packs, extracts, and
-  // runs lib/verify.js against the extracted tree. This is the load-bearing
-  // post-publish check: a broken artifact/signature here means the release
-  // is broken, so it is a HARD gate — _run (no allowFail) throws on failure
-  // and the phase exits non-zero rather than reporting a clean release.
+  // Verifies the EXACT bytes a downstream consumer installs. A source-tree verify
+  // is necessary but not sufficient — a signature can diverge at pack time. HARD
+  // gate: _run throws rather than let the phase call the release clean.
   var wrapper = path.join(ROOT, "scripts", "verify-shipped-tarball.js");
   if (fs.existsSync(wrapper)) {
     _run("node", [wrapper]);
@@ -738,12 +581,8 @@ function cmdRelease() {
     throw new Error("release: scripts/verify-shipped-tarball.js missing — cannot verify the shipped artifact");
   }
 
-  // Require a positive npm confirmation after the workflow finished. A version
-  // that is empty (query failed) OR != next is not mere propagation lag — fail
-  // so a stalled/failed/unconfirmable publish can't read as a completed
-  // release. (A genuinely in-flight publish is caught by the workflow-
-  // conclusion check above; by the time we query npm post-watch the version
-  // should be live.) The message reports the value actually queried.
+  // The workflow has finished by now, so an empty or mismatched version is not
+  // propagation lag — it must not read as a completed release.
   if (npmVersion !== next) {
     throw new Error("release: npm shows " + (npmVersion || "(unable to query)") + " but expected " + next +
       " — publish did not complete or could not be confirmed; re-check release.yml before treating the release as done");
@@ -796,8 +635,6 @@ function cmdHelp() {
   console.log("");
   console.log("Patch is the default. --minor is a deliberate, explicit choice.");
 }
-
-// ---- Dispatch ------------------------------------------------------------
 
 var sub = process.argv[2] || "help";
 var opts = {

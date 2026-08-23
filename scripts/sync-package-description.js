@@ -1,20 +1,12 @@
 'use strict';
 
 /**
- * scripts/sync-package-description.js
- *
- * Regenerate the count-bearing tokens embedded in package.json.description from
- * the live catalogs + manifest, so the description stays in sync when an
- * auto-refresh changes an entry count. refresh-sbom copies the description into
- * sbom.cdx.json, and check-sbom-currency validates every token against the live
- * counts — without this sync, the first refresh that changes a count would fail
- * the SBOM description-token gate on the auto-PR.
- *
- * Targeted, format-preserving: replaces only the integer in each known
- * "<N> <label>" token (skills / catalogs / jurisdictions / per-catalog entry
- * counts). Reuses check-sbom-currency's token table so the two can't drift.
- *
- * Run before refresh-sbom in the refresh apply path (and idempotent locally).
+ * Rewrites the count-bearing tokens in package.json.description from the live
+ * catalogs and manifest, replacing only the integer in each "<N> <label>" pair.
+ * refresh-sbom copies the description into sbom.cdx.json and
+ * check-sbom-currency validates every token against live counts, so this runs
+ * before refresh-sbom; it reads that gate's token table, so the two cannot
+ * drift. Idempotent.
  */
 
 const fs = require('fs');
@@ -39,9 +31,8 @@ function syncPackageDescription(root = path.join(__dirname, '..')) {
     liveJurisdictions = Object.keys(gf).filter((k) => !k.startsWith('_')).length;
   } catch { /* leave null — skip the jurisdiction token */ }
 
-  // Replace only the integer in "<N> <label>"; `labelRe` is the same (already
-  // regex-escaped) pattern check-sbom-currency matches, and $2 preserves the
-  // matched label text verbatim.
+  // `labelRe` arrives already regex-escaped from check-sbom-currency; $2
+  // preserves the matched label text verbatim.
   const sub = (n, labelRe) => {
     if (n == null) return;
     desc = desc.replace(new RegExp('(\\d+)(\\s+' + labelRe + '\\b)'), String(n) + '$2');

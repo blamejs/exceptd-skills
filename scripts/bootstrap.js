@@ -2,45 +2,17 @@
 'use strict';
 
 /**
- * exceptd Security — bootstrap ceremony.
+ * Bootstrap ceremony. The mode is auto-detected, so a downstream consumer
+ * running it cannot invalidate the maintainer's signing key:
  *
- * Three audiences, three behaviors. The script auto-detects which mode is
- * appropriate so a downstream consumer never accidentally invalidates the
- * maintainer's signing key.
+ *   public key only     verify only — generates nothing, rewrites nothing
+ *   private key present re-sign every skill, then verify
+ *   no keys, or --init  generate an Ed25519 keypair, sign, verify
  *
- *   1. Downstream consumer (keys/public.pem exists, .keys/private.pem missing,
- *      no --init flag) — VERIFY ONLY. The maintainer already shipped the public
- *      key + signed manifest. Running `npm run bootstrap` here just confirms
- *      the working tree is intact. No keypair is generated; no signatures are
- *      rewritten. This is the safe default.
+ * The private key never leaves the maintainer's machine. keys/public.pem is the
+ * one tracked artifact, committed after first init.
  *
- *   2. Maintainer re-sign (.keys/private.pem exists) — SIGN + VERIFY. Used
- *      after editing skill content. Re-signs every skill with the existing
- *      private key, then verifies.
- *
- *   3. First-maintainer init (no keys/public.pem, OR --init explicitly passed)
- *      — GENERATE + SIGN + VERIFY. Used once when a maintainer sets up signing
- *      for a brand-new clone. Generates an Ed25519 keypair, signs every skill,
- *      and verifies. The new public key is committed; the private key stays in
- *      .keys/ (gitignored).
- *
- * The private key never leaves the maintainer's machine. The public key in
- * keys/public.pem is the one tracked artifact and is committed by the
- * maintainer after first init.
- *
- * Subprocesses use execFileSync (no shell) with argument arrays — there is no
- * user input on the path, and avoiding the shell removes the injection surface
- * regardless.
- *
- * Usage:
- *   node scripts/bootstrap.js              Auto-detect mode and run.
- *   node scripts/bootstrap.js --init       Force first-maintainer init (generate
- *                                          keypair + sign + verify).
- *   node scripts/bootstrap.js --force      Re-run even if marker exists.
- *   node scripts/bootstrap.js --help       Print this help text.
- *
- * Dependencies: Node 24 stdlib only. package.json has no runtime deps and
- * this script keeps it that way.
+ * Node stdlib only: package.json has no runtime deps and this keeps it so.
  */
 
 const fs = require('node:fs');
@@ -113,8 +85,8 @@ function run(label, scriptPath, scriptArgs) {
   const pretty = `node ${path.relative(ROOT, scriptPath)} ${scriptArgs.join(' ')}`.trim();
   console.log(`[bootstrap] ${label}: ${pretty}`);
   try {
-    // execFileSync: no shell, args passed as a vetted array. The script path
-    // and all args here are constants under this repo's control.
+    // execFileSync, never a shell: the path and args are repo constants passed
+    // as an array, so no injection surface exists.
     childProcess.execFileSync(process.execPath, [scriptPath, ...scriptArgs], {
       cwd: ROOT,
       stdio: 'inherit'
@@ -153,10 +125,8 @@ function main() {
   const mode = detectMode(args);
 
   if (mode === 'verify-only') {
-    // Downstream consumer path. The maintainer already shipped the public
-    // key and signed manifest. Running bootstrap here just confirms tree
-    // integrity — never generates or signs, which would invalidate the
-    // upstream maintainer's signing chain.
+    // Confirms tree integrity and nothing more. Generating or signing here
+    // would invalidate the upstream maintainer's signing chain.
     console.log('[bootstrap] Detected downstream-consumer state:');
     console.log('  - keys/public.pem present (shipped by maintainer)');
     console.log('  - .keys/private.pem absent');
@@ -170,8 +140,6 @@ function main() {
   }
 
   if (mode === 'resign') {
-    // Maintainer re-sign path. Private key already exists; re-sign every
-    // skill against the current content and verify.
     console.log('[bootstrap] Detected maintainer re-sign state (private key present).');
     console.log('[bootstrap] Re-signing every skill with the existing private key.');
     console.log();

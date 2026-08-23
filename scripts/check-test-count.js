@@ -2,41 +2,15 @@
 'use strict';
 
 /**
- * scripts/check-test-count.js — v0.13.2 canonical-test-count predeploy gate.
+ * Canonical-test-count predeploy gate: catches test-set shrinkage the lint and
+ * diff-coverage gates cannot see.
  *
- * Why this exists. The v0.12 audit flagged that nothing in the suite asserts
- * "we expect N tests today." A deleted test file, a removed `test(` call, or a
- * misnamed file glob-excluded would all silently drop tests without anyone
- * noticing. The lint + diff-coverage gates catch source changes; this gate
- * catches test-set shrinkage.
+ * Counts DECLARATIONS statically across `tests/*.test.js` — `test(` and `it(`
+ * with their `.only` / `.skip` variants. `describe(` is NOT counted: a container
+ * is not a test. Blind spot: a test neutered in place still counts as one.
  *
- * Scope + blind spot. This counts test DECLARATIONS, so it detects deleted
- * files / removed `test(`/`it(` calls / glob-exclusions. It does NOT detect a
- * test neutered in place: `test('name', { skip: true }, fn)`, `test.skip(`,
- * and `it.skip(` all still count as one declaration, so flipping a running
- * test to permanently skipped leaves the count unchanged. Guarding against
- * skip-in-place would need runnable-vs-skipped tracking; that is out of scope
- * for this gate.
- *
- * Mechanism: count `test(`/`it(` declarations (including the `.only`/`.skip`
- * variants) across `tests/*.test.js` via static analysis (faster than
- * running). node:test supports both `test()` and the BDD-style `it()`/
- * `describe()` aliases as first-class declarations, and the suite mixes both,
- * so counting only `test(` was blind to every `it(` test. `describe(` is NOT
- * counted — those are containers, not tests, so counting them would inflate
- * the total and conflate removing a grouping block with removing a test.
- * Compare to a baseline pinned in `tests/.test-count-baseline.json`. Fail if
- * the observed count drops MORE than the configured tolerance (default 1)
- * below the baseline. Growth above baseline is fine; if the count grows by
- * more than `update_baseline_when_growth_exceeds`, surface a notice that the
- * baseline file should be refreshed (operator commits the refresh as part
- * of the release that added the tests).
- *
- * Output:
- *   stdout: structured JSON when --json, else a one-line summary
- *   exit 0: observed count is at or above baseline minus tolerance
- *   exit 1: observed count dropped beyond tolerance — fail predeploy
- *   exit 2: baseline file missing or malformed
+ * exit 0 at or above baseline minus tolerance, 1 when it drops further, 2 when
+ * the baseline file is missing or malformed.
  */
 
 const fs = require('fs');
@@ -63,16 +37,13 @@ function listTestFiles(dir) {
 
 function countTests(filePath) {
   let text = fs.readFileSync(filePath, 'utf8');
-  // Strip block comments first so a `/* test('x'); */`-disabled test is not
-  // counted — the most common "temporarily disable" action, which previously
-  // defeated this gate's entire purpose (it only stripped whole-line `//`).
+  // Strip block comments first: commenting a test out is the usual way to
+  // disable one, and counting it anyway defeats the gate.
   text = text.replace(/\/\*[\s\S]*?\*\//g, '');
   let count = 0;
   for (const rawLine of text.split('\n')) {
-    // Blank out single-line string/template literal BODIES first so a `test(`
-    // mentioned inside a string (e.g. an assertion on output text, or this very
-    // file's docstring examples) is not miscounted as a declaration — that
-    // phantom inflated the baseline and could mask a real test deletion.
+    // Blank string and template bodies first, so a `test(` inside a string
+    // literal is not read as a declaration — a phantom inflates the baseline.
     const noStrings = rawLine.replace(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`/g, "''");
     // Drop a trailing line comment too (`test('x'); // disabled`).
     const stripped = noStrings.replace(/\/\/.*$/, '').trim();
@@ -86,11 +57,8 @@ function main() {
   const wantJson = process.argv.includes('--json');
   const wantUpdate = process.argv.includes('--update-baseline');
 
-  // Read the baseline once and branch on the read RESULT, not on a prior
-  // existsSync probe. A separate existsSync(BASELINE_PATH)-then-read opens a
-  // check-then-use window (CodeQL js/file-system-race) where the file the
-  // gate decides about is not the file it later reads. ENOENT from the single
-  // read IS the "missing" signal — no second path access needed.
+  // Branch on the read RESULT, never on a prior existsSync probe: ENOENT from
+  // this single read IS the "missing" signal.
   let baselineRaw = null;
   try {
     baselineRaw = fs.readFileSync(BASELINE_PATH, 'utf8');
@@ -99,13 +67,10 @@ function main() {
       console.error(`[check-test-count] cannot read baseline: ${e.message}`);
       process.exit(2);
     }
-    // ENOENT — baseline absent.
     if (wantUpdate) {
       const files = listTestFiles(TESTS_DIR);
       const observed = files.reduce((n, f) => n + countTests(f), 0);
-      // Exclusive create ('wx'): fails with EEXIST if the file appeared
-      // between the read above and this write, so we never clobber a baseline
-      // a concurrent run just produced — atomic, no check-then-write window.
+      // Exclusive create: EEXIST rather than clobbering a concurrent run's baseline.
       fs.writeFileSync(BASELINE_PATH, JSON.stringify({
         baseline: observed,
         tolerance: 1,
@@ -173,9 +138,7 @@ function main() {
     console.error(`[check-test-count] FAIL - test count dropped from ${baseline} to ${observed} (delta ${delta}, tolerance -${tolerance}).`);
     console.error('[check-test-count] Either a test file was accidentally removed, a test()/it() invocation was deleted, OR the baseline is stale.');
     console.error('[check-test-count] If the drop is intentional, run: node scripts/check-test-count.js --update-baseline');
-    // exitCode + return (not process.exit) so the buffered stdout write above
-    // (the --json result / one-line summary) drains before the event loop ends
-    // — process.exit() can truncate piped output.
+    // `process.exitCode`, not `process.exit()`: the buffered stdout write must drain.
     process.exitCode = 1;
     return;
   }

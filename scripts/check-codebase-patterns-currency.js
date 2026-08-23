@@ -1,24 +1,12 @@
 #!/usr/bin/env node
 "use strict";
 /**
- * check-codebase-patterns-currency.js — advisory drift detector between
- * exceptd's adopted codebase-pattern classes and the upstream catalog they
- * were derived from (the sibling blamejs codebase-patterns test).
+ * Advisory drift detector between exceptd's adopted codebase-pattern classes
+ * and the sibling blamejs codebase-patterns test they derive from. A class
+ * present upstream but absent from UPSTREAM_TRIAGED is new and wants triage.
  *
- * exceptd's grep gate (scripts/check-codebase-patterns.js) ships a scoped
- * subset of the upstream pattern classes; the rest were triaged as either
- * already-owned by another exceptd gate, helper-dependent, or out of scope
- * for a local-file-read security CLI. UPSTREAM_TRIAGED below records every
- * class that triage covered. When upstream grows a NEW class not in that set,
- * this check flags it so the maintainer can decide whether to adopt it — the
- * same forcing function the GitHub-actions / vendored-bundle currency checks
- * provide for those surfaces.
- *
- * Advisory by design: it never fails a release. It exits 0 and prints a
- * NOTICE when upstream has drifted, and exits 0 silently when the sibling
- * repo is not present (a fresh clone / CI runner without the sibling). Point
- * it elsewhere with EXCEPTD_UPSTREAM_PATTERNS env var if the sibling lives at
- * a non-default path.
+ * Always exits 0 — it prints a NOTICE on drift and exits silently when the
+ * sibling repo is absent. EXCEPTD_UPSTREAM_PATTERNS overrides its path.
  */
 
 const fs = require("node:fs");
@@ -26,10 +14,7 @@ const path = require("node:path");
 
 const ROOT = path.resolve(__dirname, "..");
 
-// The upstream allow-class registry as triaged during the codebase-patterns adoption.
-// Every key here was classified (adopted / already-owned / helper-dependent /
-// out-of-scope). A class appearing upstream but absent here is NEW and wants
-// triage. Refresh this list (and re-triage the delta) when this check fires.
+// Refresh this list, re-triaging the delta, when this check fires.
 const UPSTREAM_TRIAGED = Object.freeze([ // keep-sorted
   "ai-disclosure-on-request-without-requested-gate",
   "archive-gz-without-safedecompress",
@@ -83,7 +68,6 @@ function upstreamPatternsPath() {
   return path.resolve(ROOT, "..", "blamejs", "test", "layer-0-primitives", "codebase-patterns.test.js");
 }
 
-// Extract the allow-class keys from the upstream VALID_ALLOW_CLASSES literal.
 function upstreamClasses(src) {
   const m = src.match(/VALID_ALLOW_CLASSES\s*=\s*(?:Object\.freeze\()?\{([\s\S]*?)\}/);
   if (!m) return null;

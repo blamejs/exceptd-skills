@@ -1,50 +1,8 @@
 #!/usr/bin/env node
 /*
- * scripts/refresh-sbom.js — regenerate sbom.cdx.json.
- *
- * The exceptd repository is zero-runtime-dependency by design (see
- * package.json `dependencies: {}`). The SBOM therefore documents the
- * project as an application component with an empty `components` array
- * and pulls live surface counts from manifest.json + data/*.json so the
- * artifact never silently drifts when the surface changes.
- *
- * Generated fields:
- *   - bomFormat / specVersion        CycloneDX 1.6
- *   - serialNumber                   urn:uuid v4 derived from a stable
- *                                    hash of (project name + version +
- *                                    bundle digest), so identical content
- *                                    reproduces the identical UUID and a
- *                                    rerun that changed nothing is a no-op
- *                                    rather than a spurious diff.
- *   - metadata.timestamp             the release date this version's
- *                                    CHANGELOG heading declares — NOT the
- *                                    wall-clock moment of generation, which
- *                                    would make the artifact irreproducible
- *   - metadata.tools                 this script itself, version pulled
- *                                    from package.json at refresh time
- *   - metadata.component             application entry for exceptd-skills,
- *                                    including a hashes[] bundle digest
- *                                    that operators can recompute from
- *                                    the per-file component list (see
- *                                    `bundleDigest` below for the exact
- *                                    canonical-input rule)
- *   - metadata.properties            catalog count, skill count, dataflow
- *                                    inputs, and the per-skill Ed25519
- *                                    integrity claim (lib/sign.js)
- *   - components                     vendored libraries + a `type: file`
- *                                    component per shipped file in the
- *                                    package.json `files` allowlist, each
- *                                    carrying its SHA-256 hash. Lets
- *                                    CycloneDX-aware vuln scanners verify
- *                                    individual files against the bundle
- *                                    without re-deriving the canonical
- *                                    list themselves.
- *   - dependencies                   [] — nothing to depend on
- *
- * Run:   node scripts/refresh-sbom.js
- *        npm run refresh-sbom
- *
- * No external dependencies. Node 24 stdlib only.
+ * Regenerates sbom.cdx.json, a CycloneDX 1.6 bundle. Every generated field is
+ * deterministic — identical content reproduces an identical SBOM, which is what
+ * makes the currency gate's regenerate-and-compare mean anything.
  */
 
 'use strict';
@@ -71,9 +29,7 @@ function listDataCatalogs(dir) {
     .sort();
 }
 
-/* RFC 4122 v4 UUID derived deterministically from a seed string so a
- * given (project, version, timestamp) triple maps to a stable UUID
- * across observers. Uses crypto.randomUUID() fallback if no seed. */
+/* RFC 4122 v4 UUID derived from a seed, so one seed maps to one UUID. */
 function uuidV4FromSeed(seed) {
   const hash = crypto.createHash('sha256').update(seed).digest();
   const b = Buffer.from(hash.subarray(0, 16));
@@ -103,19 +59,7 @@ function loadVendorProvenance() {
   }
 }
 
-/* Recursively expand a `package.json.files` allowlist entry into the
- * concrete file list that npm pack would ship. The allowlist accepts
- * either a file path or a directory path (with trailing slash convention
- * inside this repo); directories expand to every regular file beneath
- * them. Returned paths are POSIX-style relative to REPO_ROOT so the
- * SHA-256 input is stable across operating systems.
- *
- * Mirrors npm's pack-time inclusion rules at the level of fidelity this
- * SBOM needs (a deeper match — .npmignore, package-lock fields, npm-CLI
- * defaults — is intentionally out of scope: any divergence here surfaces
- * as a SHA mismatch on the predeploy verify-shipped-tarball gate, which
- * is the authoritative consumer-side check).
- */
+/* Every regular file beneath absDir, in name order for a stable inventory. */
 function walkFiles(absDir) {
   const out = [];
   const entries = fs.readdirSync(absDir, { withFileTypes: true });
@@ -130,42 +74,18 @@ function walkFiles(absDir) {
   return out;
 }
 
-/* Files that cannot have a stable SHA inside the SBOM they belong to.
- * `sbom.cdx.json` is the obvious self-reference: hashing it would always
- * be stale the moment the SBOM gets written back. The bundle digest in
- * metadata.component.hashes[] covers everything ELSE that ships and is
- * the operator's verification anchor for the bundle as a whole. */
+/* No stable SHA inside the SBOM that contains it: the hash is stale on write. */
 const SELF_EXCLUDED = new Set(['sbom.cdx.json']);
 
-/* Path prefixes whose contents are derivable / cache-class artifacts.
- * `data/_indexes/` is the pre-computed index cache that ships in the
- * tarball but is regenerated by `npm run build-indexes`. The test suite
- * deliberately mutates these files (build-incremental.test.js,
- * indexes-v070.test.js), so per-file SHA verification would race against
- * any test run that touches the cache between refresh-sbom and the
- * verification gate. The bundle digest at metadata.component.hashes[] is
- * computed from a SBOM-generation-time snapshot of all OTHER files; the
- * cache is excluded from the per-file inventory entirely. Predeploy's
- * `Pre-computed indexes freshness` gate is the authoritative consumer-
- * side check for the cache. */
+/* Derivable cache artifacts, kept out of the per-file inventory: the test suite
+ * mutates data/_indexes/, so a pinned per-file hash would race any run that
+ * touches the cache. Predeploy's index-freshness gate covers them instead. */
 const DERIVABLE_PREFIXES = ['data/_indexes/'];
 
-/* Files npm puts in every tarball regardless of the `files` allowlist.
- * package.json is never listed in `files` (npm adds it unconditionally), so
- * expanding the allowlist alone left the one file that declares the bin
- * entrypoint, the engines floor and the dependency set outside the hashed
- * inventory — the SBOM described 247 of the 268 files an operator receives and
- * said nothing about the gap. It is not derivable and not self-referential, so
- * nothing but the omission kept it out. README.md and LICENSE get the same
- * unconditional treatment from npm but are already named in `files`, so a
- * union covers the general rule without double-counting them. sources/README.md
- * is here for the same reason: npm collects README files it finds, `files` never
- * names that directory, and it shipped unhashed.
- *
- * This list is maintained by hand, which is only safe because something else
- * checks it: lib/validate-package.js compares the real `npm pack` output against
- * this SBOM, so a file npm decides to ship that is missing here fails a gate
- * instead of shipping silently. */
+/* Files npm ships whatever the `files` allowlist says, unioned in so they are
+ * hashed too. The list is hand-maintained, which is only safe because
+ * lib/validate-package.js compares the real `npm pack` output against this SBOM
+ * — a shipped file missing here fails a gate. */
 const ALWAYS_SHIPPED = ['package.json', 'sources/README.md'];
 
 function isDerivable(rel) {
@@ -184,9 +104,9 @@ function expandAllowlist(allowlist) {
       abs.push(full);
     }
   }
-  // dedupe + sort by relative POSIX path for deterministic output;
-  // strip self-referential entries (see SELF_EXCLUDED) and derivable cache
-  // entries (see DERIVABLE_PREFIXES).
+  // Deduped and sorted by POSIX-relative path, so the SHA-256 input is the same
+  // on every operating system. npm's pack rules are matched only as far as this
+  // SBOM needs; verify-shipped-tarball is the authoritative check.
   const rel = Array.from(new Set(abs.map((a) => toPosixRel(a))))
     .filter((r) => !SELF_EXCLUDED.has(r))
     .filter((r) => !isDerivable(r))
@@ -195,22 +115,10 @@ function expandAllowlist(allowlist) {
 }
 
 /* metadata.timestamp — the release date this version's CHANGELOG heading
- * declares, as an ISO-8601 instant.
- *
- * The field has to be deterministic: the SBOM-currency gate compares the
- * committed artifact against a freshly generated one, so a wall-clock value
- * would differ on every run and the comparison could never mean anything.
- * The previous approach kept determinism by folding the bundle hash into a
- * date offset, but the offset was a full uint32 of SECONDS — a 136-year
- * spread — so the field routinely landed a century or more in the future
- * (the shipped value read 2147-11-20). Deterministic, and untrue: consumers
- * that sort or age-check SBOMs read that as a real creation date.
- *
- * The CHANGELOG heading is both deterministic and true. Its format is already
- * enforced by scripts/check-changelog-extract.js, which the release flow runs
- * before this script, so the date is guaranteed present by the time a release
- * regenerates the SBOM. Refusing is deliberate when it is absent — inventing a
- * placeholder is what produced the 2147 date in the first place. */
+ * declares, as an ISO-8601 instant. It must be deterministic for the currency
+ * gate's regenerate-and-compare, and true because consumers age-check on it, so
+ * a missing heading throws rather than synthesizing a value.
+ * scripts/check-changelog-extract.js enforces the heading format. */
 function releaseTimestamp(version) {
   const changelogPath = path.join(REPO_ROOT, 'CHANGELOG.md');
   const text = fs.readFileSync(changelogPath, 'utf8');
@@ -240,22 +148,9 @@ function sha256File(absPath) {
     .digest('hex');
 }
 
-// v0.13.12 — emit SHA3-512 alongside SHA-256 for every file: component.
-// CycloneDX 1.6 supports multiple hash entries per component. Rationale
-// mirrors the existing key-fingerprint emission in lib/verify.js:
-//
-//   - SHA-256 stays as the universal-tool contract (Anchore / Trivy /
-//     Dependency-Track / GitHub Dependency Graph all parse it).
-//   - SHA3-512 is the SHA-3 family (Keccak / sponge), different
-//     mathematical foundation. Hedges against future SHA-2 weaknesses
-//     and aligns with the project's PQ posture (ML-KEM / ML-DSA both
-//     internally hash with SHA-3).
-//
-// check-sbom-currency.js verifies BOTH when present and refuses if a
-// SHA3-512 entry is recorded but its content drifts from the live
-// bytes — so a downgrade attack that drops SHA3-512 from the recorded
-// SBOM (leaving only SHA-256) is observable as a missing-hash error,
-// not a silent acceptance.
+// SHA3-512 sits alongside SHA-256 on every file component: a different
+// construction to fall back on. check-sbom-currency.js verifies both, so
+// dropping the SHA3-512 entry reads as a missing-hash error, not acceptance.
 function sha3_512File(absPath) {
   return crypto
     .createHash('sha3-512')
@@ -281,12 +176,9 @@ function fileComponents(allowlist) {
   return out;
 }
 
-/* Bundle digest = SHA-256 over a deterministic newline-delimited
- * "<sha256>\t<relpath>\n" stream of every shipped file, sorted by
- * relpath. The same input shape an operator would assemble from the
- * components[] list (`type: file` entries) lets them recompute and
- * compare without trusting the SBOM's stored value blindly.
- */
+/* SHA-256 over a "<sha256>\t<relpath>\n" stream of every shipped file, sorted by
+ * relpath — the same input an operator assembles from the `type: file` entries
+ * in components[], so the stored digest can be recomputed rather than trusted. */
 function bundleDigest(fileComps) {
   const sorted = [...fileComps].sort((a, b) =>
     a.name < b.name ? -1 : a.name > b.name ? 1 : 0,
@@ -337,25 +229,12 @@ function buildSbom() {
   const fileComps = fileComponents(Array.isArray(pkg.files) ? pkg.files : []);
   const bundleSha = bundleDigest(fileComps);
 
-  // Sort the union of vendor + file components by bom-ref for
-  // deterministic regeneration.
+  // Sorted by bom-ref so regeneration is byte-identical.
   const allComponents = [...vendoredComponents, ...fileComps].sort((a, b) =>
     a['bom-ref'] < b['bom-ref'] ? -1 : a['bom-ref'] > b['bom-ref'] ? 1 : 0,
   );
 
-  // v0.13.0: derive both serialNumber and metadata.timestamp from the
-  // bundle content hash, not wall-clock. Pre-v0.13 every refresh produced
-  // a new UUID + timestamp even when the bundle content was byte-identical,
-  // so the SBOM-currency gate produced noisy diffs and the predeploy
-  // comparison could not rely on stable byte-identity. The comment at the
-  // top of this file says "stable across observers" — the implementation
-  // contradicted it. Now: identical content → identical SBOM.
-  //
-  // The synthetic timestamp uses the bundle SHA folded into a date string
-  // anchored at the Unix epoch + a deterministic offset; this is NOT a
-  // real audit timestamp (the `metadata.lifecycles[]` block carries the
-  // intended-lifecycle phase for that). Operators wanting the wall-clock
-  // time of a refresh should read the file's mtime or refresh-report.json.
+  // Seeded from the bundle content, not the clock: a no-op refresh is a no-op.
   const seed = `${pkg.name}@${pkg.version}@${bundleSha}`;
   const serialNumber = 'urn:uuid:' + uuidV4FromSeed(seed);
   const timestamp = releaseTimestamp(pkg.version);
@@ -379,9 +258,6 @@ function buildSbom() {
         },
       ],
       component: {
-        // Switch from project: scheme to pkg:npm scheme post-v0.9.0 — the
-        // package is now published on npm with provenance attestation, so
-        // the CycloneDX bom-ref should reflect the canonical PURL.
         'bom-ref': `pkg:npm/${pkg.name}@${pkg.version}`,
         type: 'application',
         name: pkg.name,
@@ -389,10 +265,7 @@ function buildSbom() {
         description: pkg.description,
         licenses: [{ license: { id: 'Apache-2.0' } }],
         purl: `pkg:npm/${pkg.name.replace(/@/g, '%40')}@${pkg.version}`,
-        // Bundle digest over every shipped file (see bundleDigest above
-        // for the canonical-input rule). Operators can recompute this
-        // from the per-file components[] list and compare without
-        // re-deriving package.json.files themselves.
+        // Recomputable from components[]; bundleDigest above states the input rule.
         hashes: [{ alg: 'SHA-256', content: bundleSha }],
         externalReferences: [
           { type: 'distribution', url: `https://www.npmjs.com/package/${pkg.name}/v/${pkg.version}` },
@@ -416,11 +289,8 @@ function buildSbom() {
           name: 'exceptd:integrity:method',
           value: 'Ed25519 per-skill (lib/sign.js)',
         },
-        // An operator verifying the bundle holds the SBOM, not this script.
-        // Without these two properties the only record of what the inventory
-        // deliberately omits was a source comment they never see, so a partial
-        // inventory was indistinguishable from a complete one. State the
-        // uncovered prefix and the check that covers it instead.
+        // An operator verifying the bundle holds the SBOM, not this script: these
+        // two properties say the inventory is partial by design, and what covers it.
         {
           name: 'exceptd:integrity:uncovered:prefix',
           value: DERIVABLE_PREFIXES.join(','),

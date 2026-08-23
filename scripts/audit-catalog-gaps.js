@@ -1,44 +1,10 @@
 #!/usr/bin/env node
 "use strict";
 /**
- * scripts/audit-catalog-gaps.js
- *
- * Walks every data/*.json catalog and surfaces three classes of gap:
- *
- *   1. missing-context     entries that exist but lack one of the
- *                          documented context-search fields (e.g. RFC
- *                          without abstract; ATT&CK technique without
- *                          platforms; CVE without iocs)
- *
- *   2. dangling-ref        forward references from one catalog into
- *                          another that do not resolve (e.g. CVE
- *                          entry's cwe_refs cites CWE-XXX but the
- *                          local cwe-catalog does not carry that ID)
- *
- *   3. draft-debt          per-catalog count of _auto_imported rows
- *                          relative to operator-curated rows. High
- *                          draft-debt = bulk-imported surface that has
- *                          not been refined yet.
- *
- * Output: structured JSON to stdout (default) or human-readable summary
- * with `--pretty`. Returns exit 0 in --warn-only mode (default); exit
- * 1 in --strict mode if any class triggers.
- *
- * Usage:
- *   node scripts/audit-catalog-gaps.js                    # JSON
- *   node scripts/audit-catalog-gaps.js --pretty           # human
- *   node scripts/audit-catalog-gaps.js --strict           # exit 1 on gap
- *   node scripts/audit-catalog-gaps.js --catalog cve      # one catalog
- *   node scripts/audit-catalog-gaps.js --class missing-context
- *
- * npm: `npm run audit-catalog-gaps`
- *
- * Design note: the gap analyzer is a separate detection plane from
- * lib/validate-cve-catalog.js (schema validation, predeploy gate) and
- * scripts/refresh-reverse-refs.js (forward/reverse-ref currency). The
- * validator polices what's strictly required by the schema; the gap
- * analyzer polices the recommended-but-not-required context envelope
- * that lets an AI consumer find an entry by topic instead of by ID.
+ * Walks every data/*.json catalog for gaps: entries missing a documented context
+ * field, cross-catalog refs that do not resolve, and per-catalog draft debt.
+ * Warn-only by default; --strict exits 1 when any class triggers. Distinct from
+ * lib/validate-cve-catalog.js, which polices what the schema strictly requires.
  */
 
 const fs = require("fs");
@@ -48,10 +14,7 @@ const ROOT = path.join(__dirname, "..");
 const DATA = path.join(ROOT, "data");
 const TODAY = new Date().toISOString().slice(0, 10);
 
-// Per-catalog required context fields. Each entry in the array is a
-// field path (dot-separated for nested) and a non-emptiness predicate.
-// Pillar / Class / Pillar-abstraction CWEs and similar can opt out via
-// the suppression key on the entry (_gap_skip: { fields: [...] }).
+// Per-catalog required context fields; an entry opts out with _gap_skip: { fields: [...] }.
 const SPEC = {
   "cve-catalog": {
     file: "cve-catalog.json",
@@ -133,11 +96,6 @@ const SPEC = {
       { field: "control_name", check: (v) => typeof v === "string" && v.length > 0, label: "control_name" },
       { field: "real_requirement", check: (v) => typeof v === "string" && v.length > 20, label: "real_requirement (>20 chars)" },
       { field: "theater_test", check: (v) => v && typeof v.claim === "string" && typeof v.test === "string", label: "theater_test{claim,test}" },
-      // evidence_cves is required UNLESS the entry declares forward_looking:true.
-      // v0.13.19 used per-entry _gap_skip annotations on 84 framework gaps;
-      // v0.13.20 replaces that with a first-class schema field operators can
-      // see in the JSON. The check honors forward_looking via the entry
-      // parameter — see the SCHEMA_FORWARD_LOOKING block in inspect().
       { field: "evidence_cves", check: (v, entry) => (entry && entry.forward_looking === true) || (Array.isArray(v) && v.length > 0), label: "evidence_cves (or forward_looking:true)" }
     ],
     refs: []
@@ -180,10 +138,7 @@ function inspect(catalogKey) {
     const skip = e._gap_skip && Array.isArray(e._gap_skip.fields) ? new Set(e._gap_skip.fields) : new Set();
     for (const r of spec.required_context) {
       if (skip.has(r.field)) continue;
-      // Pass the entry as the second argument so per-field checks can
-      // inspect class-level schema flags (forward_looking, etc.). The
-      // legacy check-functions only consumed the value; new ones can
-      // opt into entry-aware evaluation.
+      // The second argument lets a check consult entry-level flags like forward_looking.
       if (!r.check(e[r.field], e)) {
         report.missing_context.push({ id, field: r.field, label: r.label });
       }
@@ -199,7 +154,6 @@ function inspectRefs(allCatalogs) {
   const attCat = allCatalogs["attack-techniques"];
   const atlCat = allCatalogs["atlas-ttps"];
   const fwCat = allCatalogs["framework-control-gaps"];
-  // Build presence sets keyed by id (sans _meta).
   const cweSet = new Set(Object.keys(cweCat).filter((k) => k !== "_meta"));
   const attSet = new Set(Object.keys(attCat).filter((k) => k !== "_meta"));
   const atlSet = new Set(Object.keys(atlCat).filter((k) => k !== "_meta"));
@@ -246,7 +200,6 @@ function emitPretty(report) {
     if (r.missing_context.length === 0) {
       lines.push("  ✓ context complete on every entry");
     } else {
-      // Group by field for tidier output.
       const byField = new Map();
       for (const m of r.missing_context) {
         if (!byField.has(m.field)) byField.set(m.field, []);
@@ -278,7 +231,6 @@ function emitPretty(report) {
     const pct = r.entries === 0 ? 0 : ((r.auto_imported / r.entries) * 100).toFixed(1);
     lines.push(`  ${r.catalog.padEnd(28)} ${r.auto_imported} / ${r.entries}  (${pct}%)`);
   }
-  // v0.13.21 extended findings sections.
   const ext = report.extended_findings || {};
   const extClasses = Object.keys(ext).sort();
   if (extClasses.length > 0) {
@@ -297,11 +249,7 @@ function emitPretty(report) {
   return lines.join("\n");
 }
 
-// Valid finding-class names for the `--class` filter. v0.13.21 added 7
-// extended detection classes for gaps the v0.13.19 detector did not
-// surface (content-quality / temporal-staleness / logical-consistency /
-// cross-ref-completeness / schema-evolution / operator-action-sla /
-// unused-orphan). Each is implemented in lib/gap-detectors.js.
+// Names `--class` accepts; the extended ones are implemented in lib/gap-detectors.js.
 const VALID_CLASSES = new Set([
   "missing-context", "dangling-ref", "draft-debt",
   "content-quality", "temporal-staleness", "logical-consistency",
@@ -334,12 +282,11 @@ function main() {
     perCatalog.push(inspect(k));
     allLoaded[k] = loadCatalog(SPEC[k].file);
   }
-  // Load all needed catalogs for cross-ref pass even when --catalog scoped.
+  // The cross-ref pass needs every catalog, even when --catalog scopes the audit.
   for (const k of Object.keys(SPEC)) if (!allLoaded[k]) allLoaded[k] = loadCatalog(SPEC[k].file);
   const dangling = opts.catalog && opts.catalog !== "cve-catalog" ? [] : inspectRefs(allLoaded);
 
-  // v0.13.21 extended detectors. --catalog scoping mutes them (they're
-  // cross-catalog by nature); --class scoping filters down to one.
+  // --catalog mutes the extended detectors; they are cross-catalog by nature.
   const extendedFindings = opts.catalog
     ? []
     : EXTENDED_DETECTORS.runAllDetectors(allLoaded, {});

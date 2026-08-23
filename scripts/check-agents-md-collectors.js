@@ -2,24 +2,9 @@
 "use strict";
 
 /**
- * scripts/check-agents-md-collectors.js
- *
- * Predeploy gate. Verifies that AGENTS.md's "<N> reference collectors
- * ship today" paragraph stays in sync with the actual contents of
- * lib/collectors/. Drift is silent today - AGENTS.md gets bumped by
- * hand each release; a missed bump produces inaccurate count + stale
- * enumeration that downstream AI consumers parse.
- *
- * Checks:
- *   1. The numeric count word in the paragraph (Eleven / Twelve /
- *      Thirteen / ...) matches the actual count of
- *      lib/collectors/*.js modules.
- *   2. Every collector named in the parenthesized list exists at
- *      lib/collectors/<name>.js.
- *   3. Every lib/collectors/<name>.js module appears in the
- *      parenthesized list.
- *
- * Exit codes: 0 ok, 1 drift, 2 parse error.
+ * Predeploy gate: AGENTS.md's "<N> reference collectors ship today" paragraph
+ * must agree with lib/collectors/ — the count word and the enumeration, both
+ * directions. Exit codes: 0 ok, 1 drift, 2 parse error.
  */
 
 const fs = require("node:fs");
@@ -28,31 +13,20 @@ const path = require("node:path");
 const ROOT = path.join(__dirname, "..");
 const AGENTS = path.join(ROOT, "AGENTS.md");
 const REAL_COLLECTOR_DIR = path.join(ROOT, "lib", "collectors");
-// EXCEPTD_COLLECTOR_DIR lets the test suite drive the gate against a throwaway
-// tempdir (so the require-throw / leaked-fixture behaviours are exercised
-// without writing into the real lib/collectors/). It is honored ONLY when the
-// explicit test-only switch EXCEPTD_COLLECTOR_DIR_TESTONLY=1 is also set, so a
-// stray env var in CI or a developer shell can never point the release gate at
-// an alternate directory and let missing/broken real collectors pass.
+// EXCEPTD_COLLECTOR_DIR is honored ONLY alongside EXCEPTD_COLLECTOR_DIR_TESTONLY=1,
+// so a stray env var cannot aim the release gate at another directory.
 const COLLECTOR_DIR =
   process.env.EXCEPTD_COLLECTOR_DIR_TESTONLY === "1" && process.env.EXCEPTD_COLLECTOR_DIR
     ? path.resolve(process.env.EXCEPTD_COLLECTOR_DIR)
     : REAL_COLLECTOR_DIR;
 
-// A real shipped collector is named [a-z0-9-]+.js — the AGENTS.md enumeration
-// regex (`lib/collectors/([a-z0-9-]+\.js)`) cannot even reference an
-// underscore-prefixed file. So a `__`-prefixed file is never a collector:
-// it is test scaffolding or a stray artifact. classifyCollectors SKIPS it so a
-// leaked fixture cannot poison the count/enumeration/load-error scan; the gate
-// separately FORBIDS it (see findReservedFixtures) so a leaked fixture cannot
-// silently ship in the wholesale-published lib/ tree either.
+// A shipped collector is named [a-z0-9-]+.js, so a `__`-prefixed file is test
+// scaffolding: classifyCollectors skips it, findReservedFixtures forbids it in lib/.
 function isReservedFixture(f) {
   return f.startsWith("__");
 }
 
-// Reserved-prefix .js files present in `dir`. These are test scaffolding and
-// must never ship; the gate fails hard if any are found in the directory it
-// validates.
+// Reserved-prefix .js files present in `dir`; an unreadable dir yields [].
 function findReservedFixtures(dir) {
   try {
     return fs.readdirSync(dir).filter((f) => f.endsWith(".js") && isReservedFixture(f));
@@ -61,10 +35,8 @@ function findReservedFixtures(dir) {
   }
 }
 
-// Classify every <dir>/*.js into collectors (require succeeds + exports
-// collect()), helpers (require succeeds, no collect() — silently excluded),
-// and load-errors (require throws — surfaced, never silently dropped).
-// Exported so the test suite can drive it against a tempdir.
+// Classify every <dir>/*.js: a collector requires cleanly and exports collect();
+// a require that throws becomes a load error rather than a silent omission.
 function classifyCollectors(dir) {
   const jsFiles = fs.readdirSync(dir)
     .filter((f) => f.endsWith(".js") && !isReservedFixture(f))
@@ -104,10 +76,7 @@ function ok(msg) {
 }
 
 function main() {
-  // Leak-guard (P2: forbid leaked reserved fixtures before packing). A
-  // `__`-prefixed file in the collectors dir is stray test scaffolding;
-  // because lib/ is published wholesale, a leaked one would otherwise ship.
-  // Fail hard, naming the file, so the release path deletes it.
+  // lib/ is published wholesale, so a stray fixture would ship.
   const stray = findReservedFixtures(COLLECTOR_DIR);
   if (stray.length > 0) {
     console.error(
@@ -126,18 +95,6 @@ function main() {
     return;
   }
 
-  // Classify every lib/collectors/*.js into exactly one of three buckets:
-  //   - collector:  require() succeeds AND exports a collect() function
-  //                 (counted; must appear in the AGENTS.md enumeration).
-  //   - helper:     require() succeeds but exports no collect() function
-  //                 (e.g. scan-excludes.js, the directory-walk exclusion
-  //                 policy) — legitimately excluded from the count.
-  //   - load-error: require() THROWS (syntax error, bad top-level require,
-  //                 init-time exception). A broken collector must NOT be
-  //                 silently dropped: doing so excludes it from BOTH the
-  //                 count and the enumeration cross-check, so a file that
-  //                 still ships in the tarball passes the gate undetected.
-  //                 Surface it as a parse error (exit 2) naming the file.
   let collectorFiles, loadErrors;
   try {
     ({ collectorFiles, loadErrors } = classifyCollectors(COLLECTOR_DIR));

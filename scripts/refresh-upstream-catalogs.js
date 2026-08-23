@@ -1,38 +1,10 @@
 #!/usr/bin/env node
 "use strict";
 /**
- * scripts/refresh-upstream-catalogs.js
- *
- * Unified entrypoint + library for refreshing the four canonical upstream
- * catalogs from their official sources. Each refresher is idempotent and
- * never overwrites operator-curated entries (rows that lack the
- * `_auto_imported: true` flag are preserved verbatim).
- *
- *   rfc      ietf-rfc-index            data/rfc-references.json
- *   attack   mitre-attack-stix         data/attack-techniques.json
- *   atlas    mitre-atlas-stix          data/atlas-ttps.json
- *   d3fend   mitre-d3fend-owl          data/d3fend-catalog.json
- *
- * CLI usage:
- *
- *   node scripts/refresh-upstream-catalogs.js                      # all four
- *   node scripts/refresh-upstream-catalogs.js --source rfc         # one
- *   node scripts/refresh-upstream-catalogs.js --source rfc,atlas   # two
- *   node scripts/refresh-upstream-catalogs.js --dry-run            # report only
- *   CAP=200 node scripts/refresh-upstream-catalogs.js --source attack
- *
- * Module usage (per-type wrappers under scripts/refresh-{rfc,attack,atlas,
- * d3fend}.js import the corresponding refreshX function from this file):
- *
- *   const { refreshRfc } = require("./refresh-upstream-catalogs.js");
- *   await refreshRfc({ dry: false });
- *
- * npm aliases (package.json scripts):
- *   refresh-upstream-catalogs  runs all four
- *   refresh-rfc-index          --source rfc
- *   refresh-mitre-attack       --source attack
- *   refresh-mitre-atlas        --source atlas
- *   refresh-mitre-d3fend       --source d3fend
+ * Refreshes the upstream catalogs (IETF RFC index, MITRE ATT&CK, ICS-ATT&CK,
+ * ATLAS, D3FEND) from their official sources. Refreshers are idempotent and
+ * additive: a populated field is never overwritten, and only `_auto_imported`
+ * rows take a status bump.
  */
 
 const fs = require("fs");
@@ -42,12 +14,8 @@ const path = require("path");
 const ROOT = path.join(__dirname, "..");
 const TODAY = new Date().toISOString().slice(0, 10);
 
-// v0.13.20 class-3.11 fix: refreshers read their required-context list
-// from the audit SPEC. Eliminates the parallel hardcoded field arrays
-// that v0.13.17→19 carried (and forgot to keep in sync — the v0.13.19
-// audit found 106 ATT&CK rows missing `description` + `tactic` because
-// the v0.13.18 backfill list omitted those fields). One source of truth
-// = the audit-catalog-gaps SPEC.
+// Required-context field names come from the audit-catalog-gaps SPEC, never a
+// second hardcoded list that would drift from it.
 const AUDIT_SPEC = require("./audit-catalog-gaps.js").SPEC;
 function specRequiredFields(catalogKey) {
   const spec = AUDIT_SPEC[catalogKey];
@@ -57,15 +25,9 @@ function specRequiredFields(catalogKey) {
 
 const MAX_REDIRECTS = 5;
 
-// Hardened fetch helper. Three properties the hand-rolled follower lacked:
-//   1. Redirect-depth cap + base-URL resolution + response drain, so a
-//      redirect loop rejects within the cap (rather than recursing/hanging
-//      unbounded) and a relative Location resolves against the current URL.
-//   2. 4xx/5xx (and a missing statusCode edge) reject instead of resolving an
-//      error body as a "successful" empty result — every consumer fails
-//      closed on an HTTP error rather than stamping _meta on a non-fetch.
-//   3. A 3xx with no Location header rejects with a clear message rather than
-//      throwing an opaque ERR_INVALID_URL on `new URL(undefined, url)`.
+// Rejects on anything but a 2xx, so an error body can never reach a consumer as
+// a "successful" empty result and get _meta stamped on a non-fetch. A redirect
+// resolves Location against the current URL and rejects past MAX_REDIRECTS.
 function fetchUrl(url, depth = 0) {
   return new Promise((resolve, reject) => {
     https.get(url, { headers: { "User-Agent": "exceptd-refresh-upstream-catalogs" } }, (r) => {
@@ -99,11 +61,8 @@ function loadCatalog(rel) {
   return JSON.parse(fs.readFileSync(path.join(ROOT, "data", rel), "utf8"));
 }
 
-// Atomic write: a crash / disk-full / SIGKILL mid-write would otherwise leave a
-// truncated JSON catalog on disk. Write to a temp sibling and rename — rename is
-// atomic on POSIX and on same-volume Windows renames (the .tmp sibling is
-// adjacent to the target, same volume), so a reader / the next run only ever
-// sees the complete old or complete new file. Mirrors build-indexes#writeJson.
+// Temp sibling + atomic rename, so a crash mid-write cannot leave a truncated
+// catalog behind. Mirrors build-indexes#writeJson.
 function writeCatalog(rel, obj) {
   const abs = path.join(ROOT, "data", rel);
   const tmp = `${abs}.tmp-${process.pid}`;
@@ -116,8 +75,6 @@ function getTag(blk, tag) {
   const m = blk.match(re);
   return m ? m[1].trim() : null;
 }
-
-// ---------------- RFC ----------------
 
 const RFC_SRC = "https://www.rfc-editor.org/rfc-index.xml";
 const RFC_STATUS_MAP = {
@@ -136,8 +93,7 @@ const RFC_MONTHS = {
   September: "09", October: "10", November: "11", December: "12"
 };
 
-// Extract every doc-id reference inside a parent tag like
-// <obsoleted-by><doc-id>RFC123</doc-id><doc-id>RFC456</doc-id></obsoleted-by>.
+// Every <doc-id> inside a parent tag: <obsoleted-by><doc-id>RFC123</doc-id>…
 function getDocIdList(blk, parentTag) {
   const re = new RegExp(`<${parentTag}>([\\s\\S]*?)<\\/${parentTag}>`);
   const m = blk.match(re);
@@ -166,7 +122,6 @@ function getAbstract(blk) {
   return paras.length ? paras.join(" ") : null;
 }
 
-// <keywords><kw>k1</kw><kw>k2</kw></keywords>
 function getKeywords(blk) {
   const m = blk.match(/<keywords>([\s\S]*?)<\/keywords>/);
   if (!m) return [];
@@ -211,10 +166,6 @@ function parseRfcEntry(blk) {
   const published = year && month ? `${year}-${month}` : (year || "unknown");
   const hasErrata = /<errata-url>/.test(blk);
   const obsoleted = /<obsoleted-by>/.test(blk);
-  // New context-search fields (v0.13.18+): the AI needs more than the
-  // title to locate an RFC by topic. abstract + keywords + area +
-  // wg_acronym + stream + authors + obsoletes/updates relationships are
-  // all present in the IETF index — we were only extracting title before.
   const abstract = getAbstract(blk);
   const keywords = getKeywords(blk);
   const area = getTag(blk, "area");
@@ -253,12 +204,8 @@ async function refreshRfc({ dry = false, _deps = {} } = {}) {
     if (e.obsoleted || e.status === "HISTORIC" || e.status === "UNKNOWN") continue;
     entries.push(e);
   }
-  // Sanity floor: the IETF index has ~9000+ RFCs, so a successful fetch can
-  // never parse to zero entries. A zero count means the fetch returned an
-  // error/empty/soft-error body (a 200 with a CDN error page, a captive portal,
-  // or a truncated body the HTTP-status guard can't see) — refuse to stamp
-  // _meta or write rfc-references.json, matching the JSON-parse failures the
-  // STIX sources surface for free (an empty index is never a legitimate result).
+  // A successful fetch of a ~9000-RFC index can never parse to zero. Zero means a
+  // soft-error body — a CDN error page under a 200 — the status guard cannot see.
   if (backfillable.length === 0) {
     throw new Error("RFC index parsed 0 entries (fetch likely returned an error/empty body) — refusing to stamp _meta or write rfc-references.json");
   }
@@ -266,19 +213,16 @@ async function refreshRfc({ dry = false, _deps = {} } = {}) {
   const cat = _loadCatalog("rfc-references.json");
   const existing = new Set(Object.keys(cat).filter((k) => k !== "_meta"));
   let added = 0, statusBumped = 0, backfilledCount = 0;
-  // First pass: backfill ALL existing rows from the broader entry set
-  // (including obsoleted historics). Operator may have curated an
-  // obsoleted RFC in for documentation; we still want abstract/authors.
+  // Backfill every existing row from the broader entry set, obsoleted historics
+  // included: a curated obsoleted RFC still wants its abstract and authors.
   for (const e of backfillable) {
     const id = `RFC-${e.num}`;
     if (!existing.has(id)) continue;
     const cur = cat[id];
     if (!cur) continue;
     let touched = false;
-    // Mirror the new-add path's `|| e.status` fallback: an upstream status
-    // outside RFC_STATUS_MAP must NOT write `undefined` (which would drop the
-    // status field on an existing curated row). Fall back to the raw upstream
-    // status, and only bump when the mapped value actually differs.
+    // An upstream status outside RFC_STATUS_MAP falls back to the raw status
+    // rather than writing `undefined` and dropping the field on an existing row.
     const mapped = RFC_STATUS_MAP[e.status] || e.status;
     if (cur._auto_imported && mapped && cur.status !== mapped) {
       cur.status = mapped;
@@ -302,13 +246,9 @@ async function refreshRfc({ dry = false, _deps = {} } = {}) {
     if (!cur.html_url) { cur.html_url = `https://www.rfc-editor.org/rfc/rfc${e.num}.html`; touched = true; }
     if (touched) { cur.last_verified = TODAY; backfilledCount++; }
   }
-  // Second pass: add new "current" entries that weren't in the catalog.
-  // Add new rows from the FULL index, not just the current series. Obsoleted
-  // and historic RFCs were previously excluded, so "is RFC N still current?"
-  // had no offline answer and forced a datatracker lookup. They are added here
-  // marked `_obsoleted` (with obsoleted_by populated) so the resolver can say
-  // "Historic, superseded by RFC X" offline. UNKNOWN-status index rows
-  // (placeholders / not-issued numbers) are still skipped.
+  // New rows come from the full index, not just the current series: obsoleted and
+  // historic RFCs land marked `_obsoleted` with obsoleted_by populated, so the
+  // resolver answers "Historic, superseded by RFC X" offline. UNKNOWN is skipped.
   for (const e of backfillable) {
     const id = `RFC-${e.num}`;
     // Existing rows handled in the first-pass backfill above.
@@ -347,10 +287,8 @@ async function refreshRfc({ dry = false, _deps = {} } = {}) {
     existing.add(id);
     added++;
   }
-  // Only restamp _meta + write when something actually changed. A genuine
-  // no-op leaves the file byte-identical so the daily refresh doesn't emit a
-  // spurious _meta-only diff (and so the freshness gates stay honest — a
-  // wall-clock restamp on an unchanged catalog masks real staleness).
+  // Restamp _meta and write only on a real change: restamping an unchanged
+  // catalog masks real staleness from the freshness gates.
   const changed = added > 0 || backfilledCount > 0 || statusBumped > 0;
   if (dry) {
     console.log(`[refresh-upstream:rfc] DRY-RUN: +${added} new, ${backfilledCount} backfilled, ${statusBumped} status bumps.`);
@@ -369,8 +307,6 @@ async function refreshRfc({ dry = false, _deps = {} } = {}) {
   return { added, statusBumped, backfilled: backfilledCount };
 }
 
-// ---------------- ATT&CK ----------------
-
 const ATTACK_SRC = "https://raw.githubusercontent.com/mitre/cti/master/enterprise-attack/enterprise-attack.json";
 const ATTACK_TACTIC_NAME = {
   "reconnaissance": "Reconnaissance", "resource-development": "Resource Development",
@@ -383,10 +319,8 @@ const ATTACK_TACTIC_NAME = {
   "exfiltration": "Exfiltration", "impact": "Impact"
 };
 
-// Extract the full STIX-bundle context fields the AI needs to find
-// techniques by topic (not just by ID). description_full preserves the
-// MITRE description; description (short) is the first-sentence
-// extractive summary used by token-budgeted consumers.
+// description_full keeps MITRE's text; description is the first-sentence
+// summary that token-budgeted consumers read.
 function attackEntryFromStix(t, extRef) {
   const id = extRef.external_id;
   const tactics = (t.kill_chain_phases || [])
@@ -429,13 +363,9 @@ function backfillAttack(cur, fresh) {
       if (!cur[key] && val) { cur[key] = val; touched = true; }
     }
   };
-  // v0.13.19: include description (short) + tactic in the backfill set.
-  // Existing rows from the original 110-entry catalog often have only
-  // {name, version} — they need tactic + short-description too, not just
-  // the v0.13.18 description_full / platforms / detection additions.
   fillIfEmpty("description", fresh.description);
-  // tactic: arrays only (existing rows may have a string tactic; do
-  // not overwrite a stringified tactic with an array form).
+  // Arrays only: an existing row may carry a string tactic, which must not be
+  // overwritten with the array form.
   if ((!cur.tactic || (Array.isArray(cur.tactic) && cur.tactic.length === 0)) && Array.isArray(fresh.tactic) && fresh.tactic.length) {
     cur.tactic = fresh.tactic;
     touched = true;
@@ -462,12 +392,9 @@ async function refreshAttack({ dry = false, cap = Infinity, _deps = {} } = {}) {
   console.log("[refresh-upstream:attack] fetching MITRE ATT&CK STIX...");
   const body = await _fetchUrl(ATTACK_SRC);
   const stix = JSON.parse(body);
-  // For NEW adds: live techniques only (skip revoked / deprecated).
-  // For BACKFILL on existing rows: include revoked too — an operator-
-  // curated row that references a now-revoked MITRE ID may still want
-  // the context fields (name / description / platforms) from the
-  // pre-revocation STIX record. Same logic as the RFC obsoleted-but-
-  // backfillable two-pass design.
+  // New adds take live techniques only; the backfill pass includes revoked and
+  // deprecated ones, so a curated row on a revoked MITRE ID still gets its
+  // context fields from the pre-revocation record.
   const liveTechs = (stix.objects || []).filter(
     (o) => o.type === "attack-pattern" && !o.revoked && !o.x_mitre_deprecated
   );
@@ -488,8 +415,6 @@ async function refreshAttack({ dry = false, cap = Infinity, _deps = {} } = {}) {
   });
   let added = 0;
   let backfilled = 0;
-  // First pass: backfill existing rows against the FULL technique set
-  // (including revoked) so operator-curated rows still get context.
   for (const t of backfillTechs) {
     const extRef = (t.external_references || []).find((r) => r.source_name === "mitre-attack");
     if (!extRef || !extRef.external_id) continue;
@@ -502,7 +427,6 @@ async function refreshAttack({ dry = false, cap = Infinity, _deps = {} } = {}) {
       backfilled++;
     }
   }
-  // Second pass: add new entries from live techniques only.
   for (const t of techs) {
     const extRef = (t.external_references || []).find((r) => r.source_name === "mitre-attack");
     if (!extRef || !extRef.external_id) continue;
@@ -524,8 +448,6 @@ async function refreshAttack({ dry = false, cap = Infinity, _deps = {} } = {}) {
   }
   return { added, backfilled };
 }
-
-// ---------------- ICS-ATT&CK ----------------
 
 const ICS_ATTACK_SRC = "https://raw.githubusercontent.com/mitre/cti/master/ics-attack/ics-attack.json";
 const ICS_TACTIC_NAME = {
@@ -604,8 +526,6 @@ async function refreshIcsAttack({ dry = false, cap = Infinity, _deps = {} } = {}
   return { added, backfilled };
 }
 
-// ---------------- ATLAS ----------------
-
 const ATLAS_SRC = "https://raw.githubusercontent.com/mitre-atlas/atlas-navigator-data/main/dist/stix-atlas.json";
 
 function atlasTactic(phases) {
@@ -659,14 +579,10 @@ function backfillAtlas(cur, fresh) {
       if (!cur[key] && val) { cur[key] = val; touched = true; }
     }
   };
-  // Parity with backfillAttack: include the short description + tactic in the
-  // backfill set. Existing curated ATLAS rows often carry only {name} and need
-  // the short description + tactic too, not just description_full/platforms/etc.
+  // Mirrors backfillAttack's set, short description and tactic included.
   fillIfEmpty("description", fresh.description);
-  // tactic: atlasEntryFromStix() emits a STRING for a single-tactic technique
-  // and an array for multi-tactic, so backfill both forms. fillIfEmpty only
-  // writes when cur is empty, so an existing (string OR array) tactic is never
-  // overwritten — the common single-tactic case is no longer left unhydrated.
+  // atlasEntryFromStix emits a string for a single-tactic technique and an array
+  // for multi; fillIfEmpty writes only into an empty field, so both survive.
   fillIfEmpty("tactic", fresh.tactic);
   fillIfEmpty("description_full", fresh.description_full);
   fillIfEmpty("platforms", fresh.platforms);
@@ -726,9 +642,8 @@ async function refreshAtlas({ dry = false, _deps = {} } = {}) {
     added++;
   }
   if (dry) { console.log(`[refresh-upstream:atlas] DRY-RUN: +${added} new, ${backfilled} backfills${atlasVersion ? `, v${atlasVersion}` : ""}`); return { added, backfilled, atlasVersion }; }
-  // A newly-detected ATLAS matrix version that differs from the recorded one
-  // is itself a change (the catalog should bump atlas_version + last_updated
-  // together), independent of any added/backfilled rows.
+  // A matrix version differing from the recorded one is itself a change, so
+  // atlas_version and last_updated bump together with no row edits at all.
   const versionChanged = !!(atlasVersion && local._meta && local._meta.atlas_version !== atlasVersion);
   const changed = added > 0 || backfilled > 0 || versionChanged;
   if (changed) {
@@ -744,8 +659,6 @@ async function refreshAtlas({ dry = false, _deps = {} } = {}) {
   }
   return { added, backfilled, atlasVersion };
 }
-
-// ---------------- D3FEND ----------------
 
 const D3FEND_SRC = "https://d3fend.mitre.org/ontologies/d3fend.json";
 
@@ -772,12 +685,9 @@ function d3fendIdList(t, field) {
   return arr.map((x) => (x && x["@id"]) ? String(x["@id"]).replace(/^d3f:/, "") : null).filter(Boolean);
 }
 
-// Strip a trailing period from an OWL d3fend-id: a few upstream artifact ids
-// (e.g. "D3A-C4.") carry a spurious terminal dot that no id token regex can
-// round-trip, leaving the entry unmatchable by the orphan/cross-ref scanners.
-// No legitimate d3fend technique id ends in a period. The SAME normalization
-// must key the catalog (existing.has / local[id]) as well as the entry payload,
-// or a refresh re-adds the period-keyed row every run (duplicate / churn).
+// A few upstream ids ("D3A-C4.") carry a terminal dot that no id-token regex
+// round-trips, leaving the entry unmatchable by the orphan and cross-ref
+// scanners. It must key the catalog too, or every run re-adds the dotted row.
 function normD3fendId(rawId) {
   return typeof rawId === "string" ? rawId.replace(/\.$/, "") : rawId;
 }
@@ -804,9 +714,6 @@ function d3fendEntryFromOwl(t) {
     description: desc || `D3FEND defensive technique ${id}. Reference: https://d3fend.mitre.org/technique/${id}/`,
     description_full: fullDesc || null,
     synonyms,
-    // Relationship fields — what offensive techniques this counters,
-    // what defensive technique it enables / falls under, the parent
-    // narrower/broader classes for hierarchical lookup.
     defends_against: d3fendIdList(t, "d3f:defends-against"),
     counters: d3fendIdList(t, "d3f:counters"),
     enables: d3fendIdList(t, "d3f:enables"),
@@ -885,8 +792,6 @@ async function refreshD3fend({ dry = false, cap = Infinity, _deps = {} } = {}) {
   return { added, backfilled };
 }
 
-// ---------------- CLI dispatcher ----------------
-
 const SOURCES = {
   rfc:        { name: "ietf-rfc-index",       run: refreshRfc },
   attack:     { name: "mitre-attack-stix",    run: refreshAttack },
@@ -939,11 +844,9 @@ module.exports = {
   refreshD3fend,
   SOURCES,
   runCli,
-  // Exported for regression tests: fetchUrl's status/redirect handling and
-  // writeCatalog's atomicity are load-bearing fail-closed properties.
+  // Exported for tests: fail-closed fetch behaviour and the atomic write.
   fetchUrl,
   writeCatalog,
-  // Exported for regression tests: backfillAtlas must mirror backfillAttack's
-  // description + array-tactic backfill on curated rows.
+  // Exported for tests: backfillAtlas must keep mirroring backfillAttack.
   backfillAtlas
 };

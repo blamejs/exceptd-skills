@@ -1,42 +1,14 @@
 "use strict";
 /**
- * scripts/builders/section-offsets.js
- *
- * Builds `data/_indexes/section-offsets.json` — for each skill, the byte
- * + line offsets of every H2 section header in the body. AI consumers can
- * slice a single section (e.g. "Compliance Theater Check") from disk
- * without parsing the full skill file.
- *
- * Per-skill shape:
- *   {
- *     path:           "skills/<name>/skill.md",
- *     total_bytes:    n,
- *     total_lines:    n,
- *     frontmatter:    { byte_start, byte_end, line_start, line_end },
- *     sections: [
- *       {
- *         name:            raw H2 text (e.g. "Threat Context (mid-2026)")
- *         normalized_name: collapsed for lookup ("threat-context")
- *         line:            1-based line number of the "## …" header
- *         byte_start:      byte offset of the "## " character
- *         byte_end:        byte offset where the next H2 begins (or EOF)
- *         bytes:           byte_end - byte_start
- *         h3_count:        number of "### " headers contained
- *       },
- *       ...
- *     ]
- *   }
- *
- * The normalized_name strips parenthetical qualifiers and common phrasings
- * so consumers can request a canonical section name without caring about
- * formatting drift.
+ * Builds `data/_indexes/section-offsets.json`: per skill, the byte and line
+ * offsets of every H2 section in the body, so a consumer can slice one section
+ * off disk without parsing the whole file. normalized_name collapses
+ * parenthetical qualifiers and phrasing variants onto a canonical name.
  */
 
 const fs = require("fs");
 const path = require("path");
 
-// Recognized canonical section anchors. Multiple raw H2 phrasings map to one
-// normalized name — see grep survey of skills/* for the variant phrasings.
 const NORMALIZERS = [
   [/threat\s*context/i,                     "threat-context"],
   [/framework\s*lag\s*declaration/i,        "framework-lag-declaration"],
@@ -56,7 +28,6 @@ function normalize(headerText) {
   for (const [re, canonical] of NORMALIZERS) {
     if (re.test(stripped)) return canonical;
   }
-  // Fall back: slug.
   return stripped
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
@@ -68,14 +39,10 @@ function buildOne(absPath, relPath) {
   const totalBytes = buf.length;
   const text = buf.toString("utf8");
   const lines = text.split(/\r?\n/);
-  // EOL-aware line-start byte offsets: walk the actual terminator bytes off the
-  // decoded text rather than assuming a fixed 1-byte newline. On a pure-LF body
-  // every terminator is 1 byte so the offsets are identical to the old `+ 1`
-  // accumulator; on a stray CRLF body the \r\n terminator is 2 bytes and the
-  // offsets stay correct (the old fixed-constant approach undercounted by 1
-  // byte per line and silently misaligned every token-budget slice). The split
-  // above discards terminator bytes, so the width can only be recovered by
-  // reading the terminators off the raw text — done here.
+  // Line-start byte offsets are measured off the real terminator bytes: a CRLF
+  // terminator is 2 bytes, and assuming a fixed 1-byte newline misaligns every
+  // offset in a CRLF body. The split above discards the terminators, so their
+  // width can only be recovered from the raw text.
   const lineByteOffsets = [0];
   const eolRe = /\r?\n/g;
   let m;
@@ -103,9 +70,8 @@ function buildOne(absPath, relPath) {
       }
     : null;
 
-  // H2 headers — only those outside fenced code blocks. Skill bodies often
-  // contain "## Foo" lines inside ```...``` blocks as output templates; those
-  // are not real sections.
+  // H2 headers outside fenced code blocks only — skill bodies carry "## Foo"
+  // lines inside ```...``` blocks as output templates, which are not sections.
   const h2 = [];
   let inFence = false;
   for (let i = 0; i < lines.length; i++) {
@@ -124,10 +90,8 @@ function buildOne(absPath, relPath) {
     const next = h2[j + 1];
     const startByte = lineByteOffsets[cur.idx];
     const endByte = next ? lineByteOffsets[next.idx] : totalBytes;
-    // Count H3 within this section — fence-aware, the same way the H2 loop
-    // above is. A section starts and ends on an H2 header, both of which are
-    // outside any fence, so fence state always begins false here. "### Foo"
-    // lines inside ```...``` output templates are not real sub-sections.
+    // Fence-aware like the H2 loop: a section starts and ends on an H2, both
+    // outside any fence, so fence state always begins false here.
     const endIdx = next ? next.idx : lines.length;
     let h3Count = 0;
     let h3InFence = false;
@@ -173,7 +137,5 @@ function buildSectionOffsets({ root, skills }) {
   };
 }
 
-// buildOne is exported for regression testing of the EOL-aware byte offsets
-// (a CRLF body must still produce byte_start values that point at the real
-// "## " byte in the raw file).
+// buildOne is exported for the CRLF byte-offset regression test.
 module.exports = { buildSectionOffsets, buildOne };

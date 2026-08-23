@@ -1,18 +1,11 @@
 "use strict";
 /**
- * scripts/builders/did-ladders.js
- *
- * Builds `data/_indexes/did-ladders.json` — canonical defense-in-depth
- * ladders per high-frequency attack class. Each ladder is a layered
- * sequence of controls (perimeter → identity → workload → data →
- * detection) with a cross-reference to the source skill(s) that
- * operationalize each layer and the D3FEND countermeasures backing each
- * layer.
- *
- * Curated content, validated against the manifest: every referenced skill
- * and D3FEND id must exist in their respective catalogs or the build
- * fails. This is the only place where the project's DiD knowledge is
- * laid out flat across attack classes.
+ * Builds `data/_indexes/did-ladders.json`: one defense-in-depth ladder per
+ * high-frequency attack class, each layer naming the skill that operationalizes
+ * it and the D3FEND countermeasures behind it. The ladders are curated here —
+ * the only place the project's DiD knowledge is laid out flat across attack
+ * classes — and a referenced skill or D3FEND id absent from its catalog fails
+ * the build.
  */
 
 const LADDERS = [

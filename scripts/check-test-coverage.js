@@ -1,38 +1,17 @@
 #!/usr/bin/env node
 "use strict";
 /**
- * scripts/check-test-coverage.js
+ * Diff-aware test-coverage gate. Compares the changed surface in the working
+ * tree (or a staged set, or any --base..HEAD range) against the tests/ tree
+ * and reports any surface change that lacks a covering test.
  *
- * Diff-aware test-coverage gate. Compares the changed surface in the
- * working tree (or a staged set, or any --base..HEAD range) against the
- * tests/ tree and reports any surface change that lacks a covering test.
+ * Surfaces: CLI verbs and flags in bin/exceptd.js, exported functions in
+ * lib / orchestrator / scripts, playbook detect-indicator and look-artifact
+ * ids, and CVE entries whose iocs changed. Docs, tooling dotfiles, tests/
+ * itself and derived indexes are allowlisted; workflows, manifests, schemas,
+ * SBOM and unclassified files are surfaced as manual-review, never auto-green.
  *
- * Surfaces detected:
- *   - bin/exceptd.js                CLI verbs / flags (COMMANDS / PLAYBOOK_VERBS)
- *   - lib/*.js, orchestrator/*.js,
- *     scripts/*.js                  exported functions (module.exports = {...})
- *   - data/playbooks/*.json         detect.indicators[].id + look.artifacts[].id
- *   - data/cve-catalog.json         CVE entries whose iocs field changed
- *
- * Categorization (no test required):
- *   - *.md outside data/, .gitignore, .npmrc, .editorconfig
- *   - CHANGELOG.md / README.md / CONTRIBUTING.md / SECURITY.md
- *   - whitespace-only diffs (re-run with --ignore-all-space)
- *   - tests/** changes (no recursion)
- *   - .github/workflows/*.yml      surfaced as manual-review-required
- *   - skills/<name>/skill.md       satisfied by Ed25519 verify gate
- *
- * Exit codes:
- *   0  no uncovered surface (or --warn-only)
- *   1  uncovered surface detected
- *   2  runner error (bad flag, git failure, etc.)
- *
- * Flags:
- *   --base <ref>     compare HEAD against <ref> (default: origin/main)
- *   --staged         use the staged index against HEAD
- *   --json           emit machine-readable report on stdout
- *   --warn-only      print but never exit non-zero
- *   --help, -h       this help
+ * Exit codes: 0 clean or --warn-only, 1 uncovered surface, 2 runner error.
  */
 
 const fs = require("fs");
@@ -40,8 +19,6 @@ const path = require("path");
 const childProc = require("child_process");
 
 const ROOT = path.resolve(__dirname, "..");
-
-// --- Flag parsing -----------------------------------------------------------
 
 function parseArgs(argv) {
   const out = { base: "origin/main", staged: false, json: false, warnOnly: false };
@@ -67,8 +44,6 @@ function printHelp() {
   process.stdout.write(banner);
 }
 
-// --- Git plumbing -----------------------------------------------------------
-
 function git(args, cwd) {
   const r = childProc.spawnSync("git", args, { cwd, encoding: "utf8" });
   if (r.status !== 0) {
@@ -79,29 +54,14 @@ function git(args, cwd) {
   return r.stdout;
 }
 
-// v0.12.8: resolve the diff anchor ONCE up front and thread the resolved SHA
-// through every per-file computation. Pre-fix, listChangedFiles() resolved
-// `opts.base` to a merge-base but fileDiff()/fileBefore() still used the raw
-// `opts.base` ref — so if origin/main advanced past the merge-base between
-// the file-list call and the per-file diff calls, the analyzer compared
-// per-file content against a newer upstream tree than the file list itself
-// was derived from. Result: false "added/removed" surface findings or real
-// findings masked. Codex P1 flag on PR #2 of v0.12.8.
+// The diff anchor resolves ONCE and the resolved SHA threads through every
+// per-file call: passing the raw ref lets origin/main advance mid-run, comparing
+// content against a newer tree than the file list came from.
 function resolveBaseRef(opts, cwd) {
   if (opts.staged) return null; // staged mode uses --cached / HEAD throughout
-  // F14 — fall back gracefully when origin/main is unreachable. The
-  // original implementation tried `merge-base HEAD <opts.base>` and, on
-  // failure, returned opts.base verbatim — which then failed every
-  // subsequent git invocation, surfacing as a runner-level error. In CI
-  // (full clones) the original ref usually resolves; on a developer
-  // laptop without `origin/main` configured (fresh clone, detached
-  // worktree, alternative remote name) the gate would fail entirely.
-  //
-  // Order of preference:
-  //   1. merge-base against the requested base
-  //   2. requested base verbatim, if `git rev-parse --verify` resolves it
-  //   3. local `main` HEAD if it exists
-  //   4. HEAD~1 as a last resort (single-commit diff)
+  // origin/main is not always reachable — fresh clone, detached worktree, remote
+  // under another name — and an unresolvable ref fails every later git call as a
+  // runner error rather than a coverage result.
   const tryResolve = (ref) => {
     try {
       git(["merge-base", "HEAD", ref], cwd).trim();
@@ -160,12 +120,9 @@ function fileDiff(opts, file, cwd, ignoreWs, resolvedBase) {
 }
 
 function fileAtRef(file, ref, cwd) {
-  // v0.13.18: bumped maxBuffer from the Node default (1 MiB on Windows)
-  // to 64 MiB so large catalog files (data/rfc-references.json is ~3 MiB;
-  // data/cve-catalog.json is ~600 KiB) don't ENOBUFS-truncate. A null
-  // return is the documented "missing" sentinel — silent truncation
-  // would make every entry in the live file appear as a fresh add and
-  // generate hundreds of bogus diff-coverage findings.
+  // maxBuffer far above Node's 1 MiB default: an ENOBUFS-truncated read of a
+  // multi-MiB catalog makes every entry in the live file look freshly added.
+  // Null is the "missing" sentinel, so a failure never returns partial content.
   const r = childProc.spawnSync("git", ["show", ref + ":" + file], {
     cwd, encoding: "utf8", maxBuffer: 64 * 1024 * 1024
   });
@@ -190,23 +147,14 @@ function readMaybe(p) {
   try { return fs.readFileSync(p, "utf8"); } catch { return null; }
 }
 
-// --- Categorization ---------------------------------------------------------
-
-// Mechanical / contributor-only docs the gate auto-allows: their content
-// has no operator-facing semantic surface (CONTRIBUTING is for PRs;
-// LICENSE / NOTICE / CODE_OF_CONDUCT are boilerplate; .gitignore / .npmrc
-// / .editorconfig are tooling). Edits here never need a regression test.
+// Contributor-only docs and tooling dotfiles: no semantic surface to test.
 const DOCS_ALWAYS_GREEN = new Set([
   "CONTRIBUTING.md", "LICENSE", "NOTICE", "CODE_OF_CONDUCT.md",
   "SUPPORT.md", ".gitignore", ".npmrc", ".editorconfig",
 ]);
 
-// Operator-facing docs (release notes, install instructions, security
-// disclosure policy, migration guides, AI-assistant ground truth) must not
-// auto-green — a PR could otherwise land deceptive copy here without any
-// reviewer signal. Downgrade to manual-review so the diff surfaces in the
-// gate output — a human (or the maintainer reviewing the bot summary) at
-// least sees the change exists.
+// Operator-facing docs must not auto-green — a PR could otherwise land
+// deceptive copy with no reviewer signal — so they downgrade to manual-review.
 const DOCS_MANUAL_REVIEW = new Set([
   "CHANGELOG.md", "README.md", "SECURITY.md", "MIGRATING.md", "AGENTS.md",
 ]);
@@ -226,20 +174,14 @@ function categorize(file) {
   if (norm.startsWith("scripts/") && norm.endsWith(".js")) return "lib";
   if (norm.startsWith("data/playbooks/") && norm.endsWith(".json")) return "playbook";
   if (norm === "data/cve-catalog.json") return "cve-catalog";
-  // F11 — files matching catalog/schema/SBOM shapes are surfaced for manual
-  // review rather than silent allowlist. These changes (manifest.json,
-  // schemas/*, data/*.json, sbom.cdx.json, manifest-snapshot.*) can carry
-  // semantic surface but the analyzer has no syntactic surface extractor
-  // for them — humans should look.
+  // Shapes carrying semantic surface the analyzer has no extractor for: a human
+  // looks, instead of an allowlist.
   if (norm === "manifest.json") return "manual-review";
   if (norm === "manifest-snapshot.json") return "manual-review";
   if (norm === "manifest-snapshot.sha256") return "manual-review";
   if (norm === "sbom.cdx.json") return "manual-review";
   if (norm.startsWith("lib/schemas/")) return "manual-review";
-  // v0.12.14: data/_indexes/ is auto-regenerated from data/ + manifest by
-  // `npm run build-indexes`; the source-of-truth diff is in the data/
-  // files themselves. Allowlist the derived index files so they don't
-  // perpetually surface as manual-review on every release commit.
+  // data/_indexes/ is regenerated; the reviewable diff is in the data/ sources.
   if (norm.startsWith("data/_indexes/")) return "allowlist-derived";
   if (norm.startsWith("data/") && norm.endsWith(".json")) return "manual-review";
   if (norm === "package.json") return "manual-review";
@@ -252,14 +194,11 @@ function isWhitespaceOnly(opts, file, cwd, resolvedBase) {
     .filter(l => !l.startsWith("+++") && !l.startsWith("---")).length === 0;
 }
 
-// --- Surface extraction -----------------------------------------------------
-
 function extractCliSurface(content) {
   if (!content) return { verbs: new Set(), flags: new Set() };
   const verbs = new Set();
   const flags = new Set();
-  // Only scan the COMMANDS = {...} block and PLAYBOOK_VERBS Set to avoid
-  // picking up arbitrary keys from elsewhere.
+  // Only the COMMANDS block and PLAYBOOK_VERBS Set, not arbitrary keys elsewhere.
   const cmdBlock = content.match(/const COMMANDS = \{([\s\S]*?)\n\};/);
   if (cmdBlock) {
     const re = /^\s*"?([a-zA-Z][\w-]+)"?\s*:/gm;
@@ -272,11 +211,9 @@ function extractCliSurface(content) {
     let m;
     while ((m = re.exec(playbookBlock[1])) !== null) verbs.add(m[1]);
   }
-  // REMOVED_VERBS keys are still part of the CLI surface: invoking one returns
-  // a structured refusal envelope (a real, test-covered contract). Counting
-  // them keeps a verb in the surface set when its vestigial COMMANDS entry is
-  // dropped — otherwise removing dead COMMANDS table rows for already-retired
-  // verbs reads as a fresh "removed-but-test-remains" against the refusal test.
+  // REMOVED_VERBS keys are still CLI surface: invoking one returns a structured
+  // refusal that tests cover. Counting them stops a dropped COMMANDS row reading
+  // as a fresh "removed-but-test-remains" against the refusal test.
   const removedBlock = content.match(/const REMOVED_VERBS = \{([\s\S]*?)\n\};/);
   if (removedBlock) {
     for (const m of removedBlock[1].matchAll(/^\s*"?([a-zA-Z][\w-]+)"?\s*:/gm)) verbs.add(m[1]);
@@ -299,27 +236,18 @@ function diffSets(before, after) {
 function extractLibExports(content) {
   if (!content) return new Set();
   const out = new Set();
-  // v0.12.9: strip block + line comments before matching `module.exports`
-  // so a doc-comment example like `module.exports = {...}` inside a /** */
-  // block does not shadow the real exports lower in the file. Pre-fix, the
-  // analyzer's own file matched a 3-char doc-comment fragment first and
-  // returned an empty export set — any source that mentions `module.exports`
-  // in a JSDoc/banner block hit the same bug. After stripping comments,
-  // the `module.exports = {...}` match runs against real code only.
+  // Strip comments first: a `module.exports = {...}` inside a doc comment
+  // otherwise shadows the real exports and the export set comes back empty.
   const stripped = content
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/^\s*\/\/.*$/gm, "");
-  // Capture the `module.exports = { ... }` body with brace-balancing so a
-  // nested object/array member (e.g. `{ CONFIG: { a: 1 }, x, y }`) does not
-  // truncate the export list at the first inner `}` and hide later exports —
-  // which would let an uncovered new export ship green (the gate's blind spot).
+  // Brace-balanced so a nested member (`{ CONFIG: { a: 1 }, x, y }`) does not
+  // truncate the list at the first inner `}` and hide later exports.
   const objStart = stripped.search(/module\.exports\s*=\s*\{/);
   if (objStart !== -1) {
     const openIdx = stripped.indexOf("{", objStart);
-    // String-aware brace balance: a `}` inside a string/template value (e.g.
-    // `{ PATTERN: "a}b", realExport }`) must NOT close the object early and
-    // hide the exports that follow — that blind spot let an uncovered export
-    // ship green.
+    // String-aware: a `}` inside a value (`{ PATTERN: "a}b", realExport }`)
+    // must not close the object early and hide the exports that follow.
     let depth = 0, end = -1, inStr = null;
     for (let i = openIdx; i < stripped.length; i++) {
       const ch = stripped[i];
@@ -334,8 +262,7 @@ function extractLibExports(content) {
     }
     if (end !== -1) {
       const body = stripped.slice(openIdx + 1, end);
-      // String-aware member split: a `,` or bracket inside a string value must
-      // not split a member or skew the bracket depth.
+      // String-aware split: a `,` or bracket inside a string must not split a member.
       let d = 0, cur = "", sInStr = null;
       const members = [];
       for (let i = 0; i < body.length; i++) {
@@ -356,12 +283,9 @@ function extractLibExports(content) {
       for (const tok of members) {
         const id = tok.split(":")[0].trim();
         if (/^[a-zA-Z_$][\w$]*$/.test(id)) { out.add(id); continue; }
-        // Method-shorthand member (`fn(a){...}`, `async load(){}`, `get x(){}`,
-        // `*gen(){}`): the colon-split above fails the id test because the token
-        // is `name(...)...`, so the export name would be silently dropped and a
-        // new exported method would ship with no diff-coverage requirement.
-        // Recover the name as the identifier immediately before the first `(`,
-        // after any leading modifier keyword (async/get/set) or generator `*`.
+        // Method-shorthand member (`fn(a){}`, `async load(){}`, `*gen(){}`): the
+        // colon split leaves `name(...)`, so recover the name before the first
+        // `(`, past any modifier keyword or generator `*`.
         const beforeParen = tok.split("(")[0].trim();
         const parts = beforeParen.split(/\s+/);
         const cand = parts[parts.length - 1].replace(/^\*/, "").trim();
@@ -369,12 +293,8 @@ function extractLibExports(content) {
       }
     }
   }
-  // Single-identifier whole-module export (`module.exports = mainFn;`): the
-  // entire public surface of a lib file is one assigned function. The object
-  // extractor above matches nothing, so without this the file's only export is
-  // invisible to the gate and a change to it requires no test. Capture the bare
-  // identifier on the RHS of `module.exports =` when it is not an object/array/
-  // function-expression/arrow (those are handled elsewhere or have no name).
+  // Whole-module export (`module.exports = mainFn;`): the object extractor above
+  // matches nothing, so without this the file's only export is invisible.
   const singleIdent = stripped.match(/module\.exports\s*=\s*([a-zA-Z_$][\w$]*)\s*;/);
   if (singleIdent && !/^(function|async|class)$/.test(singleIdent[1])) {
     out.add(singleIdent[1]);
@@ -401,13 +321,8 @@ function extractPlaybookIds(content) {
   return { indicators: ind, artifacts: arts };
 }
 
-// Canonical-form recursive equality replaces JSON.stringify comparison.
-// Pre-v0.13.20 the comparator was JSON.stringify(before.iocs) !==
-// JSON.stringify(after.iocs) — non-canonical: key order, trailing
-// whitespace, and numeric format differences all flagged as "changed"
-// when the operator made no semantic change. Symptoms were patched
-// twice with skip rules (_auto_imported, _iocs_stub) instead of fixing
-// the comparator. v0.13.20 fixes the root cause.
+// Canonical equality, not JSON.stringify: key order, whitespace and numeric
+// formatting are not semantic changes to an iocs block.
 const { canonicalEqual } = require("../lib/canonical-eq");
 
 function extractCveIocChanges(beforeStr, afterStr) {
@@ -417,10 +332,8 @@ function extractCveIocChanges(beforeStr, afterStr) {
   const ids = new Set([...Object.keys(before), ...Object.keys(after)]);
   for (const id of ids) {
     if (!/^CVE-\d{4}-\d+/.test(id)) continue;
-    // v0.13.18 retained skip rule: bulk-imported rows whose IoCs are
-    // stub-by-design on both sides — pure intake-class events, not
-    // operator curation. Removing this would surface every fresh KEV
-    // bulk-import as a per-CVE iocs-modified finding.
+    // Rows auto-imported on BOTH sides hold stub IoCs by design; without the
+    // skip, every fresh KEV bulk-import surfaces as a per-CVE finding.
     const beforeAuto = !!(before[id] && before[id]._auto_imported);
     const afterAuto  = !!(after[id]  && after[id]._auto_imported);
     if (beforeAuto && afterAuto) continue;
@@ -432,8 +345,6 @@ function extractCveIocChanges(beforeStr, afterStr) {
 }
 
 function safeParse(s) { try { return s ? JSON.parse(s) : null; } catch { return null; } }
-
-// --- Test corpus + coverage probes ------------------------------------------
 
 function loadTestCorpus(cwd) {
   const root = path.join(cwd, "tests");
@@ -473,32 +384,21 @@ function coversCliFlag(corpus, flag) {
   return corpus.includes(flag);
 }
 
-// F10 — same-file context check. A test corpus is no longer treated as
-// one giant string for lib-export coverage: the identifier must appear
-// inside a real test block (`test(`, `it(`, `describe(`, or an `assert(`
-// argument) within the SAME file that issues the matching require().
-// Pre-fix: an `assert.equal(...)` mention in one test file plus a stray
-// `require('../lib/x')` in a completely different test file counted as
-// coverage. That's not coverage — it's textual coincidence.
-//
-// `corpus` may be either a string (legacy joined corpus, used by
-// CLI/playbook/CVE coverage probes) or the structured shape
-// `{ joined, files }` produced by loadTestCorpus().
+// Coverage needs same-file context: the identifier must appear inside a real
+// test block in the SAME file that requires the module, or a stray require() in
+// one file plus a mention in another reads as coverage. `corpus` is either the
+// structured `{ joined, files }` from loadTestCorpus or a legacy joined string.
 function coversLibExport(corpus, libRel, ident) {
   const baseName = path.basename(libRel).replace(/\.js$/, "");
-  const baseFile = path.basename(libRel); // e.g. "check-sbom-currency.js"
+  const baseFile = path.basename(libRel);
   const identRe = new RegExp("\\b" + escapeRe(ident) + "\\b");
   const requireRe = new RegExp("require\\([^)]*" + escapeRe(baseName) + "[^)]*\\)");
-  // Accept the structured shape (preferred). Walk files individually.
   if (corpus && Array.isArray(corpus.files)) {
     for (const f of corpus.files) {
       const hasRequire = requireRe.test(f.content);
       const mentionsSpawnPath = f.content.includes(baseFile);
       if (!hasRequire && !mentionsSpawnPath) continue;
       if (!identRe.test(f.content)) continue;
-      // F10 — require the identifier appears inside a test block in this
-      // file. Recognise `test(`, `it(`, `describe(`, or `assert(` (or any
-      // `assert.<member>(`) bracketed argument that mentions the ident.
       if (mentionsIdentInTestContext(f.content, ident)) return true;
     }
     return false;
@@ -510,16 +410,11 @@ function coversLibExport(corpus, libRel, ident) {
   return false;
 }
 
-// Returns true when `ident` appears as a token inside the body of any
-// `test( ... )`, `it( ... )`, `describe( ... )`, `assert( ... )` or
-// `assert.<member>( ... )` call in the file. We approximate "the body of
-// the call" by finding the opening paren after the keyword, then walking
-// matched parens until the call closes. This is a syntactic-enough check
-// for vanilla JavaScript tests; the goal is to refuse "ident only appears
-// in a top-level comment" while still accepting `assert.deepEqual(foo, ...)`.
+// True when `ident` appears as a token inside the parenthesised body of a
+// `test(`, `it(`, `describe(`, `assert(` or `assert.<member>(` call. The paren
+// walk is approximate by design.
 function mentionsIdentInTestContext(content, ident) {
   const tokenRe = new RegExp("\\b" + escapeRe(ident) + "\\b");
-  // Quick reject: file does not mention the identifier at all.
   if (!tokenRe.test(content)) return false;
   const callRe = /\b(test|it|describe|assert(?:\.[A-Za-z_$][\w$]*)?)\s*\(/g;
   let m;
@@ -556,33 +451,15 @@ function coversCveIoc(corpus, cveId) {
   return /\biocs\b/i.test(corpus);
 }
 
-// --- Main analyzer ----------------------------------------------------------
-
-// --- Class-level lint: ban coincidence-passing notEqual(r.status, 0) --------
-//
-// Anti-coincidence rule: every exit-code assertion must pin the
-// EXACT code. `assert.notEqual(r.status, 0)` silently passes when an
-// unrelated failure produces ANY non-zero exit, hiding the regression the
-// test was meant to catch. This lint walks tests/*.test.js and rejects the
-// pattern outright. The `// allow-notEqual: <reason>` opt-out on the same
-// line is the escape hatch for genuine refusal-pins (asserting NOT a
-// specific code) — those must justify themselves inline.
-//
-// Pattern hits any of:
-//   assert.notEqual(r.status, 0)
-//   assert.notEqual(result.status, 0, '...')
-//   assert.notEqual(foo.status, 2, 'must not be unknown-cmd')   ← also refused
-// unless the same line ends with `// allow-notEqual: <reason>`.
-//
-// Structural lint replaces a per-instance hunt across 25+ test sites — keeps
-// new tests / new ports from regressing into coincidence-passing assertions.
-// Fix the class, not the instance.
+// Every exit-code assertion must pin the EXACT code: `assert.notEqual(r.status,
+// 0)` passes on any non-zero exit, hiding the regression the test was written
+// for. The only opt-out is `// allow-notEqual: <reason>` on the same line, for a
+// genuine refusal-pin that asserts NOT a specific code.
 function scanForCoincidenceAsserts(cwd) {
   const out = [];
   const testsDir = path.join(cwd, "tests");
   if (!fs.existsSync(testsDir)) return out;
-  // Match `assert.notEqual( <ident>.status` — the receiver name varies
-  // (r, r1, result, child, etc.) but the .status access is the signal.
+  // The receiver name varies (r, r1, result, child); the `.status` access is the signal.
   const banRe = /assert\.notEqual\s*\(\s*[A-Za-z_$][\w$]*\.status\b/;
   const allowRe = /\/\/\s*allow-notEqual\s*:/;
   const skipPrefix = "_helpers"; // helpers may legitimately reference the pattern
@@ -611,10 +488,6 @@ function scanForCoincidenceAsserts(cwd) {
 
 function analyze(opts) {
   const cwd = opts.repo || ROOT;
-  // v0.12.8: resolve the diff anchor ONCE and thread it through every
-  // per-file call so listChangedFiles + fileDiff + fileBefore all agree on
-  // the same SHA. Otherwise origin/main advancing past the merge-base
-  // between calls produces false add/remove findings.
   const resolvedBase = resolveBaseRef(opts, cwd);
   const changed = listChangedFiles(opts, cwd, resolvedBase);
   const corpusObj = loadTestCorpus(cwd);
@@ -632,10 +505,7 @@ function analyze(opts) {
     }
     if (cat === "skill") { allowlisted.push({ file: ch.file, reason: "skill-signed" }); continue; }
     if (cat === "workflow") { manualReview.push({ file: ch.file, reason: "workflow" }); continue; }
-    // F11 — data catalogs, schemas, manifests, SBOM go to manual review
-    // instead of being silently allowlisted. They show up in CI output.
     if (cat === "manual-review") { manualReview.push({ file: ch.file, reason: "manual-review" }); continue; }
-    // v0.12.14: derived index files allowlist (auto-regenerated artifacts).
     if (cat === "allowlist-derived") { allowlisted.push({ file: ch.file, reason: "derived-artifact" }); continue; }
     if (cat === "other") { manualReview.push({ file: ch.file, reason: "unclassified" }); continue; }
     if (ch.status !== "D" && isWhitespaceOnly(opts, ch.file, cwd, resolvedBase)) {
@@ -663,8 +533,6 @@ function analyze(opts) {
       const b = extractLibExports(before);
       const a = extractLibExports(after);
       const d = diffSets(b, a);
-      // F10 — pass the structured corpus so coversLibExport can enforce
-      // same-file require()+identifier-in-test-context coverage.
       for (const id of d.added) if (!coversLibExport(corpusObj, ch.file, id))
         findings.push({ file: ch.file, kind: "lib-export", surface: id, change: "added" });
       for (const id of d.removed) if (coversLibExport(corpusObj, ch.file, id))
@@ -687,11 +555,8 @@ function analyze(opts) {
     }
   }
 
-  // Class-level lint: ban `notEqual(<ident>.status, N)` outside of
-  // refusal-pin allowlist comments. Runs irrespective of the diff —
-  // a coincidence-passing assert that lands via a non-test-coverage
-  // path (someone hand-edits a tests/ file in a docs-only commit) is
-  // still a regression vector the gate must catch.
+  // Runs irrespective of the diff: a coincidence-passing assert can land by a
+  // path this analyzer never inspects.
   const coincidenceFindings = scanForCoincidenceAsserts(cwd);
   for (const f of coincidenceFindings) {
     findings.push({
@@ -704,8 +569,6 @@ function analyze(opts) {
 
   return { findings, allowlisted, manualReview, totalChanged: changed.length };
 }
-
-// --- Output -----------------------------------------------------------------
 
 function emitHuman(report) {
   const out = [];

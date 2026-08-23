@@ -1,31 +1,16 @@
 #!/usr/bin/env node
 /*
- * scripts/check-framework-gap-coverage.js
+ * Enforces global-first coverage (AGENTS.md Hard Rule #5): every curated CVE in
+ * data/cve-catalog.json must declare a framework_control_gaps statement for all
+ * five jurisdiction buckets, so a multi-jurisdiction operator reading the
+ * offline catalog gets more than a US-centric subset.
  *
- * AGENTS.md Hard Rule #5 (global-first) enforcement gate. Every curated CVE
- * in data/cve-catalog.json must declare a framework_control_gaps statement
- * for all five jurisdiction buckets:
+ * Draft entries (_auto_imported) are exempt — they carry raw NVD data, and the
+ * curation bar requires promotion before shipping, at which point this applies.
  *
- *   NIST  — NIST-800-53-* / NIST-800-63*
- *   EU    — NIS2-* / DORA-* / EU-AI-* / GDPR-*
- *   UK    — UK-CAF-*
- *   AU    — AU-Essential-8-* / AU-ISM-*
- *   ISO   — ISO-27001-2022-*
- *
- * A multi-jurisdiction operator reading the offline catalog's framework-gap
- * output must get coverage for every required jurisdiction on every CVE, not
- * a US-centric subset. Before this gate, two-thirds of the corpus mapped only
- * a subset; a codex review surfaced it, the corpus was completed, and this
- * gate keeps it from regressing when new CVEs are curated.
- *
- * Draft entries (_auto_imported === true) are exempt — they carry raw NVD
- * data that has not been through curation yet. The curation bar (elsewhere)
- * requires drafts to be promoted before shipping, at which point this gate
- * applies.
- *
- * Exit code: 0 when every curated entry is complete, 1 when any entry omits a
- * required bucket (the list is printed). Uses process.exitCode (not
- * process.exit) so buffered stdout drains before the process ends.
+ * Exits 0 when every curated entry is complete, 1 when any omits a bucket.
+ * `process.exitCode`, never `process.exit()`: the failure list is a buffered
+ * stdout write that the exit can truncate.
  */
 
 'use strict';
@@ -34,19 +19,16 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '..');
-// Catalog path is overridable (argv[2]) so the gate's own test can point it at
-// a fixture; defaults to the shipped catalog for the real predeploy run.
+// argv[2] overrides the catalog so the gate's own test can point at a fixture.
 const CATALOG = process.argv[2] || path.join(ROOT, 'data', 'cve-catalog.json');
 
 const REQUIRED = ['NIST', 'EU', 'UK', 'AU', 'ISO'];
 
 function bucketOf(key) {
   if (/^NIST/i.test(key)) return 'NIST';
-  // EU bucket is the security-regulation family AGENTS.md Hard Rule #5 names:
-  // NIS2, DORA, the EU AI Act, and the EU Cyber Resilience Act. GDPR / EU-GDPR
-  // (data-protection) is NOT sufficient on its own — an entry mapped only to
-  // GDPR still owes NIS2/DORA/EU-AI coverage, so GDPR does not satisfy this
-  // bucket. Note EU-AI / EU-CRA match here; EU-GDPR deliberately does not.
+  // The EU bucket is the security-regulation family Hard Rule #5 names. GDPR is
+  // data protection and does NOT satisfy it: an entry mapped only to GDPR still
+  // owes NIS2/DORA/EU-AI coverage, so EU-GDPR must not match here.
   if (/^(NIS2|DORA|EU-AI|EU-CRA)/i.test(key)) return 'EU';
   if (/^UK-CAF/i.test(key)) return 'UK';
   if (/^(AU-Essential-?8|AU-ISM|Essential-?8)/i.test(key)) return 'AU';

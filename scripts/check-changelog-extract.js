@@ -2,34 +2,14 @@
 'use strict';
 
 /**
- * Release-notes extraction + quality gate.
+ * Release-notes extraction + quality gate. .github/workflows/release.yml publishes
+ * the GitHub Release body by awk-extracting the `## <version> …` CHANGELOG section,
+ * falling back to "Release of v<version>." when the extract is empty. This runs the
+ * SAME extraction before tag-push and lints what it finds, so a malformed or
+ * internal-narrative section fails here rather than shipping as the public body.
  *
- * The release workflow (.github/workflows/release.yml) publishes the GitHub
- * Release body by awk-extracting the `## <version> ...` CHANGELOG section
- * between the version heading and the next `## ` heading, falling back to a
- * generic "Release of v<version>." line if the extract is empty. This gate
- * runs that SAME extraction locally before tag-push, and additionally lints
- * the extracted notes for operator-facing quality, so a malformed or
- * internal-narrative-laced section fails here rather than shipping as the
- * public release body.
- *
- * Two layers:
- *   1. EXTRACT  — the `## <version> — <date>` section exists, is non-empty
- *                 (won't trigger the workflow's "Release of v…" fallback),
- *                 the heading version matches package.json, and the heading
- *                 carries an ISO date.
- *   2. LINT     — the extracted body is operator-facing-clean: no internal
- *                 phase/pass/slice/sweep narrative, no agent-dispatch /
- *                 conversation residue, no tautological "all tests pass"
- *                 noise. (Mirrors the operator-facing discipline; the release
- *                 body is the most public surface there is.)
- *
- * Exit: process.exitCode 0 on pass, 1 on any failure. Functions are exported
- * for fixture-based testing (no subprocess needed).
- *
- * Usage:
- *   node scripts/check-changelog-extract.js             # uses package.json version
- *   node scripts/check-changelog-extract.js <version>   # explicit MAJOR.MINOR.PATCH
+ * process.exitCode 0 on pass, 1 on any failure. Takes an optional
+ * MAJOR.MINOR.PATCH argument, defaulting to the package.json version.
  */
 
 const fs = require('node:fs');
@@ -39,10 +19,9 @@ const ROOT = path.resolve(__dirname, '..');
 const CHANGELOG = path.join(ROOT, 'CHANGELOG.md');
 const PACKAGE_JSON = path.join(ROOT, 'package.json');
 
-// Replicates the release.yml awk: capture lines AFTER the `## <version> `
-// heading up to (not including) the next `## ` heading. The trailing space in
-// the heading match mirrors the workflow's `"^## " v " "` so a shorter version
-// heading can't accidentally match a longer one that shares its prefix.
+// Replicates the release.yml awk: lines after the `## <version> ` heading up to
+// the next `## `. The trailing space mirrors the workflow's `"^## " v " "`, so a
+// shorter version heading cannot match a longer one sharing its prefix.
 function extractSection(text, version) {
   const lines = text.split(/\r?\n/);
   const out = [];
@@ -56,8 +35,7 @@ function extractSection(text, version) {
     }
     if (startRe.test(ln)) capturing = true;
   }
-  // Trim leading/trailing blank lines (awk keeps them; the body is the same
-  // either way, but trimming makes the non-empty test honest).
+  // awk keeps the blank lines; trimming them makes the non-empty test honest.
   while (out.length && out[0].trim() === '') out.shift();
   while (out.length && out[out.length - 1].trim() === '') out.pop();
   return out;
@@ -69,10 +47,8 @@ function headingLine(text, version) {
   return text.split(/\r?\n/).find((l) => re.test(l)) || null;
 }
 
-// Operator-facing forbidden patterns. Tight, high-confidence internal-narrative
-// markers only — must not false-positive on legitimate operator prose (e.g. a
-// bare "phase" in "multi-phase attack" is fine; "Phase 9" is the tell). Each
-// entry: { id, re, why }.
+// Operator-facing forbidden patterns: high-confidence markers only, since a false
+// positive blocks a release. "multi-phase attack" is prose; "Phase 9" is the tell.
 const FORBIDDEN = [
   { id: 'phase-number', re: /\bphase\s+\d/i, why: 'internal phase number (operators have no roadmap)' },
   { id: 'pass-number', re: /\b(?:audit|curation|drift|fix|bug)?[- ]?pass\s+\d/i, why: 'internal pass/batch number' },
@@ -100,17 +76,11 @@ function readPackageVersion() {
   return JSON.parse(fs.readFileSync(PACKAGE_JSON, 'utf8')).version;
 }
 
-// Every previously released version must keep its own `## <version> ` heading.
-// The release flow edits the TOP of the file; an edit that replaces the prior
-// release's heading instead of inserting above it silently merges that
-// release's notes into the new section — the extract then spans multiple
-// releases and the public release body republishes old notes under the new
-// version. Tags are the authoritative record of what was released.
-// Tags whose release never published: the tag-push event was dropped (e.g.
-// a GitHub Actions outage) and — because the v* ruleset forbids re-pushing a
-// tag — the recovery is a version bump re-released with the same notes under
-// the NEW heading. The orphan tag therefore legitimately has no CHANGELOG
-// entry of its own. Tag exists, npm/GitHub Release do not.
+// Every released version keeps its own `## <version> ` heading; tags are the
+// authoritative record of which versions those are. An orphan is a tag whose
+// release never published: the v* ruleset forbids re-pushing a tag, so the
+// recovery was a version bump carrying the same notes under the NEW heading, and
+// such a tag legitimately has no CHANGELOG entry of its own.
 const ORPHAN_RELEASE_TAGS = new Set(['0.13.111', '0.15.25']);
 
 function releasedVersionsFromTags() {

@@ -1,11 +1,7 @@
 #!/usr/bin/env node
-// One-shot backfill of theater_test field for data/framework-control-gaps.json.
-// Hard Rule #6: every compliance-framework finding includes a specific test
-// that distinguishes paper compliance from actual security.
-//
-// Per-entry tests are authored against the entry's framework + control_name +
-// real_requirement so each one discriminates the named framework's paper
-// language from the named real-world threat.
+// One-shot backfill of the theater_test field in data/framework-control-gaps.json.
+// Hard Rule #6: every compliance-framework finding carries a specific test that
+// tells paper compliance from actual security.
 
 const fs = require('fs');
 const path = require('path');
@@ -14,15 +10,10 @@ const CATALOG_PATH = path.resolve(__dirname, '..', 'data', 'framework-control-ga
 
 const PAPER = 'compliance-theater';
 
-// Map of entry-key → theater_test. Hand-authored, grouped by framework family
-// so the discriminating test fits the language an auditor for THAT framework
-// uses. Where two entries share the same audit pattern (e.g. several NIST
-// 800-53 SI-* controls), the tests are similar in shape but worded against
-// the specific control text — never literally copy-pasted.
+// entry-key → theater_test, hand-authored and grouped by framework family so
+// each test speaks the language an auditor for that framework uses.
 const TESTS = {
-  // ---------------------------------------------------------------------
   // Universal / cross-framework AI gaps
-  // ---------------------------------------------------------------------
   'ALL-AI-PIPELINE-INTEGRITY': {
     claim: "We monitor our AI providers for security and treat model updates like any other vendor change.",
     test: "Pull the change-control register for the last 4 quarters; filter for entries where the affected asset is an externally hosted LLM, embedding model, or AI provider API. Count how many record (a) the model version pinned at the time, (b) a behavioural regression suite executed against the new version, and (c) the provider changelog reviewed with sign-off. Theater verdict if fewer than 90% of provider-side model updates produced an in-scope change-control entry, or if any sampled entry lacks a regression-suite artifact.",
@@ -42,9 +33,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // Australian frameworks (Essential 8, ISM)
-  // ---------------------------------------------------------------------
   'AU-Essential-8-App-Hardening': {
     claim: "We hardened user applications per Essential Eight Maturity Level 2; browsers and Office are locked down.",
     test: "Take the operator's hardened-application list. Confirm whether it enumerates AI coding assistants (Copilot, Cursor, Claude Code, Windsurf), MCP servers, and AI-tool config files (.claude/settings.json, .cursor/mcp.json, .vscode/settings.json:chat.tools.autoApprove) as in-scope. Pick a developer endpoint at random; verify those config files are integrity-monitored with the same alerting profile as security-sensitive files. Theater verdict if AI assistants are absent from the hardened-application list or if a config-file modification on the sampled endpoint would not generate an integrity alert.",
@@ -70,9 +59,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // CIS Controls
-  // ---------------------------------------------------------------------
   'CIS-Controls-v8-Control7': {
     claim: "We meet CIS Control 7 IG3 by remediating critical vulnerabilities within one month.",
     test: "Pull the vulnerability register for the past 12 months. Filter for CVEs that appeared on CISA KEV with public PoC during the period. For each, measure (a) time from KEV listing to verified mitigation, and (b) whether the mitigation was a live patch, configuration change, or isolation. Theater verdict if any KEV+PoC entry exceeded 4h to verified mitigation or if 'monthly cadence' was applied to a KEV-listed CVE.",
@@ -80,9 +67,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // CMMC / FedRAMP
-  // ---------------------------------------------------------------------
   'CMMC-2.0-Level-2': {
     claim: "We are CMMC Level 2 attested across all 110 NIST 800-171 controls; CUI is protected end-to-end.",
     test: "Walk the 3.4.1 (CM) asset inventory and check for AI assistants and MCP servers with CUI-adjacent access. Then inspect 3.13 system-and-communications protections to confirm AI-API egress is enumerated as a CUI exfiltration channel with monitoring. Theater verdict if AI assistants are absent from the asset inventory, or if AI-API egress at the CUI boundary has no monitoring rule, or if cross-walks to UK DEF STAN / AU DISP for joint programmes are missing.",
@@ -96,9 +81,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // CWE / SBOM standards
-  // ---------------------------------------------------------------------
   'CWE-Top-25-2024-meta': {
     claim: "Our SAST/DAST coverage maps to the CWE Top 25; we test for the most dangerous weaknesses.",
     test: "Pull the SAST/DAST rule pack and enumerate which CWE IDs each rule targets. Confirm rules exist for AI-specific CWE classes (CWE-1039 model integrity, CWE-1395 dependency on vulnerable third-party component, prompt-injection class CWEs). Run the rule pack against a known-vulnerable test fixture containing prompt-injection patterns. Theater verdict if AI-relevant CWE IDs are absent from the rule pack, or if the fixture run produces zero findings on the planted prompt-injection.",
@@ -118,9 +101,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // EU DORA family
-  // ---------------------------------------------------------------------
   'DORA-Art28': {
     claim: "Our DORA Art. 28 ICT third-party register covers all critical or important function dependencies.",
     test: "From the Art. 28 register, sample 5 third-party ICT services consumed in CIF (critical or important function) flows. For each, verify presence of build-provenance metadata (SLSA producer identifier, workflow file hash, cache key surface). Check for monthly producer-side cache verification evidence. Theater verdict if any sampled CIF dependency lacks build-provenance metadata, or if cache verification has not run in the last 90 days.",
@@ -164,9 +145,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // EU AI Act
-  // ---------------------------------------------------------------------
   'EU-AI-Act-Art-15': {
     claim: "Our high-risk AI system meets the EU AI Act Art. 15 'appropriate level of cybersecurity'.",
     test: "Request the cybersecurity test pack. Confirm presence of (a) prompt-injection red-team results bound to OWASP LLM Top 10, (b) RAG-corpus integrity test results, (c) model-extraction-resistance assessment, (d) MCP/plugin trust verification log. Then check incident-reporting bridge to NIS2 + DORA. Theater verdict if any of (a)-(d) are absent or older than 12 months, or if the bridge to NIS2/DORA notification clocks is undocumented.",
@@ -198,9 +177,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // EU CRA
-  // ---------------------------------------------------------------------
   'EU-CRA-Art13': {
     claim: "We satisfy EU CRA Art. 13 essential cybersecurity requirements with technical documentation on file.",
     test: "Request the canonical build-pipeline definition for the most recent release. Confirm publication alongside the release artifact (workflow file hash, runner attestation, secrets scope). Pick the release-being-installed at a downstream operator; verify its build pipeline matches the published definition by comparing producer-side hashes. Confirm the incident-notification clock starts from FIRST awareness (not from confirmed exploit). Theater verdict if pipeline definitions are unpublished, hashes diverge, or the clock policy starts later than first awareness.",
@@ -208,9 +185,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // HIPAA
-  // ---------------------------------------------------------------------
   'HIPAA-Security-Rule-164.312(a)(1)': {
     claim: "We meet HIPAA 164.312(a)(1) access controls; PHI is access-controlled with unique user IDs.",
     test: "Inventory AI providers in use; for each consuming PHI, locate a BAA covering prompt retention + training opt-out + breach notification within HIPAA timelines. Inspect prompt-flow telemetry for PHI; confirm DLP minimisation runs pre-egress. Confirm AI agent sessions have controls separate from human user controls. Theater verdict if any AI provider consuming PHI lacks a BAA, if DLP is absent on prompt egress, or if AI agent sessions inherit human controls without separation.",
@@ -242,9 +217,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // HITRUST
-  // ---------------------------------------------------------------------
   'HITRUST-CSF-v11.4-09.l': {
     claim: "We meet HITRUST CSF 09.l outsourced services management for all third-party providers.",
     test: "Pull the third-party register. Filter for AI providers; confirm AI vendors are inventoried separately from general SaaS. Spot-check 5 AI vendors for AI-specific contractual clauses (prompt retention, training opt-out, residency, model version pinning, prompt-breach notification). Search for self-signup AI usage on developer endpoints; confirm a policy prohibits it for in-scope data. Theater verdict if AI is bucketed inside generic SaaS, if any sampled AI vendor lacks AI-specific clauses, or if self-signup AI is in evidence on a developer endpoint that touches in-scope data.",
@@ -252,9 +225,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // IEC 62443 / NIST 800-82 / NERC CIP — OT / ICS
-  // ---------------------------------------------------------------------
   'IEC-62443-3-3': {
     claim: "Our IACS architecture meets IEC 62443-3-3 system security requirements.",
     test: "Inspect the zone-and-conduit diagram. Confirm AI operator assistants and AI-API egress paths from the corporate-to-OT boundary are enumerated as conduits with documented security levels. Sample 3 OT operator workstations; confirm any installed AI assistants are inventoried and that prompt-injection-class threats appear in the threat model. Theater verdict if AI conduits are absent from the zone diagram, or if AI assistants on OT operator workstations are not threat-modelled.",
@@ -274,9 +245,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // ISO 27001 / ISO 27017 / ISO 23894 / ISO 42001
-  // ---------------------------------------------------------------------
   'ISO-27001-2022-A.8.16': {
     claim: "Our monitoring activities under ISO 27001:2022 A.8.16 cover all in-scope systems.",
     test: "From the SIEM event-source inventory, confirm AI-API egress events, MCP server invocations, and AI-agent action audit logs are ingested. Sample one alert from each class in the past 30 days; confirm an analyst reviewed it. Theater verdict if any of those source classes are missing from the SIEM, or if no AI/MCP-related alert has been triaged in the past 90 days despite traffic being present.",
@@ -320,9 +289,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // NIS2
-  // ---------------------------------------------------------------------
   'NIS2-Art21-incident-handling': {
     claim: "We can meet NIS2 Art. 21 incident handling obligations including the 24h early warning.",
     test: "Run a tabletop with a synthetic significant-incident inject affecting an essential-service flow at T0. Stopwatch elapsed time to a Competent Authority early warning containing initial assessment, severity, and impact. Theater verdict if elapsed exceeds 24h, if no on-call is named to start the clock, or if the playbook has not been exercised in the past 12 months.",
@@ -348,9 +315,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // NIST SPs and AI RMF
-  // ---------------------------------------------------------------------
   'NIST-800-115': {
     claim: "Our pen-test methodology aligns with NIST SP 800-115 technical guidance.",
     test: "Pull the most recent pen-test report. Confirm coverage of AI/MCP attack surfaces (prompt injection, MCP plugin trust, RAG corpus integrity, AI-API egress). Confirm the testing methodology document references AI-specific test classes and tooling. Theater verdict if AI/MCP testing is absent from the methodology, or if the pen-test report contains no AI-class findings despite AI being in production.",
@@ -436,9 +401,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // OWASP family
-  // ---------------------------------------------------------------------
   'OWASP-ASVS-v5.0-V14': {
     claim: "Our application meets OWASP ASVS v5.0 V14 configuration controls.",
     test: "For any AI-mediated feature, confirm V14-equivalent controls cover prompt-isolation, output-sanitisation, and tool-grant defaults. Confirm SDK pinning and provider-version pinning where supported. Theater verdict if AI-feature configuration management is informal (no pinned versions, no documented prompt-isolation policy).",
@@ -476,9 +439,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // PCI DSS family
-  // ---------------------------------------------------------------------
   'PCI-DSS-4.0-6.3.3': {
     claim: "We address security vulnerabilities in custom and bespoke software per PCI DSS 6.3.3.",
     test: "Confirm the SDLC includes prompt-injection-class CWE coverage in code review for AI-mediated features. Inspect change tickets for AI-feature changes; confirm reviewer attestation includes AI-class threat sign-off. Theater verdict if AI-mediated changes bypass the prompt-injection threat-review gate.",
@@ -510,9 +471,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // PSD2 / PTES
-  // ---------------------------------------------------------------------
   'PSD2-RTS-SCA': {
     claim: "Our payment authentication satisfies PSD2 RTS-SCA strong customer authentication requirements.",
     test: "Inventory payment-initiation flows. For any AI-mediated initiation (agent-initiated transactions, copilot-drafted payments), confirm an explicit delegated-authority attestation per transaction class with scope (amount, counterparty, frequency). Confirm a distinct audit indicator marks AI-mediated transactions. Theater verdict if AI initiations inherit the human-user SCA evidence path without delegated-authority attestation.",
@@ -526,9 +485,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // SLSA
-  // ---------------------------------------------------------------------
   'SLSA-v1.0-Build-L3': {
     claim: "Our build pipeline is SLSA Build L3 with non-falsifiable provenance signed by a hardened build platform.",
     test: "Pull the SLSA provenance attestation for the most-recent release. Confirm the build platform is hosted/hardened, the attestation is signed, and the materials cover the full source-of-truth. Then confirm AI-authorship attestation (per-block provenance for AI-generated code with reviewer identity) is present. Confirm any model artefacts shipped have a Model Track equivalent attestation. Theater verdict if attestations exist but AI-authored diffs lack reviewer attestation, or if model artefacts ship at SLSA L0/L1 equivalent without explicit model-track attestation.",
@@ -536,9 +493,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // SOC 2
-  // ---------------------------------------------------------------------
   'SOC2-CC6-logical-access': {
     claim: "Our SOC 2 CC6 logical and physical access controls cover all in-scope systems.",
     test: "Sample AI-agent invocation flows. Confirm authorisation-context evidence per invocation (scope, tools, data sensitivity). Confirm prompt logging captures sufficient detail for post-incident analysis (input chain, output, tool calls). Confirm anomaly detection alerts on AI-agent actions outside baseline. Theater verdict if AI-agent actions are not separately authorised, prompts are unlogged, or anomaly detection is absent.",
@@ -570,9 +525,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // SWIFT CSCF
-  // ---------------------------------------------------------------------
   'SWIFT-CSCF-v2026-1.1': {
     claim: "Our SWIFT secure zone is segregated and protected per CSCF v2026 1.1.",
     test: "Inspect the secure-zone policy. Confirm explicit prohibition or strict gating of LLM assistants inside the secure zone. Confirm AI-API egress from administrative jump zones is enumerated as a named conduit with monitoring. Confirm AI-generated MT/MX message drafts are flagged as a distinct review class. Cross-walk to DORA Art. 28 register. Theater verdict if LLM assistants are silently permitted, AI-API egress is unmonitored, or no DORA cross-walk exists.",
@@ -580,9 +533,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // UK CAF
-  // ---------------------------------------------------------------------
   'UK-CAF-A1': {
     claim: "Our governance satisfies UK CAF A1 with board-level cyber risk accountability.",
     test: "Pull the board governance pack. Confirm an AI-systems-in-use inventory is reviewed at board cadence, an MCP/plugin trust register exists, and accountability for AI security outcomes maps to a named executive in the NIS2/CCRA scope. Theater verdict if AI is absent from board-pack contents, or if AI accountability is unassigned at executive level.",
@@ -626,9 +577,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // VEX
-  // ---------------------------------------------------------------------
   'VEX-CSAF-v2.1': {
     claim: "We publish VEX statements via OASIS CSAF 2.1 for our products.",
     test: "Pull the published CSAF 2.1 documents. Confirm AI-component identifier scheme presence (model + version + adapters + tokenizer). Confirm at least one VEX statement covers an AI-class vulnerability (jailbreak, prompt injection, embedding inversion). Confirm chaining of base-model VEX statements to derived-model VEX statements where applicable. Theater verdict if AI components are absent from the identifier scheme, or if no AI-class VEX statements exist despite AI components shipping.",
@@ -636,9 +585,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // FCC / Telecom
-  // ---------------------------------------------------------------------
   'FCC-CPNI-4.1': {
     claim: "Our annual CPNI certification satisfies FCC CPNI obligations.",
     test: "Confirm quarterly LI-gateway activation auditing (Salt-Typhoon/PRC threat model). Confirm gNB firmware hash attestation and signaling-anomaly baselines per PLMN-pair. Pull the most recent CPNI certification; confirm those operational artefacts are referenced. Theater verdict if certification is annual-only without LI-gateway/firmware-hash/signaling artefacts.",
@@ -676,9 +623,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // Federated identity / IdP
-  // ---------------------------------------------------------------------
   'NIST-800-53-IA-5-Federated': {
     claim: "Our IA-5 authenticator management covers federated identity providers.",
     test: "Inspect IdP control-plane: continuous attestation of token-signing certificate fingerprints, claim-transformation rule baseline with per-modification change-control attestation, management-API-token inventory with TTL + scope + source-IP enforcement. Theater verdict if attestation is snapshot-only (quarterly) rather than continuous, or if management-API tokens lack TTL/scope/source-IP enforcement.",
@@ -734,9 +679,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
 
-  // ---------------------------------------------------------------------
   // Ransomware playbook entries (RANSOMWARE-GAP-*)
-  // ---------------------------------------------------------------------
   'OFAC-SDN-Payment-Block': {
     claim: "Our incident response covers OFAC sanctions screening before any ransomware payment.",
     test: "Run a tabletop where the inject is a ransomware demand from an attribution-likely-sanctioned actor. Stopwatch the workflow: attribution-evidence package assembled → cross-jurisdiction lookup (OFAC SDN + EU 2014/833 + UK OFSI + AU DFAT + JP MOF) → counsel-signed attestation → pay/restore decision. Theater verdict if any cross-jurisdiction list is missing, counsel-signed attestation is unrehearsed, or the tabletop has not been exercised in the past 12 months.",
@@ -796,8 +739,8 @@ function backfill() {
     process.exit(2);
   }
 
-  // Re-emit with stable 2-space indentation matching the file's existing style.
-  // Trailing newline preserved.
+  // Two-space indent and a trailing newline, matching the catalog on disk, so
+  // the rewrite diffs only where a theater_test landed.
   const out = JSON.stringify(data, null, 2) + '\n';
   fs.writeFileSync(CATALOG_PATH, out);
   console.log(`Updated ${updated}/${keys.length} entries with theater_test.`);

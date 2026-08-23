@@ -2,31 +2,11 @@
 "use strict";
 
 /**
- * scripts/check-ttp-upstream.js — validates every shipped TTP id against the
- * pinned upstream release.
+ * Validates every shipped TTP id in data/attack-techniques.json and
+ * data/atlas-ttps.json against the pinned upstream MITRE release. A network
+ * check, so it runs in the refresh workflow rather than in offline predeploy.
  *
- * Why this exists. The catalogs in data/attack-techniques.json and
- * data/atlas-ttps.json are curated mirrors of MITRE releases, and nothing
- * checked that the ids in them are ids MITRE actually publishes. The ATLAS
- * 2026.07 / ATT&CK 19.2 pin bump found eleven that were not: five ATT&CK
- * techniques revoked upstream — already revoked in 19.1, the version pinned at
- * the time, so they had been shipping revoked for a full release cycle — and
- * six that appear in no upstream domain at any version. Every one of them was
- * reachable by a skill telling an operator to map a finding to it, which is
- * exactly what Hard Rule #4 (no orphaned controls — every control maps to a
- * real TTP) exists to prevent.
- *
- * This is a NETWORK check, so it runs in the refresh workflow beside the pin
- * checker rather than in predeploy, which is offline. Report-only: it prints
- * findings and exits non-zero, leaving the decision to a maintainer, because a
- * revocation needs a judgement call about the successor rather than an
- * automatic rewrite.
- *
- *   node scripts/check-ttp-upstream.js            validate against the pins
- *   node scripts/check-ttp-upstream.js --json     machine-readable output
- *
- * Exit: 0 clean, 1 findings, 2 upstream unreachable (never a silent pass —
- * an unreachable upstream must not read as "all ids valid").
+ * Exit 0 clean, 1 findings, 2 upstream unreachable — never a silent pass.
  */
 
 const fs = require("node:fs");
@@ -41,14 +21,8 @@ function readJson(p) {
 }
 
 /**
- * A pinned version read out of a catalog is file data, and it is about to be
- * interpolated into an upstream URL. Constrain it to the exact shape each
- * project publishes before it can reach a request, so a malformed or tampered
- * `_meta` cannot steer the fetch — and so a typo'd pin fails here with a clear
- * message instead of as a puzzling 404 later.
- *
- *   ATT&CK  semver-ish major.minor           19.2
- *   ATLAS   CalVer YYYY.MM with optional .N  2026.07, 2025.11.2
+ * A pin is catalog data interpolated into an upstream URL, so its shape is
+ * bounded here: ATT&CK is major.minor, ATLAS is CalVer YYYY.MM with optional .N.
  */
 const VERSION_SHAPES = {
   attack: /^\d{1,3}\.\d{1,3}$/,
@@ -66,13 +40,8 @@ function assertPinShape(kind, value) {
 }
 
 /**
- * The only hosts this checker may ever contact. `assertPinShape` already bounds
- * the catalog-sourced version to a digit-and-dot shape before it reaches a URL,
- * but that guard sits a long way from the request — a later edit could add a
- * caller that skips it, and static analysis reasonably flags file data reaching
- * an outbound request when the barrier is that distant. Re-check the resolved
- * origin at the sink so the property is enforced where it matters and is
- * verifiable by reading ten lines rather than tracing the whole module.
+ * The only hosts this checker may contact. Re-checked at the sink even though
+ * `assertPinShape` bounds the version, so a later caller cannot route past it.
  */
 const ALLOWED_ORIGINS = new Set(["https://raw.githubusercontent.com"]);
 
@@ -89,7 +58,6 @@ function assertAllowedUrl(rawUrl) {
         `${[...ALLOWED_ORIGINS].join(", ")}`
     );
   }
-  // Reject anything that could smuggle credentials or redirect the path.
   if (parsed.username || parsed.password || parsed.search || parsed.hash) {
     throw new Error(`refusing to fetch a URL carrying credentials or a query/fragment: ${parsed.origin}${parsed.pathname}`);
   }

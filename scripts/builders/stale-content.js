@@ -1,24 +1,9 @@
 "use strict";
 /**
- * scripts/builders/stale-content.js
- *
- * Builds `data/_indexes/stale-content.json` — surfaces stale or
- * drifted references the audit-cross-skill script catches at run time,
- * persisted as a JSON artifact so CI / dashboards / downstream tools can
- * read the same view without invoking the script.
- *
- * Checks performed here (subset of audit-cross-skill that's relevant to
- * the index layer, deterministic across reruns):
- *
- *   - Skill bodies referencing renamed-skill tokens (e.g. age-gates-minor-*)
- *   - README badge counts vs. live counts
- *   - "Researcher routes to N skills" claim vs. live count
- *   - Skills with last_threat_review older than 180 days from
- *     manifest.threat_review_date (gives a stale-content snapshot)
- *   - Catalog _meta.last_verified entries older than freshness_policy.stale_after_days
- *   - Forward_watch items mentioning dates that have already passed
- *
- * Each finding is { severity, category, artifact, detail }.
+ * Builds `data/_indexes/stale-content.json` — the subset of the
+ * audit-cross-skill checks that is deterministic across reruns, persisted so CI
+ * and downstream tools read the same view without invoking that script. Each
+ * finding is { severity, category, artifact, detail }.
  */
 
 const fs = require("fs");
@@ -45,7 +30,6 @@ function buildStaleContent({ root, manifest, skills, catalogFiles }) {
   const findings = [];
   const refDate = new Date((manifest.threat_review_date || "2026-05-01") + "T00:00:00Z");
 
-  // 1. Stale-renamed-skill tokens
   for (const s of skills) {
     const body = fs.readFileSync(path.join(root, s.path), "utf8");
     for (const tok of RENAMED_SKILL_TOKENS) {
@@ -62,7 +46,6 @@ function buildStaleContent({ root, manifest, skills, catalogFiles }) {
     }
   }
 
-  // 2. README badge counts vs. live counts
   const readmePath = path.join(root, "README.md");
   if (fs.existsSync(readmePath)) {
     const readme = fs.readFileSync(readmePath, "utf8");
@@ -71,10 +54,9 @@ function buildStaleContent({ root, manifest, skills, catalogFiles }) {
     const liveJurisdictions = (() => {
       try {
         const gf = JSON.parse(fs.readFileSync(path.join(root, "data/global-frameworks.json"), "utf8"));
-        // Count non-underscore keys (GLOBAL included) — the canonical
-        // jurisdiction count used by the README badge and catalog-summaries.
-        // Excluding GLOBAL here uniquely produced 34 and emitted a false
-        // badge_drift finding against the README's (correct) 35.
+        // Non-underscore keys, GLOBAL INCLUDED — the canonical jurisdiction
+        // count the README badge and catalog-summaries use. Excluding GLOBAL
+        // undercounts by one and emits a false badge_drift.
         return Object.keys(gf).filter((k) => !k.startsWith("_")).length;
       } catch {
         return null;
@@ -98,7 +80,6 @@ function buildStaleContent({ root, manifest, skills, catalogFiles }) {
     }
   }
 
-  // 3. Researcher dispatch count claim
   const researcherPath = path.join(root, "skills/researcher/skill.md");
   if (fs.existsSync(researcherPath)) {
     const r = fs.readFileSync(researcherPath, "utf8");
@@ -117,7 +98,6 @@ function buildStaleContent({ root, manifest, skills, catalogFiles }) {
     }
   }
 
-  // 4. Skills with > 180 days since review (against reference date)
   for (const s of skills) {
     if (!s.last_threat_review) continue;
     const ageDays = Math.floor(
@@ -133,7 +113,6 @@ function buildStaleContent({ root, manifest, skills, catalogFiles }) {
     }
   }
 
-  // 5. Catalog last_verified entries older than freshness_policy.stale_after_days
   for (const rel of catalogFiles) {
     const abs = path.join(root, rel);
     try {

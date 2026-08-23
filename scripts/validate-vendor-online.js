@@ -1,33 +1,13 @@
 #!/usr/bin/env node
 "use strict";
 /**
- * scripts/validate-vendor-online.js
+ * Network-touching companion to lib/validate-vendor.js: for every file in
+ * vendor/blamejs/_PROVENANCE.json, fetch the upstream blob at the pinned commit
+ * and compare its hash against the recorded `upstream_sha256_at_pin`.
  *
- * Optional, network-touching companion to lib/validate-vendor.js. For every
- * file recorded in vendor/blamejs/_PROVENANCE.json, fetches the upstream
- * blob from github.com/<source_repo>/blob/<pinned_commit>/<upstream_path>
- * (via the raw.githubusercontent.com mirror), hashes it, and compares the
- * result against the `upstream_sha256_at_pin` recorded in _PROVENANCE.json.
- *
- * This catches the class where _PROVENANCE.json was hand-edited to
- * advertise a `upstream_sha256_at_pin` that does not actually match what
- * upstream had at that commit. lib/validate-vendor.js only checks that the
- * local vendored file matches its own recorded hash — that's self-attesting.
- * This script extends the check to upstream, closing the gap.
- *
- * Not part of `npm run predeploy` by default — the predeploy gate sequence
- * must remain network-independent (offline gates only). Run manually:
- *
- *   node scripts/validate-vendor-online.js
- *   node scripts/validate-vendor-online.js --timeout 30000
- *   node scripts/validate-vendor-online.js --json
- *
- * Exit codes:
- *   0  every vendored file's upstream_sha256_at_pin matched upstream
- *   1  at least one mismatch
- *   2  runtime / network error
- *
- * Zero npm deps. Node 24 stdlib only.
+ * lib/validate-vendor.js is self-attesting — a hand-edited _PROVENANCE.json
+ * passes it. This reaches upstream, so it stays out of the offline-by-design
+ * `npm run predeploy`. Exit 0 on match, 1 on a mismatch, 2 on a runtime error.
  */
 
 const fs = require("fs");
@@ -58,18 +38,13 @@ function parseArgs(argv) {
 }
 
 function rawUrlForPin(sourceRepo, commit, upstreamPath) {
-  // Translate https://github.com/owner/repo → raw.githubusercontent.com/owner/repo
-  // sourceRepo may end in .git; strip it. Tolerate trailing slash.
+  // https://github.com/owner/repo → raw.githubusercontent.com/owner/repo.
   const m = (sourceRepo || "").match(
     /^https?:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?\/?$/
   );
   if (!m) return null;
-  // Validate every file-derived component, then build the URL from the SAME
-  // validated bindings (cleanOwner/cleanRepo/cleanCommit/cleanPath) so a tampered
-  // _PROVENANCE.json cannot steer the request and no unguarded metadata value
-  // reaches the fetch: owner/repo are GitHub-name-shaped, the commit is a hex git
-  // object id, and the path is a relative, traversal-free repo path. With the host
-  // a string literal, the fetch destination is fully constrained.
+  // The URL is built from the same bindings that get validated below, so no
+  // unguarded value out of _PROVENANCE.json reaches the fetch.
   const cleanOwner = m[1];
   const cleanRepo = m[2];
   const cleanCommit = String(commit || "");
@@ -82,12 +57,9 @@ function rawUrlForPin(sourceRepo, commit, upstreamPath) {
 
 const MAX_REDIRECTS = 5;
 
-// Only GitHub-controlled hosts may be fetched. The initial URL is always a
-// raw.githubusercontent.com URL computed from the committed _PROVENANCE.json,
-// but redirects re-enter fetchBuffer with a server-supplied Location; pinning
-// the host to github.com / *.githubusercontent.com stops a redirect (or a
-// tampered provenance source_repo) from steering the fetch at an internal or
-// attacker-controlled address.
+// Redirects re-enter fetchBuffer with a server-supplied Location, so the host is
+// checked on every hop, not just the initial URL: that is what stops a redirect
+// or a tampered source_repo steering the fetch at an internal address.
 const ALLOWED_FETCH_HOST = /(?:^|\.)githubusercontent\.com$|^github\.com$/;
 
 function assertAllowedHost(url) {
@@ -103,10 +75,7 @@ function fetchBuffer(url, timeoutMs, redirectsLeft = MAX_REDIRECTS) {
   return new Promise((resolve, reject) => {
     try { assertAllowedHost(url); } catch (e) { return reject(e); }
     const req = https.get(url, (res) => {
-      // v0.12.14 (codex P2): cap redirect hops. A redirect loop (or a
-      // hostile / mis-configured upstream that keeps returning 3xx with
-      // Location pointing back to itself) used to recurse until stack
-      // overflow or hang. Now: count hops, fail clean on exhaustion.
+      // Hops are counted: a self-referential 3xx Location would recurse forever.
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         res.resume();
         if (redirectsLeft <= 0) {

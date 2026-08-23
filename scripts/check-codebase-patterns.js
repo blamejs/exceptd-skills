@@ -1,39 +1,16 @@
 #!/usr/bin/env node
 "use strict";
 /**
- * check-codebase-patterns.js — grep-gate enforcement for code-shape bug
- * classes that have recurred across exceptd releases. One run surfaces every
- * class as a single numbered report instead of dying on the first hit.
+ * Grep gate for code-shape bug classes that recur across releases; CLASSES
+ * below is the registry.
  *
- * Shipped v1 classes:
- *   - process-exit-after-stdout-write : a library-callable function writes to
- *       the result channel (process.stdout.write / console.log) and then calls
- *       process.exit(), which truncates the buffered write when stdout is
- *       piped. Route through `safeExit(EXIT_CODES.X); return;` (lib/exit-codes).
- *       This is the stdout-flush-truncation class the validate-cves fix closed by hand.
- *   - dynamic-regex : `new RegExp(<non-literal>)` — a ReDoS sink when the
- *       pattern derives from operator input. Use a static literal, or anchor +
- *       length-cap the input, or mark the site `// allow:dynamic-regex —
- *       <reason>` when the source is a trusted bundled schema.
- *   - orphan-allow-class : an `// allow:<class>` marker whose class is not in
- *       VALID_ALLOW_CLASSES, or is missing the `— <reason>` tail. A typo'd
- *       marker suppresses nothing, so the underlying violation would ship
- *       unflagged — this meta-guard keeps the marker mechanism trustworthy.
- *   - unsorted-marked-array : a flat string array tagged `// keep-sorted` that
- *       drifted out of alphabetical order. Opt-in — only marked arrays are
- *       checked, so a one-time allowlist sort becomes a standing guarantee.
- *   - misaligned-marked-run : a `// keep-aligned` const/weight table whose
- *       `=`/`:` assignment columns are not all equal. Opt-in, same shape.
- *
- * Exceptions live at the violation site, not in this file:
+ * Exceptions live at the violation site:
  *   - file-level, in the first 50 lines:  // codebase-patterns:allow-file <class> — <reason>
  *   - per-line, on the same line or up to 2 lines above:  // allow:<class> — <reason>
  *
- * NOT covered here (owned elsewhere — do not duplicate):
- *   - internal phase/version vocabulary in comments  -> scripts/check-version-tags.js
- *   - process.exit on the top-level CLI dispatch      -> tests/safe-exit-grep.test.js
- *   - anti-coincidence test assertions                -> scripts/check-test-coverage.js
- *   - internal-path leaks in operator output          -> tests/operator-leak-grep.test.js
+ * Owned elsewhere: phase/version vocabulary (check-version-tags.js), CLI-dispatch
+ * process.exit (tests/safe-exit-grep.test.js), test assertions
+ * (check-test-coverage.js), operator-output path leaks (operator-leak-grep.test.js).
  */
 
 const fs = require("node:fs");
@@ -41,8 +18,8 @@ const path = require("node:path");
 
 const ROOT = path.resolve(__dirname, "..");
 
-// The classes that accept an `// allow:<class>` marker. orphan-allow-class is
-// the meta-guard itself and is intentionally NOT a markable class.
+// Classes that accept an `// allow:<class>` marker. orphan-allow-class is the
+// meta-guard itself, so it is not markable.
 const VALID_ALLOW_CLASSES = Object.freeze({
   "process-exit-after-stdout-write": true,
   "dynamic-regex": true,
@@ -56,8 +33,6 @@ const EXCLUDE_DIRS = new Set([
   "node_modules", "vendor", ".git", ".cache", ".scratch",
   "data", ".test-output", ".keys", "keys", "coverage",
 ]);
-
-// ---- file walk -----------------------------------------------------------
 
 function relPath(abs) {
   return path.relative(ROOT, abs).split(path.sep).join("/");
@@ -104,18 +79,15 @@ function readLines(rel) {
   return lines;
 }
 
-// Strip a trailing `//` line comment for code-shape detection (so a class
-// name mentioned in a comment doesn't arm a detector). String-aware: a `//`
-// inside a quoted string (e.g. a `http://` URL) is NOT a comment, so the
-// scanner skips string contents — otherwise the rest of the line, including a
-// real `process.exit(...)` / `new RegExp(...)`, was silently truncated away and
-// the detector never fired.
+// Strip a trailing `//` line comment so a class name mentioned in a comment
+// can't arm a detector. String-aware: a `//` inside a quoted string (a `http://`
+// URL) is not a comment — truncating there hides a real hit later on the line.
 function stripLineComment(line) {
   let inStr = null; // active quote char, or null
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
     if (inStr) {
-      if (ch === "\\") { i++; continue; } // skip the escaped char
+      if (ch === "\\") { i++; continue; }
       if (ch === inStr) inStr = null;
     } else if (ch === "'" || ch === '"' || ch === "`") {
       inStr = ch;
@@ -125,8 +97,6 @@ function stripLineComment(line) {
   }
   return line;
 }
-
-// ---- allow-marker engine -------------------------------------------------
 
 function hasFileAllow(rel, cls) {
   const head = readLines(rel).slice(0, 50);
@@ -147,23 +117,10 @@ function filterMarkers(hits, cls) {
   return hits.filter((h) => !hasFileAllow(h.file, cls) && !hasLineAllow(h.file, h.line, cls));
 }
 
-// ---- require.main block ranges -------------------------------------------
-
-// Count `{` / `}` in `line` that are in REAL CODE context, advancing a
-// stateful tokenizer that tracks string / template / comment regions across
-// lines. Braces inside a single/double/template string, a `//` line comment,
-// or a `/* */` block comment do NOT affect depth — otherwise a `{` or `}`
-// typed inside a string literal in the require.main block miscounts the brace
-// balance and the computed block range slides onto an unrelated later function
-// (whose process.exit() is then wrongly treated as a CLI-entry exit and not
-// flagged). `inTemplate` and `inBlockComment` are the cross-line states a
-// per-line stripper cannot model, so the tokenizer state object is threaded
-// line-to-line by the caller.
-//
-// `state` is mutated in place: { inSingle, inDouble, inTemplate, inBlock,
-// templateDepth } — `templateDepth` tracks `${ … }` interpolation nesting so
-// the closing `}` of an interpolation is treated as template punctuation, not
-// a code brace, while braces INSIDE the interpolation expression still count.
+// Counts `{` / `}` in REAL CODE context only: a brace inside a string, template
+// or comment must not move the depth, or the computed require.main range slides
+// onto a later function. `state` is mutated in place and threaded line to line,
+// since `inTemplate` / `inBlock` are cross-line states.
 function countCodeBraces(line, state) {
   let delta = 0;
   for (let i = 0; i < line.length; i++) {
@@ -190,13 +147,12 @@ function countCodeBraces(line, state) {
         // Enter an interpolation expression: braces inside ARE code.
         state.templateExpr.push(0);
         state.inTemplate = false;
-        i++; // skip the `{`; the `${` opener is template punctuation
+        i++;
         continue;
       }
       continue;
     }
-    // Code context (possibly inside a template interpolation expression).
-    if (ch === "/" && next === "/") break; // `//` — rest of the line is a comment
+    if (ch === "/" && next === "/") break;
     if (ch === "/" && next === "*") { state.inBlock = true; i++; continue; }
     if (ch === "'") { state.inSingle = true; continue; }
     if (ch === '"') { state.inDouble = true; continue; }
@@ -222,17 +178,12 @@ function newBraceState() {
   return { inSingle: false, inDouble: false, inTemplate: false, inBlock: false, templateExpr: [] };
 }
 
-// Line ranges (1-based, inclusive) of `if (require.main === module) { ... }`
-// blocks — the dual-mode CLI-entry section where synchronous-print-then-exit
-// is correct. process.exit there is owned by tests/safe-exit-grep.test.js and
-// is not a library-surface concern.
+// Line ranges (1-based, inclusive) of `if (require.main === module) { ... }` blocks,
+// where print-then-exit is correct — owned by tests/safe-exit-grep.test.js.
 function requireMainRanges(lines) {
   const ranges = [];
   for (let i = 0; i < lines.length; i++) {
     if (/\brequire\.main\s*===\s*module\b/.test(lines[i])) {
-      // Find the opening brace (same line or next few), then balance —
-      // string/comment/template-aware so braces inside literals don't skew the
-      // depth (see countCodeBraces).
       let depth = 0;
       let started = false;
       let j = i;
@@ -252,17 +203,10 @@ function inRanges(ranges, lineNo) {
   return ranges.some(([a, b]) => lineNo >= a && lineNo <= b);
 }
 
-// ---- detectors -----------------------------------------------------------
-
-// A line that opens a new function body (so a backward stdout-write scan stops
-// at the enclosing function and doesn't arm an exit from an unrelated earlier
-// function). The bare-identifier (third) alternative matches a declaration /
-// method-shorthand opener (`foo() {`, `async bar() {`), but it must REFUSE
-// control-flow openers (`for (…) {`, `if (…) {`, `while/switch/catch (…) {`):
-// a control-flow block sitting between a stdout write and a process.exit() is
-// inside the SAME function, so stopping the backward scan there would wrongly
-// leave the exit unflagged. The negative lookahead excludes the control-flow
-// keywords; `function` and arrow alternatives are unchanged.
+// Opens a new function body, so the backward stdout-write scan stops at the
+// enclosing function. The bare-identifier alternative must REFUSE control-flow
+// openers (`if (…) {`, `for (…) {`): those sit inside the SAME function, and
+// stopping there leaves a real exit-after-write unflagged.
 const FUNCTION_START = /(^|[^.\w])function\b|=>\s*\{?\s*$|^\s*(async\s+)?(?!(?:if|for|while|switch|catch|do|else|with|finally|return)\b)[A-Za-z_$][\w$]*\s*\([^)]*\)\s*\{/;
 
 function detectProcessExitAfterStdout(files) {
@@ -275,8 +219,7 @@ function detectProcessExitAfterStdout(files) {
       if (!/\bprocess\.exit\s*\(/.test(code)) continue;
       const lineNo = i + 1;
       if (inRanges(mainRanges, lineNo)) continue; // CLI-entry block: legitimate
-      // Scan backward within the enclosing function for a result-channel
-      // write (console.log / process.stdout.write). Stop at a function start.
+      // Scan backward within the enclosing function for a result-channel write.
       let sawStdout = false;
       for (let k = i - 1; k >= 0 && k >= i - 60; k--) {
         const prev = stripLineComment(lines[k]);
@@ -291,11 +234,8 @@ function detectProcessExitAfterStdout(files) {
   return filterMarkers(hits, "process-exit-after-stdout-write");
 }
 
-// The first non-whitespace char of the first arg is `"`, `'`, or `/` => a
-// string/regex literal => static, safe. Anything else (an identifier, a `(`,
-// a backtick template) is operator-derivable and flagged. Backtick is NOT
-// exempt — a template literal can interpolate operator input, so it must be
-// flagged the same as a bare identifier.
+// A first arg opening with `"`, `'` or `/` is a literal, so static and safe.
+// Backtick is NOT exempt — a template literal can interpolate operator input.
 function isStaticRegexFirstChar(ch) {
   return ch === '"' || ch === "'" || ch === "/";
 }
@@ -312,23 +252,17 @@ function detectDynamicRegex(files) {
         hits.push({ file: rel, line: i + 1, content: lines[i].trim() });
         continue;
       }
-      // Multi-line form: `new RegExp(` ends the (comment-stripped) line with the
-      // open paren as the last token, and the pattern arg is on a following
-      // line. The single-line match above can't see the first-arg char, so it
-      // would silently pass a dynamic RegExp whose argument starts next line.
-      // Look ahead, skipping blank and comment-only lines (capped at 5), and
-      // inspect the first code line's first non-whitespace char.
+      // Multi-line form: the pattern arg starts on a later line, so look ahead
+      // past blank and comment-only lines, capped at 5.
       if (!/\bnew RegExp\s*\(\s*$/.test(code)) continue;
       let firstChar = null;
       for (let k = i + 1; k <= i + 5 && k < lines.length; k++) {
         const ahead = stripLineComment(lines[k]).replace(/^\s+/, "");
-        if (ahead === "") continue; // blank or comment-only — skip
+        if (ahead === "") continue;
         firstChar = ahead[0];
         break;
       }
-      // A `new RegExp(` with nothing parseable after it within the cap is
-      // suspicious — flag conservatively. Otherwise apply the SAME literal
-      // exemption as the single-line path.
+      // Nothing parseable within the cap is suspicious — flag it.
       if (firstChar !== null && isStaticRegexFirstChar(firstChar)) continue;
       hits.push({ file: rel, line: i + 1, content: lines[i].trim() });
     }
@@ -336,13 +270,9 @@ function detectDynamicRegex(files) {
   return filterMarkers(hits, "dynamic-regex");
 }
 
-// Raw bidi-override / zero-width / invisible / null codepoints embedded as
-// literals in source — the Trojan-Source class (CVE-2021-42574). A literal
-// such codepoint is invisible in review and can reorder or hide code. Source
-// should emit them programmatically (via vendor/blamejs/codepoint-class) or
-// escape them (\uXXXX), never type them literally. The range table holds only
-// numeric codepoints + the regex is built from escapes, so this detector's own
-// source is clean (and the file self-skips below regardless).
+// Raw bidi-override / zero-width / invisible / null codepoints typed as literals
+// — the Trojan-Source class (CVE-2021-42574). Source emits them via
+// vendor/blamejs/codepoint-class or a \uXXXX escape instead.
 const _BIDI_LITERAL_RANGES = [
   [0x202A, 0x202E], [0x2066, 0x2069], 0x200E, 0x200F, 0x061C, // bidi overrides + isolates
   0x200B, 0x200C, 0x200D, 0x00AD, 0x2060, 0xFEFF,             // zero-width / invisible
@@ -378,13 +308,8 @@ function detectOrphanAllowClass(files) {
       const cmt = lines[i].indexOf("//");
       if (cmt === -1) continue;
       const comment = lines[i].slice(cmt);
-      // Validate BOTH marker forms with the same class + reason rules:
-      //   per-line:    allow:<class> — <reason>
-      //   file-level:  codebase-patterns:allow-file <class> — <reason>
-      // The file-level form is the broadest exemption (it suppresses every hit
-      // of its class in the file), so a reason-less or unknown-class file-level
-      // marker must be caught here too — otherwise it would suppress silently
-      // and never reach the per-line orphan check.
+      // Both marker forms carry the same class + reason rules. The file-level
+      // form suppresses every hit of its class, so it must be caught here.
       const fileLevel = comment.match(/\bcodebase-patterns:allow-file\s+([a-z0-9-]+)\b(.*)$/);
       const perLine = comment.match(/\ballow:([a-z0-9-]+)\b(.*)$/);
       const m = fileLevel || perLine;
@@ -402,16 +327,11 @@ function detectOrphanAllowClass(files) {
   return hits;
 }
 
-// ---- opt-in readability detectors (preventative) -------------------------
-// These fire ONLY on sites that explicitly opt in via a marker, so unmarked
-// code is never flagged. They turn a one-time cleanup (sorting an allowlist,
-// aligning a const table) into a standing guarantee: mark the cleaned site and
-// the gate keeps it clean.
+// The two detectors below fire only on sites that opt in via a marker, so
+// unmarked code is never flagged.
 
-// `// keep-sorted` marks a flat string-literal array that must stay
-// alphabetically sorted (e.g. an allowlist). Only arrays whose opening line
-// carries the marker are checked; arrays containing object/nested elements are
-// skipped (not a flat string list).
+// `// keep-sorted` marks a flat string-literal array that must stay alphabetically
+// sorted; an array with object or nested elements is skipped.
 function scanUnsortedMarkedArray(rel, lines) {
   const hits = [];
   for (let i = 0; i < lines.length; i++) {
@@ -428,7 +348,7 @@ function scanUnsortedMarkedArray(rel, lines) {
       body += " " + seg;
       if (started && depth <= 0) break;
     }
-    if (/[{]/.test(body)) continue; // object/nested elements — not a flat string array
+    if (/[{]/.test(body)) continue;
     const strs = [];
     const re = /(['"])((?:\\.|(?!\1).)*)\1/g;
     let m;
@@ -452,9 +372,8 @@ function detectUnsortedMarkedArray(files) {
 }
 
 // `// keep-aligned` marks a contiguous run of `IDENT = value` / `IDENT: value`
-// lines (a const/weight table) whose assignment columns must all line up. The
-// run is the lines immediately after the marker, until a blank or non-assignment
-// line. Opt-in, so only deliberately-aligned tables are enforced.
+// lines whose assignment columns must all line up. The run starts at the line
+// after the marker and ends at the first blank or non-assignment line.
 function scanMisalignedMarkedRun(rel, lines) {
   const hits = [];
   for (let i = 0; i < lines.length; i++) {
@@ -487,22 +406,13 @@ function detectMisalignedMarkedRun(files) {
   return hits;
 }
 
-// ---- hand-rolled SQL in a file that talks to a database ------------------
-//
-// exceptd ships no database today, so this is a FORWARD guard: the moment a
-// file imports a SQL driver, any SQL STATEMENT (`"SELECT …"`) or CLAUSE built
-// by string concatenation (`… + " WHERE " + …`) is a parameterization/injection
-// sink and must use the driver's bound-parameter API instead. The SQL-driver
-// import is the gate — a SQL-looking string in a file with no driver executes
-// nothing, so prose that merely begins with "Update …" / "Delete …" in a
-// non-DB file is never scanned (no false positives). A trusted static DDL
-// string can opt out with `// allow:hand-rolled-sql — <reason>`.
+// Forward guard: the driver import is the gate, so prose merely beginning
+// "Update …" in a non-DB file is never scanned. In a file that does import one,
+// a statement or a concatenated clause is an injection sink.
 const SQL_DRIVER_IMPORT = /require\(\s*["'](?:node:sqlite|better-sqlite3|sqlite3|sqlite|pg|mysql2?|knex|sequelize|drizzle-orm|postgres|@libsql\/[\w.-]+)(?:\/[^"']*)?["']\s*\)|\bfrom\s+["'](?:node:sqlite|better-sqlite3|pg|mysql2?|knex|sequelize|drizzle-orm)(?:\/[^"']*)?["']/;
 const SQL_STMT_START = /(["'`])\s*(?:SELECT\b|INSERT\s+(?:INTO|OR)\b|REPLACE\s+INTO\b|UPDATE\s+["'`]?[A-Za-z_]|DELETE\s+FROM\b|CREATE\s+(?:TABLE|UNIQUE\s+INDEX|INDEX|TRIGGER|VIRTUAL\s+TABLE)\b|ALTER\s+TABLE\b|DROP\s+(?:TABLE|TRIGGER|INDEX)\b|MERGE\s+INTO\b)/i;
-// Trailing-concat form tolerates an embedded SQL string-quote inside the
-// clause (e.g. `" WHERE name = 'x' " + id`) by scanning to the first `+`
-// concatenation operator rather than requiring the clause string to close on
-// the same quote with no interior quotes.
+// The trailing-concat form tolerates a quote inside the clause
+// (`" WHERE name = 'x' " + id`) by scanning to the first `+`.
 const SQL_CLAUSE_FRAG = /(?:\+\s*["'`]\s*(?:SET|FROM|WHERE|VALUES|ORDER\s+BY|GROUP\s+BY|HAVING|RETURNING|LIMIT|OFFSET|ON\s+CONFLICT|(?:INNER\s+|LEFT\s+|RIGHT\s+|CROSS\s+)?JOIN)\b|["'`]\s*(?:SET|FROM|WHERE|VALUES\s*\(|ORDER\s+BY|GROUP\s+BY|HAVING|RETURNING|ON\s+CONFLICT|(?:INNER\s+|LEFT\s+|RIGHT\s+|CROSS\s+)?JOIN)\b[^+]*\+)/i;
 function detectHandRolledSql(files) {
   const hits = [];
@@ -564,11 +474,8 @@ const CLASSES = [
 ];
 
 function main() {
-  // Fail closed if the scan universe is empty. Each detector scopes to a subset
-  // of these roots and silently finds no hits when its root list is
-  // unreadable/empty — so a wholesale missing source tree would make every
-  // class report "clean" and the gate pass without scanning anything (the
-  // absent-input false-pass class). Refuse to call zero-files-scanned "clean".
+  // Fail closed on an empty scan universe: each detector silently finds no hits
+  // when its roots are unreadable. Zero files scanned is not "clean".
   const universe = filesUnder(["bin/exceptd.js", "lib", "orchestrator", "scripts"]);
   if (universe.length === 0) {
     console.error("[check-codebase-patterns] FAIL — zero source files found under bin/lib/orchestrator/scripts; refusing to report clean without scanning anything.");

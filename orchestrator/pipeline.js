@@ -1,13 +1,9 @@
 'use strict';
 
 /**
- * Multi-agent pipeline coordinator.
- * Orchestrates: threat-researcher → source-validator → skill-updater → report-generator
- *
- * This module coordinates agent handoffs using a structured JSON protocol.
- * Each stage produces a handoff package that the next stage consumes.
- * Agents themselves are defined in agents/ and executed by AI assistants — not by this code.
- * This module tracks state, validates handoffs, and routes between stages.
+ * Multi-agent pipeline coordinator: threat-researcher → source-validator →
+ * skill-updater → report-generator. Tracks state, validates handoffs and routes
+ * between stages; the agents live in agents/ and are run by AI assistants.
  */
 
 const fs = require('fs');
@@ -19,8 +15,6 @@ const DATA_DIR = process.env.EXCEPTD_DATA_DIR || path.join(__dirname, '..', 'dat
 const REPORTS_DIR = path.join(__dirname, '..', 'reports');
 
 const PIPELINE_STAGES = ['threat-researcher', 'source-validator', 'skill-updater', 'report-generator'];
-
-// --- public API ---
 
 /**
  * Initialize a new pipeline run for a given trigger.
@@ -52,8 +46,7 @@ function initPipeline(triggerType, triggerPayload) {
 }
 
 /**
- * Build the handoff package for a specific pipeline stage.
- * This is what an AI assistant reads to understand what to do and what to pass forward.
+ * Build the handoff package for a pipeline stage — what the next agent reads.
  *
  * @param {object} run - Pipeline run object from initPipeline()
  * @param {number} stageIndex - 0-based stage index
@@ -61,10 +54,8 @@ function initPipeline(triggerType, triggerPayload) {
  * @returns {object} Handoff package for the next stage
  */
 function buildHandoff(run, stageIndex, stageOutput) {
-  // Bounds-check the stage index up front. Without this, an out-of-range
-  // index throws an opaque "cannot read properties of undefined" deep inside
-  // validateHandoff. With it, callers see a structured error that names the
-  // exact invalid input.
+  // Bounds-check up front, else an out-of-range index surfaces as an opaque
+  // "cannot read properties of undefined" from inside validateHandoff.
   if (!run || !Array.isArray(run.stages)) {
     throw new TypeError('buildHandoff: run.stages must be an array');
   }
@@ -102,18 +93,8 @@ function buildHandoff(run, stageIndex, stageOutput) {
   return handoff;
 }
 
-/**
- * Check the currency of all skills and return a report.
- * Used by the scheduler for weekly currency checks.
- *
- * @returns {{ currency_report: object[], action_required: boolean }}
- */
-// Manifest read cache. currencyCheck() runs on every weekly tick AND on every
-// `exceptd currency` invocation; in `watch` mode the scheduler triggers it
-// repeatedly. Re-reading + JSON.parse'ing the (~80 KB) manifest each time is
-// pure waste when the file hasn't changed within the cache window. 60s TTL is
-// short enough that a manual edit during a long-running watcher shows up by
-// the next periodic tick.
+// currencyCheck() runs on every weekly tick and every `exceptd currency` call, so
+// the TTL is short enough that a manual manifest edit shows by the next tick.
 const MANIFEST_CACHE_TTL_MS = 60_000;
 let _manifestCache = { value: null, mtimeMs: 0, readAt: 0 };
 
@@ -121,8 +102,7 @@ function _loadManifestCached() {
   const manifestPath = path.join(__dirname, '..', 'manifest.json');
   const now = Date.now();
   if (_manifestCache.value && (now - _manifestCache.readAt) < MANIFEST_CACHE_TTL_MS) {
-    // Within TTL — return cached value. The cost of a stat() per call is
-    // ~tens of microseconds; trade it for the JSON.parse() cost saved.
+    // Within TTL: one stat() to confirm, in place of a re-parse.
     try {
       const st = fs.statSync(manifestPath);
       if (st.mtimeMs === _manifestCache.mtimeMs) {
@@ -141,25 +121,17 @@ function _loadManifestCached() {
 }
 
 /**
- * Compute the currency row for a single skill against a reference `now`.
- *
- * Pulled out of currencyCheck so the parse-guard is unit-testable without a
- * real manifest read. A malformed `last_threat_review` (e.g. "2026-13-99",
- * which is structurally ISO-shaped but not a real calendar date) must map to
- * maximally STALE — score 0, action_required true — not to the safe-LOOKING
- * 100 a NaN delta would otherwise yield. The misformat is also surfaced via
- * `unparseable_review_date` so a bad date is OBSERVABLE rather than silently
- * defaulting (matching the project rule that a no-match/fall-through path must
- * surface, not silently pass).
+ * Currency row for a single skill against a reference `now`. A malformed
+ * `last_threat_review` maps to maximally STALE — score 0, action_required true,
+ * `unparseable_review_date` set — not the safe-LOOKING 100 a NaN delta yields.
  *
  * @param {object} skill
  * @param {Date} now
  */
 function _skillCurrencyRow(skill, now) {
   const rawDate = skill.last_threat_review || '2020-01-01';
-  // Use the timezone-stable date-only convention the sibling builders use
-  // (append T00:00:00Z for bare YYYY-MM-DD) so the day delta doesn't shift by
-  // the runner's local offset.
+  // A bare YYYY-MM-DD gets an explicit T00:00:00Z, so the day delta does not
+  // shift with the runner's local offset.
   const t = Date.parse(/^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate + 'T00:00:00Z' : rawDate);
   const unparseable = !Number.isFinite(t);
   const reviewDate = unparseable ? new Date('2020-01-01T00:00:00Z') : new Date(t);
@@ -199,10 +171,8 @@ function currencyCheck() {
 }
 
 /**
- * Get the agent definition for a stage.
- *
- * @param {string} stageName - Agent name
- * @returns {string|null} Agent instruction content
+ * Reads agents/<stageName>.md.
+ * @returns {string|null} Agent instruction content, null when unreadable.
  */
 function getAgentDefinition(stageName) {
   const agentPath = path.join(AGENTS_DIR, `${stageName}.md`);
@@ -213,16 +183,10 @@ function getAgentDefinition(stageName) {
   }
 }
 
-// --- private helpers ---
-
 function validateHandoff(stageName, output) {
-  // Guard the `in` deref below: a null / non-object / array `output` would
-  // otherwise throw an opaque "Cannot use 'in' operator …" TypeError deep in
-  // the missing-fields filter. Reject up front with a named error in the same
-  // style as buildHandoff's stageIndex RangeError, so the caller sees which
-  // input was wrong. A handoff payload is a keyed object — an array is not a
-  // valid payload, so Array.isArray is rejected too (today it would yield the
-  // less-precise "missing fields" error).
+  // Guard the `in` deref below: null, a non-object or an array would otherwise
+  // throw an opaque "Cannot use 'in' operator". A payload is keyed, so an array
+  // is rejected here rather than reported as missing fields.
   if (output === null || typeof output !== 'object' || Array.isArray(output)) {
     throw new TypeError(
       `buildHandoff: stageOutput for ${stageName} must be a non-null object`
@@ -264,26 +228,11 @@ function getStageInstructions(stageName, previousOutput) {
 }
 
 function _currencyScore(daysSinceReview, _forwardWatchCount) {
-  // Currency = function of last_threat_review age, period. Earlier
-  // versions subtracted 5 per forward_watch entry, which created a
-  // perverse incentive: skills that diligently track upcoming threats
-  // (e.g. cloud-security with 14 forward_watch items) scored 30%
-  // currency even on the day after a review. forward_watch is a
-  // signal of ACTIVE maintenance, not staleness, so the count no
-  // longer affects the score. The arg is retained for ABI compat.
-  // The penalty schedule must be able to cross the tiers the gate checks
-  // against (currencyCheck: action_required at < 70, critical_count at < 50;
-  // _currencyLabel: 'stale' < 70, 'critical_stale' < 50). A schedule whose
-  // worst penalty was -30 floored the score at 70, so the warn/critical tiers —
-  // and the workflow issue they gate — could never fire. The deeper penalties
-  // only bite past 180/270/365 days, so a normally-maintained skill stays
-  // 'acceptable' while a genuinely abandoned one reaches the gate.
-  //
-  // Belt-and-suspenders: a NaN delta (the day-count derived from an
-  // unparseable last_threat_review) must map to maximally STALE (0), never the
-  // safe-LOOKING 100 the additive schedule below would leave it at. This is an
-  // exported surface other callers/tests use, so guard here even though
-  // _skillCurrencyRow already substitutes a stale fallback date upstream.
+  // Age of last_threat_review alone. A forward_watch entry signals ACTIVE
+  // maintenance, so the count must not penalise the score; the argument stays for
+  // callers. The schedule has to cross the tiers the gate checks — 'stale' below
+  // 70, 'critical_stale' below 50 — so a worst penalty of -30 would floor the
+  // score at 70 and neither tier could fire. A non-finite delta maps to STALE.
   if (!Number.isFinite(daysSinceReview)) return 0;
   let score = 100;
   if (daysSinceReview > 365) score -= 100;      // a year+ unreviewed → 0 (critical_stale)
@@ -302,12 +251,8 @@ function _currencyLabel(score) {
   return 'critical_stale';
 }
 
-// Test-only hook to reset the in-memory manifest cache. Not part of the
-// operator surface. v0.12.14: moved out of the export object literal so
-// the inline { mtimeMs: 0, readAt: 0 } reset values don't get detected
-// by scripts/check-test-coverage.js's extractLibExports regex as
-// pseudo-exports (`mtimeMs` and `readAt` are private cache fields, not
-// module exports).
+// Test-only hook. Defined here rather than inline in the export literal so its
+// reset values are not read as exports by scripts/check-test-coverage.js.
 function _resetManifestCache() {
   _manifestCache = { value: null, mtimeMs: 0, readAt: 0 };
 }
@@ -319,10 +264,8 @@ module.exports = {
   getAgentDefinition,
   MANIFEST_CACHE_TTL_MS,
   _resetManifestCache,
-  // Exported for the gate-reachability contract test: the schedule must be able
-  // to reach the warn (< 70) and critical (< 50) tiers the workflow issues on.
+  // Exported for the gate-reachability contract test (warn < 70, critical < 50).
   _currencyScore,
-  // Exported so the malformed-date staleness guard is unit-testable without a
-  // real manifest read.
+  // Exported so the malformed-date guard is testable without a manifest read.
   _skillCurrencyRow,
 };

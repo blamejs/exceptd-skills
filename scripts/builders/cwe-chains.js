@@ -1,29 +1,11 @@
 "use strict";
 /**
- * scripts/builders/cwe-chains.js
+ * Builds the CWE-keyed half of `data/_indexes/chains.json`, in the same
+ * hydrated cross-walk shape as the CVE-keyed half.
  *
- * Builds the CWE side of `data/_indexes/chains.json`. The existing chains
- * object is keyed by CVE-id; this builder produces CWE-id entries with the
- * same hydrated cross-walk shape so AI consumers can start from a CWE and
- * see every skill / catalog dimension that touches the weakness class.
- *
- * Per-CWE shape:
- *   {
- *     name:                CWE catalog entry name
- *     category:            CWE catalog category (memory-safety / injection / etc.)
- *     referencing_skills:  every skill listing this CWE in cwe_refs
- *     chain: {
- *       atlas, attack_refs, framework_gaps, d3fend, rfc_refs, dlp_refs
- *     }
- *     related_cves:        CVEs in cve-catalog.json whose framework gaps
- *                          surface via skills that also cite this CWE
- *   }
- *
- * The CWE → CVE link is indirect — CWEs aren't currently stamped on each
- * CVE entry directly. The skill bodies are the connective tissue. So we
- * compute it the same way the CVE chains builder does: skills cite CWEs,
- * skills cite framework_gaps, framework_gaps surface evidence_cves. The
- * intersection through the skill graph gives the related-CVE set.
+ * The CWE → CVE link is indirect: CWE ids are not stamped on CVE entries, so
+ * related_cves is computed through the skill graph — skills cite CWEs, skills
+ * cite framework_gaps, framework_gaps surface evidence_cves.
  */
 
 function buildCweChains({ skills, cweCatalog, atlasTtps, cveCatalog, frameworkGaps, d3fendCatalog, rfcCatalog }) {
@@ -37,7 +19,6 @@ function buildCweChains({ skills, cweCatalog, atlasTtps, cveCatalog, frameworkGa
       .filter((s) => (s.cwe_refs || []).includes(cweId))
       .map((s) => s.name);
 
-    // Aggregate cross-refs from those skills.
     const accum = {
       atlas_refs: new Set(),
       attack_refs: new Set(),
@@ -54,7 +35,6 @@ function buildCweChains({ skills, cweCatalog, atlasTtps, cveCatalog, frameworkGa
       }
     }
 
-    // Hydrate the cross-walk dimensions for the AI consumer.
     const hydrated = {
       atlas: [...accum.atlas_refs].sort().map((a) => ({
         id: a,
@@ -80,11 +60,8 @@ function buildCweChains({ skills, cweCatalog, atlasTtps, cveCatalog, frameworkGa
       dlp_refs: [...accum.dlp_refs].sort(),
     };
 
-    // Related CVEs: walk evidence_cves on the framework_gaps that the
-    // referencing skills cite. Inner join via the skill graph. Skip draft
-    // (_draft) CVEs so this CWE half agrees with the CVE half (build-indexes.js)
-    // and the reverse-ref index — all three must reflect the same curated,
-    // operator-queryable truth.
+    // Draft (_draft) CVEs are skipped so this half agrees with the CVE half
+    // (build-indexes.js) and the reverse-ref index.
     const relatedCves = new Set();
     for (const gap of accum.framework_gaps) {
       for (const ev of (frameworkGaps[gap]?.evidence_cves || [])) {

@@ -1,17 +1,8 @@
 "use strict";
 /**
- * scripts/builders/activity-feed.js
- *
- * Builds `data/_indexes/activity-feed.json` — a "what changed when" feed
- * across skills and catalogs, sorted by date. Lightweight RSS for the
- * skill corpus that consumers can poll without diff-ing the manifest.
- *
- * Combines:
- *   - per-skill last_threat_review
- *   - per-catalog _meta.last_updated
- *   - manifest threat_review_date + atlas_version_date when present
- *
- * Output sorted descending by date.
+ * Builds `data/_indexes/activity-feed.json`: a "what changed when" feed across
+ * skills and catalogs, sorted descending by date, so a consumer can poll it
+ * rather than diff the manifest.
  */
 
 const fs = require("fs");
@@ -49,8 +40,7 @@ function buildActivityFeed({ root, manifest, skills, catalogFiles }) {
         });
       }
     } catch {
-      // skip non-JSON or malformed; build-indexes runs after lint so this
-      // is unlikely.
+      // Skip malformed JSON; lint runs before build-indexes.
     }
   }
 

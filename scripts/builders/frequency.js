@@ -1,21 +1,8 @@
 "use strict";
 /**
- * scripts/builders/frequency.js
- *
- * Builds `data/_indexes/frequency.json` — citation-count tables. For each
- * catalog (CWE, ATLAS, ATT&CK, D3FEND, framework gaps, RFC, DLP), counts
- * how many skills cite each entry. Surfaces which entries are load-bearing
- * (cited by many) vs. orphan-adjacent (cited by ≤1).
- *
- * Per-field shape:
- *   {
- *     <entry_id>: { count, skills: [name, ...] }
- *   }
- *
- * Plus rollups:
- *   - top_cited: top 10 entries per field
- *   - orphan_adjacent: entries cited by exactly one skill
- *   - uncited: catalog entries with zero skill citations (flagged for review)
+ * Builds `data/_indexes/frequency.json`: how many skills cite each entry of
+ * each catalog, with rollups that separate the load-bearing entries from the
+ * ones a single skill cites and the ones nothing cites at all.
  */
 
 function buildFrequency({ skills, catalogs }) {
@@ -51,7 +38,6 @@ function buildFrequency({ skills, catalogs }) {
       .sort();
   }
 
-  // Uncited: catalog has an entry but zero skill cites it.
   const uncited = {};
   const catalogFieldMap = {
     cwe_refs: catalogs.cwe,
@@ -67,8 +53,8 @@ function buildFrequency({ skills, catalogs }) {
     uncited[field] = inCatalog.filter((id) => !counts[field][id]).sort();
   }
 
-  // attack_refs has no catalog file (uses MITRE upstream directly), so no
-  // uncited table for it — only counts.
+  // attack_refs is absent from catalogFieldMap: it has no catalog file of its
+  // own, so it gets counts but no uncited table.
 
   const topCited = {};
   for (const f of fields) topCited[f] = topN(f);

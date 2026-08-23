@@ -1,28 +1,16 @@
 "use strict";
 /**
- * scripts/builders/theater-fingerprints.js
- *
- * Builds `data/_indexes/theater-fingerprints.json` — for each Compliance
- * Theater pattern in the `compliance-theater` skill, a structured record:
- *   - the claim (what auditors hear)
- *   - the audit evidence (what passes the audit)
- *   - the reality (why it's theater)
- *   - the detection test (operational steps)
- *   - the controls it spans (NIST 800-53 / ISO 27001 / PCI / SOC 2)
- *   - the evidence CVE / campaign tying the pattern to the real world
- *
- * Extracted from `skills/compliance-theater/skill.md`. The compliance-theater
- * skill is the source-of-truth — this index just structures the pattern
- * library so downstream consumers (audit defense, framework-gap-analysis)
- * can join on control IDs without re-parsing the markdown.
+ * Builds `data/_indexes/theater-fingerprints.json` from
+ * `skills/compliance-theater/skill.md`, which stays the source of truth — the
+ * index only structures the pattern library so consumers can join on control
+ * IDs without re-parsing the markdown.
  */
 
 const fs = require("fs");
 const path = require("path");
 
-// Stable mapping of each Pattern → the controls it spans. Manually curated
-// from the skill's Framework Lag Declaration table — keep this in lockstep
-// with skills/compliance-theater/skill.md.
+// Each pattern → the controls it spans, hand-curated from the skill's Framework
+// Lag Declaration table; keep in lockstep with that table.
 const PATTERN_CONTROL_MAP = {
   1: {
     pattern_name: "Patch Management Theater",
@@ -117,10 +105,9 @@ const PATTERN_CONTROL_MAP = {
 };
 
 function extractPatternBodyFromSkill(skillBody, patternNumber) {
-  // Find "### Pattern N:" and capture until the next "### Pattern N+1:" OR
-  // the next ## H2 after the header line itself. We skip the header's own
-  // line before scanning for an H2 boundary — otherwise the `### Pattern N:`
-  // line would match the `## ` prefix regex once its leading `#` is sliced.
+  // Captures from "### Pattern N:" to the next "### Pattern N+1:" or the next
+  // H2. The H2 scan starts past the header line: `### Pattern N:` itself
+  // matches the `^## ` prefix once its leading `#` is sliced off.
   const startRe = new RegExp(`^### Pattern ${patternNumber}:`, "m");
   const startMatch = skillBody.match(startRe);
   if (!startMatch) return null;
@@ -142,8 +129,7 @@ function extractPatternBodyFromSkill(skillBody, patternNumber) {
 }
 
 function pullField(body, label) {
-  // The patterns use a "**Label:** ..." prose convention. Return the line(s)
-  // after the label until the next "**" or blank line.
+  // Patterns write fields as "**Label:** ..."; capture to the next "**" or blank line.
   const re = new RegExp(`\\*\\*${label.replace(/[-/\\^$*+?.()|[\\]{}]/g, "\\$&")}:?\\*\\*\\s*([\\s\\S]*?)(?=\\n\\n|\\n\\*\\*|$)`);
   const m = body.match(re);
   return m ? m[1].trim() : null;
@@ -173,9 +159,8 @@ function buildTheaterFingerprints({ root }) {
     };
   }
 
-  // Inverted index: control_id → pattern(s) it spans, so a consumer can ask
-  // "is this control implicated in a theater pattern?" without scanning all
-  // seven patterns.
+  // Inverted index, framework::control_id → patterns, so a consumer can ask
+  // whether a control is implicated without scanning every pattern.
   const byControl = {};
   for (const [pid, p] of Object.entries(out)) {
     for (const c of p.controls) {

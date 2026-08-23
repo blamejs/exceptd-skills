@@ -2,20 +2,8 @@
 'use strict';
 
 /**
- * exceptd orchestrator — CLI entry point.
- *
- * Commands:
- *   scan              Scan current environment and produce findings
- *   dispatch          Route findings to relevant skills
- *   skill <name>      Show context for a specific skill
- *   pipeline          Initialize and describe a pipeline run
- *   currency          Check skill currency scores
- *   report            Print dispatch plan as a report
- *   watch             Start event bus watcher (long-running)
- *   validate-cves     Remind to validate CVE entries against NVD
- *   validate-rfcs     Cross-check the RFC catalog against IETF Datatracker
- *   watchlist         Aggregate forward_watch entries across all skills
- *   help              Show this help
+ * exceptd orchestrator — CLI entry point. printHelp() below is the
+ * authoritative verb and flag list.
  */
 
 const fsMod = require('fs');
@@ -34,16 +22,9 @@ const cmd = process.argv[2];
 const args = process.argv.slice(3);
 
 /**
- * Minimal argv parser shared by verbs that want a structured view of
- * `process.argv.slice(2)` instead of repeated `.includes()` calls. Returns
- * `{ flags: Set<string>, options: Map<string,string>, positionals: string[] }`
- * where boolean flags (e.g. `--json`) land in `flags`, option flags with a
- * value (e.g. `--log-file path.log` or `--log-file=path.log`) land in
- * `options`, and the rest are positionals.
- *
- * Kept inline rather than reaching into `lib/refresh-external.js#parseArgs`
- * because that helper is hard-coded to the `refresh` flag set; this one
- * stays generic. Both follow the same convention so verbs stay consistent.
+ * Returns `{ flags: Set<string>, options: Map<string,string>, positionals:
+ * string[] }`. A flag named in `optionFlags` consumes the following token (or an
+ * `=value`) into `options`; every other `--flag` is a boolean in `flags`.
  */
 function parseFlags(argv, optionFlags) {
   const optSet = new Set(optionFlags || []);
@@ -90,10 +71,8 @@ async function main() {
       runSkillContext(args);
       break;
     case 'pipeline': {
-      // pipeline is not dispatched by the bin/ CLI; it's reachable only via a
-      // direct orchestrator invocation. Guard the findings JSON.parse so
-      // malformed input emits a structured ok:false envelope instead of an
-      // uncaught SyntaxError stack trace.
+      // Reachable only through a direct orchestrator invocation. The guarded
+      // parse turns malformed findings into an ok:false envelope.
       let findings = {};
       if (args[1]) {
         try {
@@ -115,9 +94,8 @@ async function main() {
       runCurrency();
       break;
     case 'report':
-      // Resolve the format from the first NON-FLAG positional so `report --json`
-      // (no format given) defaults to technical instead of treating "--json" as
-      // an invalid format and exiting 1.
+      // The first non-flag positional, so `report --json` does not read "--json"
+      // as the format.
       await runReport(args.find((a) => typeof a === 'string' && !a.startsWith('--')) || 'technical');
       break;
     case 'watch':
@@ -142,26 +120,12 @@ async function main() {
   }
 }
 
-// Programmatic runner for the framework-gap-analysis skill. Closes the
-// dispatch loop — previously `exceptd dispatch` would say "run
-// framework-gap-analysis" but the only thing the CLI could actually do
-// was print the skill body. This subcommand executes the analytical
-// path in lib/framework-gap.js so an operator (or a CI gate) can pipe
-// the JSON into another tool.
-//
-// Usage:
-//   exceptd framework-gap <FRAMEWORK_ID|all> <SCENARIO|CVE-ID>
-//   exceptd framework-gap NIST-800-53 CVE-2026-31431
-//   exceptd framework-gap PCI-DSS-4.0 "prompt injection"
-//   exceptd framework-gap all CVE-2025-53773 --json
 function runFrameworkGap(rawArgs) {
   const fs = require('fs');
   const path = require('path');
   const { gapReport, theaterCheck } = require('../lib/framework-gap');
 
-  // Reject unknown flags with the shared structured envelope. framework-gap
-  // consumes only --json; the global air-gap flags are accepted-and-ignored
-  // (the analytical path reads local catalogs, no egress).
+  // Air-gap flags are accepted and ignored: this path reads local catalogs only.
   if (rejectUnknownFlags('framework-gap', rawArgs, ['--json', '--air-gap', '--offline', '--no-network'])) return;
   const args = rawArgs.filter(a => !a.startsWith('--'));
   const flags = new Set(rawArgs.filter(a => a.startsWith('--')));
@@ -173,8 +137,7 @@ Examples:
   exceptd framework-gap NIST-800-53 CVE-2026-31431
   exceptd framework-gap PCI-DSS-4.0 "prompt injection"
   exceptd framework-gap all CVE-2025-53773 --json`;
-    // Honor --json on the missing-arg path: a JSON consumer must get a
-    // structured ok:false envelope, not plain usage text on stderr.
+    // A JSON consumer needs the ok:false envelope, not usage text on stderr.
     if (jsonOut) {
       process.stdout.write(JSON.stringify({
         ok: false,
@@ -185,10 +148,8 @@ Examples:
     } else {
       console.error(usage);
     }
-    // v0.13 exit-code class fix: usage error is GENERIC_FAILURE (1),
-    // not DETECTED_ESCALATE (2). Pre-v0.13 the orchestrator emitted
-    // exit 2 for usage errors, colliding with CI gates that branch on
-    // exit 2 to mean "verb ran + detected escalation-worthy finding".
+    // A usage error is GENERIC_FAILURE, never DETECTED_ESCALATE — exit 2 tells a
+    // CI gate the verb ran and found something.
     safeExit(EXIT_CODES.GENERIC_FAILURE);
     return;
   }
@@ -200,8 +161,6 @@ Examples:
     cveCatalog = JSON.parse(fs.readFileSync(path.join(root, 'data', 'cve-catalog.json'), 'utf8'));
     lessons = JSON.parse(fs.readFileSync(path.join(root, 'data', 'zeroday-lessons.json'), 'utf8'));
   } catch (err) {
-    // Honor --json on the catalog-read failure path too: a JSON consumer must
-    // get the same structured ok:false envelope the other error exits emit.
     const msg = `framework-gap: cannot read catalog: ${err.message}`;
     if (jsonOut) {
       process.stdout.write(JSON.stringify({ ok: false, verb: 'framework-gap', error: msg }) + '\n');
@@ -212,8 +171,6 @@ Examples:
     return;
   }
 
-  // The set of framework IDs the catalog actually carries gaps for. Used both
-  // to expand `all` and to validate an explicit framework argument.
   const knownFrameworks = [...new Set(Object.values(controlGaps).flatMap(g =>
     Array.isArray(g.framework) ? g.framework : [g.framework]
   ).filter(f => f && f !== 'ALL'))];
@@ -222,18 +179,9 @@ Examples:
     ? knownFrameworks
     : [args[0]];
 
-  // Validate an explicit framework name. Pre-fix an unknown framework (typo,
-  // wrong casing, a framework the catalog doesn't track) produced a report
-  // with zero matching gaps — indistinguishable from a real "no gaps" result,
-  // so an operator could read a typo as proof the framework covers the
-  // scenario. Refuse with the known-framework list instead.
-  //
-  // Match exactly as gapReport does: normalize (strip case + spaces + hyphens)
-  // and accept a substring hit against either a gap's `framework` or a prefix
-  // hit against a gap KEY — so the documented short forms ("NIST-800-53"
-  // matching "NIST 800-53 Rev 5") still resolve. A framework is "known" when at
-  // least one catalog gap matches it, independent of the scenario; a known
-  // framework with no scenario gaps remains a legitimate empty result.
+  // An unknown framework reports zero matching gaps — indistinguishable from a
+  // real "no gaps" result, so a typo could read as proof of coverage. Matching is
+  // as gapReport does it, so the short forms still resolve.
   if (args[0].toLowerCase() !== 'all') {
     const normalize = (s) => String(s).toLowerCase().replace(/[\s_-]/g, '');
     const idNorm = normalize(args[0]);
@@ -263,7 +211,6 @@ Examples:
     return;
   }
 
-  // Human-readable output.
   console.log(`\nFramework gap analysis — ${new Date().toISOString().slice(0, 10)}`);
   console.log(`Scenario: ${scenario}`);
   console.log(`Frameworks: ${requested.join(', ')}\n`);
@@ -292,8 +239,6 @@ Examples:
     for (const c of report.new_control_requirements) {
       const req = c.requirement || '';
       console.log(`  - ${c.id} ${c.name}: ${req.length > 140 ? req.slice(0, 140) + '…' : req}`);
-      // Naming the gaps it closes is what separates this from generic advice —
-      // it ties the control back to the insufficient framework controls above.
       if (c.closes.length) console.log(`    closes: ${c.closes.join(', ')}`);
     }
     console.log();
@@ -310,25 +255,16 @@ Examples:
   console.log(`Summary: ${report.summary.total_gaps} matching gaps, ${report.summary.universal_gaps} universal, ${report.summary.new_control_requirements} new controls required, ${report.summary.theater_risk_controls} theater-risk controls`);
 }
 
-// --- command implementations ---
-
 async function runScan() {
-  // Use the shared parseFlags helper so flag handling is consistent with
-  // other verbs (validate-cves, watchlist, etc.). Previously this was a
-  // bare `process.argv.includes('--json')`, which differed in style from
-  // the verbs below and could miss `--json=true` or similar future forms.
-  // --air-gap / --offline / --no-network are global flags; scan's TLS-reachability
-  // probe is the one network touch, and --air-gap (or EXCEPTD_AIR_GAP=1) now
-  // suppresses it (see scanner.js isAirGap), so the flags are accepted here and
-  // honored downstream rather than silently ignored.
+  // scan's TLS-reachability probe is its one network touch; --air-gap (or
+  // EXCEPTD_AIR_GAP=1) suppresses it in scanner.js, so the flags are honored there.
   if (rejectUnknownFlags('scan', args, ['--json', '--air-gap', '--offline', '--no-network'])) return;
   const { flags } = parseFlags(process.argv.slice(2), []);
   const jsonOut = flags.has('--json');
   if (!jsonOut) console.log('[orchestrator] Scanning environment...\n');
   const result = await scan();
   if (jsonOut) {
-    // Top-level ok:true so a single JSON consumer can branch on the same
-    // envelope the ok:false error paths emit.
+    // ok:true so one consumer branches on the same envelope as the error paths.
     process.stdout.write(JSON.stringify({ ok: true, ...result }) + '\n');
     return result;
   }
@@ -359,9 +295,7 @@ async function runScan() {
 }
 
 async function runDispatch() {
-  // --air-gap / --offline / --no-network: dispatch runs scan() first, whose TLS
-  // probe is suppressed under air-gap (see runScan / scanner.js isAirGap), so the
-  // flags are accepted here and honored downstream.
+  // dispatch runs scan(), whose TLS probe is suppressed under air-gap.
   if (rejectUnknownFlags('dispatch', args, ['--json', '--air-gap', '--offline', '--no-network'])) return;
   const jsonOut = process.argv.includes('--json');
   if (!jsonOut) console.log('[orchestrator] Scanning then dispatching...\n');
@@ -380,9 +314,6 @@ async function runDispatch() {
     console.log(`[${urgency}] ${item.skill_name}`);
     console.log(`  Triggered by: ${item.triggered_by} (${item.finding_domain})`);
     console.log(`  Action: ${item.action_required}`);
-    // Surface per-CVE detail when the underlying finding had a list of
-    // CVEs (e.g. cisa_kev_high_rwep). Operators need to know WHICH
-    // CVE — not just an aggregate count.
     if (item.evidence && Array.isArray(item.evidence.items) && item.evidence.items.length > 0) {
       console.log(`  Evidence:`);
       for (const ev of item.evidence.items) {
@@ -405,24 +336,18 @@ async function runDispatch() {
 }
 
 function runSkillContext(rawArgs) {
-  // `rawArgs` is the full arg list. Filter --flags out of the positional set
-  // before treating the first positional as the skill name — pre-fix
-  // `skill --json` passed "--json" through as args[0] and reported
-  // "Skill not found: --json".
+  // --flags are filtered out before the first positional is read as the skill
+  // name, or `skill --json` reports "Skill not found: --json".
   const argList = Array.isArray(rawArgs) ? rawArgs : (rawArgs == null ? [] : [rawArgs]);
-  // Reject unknown flags with the shared structured envelope. skill consumes
-  // only --json; the global air-gap flags are accepted-and-ignored (skill
-  // context is read from local skill files, no egress).
+  // Air-gap flags are accepted and ignored; skill context is read from local files.
   if (rejectUnknownFlags('skill', argList, ['--json', '--air-gap', '--offline', '--no-network'])) return;
   const jsonOut = argList.includes('--json');
   const positionals = argList.filter(a => typeof a === 'string' && !a.startsWith('--'));
   const skillName = positionals[0];
 
   if (!skillName) {
-    // Operators cannot guess the skill IDs (they are not the playbook names, and
-    // `brief --all` lists playbooks, not skills). List the real skill IDs +
-    // one-line descriptions straight from the signed manifest so `exceptd skill`
-    // is self-documenting.
+    // Skill IDs are not the playbook names `brief --all` lists, so listing them
+    // from the signed manifest keeps `exceptd skill` self-documenting.
     let skills = [];
     try {
       skills = (require('../manifest.json').skills || [])
@@ -454,9 +379,8 @@ function runSkillContext(rawArgs) {
 
   const context = getSkillContext(skillName);
   if (!context) {
-    // v0.13 envelope harmonization: ok:false bodies land on stdout
-    // alongside successful results so a single consumer can parse the
-    // verb's envelope without splitting across two streams.
+    // ok:false bodies land on stdout beside successful results, so one consumer
+    // parses the envelope without splitting across two streams.
     process.stdout.write(JSON.stringify({ ok: false, verb: "skill", error: `Skill not found: ${skillName}`, hint: "Run `exceptd skill` with no arguments to list all available skill IDs." }) + "\n");
     safeExit(EXIT_CODES.GENERIC_FAILURE);
     return;
@@ -491,8 +415,7 @@ function runPipeline(triggerType, payload) {
 }
 
 function runCurrency() {
-  // --air-gap / --offline / --no-network: local-only verb, accepted-and-ignored
-  // (see runScan).
+  // Local-only verb; the air-gap flags are accepted and ignored.
   if (rejectUnknownFlags('currency', args, ['--json', '--air-gap', '--offline', '--no-network'])) return;
   const jsonOut = process.argv.includes('--json');
   const result = runCurrencyNow();
@@ -520,22 +443,12 @@ function runCurrency() {
 }
 
 async function runReport(format) {
-  // Reject unknown flags with the same structured envelope the other verbs
-  // emit. report takes only a format positional; --json is accepted for
-  // parity, and the global air-gap flags are honored downstream — the
-  // report path's scan() TLS probe is suppressed under air-gap (scanner.js).
+  // The air-gap flags are honored downstream by scan()'s TLS probe.
   if (rejectUnknownFlags('report', args, ['--json', '--air-gap', '--offline', '--no-network'])) return;
-  // v0.11.6 (#98): validate format positional. Pre-0.11.6 unknown formats
-  // emitted a generic "# exceptd Report" header — silently accepted any
-  // string. Now: reject with structured JSON error matching other verbs.
   const VALID_REPORT_FORMATS = ['executive', 'technical', 'compliance', 'csaf'];
   if (!VALID_REPORT_FORMATS.includes(format)) {
-    // v0.13 envelope harmonization: ok:false body on stdout, exit 1
-    // (GENERIC_FAILURE) not 2 (DETECTED_ESCALATE). Pre-v0.13 the
-    // body went to stderr and exit was 2; both broke CI consumers
-    // that expected the dispatch-error vs verb-finding distinction.
-    // v0.13.2: did-you-mean on the unknown format value (reuses
-    // lib/flag-suggest.js for Levenshtein-≤2 typo correction).
+    // GENERIC_FAILURE, not DETECTED_ESCALATE — exit 2 is how a CI consumer reads
+    // "the verb ran and found something".
     const { suggestFlag } = require('../lib/flag-suggest');
     const dym = suggestFlag(String(format), VALID_REPORT_FORMATS);
     const hint = dym ? ` Did you mean "${dym}"?` : '';
@@ -551,9 +464,7 @@ async function runReport(format) {
     return;
   }
 
-  // v0.11.1 feature #55: `report csaf` emits a CSAF 2.0 envelope covering
-  // every scanned finding + dispatched plan + currency posture. Useful for
-  // VEX downstreams that ingest CSAF JSON.
+  // `report csaf` emits a CSAF 2.0 envelope for VEX downstreams.
   if (format === 'csaf') {
     const scanResult = await scan();
     const plan = dispatch(scanResult.findings);
@@ -573,28 +484,22 @@ async function runReport(format) {
           revision_history: [{ number: '1', date: new Date().toISOString(), summary: 'Initial report emission' }],
         },
       },
-      // CSAF vulnerabilities[] are CVE-scoped by spec; non-CVE findings (signal
-      // detections without a catalogued CVE) are preserved in
-      // exceptd_extension.scan_summary below, not dropped.
+      // CSAF vulnerabilities[] is CVE-scoped by spec, so a signal detection
+      // without a catalogued CVE is preserved in exceptd_extension, not dropped.
       vulnerabilities: scanResult.findings
         .filter(f => f.cve_id)
         .map(f => {
           const vuln = {
             cve: f.cve_id,
-            // Never emit a null description/threat detail — the CSAF schema
-            // requires non-empty strings, so fall back through signal to a
-            // generic label.
+            // The CSAF schema requires non-empty strings, so never emit null here.
             notes: [{ category: 'description', text: f.action_required || f.signal || 'Vulnerability detected' }],
             threats: f.severity === 'critical'
               ? [{ category: 'exploit_status', details: f.action_required || f.signal || 'Critical vulnerability detected' }]
               : [],
           };
-          // Emit the REAL catalog CVSS, never a hardcoded base_score:0 (which
-          // reads as "no impact" and inverts the risk for a critical CVE).
-          // Mirror the playbook-runner CSAF emitter: a cvss_v3 block carries
-          // vectorString (CSAF §3.2.1.5), so emit it only when both the score
-          // and vector are known, and omit scores entirely otherwise rather
-          // than fabricate one.
+          // The real catalog CVSS, never a hardcoded base_score of 0 — that reads
+          // as "no impact". A cvss_v3 block carries vectorString (CSAF §3.2.1.5),
+          // so emit only when both are known rather than fabricate one.
           if (typeof f.cvss_score === 'number' && Number.isFinite(f.cvss_score) &&
               typeof f.cvss_vector === 'string' && f.cvss_vector) {
             vuln.scores = [{ products: [], cvss_v3: { baseScore: f.cvss_score, vectorString: f.cvss_vector } }];
@@ -612,17 +517,13 @@ async function runReport(format) {
     return;
   }
 
-  // Progress line goes to stderr so `report executive > out.md` produces
-  // clean markdown on stdout — the first stdout line must be the report
-  // header, not this progress notice.
+  // stderr, so `report executive > out.md` opens with the report header.
   console.error(`[orchestrator] Generating ${format} report...\n`);
   const scanResult = await scan();
   const plan = dispatch(scanResult.findings);
   const { currency_report } = currencyCheck();
 
-  // The help advertises `--json for machine-readable output`. Previously only
-  // `report csaf` emitted JSON; executive/technical/compliance silently
-  // rendered Markdown even with --json. Honor the flag for those formats too.
+  // The help advertises --json for every format, not only csaf.
   if (args.includes('--json')) {
     process.stdout.write(JSON.stringify({
       ok: true,
@@ -639,9 +540,7 @@ async function runReport(format) {
     return;
   }
 
-  // Bug #48: header now self-describes the report flavor so a piped-to-file
-  // report carries its provenance internally. Previously only stderr
-  // (`[orchestrator] Generating <X> report`) distinguished the three.
+  // The header self-describes the flavor, so a piped report carries its provenance.
   const flavorTitle = {
     executive: 'Executive Report',
     technical: 'Technical Report',
@@ -664,8 +563,6 @@ async function runReport(format) {
   }
 
   console.log('\n## Skill Currency');
-  // Two tiers, named consistently and explained inline so the reader
-  // doesn't have to mentally map two thresholds onto the same list.
   const critical = currency_report.filter(s => s.currency_score < 50);
   const stale = currency_report.filter(s => s.currency_score >= 50 && s.currency_score < 70);
   if (critical.length === 0 && stale.length === 0) {
@@ -683,15 +580,13 @@ async function runReport(format) {
 }
 
 /**
- * Resolve a writable directory for the watch lockfile. Prefer the operator's
- * home directory; fall back to the OS tempdir when home is non-writable or
- * non-existent (CI runners, restricted shells, etc.).
+ * A writable directory for the watch lockfile: the operator's home, falling
+ * back to the OS tempdir when home is absent or non-writable.
  */
 function _resolveWatchLockDir() {
   const home = process.env.EXCEPTD_HOME || pathMod.join(osMod.homedir(), '.exceptd');
   try {
     fsMod.mkdirSync(home, { recursive: true });
-    // Probe writability with a small marker; remove on success.
     const probe = pathMod.join(home, `.write-probe-${process.pid}`);
     fsMod.writeFileSync(probe, '');
     fsMod.unlinkSync(probe);
@@ -704,16 +599,9 @@ function _resolveWatchLockDir() {
 }
 
 /**
- * Acquire an exclusive watch lockfile. Returns `{ path, release }` on
- * success. Throws with code 'EWATCHLOCKED' when another watcher holds the
- * lock and the lock looks fresh. Staleness is determined by two checks
- * combined: (a) the recorded PID is no longer alive, or (b) the file
- * mtime is older than 60s. Either path reclaims the lock atomically.
- *
- * The PID-alive check covers Windows, where SIGTERM cannot be delivered
- * to the prior watcher and our graceful release handler never ran (e.g.
- * the test harness kills with taskkill /F). Without it, every second
- * watch invocation would inherit a stale lock until the 60s mtime ages out.
+ * Returns `{ path, release }`, or throws code 'EWATCHLOCKED' when a live watcher
+ * holds the lock. Stale means the recorded PID is dead or the mtime is older than
+ * 60s; the PID check covers Windows, where the graceful release never ran.
  */
 function _acquireWatchLock() {
   const dir = _resolveWatchLockDir();
@@ -721,10 +609,8 @@ function _acquireWatchLock() {
   const STALE_MS = 60_000;
 
   function tryCreate() {
-    // O_EXCL create with an explicit owner-only (0o600) mode: the predictable
-    // lock-file name is the cross-process mutex, so safety is the exclusive
-    // create + restrictive perms, not an unguessable name. The explicit mode
-    // also clears the insecure-temporary-file static-analysis finding.
+    // The predictable lock-file name IS the mutex, so the safety is the exclusive
+    // create plus the owner-only mode, not an unguessable name.
     const fd = fsMod.openSync(lockPath, 'wx', 0o600);
     fsMod.writeSync(fd, JSON.stringify({ pid: process.pid, started_at: new Date().toISOString() }));
     fsMod.closeSync(fd);
@@ -733,9 +619,7 @@ function _acquireWatchLock() {
   function _pidAlive(pid) {
     if (!Number.isInteger(pid) || pid <= 0) return false;
     try {
-      // signal 0 is the POSIX "is the process alive" probe; Node implements
-      // it on Windows too via OpenProcess. Throws ESRCH (or EPERM, which
-      // also implies alive) when the PID is dead.
+      // Signal 0 is the "is it alive" probe; ESRCH means dead, EPERM alive.
       process.kill(pid, 0);
       return true;
     } catch (e) {
@@ -766,11 +650,8 @@ function _acquireWatchLock() {
       e.code = 'EWATCHLOCKED';
       throw e;
     }
-    // Stale — reclaim atomically. unlink + re-create with O_EXCL. If another
-    // reclaimer won the race between our unlink and our re-create, the O_EXCL
-    // create throws EEXIST; that is contention, not a generic failure, so
-    // re-tag it as EWATCHLOCKED to map onto the EX_TEMPFAIL "retry later"
-    // exit rather than the GENERIC_FAILURE the bare EEXIST would fall to.
+    // Stale — unlink and re-create with O_EXCL. Losing that race is contention,
+    // so it is re-tagged EWATCHLOCKED to reach the EX_TEMPFAIL "retry later" exit.
     try { fsMod.unlinkSync(lockPath); } catch { /* concurrent reclaim, fine */ }
     try {
       tryCreate();
@@ -795,27 +676,20 @@ function _acquireWatchLock() {
 }
 
 async function runWatch() {
-  // Reject unknown flags before acquiring the watch lock / starting the
-  // scheduler. --log-file is the value-taking option this verb consumes;
-  // --json is accepted for parity; the global air-gap flags are
-  // accepted-and-ignored (watch does no egress of its own).
+  // Reject unknown flags before acquiring the lock or starting the scheduler.
+  // --log-file is the value-taking option; watch does no egress of its own.
   if (rejectUnknownFlags('watch', args, ['--log-file', '--json', '--air-gap', '--offline', '--no-network'])) return;
   const { flags, options } = parseFlags(args, ['--log-file']);
   const logFilePath = options.get('--log-file');
   let logStream = null;
-  // Tee stdout when --log-file is set. We intercept process.stdout.write so
-  // every console.log + raw write also lands in the log file; this is the
-  // simplest pattern that captures scheduler + event-bus + this verb's
-  // output uniformly without rewriting every console.log call site.
+  // Intercepting process.stdout.write tees the scheduler and event bus too.
   if (logFilePath) {
     try {
       fsMod.mkdirSync(pathMod.dirname(pathMod.resolve(logFilePath)), { recursive: true });
       logStream = fsMod.createWriteStream(pathMod.resolve(logFilePath), { flags: 'a' });
     } catch (err) {
-      // A filesystem error opening the log target (ENOENT/EACCES/EROFS) is a
-      // generic operational failure, not a detected-finding escalation — code
-      // 2 is DETECTED_ESCALATE and would misroute a CI gate. Use the same
-      // GENERIC_FAILURE every other error site in this function uses.
+      // A filesystem error opening the log target is a generic failure, not a
+      // detected finding — exit 2 would misroute a CI gate.
       console.error(`[orchestrator] --log-file ${logFilePath}: ${err.message}`);
       safeExit(EXIT_CODES.GENERIC_FAILURE);
       return;
@@ -826,21 +700,18 @@ async function runWatch() {
       return origWrite(chunk, enc, cb);
     };
   }
-  // Touch flags to keep eslint-style linters quiet about unused locals.
+  // Parsed for symmetry with the other verbs, unused here.
   void flags;
 
-  // Acquire the cross-process watch lock before any heavy work. The lock
-  // prevents two concurrent watchers from emitting double events or
-  // double-firing scheduler bootstraps. Release happens in every shutdown
-  // path (SIGINT/SIGTERM/SIGHUP/SIGBREAK).
+  // The cross-process lock stops two watchers double-emitting events and
+  // double-firing the scheduler bootstrap. Every shutdown path releases it.
   let lock;
   try {
     lock = _acquireWatchLock();
   } catch (err) {
     console.error(`[orchestrator] cannot start watch: ${err.message}`);
-    // sysexits EX_TEMPFAIL: the watch daemon lock is held; retry later. Read
-    // the value from the canonical exit-code table when it carries it so the
-    // `doctor --exit-codes` dump and this path share one source of truth.
+    // sysexits EX_TEMPFAIL, read from the canonical table so this path and the
+    // `doctor --exit-codes` dump agree.
     const watchLocked = EXIT_CODES.WATCH_LOCK_CONTENTION || 75;
     process.exitCode = err.code === 'EWATCHLOCKED' ? watchLocked : 1;
     return;
@@ -850,9 +721,8 @@ async function runWatch() {
   console.log(`[orchestrator] Lockfile: ${lock.path}`);
   console.log('Listening for: CISA KEV additions, ATLAS updates, CVE drops, framework amendments.\n');
 
-  // Save the listener reference so the shutdown path can detach it instead
-  // of leaving it bound (a leaked '*' listener accumulates across
-  // start/stop cycles in long-running embedders).
+  // Held so shutdown can detach it — a leaked '*' listener accumulates across
+  // start/stop cycles.
   const anyListener = (event) => {
     console.log(`[event] ${event.type} — ${event.timestamp}`);
     if (event.affected_skills.length > 0) {
@@ -877,18 +747,13 @@ async function runWatch() {
     if (logStream) {
       try { logStream.end(); } catch { /* best-effort */ }
     }
-    // process.exitCode + return-from-handler pattern: let the loop drain
-    // (so stdout flushes the goodbye line + the log stream finishes) rather
-    // than a hard process.exit() that can truncate.
+    // process.exitCode, not process.exit() — the loop drains so the goodbye line
+    // flushes and the log stream finishes.
     process.exitCode = 0;
   };
 
-  // Standard signal coverage. SIGINT (Ctrl+C) was the only one previously
-  // handled; SIGTERM is the conventional "graceful stop" signal sent by
-  // process managers (systemd, docker stop, kubernetes), and SIGHUP is the
-  // terminal-close signal on POSIX. SIGBREAK fires on Ctrl+Break on Windows.
-  // SIGHUP doesn't exist on Windows and registering it there is a no-op
-  // that throws on some Node versions; gate by platform.
+  // SIGHUP does not exist on Windows and registering it throws on some Node
+  // versions, so the platform gate picks SIGBREAK instead.
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   if (process.platform !== 'win32') {
@@ -900,24 +765,19 @@ async function runWatch() {
   console.log('Press Ctrl+C to stop. (SIGTERM / SIGHUP / SIGBREAK also honored.)\n');
 }
 
-// Known flags accepted by validate-cves. An unknown flag (typo) must be
-// rejected before any network work — a swallowed `--ofline` previously fell
-// through to the default live-network path and the verb hung fetching the
-// whole catalog from NVD until killed.
+// An unknown flag must be rejected BEFORE any network work: a swallowed
+// `--ofline` falls through to the live path and fetches the whole NVD catalog.
 const VALIDATE_CVES_KNOWN_FLAGS = Object.freeze([
   '--offline', '--no-fail', '--from-cache', '--concurrency', '--since', '--air-gap',
 ]);
-// Known flags accepted by validate-rfcs (same hang-on-typo class as
-// validate-cves). `--live` is the explicit opt-in to the default network
-// path; `--air-gap` forces the offline view with no egress.
+// `--live` is the explicit opt-in to the default network path; `--air-gap`
+// forces the offline view.
 const VALIDATE_RFCS_KNOWN_FLAGS = Object.freeze([
   '--offline', '--no-fail', '--from-cache', '--since', '--live', '--air-gap',
 ]);
 
-// Reject unknown --flags against a per-verb allowlist BEFORE any network work.
-// Returns true when a rejection was emitted (caller should return); false when
-// every flag is recognized. The base flag (text before any `=`) is what gets
-// matched so `--from-cache=path` and `--since=2026-01-01` are accepted.
+// True when a rejection was emitted and the caller must return. Matching is on
+// the base flag — the text before any `=` — so `--since=2026-01-01` is accepted.
 function rejectUnknownFlags(verb, rawArgs, knownFlags) {
   const known = new Set(knownFlags);
   const unknown = rawArgs
@@ -925,7 +785,6 @@ function rejectUnknownFlags(verb, rawArgs, knownFlags) {
     .map(a => { const eq = a.indexOf('='); return eq === -1 ? a : a.slice(0, eq); })
     .filter(base => !known.has(base));
   if (unknown.length === 0) return false;
-  // Dedupe while preserving order.
   const uniq = [...new Set(unknown)];
   process.stdout.write(JSON.stringify({
     ok: false,
@@ -947,15 +806,9 @@ async function runValidateCves(rawArgs = []) {
   const flags = new Set(rawArgs.filter(a => a.startsWith('--')));
   const offline = flags.has('--offline') || flags.has('--air-gap');
   const noFail = flags.has('--no-fail');
-  // --from-cache: prefer cached upstream snapshots before falling back to live
-  // network. Accepts an optional path; defaults to .cache/upstream when bare.
-  // The cache layout is fixed by lib/prefetch.js — same one refresh-external
-  // reads from.
+  // --from-cache takes an optional path; the layout is fixed by lib/prefetch.js.
   let cacheDir = null;
-  // --concurrency N — bound the number of in-flight upstream calls during
-  // live validation. Default stays 4 to match the prior implicit value;
-  // operators with faster networks can crank it up, air-gapped fleets can
-  // drop it to 1 to keep cache reads serial.
+  // --concurrency bounds in-flight upstream calls during live validation.
   let concurrency = 4;
   for (let i = 0; i < rawArgs.length; i++) {
     const a = rawArgs[i];
@@ -985,9 +838,7 @@ async function runValidateCves(rawArgs = []) {
     return;
   }
 
-  // --since <ISO|YYYY-MM-DD>: scope-limit validation to CVEs whose
-  // last_updated (or cisa_kev_date when missing) is on or after the given
-  // date. Cuts upstream calls for fleet operators running cron jobs.
+  // --since scopes to CVEs whose last_updated (or cisa_kev_date) is on or after it.
   let sinceDate = null;
   for (let i = 0; i < rawArgs.length; i++) {
     if (rawArgs[i] === '--since' && rawArgs[i + 1]) sinceDate = rawArgs[i + 1];
@@ -1011,11 +862,8 @@ async function runValidateCves(rawArgs = []) {
   const modeStr = offline
     ? 'offline (local view only)'
     : (cacheDir ? `live with cache (${path.relative(path.join(__dirname, '..'), cacheDir)})` : 'live (NVD + CISA KEV)');
-  // v0.13.6: clarify that this count is CVE-* IDs validated against NVD,
-  // not the full catalog. MAL-* (malicious package) entries are listed in
-  // data/cve-catalog.json but are out of scope for NVD validation — they
-  // do not have CVE IDs by design. `exceptd doctor` reports the combined
-  // catalog total separately to avoid the "where did MAL-* go?" misread.
+  // CVE-* IDs validated against NVD, not the whole catalog: MAL-* entries live in
+  // the same file but carry no CVE ID by design.
   const allKeys = Object.keys(catalog).filter((k) => !k.startsWith('_'));
   const nonCveCount = allKeys.length - cveIds.length;
   const totalNote = nonCveCount > 0
@@ -1024,7 +872,6 @@ async function runValidateCves(rawArgs = []) {
   console.log(`${cveIds.length} CVE IDs queued for NVD validation${totalNote}. Mode: ${modeStr}${sinceDate ? ` · since=${sinceDate}` : ''}`);
   console.log(`Fail-on-drift: ${noFail ? 'disabled' : 'enabled'}\n`);
 
-  // --- Header (fixed-width; works with the existing currency command's style)
   const header = 'CVE                | Local RWEP | Local CVSS | NVD CVSS         | KEV Local | KEV NVD | EPSS Local      | EPSS Live       | EPSS Drift | Status';
   const rule   = '-------------------|------------|------------|------------------|-----------|---------|-----------------|-----------------|------------|----------';
   console.log(header);
@@ -1035,7 +882,6 @@ async function runValidateCves(rawArgs = []) {
     return s.length >= n ? s.slice(0, n) : s + ' '.repeat(n - s.length);
   }
 
-  // Format an EPSS pair as "score / percentile" with 4-decimal score, 2-decimal pct.
   function fmtEpss(score, pct) {
     if (score === null || score === undefined) return '-';
     const s = Number(score).toFixed(4);
@@ -1064,15 +910,8 @@ async function runValidateCves(rawArgs = []) {
     return;
   }
 
-  // Live path — opportunistically use the prefetch cache when --from-cache
-  // is set. Cache-resolved CVEs short-circuit the network fetch; missing
-  // entries fall through to the live validator. Both paths produce the
-  // same ValidationResult shape.
-  //
-  // Graceful fallback when sources/validators isn't shipped (matches the
-  // pattern validate-rfcs uses below). Pre-v0.10.3 this crashed with
-  // MODULE_NOT_FOUND in installed npm packages because sources/ wasn't
-  // in the files allowlist.
+  // sources/validators is absent from some installs, hence the guarded require
+  // and the offline fallback.
   let validateAllCves;
   try {
     ({ validateAllCves } = require('../sources/validators'));
@@ -1092,7 +931,6 @@ async function runValidateCves(rawArgs = []) {
     report = await validateAllCves(catalog, { concurrency });
   }
 
-  // Index results by cve_id (validateAllCves preserves insertion order, but be explicit).
   const byId = new Map(report.results.map(r => [r.cve_id, r]));
   let driftFound = 0;
   let unreachable = 0;
@@ -1111,7 +949,6 @@ async function runValidateCves(rawArgs = []) {
     const cvssMismatch = r?.discrepancies?.some(d => d.field === 'cvss_score');
     const kevMismatch  = r?.discrepancies?.some(d => d.field === 'cisa_kev');
 
-    // EPSS Local / Live / Drift block
     const liveEpss = r?.fetched?.epss || null;
     const epssReachable = r?.fetched?.sources?.epss?.reachable === true;
     const epssMismatchScore = r?.discrepancies?.some(d => d.field === 'epss_score');
@@ -1169,23 +1006,10 @@ async function runValidateCves(rawArgs = []) {
 }
 
 /**
- * validate-rfcs — companion to validate-cves for the IETF RFC / Internet-Draft
- * catalog. Confirms that every entry in data/rfc-references.json is current
- * against the IETF Datatracker.
- *
- * Modes:
- *   --offline   Print the local view only; do not fetch. Useful for airgapped
- *               CI runs and for fast iteration on the catalog file itself.
- *   --live      Fetch the IETF Datatracker for each RFC / draft (default if
- *               neither flag passed).
- *   --no-fail   Report drift but exit zero. Useful when you want a quarterly
- *               drift report without blocking CI.
- *
- * Per AGENTS.md hard rule #12 (external data version pinning), drift surfaces
- * are: status change (Draft → Standards Track → Internet Standard), new
- * errata since `last_verified`, replaced-by relationships, and obsoletion.
- * A local entry with no upstream is flagged. Network errors return
- * `unreachable` for that entry — they never fail the run.
+ * Confirms every entry in data/rfc-references.json is current against the IETF
+ * Datatracker. Drift is a status change, new errata since `last_verified`, a
+ * replaced-by relationship, or obsoletion; a network error returns `unreachable`
+ * for that entry and never fails the run.
  */
 async function runValidateRfcs(rawArgs = []) {
   const fs = require('fs');
@@ -1254,8 +1078,7 @@ async function runValidateRfcs(rawArgs = []) {
     return s.length >= n ? s.slice(0, n) : s + ' '.repeat(n - s.length);
   }
 
-  // Lazy-load the validator so an environment without `sources/validators`
-  // installed still gets the offline view.
+  // Lazy-loaded so an install without sources/validators still gets the offline view.
   let validator = null;
   if (!offline) {
     try {
@@ -1268,9 +1091,8 @@ async function runValidateRfcs(rawArgs = []) {
   let driftFound = 0;
   let unreachable = 0;
 
-  // Cache-first helpers — read the prefetch payload for an RFC/draft and
-  // compute drift the same way validateRfc would. Cache misses fall through
-  // to the live validator.
+  // Cache-first: drift is computed the way validateRfc would, and a miss falls
+  // through to the validator.
   const STATUS_MAP = {
     std: 'Internet Standard', ps: 'Proposed Standard', ds: 'Draft Standard',
     bcp: 'Best Current Practice', inf: 'Informational', exp: 'Experimental',
@@ -1356,19 +1178,12 @@ async function runValidateRfcs(rawArgs = []) {
 }
 
 /**
- * watchlist — aggregate `forward_watch` entries across every skill in
- * manifest.json into a single deduplicated, sorted list, with the skills
- * that listed each item and the most recent `last_threat_review` date among
- * them. Supports `--by-skill` to invert the view (per-skill watch items).
- *
- * Per AGENTS.md, `forward_watch` is the optional frontmatter field every
- * skill uses to flag upcoming standards changes, new TTPs, or RFC drops
- * that should trigger a skill update. This command surfaces the union so
- * maintainers can see the full horizon at a glance.
+ * Aggregates the `forward_watch` frontmatter across every manifest skill into
+ * one deduplicated, sorted list, carrying the skills that listed each item and
+ * the most recent `last_threat_review` among them. --by-skill inverts the view.
  */
-// Every flag any watchlist mode (default aggregator, --alerts, --org-scan)
-// accepts. The unknown-flag guard runs once at the top of runWatchlist so a
-// typo is rejected regardless of which sub-mode it would have reached.
+// Every flag any watchlist mode accepts; the guard runs once at the top of
+// runWatchlist, whichever sub-mode a typo would have reached.
 const WATCHLIST_KNOWN_FLAGS = Object.freeze([
   '--json', '--by-skill', '--alerts', '--org-scan',
   '--org', '--pattern', '--output-format', '--air-gap',
@@ -1387,22 +1202,11 @@ function runWatchlist(rawArgs = []) {
   const manifestPath = path.join(__dirname, '..', 'manifest.json');
   const repoRoot = path.join(__dirname, '..');
 
-  // v0.13.1: --alerts re-scopes watchlist from "skills forward_watch" to
-  // "CVE-class alert patterns" — surfaces catalog entries matching
-  // high-priority shape rules (kernel-LPE-with-PoC, supply-chain-family,
-  // AI-discovered-KEV, recently-disclosed-with-active-exploitation).
   // The modes are mutually exclusive; the first matching flag wins.
   if (alertsMode) {
     return runWatchlistAlerts(rawArgs);
   }
 
-  // v0.13.3: --org-scan probes GitHub for repository naming patterns
-  // associated with known threat actors (per NEW-CTRL-052 from the
-  // MAL-2026-SHAI-HULUD-OSS zeroday-lessons entry). The Shai-Hulud
-  // worm uses GitHub itself as the exfil channel — repos named
-  // "A Gift From TeamPCP", "Shai-Hulud-*", or with future variants
-  // hold the stolen credentials. Operators can run this against
-  // their own GitHub org to surface exfil staging in their tenant.
   if (orgScanMode) {
     return runWatchlistOrgScan(rawArgs);
   }
@@ -1416,10 +1220,7 @@ function runWatchlist(rawArgs = []) {
     return;
   }
 
-  // Exclude entries that are explicitly marked `status: "deprecated"` so
-  // operator forward-watch decisions aren't anchored to skills that are
-  // about to come out of the manifest. The field is optional today; when
-  // absent every skill is treated as active.
+  // Deprecated skills are excluded; the field is optional, absent means active.
   const skills = (Array.isArray(manifest.skills) ? manifest.skills : [])
     .filter(s => s && s.status !== 'deprecated');
   // item -> { skills: [{name, last_threat_review}] }
@@ -1460,10 +1261,7 @@ function runWatchlist(rawArgs = []) {
 
   const jsonOut = rawArgs.includes('--json');
   if (jsonOut) {
-    // v0.13.0 envelope harmonization: top-level `ok: true` so every
-    // verb's JSON body shares the contract whether emitted by
-    // bin/exceptd.js emit() (which auto-defaults `ok`) or by the
-    // orchestrator dispatch (which writes stdout directly).
+    // Top-level ok:true so every verb's JSON body shares one contract.
     const out = {
       ok: true,
       generated_at: new Date().toISOString(),
@@ -1520,30 +1318,9 @@ function runWatchlist(rawArgs = []) {
 }
 
 /**
- * v0.13.1 — runWatchlistAlerts surfaces CVE catalog entries matching
- * high-priority pattern rules. Closes the post-mortem gap from
- * CVE-2026-46333 (ssh-keysign-pwn) where the toolkit shipped a CVE
- * matching the kernel-LPE-with-public-PoC shape but had no programmatic
- * way for an operator to ask "what just landed that needs attention?".
- *
- * Patterns are evaluated against every catalog entry; multiple patterns
- * may fire on the same entry (the report carries the list). The age
- * filter — pattern.fresh_days — bounds the "recently disclosed" patterns;
- * older entries already had attention.
- *
- * Output (JSON mode):
- *   {
- *     ok: true,
- *     verb: "watchlist",
- *     mode: "alerts",
- *     generated_at: "...",
- *     patterns_evaluated: 5,
- *     entries_scanned: 39,
- *     alerts: [
- *       { cve_id, name, rwep_score, patterns: ["kernel_lpe_class", ...],
- *         disclosed: "...", source_verified: "...", links: [...] }
- *     ]
- *   }
+ * Surfaces CVE catalog entries matching high-priority pattern rules. Every entry
+ * is evaluated against every pattern and several may fire on one entry, so the
+ * report carries the list rather than a single label.
  */
 function runWatchlistAlerts(rawArgs = []) {
   const fs = require('fs');
@@ -1559,9 +1336,8 @@ function runWatchlistAlerts(rawArgs = []) {
     return;
   }
 
-  // Pattern definitions. Each pattern is a predicate against a single
-  // catalog entry plus a label + severity. Patterns are intentionally
-  // narrow — false-positive flood would defeat the alert purpose.
+  // A pattern is a predicate over one entry plus a label and severity. Kept
+  // narrow — a false-positive flood defeats the alert.
   const today = new Date();
   function daysSince(iso) {
     if (typeof iso !== 'string') return Infinity;
@@ -1639,8 +1415,7 @@ function runWatchlistAlerts(rawArgs = []) {
     });
   }
 
-  // Sort: critical-severity matches first, then high, then medium; within
-  // each band, highest RWEP first; finally CVE-id ascending for stability.
+  // Severity band first, then highest RWEP, then CVE id for a stable order.
   const severityWeight = { critical: 0, high: 1, medium: 2, low: 3 };
   alerts.sort((a, b) => {
     const sa = Math.min(...a.patterns.map((p) => severityWeight[p.severity] ?? 9));
@@ -1684,14 +1459,10 @@ function runWatchlistAlerts(rawArgs = []) {
 }
 
 /**
- * Cache-first variant of validateAllCves. For each catalog CVE, reads the
- * NVD + EPSS payload from the prefetch cache (cacheDir/nvd/<id>.json +
- * cacheDir/epss/<id>.json) and the KEV feed from cacheDir/kev/. Builds a
- * ValidationResult matching the shape sources/validators/cve-validator.js
- * produces so downstream consumers don't have to fork their logic.
- *
- * Missing cache entries fall through to the live validator for that CVE,
- * so partial caches still produce a complete report.
+ * Cache-first variant of validateAllCves: builds a ValidationResult matching the
+ * shape sources/validators/cve-validator.js produces, so a downstream consumer
+ * needs no second code path. A missing cache entry falls through to the live
+ * validator, so a partial cache still yields a complete report.
  */
 async function validateAllCvesPreferCache(catalog, cacheDir) {
   const fs = require('fs');
@@ -1699,27 +1470,20 @@ async function validateAllCvesPreferCache(catalog, cacheDir) {
   const crypto = require('crypto');
   const { validateCve } = require('../sources/validators');
 
-  // 50 MB cap on any single cache file. Refuses to read past the cap to
-  // protect against a tampered or malformed prefetch payload that would
-  // OOM the validator on JSON.parse. The cap is well above any legitimate
-  // NVD / EPSS / KEV file (largest in practice is the full KEV feed at
-  // ~3 MB as of 2026); anything beyond 50 MB is almost certainly damage.
+  // Cap on any single cache file: a malformed prefetch payload would otherwise
+  // OOM the validator on JSON.parse. Well above the few-MB full KEV feed.
   const CACHE_FILE_MAX_BYTES = 50 * 1024 * 1024;
 
-  // Load the prefetch cache index once. Every payload written by the prefetch
-  // pipeline records a per-entry sha256 here, so a consume-side recompute
-  // catches a payload rewritten on disk after prefetch. The fingerprint is
-  // computed over JSON.stringify(payload) (unindented) at write time, so the
-  // round-trip parse + re-stringify below produces the comparable hash.
+  // Every prefetch payload records a per-entry sha256, so recomputing on read
+  // catches a rewrite. It is taken over JSON.stringify(payload) unindented,
+  // which is why the re-stringify below matches.
   let cacheIndex = null;
   try {
     cacheIndex = JSON.parse(fs.readFileSync(path.join(cacheDir, '_index.json'), 'utf8'));
   } catch { cacheIndex = null; }
 
-  // Verify a cache payload against its recorded sha256 before it is trusted.
-  // Returns false on any tamper signal: no index, no sha256 entry, or a
-  // mismatch. The caller then refuses the cached value and re-validates the
-  // CVE live, so forged cache contents can no longer mask drift.
+  // False on any tamper signal — no index, no sha256 entry, or a mismatch. The
+  // caller then validates that CVE live, so forged cache cannot mask drift.
   function cacheEntryVerified(source, id, parsed) {
     const meta = cacheIndex && cacheIndex.entries && cacheIndex.entries[`${source}/${id}`];
     if (!meta || typeof meta.sha256 !== 'string') {
@@ -1747,10 +1511,8 @@ async function validateAllCvesPreferCache(catalog, cacheDir) {
         console.error(`[validate-cves] cache file ${p} exceeds ${CACHE_FILE_MAX_BYTES} byte cap (${st.size}); refusing to read.`);
         return null;
       }
-      // readFileSync(fd) loops read() to EOF — a single readSync may return
-      // fewer than st.size bytes on network/FUSE/sync-backed fds, leaving the
-      // tail NUL-filled and truncating the JSON. Reading via the open fd keeps
-      // the open→fstat ordering TOCTOU-free.
+      // readFileSync(fd) loops to EOF — a single readSync can come back short on
+      // a network fd, NUL-filling the tail and truncating the JSON.
       const parsed = JSON.parse(fs.readFileSync(fd, 'utf8'));
       if (!cacheEntryVerified(source, id, parsed)) return null;
       return parsed;
@@ -1803,7 +1565,6 @@ async function validateAllCvesPreferCache(catalog, cacheDir) {
     const epssPayload = readCached('epss', id);
 
     if (!nvdPayload && !kevFeed && !epssPayload) {
-      // No cache for this CVE on any source — fall through to live.
       liveFallbacks++;
       try {
         const r = await validateCve(id, local);
@@ -1930,30 +1691,14 @@ Examples:
 }
 
 /**
- * v0.13.3 — runWatchlistOrgScan: GitHub repo-pattern monitoring per
- * NEW-CTRL-052 (MAL-2026-SHAI-HULUD-OSS zeroday-lessons). The Shai-Hulud
- * worm uses GitHub itself as the exfil channel; the canonical naming
- * pattern is "A Gift From TeamPCP", commit-timestamps falsified to
- * 2099-01-01, and contributor accounts agwagwagwa / headdirt / tmechen.
- *
- * Operators run this against their GitHub org (--org <login> or
- * GITHUB_ORG env var) to surface exfil staging within their tenant.
- * Uses the GitHub Search API (unauthenticated for public-repo search;
- * GITHUB_TOKEN env var lifts the rate limit + enables private-repo
- * coverage). Report-only — never modifies repos.
- *
- * Flags / env:
- *   --org <login>              GitHub org / user to scope the search to (required)
- *   --pattern <s> (repeatable) additional naming-pattern strings (defaults below)
- *   --json                     structured JSON output
- *   GITHUB_TOKEN env var       lifts rate limit + private-repo search coverage
+ * GitHub repo-pattern monitoring per NEW-CTRL-052: the Shai-Hulud worm uses
+ * GitHub itself as the exfil channel, so an operator scans their own org
+ * (--org <login>, or GITHUB_ORG) for the threat-actor naming patterns.
+ * GITHUB_TOKEN lifts the rate limit and adds private-repo coverage.
  */
 async function runWatchlistOrgScan(rawArgs = []) {
   const jsonOut = rawArgs.includes('--json');
-  // v0.13.5: --output-format markdown emits a GitHub-flavored markdown
-  // table suitable for pasting into a PR / issue body for ops follow-up.
-  // Accepted values: json | markdown | human (default). --json is the
-  // legacy short form and remains accepted (treated as --output-format json).
+  // --output-format takes json | markdown | human; --json resolves to json.
   let outputFormat = jsonOut ? 'json' : 'human';
   for (let i = 0; i < rawArgs.length; i++) {
     if (rawArgs[i] === '--output-format' && rawArgs[i + 1]) outputFormat = rawArgs[i + 1];
@@ -1972,7 +1717,6 @@ async function runWatchlistOrgScan(rawArgs = []) {
     safeExit(EXIT_CODES.GENERIC_FAILURE);
     return;
   }
-  // Extract --org <login>. Accept --org=foo too.
   let org = null;
   for (let i = 0; i < rawArgs.length; i++) {
     if (rawArgs[i] === '--org' && rawArgs[i + 1]) { org = rawArgs[i + 1]; break; }
@@ -1989,10 +1733,8 @@ async function runWatchlistOrgScan(rawArgs = []) {
     safeExit(EXIT_CODES.GENERIC_FAILURE);
     return;
   }
-  // Air-gap guard. The org-scan reaches api.github.com on every pattern
-  // query; under air-gap there is no offline substitute, so refuse before
-  // any fetch rather than silently attempting egress. Mirrors the
-  // source-ghsa air-gap refusal shape (ok:false + source + explicit error).
+  // Every pattern query reaches api.github.com with no offline substitute, so
+  // air-gap refuses before any fetch. Same refusal shape as source-ghsa.
   if (process.env.EXCEPTD_AIR_GAP === '1' || rawArgs.includes('--air-gap')) {
     process.stdout.write(JSON.stringify({
       ok: false,
@@ -2004,8 +1746,7 @@ async function runWatchlistOrgScan(rawArgs = []) {
     safeExit(EXIT_CODES.BLOCKED);
     return;
   }
-  // Custom patterns via --pattern <s> (repeatable). Default set from
-  // the MAL-2026-SHAI-HULUD-OSS catalog entry + NEW-CTRL-052 evidence.
+  // --pattern is repeatable; the defaults come from MAL-2026-SHAI-HULUD-OSS.
   const customPatterns = [];
   for (let i = 0; i < rawArgs.length; i++) {
     if (rawArgs[i] === '--pattern' && rawArgs[i + 1]) customPatterns.push(rawArgs[i + 1]);
@@ -2021,9 +1762,7 @@ async function runWatchlistOrgScan(rawArgs = []) {
     ...customPatterns.map((q, i) => ({ id: `custom-${i + 1}`, q, severity: 'medium', source: 'operator --pattern' })),
   ];
 
-  // GitHub Search API: GET /search/code?q=<query>+org:<login>
-  // and GET /search/repositories?q=<query>+org:<login>. Both return
-  // the same shape (items[] with name, html_url, owner, created_at).
+  // Both GitHub search endpoints return items[] with name, html_url, owner, created_at.
   const token = process.env.GITHUB_TOKEN || '';
   const matches = [];
   let rateLimited = false;
@@ -2038,19 +1777,15 @@ async function runWatchlistOrgScan(rawArgs = []) {
     safeExit(EXIT_CODES.GENERIC_FAILURE);
     return;
   }
-  // Patterns whose query exhausted retries on a transient failure. Surfaced
-  // in the envelope so a dropped pattern is observable rather than reading as
-  // a clean zero — the false-negative-on-transient class (a flaky 5xx /
-  // reset / timeout silently yielding "no matches found" for a threat-actor
-  // naming pattern) is exactly what NEW-CTRL-052 exists to defend against.
+  // Patterns whose query exhausted its retries, surfaced in the envelope: a flaky
+  // 5xx silently yielding "no matches" for a threat-actor pattern is the false
+  // negative NEW-CTRL-052 defends against.
   const erroredPatterns = [];
-  // A 5xx / timeout / reset is retried with backoff + jitter (mirrors
-  // lib/source-advisories.js#fetchFeed); a permanent 4xx other than the
-  // rate-limit codes is not. 403/429 short-circuit to the rateLimited flag.
+  // A 5xx, timeout or reset retries with backoff and jitter; a permanent 4xx does
+  // not, and 403/429 short-circuit to the rateLimited flag.
   const retryable = (err) => {
-    // 403/429 are the documented rate-limit signal — surface them at once
-    // (preserving the prior continue-on-rate-limit semantics) rather than
-    // burning the retry budget; the operator re-runs with GITHUB_TOKEN set.
+    // 403/429 are the documented rate-limit signal — surface at once rather than
+    // burn the retry budget; the operator re-runs with GITHUB_TOKEN set.
     if (err && err._rateLimit) return false;
     if (err && typeof err.statusCode === 'number') return err.statusCode >= 500;
     if (err && (err.name === 'AbortError' || err.name === 'TimeoutError')) return true;
@@ -2095,9 +1830,8 @@ async function runWatchlistOrgScan(rawArgs = []) {
         });
       }
     } catch (err) {
-      // 403/429 (incl. after retries) is the documented rate-limit signal.
-      // Any other exhausted-retry failure marks the pattern errored so the
-      // operator can distinguish a dropped query from a clean no-match.
+      // A non-rate-limit failure that exhausted its retries marks the pattern
+      // errored, so a dropped query is distinguishable from a clean no-match.
       if (err && err._rateLimit) {
         rateLimited = true;
       } else {
@@ -2108,8 +1842,7 @@ async function runWatchlistOrgScan(rawArgs = []) {
   const generated_at = new Date().toISOString();
   if (outputFormat === 'json') {
     process.stdout.write(JSON.stringify({
-      // A rate-limited OR errored pattern means the scan is incomplete — a
-      // zero match-count is no longer trustworthy as "clean".
+      // A rate-limited or errored pattern means a zero match-count is not "clean".
       ok: !rateLimited && erroredPatterns.length === 0,
       verb: 'watchlist',
       mode: 'org-scan',
@@ -2126,10 +1859,8 @@ async function runWatchlistOrgScan(rawArgs = []) {
     return;
   }
   if (outputFormat === 'markdown') {
-    // GitHub-flavored markdown table — paste-friendly for PR / issue
-    // bodies and security advisories. Includes the control reference
-    // and the unauthenticated / rate-limit caveats so the operator
-    // who receives the paste knows how to validate the result.
+    // Paste-friendly for a PR, issue or advisory body. Carries the unauthenticated
+    // and rate-limit caveats, so the receiver knows how far to trust the result.
     const lines = [];
     lines.push(`## GitHub Org-Scan: ${org}`);
     lines.push('');
@@ -2182,23 +1913,18 @@ async function runWatchlistOrgScan(rawArgs = []) {
   }
 }
 
-// Only run the CLI when this file is executed directly. Earlier versions
-// invoked main() at import time too, which meant `require('./orchestrator')`
-// would trigger a full CLI dispatch (and printHelp) inside the importing
-// process. Gating on require.main keeps the module safely importable from
-// tests and from `bin/exceptd.js`'s programmatic entrypoints.
+// Gated on require.main so `require('./orchestrator')` does not trigger a CLI
+// dispatch inside the importing process.
 if (require.main === module) {
   main().catch(err => {
-    // Match the structured ok:false stderr contract the rest of the surface
-    // uses so a JSON consumer gets a parseable envelope on the fatal path too.
+    // The same ok:false envelope on the fatal path, so a JSON consumer can parse it.
     console.error(JSON.stringify({ ok: false, verb: cmd, error: String((err && err.message) || err) }));
     process.exitCode = 1;
   });
 }
 
 module.exports = {
-  // Export the main + parseFlags helpers for programmatic embedders /
-  // tests. Verb runners stay internal — call them via the CLI surface.
+  // Verb runners stay internal — reach them through the CLI surface.
   main,
   parseFlags,
 };

@@ -1,10 +1,7 @@
 "use strict";
 /**
- * scripts/audit-perf.js
- *
- * Micro-benchmarks the hot paths a skill / orchestrator / audit
- * actually exercises. Times each operation so we can decide what's
- * worth pre-computing into a seeded index.
+ * scripts/audit-perf.js — micro-benchmarks the hot paths a skill, orchestrator
+ * or audit exercises, to decide what is worth pre-computing into a seeded index.
  *
  * Usage: node scripts/audit-perf.js
  */
@@ -29,13 +26,11 @@ console.log("\n=== exceptd hot-path performance ===\n");
 console.log("Operation                                            Time");
 console.log("-".repeat(70));
 
-// 1. Load manifest
 const manifest = bench("load manifest.json (parse)", () =>
   JSON.parse(fs.readFileSync(ABS("manifest.json"), "utf8"))
 );
 const skills = manifest.skills;
 
-// 2. Load every data catalog
 const catalogs = [
   "cve-catalog.json",
   "atlas-ttps.json",
@@ -54,12 +49,11 @@ const catalogObjs = bench(`load all ${catalogs.length} data catalogs`, () => {
   return out;
 });
 
-// 3. Read every skill body
 bench(`read all ${skills.length} skill.md bodies`, () => {
   for (const s of skills) fs.readFileSync(ABS(s.path), "utf8");
 });
 
-// 4. Parse every skill frontmatter (the linter's expensive op)
+// The linter's expensive operation.
 function parseFm(text) {
   if (!text.startsWith("---")) return null;
   const end = text.indexOf("\n---", 3);
@@ -90,7 +84,7 @@ bench(`parse all ${skills.length} skill frontmatters`, () => {
   for (const s of skills) parseFm(fs.readFileSync(ABS(s.path), "utf8"));
 });
 
-// 5. Trigger lookup (what the dispatcher does)
+// The lookup the dispatcher performs.
 const flatTriggers = [];
 for (const s of skills) for (const t of s.triggers || []) flatTriggers.push([t.toLowerCase(), s.name]);
 bench("trigger string-match against all skills (single query)", () => {
@@ -98,16 +92,14 @@ bench("trigger string-match against all skills (single query)", () => {
   return flatTriggers.filter(([t]) => t.includes(q) || q.includes(t));
 });
 
-// 6. Cross-reference lookup: which skills cite a given CWE?
 bench("xref: which skills cite CWE-79? (linear scan)", () => {
   const refSet = "CWE-79";
   return skills.filter((s) => (s.cwe_refs || []).includes(refSet)).map((s) => s.name);
 });
 
-// 7. Multi-hop chain: CVE → CWE → ATLAS → framework_gaps for one CVE
 const cve = catalogObjs["cve-catalog.json"]["CVE-2026-31431"];
 bench("multi-hop chain: CVE-2026-31431 → CWE → ATLAS → frameworks", () => {
-  // skills that mention CVE → their CWE refs → their ATLAS refs → their framework gaps
+  // CVE → the citing skills' CWE refs → their ATLAS refs → their framework gaps.
   const skillsCiting = skills.filter((s) =>
     (catalogObjs["cve-catalog.json"]["CVE-2026-31431"].evidence_cves || []).length > 0 // dummy filter
   );
@@ -123,7 +115,6 @@ bench("multi-hop chain: CVE-2026-31431 → CWE → ATLAS → frameworks", () => 
   return { cwes: [...cwes], atlases: [...atlases], fws: [...fws] };
 });
 
-// 8. Forward_watch aggregator (read 38 skill files, parse frontmatter, union all forward_watch)
 bench(`watchlist aggregator (full scan, ${skills.length} skills)`, () => {
   const watch = new Set();
   for (const s of skills) {
@@ -133,9 +124,8 @@ bench(`watchlist aggregator (full scan, ${skills.length} skills)`, () => {
   return watch.size;
 });
 
-// 9. Full cross-skill audit
 bench("full cross-skill audit script (subprocess overhead included)", () => {
-  // Simulate: load manifest + all catalogs + all skill files + compute every refset
+  // Simulated: load the manifest, catalogs and skill files, walk every refset.
   for (const s of skills) {
     fs.readFileSync(ABS(s.path), "utf8");
     for (const f of s.cwe_refs || []) { /* lookup */ }
