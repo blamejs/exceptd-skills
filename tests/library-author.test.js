@@ -1132,3 +1132,371 @@ for (const f of FIXTURES) {
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+
+// ---- release-workflow-non-frozen-install, per ecosystem ----
+require("node:test").describe("release-workflow-non-frozen-install", () => {
+/**
+ * The playbook indicator names four ecosystems — `npm install` / `pnpm install`
+ * / `pip install -r` / `bundle install`, "not the --frozen / --locked /
+ * --require-hashes variant". Only npm and cargo were probed, so a Python or
+ * Ruby publisher resolving dependencies at release time read as a clean miss.
+ *
+ * The flag suppressions are also scoped to the command that carries them: a
+ * workflow that pins one install and resolves another must still report the
+ * unpinned one.
+ */
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const libauthor = require('../lib/collectors/library-author.js');
+
+const INDICATOR = 'release-workflow-non-frozen-install';
+
+// Writes a minimal publisher repo: a package manifest plus one release
+// workflow, plus any extra files the case needs (e.g. a requirements file).
+function fixture(releaseSteps, extraFiles = {}) {
+  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'libauthor-install-')));
+  const wf = path.join(dir, '.github', 'workflows');
+  fs.mkdirSync(wf, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'package.json'), '{"name":"x","version":"1.0.0"}');
+  fs.writeFileSync(path.join(wf, 'release.yml'), [
+    'name: release',
+    'on: { push: { tags: ["v*"] } }',
+    'jobs:',
+    '  publish:',
+    '    runs-on: ubuntu-latest',
+    '    steps:',
+    ...releaseSteps,
+    '',
+  ].join('\n'));
+  for (const [rel, body] of Object.entries(extraFiles)) {
+    const full = path.join(dir, rel);
+    fs.mkdirSync(path.dirname(full), { recursive: true });
+    fs.writeFileSync(full, body);
+  }
+  return dir;
+}
+
+function verdictFor(releaseSteps, extraFiles) {
+  const dir = fixture(releaseSteps, extraFiles);
+  try {
+    const res = libauthor.collect({ cwd: dir });
+    const v = res.signal_overrides[INDICATOR];
+    assert.equal(typeof v, 'string', `${INDICATOR} must resolve to a string verdict`);
+    return { verdict: v, overrides: res.signal_overrides, locations: res.evidence_locations[INDICATOR] };
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+const PUBLISH = '      - run: python -m build';
+
+test('pip install -r without --require-hashes is a hit', () => {
+  const { verdict, overrides } = verdictFor([
+    '      - run: pip install -r requirements.txt',
+    PUBLISH,
+  ]);
+  assert.equal(verdict, 'hit', `signal_overrides=${JSON.stringify(overrides)}`);
+});
+
+test('pip install with the requirement file attached to -r is a hit', () => {
+  // pip accepts `-rreq.txt` as readily as `-r req.txt`. A predicate demanding a
+  // separator examines neither the command nor the file it names, so an
+  // unpinned requirement set in this form reads as clean.
+  const { verdict, overrides } = verdictFor([
+    '      - run: pip install -rrequirements.txt',
+    PUBLISH,
+  ]);
+  assert.equal(verdict, 'hit', `signal_overrides=${JSON.stringify(overrides)}`);
+});
+
+test('an attached -r naming a hash-pinned requirements file is a miss', () => {
+  // A guard against the detector over-firing, not proof of the repair: it reads
+  // as a miss whether the attached form is recognised or not. Its pair with the
+  // hit case above is what shows the attached filename reaches the hash lookup
+  // rather than only the detector.
+  const { verdict, overrides } = verdictFor([
+    '      - run: pip install -rrequirements.txt',
+    PUBLISH,
+  ], { 'requirements.txt': 'flask==3.0.0 --hash=sha256:0000000000000000000000000000000000000000000000000000000000000000\n' });
+  assert.equal(verdict, 'miss', `signal_overrides=${JSON.stringify(overrides)}`);
+});
+
+test('a hash-pinned requirements file under a working-directory is a miss', () => {
+  // The command resolves its relative path against the job's working-directory,
+  // not the repository root. Checking only the root finds nothing and reports a
+  // correctly pinned release as unpinned.
+  const { verdict, overrides } = verdictFor([
+    '    defaults: { run: { working-directory: packages/api } }',
+    '      - run: pip install -r requirements.txt',
+    PUBLISH,
+  ], { 'packages/api/requirements.txt': 'flask==3.0.0 --hash=sha256:1111111111111111111111111111111111111111111111111111111111111111\n' });
+  assert.equal(verdict, 'miss', `signal_overrides=${JSON.stringify(overrides)}`);
+});
+
+test('an unpinned requirements file under a working-directory is still a hit', () => {
+  // The working-directory lookup must not become a way to be excused: the file
+  // resolves, and what it holds is what decides.
+  const { verdict, overrides } = verdictFor([
+    '    defaults: { run: { working-directory: packages/api } }',
+    '      - run: pip install -r requirements.txt',
+    PUBLISH,
+  ], { 'packages/api/requirements.txt': 'flask==3.0.0\n' });
+  assert.equal(verdict, 'hit', `signal_overrides=${JSON.stringify(overrides)}`);
+});
+
+test('a pinned copy in one working-directory does not vouch for an unpinned copy in another', () => {
+  // Both candidates resolve, so both are read. Suppressing on the strength of
+  // the hashed one would report an unpinned release as reproducible.
+  const { verdict, overrides } = verdictFor([
+    '      - run: pip install -r requirements.txt',
+    '        working-directory: packages/api',
+    '      - run: pip install -r requirements.txt',
+    '        working-directory: packages/worker',
+    PUBLISH,
+  ], {
+    'packages/api/requirements.txt': 'flask==3.0.0 --hash=sha256:2222222222222222222222222222222222222222222222222222222222222222\n',
+    'packages/worker/requirements.txt': 'celery==5.4.0\n',
+  });
+  assert.equal(verdict, 'hit', `signal_overrides=${JSON.stringify(overrides)}`);
+});
+
+test('pip install --require-hashes -r is a miss', () => {
+  const { verdict, overrides } = verdictFor([
+    '      - run: pip install --require-hashes -r requirements.txt',
+    PUBLISH,
+  ]);
+  assert.equal(verdict, 'miss', `signal_overrides=${JSON.stringify(overrides)}`);
+});
+
+test('a hash-pinned pip install does not vouch for an unpinned one in the same workflow', () => {
+  // The suppression is scoped to the command carrying the flag. Read across the
+  // whole file instead, the second command reads as clean.
+  const { verdict, overrides } = verdictFor([
+    '      - run: pip install --require-hashes -r build-reqs.txt',
+    '      - run: pip install -r requirements.txt',
+    PUBLISH,
+  ]);
+  assert.equal(verdict, 'hit', `signal_overrides=${JSON.stringify(overrides)}`);
+});
+
+test('the evidence points at the unpinned command line, not the top of the file', () => {
+  // Steps start on line 7, so the unpinned second install is line 8. A
+  // whole-file probe has no command to point at and reports line 0.
+  const { verdict, locations } = verdictFor([
+    '      - run: pip install --require-hashes -r build-reqs.txt',
+    '      - run: pip install -r requirements.txt',
+    PUBLISH,
+  ]);
+  assert.equal(verdict, 'hit');
+  assert.equal(Array.isArray(locations), true, 'evidence_locations entry must be an array');
+  assert.equal(locations.length, 1);
+  assert.equal(locations[0].uri, '.github/workflows/release.yml');
+  assert.equal(locations[0].startLine, 8);
+});
+
+test('the same two installs chained on one line are still probed separately', () => {
+  const { verdict, overrides } = verdictFor([
+    '      - run: pip install --require-hashes -r build-reqs.txt && pip install -r requirements.txt',
+    PUBLISH,
+  ]);
+  assert.equal(verdict, 'hit', `signal_overrides=${JSON.stringify(overrides)}`);
+});
+
+test('a backslash-continued pip install is read as one command', () => {
+  // Split across lines, `pip install \` and `-r requirements.txt` each match
+  // nothing on their own and the unpinned install reads as a clean miss.
+  const { verdict, locations, overrides } = verdictFor([
+    '      - run: |',
+    '          pip install \\',
+    '            -r requirements.txt',
+    PUBLISH,
+  ]);
+  assert.equal(verdict, 'hit', `signal_overrides=${JSON.stringify(overrides)}`);
+  // Reported where the command starts, not where its last fragment ends.
+  assert.equal(locations[0].startLine, 8);
+});
+
+test('a backslash-continued pip install keeps its --require-hashes suppression', () => {
+  // Companion pin, not proof of the join: this reads as a miss with or without
+  // line joining. It locks the join against later losing the flag it carries.
+  const { verdict, overrides } = verdictFor([
+    '      - run: |',
+    '          pip install --require-hashes \\',
+    '            -r requirements.txt',
+    PUBLISH,
+  ]);
+  assert.equal(verdict, 'miss', `signal_overrides=${JSON.stringify(overrides)}`);
+});
+
+test('pip install -r against a --generate-hashes requirements file is a miss', () => {
+  // One hashed requirement puts pip in hash-checking mode for the whole file,
+  // so this install is reproducible without the flag being spelled out.
+  const { verdict, overrides } = verdictFor(
+    ['      - run: pip install -r requirements.txt', PUBLISH],
+    {
+      'requirements.txt': [
+        'requests==2.32.3 \\',
+        '    --hash=sha256:55365417734eb18255590a9ff9eb97e9e1da868d4ccd6402399eac5d0c0f0f14',
+        '',
+      ].join('\n'),
+    }
+  );
+  assert.equal(verdict, 'miss', `signal_overrides=${JSON.stringify(overrides)}`);
+});
+
+test('pip install -r against a requirements file with no hashes is a hit', () => {
+  const { verdict, overrides } = verdictFor(
+    ['      - run: pip install -r requirements.txt', PUBLISH],
+    { 'requirements.txt': 'requests==2.32.3\n' }
+  );
+  assert.equal(verdict, 'hit', `signal_overrides=${JSON.stringify(overrides)}`);
+});
+
+test('a hashed requirements file outside the scanned tree cannot suppress the finding', () => {
+  // The `..` target is REAL and hash-pinned. Resolving it would read a file the
+  // scan was never pointed at and turn the finding into a miss, so the reach is
+  // refused and the unresolvable requirement set stays a hit.
+  const outer = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'libauthor-escape-')));
+  try {
+    fs.mkdirSync(path.join(outer, 'elsewhere'), { recursive: true });
+    fs.writeFileSync(path.join(outer, 'elsewhere', 'requirements.txt'), [
+      'requests==2.32.3 \\',
+      '    --hash=sha256:55365417734eb18255590a9ff9eb97e9e1da868d4ccd6402399eac5d0c0f0f14',
+      '',
+    ].join('\n'));
+
+    const repo = path.join(outer, 'repo');
+    const wf = path.join(repo, '.github', 'workflows');
+    fs.mkdirSync(wf, { recursive: true });
+    fs.writeFileSync(path.join(repo, 'package.json'), '{"name":"x","version":"1.0.0"}');
+    fs.writeFileSync(path.join(wf, 'release.yml'), [
+      'name: release',
+      'on: { push: { tags: ["v*"] } }',
+      'jobs:',
+      '  publish:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - run: pip install -r ../elsewhere/requirements.txt',
+      PUBLISH,
+      '',
+    ].join('\n'));
+
+    // Same file reached from INSIDE the tree is a miss, which is what proves
+    // the hit above comes from the containment check and not from the file
+    // being unreadable.
+    fs.copyFileSync(
+      path.join(outer, 'elsewhere', 'requirements.txt'),
+      path.join(repo, 'requirements.txt')
+    );
+
+    const escaped = libauthor.collect({ cwd: repo });
+    assert.equal(typeof escaped.signal_overrides[INDICATOR], 'string');
+    assert.equal(escaped.signal_overrides[INDICATOR], 'hit',
+      `signal_overrides=${JSON.stringify(escaped.signal_overrides)}`);
+
+    fs.writeFileSync(path.join(wf, 'release.yml'),
+      fs.readFileSync(path.join(wf, 'release.yml'), 'utf8')
+        .replace('-r ../elsewhere/requirements.txt', '-r requirements.txt'));
+    const inTree = libauthor.collect({ cwd: repo });
+    assert.equal(inTree.signal_overrides[INDICATOR], 'miss',
+      `the same hashed file inside the tree must suppress; signal_overrides=${JSON.stringify(inTree.signal_overrides)}`);
+  } finally {
+    fs.rmSync(outer, { recursive: true, force: true });
+  }
+});
+
+test('cargo install --locked does not vouch for an unlocked cargo build', () => {
+  const { verdict, overrides } = verdictFor([
+    '      - run: cargo install --locked cargo-audit',
+    '      - run: cargo build --release',
+    PUBLISH,
+  ]);
+  assert.equal(verdict, 'hit', `signal_overrides=${JSON.stringify(overrides)}`);
+});
+
+test('cargo build --locked alone is a miss', () => {
+  const { verdict, overrides } = verdictFor([
+    '      - run: cargo build --release --locked',
+    PUBLISH,
+  ]);
+  assert.equal(verdict, 'miss', `signal_overrides=${JSON.stringify(overrides)}`);
+});
+
+test('pnpm install opting out of the frozen lockfile is a hit', () => {
+  const { verdict, overrides } = verdictFor([
+    '      - run: pnpm install --no-frozen-lockfile',
+    PUBLISH,
+  ]);
+  assert.equal(verdict, 'hit', `signal_overrides=${JSON.stringify(overrides)}`);
+});
+
+test('a bare pnpm install in a GitHub Actions workflow is a miss', () => {
+  // A pin on a deliberate no-fire, not proof of a repair — pnpm defaults to
+  // --frozen-lockfile whenever CI is set, and Actions always sets it, so only
+  // the explicit opt-out above resolves dependencies at release time. This
+  // reads as a miss with or without the pnpm probe; it locks the probe against
+  // widening to bare `pnpm install` and reporting every Actions workflow.
+  const { verdict, overrides } = verdictFor([
+    '      - run: pnpm install',
+    PUBLISH,
+  ]);
+  assert.equal(verdict, 'miss', `signal_overrides=${JSON.stringify(overrides)}`);
+});
+
+test('bundle install without --deployment / --frozen is a hit', () => {
+  const { verdict, overrides } = verdictFor([
+    '      - run: bundle install',
+    PUBLISH,
+  ]);
+  assert.equal(verdict, 'hit', `signal_overrides=${JSON.stringify(overrides)}`);
+});
+
+test('bundle install --deployment is a miss', () => {
+  const { verdict, overrides } = verdictFor([
+    '      - run: bundle install --deployment',
+    PUBLISH,
+  ]);
+  assert.equal(verdict, 'miss', `signal_overrides=${JSON.stringify(overrides)}`);
+});
+
+test('a bundle config frozen set earlier in the job suppresses a later bundle install', () => {
+  // Bundler frozen mode is job-scoped state rather than a per-command flag, so
+  // this one suppressor legitimately reads across the file.
+  const { verdict, overrides } = verdictFor([
+    '      - run: bundle config set --local frozen true',
+    '      - run: bundle install',
+    PUBLISH,
+  ]);
+  assert.equal(verdict, 'miss', `signal_overrides=${JSON.stringify(overrides)}`);
+});
+
+test('bundle config set frozen false does not suppress a later bundle install', () => {
+  // The setting has to be turned ON. Matching the key alone reads an explicit
+  // opt-out as the protection it opts out of — the strongest possible signal
+  // that the install is not frozen, silencing the finding.
+  const { verdict, overrides } = verdictFor([
+    '      - run: bundle config set --local frozen false',
+    '      - run: bundle install',
+    PUBLISH,
+  ]);
+  assert.equal(verdict, 'hit', `signal_overrides=${JSON.stringify(overrides)}`);
+});
+
+test('a commented-out unpinned install does not flip the indicator', () => {
+  // False-positive guard on the probes added above: they read the
+  // comment-stripped view, so a `#` line naming an unpinned install is not a
+  // command. Nothing here fires without those probes, so it pins the new
+  // surface rather than proving a repair.
+  const { verdict, overrides } = verdictFor([
+    '      # - run: pip install -r requirements.txt',
+    '      # - run: bundle install',
+    '      - run: pip install --require-hashes -r requirements.txt',
+    PUBLISH,
+  ]);
+  assert.equal(verdict, 'miss', `signal_overrides=${JSON.stringify(overrides)}`);
+});
+});

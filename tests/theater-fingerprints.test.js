@@ -127,6 +127,39 @@ test("synthetic skill: pattern extractor stops at the next pattern/H2 and pullFi
   }
 });
 
+test("_meta.source states the built pattern count, never a hardcoded one", () => {
+  // The live build must agree with itself...
+  const live = buildTheaterFingerprints({ root: ROOT });
+  assert.equal(live._meta.pattern_count, 7);
+  assert.equal(live._meta.source, "skills/compliance-theater/skill.md (7 documented patterns)");
+
+  // ...and a pattern set of a different size must move BOTH fields. A count
+  // written into the prose by hand would still read 7 here.
+  const twoPatterns = {
+    1: {
+      pattern_name: "Patch Management Theater",
+      primary_attack_class: "patch-cycle vs. KEV-listed instant-root exploits",
+      controls: [{ framework: "NIST 800-53", control_id: "SI-2", note: "n" }],
+      evidence: { cve: "CVE-2026-31431", rationale: "r" },
+      ttps: ["T1068"],
+      fast_test: "THEATER FLAG",
+    },
+    2: {
+      pattern_name: "Network Segmentation Theater (IPsec)",
+      primary_attack_class: "IPsec subsystem as both control and attack surface",
+      controls: [{ framework: "NIST 800-53", control_id: "SC-8", note: "n" }],
+      evidence: { cve: "CVE-2026-43284", rationale: "r" },
+      ttps: ["T1190"],
+      fast_test: "THEATER FLAG",
+    },
+  };
+  const out = buildTheaterFingerprints({ root: ROOT, patternMap: twoPatterns });
+  assert.equal(out._meta.pattern_count, 2);
+  assert.equal(typeof out._meta.source, "string");
+  assert.equal(out._meta.source, "skills/compliance-theater/skill.md (2 documented patterns)");
+  assert.equal(Object.keys(out.patterns).length, 2);
+});
+
 test("an absent pattern heading yields null prose fields (no throw)", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "exceptd-theater-empty-"));
   try {

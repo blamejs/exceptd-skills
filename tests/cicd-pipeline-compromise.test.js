@@ -1,5 +1,84 @@
 "use strict";
 
+/**
+ * A workflow the collector could not read is a visibility gap, not a clean
+ * miss: every indicator that file would have flipped reports "miss", so the
+ * skip has to reach collector_errors for the operator to see it.
+ */
+require("node:test").describe("cicd-pipeline-compromise-unreadable-input", () => {
+  const test = require('node:test');
+  const assert = require('node:assert/strict');
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const cicd = require('../lib/collectors/cicd-pipeline-compromise.js');
+
+  test('cicd-pipeline-compromise: an oversized workflow YAML is recorded in collector_errors, not silently skipped', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cicd-oversize-'));
+    try {
+      fs.mkdirSync(path.join(dir, '.git'), { recursive: true });
+      const wf = path.join(dir, '.github', 'workflows');
+      fs.mkdirSync(wf, { recursive: true });
+      // Real indicator content (a floating third-party ref), padded past the
+      // 512 KB read cap so the file is skipped before it can be scanned.
+      const body = [
+        'name: big',
+        'on: [pull_request_target]',
+        'jobs:',
+        '  b:',
+        '    steps:',
+        '      - uses: third-party/action@v1',
+      ].join('\n');
+      fs.writeFileSync(path.join(wf, 'big.yml'), body + '\n#' + 'x'.repeat(600 * 1024));
+
+      const res = cicd.collect({ cwd: dir });
+      assert.ok(Array.isArray(res.collector_errors), 'collector_errors must be an array');
+      assert.equal(res.collector_errors.length, 1,
+        `exactly one skip expected; got ${JSON.stringify(res.collector_errors)}`);
+      const err = res.collector_errors[0];
+      assert.equal(err.artifact_id, 'workflow-yaml-inventory');
+      assert.equal(err.kind, 'file_too_large_skipped');
+      assert.equal(typeof err.reason, 'string');
+      assert.match(err.reason, /^\.github\/workflows\/big\.yml: \d+ bytes exceeds the \d+-byte scan limit/);
+      // This fixture holds a real floating third-party ref that was never read,
+      // so `miss` would be a clean verdict on the one file carrying the finding.
+      // collector_errors alone cannot carry that: they are advisory and change
+      // no verdict, so the gap has to reach the signal.
+      assert.equal(res.signal_overrides['actions-floating-tag-pin'], 'inconclusive');
+      assert.equal(res.signal_overrides['workflow-injection-sink'], 'inconclusive');
+      // The inventory is not captured, and the readability precondition cannot
+      // attest a file the collector failed to open.
+      assert.equal(res.artifacts['workflow-yaml-inventory'].captured, false);
+      assert.equal(typeof res.artifacts['workflow-yaml-inventory'].reason, 'string');
+      assert.equal(res.precondition_checks['ci-config-readable'], false);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('cicd-pipeline-compromise: a readable workflow set produces no collector_errors', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cicd-readable-'));
+    try {
+      fs.mkdirSync(path.join(dir, '.git'), { recursive: true });
+      const wf = path.join(dir, '.github', 'workflows');
+      fs.mkdirSync(wf, { recursive: true });
+      fs.writeFileSync(path.join(wf, 'ci.yml'), [
+        'name: ci',
+        'on: [pull_request]',
+        'jobs:',
+        '  b:',
+        '    steps:',
+        '      - uses: third-party/action@v1',
+      ].join('\n'));
+      const res = cicd.collect({ cwd: dir });
+      assert.deepEqual(res.collector_errors, []);
+      assert.equal(res.signal_overrides['actions-floating-tag-pin'], 'hit');
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
 
 // ---- routed from collectors-fp-fixes ----
 require("node:test").describe("collectors-fp-fixes", () => {

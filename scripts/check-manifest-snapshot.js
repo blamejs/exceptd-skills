@@ -37,12 +37,47 @@ function captureSurface(manifest) {
   };
 }
 
+// Absent and corrupt are different states and must not collapse into one.
+//
+// ABSENT (key not in the object) is the stale baseline this gate exists to
+// report on: a snapshot committed before a surface field existed carries no key
+// for it, and an absent field is an empty surface, not a crash. Reading it
+// unguarded threw a TypeError that the CLI's outer catch turned into exit 2 with
+// a stack trace instead of an additive-change report.
+//
+// PRESENT-BUT-NOT-AN-ARRAY (a string, an object, null) is corruption. Coercing
+// it to [] would report every live entry as additive and exit 0 — a gate that
+// passes without checking anything. It raises instead, and the outer catch turns
+// that into exit 2 naming the skill and the field.
+function asArray(value, skillName, field) {
+  if (value === undefined) return [];
+  if (Array.isArray(value)) return value;
+  throw new Error(
+    `${skillName}: ${field} is ${value === null ? "null" : typeof value}, not an array. ` +
+    "The baseline or manifest is corrupt, not merely stale — regenerate the baseline " +
+    "with `node scripts/refresh-manifest-snapshot.js` and re-check the manifest."
+  );
+}
+
+// captureSurface() always writes `skills`, so unlike the per-field case above
+// there is no legitimate historical baseline without it: absent and non-array
+// are both corruption here, and treating either as [] would report every skill
+// as added and exit 0.
+function skillList(surface, which) {
+  const skills = surface && surface.skills;
+  if (Array.isArray(skills)) return skills;
+  throw new Error(
+    `${which}.skills is ${skills === null ? "null" : typeof skills}, not an array. ` +
+    "Regenerate the baseline with `node scripts/refresh-manifest-snapshot.js`."
+  );
+}
+
 function diff(baseline, current) {
   const breaking = [];
   const additive = [];
 
-  const bSkills = new Map(baseline.skills.map(s => [s.name, s]));
-  const cSkills = new Map(current.skills.map(s => [s.name, s]));
+  const bSkills = new Map(skillList(baseline, "baseline").map(s => [s.name, s]));
+  const cSkills = new Map(skillList(current, "current").map(s => [s.name, s]));
 
   for (const name of bSkills.keys()) {
     if (!cSkills.has(name)) {
@@ -70,32 +105,38 @@ function diff(baseline, current) {
     }
 
     // Removed trigger keywords break downstream skill matchers.
-    const removedTriggers = b.triggers.filter(t => !c.triggers.includes(t));
+    const bTriggers = asArray(b.triggers, name, "baseline triggers");
+    const cTriggers = asArray(c.triggers, name, "triggers");
+    const removedTriggers = bTriggers.filter(t => !cTriggers.includes(t));
     if (removedTriggers.length > 0) {
       breaking.push(`${name}: removed trigger keywords: ${removedTriggers.join(", ")}`);
     }
-    const addedTriggers = c.triggers.filter(t => !b.triggers.includes(t));
+    const addedTriggers = cTriggers.filter(t => !bTriggers.includes(t));
     if (addedTriggers.length > 0) {
       additive.push(`${name}: added trigger keywords: ${addedTriggers.join(", ")}`);
     }
 
     // Removed data deps break the skill at load time.
-    const removedDeps = b.data_deps.filter(d => !c.data_deps.includes(d));
+    const bDeps = asArray(b.data_deps, name, "baseline data_deps");
+    const cDeps = asArray(c.data_deps, name, "data_deps");
+    const removedDeps = bDeps.filter(d => !cDeps.includes(d));
     if (removedDeps.length > 0) {
       breaking.push(`${name}: removed data deps: ${removedDeps.join(", ")}`);
     }
-    const addedDeps = c.data_deps.filter(d => !b.data_deps.includes(d));
+    const addedDeps = cDeps.filter(d => !bDeps.includes(d));
     if (addedDeps.length > 0) {
       additive.push(`${name}: added data deps: ${addedDeps.join(", ")}`);
     }
 
     // Narrowing the cited surface is deliberate (AGENTS.md #4, #12), so removal is breaking.
     for (const field of ["atlas_refs", "attack_refs", "framework_gaps", "rfc_refs", "cwe_refs", "d3fend_refs", "dlp_refs"]) {
-      const removed = b[field].filter(r => !c[field].includes(r));
+      const bRefs = asArray(b[field], name, `baseline ${field}`);
+      const cRefs = asArray(c[field], name, field);
+      const removed = bRefs.filter(r => !cRefs.includes(r));
       if (removed.length > 0) {
         breaking.push(`${name}: removed ${field}: ${removed.join(", ")}`);
       }
-      const added = c[field].filter(r => !b[field].includes(r));
+      const added = cRefs.filter(r => !bRefs.includes(r));
       if (added.length > 0) {
         additive.push(`${name}: added ${field}: ${added.join(", ")}`);
       }

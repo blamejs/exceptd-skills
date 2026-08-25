@@ -914,3 +914,53 @@ require("node:test").describe("malformed controls never reach the renderer", () 
     assert.equal(r.summary.new_control_requirements, 1);
   });
 });
+
+// ---------- gapReport()'s fourth parameter is positional, not input ----------
+
+/**
+ * CHARACTERIZATION PINS — these lock behaviour that already holds. Nothing in
+ * lib/framework-gap.js was repaired; the only change there was the docblock
+ * that records what the fourth parameter is for. Both tests pass against the
+ * unmodified function, so neither is regression coverage for a defect.
+ *
+ * What they lock: gapReport(frameworkIds, threatScenario, controlGaps,
+ * cveCatalog, opts) never reads cveCatalog — the scenario resolves against
+ * controlGaps alone, matching `misses`, `real_requirement` and `evidence_cves`.
+ * The parameter is load-bearing anyway: it holds the fourth slot so `opts`
+ * stays fifth for every caller, and it mirrors theaterCheck(), which DOES read
+ * its catalog.
+ *
+ * Pinned in both directions so the parameter is neither quietly dropped (which
+ * would bind each caller's `opts` to it and disable allFrameworks/lessons) nor
+ * quietly turned into a real input without the callers being updated.
+ */
+
+test('gapReport() ignores the cveCatalog argument entirely — the report is identical for {} and the real catalog', () => {
+  const withCatalog = gapReport(['NIST SP 800-53 Rev 5'], 'CVE-2026-31431', controlGaps, cveCatalog);
+  const withoutCatalog = gapReport(['NIST SP 800-53 Rev 5'], 'CVE-2026-31431', controlGaps, {});
+  assert.deepEqual(
+    withoutCatalog,
+    withCatalog,
+    'an empty cveCatalog must produce the same report — the parameter is a positional placeholder',
+  );
+  // Anti-coincidence: the scenario really does resolve to gaps, so the deepEqual
+  // above is not two identical empty reports.
+  assert.ok(
+    withCatalog.frameworks['NIST SP 800-53 Rev 5'].gap_count > 0,
+    'the fixture scenario must match at least one gap for the comparison to mean anything',
+  );
+});
+
+test('gapReport() keeps opts in the fifth position, so allFrameworks still reaches it', () => {
+  // If cveCatalog were dropped from the signature, this opts object would bind
+  // to the fourth parameter and allFrameworks would silently stop applying.
+  assert.equal(gapReport.length, 3, 'three required params; cveCatalog and opts are defaulted');
+  const scoped = gapReport(['NIST SP 800-53 Rev 5'], 'prompt injection', controlGaps, cveCatalog, { allFrameworks: false });
+  const all = gapReport(['all'], 'prompt injection', controlGaps, cveCatalog, { allFrameworks: true });
+  assert.equal(typeof scoped.summary.total_gaps, 'number');
+  assert.equal(typeof all.summary.total_gaps, 'number');
+  assert.ok(
+    all.summary.total_gaps > scoped.summary.total_gaps,
+    `allFrameworks must widen the scope; got all=${all.summary.total_gaps} scoped=${scoped.summary.total_gaps} — equal counts would mean opts never arrived`,
+  );
+});

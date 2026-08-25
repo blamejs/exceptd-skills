@@ -14,15 +14,6 @@ const path = require("path");
 const ROOT = path.join(__dirname, "..");
 const TODAY = new Date().toISOString().slice(0, 10);
 
-// Required-context field names come from the audit-catalog-gaps SPEC, never a
-// second hardcoded list that would drift from it.
-const AUDIT_SPEC = require("./audit-catalog-gaps.js").SPEC;
-function specRequiredFields(catalogKey) {
-  const spec = AUDIT_SPEC[catalogKey];
-  if (!spec || !Array.isArray(spec.required_context)) return [];
-  return spec.required_context.map((r) => r.field);
-}
-
 const MAX_REDIRECTS = 5;
 
 // Rejects on anything but a 2xx, so an error body can never reach a consumer as
@@ -186,7 +177,7 @@ function parseRfcEntry(blk) {
   };
 }
 
-async function refreshRfc({ dry = false, _deps = {} } = {}) {
+async function refreshRfc({ dry = false, cap = Infinity, _deps = {} } = {}) {
   const _fetchUrl = _deps.fetchUrl || fetchUrl;
   const _loadCatalog = _deps.loadCatalog || loadCatalog;
   const _writeCatalog = _deps.writeCatalog || writeCatalog;
@@ -254,6 +245,9 @@ async function refreshRfc({ dry = false, _deps = {} } = {}) {
     // Existing rows handled in the first-pass backfill above.
     if (existing.has(id)) continue;
     if (e.status === "UNKNOWN") continue;
+    // The cap bounds new adds only; the backfill pass above is unbounded, so a
+    // capped run still completes context on every row already curated.
+    if (added >= cap) continue;
     const obsoleted = !!e.obsoleted || e.status === "HISTORIC";
     cat[id] = {
       number: e.num,
@@ -479,6 +473,7 @@ async function refreshIcsAttack({ dry = false, cap = Infinity, _deps = {} } = {}
   const local = _loadCatalog("attack-techniques.json");
   const existing = new Set(Object.keys(local).filter((k) => k !== "_meta"));
   let added = 0, backfilled = 0;
+  const skippedNoIcsTactic = [];
   for (const t of techs) {
     const extRef = (t.external_references || []).find((r) => r.source_name === "mitre-ics-attack" || r.source_name === "mitre-attack");
     if (!extRef || !extRef.external_id) continue;
@@ -486,6 +481,17 @@ async function refreshIcsAttack({ dry = false, cap = Infinity, _deps = {} } = {}
     const tactics = (t.kill_chain_phases || [])
       .filter((p) => (p.kill_chain_name || "").includes("ics"))
       .map((p) => ICS_TACTIC_NAME[p.phase_name] || `${p.phase_name} (ICS)`);
+    // The external-reference match above accepts a cross-listed enterprise
+    // reference, while the tactic map keeps ICS kill-chain phases only. An
+    // object matched by the first and not the second would land with
+    // `tactic: []`, which audit-catalog-gaps counts as a missing-context gap
+    // the moment it is written — the import spending gap budget on itself.
+    // Enterprise-only techniques belong to refreshAttack, so skip them here,
+    // and report the count so the omission is observable rather than silent.
+    if (tactics.length === 0) {
+      skippedNoIcsTactic.push(id);
+      continue;
+    }
     const fullDesc = String(t.description || "").replace(/\s+/g, " ").trim();
     let shortDesc = fullDesc.split(/\.\s/)[0];
     if (shortDesc.length > 500) shortDesc = shortDesc.slice(0, 497) + "...";
@@ -514,7 +520,10 @@ async function refreshIcsAttack({ dry = false, cap = Infinity, _deps = {} } = {}
     existing.add(id);
     added++;
   }
-  if (dry) { console.log(`[refresh-upstream:ics-attack] DRY-RUN: +${added} new, ${backfilled} backfills`); return { added, backfilled }; }
+  if (skippedNoIcsTactic.length) {
+    console.log(`[refresh-upstream:ics-attack] skipped ${skippedNoIcsTactic.length} technique(s) with no ICS kill-chain phase (enterprise-only, handled by the ATT&CK refresher): ${skippedNoIcsTactic.slice(0, 10).join(", ")}${skippedNoIcsTactic.length > 10 ? ", ..." : ""}`);
+  }
+  if (dry) { console.log(`[refresh-upstream:ics-attack] DRY-RUN: +${added} new, ${backfilled} backfills`); return { added, backfilled, skipped_no_ics_tactic: skippedNoIcsTactic.length }; }
   const changed = added > 0 || backfilled > 0;
   if (changed) {
     if (local._meta) { local._meta.last_updated = TODAY; local._meta.last_threat_review = TODAY; }
@@ -523,7 +532,7 @@ async function refreshIcsAttack({ dry = false, cap = Infinity, _deps = {} } = {}
   } else {
     console.log("[ok] attack-techniques.json: no upstream ICS changes — file unchanged");
   }
-  return { added, backfilled };
+  return { added, backfilled, skipped_no_ics_tactic: skippedNoIcsTactic.length };
 }
 
 const ATLAS_SRC = "https://raw.githubusercontent.com/mitre-atlas/atlas-navigator-data/main/dist/stix-atlas.json";
@@ -595,7 +604,7 @@ function backfillAtlas(cur, fresh) {
   return touched;
 }
 
-async function refreshAtlas({ dry = false, _deps = {} } = {}) {
+async function refreshAtlas({ dry = false, cap = Infinity, _deps = {} } = {}) {
   const _fetchUrl = _deps.fetchUrl || fetchUrl;
   const _loadCatalog = _deps.loadCatalog || loadCatalog;
   const _writeCatalog = _deps.writeCatalog || writeCatalog;
@@ -637,6 +646,9 @@ async function refreshAtlas({ dry = false, _deps = {} } = {}) {
       if (backfillAtlas(cur, fresh)) { cur.last_verified = TODAY; backfilled++; }
       continue;
     }
+    // Bounds new adds only, matching every other refresher; backfill above runs
+    // on the full upstream set regardless of the cap.
+    if (added >= cap) continue;
     local[id] = atlasEntryFromStix(t, ext);
     existing.add(id);
     added++;

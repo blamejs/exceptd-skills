@@ -10,10 +10,13 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const path = require("node:path");
+const fs = require("node:fs");
+const os = require("node:os");
+const crypto = require("node:crypto");
+const { spawnSync } = require("node:child_process");
 
-const { captureSurface, diff } = require(
-  path.join(__dirname, "..", "scripts", "check-manifest-snapshot.js")
-);
+const GATE_SCRIPT = path.join(__dirname, "..", "scripts", "check-manifest-snapshot.js");
+const { captureSurface, diff } = require(GATE_SCRIPT);
 
 function skill(overrides = {}) {
   return {
@@ -183,6 +186,183 @@ test("diff: removed ATLAS/ATT&CK/framework refs are breaking", () => {
       /removed framework_gaps: ISO-27001-2022-A\.8\.1/.test(b)
     )
   );
+});
+
+// A baseline committed before a surface field existed carries no key for it.
+// captureSurface() always writes all seven ref arrays, so only the stale
+// baseline hits this — which is precisely the case the gate exists to report.
+// Reading b[field] unguarded threw a TypeError, and the CLI's outer catch turned
+// it into exit 2 with a stack trace instead of an additive-change report.
+function staleBaselineSkill() {
+  return {
+    name: "test-skill",
+    version: "1.0.0",
+    triggers: ["trigger-a", "trigger-b"],
+    data_deps: ["cve-catalog.json"],
+    atlas_refs: ["AML.T0001"],
+    attack_refs: ["T1000"],
+    framework_gaps: ["NIST-800-53-AC-1"],
+    rfc_refs: [],
+    cwe_refs: [],
+    d3fend_refs: [],
+    // dlp_refs deliberately absent — the field postdates this baseline.
+  };
+}
+
+test("diff: a baseline predating a ref field reports it as additive, never throws", () => {
+  const baseline = { atlas_version: "5.1.0", skill_count: 1, skills: [staleBaselineSkill()] };
+  const current = captureSurface(
+    manifest([skill({ dlp_refs: ["DLP-EXFIL-001", "DLP-EXFIL-002"] })])
+  );
+
+  const result = diff(baseline, current);
+
+  assert.equal(Array.isArray(result.breaking), true);
+  assert.equal(result.breaking.length, 0, "a field the baseline never had is not a removal");
+  assert.equal(result.additive.length, 1);
+  assert.equal(
+    result.additive[0],
+    "test-skill: added dlp_refs: DLP-EXFIL-001, DLP-EXFIL-002"
+  );
+});
+
+test("diff: a baseline missing triggers/data_deps reports both as additive, never throws", () => {
+  const bare = { name: "test-skill", version: "1.0.0" };
+  const baseline = { atlas_version: "5.1.0", skill_count: 1, skills: [bare] };
+  const current = captureSurface(manifest([skill()]));
+
+  const result = diff(baseline, current);
+
+  assert.equal(result.breaking.length, 0);
+  assert.equal(
+    result.additive.includes("test-skill: added trigger keywords: trigger-a, trigger-b"),
+    true
+  );
+  assert.equal(
+    result.additive.includes("test-skill: added data deps: cve-catalog.json"),
+    true
+  );
+});
+
+// The other half of the absent-field guard: absent is stale (report additive),
+// but PRESENT-BUT-NOT-AN-ARRAY is corrupt and must not be coerced to []. Coercion
+// reports every live entry as additive and exits 0 — a gate that passes without
+// checking anything. Each case asserts the raised message names the skill and the
+// field, so an operator gets a diagnosis rather than a bare TypeError stack.
+
+test("diff: a ref field present as a string is corrupt, not stale — it raises", () => {
+  const baseline = {
+    atlas_version: "5.1.0",
+    skill_count: 1,
+    skills: [{ ...staleBaselineSkill(), dlp_refs: "DLP-EXFIL-001" }],
+  };
+  const current = captureSurface(manifest([skill({ dlp_refs: ["DLP-EXFIL-001"] })]));
+
+  assert.throws(
+    () => diff(baseline, current),
+    (e) => {
+      assert.equal(e instanceof Error, true);
+      assert.equal(typeof e.message, "string");
+      assert.match(e.message, /test-skill: baseline dlp_refs is string, not an array/);
+      assert.match(e.message, /refresh-manifest-snapshot\.js/);
+      return true;
+    },
+    "a corrupt baseline ref field must raise, never be reported as an additive change"
+  );
+});
+
+test("diff: a null triggers field is corrupt, not an absent field — it raises", () => {
+  const baseline = {
+    atlas_version: "5.1.0",
+    skill_count: 1,
+    skills: [{ ...staleBaselineSkill(), triggers: null }],
+  };
+  const current = captureSurface(manifest([skill()]));
+
+  assert.throws(
+    () => diff(baseline, current),
+    (e) => {
+      assert.match(e.message, /test-skill: baseline triggers is null, not an array/);
+      return true;
+    }
+  );
+});
+
+test("diff: a corrupt data_deps on the CURRENT side raises too, naming the field", () => {
+  const baseline = { atlas_version: "5.1.0", skill_count: 1, skills: [staleBaselineSkill()] };
+  // captureSurface() normalizes, so reach past it to model a manifest read that
+  // was hand-edited into a non-array shape.
+  const current = captureSurface(manifest([skill()]));
+  current.skills[0].data_deps = { "cve-catalog.json": true };
+
+  assert.throws(
+    () => diff(baseline, current),
+    (e) => {
+      assert.match(e.message, /test-skill: data_deps is object, not an array/);
+      return true;
+    }
+  );
+});
+
+test("diff: a baseline with no skills key raises instead of reporting every skill as added", () => {
+  // captureSurface() always writes `skills`, so an absent one is corruption, not
+  // a stale baseline. Coercing to [] would emit "added skill: …" for the whole
+  // catalog and exit 0.
+  const baseline = { atlas_version: "5.1.0", skill_count: 0 };
+  const current = captureSurface(manifest([skill()]));
+
+  assert.throws(
+    () => diff(baseline, current),
+    (e) => {
+      assert.match(e.message, /baseline\.skills is undefined, not an array/);
+      return true;
+    }
+  );
+});
+
+// The operator path: a corrupt baseline must reach the CLI as exit 2 with a
+// named diagnosis, not as a green "additive changes only" run. The sidecar is
+// written over the corrupt bytes so checkSnapshotIntegrity passes and the
+// corruption is what the run actually turns on.
+test("CLI: a corrupt baseline ref field exits 2 naming the skill and field, never 0", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "snap-corrupt-"));
+  try {
+    fs.mkdirSync(path.join(tmp, "scripts"), { recursive: true });
+    fs.copyFileSync(GATE_SCRIPT, path.join(tmp, "scripts", "check-manifest-snapshot.js"));
+
+    const realManifest = JSON.parse(
+      fs.readFileSync(path.join(__dirname, "..", "manifest.json"), "utf8")
+    );
+    fs.writeFileSync(path.join(tmp, "manifest.json"), JSON.stringify(realManifest, null, 2));
+
+    const baseline = captureSurface(realManifest);
+    const victim = baseline.skills[0].name;
+    baseline.skills[0].dlp_refs = "DLP-EXFIL-001"; // string where an array belongs
+
+    const snapBytes = Buffer.from(JSON.stringify(baseline, null, 2), "utf8");
+    fs.writeFileSync(path.join(tmp, "manifest-snapshot.json"), snapBytes);
+    const sha = crypto.createHash("sha256").update(snapBytes).digest("hex");
+    fs.writeFileSync(
+      path.join(tmp, "manifest-snapshot.sha256"),
+      sha + "  manifest-snapshot.json\n"
+    );
+
+    const r = spawnSync(
+      process.execPath,
+      [path.join(tmp, "scripts", "check-manifest-snapshot.js")],
+      { encoding: "utf8" }
+    );
+    assert.equal(
+      r.status, 2,
+      `a corrupt baseline is a script-level error (exit 2), never a pass (0) or drift (1); ` +
+      `got ${r.status}\nstdout=${r.stdout}\nstderr=${r.stderr}`
+    );
+    assert.match(r.stderr, new RegExp(`${victim}: baseline dlp_refs is string, not an array`));
+    assert.doesNotMatch(r.stdout, /surface unchanged/);
+    assert.doesNotMatch(r.stdout, /additive change/);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 });
 
 

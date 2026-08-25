@@ -1023,3 +1023,147 @@ test('A: validate-playbooks no longer emits any "unexpected property fed_by" war
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+
+// ---------------------------------------------------------------------------
+// attack_ref checks cannot be silently disabled
+// ---------------------------------------------------------------------------
+
+/**
+ * loadContext() loads data/attack-techniques.json through the REQUIRED reader,
+ * which throws on a missing or unparseable file. The context nonetheless built
+ * `attackKeys` through an `attack ? … : null` ternary, and all three attack_ref
+ * call sites guarded on `ctx.attackKeys &&` — the shape that skips Hard Rule #4
+ * validation without a single line of output. A dead `readJsonIfExists` helper
+ * sat beside the required reader as the ready-made way back to it.
+ */
+
+test("loadContext() yields a populated attackKeys Set — the attack_ref checks cannot degrade to a silent skip", () => {
+  const ctx = loadContext();
+  assert.ok(ctx.attackKeys instanceof Set, "attackKeys must be a Set, never null");
+  assert.ok(ctx.attackKeys.size > 0, "attackKeys must be populated from data/attack-techniques.json");
+});
+
+test("validate-playbooks carries no optional-read helper and no nullable attackKeys guard", () => {
+  const src = fs.readFileSync(VALIDATOR, "utf8");
+  assert.equal(
+    src.includes("readJsonIfExists"),
+    false,
+    "the optional-read helper is the mechanism by which a required catalog load becomes a silent skip",
+  );
+  assert.equal(
+    /ctx\.attackKeys\s*&&/.test(src),
+    false,
+    "a `ctx.attackKeys &&` guard lets an unresolved attack_ref check pass by skipping it",
+  );
+});
+
+test("an unresolved domain.attack_refs entry still warns (the check is live, not skipped)", () => {
+  const ctx = loadContext();
+  const playbooks = loadPlaybooks();
+  const base = playbooks.find((p) => p.data && p.data.domain);
+  assert.ok(base, "a shipped playbook with a domain block is needed as the fixture base");
+
+  const playbookIds = new Set(playbooks.filter((p) => p.data).map((p) => p.data._meta.id));
+  const pb = JSON.parse(JSON.stringify(base.data));
+  pb.domain.attack_refs = ["T9999.999"];
+  const findings = checkCrossRefs(pb, ctx, playbookIds);
+  const hit = findings.find(
+    (f) => f.severity === "warning" && /domain\.attack_refs: unresolved "T9999\.999"/.test(f.message),
+  );
+  assert.ok(
+    hit,
+    `expected an unresolved-attack_ref warning; got ${JSON.stringify(findings.map((f) => f.message).slice(0, 6))}`,
+  );
+});
+
+// ---------------------------------------------------------------------------
+// obligation_ref resolution matches the runner's merge, not a union
+// ---------------------------------------------------------------------------
+
+/**
+ * A directive's phase_overrides reach the runner through deepMerge, whose array
+ * rule is REPLACE: `if (typeof b !== 'object' || Array.isArray(b)) return b`.
+ * An override that supplies its own govern.jurisdiction_obligations therefore
+ * replaces the base list outright, and the effective set the runner resolves
+ * close.notification_actions[].obligation_ref against is the override's alone.
+ * Resolving against the UNION of base and override would pass a directive whose
+ * obligation_ref the runner cannot resolve at run time.
+ *
+ * Pinned against the runner's own merge so a change to either side surfaces
+ * here rather than as an unresolvable ref in a live run.
+ */
+
+test("deepMerge replaces an override array rather than unioning it (the premise the obligation_ref check rests on)", () => {
+  const { _deepMerge } = require(path.join(ROOT, "lib", "playbook-runner.js"));
+  const merged = _deepMerge(
+    { jurisdiction_obligations: [{ jurisdiction: "EU", regulation: "NIS2", window_hours: 24 }] },
+    { jurisdiction_obligations: [{ jurisdiction: "UK", regulation: "CAF", window_hours: 72 }] },
+  );
+  assert.equal(merged.jurisdiction_obligations.length, 1, "an override array replaces the base array");
+  assert.equal(merged.jurisdiction_obligations[0].jurisdiction, "UK");
+});
+
+test("an override-supplied obligation list makes a base-only obligation_ref unresolved (no union)", () => {
+  const ctx = loadContext();
+  const baseObligation = { jurisdiction: "EU", regulation: "NIS2", window_hours: 24, clock_starts: "awareness" };
+  const overrideObligation = { jurisdiction: "UK", regulation: "CAF", window_hours: 72, clock_starts: "awareness" };
+
+  const pb = {
+    _meta: { id: "t", version: "1.0.0" },
+    phases: {
+      govern: { jurisdiction_obligations: [baseObligation] },
+      close: { notification_actions: [] },
+    },
+    directives: [{
+      id: "d1",
+      phase_overrides: {
+        govern: { jurisdiction_obligations: [overrideObligation] },
+        close: { notification_actions: [{ obligation_ref: obligationKey(baseObligation) }] },
+      },
+    }],
+  };
+
+  const findings = checkCrossRefs(pb, ctx, new Set(["t"]));
+  const hit = findings.find((f) => /phase_overrides\.close\.notification_actions\[0\]\.obligation_ref: unresolved/.test(f.message));
+  assert.ok(
+    hit,
+    `a ref satisfied only by the REPLACED base list must warn; got ${JSON.stringify(findings.map((f) => f.message).slice(0, 6))}`,
+  );
+  assert.equal(hit.severity, "warning");
+
+  // The override's own obligation resolves in the same position.
+  pb.directives[0].phase_overrides.close.notification_actions[0].obligation_ref = obligationKey(overrideObligation);
+  const clean = checkCrossRefs(pb, ctx, new Set(["t"]));
+  assert.equal(
+    clean.some((f) => /phase_overrides\.close\.notification_actions\[0\]\.obligation_ref: unresolved/.test(f.message)),
+    false,
+    "the override's own obligation must resolve",
+  );
+});
+
+test("with no override obligation list the base phase's obligations resolve the ref", () => {
+  const ctx = loadContext();
+  const baseObligation = { jurisdiction: "EU", regulation: "NIS2", window_hours: 24, clock_starts: "awareness" };
+
+  const pb = {
+    _meta: { id: "t", version: "1.0.0" },
+    phases: {
+      govern: { jurisdiction_obligations: [baseObligation] },
+      close: { notification_actions: [] },
+    },
+    directives: [{
+      id: "d1",
+      phase_overrides: {
+        close: { notification_actions: [{ obligation_ref: obligationKey(baseObligation) }] },
+      },
+    }],
+  };
+
+  const findings = checkCrossRefs(pb, ctx, new Set(["t"]));
+  assert.equal(
+    findings.some((f) => /phase_overrides\.close\.notification_actions\[0\]\.obligation_ref: unresolved/.test(f.message)),
+    false,
+    "an override that supplies no obligation list inherits the base list, exactly as the runner's merge does",
+  );
+});

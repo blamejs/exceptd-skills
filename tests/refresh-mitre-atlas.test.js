@@ -97,6 +97,21 @@ test("the wrapper parses --dry-run and wires a non-zero error exit", () => {
   assert.match(src, /process\.exit\(1\)/, "a failed refresh must exit non-zero");
 });
 
+// A cap threaded into refreshAtlas but dropped by the wrapper is not a cap:
+// `CAP=<n> npm run refresh-mitre-atlas` would import the whole upstream bundle
+// on a run the operator asked to bound, and nothing reports the omission at
+// runtime. The value's effect on refreshAtlas is covered behaviourally in
+// tests/refresh-upstream-catalogs.test.js; this pins the wrapper hand-off.
+test("the wrapper reads the CAP env var and hands it to refreshAtlas", () => {
+  const src = fs.readFileSync(WRAPPER, "utf8");
+  assert.match(src, /process\.env\.CAP/,
+    "the ATLAS wrapper must honor the CAP env var like every sibling wrapper");
+  // Lazy, single-line match (no `s` flag): a negated-brace class would truncate
+  // at the first `}` and could not see a later argument.
+  assert.match(src, /refreshAtlas\(\s*\{.*?\bcap\b.*?\}\s*\)/,
+    "the parsed cap must be passed into refreshAtlas, not merely computed");
+});
+
 test("refreshAtlas is the exported function the wrapper depends on", () => {
   assert.equal(typeof UPSTREAM.refreshAtlas, "function",
     "refreshAtlas must be exported so the wrapper can import it");

@@ -493,6 +493,23 @@ const ROOT = path.resolve(__dirname, '..');
 // scripts/check-test-coverage.js — coincidence-assert ban
 // ---------------------------------------------------------------------------
 
+test("--help documents every flag, the surfaces and the exit codes without deferring to the source", () => {
+  const r = childProc.spawnSync(process.execPath, [ANALYZER, "--help"], { encoding: "utf8" });
+  assert.equal(r.status, 0, "--help must exit 0; stderr=" + r.stderr);
+  const out = r.stdout;
+  // Every flag parseArgs accepts (bar the test-only --repo) is described.
+  for (const flag of ["--base <ref>", "--staged", "--json", "--warn-only"]) {
+    assert.match(out, new RegExp("^\\s+" + flag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s+\\S", "m"));
+  }
+  assert.match(out, /default: origin\/main/);
+  assert.match(out, /Surfaces checked:/);
+  assert.match(out, /Categorization:/);
+  assert.match(out, /Exit codes: 0 clean or --warn-only, 1 uncovered surface, 2 runner error\./);
+  // Help that points at a comment degrades the moment the comment is trimmed.
+  assert.equal(out.includes("See file header"), false,
+    "--help must be self-contained, not a pointer into the source");
+});
+
 test('scripts/check-test-coverage exposes scanForCoincidenceAsserts', () => {
   const cov = require(path.join(ROOT, 'scripts', 'check-test-coverage.js'));
   assert.equal(typeof cov.scanForCoincidenceAsserts, 'function',

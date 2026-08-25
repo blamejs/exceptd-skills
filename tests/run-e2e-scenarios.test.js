@@ -125,17 +125,17 @@ test('a scenario crash (non-zero exit, no JSON) is caught even with only a json 
 
 test('diffExpect reports every JSON matcher class and passes a fully-satisfied expect', () => {
   const body = { ok: true, score: 7, label: 'CRITICAL', nested: { id: 'x' } };
-  const ctx = { stdout: '', stderr: 'warning: stale', status: 0 };
+  const stderr = 'warning: stale';
 
   // Each JSON matcher class produces a distinct, attributable failure.
-  assert.ok(diffExpect(body, { json_path_equals: { ok: false } }, ctx).some(f => /json_path_equals\.ok/.test(f)));
-  assert.ok(diffExpect(body, { json_path_present: ['missing'] }, ctx).some(f => /json_path_present\.missing: missing/.test(f)));
-  assert.ok(diffExpect(body, { json_path_min: { score: 10 } }, ctx).some(f => /json_path_min\.score/.test(f)));
-  assert.ok(diffExpect(body, { json_path_match: { label: '^low$' } }, ctx).some(f => /json_path_match\.label/.test(f)));
+  assert.ok(diffExpect(body, { json_path_equals: { ok: false } }).some(f => /json_path_equals\.ok/.test(f)));
+  assert.ok(diffExpect(body, { json_path_present: ['missing'] }).some(f => /json_path_present\.missing: missing/.test(f)));
+  assert.ok(diffExpect(body, { json_path_min: { score: 10 } }).some(f => /json_path_min\.score/.test(f)));
+  assert.ok(diffExpect(body, { json_path_match: { label: '^low$' } }).some(f => /json_path_match\.label/.test(f)));
 
   // The negative stderr ban lives in stderrBanFailures (not diffExpect), so
   // it holds regardless of whether stdout parses as JSON.
-  assert.ok(stderrBanFailures({ stderr_must_not_match: ['stale'] }, ctx.stderr).some(f => /stderr_must_not_match/.test(f)));
+  assert.ok(stderrBanFailures({ stderr_must_not_match: ['stale'] }, stderr).some(f => /stderr_must_not_match/.test(f)));
 
   // A fully-satisfied JSON expect (including a nested path) yields zero
   // failures, and a stderr ban that does NOT match yields none either.
@@ -144,9 +144,20 @@ test('diffExpect reports every JSON matcher class and passes a fully-satisfied e
     json_path_present: ['ok'],
     json_path_min: { score: 5 },
     json_path_match: { label: '^CRIT' },
-  }, ctx);
+  });
   assert.deepEqual(pass, []);
-  assert.deepEqual(stderrBanFailures({ stderr_must_not_match: ['ETIMEDOUT'] }, ctx.stderr), []);
+  assert.deepEqual(stderrBanFailures({ stderr_must_not_match: ['ETIMEDOUT'] }, stderr), []);
+});
+
+test('diffExpect takes exactly (jsonBody, expect) — no phantom context parameter', () => {
+  // diffExpect reads the parsed JSON body only. A third parameter would advertise
+  // that a matcher can reach stdout/stderr/status, which none of them can: those
+  // live in evaluateScenario and stderrBanFailures.
+  assert.equal(diffExpect.length, 2, 'diffExpect must declare exactly two parameters');
+  const src = require('node:fs').readFileSync(
+    path.join(__dirname, '..', 'scripts', 'run-e2e-scenarios.js'), 'utf8');
+  assert.equal(/diffExpect\(body, expect\)/.test(src), true,
+    'evaluateScenario must call diffExpect with the body and expect alone');
 });
 
 test('runScenario skips a directory with no scenario.json instead of throwing', () => {

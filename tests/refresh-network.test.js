@@ -646,3 +646,69 @@ test('#51 isAllowedTarballHost still rejects look-alike and internal hosts', () 
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+
+// ===========================================================================
+// The tarball size cap has one definition, not two.
+// ===========================================================================
+
+/**
+ * The 200 MB cap was defined twice and read independently: an inline IIFE in
+ * getBufferOnce enforced it DURING the streaming download, and
+ * TARBALL_SIZE_CAP_BYTES_DEFAULT + tarballSizeCap() enforced it AFTER the
+ * buffer landed. Both read EXCEPTD_TARBALL_SIZE_CAP_BYTES with the same
+ * fallback, so the two agreed by coincidence rather than by construction:
+ * raising the default in one place would leave the stream aborting below the
+ * limit the post-download check accepts, or accepting bytes the buffered check
+ * then rejects — a divergence that shows up only on a tarball sized between the
+ * two values, and only against the live registry.
+ *
+ * These assertions pin the single-definition property directly, since the
+ * streaming path needs a live HTTPS fetch from an allowlisted npm host to
+ * exercise and cannot be driven from a unit test.
+ */
+
+/**
+ * Counts run over CODE, not prose. A comment that quotes the cap while
+ * explaining it is not a second definition, and failing the gate for one would
+ * teach the next reader to describe the constant less precisely. Block
+ * comments go first; the `[^:\\]` guard on the line-comment pass keeps the
+ * `https://` inside a string literal from being read as a comment start. This
+ * is a heuristic rather than a JS tokenizer — enough for counting two literals,
+ * and it errs toward leaving code in rather than stripping it out.
+ */
+function stripComments(src) {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/(^|[^:\\])\/\/[^\n]*/gm, '$1');
+}
+
+test('the tarball size cap is defined once and the streaming check reads it through tarballSizeCap()', () => {
+  const raw = fs.readFileSync(REFRESH_NETWORK, 'utf8');
+  const src = stripComments(raw);
+
+  // Control: the stripper must not have eaten the code the counts run over.
+  assert.match(src, /TARBALL_SIZE_CAP_BYTES_DEFAULT\s*=/, 'comment-stripping removed the cap definition itself');
+  assert.match(src, /function tarballSizeCap\(\)/, 'comment-stripping removed the shared reader');
+
+  const defaultLiterals = src.match(/200\s*\*\s*1024\s*\*\s*1024/g) || [];
+  assert.equal(
+    defaultLiterals.length,
+    1,
+    `the 200 MB default must appear exactly once in code; found ${defaultLiterals.length}`,
+  );
+
+  const parseIntReads = src.match(/parseInt\(process\.env\.EXCEPTD_TARBALL_SIZE_CAP_BYTES/g) || [];
+  assert.equal(
+    parseIntReads.length,
+    1,
+    `exactly one reader may parse the override; found ${parseIntReads.length}`,
+  );
+
+  // The streaming cap resolves through the shared reader, not its own literal.
+  assert.match(
+    src,
+    /const cap = tarballSizeCap\(\);/,
+    'the streaming download cap must call tarballSizeCap()',
+  );
+});

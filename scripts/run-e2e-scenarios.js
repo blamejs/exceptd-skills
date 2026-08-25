@@ -52,7 +52,7 @@ function stderrBanFailures(expect, stderr) {
 }
 
 // Positive matchers against the parsed JSON body only; the stderr ban is separate.
-function diffExpect(jsonBody, expect, ctx) {
+function diffExpect(jsonBody, expect) {
   const failures = [];
   if (expect.json_path_equals) {
     for (const [p, want] of Object.entries(expect.json_path_equals)) {
@@ -136,7 +136,7 @@ function evaluateScenario(scenario, expect, res) {
   if (!body && hasJsonAssertion) {
     failures.push(`stdout did not parse as JSON; first 200 chars: ${stdout.slice(0, 200)}`);
   }
-  if (body) failures.push(...diffExpect(body, expect, { stdout, stderr, status }));
+  if (body) failures.push(...diffExpect(body, expect));
 
   // Unconditional, outside every `if (body)` branch above.
   failures.push(...stderrBanFailures(expect, stderr));

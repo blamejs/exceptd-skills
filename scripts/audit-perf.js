@@ -97,23 +97,34 @@ bench("xref: which skills cite CWE-79? (linear scan)", () => {
   return skills.filter((s) => (s.cwe_refs || []).includes(refSet)).map((s) => s.name);
 });
 
-const cve = catalogObjs["cve-catalog.json"]["CVE-2026-31431"];
-bench("multi-hop chain: CVE-2026-31431 → CWE → ATLAS → frameworks", () => {
-  // CVE → the citing skills' CWE refs → their ATLAS refs → their framework gaps.
-  const skillsCiting = skills.filter((s) =>
-    (catalogObjs["cve-catalog.json"]["CVE-2026-31431"].evidence_cves || []).length > 0 // dummy filter
-  );
-  const cwes = new Set();
-  const atlases = new Set();
-  const fws = new Set();
-  for (const s of skills) {
-    if (!(s.atlas_refs || []).length) continue;
+// CVE entry → its CWE refs → the skills citing any of them → their ATLAS refs
+// and framework gaps. An unknown id resolves to no entry and yields empty sets,
+// which is what makes this a measurement of the lookup rather than of the corpus.
+function multiHopChain(catalog, allSkills, cveId) {
+  const entry = catalog[cveId];
+  if (!entry) return { cwes: [], atlases: [], fws: [], citing: [] };
+  // The seed stays fixed while the skills are scanned: a skill qualifies by
+  // citing one of the CVE's OWN weaknesses, never one another skill dragged in.
+  const seed = new Set(entry.cwe_refs || []);
+  const cwes = new Set(seed);
+  const atlases = new Set(entry.atlas_refs || []);
+  const fws = new Set(Object.keys(entry.framework_control_gaps || {}));
+  const citing = [];
+  for (const s of allSkills) {
+    if (!(s.cwe_refs || []).some((c) => seed.has(c))) continue;
+    citing.push(s.name);
     for (const c of s.cwe_refs || []) cwes.add(c);
     for (const a of s.atlas_refs || []) atlases.add(a);
     for (const f of s.framework_gaps || []) fws.add(f);
   }
-  return { cwes: [...cwes], atlases: [...atlases], fws: [...fws] };
-});
+  return { cwes: [...cwes], atlases: [...atlases], fws: [...fws], citing };
+}
+// Seeded from a CVE whose weaknesses several skills actually cite, so the row
+// times a join that unions real skill refs instead of terminating at the seed.
+const CHAIN_CVE_ID = "CVE-2026-46817";
+bench(`multi-hop chain: ${CHAIN_CVE_ID} → CWE → ATLAS → frameworks`, () =>
+  multiHopChain(catalogObjs["cve-catalog.json"], skills, CHAIN_CVE_ID)
+);
 
 bench(`watchlist aggregator (full scan, ${skills.length} skills)`, () => {
   const watch = new Set();

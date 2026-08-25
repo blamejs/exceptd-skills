@@ -1141,3 +1141,142 @@ test('a genuine H2 section (with a trailing qualifier) still satisfies the requi
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+require("node:test").describe("lint-skills-help-exit", () => {
+/**
+ * parseArgs() used to call process.exit() directly after printHelp(); it now
+ * records the code on `opts.helpExitCode` and RETURNS, and main() ends the run
+ * through safeExit(). That keeps this file's exit paths free of the
+ * `process-exit-after-stdout-write` shape.
+ *
+ * What the tests below do and do not prove:
+ *
+ *   - The two `parseArgs returns` tests are coupled to the change. They drive
+ *     the exported parseArgs() in a child process and require a marker written
+ *     AFTER the call, so a source that terminates inside parseArgs() fails them.
+ *   - The source guard is coupled to the change: the pre-fix file names
+ *     process.exit() in executable code.
+ *   - The three spawned-CLI tests are CHARACTERIZATION PINS, not regression
+ *     tests. Measured on this repo, `--help`, an unknown flag and an unknown
+ *     --skill name produce identical exit codes and identical stdout/stderr
+ *     before and after the change — pipe stdout is synchronous on Windows and
+ *     Linux and the help block is a few hundred bytes, so the pre-fix
+ *     process.exit() did not truncate it. They lock the operator-visible
+ *     contract across the refactor; they would not have caught its absence.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
+
+const ROOT = path.join(__dirname, '..');
+const LINTER = path.join(ROOT, 'lib', 'lint-skills.js');
+
+function runLinter(args) {
+  return spawnSync(process.execPath, [LINTER, ...args], { encoding: 'utf8', cwd: ROOT, timeout: 120000 });
+}
+
+// Drive the exported parseArgs() in a child and print a marker AFTER the call.
+// A parseArgs() that terminates the process never reaches the marker, so
+// "returns control to its caller" becomes an observable assertion instead of a
+// claim about the source text. Running it in-process would kill the test runner.
+function runParseArgs(argvTail) {
+  const argv = ['node', 'lib/lint-skills.js', ...argvTail];
+  const script =
+    'const lint = require(' + JSON.stringify(LINTER) + ');' +
+    'const opts = lint.parseArgs(' + JSON.stringify(argv) + ');' +
+    'process.stdout.write("\\nPARSEARGS_RETURNED " + JSON.stringify({' +
+    'helpExitCode: opts.helpExitCode, type: typeof opts.helpExitCode, skill: opts.skill' +
+    '}));';
+  return spawnSync(process.execPath, ['-e', script], { encoding: 'utf8', cwd: ROOT, timeout: 120000 });
+}
+
+function returnedPayload(stdout) {
+  const m = String(stdout).match(/PARSEARGS_RETURNED (\{.*\})/);
+  return m ? JSON.parse(m[1]) : null;
+}
+
+// Strip comments AND string literals so the guard matches only EXECUTABLE code:
+// the fixed source names process.exit() in a comment explaining why it is not
+// used, and a future help line or error string could legitimately carry the same
+// text. Same helper as tests/check-agents-md-collectors.test.js, same reason.
+function executableSource(file) {
+  let s = fs.readFileSync(file, 'utf8');
+  s = s.replace(/\/\*[\s\S]*?\*\//g, '');                                        // block comments
+  s = s.replace(/(^|[^:])\/\/.*$/gm, '$1');                                      // line comments (not ://)
+  s = s.replace(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`/g, "''"); // strings
+  return s;
+}
+
+// COUPLED: fails on the pre-fix source, where parseArgs() calls process.exit(0)
+// and the marker is never written.
+test('lint-skills: parseArgs returns helpExitCode 0 for --help instead of exiting', () => {
+  const r = runParseArgs(['--help']);
+  assert.equal(r.status, 0, `child must finish normally; stderr: ${r.stderr}`);
+  const payload = returnedPayload(r.stdout);
+  assert.notEqual(payload, null,
+    'parseArgs must return to its caller — no marker means it terminated the process');
+  assert.equal(payload.type, 'number');
+  assert.equal(payload.helpExitCode, 0);
+});
+
+// COUPLED: fails on the pre-fix source, where parseArgs() calls process.exit(2)
+// so the child exits 2 with no marker.
+test('lint-skills: parseArgs returns helpExitCode 2 for an unknown argument instead of exiting', () => {
+  const r = runParseArgs(['--not-a-real-flag']);
+  assert.equal(r.status, 0,
+    `parseArgs must not terminate the process itself; got status ${r.status}, stderr: ${r.stderr}`);
+  const payload = returnedPayload(r.stdout);
+  assert.notEqual(payload, null,
+    'parseArgs must return to its caller — no marker means it terminated the process');
+  assert.equal(payload.type, 'number');
+  assert.equal(payload.helpExitCode, 2);
+});
+
+// COUPLED: the pre-fix file carries process.exit() in executable code.
+//
+// A per-file invariant, deliberately absolute and with no `// allow:` escape
+// hatch, mirroring the same ban held over bin/exceptd.js. It is NOT the
+// repo-wide `process-exit-after-stdout-write` class in
+// scripts/check-codebase-patterns.js, which is markable and exempts
+// `require.main === module` blocks.
+test('lint-skills: no process.exit() remains outside comments and strings', () => {
+  const code = executableSource(LINTER);
+  assert.equal(
+    /process\.exit\s*\(/.test(code), false,
+    'lib/lint-skills.js must end every path through safeExit(), so no path here can ' +
+    'write to stdout and then terminate the process synchronously'
+  );
+});
+
+// PIN: identical before and after the change. Locks the operator-visible
+// contract of `--help`; it does not guard the safeExit refactor.
+test('lint-skills: --help exits 0 and writes the complete help block to stdout', () => {
+  const r = runLinter(['--help']);
+  assert.equal(r.status, 0);
+  assert.equal(typeof r.stdout, 'string');
+  assert.match(r.stdout, /^Usage: node lib\/lint-skills\.js/);
+  // The last line printHelp() emits — head and tail both present.
+  assert.match(r.stdout, /--help {10}Show this message\./);
+});
+
+// PIN: identical before and after the change. Locks the exit code and the
+// diagnostic for an unknown flag.
+test('lint-skills: an unknown argument exits exactly 2 with the help block on stdout', () => {
+  const r = runLinter(['--not-a-real-flag']);
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /Unknown argument: --not-a-real-flag/);
+  assert.match(r.stdout, /--help {10}Show this message\./);
+});
+
+// PIN: identical before and after the change. Locks the exit code and the
+// stop-before-linting behaviour for an unknown --skill name.
+test('lint-skills: an unknown --skill name exits exactly 2 and does not lint', () => {
+  const r = runLinter(['--skill', 'no-such-skill-exists']);
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /No skill named "no-such-skill-exists"/);
+  assert.equal(/skills passed/.test(r.stdout), false, 'the run must stop before the lint summary');
+});
+});

@@ -120,6 +120,49 @@ test('#49 upstream-check-cli emits a parseable ok:false envelope on an unexpecte
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+// ===================================================================
+// unknown flags are refused, not silently ignored
+// ===================================================================
+
+test('upstream-check-cli refuses an unknown flag with exit 2 and a JSON envelope on stderr', () => {
+  // EXCEPTD_AIR_GAP pins the no-flag-error path to the offline `skipped`
+  // envelope (exit 0), so this asserts the refusal and never the network.
+  const out = spawnSync(process.execPath, [UPSTREAM_CLI, '--tiemout=5000'], {
+    encoding: 'utf8',
+    env: { ...process.env, EXCEPTD_AIR_GAP: '1' },
+  });
+  assert.equal(out.status, 2, `unknown flag must exit 2; got ${out.status} (stdout: ${out.stdout.slice(0, 200)})`);
+  // stdout stays reserved for the report line callers JSON.parse.
+  assert.equal(out.stdout, '');
+  const body = tryJson(out.stderr.trim());
+  assert.ok(body, `stderr must be one parseable JSON line; got: ${out.stderr.slice(0, 200)}`);
+  assert.equal(body.ok, false);
+  assert.equal(body.source, 'upstream-check');
+  assert.equal(typeof body.error, 'string');
+  assert.equal(body.error, 'upstream-check: unknown flag(s): --tiemout');
+  assert.deepEqual(body.unknown_flags, ['--tiemout']);
+  assert.deepEqual(body.known_flags, ['--timeout', '--raw', '--air-gap']);
+});
+
+// A no-over-rejection pin, NOT a regression case: it also passes against the
+// version that had no unknown-flag refusal at all, because that version ignored
+// every unrecognised argument. What it locks is branch ORDER — the collector's
+// `--` catch-all stays below the known-flag branches, so `--timeout` (both
+// spellings), `--raw` and `--air-gap` are never read as typos. The refusal
+// itself is covered by the exit-2 case above.
+test('upstream-check-cli does not over-reject its own documented flags (--air-gap short-circuits to the skipped envelope)', () => {
+  const out = spawnSync(process.execPath, [UPSTREAM_CLI, '--air-gap', '--timeout=5000', '--raw'], {
+    encoding: 'utf8',
+  });
+  assert.equal(out.status, 0, `known flags must not be refused; got ${out.status} (stderr: ${out.stderr.slice(0, 200)})`);
+  assert.equal(out.stderr.includes('unknown flag'), false, `no known flag may be reported as unknown; stderr: ${out.stderr.slice(0, 200)}`);
+  const body = tryJson(out.stdout.trim());
+  assert.ok(body, `stdout must be parseable JSON; got: ${out.stdout.slice(0, 200)}`);
+  assert.equal(body.ok, null);
+  assert.equal(body.skipped, 'air-gap');
+  assert.equal(body.source, 'upstream-check');
+});
 ;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
   for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
   __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });

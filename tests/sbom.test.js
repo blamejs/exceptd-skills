@@ -377,3 +377,199 @@ test("sbom: remote-tarball entry missing integrity is still a HIT", () => {
     const __ROOT = require("path").resolve(__dirname, ".."); for (const k of Object.keys(require.cache)) { if (k.startsWith(__ROOT) && !k.includes("node_modules")) delete require.cache[k]; } });
 }
 });
+
+
+// ---- collector_errors reachability + integrity-count surfacing ----
+require("node:test").describe("sbom-collector-errors", () => {
+/**
+ * The sbom collector declared `collector_errors: []` and never pushed to it:
+ * every read and parse failure was caught locally and discarded, so an
+ * unreadable lockfile and an unparseable SBOM both rendered as an ordinary
+ * clean scan. bin/exceptd.js prints collector_errors[] as "Collector warnings"
+ * and the runner forwards them as collector_warnings, so an empty channel is
+ * the difference between a partial scan the operator can see and one they
+ * cannot.
+ *
+ * Also pins the two integrity counts. They were computed off package-lock.json
+ * and assigned to a local object that never left collect(), so the
+ * lockfile-no-integrity verdict shipped without its magnitude.
+ */
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const os = require("node:os");
+
+const sbom = require(path.join(__dirname, "..", "lib", "collectors", "sbom.js"));
+
+function mkTmp(prefix) {
+  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+}
+
+test("sbom: an unparseable CycloneDX document is reported on collector_errors, not silently counted as zero components", () => {
+  const tmp = mkTmp("sbom-err-cdx-");
+  try {
+    // Well-formed enough to open and read, invalid as JSON.
+    fs.writeFileSync(path.join(tmp, "sbom.cdx.json"), '{"bomFormat":"CycloneDX","components":[', "utf8");
+    const r = sbom.collect({ cwd: tmp });
+
+    assert.ok(Array.isArray(r.collector_errors), "collector_errors must be an array");
+    const hit = r.collector_errors.find(
+      (e) => e.artifact_id === "sbom-document" && e.kind === "parse_failed",
+    );
+    assert.ok(
+      hit,
+      `expected a sbom-document/parse_failed entry; got ${JSON.stringify(r.collector_errors)}`,
+    );
+    assert.equal(typeof hit.reason, "string");
+    assert.match(hit.reason, /^sbom\.cdx\.json: /);
+    // The artifact still reports the document as present with no component
+    // count — that is exactly the state the warning explains.
+    assert.match(r.artifacts["sbom-document"].value, /sbom\.cdx\.json/);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("sbom: an unparseable package-lock.json is reported on collector_errors with the parse kind", () => {
+  const tmp = mkTmp("sbom-err-lock-");
+  try {
+    fs.writeFileSync(path.join(tmp, "package-lock.json"), "{ not json", "utf8");
+    const r = sbom.collect({ cwd: tmp });
+
+    const hit = r.collector_errors.find(
+      (e) => e.artifact_id === "lockfile-inventory" && e.kind === "lockfile_parse_failed",
+    );
+    assert.ok(
+      hit,
+      `expected a lockfile-inventory/lockfile_parse_failed entry; got ${JSON.stringify(r.collector_errors)}`,
+    );
+    assert.equal(typeof hit.reason, "string");
+    assert.match(hit.reason, /^package-lock\.json: /);
+    // A read failure and a parse failure are different operator actions, so the
+    // read kind must NOT be what an unparseable-but-readable file reports.
+    assert.equal(
+      r.collector_errors.some((e) => e.kind === "lockfile_read_failed"),
+      false,
+      "a readable-but-unparseable lockfile is a parse failure, not a read failure",
+    );
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("sbom: a clean scan leaves collector_errors empty", () => {
+  const tmp = mkTmp("sbom-err-clean-");
+  try {
+    fs.writeFileSync(path.join(tmp, "package-lock.json"), JSON.stringify({
+      lockfileVersion: 3,
+      packages: {
+        "": { name: "p", version: "1.0.0" },
+        "node_modules/foo": { version: "1.0.0", resolved: "https://r/foo.tgz", integrity: "sha512-abc" },
+      },
+    }), "utf8");
+    const r = sbom.collect({ cwd: tmp });
+    assert.deepEqual(r.collector_errors, [], "no failures means no warnings — the channel must not over-report");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("sbom: collector_meta carries the npm integrity present/missing counts behind the lockfile-no-integrity verdict", () => {
+  const tmp = mkTmp("sbom-integrity-counts-");
+  try {
+    fs.writeFileSync(path.join(tmp, "package-lock.json"), JSON.stringify({
+      lockfileVersion: 3,
+      packages: {
+        "": { name: "p", version: "1.0.0" },
+        "node_modules/a": { version: "1.0.0", resolved: "https://r/a.tgz", integrity: "sha512-a" },
+        "node_modules/b": { version: "1.0.0", resolved: "https://r/b.tgz", integrity: "sha512-b" },
+        "node_modules/c": { version: "1.0.0", resolved: "https://r/c.tgz" },
+      },
+    }), "utf8");
+    const r = sbom.collect({ cwd: tmp });
+
+    assert.equal(r.signal_overrides["lockfile-no-integrity"], "hit");
+    assert.equal(typeof r.collector_meta.npm_integrity_present_count, "number");
+    assert.equal(typeof r.collector_meta.npm_integrity_missing_count, "number");
+    assert.equal(r.collector_meta.npm_integrity_present_count, 2);
+    assert.equal(r.collector_meta.npm_integrity_missing_count, 1);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("sbom: the integrity counts are absent (not zero) when no npm lockfile was parsed", () => {
+  const tmp = mkTmp("sbom-integrity-absent-");
+  try {
+    // A cargo lockfile only — nothing to derive npm integrity coverage from.
+    // Reporting 0/0 here would read as "every entry carries a hash".
+    fs.writeFileSync(path.join(tmp, "Cargo.lock"), '[[package]]\nname = "x"\n', "utf8");
+    const r = sbom.collect({ cwd: tmp });
+    assert.equal(r.collector_meta.npm_integrity_present_count, undefined);
+    assert.equal(r.collector_meta.npm_integrity_missing_count, undefined);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+/**
+ * findSbomDocuments records a failed document from two places — the openSync
+ * catch and the outer catch around fstatSync — and collect() turns each into a
+ * collector_errors entry. Reporting both as "open_failed" sends an operator
+ * chasing file permissions for a descriptor that opened fine, so the kind
+ * travels from the push site the way the lockfile loop already does it.
+ */
+
+test("sbom: an fstat failure on an opened SBOM document reports stat_failed, not open_failed", () => {
+  const tmp = mkTmp("sbom-err-fstat-");
+  const realFstatSync = fs.fstatSync;
+  try {
+    fs.writeFileSync(path.join(tmp, "sbom.cdx.json"), '{"bomFormat":"CycloneDX","components":[]}', "utf8");
+    // fs.fstatSync has exactly one call site in the collector — the descriptor
+    // stat inside findSbomDocuments — so throwing here drives the outer catch
+    // and touches nothing else in the scan.
+    fs.fstatSync = () => {
+      const e = new Error("EIO: i/o error, fstat");
+      e.code = "EIO";
+      throw e;
+    };
+    const r = sbom.collect({ cwd: tmp });
+    fs.fstatSync = realFstatSync;
+
+    const hit = r.collector_errors.find((e) => e.artifact_id === "sbom-document");
+    assert.ok(hit, `expected a sbom-document entry; got ${JSON.stringify(r.collector_errors)}`);
+    assert.equal(hit.kind, "stat_failed", "the descriptor opened — fstat is what failed");
+    assert.equal(typeof hit.reason, "string");
+    assert.match(hit.reason, /^sbom\.cdx\.json: /);
+    assert.match(hit.reason, /EIO/);
+  } finally {
+    fs.fstatSync = realFstatSync;
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("sbom: a document that opens and stats but cannot be read reports read_failed", () => {
+  const tmp = mkTmp("sbom-err-read-");
+  try {
+    // A directory at the document's name opens and fstats on both POSIX and
+    // Windows; the read is what fails (EISDIR).
+    fs.mkdirSync(path.join(tmp, "sbom.cdx.json"));
+    const r = sbom.collect({ cwd: tmp });
+
+    const hit = r.collector_errors.find((e) => e.artifact_id === "sbom-document");
+    assert.ok(hit, `expected a sbom-document entry; got ${JSON.stringify(r.collector_errors)}`);
+    assert.equal(hit.kind, "read_failed");
+    assert.equal(typeof hit.reason, "string");
+    assert.match(hit.reason, /^sbom\.cdx\.json: /);
+    assert.equal(
+      r.collector_errors.some((e) => e.kind === "open_failed" || e.kind === "stat_failed"),
+      false,
+      "the open and the stat both succeeded — neither may be reported",
+    );
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+});

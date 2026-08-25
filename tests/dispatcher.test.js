@@ -422,3 +422,73 @@ require("node:test").describe("dispatcher.findingFingerprint", () => {
     assert.notEqual(a, findingFingerprint({ a: 1, b: 3 }));
   });
 });
+
+/**
+ * CHARACTERIZATION PINS — these lock behaviour that already holds. No defect
+ * was found in orchestrator/dispatcher.js and none was repaired there; both
+ * tests pass against the unmodified module. They are not regression coverage
+ * for any change, and nothing here should be read as evidence that
+ * dispatcher.js was fixed.
+ *
+ * What they lock: dispatch() sorts on severityToPriority(finding.severity) over
+ * the critical/high/medium/low/info ladder. rwep_score rides along as evidence
+ * for the print path and takes no part in the ordering, so a low-severity
+ * finding carrying a high RWEP stays below a critical one. Worth pinning
+ * because "sorted by RWEP urgency" is the plausible-sounding reading of this
+ * plan, and adopting it would silently reorder every operator's remediation
+ * queue.
+ */
+require("node:test").describe("dispatcher plan ordering", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const { dispatch } = require("../orchestrator/dispatcher.js");
+
+  test("the plan orders by severity even when rwep_score disagrees", () => {
+    // rwep_score is deliberately inverted against severity: if RWEP drove the
+    // sort, the low-severity finding would come first.
+    const findings = [
+      {
+        domain: "ai", signal: "prompt_injection_surface", severity: "low",
+        skill_hint: "ai-attack-surface", rwep_score: 99,
+        action_required: "review llm input boundary",
+      },
+      {
+        domain: "kernel", signal: "kernel_lpe", severity: "critical",
+        skill_hint: "kernel-lpe-triage", rwep_score: 5,
+        action_required: "patch kernel",
+      },
+    ];
+
+    const { plan } = dispatch(findings);
+    assert.equal(plan.length, 2, "both findings must route to a skill");
+    assert.equal(plan[0].priority, 1, "critical maps to priority 1 and sorts first");
+    assert.equal(plan[1].priority, 4, "low maps to priority 4 and sorts last");
+    assert.equal(plan[0].skill_name, "kernel-lpe-triage");
+    assert.equal(plan[1].skill_name, "ai-attack-surface");
+    // The score is carried as evidence, not consumed as an ordering key.
+    assert.equal(plan[0].evidence.rwep_score, 5);
+    assert.equal(plan[1].evidence.rwep_score, 99);
+  });
+
+  test("the module docblock describes the severity sort it actually performs", () => {
+    const fs = require("node:fs");
+    const path = require("node:path");
+    const src = fs.readFileSync(
+      path.join(__dirname, "..", "orchestrator", "dispatcher.js"),
+      "utf8",
+    );
+    const docblock = src.slice(0, src.indexOf("const fs"));
+    assert.match(docblock, /severity/i, "the docblock must name the key the sort uses");
+    assert.equal(
+      /RWEP/i.test(docblock),
+      false,
+      "RWEP is not consulted anywhere in dispatcher.js — claiming it in the docblock misdescribes the plan",
+    );
+    // And the sort itself compares the severity-derived priority. Deliberately
+    // whitespace-tolerant: the comparator's exact source text is not the
+    // invariant, so a reformat must not fail a test about what the docblock
+    // claims. The ordering behaviour itself is covered by the sibling test
+    // above, which drives dispatch() rather than reading the file.
+    assert.match(src, /\.sort\(\s*\(\s*a\s*,\s*b\s*\)\s*=>\s*a\.priority\s*-\s*b\.priority\s*,?\s*\)/);
+  });
+});

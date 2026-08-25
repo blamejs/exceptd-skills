@@ -40,6 +40,25 @@ test("audit-catalog-gaps exports SPEC for every shipped catalog", () => {
   }
 });
 
+test("every SPEC required_context field is a flat property name", () => {
+  // CHARACTERIZATION PIN, not regression coverage: no SPEC entry uses a dotted
+  // path today and no repair to the script accompanies this test, so it passes
+  // against the script exactly as it stands. It exists to keep that true.
+  //
+  // inspect() resolves the field as `e[r.field]`, a single property access. A
+  // dotted path would read undefined on every entry and report the whole
+  // catalog as missing that field, with nothing to distinguish it from a real
+  // gap. A nested requirement belongs in `check(v, entry)`, which receives the
+  // entry, not in the field name.
+  for (const [key, spec] of Object.entries(MOD.SPEC)) {
+    for (const r of spec.required_context) {
+      assert.equal(typeof r.field, "string", `SPEC.${key} required_context field must be a string`);
+      assert.equal(r.field.includes("."), false,
+        `SPEC.${key} required_context "${r.field}" is a dotted path; inspect() resolves fields with a flat property access, so it would report every entry as missing`);
+    }
+  }
+});
+
 test("inspect() returns the per-catalog shape with missing-context findings", () => {
   const r = MOD.inspect("cve-catalog");
   assert.equal(r.catalog, "cve-catalog");
