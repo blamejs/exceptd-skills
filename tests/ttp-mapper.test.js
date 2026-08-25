@@ -70,6 +70,26 @@ test('gapsFor() returns a found_gaps=false explanation when nothing matches', ()
   assert.match(r.message, /No documented gaps/i);
 });
 
+test('gapsFor() returns the no-data shape for a null / undefined catalog instead of throwing', () => {
+  for (const absent of [null, undefined]) {
+    const r = gapsFor('prompt injection', absent, atlasCatalog);
+    assert.equal(r.found_gaps, false);
+    assert.equal(r.attack_pattern, 'prompt injection');
+    assert.equal(typeof r.message, 'string');
+    assert.match(r.message, /No documented gaps/i);
+    assert.equal('controls_with_gap' in r, false);
+  }
+});
+
+test('gapsFor() gives an absent catalog and an unmatched pattern the identical no-match answer', () => {
+  // Two routes reach the same operator-visible sentence. Compared whole, not
+  // by regex, so one copy cannot be reworded away from the other.
+  const absent = gapsFor('prompt injection', null, atlasCatalog);
+  const unmatched = gapsFor('prompt injection', {}, atlasCatalog);
+  assert.deepEqual(absent, unmatched);
+  assert.equal(absent.message, 'No documented gaps for this pattern — verify manually');
+});
+
 test('gapsFor() does not return entries from metadata keys (underscore-prefixed)', () => {
   const stub = {
     '_meta': { misses: ['prompt injection'], framework: 'meta', control_name: 'meta' },

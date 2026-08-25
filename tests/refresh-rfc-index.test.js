@@ -52,6 +52,22 @@ test("wrapper imports refreshRfc from the single-source-of-truth module", () => 
   assert.match(src, /--dry-run/, "wrapper must honor --dry-run");
 });
 
+// A cap threaded into refreshRfc but dropped by the wrapper is not a cap: the
+// RFC index is the largest of the five upstream catalogs (~9000 entries), so
+// `CAP=100 npm run refresh-rfc-index` importing all of them is the exact run an
+// operator asked to bound. Nothing reports the omission at runtime, so the
+// wrapper's read of CAP is pinned here; what the value does once it reaches
+// refreshRfc is covered behaviourally in tests/refresh-upstream-catalogs.test.js.
+test("the wrapper reads the CAP env var and hands it to refreshRfc", () => {
+  const src = fs.readFileSync(WRAPPER, "utf8");
+  assert.match(src, /process\.env\.CAP/,
+    "the RFC wrapper must honor the CAP env var (~9000-entry upstream index)");
+  // Lazy, single-line match (no `s` flag): a negated-brace class would truncate
+  // at the first `}` and could not see a later argument.
+  assert.match(src, /refreshRfc\(\s*\{.*?\bcap\b.*?\}\s*\)/,
+    "the parsed cap must be passed into refreshRfc, not merely computed");
+});
+
 test("refreshRfc (the wrapper's delegate) is exported and registered", () => {
   assert.equal(typeof MOD.refreshRfc, "function",
     "refreshRfc must be exported so the wrapper can import it");

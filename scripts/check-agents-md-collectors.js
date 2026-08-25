@@ -35,8 +35,20 @@ function findReservedFixtures(dir) {
   }
 }
 
+// Repo-relative POSIX form of <dir>/<file> for a diagnostic, falling back to the
+// literal path when `dir` sits outside the repo (a test-only override dir).
+function collectorDisplayPath(dir, file) {
+  const abs = path.join(dir, file);
+  const rel = path.relative(ROOT, abs).split(path.sep).join("/");
+  return rel && !rel.startsWith("..") ? rel : abs.split(path.sep).join("/");
+}
+
 // Classify every <dir>/*.js: a collector requires cleanly and exports collect();
 // a require that throws becomes a load error rather than a silent omission.
+//
+// collectorFiles entries keep the literal `lib/collectors/` prefix whatever `dir`
+// is: they are compared against the paths AGENTS.md enumerates, which always name
+// the shipped location. Only the load-error diagnostic names the real path.
 function classifyCollectors(dir) {
   const jsFiles = fs.readdirSync(dir)
     .filter((f) => f.endsWith(".js") && !isReservedFixture(f))
@@ -48,7 +60,7 @@ function classifyCollectors(dir) {
     try {
       mod = require(path.join(dir, f));
     } catch (e) {
-      loadErrors.push(`lib/collectors/${f}: ${e.message.split("\n")[0]}`);
+      loadErrors.push(`${collectorDisplayPath(dir, f)}: ${e.message.split("\n")[0]}`);
       continue;
     }
     if (typeof mod.collect === "function") {
@@ -106,7 +118,7 @@ function main() {
 
   if (loadErrors.length > 0) {
     console.error(
-      `[check-agents-md-collectors] cannot load ${loadErrors.length} module(s) in lib/collectors/ ` +
+      `[check-agents-md-collectors] cannot load ${loadErrors.length} module(s) in ${collectorDisplayPath(COLLECTOR_DIR, "")}/ ` +
       `- a require-time failure must not be silently excluded from the count + enumeration check:\n  ` +
       loadErrors.join("\n  ")
     );
@@ -163,4 +175,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { classifyCollectors };
+module.exports = { classifyCollectors, collectorDisplayPath };

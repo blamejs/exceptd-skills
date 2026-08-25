@@ -14,8 +14,6 @@ var ROOT = path.resolve(__dirname, "..");
 var REPO = "blamejs/exceptd-skills";
 var PKG_NAME = "@blamejs/exceptd-skills";
 
-var RERUN_LIMIT = 2;
-
 // Windows resolves `npm` / `npx` as `.cmd` shims, which child_process can only
 // invoke through a shell; `git`, `gh` and `node` are native exes that spawn directly.
 function _needsShell(cmd) {

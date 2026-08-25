@@ -663,35 +663,168 @@ test_describe("refresher-fixture-roundtrip", () => {
 });
 
 // ===========================================================================
-// refresher-spec-coupling — refresher reads required-context from the audit SPEC
+// refresher-spec-coupling — an auto-imported row satisfies the audit SPEC
 //
-// refresh-upstream-catalogs.js reads its required-context list from the
-// audit-catalog-gaps SPEC. This pins the coupling so a future PR that adds a
-// required-context field to the audit SPEC but forgets to extend the refresher's
-// backfill fires immediately.
+// audit-catalog-gaps counts a row missing any required_context field as a gap,
+// so a refresher that adds rows the audit immediately flags spends the gap
+// budget on its own imports. These run each refresher against a synthetic
+// upstream payload and hold the produced row to the SPEC's own check functions,
+// so adding a required_context field the entry builder does not emit fires here.
 // ===========================================================================
 
 test_describe("refresher-spec-coupling", () => {
   const RU = require(path.join(__dirname, "..", "scripts", "refresh-upstream-catalogs.js"));
   const AUDIT = require(path.join(__dirname, "..", "scripts", "audit-catalog-gaps.js"));
 
-  test("refresher imports the audit SPEC (single source of truth for required-context)", () => {
-    // Static-grep the refresher file for the SPEC import. If a future PR removes
-    // the import or re-introduces a hardcoded parallel field list, this fires.
-    const body = fs.readFileSync(
-      path.join(__dirname, "..", "scripts", "refresh-upstream-catalogs.js"),
-      "utf8"
-    );
-    assert.match(body, /require\(["']\.\/audit-catalog-gaps/,
-      "refresh-upstream-catalogs.js must require audit-catalog-gaps so the SPEC is the truth source");
-    assert.match(body, /SPEC|specRequiredFields/,
-      "the SPEC import must be USED — not just imported and ignored");
+  // Upstream payloads carrying every field the five entry builders read, so a
+  // missing field in the produced row is the builder's omission, not the fixture's.
+  function rfcIndexXmlFull(num) {
+    return `<?xml version="1.0"?>
+<rfc-index>
+<rfc-entry>
+<doc-id>RFC${String(num).padStart(4, "0")}</doc-id>
+<title>Synthetic Coupling Fixture</title>
+<current-status>PROPOSED STANDARD</current-status>
+<date><month>May</month><year>2026</year></date>
+<abstract><p>A synthetic abstract long enough to clear the twenty-character floor the audit SPEC applies.</p></abstract>
+<keywords><kw>synthetic</kw></keywords>
+<area>sec</area>
+<wg_acronym>tls</wg_acronym>
+<stream>IETF</stream>
+<author><name>A. Author</name><organization>Example</organization></author>
+</rfc-entry>
+</rfc-index>`;
+  }
+  function attackStix(id) {
+    return JSON.stringify({ type: "bundle", objects: [{
+      type: "attack-pattern",
+      id: `attack-pattern--coupling-${id}`,
+      name: "Synthetic Coupling Technique",
+      description: "Adversaries may do a synthetic thing. Fixture body for the coupling gate.",
+      external_references: [{ source_name: "mitre-attack", external_id: id, url: `https://attack.mitre.org/techniques/${id}/` }],
+      kill_chain_phases: [{ kill_chain_name: "mitre-attack", phase_name: "persistence" }],
+      x_mitre_platforms: ["Linux"],
+      x_mitre_detection: "Watch for the synthetic thing.",
+    }] });
+  }
+  function icsAttackStix(id) {
+    return JSON.stringify({ type: "bundle", objects: [{
+      type: "attack-pattern",
+      id: `attack-pattern--coupling-${id}`,
+      name: "Synthetic Coupling ICS Technique",
+      description: "Adversaries may halt a process. Fixture body for the coupling gate.",
+      external_references: [{ source_name: "mitre-ics-attack", external_id: id, url: `https://attack.mitre.org/techniques/${id}/` }],
+      kill_chain_phases: [{ kill_chain_name: "mitre-ics-attack", phase_name: "inhibit-response-function" }],
+      x_mitre_platforms: ["Field Controller/RTU/PLC/IED"],
+      x_mitre_detection: "Watch the controller.",
+    }] });
+  }
+  function atlasStix(id) {
+    return JSON.stringify({ type: "bundle", objects: [{
+      type: "attack-pattern",
+      id: `attack-pattern--coupling-${id}`,
+      name: "Synthetic Coupling AML Technique",
+      description: "Adversaries may poison a model. Fixture body for the coupling gate.",
+      external_references: [{ source_name: "mitre-atlas", external_id: id, url: `https://atlas.mitre.org/techniques/${id}` }],
+      kill_chain_phases: [{ kill_chain_name: "mitre-atlas", phase_name: "ml-attack-staging" }],
+      x_mitre_platforms: ["ML"],
+    }] });
+  }
+  function d3fendOwl(id) {
+    return JSON.stringify({ "@graph": [{
+      "@id": `d3f:${id}`,
+      "d3f:d3fend-id": id,
+      "rdfs:label": "Platform Hardening",
+      "d3f:definition": "Synthetic definition text for the coupling gate. Second sentence.",
+    }] });
+  }
+
+  // All five refreshers, not four: attack-techniques.json is written by TWO of
+  // them (refreshAttack from the enterprise bundle, refreshIcsAttack from the
+  // ICS bundle through a separate entry builder), so covering the specKey once
+  // would leave the ICS builder unchecked against the same SPEC.
+  const COUPLING_CASES = [
+    { label: "rfc", specKey: "rfc-references", file: "rfc-references.json", rowId: "RFC-9321",
+      run: (deps) => RU.refreshRfc({ _deps: deps }), body: rfcIndexXmlFull(9321) },
+    { label: "attack", specKey: "attack-techniques", file: "attack-techniques.json", rowId: "T9321",
+      run: (deps) => RU.refreshAttack({ _deps: deps }), body: attackStix("T9321") },
+    { label: "ics-attack", specKey: "attack-techniques", file: "attack-techniques.json", rowId: "T0921",
+      run: (deps) => RU.refreshIcsAttack({ _deps: deps }), body: icsAttackStix("T0921") },
+    { label: "atlas", specKey: "atlas-ttps", file: "atlas-ttps.json", rowId: "AML.T9321",
+      run: (deps) => RU.refreshAtlas({ _deps: deps }), body: atlasStix("AML.T9321") },
+    { label: "d3fend", specKey: "d3fend-catalog", file: "d3fend-catalog.json", rowId: "D3-SCG",
+      run: (deps) => RU.refreshD3fend({ _deps: deps }), body: d3fendOwl("D3-SCG") },
+  ];
+
+  for (const c of COUPLING_CASES) {
+    test(`a row newly imported by ${c.label} satisfies every ${c.specKey} required_context check`, async () => {
+      let written = null;
+      const deps = {
+        fetchUrl: async () => c.body,
+        loadCatalog: () => ({ _meta: { last_updated: "2026-01-01", last_threat_review: "2026-01-01" } }),
+        writeCatalog: (rel, obj) => { written = { rel, obj }; },
+      };
+      const r = await c.run(deps);
+      assert.equal(r.added, 1, `${c.label}: the fixture row must be added`);
+      assert.equal(written.rel, c.file, `${c.label}: writes ${c.file}`);
+      const row = written.obj[c.rowId];
+      assert.equal(typeof row, "object", `${c.label}: ${c.rowId} must be present in the written catalog`);
+
+      const required = AUDIT.SPEC[c.specKey].required_context;
+      assert.equal(Array.isArray(required) && required.length > 0, true,
+        `${c.specKey}: the audit SPEC must declare required_context`);
+      for (const rc of required) {
+        assert.equal(Boolean(rc.check(row[rc.field], row)), true,
+          `${c.label}: an auto-imported row must satisfy required_context "${rc.label}" — ` +
+          `the entry builder emits ${JSON.stringify(row[rc.field])} for ${rc.field}`);
+      }
+    });
+  }
+
+  // The ICS external-reference match accepts a cross-listed `mitre-attack`
+  // reference, while the tactic map keeps ICS kill-chain phases only. An object
+  // matched by the first and not the second has no tactic to give, and a row
+  // written with `tactic: []` is a missing-context gap charged to the import
+  // itself — so the builder declines it and reports the count instead.
+  test("ics-attack refuses to import a cross-listed row it cannot give a tactic", async () => {
+    let written = null;
+    const body = JSON.stringify({ type: "bundle", objects: [{
+      type: "attack-pattern",
+      id: "attack-pattern--cross-listed",
+      name: "Cross-listed Enterprise Technique",
+      description: "Adversaries may do an enterprise thing. Fixture body.",
+      // Enterprise reference + enterprise kill chain: the extRef matcher accepts
+      // it, the ICS tactic filter drops every phase.
+      external_references: [{ source_name: "mitre-attack", external_id: "T0999", url: "https://attack.mitre.org/techniques/T0999/" }],
+      kill_chain_phases: [{ kill_chain_name: "mitre-attack", phase_name: "persistence" }],
+      x_mitre_platforms: ["Windows"],
+    }] });
+    const deps = {
+      fetchUrl: async () => body,
+      loadCatalog: () => ({ _meta: { last_updated: "2026-01-01", last_threat_review: "2026-01-01" } }),
+      writeCatalog: (rel, obj) => { written = { rel, obj }; },
+    };
+
+    const r = await RU.refreshIcsAttack({ _deps: deps });
+    assert.equal(r.added, 0, "a row with no ICS kill-chain phase must not be imported");
+    assert.equal(r.skipped_no_ics_tactic, 1,
+      "the skip must be counted and returned, so the omission is observable rather than silent");
+    assert.equal(written, null,
+      "nothing added and nothing backfilled is a genuine no-op — no write");
+
+    // The tactic check is what would have failed: prove the SPEC would have
+    // flagged the row this refresher declined to write.
+    const tacticRc = AUDIT.SPEC["attack-techniques"].required_context.find((rc) => rc.field === "tactic");
+    assert.equal(typeof tacticRc, "object", "the attack-techniques SPEC must declare a tactic check");
+    assert.equal(tacticRc.check([], {}), false,
+      "an empty tactic array is a missing-context gap by the audit's own check");
   });
 
   test("AUDIT.SPEC declares required_context for every catalog the refresher writes to", () => {
-    // The refresher writes to: rfc-references, attack-techniques, atlas-ttps,
-    // d3fend-catalog. Each must have a SPEC entry so the refresher-spec coupling
-    // holds.
+    // Five refreshers write four catalogs: rfc-references (refreshRfc),
+    // attack-techniques (refreshAttack AND refreshIcsAttack, through separate
+    // entry builders), atlas-ttps (refreshAtlas), d3fend-catalog (refreshD3fend).
+    // Each catalog must have a SPEC entry so the refresher-spec coupling holds.
     for (const key of ["rfc-references", "attack-techniques", "atlas-ttps", "d3fend-catalog"]) {
       const spec = AUDIT.SPEC[key];
       assert.ok(spec, `audit SPEC must declare ${key}`);
@@ -1087,5 +1220,185 @@ require("node:test").describe("refresh-upstream backfillAtlas single-tactic stri
     const fill = { name: "y" };
     m.backfillAtlas(fill, { tactic: ["a", "b"] });
     assert.deepEqual(fill.tactic, ["a", "b"]);
+  });
+});
+
+// ===========================================================================
+// CAP=<n> bounds new adds on EVERY source. runCli reads process.env.CAP once
+// and hands the same value to all five refreshers, so a refresher that drops it
+// imports the whole upstream index on a run the operator asked to bound —
+// silently, since nothing reports the omission.
+//
+// SCOPE: these tests cover the refreshers and runCli's dispatch only. The
+// per-type wrapper scripts (`npm run refresh-rfc-index` and friends) each parse
+// CAP themselves and are covered in their own suites — a wrapper dropping the
+// cap is invisible from here, because runCli is not the code path those
+// operator-facing commands run.
+// ===========================================================================
+
+require("node:test").describe("refresh-upstream cap coverage across all five sources", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const MOD = require("../scripts/refresh-upstream-catalogs.js");
+
+  test("refreshRfc honors the cap on new adds while backfill stays uncapped", async () => {
+    // Four upstream RFCs: RFC-7001 is already curated (missing its abstract),
+    // the other three are new.
+    const xml = `<?xml version="1.0"?>
+<rfc-index>
+${[7001, 7002, 7003, 7004].map((n) => `<rfc-entry>
+<doc-id>RFC${n}</doc-id>
+<title>Capped RFC ${n}</title>
+<current-status>PROPOSED STANDARD</current-status>
+<date><month>May</month><year>2026</year></date>
+<abstract><p>An abstract for RFC ${n}, long enough to be a real backfill value.</p></abstract>
+</rfc-entry>`).join("\n")}
+</rfc-index>`;
+    let written = null;
+    const deps = {
+      fetchUrl: async () => xml,
+      loadCatalog: () => ({
+        _meta: { last_updated: "2026-01-01", last_threat_review: "2026-01-01" },
+        "RFC-7001": { number: 7001, title: "Capped RFC 7001", status: "Proposed Standard" },
+      }),
+      writeCatalog: (rel, obj) => { written = { rel, obj }; },
+    };
+
+    const r = await MOD.refreshRfc({ cap: 2, _deps: deps });
+    assert.equal(r.added, 2, "exactly cap new RFCs may be added");
+    assert.equal(r.backfilled, 1, "the cap must not suppress backfill on an existing row");
+    assert.equal(typeof written.obj["RFC-7001"].abstract, "string",
+      "the existing row's abstract is backfilled despite the cap");
+    const landed = [7002, 7003, 7004].filter((n) => written.obj[`RFC-${n}`] !== undefined);
+    assert.equal(landed.length, 2, "only two of the three new RFCs land under cap:2");
+  });
+
+  test("refreshAtlas honors the cap on new adds while backfill stays uncapped", async () => {
+    const bundle = JSON.stringify({
+      type: "bundle",
+      objects: [7001, 7002, 7003].map((n) => ({
+        type: "attack-pattern",
+        id: `attack-pattern--capped-${n}`,
+        name: `Capped AML Technique ${n}`,
+        description: `Adversaries may do capped thing ${n}. Fixture body.`,
+        external_references: [{
+          source_name: "mitre-atlas",
+          external_id: `AML.T${n}`,
+          url: `https://atlas.mitre.org/techniques/AML.T${n}`,
+        }],
+        kill_chain_phases: [{ kill_chain_name: "mitre-atlas", phase_name: "ml-attack-staging" }],
+        x_mitre_platforms: ["ML"],
+      })),
+    });
+    let written = null;
+    const deps = {
+      fetchUrl: async () => bundle,
+      loadCatalog: () => ({
+        _meta: { atlas_version: "2026.05", last_updated: "2026-01-01", last_threat_review: "2026-01-01" },
+        "AML.T7001": { id: "AML.T7001", name: "Capped AML Technique 7001", tactic: "AI Attack Staging" },
+      }),
+      writeCatalog: (rel, obj) => { written = { rel, obj }; },
+    };
+
+    const r = await MOD.refreshAtlas({ cap: 1, _deps: deps });
+    assert.equal(r.added, 1, "exactly cap new ATLAS techniques may be added");
+    assert.equal(r.backfilled, 1, "the cap must not suppress backfill on an existing row");
+    assert.equal(typeof written.obj["AML.T7001"].description, "string",
+      "the existing row's description is backfilled despite the cap");
+    const landed = [7002, 7003].filter((n) => written.obj[`AML.T${n}`] !== undefined);
+    assert.equal(landed.length, 1, "only one of the two new techniques lands under cap:1");
+  });
+
+  test("refreshIcsAttack honors the cap on new adds while backfill stays uncapped", async () => {
+    const icsTech = (n) => ({
+      type: "attack-pattern",
+      id: `attack-pattern--capped-${n}`,
+      name: `Capped ICS Technique ${n}`,
+      description: `Adversaries may do capped ICS thing ${n}. Fixture body.`,
+      external_references: [{
+        source_name: "mitre-ics-attack",
+        external_id: `T0${n}`,
+        url: `https://attack.mitre.org/techniques/T0${n}/`,
+      }],
+      kill_chain_phases: [{ kill_chain_name: "mitre-ics-attack", phase_name: "inhibit-response-function" }],
+      x_mitre_platforms: ["Field Controller/RTU/PLC/IED"],
+    });
+    const bundle = JSON.stringify({ type: "bundle", objects: [801, 802, 803].map(icsTech) });
+    let written = null;
+    const deps = {
+      fetchUrl: async () => bundle,
+      loadCatalog: () => ({
+        _meta: { last_updated: "2026-01-01", last_threat_review: "2026-01-01" },
+        // Curated row missing its description — backfill must reach it anyway.
+        "T0801": { id: "T0801", name: "Capped ICS Technique 801", tactic: ["Inhibit Response Function"] },
+      }),
+      writeCatalog: (rel, obj) => { written = { rel, obj }; },
+    };
+
+    const r = await MOD.refreshIcsAttack({ cap: 1, _deps: deps });
+    assert.equal(r.added, 1, "exactly cap new ICS techniques may be added");
+    assert.equal(r.backfilled, 1, "the cap must not suppress backfill on an existing row");
+    assert.equal(typeof written.obj["T0801"].description, "string",
+      "the existing row's description is backfilled despite the cap");
+    const landed = [802, 803].filter((n) => written.obj[`T0${n}`] !== undefined);
+    assert.equal(landed.length, 1, "only one of the two new techniques lands under cap:1");
+  });
+
+  test("refreshD3fend honors the cap on new adds while backfill stays uncapped", async () => {
+    const owlTech = (n) => ({
+      "@id": `d3f:D3-CAP${n}`,
+      "d3f:d3fend-id": `D3-CAP${n}`,
+      "rdfs:label": `Capped Defensive Technique ${n}`,
+      "d3f:definition": `Synthetic definition ${n} for the cap gate. Second sentence.`,
+      "d3f:synonym": [`cap-syn-${n}`],
+    });
+    const owl = JSON.stringify({ "@graph": [1, 2, 3].map(owlTech) });
+    let written = null;
+    const deps = {
+      fetchUrl: async () => owl,
+      loadCatalog: () => ({
+        _meta: { last_updated: "2026-01-01", last_threat_review: "2026-01-01" },
+        // Curated row missing its synonyms — backfill must reach it anyway.
+        "D3-CAP1": { id: "D3-CAP1", name: "Capped Defensive Technique 1", tactic: "Harden", description: "Curated." },
+      }),
+      writeCatalog: (rel, obj) => { written = { rel, obj }; },
+    };
+
+    const r = await MOD.refreshD3fend({ cap: 1, _deps: deps });
+    assert.equal(r.added, 1, "exactly cap new D3FEND techniques may be added");
+    assert.equal(r.backfilled, 1, "the cap must not suppress backfill on an existing row");
+    assert.deepEqual(written.obj["D3-CAP1"].synonyms, ["cap-syn-1"],
+      "the existing row's synonyms are backfilled despite the cap");
+    assert.equal(written.obj["D3-CAP1"].description, "Curated.",
+      "backfill never overwrites a populated curated field");
+    const landed = ["D3-CAP2", "D3-CAP3"].filter((k) => written.obj[k] !== undefined);
+    assert.equal(landed.length, 1, "only one of the two new techniques lands under cap:1");
+  });
+
+  test("every refresher runCli dispatches to destructures cap", () => {
+    // Backstop for the five behavioural cap tests above (three here, one in
+    // tests/refresh-mitre-attack.test.js): it catches a NEW refresher landing
+    // without the parameter at all. It proves nothing about the cap being READ,
+    // which is what the behavioural tests are for.
+    //
+    // The parameter list is matched lazily to the `= {}` default that closes it.
+    // A negated-brace class would truncate at the `{` of `_deps = {}` and see
+    // only the parameters that happen to precede it.
+    const src = fs.readFileSync(
+      path.join(__dirname, "..", "scripts", "refresh-upstream-catalogs.js"), "utf8");
+    for (const fn of ["refreshRfc", "refreshAttack", "refreshIcsAttack", "refreshAtlas", "refreshD3fend"]) {
+      const m = src.match(new RegExp(`async function ${fn}\\(\\{([\\s\\S]*?)\\}\\s*=\\s*\\{\\}\\)`));
+      assert.equal(m !== null, true, `${fn} must take a destructured options object with a {} default`);
+      assert.equal(/\bcap\b/.test(m[1]), true,
+        `${fn} must destructure cap — runCli passes { dry, cap } to every source`);
+      // The whole list is in hand, not a prefix of it: the last parameter must
+      // be visible too, or the match truncated the way the old one did.
+      assert.equal(/_deps\s*=\s*\{$/.test(m[1].trim()), false,
+        `${fn}: the parameter match truncated mid-list at a nested brace`);
+      assert.equal(/\b_deps\b/.test(m[1]), true,
+        `${fn}: the match must span the full parameter list, _deps included`);
+    }
   });
 });

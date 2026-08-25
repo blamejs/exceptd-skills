@@ -267,6 +267,38 @@ test('validate() rejects an entry missing required fields', () => {
   assert.ok(errs.some(e => e.includes("missing required field")), 'expected missing-field errors');
 });
 
+test('validate() reports a null entry instead of throwing, and keeps checking the rest', () => {
+  const withNull = {
+    'CVE-TEST-NULL-0001': null,
+    'CVE-TEST-NULL-0002': {
+      type: 'LPE', cvss_score: 7, cvss_vector: 'x', cisa_kev: false,
+      poc_available: true, poc_description: '',
+      ai_discovered: false, active_exploitation: 'none',
+      affected: 'x', patch_available: true, patch_required_reboot: false,
+      live_patch_available: false, live_patch_tools: [],
+      rwep_score: 5, rwep_factors: { blast_radius: 0 },
+      atlas_refs: [], attack_refs: [],
+      source_verified: '2026-01-01', verification_sources: [], last_updated: '2026-01-01'
+    }
+  };
+  const errs = validate(withNull);
+  assert.equal(Array.isArray(errs), true);
+  assert.equal(
+    errs.filter(e => e === 'CVE-TEST-NULL-0001: entry is null, expected an object').length,
+    1
+  );
+  // The entry after the null one is still validated — the loop did not abort.
+  assert.equal(errs.filter(e => /^CVE-TEST-NULL-0002: .*poc_description is empty/.test(e)).length, 1);
+});
+
+test('validate() reports a non-object entry rather than throwing on the `in` operator', () => {
+  const errs = validate({ 'CVE-TEST-STR-0001': 'not-an-entry' });
+  assert.equal(
+    errs.filter(e => e === 'CVE-TEST-STR-0001: entry is string, expected an object').length,
+    1
+  );
+});
+
 test('validate() flags poc_available without poc_description', () => {
   const bad = {
     'CVE-TEST-0002': {

@@ -37,10 +37,26 @@ function parseArgs(argv) {
 
 function printHelp() {
   const banner =
+    "check-test-coverage — report changed surface that no test covers.\n" +
+    "\n" +
     "Usage: node scripts/check-test-coverage.js [--base <ref>] [--staged]\n" +
     "                                          [--json] [--warn-only]\n" +
     "\n" +
-    "See file header for full surface + categorization rules.\n";
+    "Flags:\n" +
+    "  --base <ref>   compare against <ref>..HEAD (default: origin/main)\n" +
+    "  --staged       compare the staged set instead of a ref range\n" +
+    "  --json         emit the result as JSON instead of a text report\n" +
+    "  --warn-only    report findings but always exit 0\n" +
+    "\n" +
+    "Surfaces checked: CLI verbs and flags in bin/exceptd.js, exported functions\n" +
+    "in lib / orchestrator / scripts, playbook detect-indicator and look-artifact\n" +
+    "ids, and CVE entries whose iocs changed.\n" +
+    "\n" +
+    "Categorization: docs, tooling dotfiles, tests/ itself and derived indexes are\n" +
+    "allowlisted; workflows, manifests, schemas, SBOM and unclassified files are\n" +
+    "surfaced as manual-review, never auto-green.\n" +
+    "\n" +
+    "Exit codes: 0 clean or --warn-only, 1 uncovered surface, 2 runner error.\n";
   process.stdout.write(banner);
 }
 

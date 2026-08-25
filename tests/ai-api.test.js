@@ -219,6 +219,284 @@ test("ai-api: google cleartext key emits hit + populated {0,1,2} __fp_checks att
     "the google value regex must let cleartextFpIndices attest all three deterministic FP checks — an empty {} here re-introduces the runner downgrade"
   );
 });
+
+/**
+ * collector_errors reachability.
+ *
+ * The ai-api collector declared `collector_errors: []` and never pushed to it.
+ * Every credential-store read failure was swallowed by readSafe returning null,
+ * and an unparseable gcloud ADC returned `{ hasServiceAccount: false }` — which
+ * the collector renders as `gcp-service-account-json: "miss"`. A file that
+ * could not be read and a file that was read and holds nothing therefore
+ * produced byte-identical output: a clean bill of health over an unscanned
+ * store. The reason now travels on the submission, which bin/exceptd.js prints
+ * as "Collector warnings" and the runner forwards as collector_warnings.
+ */
+
+function mkTmpHome(prefix) {
+  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+}
+
+test("ai-api: an unparseable gcloud ADC reports inconclusive and an uncaptured artifact, not a clean scan", () => {
+  const home = mkTmpHome("ai-err-adc-");
+  try {
+    const adcDir = path.join(home, ".config", "gcloud");
+    fs.mkdirSync(adcDir, { recursive: true });
+    fs.writeFileSync(path.join(adcDir, "application_default_credentials.json"), '{"type":"service_account"', "utf8");
+
+    const r = aiApi.collect({ cwd: home, env: { HOME: home } });
+
+    assert.ok(Array.isArray(r.collector_errors), "collector_errors must be an array");
+    const hit = r.collector_errors.find(
+      (e) => e.artifact_id === "gcp-credentials" && e.kind === "parse_failed",
+    );
+    assert.ok(
+      hit,
+      `expected a gcp-credentials/parse_failed entry; got ${JSON.stringify(r.collector_errors)}`,
+    );
+    assert.equal(typeof hit.reason, "string");
+    assert.match(hit.reason, /application_default_credentials\.json/);
+    // A file whose contents were never validated cannot answer the question the
+    // indicator asks, so it reports inconclusive. `miss` would state that no
+    // service account is present on the strength of a parse that failed.
+    assert.equal(r.signal_overrides["gcp-service-account-json"], "inconclusive");
+    // Read-but-unparseable is not capture: the bytes arrived and told us
+    // nothing, so the artifact must not claim service_account=false.
+    const art = r.artifacts["gcp-credentials"];
+    assert.equal(art.captured, false);
+    assert.match(art.value, /unparseable/);
+    assert.equal(typeof art.reason, "string");
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("ai-api: a shell rc over the scan cap is recorded as file_too_large_skipped, not silently unscanned", () => {
+  const home = mkTmpHome("ai-err-big-");
+  try {
+    // Over the 256 KB readSafe cap, with a real export inside: the collector
+    // cannot see the key, so the operator has to be told the file was skipped.
+    const rc =
+      "# padding\n".repeat(30000) +
+      'export OPENAI_API_KEY="sk-' + "A".repeat(48) + '"\n';
+    assert.ok(Buffer.byteLength(rc, "utf8") > 256 * 1024, "fixture must exceed the scan cap");
+    fs.writeFileSync(path.join(home, ".bashrc"), rc, "utf8");
+
+    const r = aiApi.collect({ cwd: home, env: { HOME: home } });
+
+    const hit = r.collector_errors.find((e) => e.kind === "file_too_large_skipped");
+    assert.ok(
+      hit,
+      `expected a file_too_large_skipped entry; got ${JSON.stringify(r.collector_errors)}`,
+    );
+    assert.equal(hit.artifact_id, "shell-rc-files");
+    assert.equal(typeof hit.reason, "string");
+    // Home-relative, never the absolute path: collector_meta already carries
+    // `home`, and the absolute path is operator-identifying.
+    assert.match(hit.reason, /^\.bashrc: \d+ bytes exceeds \d+-byte scan limit/);
+    assert.equal(
+      hit.reason.includes(home),
+      false,
+      "the skip reason must not embed the absolute home path",
+    );
+    // The key inside the skipped file was NOT seen — which is the point, and
+    // is why the verdict cannot be `miss`. This fixture holds a real key the
+    // collector never read, so reporting no cleartext key would be a clean
+    // bill of health over the one file that carries one.
+    assert.equal(r.signal_overrides["cleartext-api-key-in-dotfile"], "inconclusive");
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("ai-api: an unread credential store reports inconclusive, never a clean miss", () => {
+  const home = mkTmpHome("ai-err-unread-");
+  try {
+    // Over the scan cap, so readSafe returns null for a file that exists. The
+    // store could hold a long-lived key or a static token; nothing in it was
+    // read, so neither indicator may answer for it.
+    const big = "#".repeat(300 * 1024) + "\n";
+    fs.mkdirSync(path.join(home, ".aws"), { recursive: true });
+    fs.writeFileSync(path.join(home, ".aws", "credentials"), big, "utf8");
+    fs.mkdirSync(path.join(home, ".kube"), { recursive: true });
+    fs.writeFileSync(path.join(home, ".kube", "config"), big, "utf8");
+
+    const r = aiApi.collect({ cwd: home, env: { HOME: home } });
+
+    assert.equal(r.signal_overrides["long-lived-aws-keys"], "inconclusive");
+    assert.equal(r.signal_overrides["kubeconfig-with-static-token"], "inconclusive");
+    assert.equal(r.artifacts["aws-credentials"].captured, false);
+    assert.equal(r.artifacts["kube-config"].captured, false);
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("ai-api: a credential store read as empty is a scanned miss, not an unread gap", () => {
+  const home = mkTmpHome("ai-err-empty-");
+  try {
+    // An empty file reads as "" — a completed scan that found nothing. Testing
+    // content truthiness routes it to the unread branch and reports a
+    // visibility gap that does not exist, with no reason on collector_errors.
+    fs.mkdirSync(path.join(home, ".aws"), { recursive: true });
+    fs.writeFileSync(path.join(home, ".aws", "credentials"), "", "utf8");
+    fs.mkdirSync(path.join(home, ".kube"), { recursive: true });
+    fs.writeFileSync(path.join(home, ".kube", "config"), "", "utf8");
+
+    const r = aiApi.collect({ cwd: home, env: { HOME: home } });
+
+    assert.equal(r.signal_overrides["long-lived-aws-keys"], "miss");
+    assert.equal(r.signal_overrides["kubeconfig-with-static-token"], "miss");
+    assert.equal(r.artifacts["aws-credentials"].captured, true);
+    assert.equal(r.artifacts["kube-config"].captured, true);
+    assert.deepEqual(r.collector_errors, []);
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("ai-api: a clean home leaves collector_errors empty", () => {
+  const home = mkTmpHome("ai-err-clean-");
+  try {
+    fs.writeFileSync(path.join(home, ".bashrc"), "# nothing interesting here\n", "utf8");
+    const r = aiApi.collect({ cwd: home, env: { HOME: home } });
+    assert.deepEqual(r.collector_errors, [], "an absent store is not an error — the channel must not over-report");
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+
+/** Over the readSafe scan cap, with a plausible key export inside. */
+function oversizedKeyFile() {
+  return "# padding\n".repeat(30000) + 'export OPENAI_API_KEY="sk-' + "A".repeat(48) + '"\n';
+}
+
+test("ai-api: a skipped dotfile carrier is reported against dotfile-api-keys, not the shell-rc row", () => {
+  const home = mkTmpHome("ai-err-dotfile-");
+  try {
+    // `~/.anthropic` is a dotfile carrier, and the collector declares
+    // dotfile-api-keys as its own artifact. Routing its read failure to
+    // shell-rc-files points the operator at a file that scanned fine.
+    fs.writeFileSync(path.join(home, ".anthropic"), oversizedKeyFile(), "utf8");
+    // A shell rc that reads cleanly, so a wrong attribution is unambiguous.
+    fs.writeFileSync(path.join(home, ".bashrc"), "# nothing interesting here\n", "utf8");
+
+    const r = aiApi.collect({ cwd: home, env: { HOME: home } });
+
+    const hit = r.collector_errors.find((e) => e.kind === "file_too_large_skipped");
+    assert.ok(hit, `expected a file_too_large_skipped entry; got ${JSON.stringify(r.collector_errors)}`);
+    assert.equal(
+      hit.artifact_id,
+      "dotfile-api-keys",
+      "the carrier's own artifact owns the failure — shell-rc-files scanned without incident",
+    );
+    assert.equal(typeof hit.reason, "string");
+    assert.match(hit.reason, /^\.anthropic: \d+ bytes exceeds \d+-byte scan limit/);
+    assert.equal(
+      r.collector_errors.some((e) => e.artifact_id === "shell-rc-files"),
+      false,
+      "no shell rc failed to read, so nothing may be attributed to shell-rc-files",
+    );
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("ai-api: a KUBECONFIG in a home-prefixed SIBLING directory is labelled by basename, with no ../ chain", () => {
+  // "/home/rob" is a string prefix of "/home/robert-backup", so a bare
+  // startsWith() treats a sibling account's kubeconfig as home-relative and
+  // labels it "../robert-backup/.kube/config" — the `..` chain the basename
+  // branch exists to avoid, carrying another account's directory name into an
+  // operator-visible warning.
+  const base = mkTmpHome("ai-err-kube-sib-");
+  try {
+    const home = path.join(base, "rob");
+    const sibling = path.join(base, "robert-backup", ".kube");
+    fs.mkdirSync(home, { recursive: true });
+    fs.mkdirSync(sibling, { recursive: true });
+    const kubeCfg = path.join(sibling, "config");
+    fs.writeFileSync(kubeCfg, "# padding\n".repeat(30000), "utf8");
+    assert.ok(
+      kubeCfg.startsWith(home),
+      "the fixture must reproduce the sibling-prefix shape a bare startsWith() accepts",
+    );
+
+    const r = aiApi.collect({ cwd: home, env: { HOME: home, KUBECONFIG: kubeCfg } });
+
+    const hit = r.collector_errors.find((e) => e.artifact_id === "kube-config");
+    assert.ok(hit, `expected a kube-config entry; got ${JSON.stringify(r.collector_errors)}`);
+    assert.equal(hit.kind, "file_too_large_skipped");
+    assert.equal(typeof hit.reason, "string");
+    assert.match(hit.reason, /^config: \d+ bytes exceeds \d+-byte scan limit/);
+    assert.equal(hit.reason.includes(".."), false, "a sibling path must not degrade to a ../ chain");
+    assert.equal(
+      hit.reason.includes("robert-backup"),
+      false,
+      "the label must not leak the sibling directory name",
+    );
+  } finally {
+    fs.rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test("ai-api: a credential store that exists but went unread reports captured:false, never 'absent'", () => {
+  const home = mkTmpHome("ai-err-unread-");
+  try {
+    // Every one of the three canonical stores exists and is over the scan cap,
+    // so each is present-and-unread. Rendering "absent" here is a positive
+    // claim about a file the collector never opened past its size.
+    const big = "# padding\n".repeat(30000);
+    fs.mkdirSync(path.join(home, ".aws"), { recursive: true });
+    fs.writeFileSync(path.join(home, ".aws", "credentials"), big, "utf8");
+    fs.mkdirSync(path.join(home, ".config", "gcloud"), { recursive: true });
+    fs.writeFileSync(path.join(home, ".config", "gcloud", "application_default_credentials.json"), big, "utf8");
+    fs.mkdirSync(path.join(home, ".kube"), { recursive: true });
+    fs.writeFileSync(path.join(home, ".kube", "config"), big, "utf8");
+
+    const r = aiApi.collect({ cwd: home, env: { HOME: home } });
+
+    // The exact strings the collector emits when the store really is missing.
+    // The unread rendering must be none of them.
+    const ABSENCE_CLAIM = {
+      "aws-credentials": "~/.aws/credentials absent",
+      "gcp-credentials": "no gcloud ADC at the canonical path",
+      "kube-config": "no kubeconfig at the canonical path",
+    };
+    for (const [id, absent] of Object.entries(ABSENCE_CLAIM)) {
+      const a = r.artifacts[id];
+      assert.equal(typeof a.value, "string", `${id}: value must be a string`);
+      assert.notEqual(a.value, absent, `${id}: "${absent}" asserts absence for a file that exists`);
+      assert.match(a.value, /present but unread/, `${id}: must say the store was not read`);
+      assert.match(a.value, /undetermined, not absent/, `${id}: must not claim absence`);
+      assert.equal(a.captured, false, `${id}: an unread store is not captured`);
+      assert.equal(typeof a.reason, "string", `${id}: captured:false requires a reason`);
+      assert.ok(
+        r.collector_errors.some((e) => e.artifact_id === id),
+        `${id}: the unread store must also appear on collector_errors`,
+      );
+    }
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("ai-api: a genuinely absent store still reports absent and captured:true", () => {
+  const home = mkTmpHome("ai-err-absent-");
+  try {
+    fs.writeFileSync(path.join(home, ".bashrc"), "# nothing interesting here\n", "utf8");
+    const r = aiApi.collect({ cwd: home, env: { HOME: home } });
+
+    assert.equal(r.artifacts["aws-credentials"].value, "~/.aws/credentials absent");
+    assert.equal(r.artifacts["aws-credentials"].captured, true);
+    assert.equal(r.artifacts["gcp-credentials"].value, "no gcloud ADC at the canonical path");
+    assert.equal(r.artifacts["gcp-credentials"].captured, true);
+    assert.equal(r.artifacts["kube-config"].value, "no kubeconfig at the canonical path");
+    assert.equal(r.artifacts["kube-config"].captured, true);
+    assert.deepEqual(r.collector_errors, []);
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
 ;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
   for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
   __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });

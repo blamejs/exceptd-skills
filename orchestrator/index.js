@@ -1384,7 +1384,6 @@ function runWatchlistAlerts(rawArgs = []) {
         e?.poc_available === true &&
         e?.cisa_kev !== true &&
         daysSince(e?.source_verified) <= 14,
-      fresh_only: true,
     },
   ];
 

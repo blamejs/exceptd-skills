@@ -39,7 +39,6 @@ function canonicalizeForTarball(value) {
 function canonicalManifestBytesForTarball(manifest) {
   const clone = Object.assign({}, manifest);
   delete clone.manifest_signature;
-  const cryptoMod = require("crypto"); // eslint-disable-line no-unused-vars
   const json = JSON.stringify(canonicalizeForTarball(clone), null, 2);
   return normalizeSkillBytes(Buffer.from(json, "utf8"));
 }

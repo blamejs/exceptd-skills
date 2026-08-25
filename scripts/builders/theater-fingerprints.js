@@ -135,12 +135,14 @@ function pullField(body, label) {
   return m ? m[1].trim() : null;
 }
 
-function buildTheaterFingerprints({ root }) {
+// `patternMap` defaults to the curated map; an explicit one lets a test drive
+// the builder with a pattern set of a different size.
+function buildTheaterFingerprints({ root, patternMap = PATTERN_CONTROL_MAP }) {
   const skillPath = path.join(root, "skills/compliance-theater/skill.md");
   const body = fs.readFileSync(skillPath, "utf8");
 
   const out = {};
-  for (const [num, meta] of Object.entries(PATTERN_CONTROL_MAP)) {
+  for (const [num, meta] of Object.entries(patternMap)) {
     const patternBody = extractPatternBodyFromSkill(body, Number(num));
     out[`pattern-${num}`] = {
       pattern_number: Number(num),
@@ -169,11 +171,14 @@ function buildTheaterFingerprints({ root }) {
     }
   }
 
+  const patternCount = Object.keys(out).length;
   return {
     _meta: {
       schema_version: "1.0.0",
-      source: "skills/compliance-theater/skill.md (7 documented patterns)",
-      pattern_count: Object.keys(out).length,
+      // Counted from the built set, not written out, so adding a pattern cannot
+      // leave this prose contradicting pattern_count in the shipped index.
+      source: `skills/compliance-theater/skill.md (${patternCount} documented patterns)`,
+      pattern_count: patternCount,
     },
     patterns: out,
     by_control: byControl,

@@ -170,6 +170,50 @@ test('a __-prefixed file is ignored by classifyCollectors so a leaked fixture ca
   );
 });
 
+test('a load error names the directory actually scanned, not a hardcoded lib/collectors/', () => {
+  // The diagnostic used to prefix every failing file with `lib/collectors/`
+  // whatever dir was scanned, so a run against EXCEPTD_COLLECTOR_DIR pointed the
+  // reader at a shipped path that had nothing wrong with it. The collectorFiles
+  // entries keep the literal prefix on purpose — they are matched against the
+  // paths AGENTS.md enumerates — but the error must name the real file.
+  withTempCollectorDir(
+    { 'broken-collector.js': '"use strict";\nthrow new Error("simulated load-time failure");\n' },
+    (dir) => {
+      const { loadErrors } = classifyCollectors(dir);
+      assert.equal(loadErrors.length, 1);
+      assert.equal(typeof loadErrors[0], 'string');
+      assert.equal(
+        loadErrors[0].startsWith('lib/collectors/'), false,
+        `a tempdir load error must not be labelled under the shipped collectors path; got ${loadErrors[0]}`
+      );
+      const expected = path.join(dir, 'broken-collector.js').split(path.sep).join('/');
+      assert.equal(
+        loadErrors[0].startsWith(expected + ':'), true,
+        `expected the error to open with ${expected}; got ${loadErrors[0]}`
+      );
+      assert.match(loadErrors[0], /simulated load-time failure/);
+    }
+  );
+});
+
+test('the load-error label stays repo-relative for the real collectors dir', () => {
+  // Pure-function check, so nothing is ever written into the real lib/collectors/
+  // — a fixture left there by a killed run poisons every collector-counting gate.
+  // Inside the repo the operator-facing form is unchanged; only an out-of-repo
+  // override dir falls back to the literal path.
+  const { collectorDisplayPath } = require(GATE);
+  assert.equal(typeof collectorDisplayPath, 'function');
+  assert.equal(
+    collectorDisplayPath(path.join(ROOT, 'lib', 'collectors'), 'kernel-lpe.js'),
+    'lib/collectors/kernel-lpe.js'
+  );
+  const outside = path.join(os.tmpdir(), 'exceptd-not-in-repo');
+  assert.equal(
+    collectorDisplayPath(outside, 'x.js'),
+    path.join(outside, 'x.js').split(path.sep).join('/')
+  );
+});
+
 test('a require-succeeds-without-collect helper is still excluded, not treated as a load error', () => {
   // Regression guard for the by-design exclusion: scan-excludes.js requires
   // cleanly but exports no collect(). It must remain a silent exclusion (not

@@ -8,9 +8,10 @@
  *   - file-level, in the first 50 lines:  // codebase-patterns:allow-file <class> — <reason>
  *   - per-line, on the same line or up to 2 lines above:  // allow:<class> — <reason>
  *
- * Owned elsewhere: phase/version vocabulary (check-version-tags.js), CLI-dispatch
- * process.exit (tests/safe-exit-grep.test.js), test assertions
- * (check-test-coverage.js), operator-output path leaks (operator-leak-grep.test.js).
+ * Owned elsewhere: phase/version vocabulary (check-version-tags.js), test
+ * assertions (check-test-coverage.js), and — both now in tests/cli.test.js,
+ * which absorbed the separate safe-exit-grep and operator-leak-grep files —
+ * the per-file CLI-dispatch process.exit ban and operator-output path leaks.
  */
 
 const fs = require("node:fs");
@@ -209,6 +210,18 @@ function inRanges(ranges, lineNo) {
 // stopping there leaves a real exit-after-write unflagged.
 const FUNCTION_START = /(^|[^.\w])function\b|=>\s*\{?\s*$|^\s*(async\s+)?(?!(?:if|for|while|switch|catch|do|else|with|finally|return)\b)[A-Za-z_$][\w$]*\s*\([^)]*\)\s*\{/;
 
+// Scope, stated so it is not mistaken for full coverage of the class: the
+// backward scan recognises a result-channel write only where it is written
+// LITERALLY — `process.stdout.write(` or `console.log(`. A write reached
+// INDIRECTLY, through a helper called from the exiting function (`printHelp()`,
+// `renderSummary()`), is invisible to it, so an exit-after-write of that shape
+// passes this gate and has to be caught by review or a per-file test.
+//
+// Not closed by matching call sites of same-file writer functions: measured over
+// lib/, orchestrator/, scripts/ and bin/, that heuristic cannot tell a helper
+// that writes to STDOUT from one that writes to stderr via console.error, and it
+// fires on exits that are correct. Closing it properly needs call-graph
+// resolution of the write target, not another regex.
 function detectProcessExitAfterStdout(files) {
   const hits = [];
   for (const rel of (files || filesUnder(["bin/exceptd.js", "lib", "orchestrator", "scripts"]))) {

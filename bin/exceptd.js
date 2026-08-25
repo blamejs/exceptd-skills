@@ -544,11 +544,7 @@ function main() {
     // Strip only `--prefetch` (the alias). `--no-network` must reach prefetch.js:
     // dropping it leaves prefetch fetching, so a cold cache hits every upstream.
     effectiveCmd = "prefetch";
-    const wantedNoNetwork = rest.includes("--no-network");
     effectiveRest = rest.filter(a => a !== "--prefetch");
-    if (wantedNoNetwork && !effectiveRest.includes("--no-network")) {
-      // Unreachable while the filter above spares --no-network.
-    }
   } else if (cmd === "refresh" && rest.includes("--indexes-only")) {
     effectiveCmd = "build-indexes";
     effectiveRest = rest.filter(a => a !== "--indexes-only");
@@ -6937,7 +6933,6 @@ function cmdAiRun(runner, args, runOpts, pretty) {
     if (!handled) {
       // stdin closed with no evidence event. Before erroring, try the raw text as a
       // bare submission — `echo '{...}' | ai-run secrets` pipes the body unwrapped.
-      const raw = (process.stdin._consumed || "") || buf;
       const allText = process.stdin._allText;
       if (allText && allText.trim()) {
         try {

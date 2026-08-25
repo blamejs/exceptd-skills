@@ -196,6 +196,54 @@ test('#19 parseIsoDateStrict rejects impossible dates and accepts real ones (no 
   assert.equal(parseIsoDateStrict('2024-01-15').getUTCFullYear(), 2024);
 });
 
+// ===========================================================================
+// CHARACTERIZATION PINS — freshness_policy ordering is a hard error in BOTH
+// modes. These lock behaviour the validator already had; they are not
+// regression coverage, because nothing about the ordering check was broken or
+// repaired. lib/validate-catalog-meta.js needed no fix, and these tests pass
+// against it unchanged.
+//
+// What they pin: the staleness finding beside it is mode-dependent (a warning
+// by default, an error under --strict); the ordering check is not. Its push
+// sits outside every opts.strict branch, so it is an error in either mode. An
+// out-of-order policy makes the staleness math incoherent for every consumer
+// whatever mode the validator runs in, and demoting it to a warning would let a
+// catalog ship whose review cadence outlives its own stale-after window — so a
+// future refactor that folds the ordering check into the strict-only branch
+// should fail here rather than pass quietly.
+// ===========================================================================
+
+const ORDERING_RE = /expected default_review_cadence_days <= stale_after_days <= rebuild_after_days/;
+
+for (const mode of [{}, { strict: true }]) {
+  const modeLabel = mode.strict ? '--strict' : 'default mode';
+  test(`freshness_policy cadence > stale is an ERROR in ${modeLabel} (never a warning)`, () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const bad = freshMeta(today);
+    bad._meta.freshness_policy.default_review_cadence_days = 120; // > stale_after_days 90
+    const r = validateMetaObj(bad, { includeWarnings: true, ...mode });
+    assert.equal(r.errors.filter((e) => ORDERING_RE.test(e)).length, 1,
+      `expected exactly one ordering error, got: ${JSON.stringify(r.errors)}`);
+    assert.equal(r.warnings.filter((w) => ORDERING_RE.test(w)).length, 0,
+      'the ordering finding must not be demoted to a warning');
+  });
+}
+
+test('freshness_policy stale > rebuild is an ERROR, and a well-ordered policy reports nothing', () => {
+  const today = new Date().toISOString().slice(0, 10);
+  const bad = freshMeta(today);
+  bad._meta.freshness_policy.rebuild_after_days = 60; // < stale_after_days 90
+  const r = validateMetaObj(bad, { includeWarnings: true });
+  assert.equal(r.errors.filter((e) => ORDERING_RE.test(e)).length, 1,
+    `expected exactly one ordering error, got: ${JSON.stringify(r.errors)}`);
+
+  // Control: the same fixture in order yields no ordering finding at all, so the
+  // assertions above bind to the ordering rather than to the fixture.
+  const ok = validateMetaObj(freshMeta(today), { includeWarnings: true });
+  assert.equal(ok.errors.filter((e) => ORDERING_RE.test(e)).length, 0);
+  assert.equal(ok.warnings.filter((w) => ORDERING_RE.test(w)).length, 0);
+});
+
 
 // ---- routed from predeploy-gates ----
 require("node:test").describe("predeploy-gates", () => {

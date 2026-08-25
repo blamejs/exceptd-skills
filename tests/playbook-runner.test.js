@@ -1003,6 +1003,221 @@ describe('close', () => {
     assert.equal(c.exception, null);
   });
 
+  // A close() fixture on the production path: every shipped playbook declares
+  // phases.close.evidence_package, and the bundle builders map over
+  // analyze.matched_cves with no guard of their own — so a fixture that leaves
+  // evidence_package null never reaches them and cannot show whether a
+  // malformed analyze result aborts the phase.
+  function malformedAnalyzeFixture() {
+    return synthPlaybook({
+      _meta: { feeds_into: [{ playbook_id: 'sbom', condition: 'finding.severity == "low"' }] },
+      phases: {
+        close: {
+          evidence_package: {
+            bundle_format: 'csaf-2.0', contents: [], destination: 'local_only', signed: false
+          },
+          learning_loop: {
+            enabled: true,
+            lesson_template: {
+              attack_vector: 'vector against ${matched_cve_ids}',
+              control_gap: 'g',
+              framework_gap: 'fg',
+              new_control_requirement: 'ncr'
+            },
+            feeds_back_to_skills: []
+          }
+        }
+      }
+    });
+  }
+
+  for (const [label, malformed, expectedMessage] of [
+    ['matched_cves is a string', { matched_cves: 'not-an-array', rwep: { adjusted: 10 } },
+      'analyze.matched_cves is string, expected an array; treated as empty'],
+    ['matched_cves is absent', { rwep: { adjusted: 10 } },
+      'analyze.matched_cves is undefined, expected an array; treated as empty'],
+    ['the whole result is null', null,
+      'analyze result is null, expected an object; treated as empty'],
+    ['the whole result is an array', [{ matched_cves: [] }],
+      'analyze result is array, expected an object; treated as empty'],
+  ]) {
+    it(`close() survives a malformed analyze result (${label}): evidence bundle, lesson and feeds_into all return`, () => {
+      const dir = tmpDir('close-malformed-analyze');
+      try {
+        writePlaybook(dir, 'p', malformedAnalyzeFixture());
+        const local = freshRunner(dir);
+        const an = local.analyze('p', 'default', local.detect('p', 'default', {}));
+        const v = local.validate('p', 'default', an, {});
+        const runErrors = [];
+        const c = local.close('p', 'default', malformed, v,
+          { finding: { severity: 'low' } }, { _runErrors: runErrors });
+
+        assert.equal(c.phase, 'close');
+        // Phase 7's actual product. The CSAF builder walked the normalized
+        // empty array instead of throwing on the malformed container.
+        assert.equal(typeof c.evidence_package, 'object');
+        assert.notEqual(c.evidence_package, null);
+        assert.equal(c.evidence_package.bundle_format, 'csaf-2.0');
+        assert.equal(typeof c.evidence_package.bundle_body, 'object');
+        assert.notEqual(c.evidence_package.bundle_body, null);
+        assert.equal(typeof c.evidence_package.bundle_body.document, 'object');
+        // No matched CVE survives normalization, so the advisory is the
+        // informational category rather than a VEX one.
+        assert.equal(c.evidence_package.bundle_body.document.category, 'csaf_informational_advisory');
+        // The learning-loop lesson interpolates the finding shape; an empty
+        // matched set renders the id list as the empty string, not a crash.
+        assert.equal(c.learning_loop.enabled, true);
+        assert.equal(c.learning_loop.attack_vector, 'vector against ');
+        // The feeds_into finding context: the operator-submitted
+        // finding.severity still resolves, so the chain evaluates.
+        assert.deepEqual(c.feeds_into, ['sbom']);
+        // The shape failure is observable rather than silent, and names which
+        // part of the result was wrong.
+        const shapeErrors = runErrors.filter(e => e.kind === 'analyze_shape');
+        assert.equal(shapeErrors.length, 1);
+        assert.equal(shapeErrors[0].message, expectedMessage);
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+        freshRunner(REAL_PLAYBOOK_DIR);
+      }
+    });
+  }
+
+  it('close() drops a malformed element and keeps the rest of matched_cves', () => {
+    // Every bundle builder dereferences an element, so one null inside an
+    // otherwise well-formed array aborted the phase exactly as a non-array
+    // container did. The malformed entries are dropped rather than repaired —
+    // a placeholder would put a finding in the evidence bundle that the analyze
+    // phase never produced — and the usable ones still reach the advisory.
+    const dir = tmpDir('close-malformed-element');
+    try {
+      writePlaybook(dir, 'p', malformedAnalyzeFixture());
+      const local = freshRunner(dir);
+      const an = local.analyze('p', 'default', local.detect('p', 'default', {}));
+      const v = local.validate('p', 'default', an, {});
+      const runErrors = [];
+      const c = local.close('p', 'default', {
+        matched_cves: [null, { cve_id: 'CVE-2026-0001', cisa_kev: true }, 'nope'],
+        rwep: { adjusted: 10 },
+      }, v, { finding: { severity: 'low' } }, { _runErrors: runErrors });
+
+      assert.equal(c.phase, 'close');
+      assert.equal(typeof c.evidence_package, 'object');
+      assert.notEqual(c.evidence_package, null);
+      assert.equal(c.evidence_package.bundle_format, 'csaf-2.0');
+      // The surviving CVE reaches the lesson, so the drop removed the malformed
+      // elements rather than the whole array.
+      assert.equal(c.learning_loop.attack_vector, 'vector against CVE-2026-0001');
+      // Both malformed shapes are named, and the kept count is stated.
+      const shapeErrors = runErrors.filter(e => e.kind === 'analyze_shape');
+      assert.equal(shapeErrors.length, 1);
+      assert.equal(
+        shapeErrors[0].message,
+        'analyze.matched_cves holds 2 malformed element(s) (null, string); they are dropped and the remaining 1 are used',
+      );
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+      freshRunner(REAL_PLAYBOOK_DIR);
+    }
+  });
+
+  it('a finding-shape throw degrades the exception language and is reported once', () => {
+    // CHARACTERIZATION PIN, not regression coverage. The feeds_into context
+    // calls safeFindingShape on every close(), so the throw reaches
+    // runtime_errors whether or not the exception-generation site routes
+    // through it, and that site's own disposition is not separately observable.
+    // What is pinned is the pair — auditor-ready language degrades to
+    // `<MISSING:…>` instead of aborting the phase, and the throw is reported
+    // exactly once however many templates consume the shape.
+    const dir = tmpDir('close-exception-shape');
+    try {
+      writePlaybook(dir, 'p', synthPlaybook({
+        phases: {
+          close: {
+            exception_generation: {
+              trigger_condition: 'remediation_blocked == true',
+              exception_template: {
+                scope: 'Scope for ${matched_cve_ids}',
+                duration: 'until_vendor_patch',
+                compensating_controls: ['c1'],
+                risk_acceptance_owner: 'ciso',
+                auditor_ready_language: 'Accepted re ${matched_cve_ids}.'
+              }
+            }
+          }
+        }
+      }));
+      const local = freshRunner(dir);
+      const an = local.analyze('p', 'default', local.detect('p', 'default', {}));
+      const v = local.validate('p', 'default', an, {});
+      const runErrors = [];
+      // An element the normalization cannot screen: a non-null object, so it
+      // survives the shape filter, that throws when its `cve_id` is read. This
+      // is what the residual guard is for — the shapes normalization predicts
+      // are dropped before they get here, and this one still has to degrade
+      // rather than abort.
+      const hostile = { get cve_id() { throw new TypeError('cve_id is not readable'); } };
+      const c = local.close('p', 'default', { matched_cves: [hostile], rwep: { adjusted: 10 } }, v,
+        { remediation_blocked: true }, { _runErrors: runErrors });
+
+      assert.equal(typeof c.exception, 'object');
+      assert.notEqual(c.exception, null);
+      assert.equal(c.exception.scope, 'Scope for <MISSING:matched_cve_ids>');
+      assert.equal(c.exception.missing_interpolation_vars.includes('matched_cve_ids'), true);
+      const shapeErrors = runErrors.filter(e => e.kind === 'analyze_shape');
+      assert.equal(shapeErrors.length, 1);
+      assert.equal(typeof shapeErrors[0].message, 'string');
+      assert.match(shapeErrors[0].message, /cve_id/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+      freshRunner(REAL_PLAYBOOK_DIR);
+    }
+  });
+
+  it('validate(): a null selected_remediation implies no options were considered', () => {
+    // CHARACTERIZATION PIN, not regression coverage. It passes unchanged
+    // against the code it accompanies — that change is a pure deletion of a
+    // `validate.remediation_paths?.[0]?.id` fallback in the OpenVEX
+    // action_statement, and validate()'s result carries no `remediation_paths`
+    // key for that fallback to have read. What is pinned is the premise the
+    // deletion rests on: the OpenVEX action_statement names
+    // selected_remediation.id and has no second source to fall back to, which
+    // is only sound while the two stay paired — no paths declared → nothing
+    // selected AND nothing considered.
+    const dir = tmpDir('close-remediation-pairing');
+    try {
+      writePlaybook(dir, 'none', synthPlaybook({
+        phases: { validate: { remediation_paths: [] } }
+      }));
+      writePlaybook(dir, 'one', synthPlaybook({
+        phases: {
+          validate: {
+            remediation_paths: [
+              { id: 'rp-only', priority: 1, description: 'the only path', preconditions: [] }
+            ]
+          }
+        }
+      }));
+      const local = freshRunner(dir);
+
+      const anNone = local.analyze('none', 'default', local.detect('none', 'default', {}));
+      const vNone = local.validate('none', 'default', anNone, {});
+      assert.equal(vNone.selected_remediation, null);
+      assert.deepEqual(vNone.remediation_options_considered, []);
+
+      const anOne = local.analyze('one', 'default', local.detect('one', 'default', {}));
+      const vOne = local.validate('one', 'default', anOne, {});
+      assert.equal(vOne.selected_remediation.id, 'rp-only');
+      assert.equal(vOne.remediation_options_considered.length, 1);
+      assert.equal(vOne.remediation_options_considered[0].id, 'rp-only');
+      // The result carries no `remediation_paths` key for a consumer to read.
+      assert.equal('remediation_paths' in vOne, false);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+      freshRunner(REAL_PLAYBOOK_DIR);
+    }
+  });
+
   it('feeds_into chain returns downstream playbooks for satisfied conditions', () => {
     const { an, v } = detected();
     // blast_radius_score=3 won't trigger sbom (needs >=4). Use 5.

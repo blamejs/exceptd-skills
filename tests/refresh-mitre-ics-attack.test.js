@@ -60,6 +60,21 @@ test("wrapper imports refreshIcsAttack from the single-source-of-truth module", 
   assert.match(src, /--dry-run/, "wrapper must honor --dry-run");
 });
 
+// A cap threaded into refreshIcsAttack but dropped by the wrapper is not a cap:
+// `CAP=<n> npm run refresh-mitre-ics-attack` would import the whole upstream
+// bundle on a run the operator asked to bound, and nothing reports the omission
+// at runtime. The value's effect on refreshIcsAttack is covered behaviourally
+// in tests/refresh-upstream-catalogs.test.js; this pins the wrapper hand-off.
+test("the wrapper reads the CAP env var and hands it to refreshIcsAttack", () => {
+  const src = fs.readFileSync(WRAPPER, "utf8");
+  assert.match(src, /process\.env\.CAP/,
+    "the ICS wrapper must honor the CAP env var like every sibling wrapper");
+  // Lazy, single-line match (no `s` flag): a negated-brace class would truncate
+  // at the first `}` and could not see a later argument.
+  assert.match(src, /refreshIcsAttack\(\s*\{.*?\bcap\b.*?\}\s*\)/,
+    "the parsed cap must be passed into refreshIcsAttack, not merely computed");
+});
+
 test("refreshIcsAttack (the wrapper's delegate) is exported and registered", () => {
   assert.equal(typeof MOD.refreshIcsAttack, "function",
     "refreshIcsAttack must be exported so the wrapper can import it");
