@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.19.36 — 2026-08-28
+
+The catalog describes findings again rather than the process that recorded them. Entries were written from a research bundle of facts, and that bundle's vocabulary reached the shipped prose: 1,691 sentences across 678 records opened with "the packet records", "the packet's affected list" or "packet facts for", naming an artefact no operator has ever seen. They now state the fact directly — "a vendor fix is available and there is no live-patch path" rather than "the packet records a vendor fix as available". Most sit in the control-requirement descriptions and their supporting evidence, with a few in exploitation and complexity notes.
+
+Comparisons that only held inside the run that produced them are gone rather than reworded. A record saying an entry carried "the highest RWEP in this batch" or "the lowest base score of this batch" was ranking it against a set the reader cannot enumerate, so the ranking goes and the standalone claim stays. No replacement comparison was invented in its place.
+
+Where a sentence scoped a negative finding to the moment it was written — "no campaign was attributed during this curation" — the limit is kept and restated about the record: no public report attributes one. Dropping the clause outright would have promoted "nothing was found" to "nothing exists", which is a stronger claim than the evidence supports.
+
+Attack timelines keep their own numbering. The Shai-Hulud worm's four phases and the Moika dependency-confusion campaign's publishing waves describe the attack, and an IKE phase-1 negotiation is where in the protocol a defect sits; all are subject matter and are untouched.
+
 ## 0.19.35 — 2026-08-25
 
 A scan that could not read something no longer reports that it found nothing there. The evidence collectors treated an unreadable file the same as an absent one: a credential store over the size cap, a workflow file without read permission, a lockfile that failed to parse all produced the output of a clean scan. A credential store that exists but went unread now reports its indicator as inconclusive rather than a miss, and its artifact as uncaptured with the reason attached. An unparseable Google Cloud credentials file reports the same way, since a parse that failed says nothing about what the file holds. A file read successfully but empty stays a completed scan, because the collector did read it and there was nothing in it — the two cases were previously indistinguishable, and both read as clean.
