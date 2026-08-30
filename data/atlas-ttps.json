@@ -700,6 +700,7 @@
       "CVE-2024-4889",
       "CVE-2024-6587",
       "CVE-2026-42208",
+      "CVE-2026-64849",
       "MAL-2026-3083"
     ],
     "description_full": "Adversaries may search compromised systems to find and obtain insecurely stored credentials. These credentials can be stored and/or misplaced in many locations on a system, including plaintext files (e.g. bash history), environment variables, operating system, or application-specific repositories (e.g. Credentials in Registry), or other specialized files/artifacts (e.g. private keys).",
@@ -1106,7 +1107,10 @@
     ],
     "reference_url": "https://atlas.mitre.org/techniques/AML.T0106",
     "stix_id": "attack-pattern--61bd1eb1-b526-59aa-9b1c-86a7dc5fa0d8",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2026-64849"
+    ]
   },
   "AML.T0107": {
     "id": "AML.T0107",
@@ -1758,7 +1762,8 @@
       "CVE-2026-34159",
       "CVE-2026-41947",
       "CVE-2026-41950",
-      "CVE-2026-45829"
+      "CVE-2026-45829",
+      "CVE-2026-64849"
     ]
   },
   "AML.T0050": {
@@ -2085,7 +2090,10 @@
       "ATLAS"
     ],
     "stix_id": "attack-pattern--59fc3797-1686-503b-9212-26e1eecb5a69",
-    "is_subtechnique": false
+    "is_subtechnique": false,
+    "cve_refs": [
+      "CVE-2026-64849"
+    ]
   },
   "AML.T0076": {
     "id": "AML.T0076",

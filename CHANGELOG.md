@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.19.37 — 2026-08-30
+
+The catalog reaches 1,517 CVEs with 100 additions from CISA KEV, spanning 2002 to 2026 — a third of them predate 2015, because KEV keeps listing defects whose disclosure is old and whose exploitation is current. Microsoft accounts for 33, Adobe 10, Oracle 8. Nineteen carry CISA's ransomware designation, 79 have an obtainable public exploit, and 47 need a restart before the fix is running. Eleven arrived with a remediation window of a week or less.
+
+Twenty-nine entries carry their CVE id in the title. CISA names a vulnerability by product and defect class rather than by defect, so one title covers entries decades apart — "Microsoft Windows Privilege Escalation Vulnerability" already sat on a 2021 record and now also fits a 2002 and a 2004 one. Where a title is shared, the identifier is appended so two entries are no longer indistinguishable in a list.
+
+Two entries record an exploit built with AI assistance rather than found with it. Cisco Talos documents the actor behind the AjaxPro deserialization flaw running PentestGPT to scan web servers and execute proof-of-concept exploits; the kernel container-escape entry rests on OpenAI's own report. Neither is an AI-discovered defect, and the entries say which side of that line they sit on.
+
+Where a KEV listing carries no vendor advisory, the entry says so rather than pointing somewhere plausible. Five of the additions have none to cite: the Nagios XI changelog names a sibling CVE and not the three listed here, WinRAR's only vendor reference is a rolling release-notes page that no longer mentions the defect, and Grandstream's advisory paths do not resolve. Thirteen advisories were attached to the remaining entries, each from the vendor or a coordinating body.
+
+Two entries state a companion defect's identifier that earlier drafts said did not exist. The TrueConf server code-injection flaw is remediated by the same upgrade as a missing-authentication flaw listed the same day, and that companion's deadline is eleven days earlier — an operator reading either entry now gets the deadline that actually binds the host.
+
 ## 0.19.36 — 2026-08-28
 
 The catalog describes findings again rather than the process that recorded them. Entries were written from a research bundle of facts, and that bundle's vocabulary reached the shipped prose: 1,691 sentences across 678 records opened with "the packet records", "the packet's affected list" or "packet facts for", naming an artefact no operator has ever seen. They now state the fact directly — "a vendor fix is available and there is no live-patch path" rather than "the packet records a vendor fix as available". Most sit in the control-requirement descriptions and their supporting evidence, with a few in exploitation and complexity notes.

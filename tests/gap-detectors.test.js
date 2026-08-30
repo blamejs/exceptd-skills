@@ -663,7 +663,7 @@ test("shipped catalogs: extended-detector budgets (no silent regression on v0.13
     byClass[f.class] = (byClass[f.class] || 0) + 1;
   }
   const BUDGET = {
-    "content-quality": 12,        // 10 KEV-no-vendor-advisories + slack
+    "content-quality": 14,        // KEV entries whose vendor published no advisory, + slack
     // data-freshness only (source_verified / last_updated / epss_date). The
     // calendar-driven KEV-due-passed sub-check was removed (external operator
     // date, not catalog freshness; grew unboundedly as KEV drafts got curated).
