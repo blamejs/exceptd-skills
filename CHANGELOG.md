@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.19.38 — 2026-08-30
+
+A control requirement no longer argues from a premise that does not support it. The GNU InetUtils entry reasoned that because a patch exists and no live-patch path does, both a patch path and a service-disable path are available — which does not follow, since the absence of a live-patch path is not the presence of anything. A service-disable path does exist for that flaw, in CISA's required action, and the entry now says so from the field that carries it. What the two flags actually establish is the state the control exists to name: a fix that cannot be applied without interrupting the service, so the mitigation carries the risk while the patch is pending.
+
+A Chrome entry's attribution note ended with a stray quotation mark and comma — a fragment of the surrounding data format that escaped quoting during a bulk import years ago, leaving the field with an unclosed quotation. The delimiter is removed and the note's content is unchanged.
+
 ## 0.19.37 — 2026-08-30
 
 The catalog reaches 1,517 CVEs with 100 additions from CISA KEV, spanning 2002 to 2026 — a third of them predate 2015, because KEV keeps listing defects whose disclosure is old and whose exploitation is current. Microsoft accounts for 33, Adobe 10, Oracle 8. Nineteen carry CISA's ransomware designation, 79 have an obtainable public exploit, and 47 need a restart before the fix is running. Eleven arrived with a remediation window of a week or less.
