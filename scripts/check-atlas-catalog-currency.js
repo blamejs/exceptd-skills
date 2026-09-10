@@ -70,11 +70,22 @@ function fetchText(url, redirects = 0) {
   });
 }
 
+// The pin is read from a file and then becomes part of a URL and a path, so it
+// is constrained to the calendar-version shape ATLAS publishes before either.
+const PIN_SHAPE = /^[0-9]{4}\.[0-9]{2}(?:\.[0-9]+)?$/;
+
 async function loadRelease(pin) {
+  if (!PIN_SHAPE.test(pin)) {
+    throw new Error(`_meta.atlas_version ${JSON.stringify(pin)} is not a YYYY.MM release`);
+  }
   const cached = path.join(CACHE_DIR, `ATLAS-${pin}.yaml`);
-  if (fs.existsSync(cached)) {
-    const text = fs.readFileSync(cached, "utf8");
-    if (text.includes(`version: '${pin}'`)) return { text, source: "cache" };
+  // Read and handle absence, rather than asking whether it exists and then
+  // reading: between the two answers the file can change.
+  let cachedText = null;
+  try { cachedText = fs.readFileSync(cached, "utf8"); }
+  catch (e) { if (e.code !== "ENOENT") throw e; }
+  if (cachedText !== null && cachedText.includes(`version: '${pin}'`)) {
+    return { text: cachedText, source: "cache" };
   }
   const url = `https://raw.githubusercontent.com/mitre-atlas/atlas-data/v${pin}/dist/v6/ATLAS-${pin}.yaml`;
   const text = await fetchText(url);
@@ -141,9 +152,9 @@ async function main() {
     release = await loadRelease(pin);
   } catch (e) {
     process.stderr.write(
-      `[check-atlas-catalog-currency] COULD NOT VERIFY against ATLAS ${pin}: ${e.message}\n` +
-      "The catalog was not compared to anything. This is not a pass — re-run with network access, " +
-      `or prime the cache at .cache/upstream/atlas/ATLAS-${pin}.yaml.\n`
+      `[check-atlas-catalog-currency] COULD NOT VERIFY: ${e.message}\n` +
+      "The catalog was not compared to anything, which is not the same as passing. " +
+      `Re-run with network access, or place the release file under ${path.relative(ROOT, CACHE_DIR)}.\n`
     );
     process.exitCode = 2;
     return;
@@ -231,4 +242,6 @@ if (require.main === module) {
   });
 }
 
-module.exports = { parseNames, isRenderingOf, main };
+// Only the two pieces that carry judgment are exported; `main` is the CLI and
+// is reached through the guard above.
+module.exports = { parseNames, isRenderingOf };
