@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.20.0 — 2026-09-09
+
+The minimum supported Node.js is now 24.21.0, so `engines.node` reads `>=24.21.0`. Install 24.21.0 before upgrading; npm reports an engines warning on 24.19 and 24.20. The runtime brings OpenSSL 3.5.8 and the NSS 3.126 root certificate set. Continuous integration, the release workflow, the daily-refresh and ATLAS-currency workflows, the Docker reproduction harness and `.nvmrc` all move to 24.21.0 together, and the harness base image is re-pinned to the 24.21.0-alpine3.23 manifest digest.
+
+MITRE ATLAS moves to v2026.08. The release generalizes three techniques the catalog carries, and each entry now reads the way ATLAS names it: AML.T0072 covers any command-and-control channel rather than only a reverse shell, AML.T0075 covers enterprise resource discovery rather than only cloud services, and AML.T0089 covers enterprise environment discovery rather than only processes. Each description moved with its name, so no entry promises a scope its text does not cover.
+
+Six entries used MITRE's pre-2025 machine-learning wording and now carry the current names: AML.T0007, AML.T0010, AML.T0018, AML.T0020, AML.T0024 and AML.T0044. ATLAS also widened AML.T0018 from backdooring a model to manipulating the artifact by any means, so its description was replaced rather than reworded. The skills and playbooks that print these labels next to the id were updated to match, so a reader checking a skill against atlas.mitre.org finds one name for one technique.
+
+A new pre-publish check compares `data/atlas-ttps.json` against the ATLAS release it pins. Every other check treats that file as the authority on technique ids, so nothing measured it against MITRE, and an id could carry a name MITRE gives to a different technique while every gate stayed green. The check fetches the pinned release, caches it under `.cache/upstream/atlas/`, and fails on any id or name the release does not carry. When it cannot reach the release it exits non-zero rather than reporting a run that checked nothing as a pass. Eight names and 54 sub-technique ids in that file still disagree with the release; they are recorded as known divergences so the check blocks anything new, and they are tracked in issue #397.
+
 ## 0.19.39 — 2026-09-04
 
 The catalog now holds 1,617 CVEs after 100 additions from CISA KEV, concentrated in 2021 — 47 of them — with 17 each from 2019 and 2020 and the oldest reaching back to 2010. Apple accounts for 23, Apache 12, Microsoft and Cisco 6 each. Twenty-four have CISA's ransomware designation, 62 have an obtainable public exploit, and 51 need a restart before the fix is running.

@@ -21,7 +21,7 @@ framework_gaps:
   - ALL-PROMPT-INJECTION-ACCESS-CONTROL
   - FedRAMP-Rev5-Moderate
   - CMMC-2.0-Level-2
-last_threat_review: "2026-06-10"
+last_threat_review: "2026-09-09"
 ---
 
 # Compliance Theater Detection
@@ -78,7 +78,7 @@ The pre-analyzed gaps for these controls live in the framework-gap-analysis skil
 
 ---
 
-## TTP Mapping (MITRE ATLAS v2026.07 and ATT&CK)
+## TTP Mapping (MITRE ATLAS v2026.08 and ATT&CK)
 
 Each theater pattern below maps to one or more attacker TTPs in `data/atlas-ttps.json` and MITRE ATT&CK Enterprise. The mapping is what distinguishes theater from genuine compliance: a control claimed as compensating must map to a TTP it actually disrupts.
 
@@ -87,12 +87,12 @@ Each theater pattern below maps to one or more attacker TTPs in `data/atlas-ttps
 | Patch Management Theater (Pattern 1) | T1068 (Exploitation for Privilege Escalation), T1203 (Exploitation for Client Execution) | Public PoC + KEV + AI-accelerated weaponization compresses the exploitation window inside the SLA |
 | Network Segmentation Theater — IPsec (Pattern 2) | T1190 (Exploit Public-Facing Application) targeting the IPsec kernel subsystem | The control's cryptographic mechanism is the attack surface |
 | Access Control Theater — AI Agents (Pattern 3) | AML.T0051 (LLM Prompt Injection), AML.T0054 (LLM Jailbreak), T1059 (Command and Scripting Interpreter) | Authorized service account executes attacker-chosen actions; no identity boundary is crossed |
-| Incident Response Theater — AI Pipeline (Pattern 4) | AML.T0020 (Poison Training Data), AML.T0096 (LLM Integration Abuse as C2), AML.T0010 (ML Supply Chain Compromise) | Detection triggers do not exist, so documented IR procedures have no input |
-| Change Management Theater — AI Models (Pattern 5) | AML.T0018 (Backdoor ML Model), AML.T0020 | Externally-managed model updates bypass operator change control entirely |
-| Vendor/Third-Party Risk Theater — AI APIs (Pattern 6) | AML.T0010 (ML Supply Chain Compromise) | MCP servers and LLM APIs sit outside the vendor-management scope |
+| Incident Response Theater — AI Pipeline (Pattern 4) | AML.T0020 (Training Data Poisoning), AML.T0096 (LLM Integration Abuse as C2), AML.T0010 (AI Supply Chain Compromise) | Detection triggers do not exist, so documented IR procedures have no input |
+| Change Management Theater — AI Models (Pattern 5) | AML.T0018 (Manipulate AI Model), AML.T0020 | Externally-managed model updates bypass operator change control entirely |
+| Vendor/Third-Party Risk Theater — AI APIs (Pattern 6) | AML.T0010 (AI Supply Chain Compromise) | MCP servers and LLM APIs sit outside the vendor-management scope |
 | Security Awareness Theater — AI Phishing (Pattern 7) | T1566 (Phishing), AML.T0016 (Obtain Capabilities: Develop Capabilities — misuse of public AI APIs for payload crafting) | AI-generated content evades grammar/style heuristics and template-matching detectors |
 
-Source-of-truth TTP catalog: `data/atlas-ttps.json` (pinned to MITRE ATLAS v2026.07, May 2026). Any theater claim in an assessment must cite at least one TTP ID from that catalog or an ATT&CK Enterprise ID — claims without a mapped TTP are orphaned controls and are rejected.
+Source-of-truth TTP catalog: `data/atlas-ttps.json` (pinned to MITRE ATLAS v2026.08, May 2026). Any theater claim in an assessment must cite at least one TTP ID from that catalog or an ATT&CK Enterprise ID — claims without a mapped TTP are orphaned controls and are rejected.
 
 ---
 
@@ -395,8 +395,8 @@ This skill produces theater findings, not control prescriptions. The mapping bel
 | 2 Network Segmentation (IPsec compromised subsystem) | T1190 (Exploit Public-Facing Application) | `D3-NI` | Network Isolation (non-IPsec data path) | `framework-gap-analysis` (SC-8 / SC-28 lag) |
 | 3 Access Control (AI agent prompt injection) | AML.T0051 (LLM Prompt Injection) | `D3-IOPR` + `D3-CSPP` | Input/Output Profiling + Client-server Payload Profiling | `ai-attack-surface` |
 | 4 Incident Response (AI-specific playbook absence) | AML.T0096 (LLM Integration Abuse — C2), AML.T0051 | `D3-NTA` + `D3-IOPR` | Network Traffic Analysis + Input/Output Profiling | `ai-c2-detection` + `incident-response-playbook` |
-| 5 Change Management (Model version drift) | AML.T0018 (Backdoor ML Model), AML.T0020 (Poison Training Data) | `D3-FAPA` + `D3-EFA` | File Access Pattern Analysis + Executable File Analysis | `mlops-security` |
-| 6 Vendor Management (AI APIs + MCP servers without DPA) | AML.T0010 (ML Supply Chain Compromise) | `D3-EAL` + `D3-EFA` | Executable Allowlisting + Executable File Analysis | `mcp-agent-trust` + `supply-chain-integrity` |
+| 5 Change Management (Model version drift) | AML.T0018 (Manipulate AI Model), AML.T0020 (Training Data Poisoning) | `D3-FAPA` + `D3-EFA` | File Access Pattern Analysis + Executable File Analysis | `mlops-security` |
+| 6 Vendor Management (AI APIs + MCP servers without DPA) | AML.T0010 (AI Supply Chain Compromise) | `D3-EAL` + `D3-EFA` | Executable Allowlisting + Executable File Analysis | `mcp-agent-trust` + `supply-chain-integrity` |
 | 7 Security Awareness (AI-generated phishing absent from simulations) | AML.T0016 (Develop Capabilities — payload generation), T1566 (Phishing) | `D3-MFA` + `D3-CSPP` | Multi-factor Authentication (passkey class) + Client-server Payload Profiling (gateway) | `email-security-anti-phishing` + `identity-assurance` |
 
 **Defense-in-depth posture:** every theater finding produced by this skill must cite the downstream skill that owns the remediation. A theater finding with no routing target is incomplete — the operator receives a gap with no closure path. Where a theater pattern names multiple D3FEND techniques, the downstream skill is the authority on which combinations satisfy defence-in-depth for the operator's environment.
