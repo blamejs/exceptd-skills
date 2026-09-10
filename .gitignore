@@ -18,6 +18,8 @@
 # Track the version-bump authorization (an authorized minor/major commits this
 # so the cadence gate can verify it in CI); the `.*` catch-all above hides it.
 !tests/.version-bump-ack.json
+# Track the ATLAS divergence baseline so CI can compare against it.
+!tests/.atlas-divergence-baseline.json
 
 # Node
 node_modules/

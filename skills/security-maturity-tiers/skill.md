@@ -44,7 +44,7 @@ forward_watch:
   - Framework updates that change minimum compliance baselines
   - New tooling that makes higher tiers more accessible
   - PQC tooling maturity shifting overkill to practical
-last_threat_review: "2026-08-05"
+last_threat_review: "2026-09-09"
 ---
 
 # Security Maturity Tiers
@@ -473,7 +473,7 @@ The divergences above are surfaced against US, EU, UK, AU and ISO 27001:2022 —
 
 ## TTP Mapping
 
-Per-tier TTP coverage is cumulative: Practical includes MVP's coverage plus additions; Overkill includes both plus additions. Source-of-truth: `data/atlas-ttps.json` (MITRE ATLAS v2026.07) and ATT&CK references in `data/cve-catalog.json`.
+Per-tier TTP coverage is cumulative: Practical includes MVP's coverage plus additions; Overkill includes both plus additions. Source-of-truth: `data/atlas-ttps.json` (MITRE ATLAS v2026.08) and ATT&CK references in `data/cve-catalog.json`.
 
 | Tier | Must cover | TTP | Source | Tier-specific control element |
 |---|---|---|---|---|
@@ -505,11 +505,11 @@ D3FEND references from `data/d3fend-catalog.json`. This skill prescribes a roadm
 | MVP | T1190 (Exploit Public-Facing Application — self-hosted LLM infrastructure) | `D3-NI` + `D3-ITF` | Network Isolation + Inbound Traffic Filtering | `webapp-security` + `ai-attack-surface` |
 | Practical | T1190 (Exploit Public-Facing Application) | `D3-ITF` + `D3-NI` | Inbound Traffic Filtering + Network Isolation | `attack-surface-pentest` |
 | Practical | AML.T0017 (Discover ML Model Ontology) | `D3-CSPP` | Client-server Payload Profiling (inference-API rate and shape monitoring) | `ai-attack-surface` |
-| Practical | AML.T0020 (Poison Training Data) | `D3-FAPA` | File Access Pattern Analysis (training-pipeline integrity) | `mlops-security` |
+| Practical | AML.T0020 (Training Data Poisoning) | `D3-FAPA` | File Access Pattern Analysis (training-pipeline integrity) | `mlops-security` |
 | Practical | AML.T0016 (Develop Capabilities — AI-assisted weaponization) | `D3-CSPP` + `D3-MFA` | Client-server Payload Profiling + Multi-factor Authentication (passkey class) | `email-security-anti-phishing` + `identity-assurance` |
 | Practical | Harvest-now-decrypt-later (T1040, T1557) | `D3-MENCR` | Message Encryption (PQC-hybrid KEM per RFC 9954) | `pqc-first` |
 | Overkill | AML.T0096 (LLM Integration Abuse — C2) | `D3-NTA` + `D3-OTF` | Network Traffic Analysis + Outbound Traffic Filtering | `ai-c2-detection` |
-| Overkill | AML.T0018 (Backdoor ML Model) | `D3-EFA` + `D3-FAPA` | Executable File Analysis (model signing) + File Access Pattern Analysis | `mlops-security` |
+| Overkill | AML.T0018 (Manipulate AI Model) | `D3-EFA` + `D3-FAPA` | Executable File Analysis (model signing) + File Access Pattern Analysis | `mlops-security` |
 | Overkill | AML.T0043 (Craft Adversarial Data — RAG) | `D3-IOPR` + `D3-FAPA` | Input/Output Profiling + File Access Pattern Analysis (vector-store access control) | `rag-pipeline-security` |
 
 **Defense-in-depth posture:** the tiers are the defence-in-depth axis. A tier is complete only when every technique at that tier *and every tier below it* is deployed — this is the cardinal rule of the skill expressed in D3FEND terms. An org running `D3-NTA` for AI-C2 detection while `D3-KBPI` is absent has an Overkill technique guarding a host that a deterministic LPE owns outright, which is precisely the half-implemented-Tier-3 anti-pattern.

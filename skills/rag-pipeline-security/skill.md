@@ -41,7 +41,7 @@ d3fend_refs:
   - D3-NTA
 forward_watch:
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — Chroma vector DB CWE-190 + CWE-362 chain by haehae; impacts RAG vector store integrity (integer overflow + race condition); track patch and downstream RAG pipeline advisory
-last_threat_review: "2026-06-10"
+last_threat_review: "2026-09-09"
 ---
 
 # RAG Pipeline Security Assessment
@@ -182,9 +182,9 @@ This attack requires:
 
 ---
 
-## TTP Mapping (MITRE ATLAS v2026.07)
+## TTP Mapping (MITRE ATLAS v2026.08)
 
-Descriptions sourced verbatim from `data/atlas-ttps.json` (ATLAS v2026.07, released 2026-06-30). Partial-coverage controls from `data/framework-control-gaps.json`.
+Descriptions sourced verbatim from `data/atlas-ttps.json` (ATLAS v2026.08, released 2026-06-30). Partial-coverage controls from `data/framework-control-gaps.json`.
 
 | ATLAS ID | ATLAS Name | RAG Attack Class | Control Gap That Lets It Land | Controls That Partially Cover It |
 |---|---|---|---|---|

@@ -1196,7 +1196,7 @@
     },
     {
       "id": "ml-supply-chain-compromise-atlas",
-      "title": "ATLAS AML.T0010 — ML Supply Chain Compromise via MCP namespace",
+      "title": "ATLAS AML.T0010 — AI Supply Chain Compromise via MCP namespace",
       "applies_to": {
         "atlas_ttp": "AML.T0010"
       }

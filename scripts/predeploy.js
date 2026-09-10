@@ -198,6 +198,17 @@ const GATES = [
     args: [path.join(ROOT, "scripts", "check-version-bump.js")],
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
+  {
+    // Every other check reads data/atlas-ttps.json as ground truth, so an id
+    // can carry a name MITRE gives to a different technique and stay green.
+    // This compares the catalog to the ATLAS release it pins. It reaches the
+    // network on a cold cache; a tagged release is immutable, so the fetch
+    // happens once per pin.
+    name: "ATLAS catalog currency (catalog vs. the release it pins)",
+    command: process.execPath,
+    args: [path.join(ROOT, "scripts", "check-atlas-catalog-currency.js")],
+    ciJobName: "Data integrity (catalog + manifest snapshot)",
+  },
 ];
 
 function runGate(gate) {
