@@ -1,7 +1,7 @@
 ---
 name: ai-attack-surface
 version: "1.0.0"
-description: Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v2026.07 with explicit framework gap flags
+description: Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v2026.09 with explicit framework gap flags
 triggers:
   - ai attack surface
   - prompt injection
@@ -59,7 +59,7 @@ forward_watch:
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — Chroma vector DB CWE-190 + CWE-362 chain by haehae; impacts RAG vector store integrity; track patch and downstream RAG advisory
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — NVIDIA Megatron Bridge overly permissive allowed list by Satoki Tsuji; AI training-stack supply-chain exposure; track patch and SBOM advisory
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — NVIDIA Megatron Bridge path traversal by haehae; AI training-stack file-system trust boundary; track patch and SBOM advisory
-last_threat_review: "2026-06-10"
+last_threat_review: "2026-09-18"
 ---
 
 # AI Attack Surface Assessment
@@ -88,7 +88,7 @@ The Model Context Protocol (MCP) introduced an architectural vulnerability affec
 
 This is a supply chain attack surface. Every MCP server a user installs is a potential RCE vector. Trust boundaries that exist for npm packages do not exist for MCP servers because most MCP clients do not enforce signed manifests or tool allowlists.
 
-**ATLAS ref:** AML.T0010 (ML Supply Chain Compromise)
+**ATLAS ref:** AML.T0010 (AI Supply Chain Compromise)
 
 ### 3. AI-Assisted Exploit Development
 
@@ -128,7 +128,7 @@ Attackers manipulating vector embeddings to force retrieval mechanisms to surfac
 
 Training pipeline targeting has moved beyond data injection to directly biasing model behavior. Supply chain logistics and classification systems that use ML models for decisions are at risk of subtle model poisoning that influences decisions in the attacker's favor over time.
 
-**ATLAS ref:** AML.T0020 (Poison Training Data)
+**ATLAS ref:** AML.T0020 (Training Data Poisoning)
 
 ### 9. AI-Speed Reconnaissance
 
@@ -140,7 +140,7 @@ AI-assisted reconnaissance is observed at 36,000 probes per second per campaign.
 
 ### 11. AI-Discovered + AI-Weaponized Supply-Chain Worms
 
-**CVE-2026-45321** — Mini Shai-Hulud TanStack npm worm (CVSS 9.6, ~150M weekly downloads across 42 @tanstack/* packages, CISA KEV pending). Disclosed 2026-05-11. The attack chain — Pwn-Request via `pull_request_target` on TanStack's bundle-size workflow, pnpm-store cache poisoning under the `actions/cache` key, and OIDC-token theft on the next main push — is engineering-grade and weaponizes three independently-benign primitives. While attribution (TeamPCP) records no AI-assisted exploit development for this specific instance, the worm pattern is exactly what AML.T0016-class capability-development now produces at AI cadence: chained CI/CD primitives that no individual component owner recognises as exploitable. Treat the @tanstack/* surface as an exemplar of the broader AML.T0010 (ML Supply Chain Compromise) threat applied to JS toolchains that the AI assistant ecosystem depends on.
+**CVE-2026-45321** — Mini Shai-Hulud TanStack npm worm (CVSS 9.6, ~150M weekly downloads across 42 @tanstack/* packages, CISA KEV pending). Disclosed 2026-05-11. The attack chain — Pwn-Request via `pull_request_target` on TanStack's bundle-size workflow, pnpm-store cache poisoning under the `actions/cache` key, and OIDC-token theft on the next main push — is engineering-grade and weaponizes three independently-benign primitives. While attribution (TeamPCP) records no AI-assisted exploit development for this specific instance, the worm pattern is exactly what AML.T0016-class capability-development now produces at AI cadence: chained CI/CD primitives that no individual component owner recognises as exploitable. Treat the @tanstack/* surface as an exemplar of the broader AML.T0010 (AI Supply Chain Compromise) threat applied to JS toolchains that the AI assistant ecosystem depends on.
 
 ---
 
@@ -156,7 +156,7 @@ AI-assisted reconnaissance is observed at 36,000 probes per second per campaign.
 | SOC 2 | CC6 (Logical and Physical Access) | Access control via IAM, authentication, authorization. Prompt injection is an access control failure that routes around CC6 entirely — the authorized model account takes the action, not the attacker. Audit trails show the model's service account performed the action. |
 | SOC 2 | CC7 (System Operations) | Anomaly detection for system operations. No guidance for AI API baseline, AI C2 detection, or PROMPTFLUX behavioral patterns. |
 | PCI DSS 4.0 | 6.4.1 | Web application protection (WAF). WAFs operate on HTTP request/response patterns. They have no semantic understanding of prompt injection embedded in JSON `message` fields. |
-| MITRE ATT&CK | Enterprise | Does not include prompt injection as a technique. AI-as-C2 (SesameOp) is not in ATT&CK as of mid-2026. ATLAS v2026.07 covers these but is not part of SOC detection engineering programs that are ATT&CK-mapped. |
+| MITRE ATT&CK | Enterprise | Does not include prompt injection as a technique. AI-as-C2 (SesameOp) is not in ATT&CK as of mid-2026. ATLAS v2026.09 covers these but is not part of SOC detection engineering programs that are ATT&CK-mapped. |
 | NIST AI RMF | MEASURE 2.5 | Measure AI risks during operation. Provides a framework for thinking about AI risk but no specific controls for prompt injection, MCP supply chain, or AI-as-C2. |
 | EU NIS2 | Art. 21(2)(d) (supply-chain security) + Art. 21(2)(e) (security in acquisition, development and maintenance) | "Appropriate and proportionate" supply-chain language. Member-state transpositions (BSI IT-SiG 2.0, ANSSI) do not enumerate MCP servers or LLM API providers as in-scope supply-chain components. An essential entity can meet NIS2 supplier-management obligations with traditional SaaS vendor reviews while having zero coverage of AI-assistant tool ecosystems. |
 | EU DORA | Art. 8 (ICT asset management) + Art. 28 (ICT third-party register) + Art. 30 (key contractual provisions) | Financial-entity ICT third-party language scoped to traditional ICT providers. LLM API providers acting as data processors for prompt content and developer-environment MCP servers are not enumerated as ICT third-party service providers. ESAs RTS on subcontracting (JC 2024/53) is silent on AI/ML SaaS dependency classes. |
@@ -170,19 +170,19 @@ AI-assisted reconnaissance is observed at 36,000 probes per second per campaign.
 
 ---
 
-## TTP Mapping (MITRE ATLAS v2026.07)
+## TTP Mapping (MITRE ATLAS v2026.09)
 
 | ATLAS ID | Technique | Framework Coverage | Gap Description | Exploitation Example |
 |---|---|---|---|---|
 | AML.T0054 | LLM Jailbreak | Missing in all major frameworks | No control covers adversarial-instruction injection that bypasses guardrails and coerces the model into attacker-chosen actions | CVE-2025-53773 (GitHub Copilot YOLO-mode RCE) |
-| AML.T0010 | ML Supply Chain Compromise | Partial (ISO A.8.30) | A.8.30 covers outsourced development; does not cover MCP server trust, package signing for AI tools | CVE-2026-30615 (Windsurf MCP) |
+| AML.T0010 | AI Supply Chain Compromise | Partial (ISO A.8.30) | A.8.30 covers outsourced development; does not cover MCP server trust, package signing for AI tools | CVE-2026-30615 (Windsurf MCP) |
 | AML.T0096 | LLM Integration Abuse (C2) | Missing in all major frameworks | No framework has a control for AI API traffic as C2 channel | SesameOp campaign |
-| AML.T0020 | Poison Training Data | Partial (NIST AI RMF) | NIST AI RMF identifies the risk; no specific technical control | Supply chain logistics model poisoning |
+| AML.T0020 | Training Data Poisoning | Partial (NIST AI RMF) | NIST AI RMF identifies the risk; no specific technical control | Supply chain logistics model poisoning |
 | AML.T0043 | Craft Adversarial Data | Partial (SI-10) | SI-10 covers web input validation; not semantic injection in LLM prompts | RAG vector manipulation |
 | AML.T0051 | LLM Prompt Injection | Missing in all major frameworks | Zero controls in NIST, ISO, SOC 2, PCI for prompt injection | CVE-2025-53773, indirect injection via retrieved docs |
 | AML.T0017 | Discover ML Model Ontology | Partial (awareness only) | No framework requires monitoring for adversary mapping of deployed model family, guardrail surface, or system-prompt structure via inference-API probing | Reconnaissance step preceding PROMPTSTEAL-class targeting; AML-model registry exposure |
 | AML.T0016 | Obtain Capabilities: Develop Capabilities | Missing (misuse dimension) | Frameworks don't address adversary AI-assisted exploit development or use of public AI APIs to craft malware/phishing payloads | Copy Fail AI discovery (41% of 2025 0-days), PROMPTFLUX, PROMPTSTEAL, phishing generation |
-| AML.T0018 | Backdoor ML Model | Partial (NIST AI RMF) | No technical control requirements for model integrity verification | Training pipeline poisoning |
+| AML.T0018 | Manipulate AI Model | Partial (NIST AI RMF) | No technical control requirements for model integrity verification | Training pipeline poisoning |
 
 ---
 

@@ -42,11 +42,20 @@ test('#9 byTtp resolves an ATT&CK technique entry (not only ATLAS)', () => {
 });
 
 test('#9 byTtp still resolves an ATLAS technique entry', () => {
-  const r = xref.byTtp('AML.T0010'); // ML Supply Chain Compromise
+  const r = xref.byTtp('AML.T0010');
   assert.equal(r.found, true);
   assert.ok(r.entry, 'ATLAS entry must be populated');
   assert.equal(typeof r.entry.name, 'string');
-  assert.equal(r.entry.name, 'ML Supply Chain Compromise');
+  assert.ok(r.entry.name.length > 0, 'the resolved entry carries a name');
+  // The literal name belongs to MITRE and moves when ATLAS renames a technique,
+  // so what is pinned here is that the lookup returned THIS id's record.
+  // scripts/check-atlas-catalog-currency.js is what holds the name to upstream.
+  assert.equal(r.entry.id, 'AML.T0010');
+  assert.equal(
+    r.entry.name,
+    require('../data/atlas-ttps.json')['AML.T0010'].name,
+    'byTtp must return the catalog record for the id it was asked for',
+  );
   assert.equal(typeof r.entry.tactic, 'string'); // ATLAS stores tactic as a string
 });
 
@@ -620,11 +629,20 @@ test('#9 byTtp resolves an ATT&CK technique entry (not only ATLAS)', () => {
 });
 
 test('#9 byTtp still resolves an ATLAS technique entry', () => {
-  const r = xref.byTtp('AML.T0010'); // ML Supply Chain Compromise
+  const r = xref.byTtp('AML.T0010');
   assert.equal(r.found, true);
   assert.ok(r.entry, 'ATLAS entry must be populated');
   assert.equal(typeof r.entry.name, 'string');
-  assert.equal(r.entry.name, 'ML Supply Chain Compromise');
+  assert.ok(r.entry.name.length > 0, 'the resolved entry carries a name');
+  // The literal name belongs to MITRE and moves when ATLAS renames a technique,
+  // so what is pinned here is that the lookup returned THIS id's record.
+  // scripts/check-atlas-catalog-currency.js is what holds the name to upstream.
+  assert.equal(r.entry.id, 'AML.T0010');
+  assert.equal(
+    r.entry.name,
+    require('../data/atlas-ttps.json')['AML.T0010'].name,
+    'byTtp must return the catalog record for the id it was asked for',
+  );
   assert.equal(typeof r.entry.tactic, 'string'); // ATLAS stores tactic as a string
 });
 

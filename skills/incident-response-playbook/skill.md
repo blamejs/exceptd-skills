@@ -55,7 +55,7 @@ forward_watch:
   - AU SOCI Act expanded sector coverage (data-storage and processing entities added 2024; further mandatory-reporting tiers under review)
   - IL INCD Incident Response Process v4 (slated for 2026-2027) consolidating AI-incident sub-class
   - NYDFS 23 NYCRR 500.17 amendments tightening ransom-payment 24h disclosure operationalization
-last_threat_review: "2026-06-10"
+last_threat_review: "2026-09-18"
 ---
 
 # Incident Response Playbook
@@ -128,7 +128,7 @@ This skill is response-shaped — the TTPs below name the incident classes the p
 | **AML.T0017** | Discover ML Model Ontology | Adversary mapping of deployed model family, system-prompt structure, guardrails, and training-data signal — precursor to extraction and adversarial-input crafting | Identification: anomalous inference-API usage patterns (high-volume queries, structured probing, membership-inference signatures, repeated training-data extraction prompts). Containment: rate-limit + API-key revocation + IP block. Eradication: identify attacker access surface; assess what model-ontology data was exposed. Recovery: re-key, consider model-rotation if proprietary weights are at risk; for training-data exfiltration consider differential-privacy retraining. | No standardized detection signatures; org must build custom telemetry over AI inference APIs. |
 | **AML.T0051** | LLM Prompt Injection | Prompt-injection breach as incident trigger | Identification: AI-assistant or agentic-system anomalous action (unauthorized data access, anomalous tool invocation, identity-context confusion). Containment: revoke AI-system tool scopes, disable agent autonomy, isolate affected RAG corpus. Eradication: identify injection vector (web content, email signature, document metadata, RAG corpus poisoning) and remove. Recovery: re-deploy with hardened system prompt + tool-scoping per `mcp-agent-trust`. | Detection lags; most orgs discover the incident from downstream effect (unauthorized action) rather than detection at the prompt boundary. |
 
-ATLAS pinned to v2026.07 (August 2026). ATT&CK pinned to v19.2 (August 2026); the Defense Evasion (TA0005) split into Stealth (TA0005) and Defense Impairment (TA0112) is traced via `tactic_moved_from` on affected `data/attack-techniques.json` entries and does not introduce breaking changes for the T-IDs cited above.
+ATLAS pinned to v2026.09 (September 2026). ATT&CK pinned to v19.2 (August 2026); the Defense Evasion (TA0005) split into Stealth (TA0005) and Defense Impairment (TA0112) is traced via `tactic_moved_from` on affected `data/attack-techniques.json` entries and does not introduce breaking changes for the T-IDs cited above.
 
 ---
 

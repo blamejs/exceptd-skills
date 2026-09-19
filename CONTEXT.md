@@ -116,7 +116,7 @@ Skills and playbooks read from `data/`. Authoritative catalog inventory:
 | File | Entries | Purpose |
 |------|---------|---------|
 | `cve-catalog.json` | 1323 | CVEs with CVSS, RWEP score, EPSS estimates, CISA KEV flags, PoC and live-patch availability |
-| `atlas-ttps.json` | 174 | MITRE ATLAS v2026.07 (August 2026) techniques with framework gap flags |
+| `atlas-ttps.json` | 174 | MITRE ATLAS v2026.09 (September 2026) techniques with framework gap flags |
 | `attack-techniques.json` | 794 | MITRE ATT&CK techniques with framework coverage mappings |
 | `framework-control-gaps.json` | 194 | Framework control gap entries: designed-for vs. what each control misses |
 | `exploit-availability.json` | 28 | Per-CVE PoC locations, weaponization stage, AI-acceleration factor, live-patch status |

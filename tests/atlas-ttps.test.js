@@ -156,7 +156,10 @@ test('Skill bodies + indexes + builder scripts — ATLAS version matches live pi
   const builderFiles = walkFiles(BUILDER_DIR, (f) => f.endsWith('.js'));
   const allFiles = [...skillFiles, ...indexFiles, ...builderFiles];
 
-  // Patterns that introduce an ATLAS version mention.
+  // Patterns that introduce an ATLAS version mention. "ATLAS v<version>" is
+  // the form that states the pin, so it must equal the live pin. A historical
+  // statement about a past release is written "ATLAS release 2026.06" or
+  // "ATLAS 2025.12", without the "v", and is not matched here.
   const patterns = [
     /MITRE ATLAS v(\d+\.\d+(?:\.\d+)?)/g,
     /ATLAS v(\d+\.\d+(?:\.\d+)?)/g,

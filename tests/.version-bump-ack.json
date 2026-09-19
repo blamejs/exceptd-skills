@@ -1,7 +1,7 @@
 {
-  "version": "0.19.0",
+  "version": "0.20.0",
   "type": "minor",
   "authorized_by": "maintainer",
-  "authorized_on": "2026-08-08",
-  "reason": "Raises the published engines.node floor from >=24.16.0 to >=24.19.0. Narrowing the supported runtime range is a consumer-compatibility change, so it takes a minor under the project cadence — the same call v0.18.0 made when it moved the floor onto the Node 24 LTS line. Installs on Node 24.16 through 24.18 will surface an npm engines warning until they upgrade."
+  "authorized_on": "2026-09-09",
+  "reason": "Raises the published engines.node floor from >=24.19.0 to >=24.21.0. Narrowing the supported runtime range is a consumer-compatibility change, so it takes a minor under the project cadence, as v0.18.0 and v0.19.0 did when they moved the floor. The toolchain pins the same version across ci.yml, release.yml, docker/test.Dockerfile and .nvmrc, and tests/docker.test.js requires the published floor to be a runtime the gates actually ran on. Installs on Node 24.19 or 24.20 will surface an npm engines warning until they upgrade."
 }

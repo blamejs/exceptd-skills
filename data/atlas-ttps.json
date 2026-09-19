@@ -1,14 +1,14 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "atlas_version": "2026.07",
-    "atlas_release_date": "2026-08-07",
+    "atlas_version": "2026.09",
+    "atlas_release_date": "2026-09-15",
     "secure_ai_v2_release_date": "2026-05-06",
     "secure_ai_v2_source": "https://ctid.mitre.org/blog/2026/05/06/secure-ai-v2-release",
-    "last_updated": "2026-08-08",
-    "last_threat_review": "2026-08-08",
+    "last_updated": "2026-09-18",
+    "last_threat_review": "2026-09-18",
     "source": "https://atlas.mitre.org",
-    "note": "AI-relevant ATLAS TTPs with framework_gap field, curated as a subset of the full ATLAS matrix and pinned to v2026.07. ATLAS content follows a YYYY.MM calendar-versioning scheme; the CalVer scheme and the per-technique platform tags (Predictive AI, Generative AI, Agentic AI, Enterprise) were introduced in v2026.05. v2026.07 consolidated three separately-numbered publish-poisoned techniques — AML.T0019 (datasets), AML.T0058 (models) and AML.T0104 (agent tools) — under a single parent, AML.T0115 (Publish Poisoned AI Artifacts), with the artifact class recorded by sub-technique. Those three ids are retired upstream; entries carrying them here were re-keyed and declare a `supersedes` field so an operator holding older data can still join the two. v2026.07 also published AML.T0113 (Steal Web Session Cookie), AML.T0091.001 (Use Alternate Authentication Material: Web Session Cookie) and AML.T0114 (AI Service Web Interface), all three carried here, and refreshed AML.T0054 (LLM Jailbreak). This curated subset holds 174 techniques and intentionally trails the full matrix. framework_gap: no framework has a control that addresses this TTP. secure_ai_v2_layer flags entries included in the CTID Secure AI v2 layered set (May 2026); maturity reflects CTID's technique-maturity classification (low / moderate / high).",
+    "note": "AI-relevant ATLAS TTPs with framework_gap field, curated as a subset of the full ATLAS matrix and pinned to v2026.09. ATLAS content follows a YYYY.MM calendar-versioning scheme; the CalVer scheme and the per-technique platform tags (Predictive AI, Generative AI, Agentic AI, Enterprise) were introduced in release 2026.05. Release 2026.06 published AML.T0113 (Steal Web Session Cookie), AML.T0091.001 (Use Alternate Authentication Material: Web Session Cookie) and AML.T0114 (AI Service Web Interface), all three carried here. Release 2026.07 consolidated three separately-numbered publish-poisoned techniques, AML.T0019 (datasets), AML.T0058 (models) and AML.T0104 (agent tools), under a single parent, AML.T0115 (Publish Poisoned AI Artifacts), with the artifact class recorded by sub-technique. Those three ids are retired upstream; entries carrying them here were re-keyed and declare a `supersedes` field so an operator holding older data can still join the two. Release 2026.08 generalized AML.T0072, AML.T0075 and AML.T0089 and renamed tactic AML.TA0001. Release 2026.09 updated AML.T0054 (LLM Jailbreak) and added techniques this subset does not carry. This curated subset holds 174 techniques and intentionally trails the full matrix. framework_gap: no framework has a control that addresses this TTP. secure_ai_v2_layer flags entries included in the CTID Secure AI v2 layered set (May 2026); maturity reflects CTID's technique-maturity classification (low / moderate / high).",
     "tlp": "CLEAR",
     "source_confidence": {
       "scheme": "Admiralty (A-F + 1-6)",
@@ -108,9 +108,9 @@
   },
   "AML.T0010": {
     "id": "AML.T0010",
-    "name": "ML Supply Chain Compromise",
+    "name": "AI Supply Chain Compromise",
     "tactic": "Initial Access",
-    "description": "Adversary compromises the ML supply chain — pretrained models, datasets, training infrastructure, or AI tool plugins — to inject backdoors or malicious behavior before the model reaches the target organization.",
+    "description": "Adversary compromises the AI supply chain — pretrained models, datasets, training infrastructure, or AI tool plugins — to inject backdoors or malicious behavior before the model reaches the target organization.",
     "subtechniques": [
       "AML.T0010.000 — GPU Firmware Compromise",
       "AML.T0010.001 — ML Framework Compromise (PyTorch, TensorFlow)",
@@ -142,7 +142,7 @@
     ],
     "secure_ai_v2_layer": true,
     "maturity": "high",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-09-09",
     "cve_refs": [
       "CVE-2023-43654",
       "CVE-2023-6016",
@@ -271,9 +271,9 @@
   },
   "AML.T0018": {
     "id": "AML.T0018",
-    "name": "Backdoor ML Model",
+    "name": "Manipulate AI Model",
     "tactic": "Persistence",
-    "description": "Adversary inserts a backdoor into an ML model during training or fine-tuning. The backdoor is dormant until a trigger input is presented, at which point the model produces attacker-controlled outputs. The clean accuracy remains high, making detection difficult.",
+    "description": "Adversaries may manipulate an AI model artifact or its bundled components to change AI system behavior, introduce malicious code, or establish persistent malicious functionality. This may include modifying model weights, model architecture, or prompt-construction logic. Manipulated artifacts may retain expected behavior under ordinary conditions while activating malicious behavior only for selected inputs, contexts, or deployment conditions.",
     "subtechniques": [
       "AML.T0018.000 — Poison Training Data (data poisoning)",
       "AML.T0018.001 — Trojan Model (direct weight manipulation)",
@@ -299,12 +299,12 @@
     ],
     "secure_ai_v2_layer": true,
     "maturity": "moderate",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-09-09",
     "cve_refs": [
       "CVE-2026-45321",
       "MAL-2026-3083"
     ],
-    "description_full": "Adversaries may directly manipulate an AI model to change its behavior or introduce malicious code. Manipulating a model gives the adversary a persistent change in the system. This can include poisoning the model by changing its weights, modifying the model architecture to change its behavior, and embedding malware which may be executed when the model is loaded.",
+    "description_full": "Adversaries may manipulate an AI model artifact or its bundled components to change AI system behavior, introduce malicious code, or establish persistent malicious functionality. This may include modifying model weights, model architecture, or prompt-construction logic. Manipulated artifacts may retain expected behavior under ordinary conditions while activating malicious behavior only for selected inputs, contexts, or deployment conditions.",
     "platforms": [
       "ATLAS"
     ],
@@ -314,7 +314,7 @@
   },
   "AML.T0020": {
     "id": "AML.T0020",
-    "name": "Poison Training Data",
+    "name": "Training Data Poisoning",
     "tactic": "ML Attack Staging",
     "description": "Adversary injects malicious examples into training data to degrade model performance, introduce backdoors, or bias outputs toward attacker-controlled behaviors. For RAG systems: adversary injects malicious content into the knowledge base.",
     "subtechniques": [
@@ -342,7 +342,7 @@
     ],
     "secure_ai_v2_layer": true,
     "maturity": "high",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-09-09",
     "cve_refs": [
       "MAL-2026-MOIKA-DEPCONFUSION",
       "MAL-2026-NODE-IPC-STEALER",
@@ -358,9 +358,9 @@
   },
   "AML.T0024": {
     "id": "AML.T0024",
-    "name": "Exfiltration via ML Inference API",
+    "name": "Exfiltration via AI Inference API",
     "tactic": "Exfiltration",
-    "description": "Adversary uses an ML inference API as the exfiltration channel for stolen data — embedding sensitive content in prompts, retrieval queries, or function-call arguments and reconstructing it from responses, logs, or training feedback. Distinguished from classical exfiltration by the channel being a categorically-trusted AI endpoint that egress controls do not flag.",
+    "description": "Adversary uses an AI inference API as the exfiltration channel for stolen data — embedding sensitive content in prompts, retrieval queries, or function-call arguments and reconstructing it from responses, logs, or training feedback. Distinguished from classical exfiltration by the channel being a categorically-trusted AI endpoint that egress controls do not flag.",
     "subtechniques": [
       "AML.T0024.000 — Prompt-as-Exfil (embed secret in user-facing prompt to public LLM)",
       "AML.T0024.001 — Retrieval-as-Exfil (poisoned RAG corpus reads attacker-controlled documents that include exfil instructions)",
@@ -385,7 +385,7 @@
     "exceptd_skills": [],
     "secure_ai_v2_layer": true,
     "maturity": "high",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-09-09",
     "cve_refs": [
       "CVE-2025-10725",
       "CVE-2025-53767",
@@ -445,9 +445,9 @@
   },
   "AML.T0044": {
     "id": "AML.T0044",
-    "name": "Full ML Model Access",
+    "name": "Full AI Model Access",
     "tactic": "Collection",
-    "description": "Adversary obtains complete read access to a deployed ML model — weights, architecture, tokenizer, training-data fingerprints — enabling offline adversarial-example crafting, distillation into a smaller offensive model, or extraction of memorized training data containing sensitive content.",
+    "description": "Adversary obtains complete read access to a deployed AI model — weights, architecture, tokenizer, training-data fingerprints — enabling offline adversarial-example crafting, distillation into a smaller offensive model, or extraction of memorized training data containing sensitive content.",
     "subtechniques": [
       "AML.T0044.000 — Model File Theft (read access to weights on disk / object storage)",
       "AML.T0044.001 — Model Extraction via Query (reconstruct equivalent model from API responses)",
@@ -471,7 +471,7 @@
     "exceptd_skills": [],
     "secure_ai_v2_layer": true,
     "maturity": "moderate",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-09-09",
     "description_full": "Adversaries may gain full \"white-box\" access to an AI model. This means the adversary has complete knowledge of the model architecture, its parameters, and class ontology. They may exfiltrate the model to [Craft Adversarial Data](/techniques/AML.T0043) and [Verify Attack](/techniques/AML.T0042) in an offline where it is hard to detect their behavior.",
     "platforms": [
       "ATLAS"
@@ -1216,7 +1216,7 @@
   },
   "AML.T0007": {
     "id": "AML.T0007",
-    "name": "Discover ML Artifacts",
+    "name": "Discover AI Artifacts",
     "tactic": "Reconnaissance",
     "description": "Adversary enumerates ML artifacts available locally or remotely after gaining initial access — model files, training datasets, model registries, tokenizer files, configuration. Distinct from AML.T0001 (Victim Research, pre-access) — this is post-access enumeration of the ML attack surface to plan downstream actions like poisoning, theft, or evasion.",
     "subtechniques": [],
@@ -1227,7 +1227,7 @@
     "controls_that_dont_help": [],
     "detection": "File-access auditing on model registries + tokenizer / weights paths; anomalous read patterns from non-training service accounts.",
     "exceptd_skills": [],
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-09-09",
     "cve_refs": [
       "CVE-2026-7482"
     ],
@@ -2030,14 +2030,14 @@
   },
   "AML.T0072": {
     "id": "AML.T0072",
-    "name": "Reverse Shell",
+    "name": "Cyber Communication Channel",
     "tactic": "Command and Control",
-    "description": "Adversaries may utilize a reverse shell to communicate and control the victim system.",
+    "description": "Adversaries may establish or use cyber communication channels for command and control. A channel may use any network protocol, service, repository, relay, or other intermediary and may operate synchronously or asynchronously.",
     "reference_url": "https://atlas.mitre.org/techniques/AML.T0072",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-09-09",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
-    "description_full": "Adversaries may utilize a reverse shell to communicate and control the victim system. Typically, a user uses a client to connect to a remote machine which is listening for connections. With a reverse shell, the adversary is listening for incoming connections initiated from the victim system.",
+    "description_full": "Adversaries may establish or use cyber communication channels for command and control. A channel may use any network protocol, service, repository, relay, or other intermediary and may operate synchronously or asynchronously. See the ATT&CK Command and Control tactic (https://attack.mitre.org/tactics/TA0011/) for techniques describing specific protocols, services, relays, tunneling methods, and communication patterns.",
     "platforms": [
       "ATLAS"
     ],
@@ -2078,14 +2078,14 @@
   },
   "AML.T0075": {
     "id": "AML.T0075",
-    "name": "Cloud Service Discovery",
+    "name": "Enterprise Resource Discovery",
     "tactic": "Discovery",
-    "description": "Adversaries may attempt to enumerate the cloud services running on a system after gaining access.",
+    "description": "Adversaries may discover resources available within an enterprise environment and information needed to identify or access them.",
     "reference_url": "https://atlas.mitre.org/techniques/AML.T0075",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-09-09",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
-    "description_full": "Adversaries may attempt to enumerate the cloud services running on a system after gaining access. These methods can differ from platform-as-a-service (PaaS), to infrastructure-as-a-service (IaaS), software-as-a-service (SaaS), or AI-as-a-service (AIaaS). Many services exist throughout the various cloud providers and can include Continuous Integration and Continuous Delivery (CI/CD), Lambda Functions, Entra ID, AI Inference, Generative AI, Agentic AI, etc. They may also include security services, such as AWS GuardDuty and Microsoft Defender for Cloud, and logging services, such as AWS CloudTrail and Google Cloud Audit Logs. Adversaries may attempt to discover information about the services enabled throughout the environment. Azure tools and APIs, such as the Microsoft Graph API and Azure Resource Manager API, can enumerate resources and services, including applications, management groups, resources and policy definitions, and their relationships that are accessible by an identity. They may use tools to check credentials and enumerate the AI models available in various AIaaS providers' environments including AI21 Labs, Anthropic, AWS Bedrock, Azure, ElevenLabs, MakerSuite, Mistral, OpenAI, OpenRouter, and GCP Vertex AI [\\[1\\]][1]. [1]: https://www.sysdig.com/blog/llmjacking-stolen-cloud-credentials-used-in-new-ai-attack",
+    "description_full": "Adversaries may discover resources available within an enterprise environment and information needed to identify or access them. Resources may include accounts, groups, systems, devices, virtual machines, files, directories, storage volumes, cloud objects, containers, applications, software, processes, services, network shares, repositories, policies, logs, and other local, remote, or cloud-hosted assets. Adversaries may enumerate, query, scan, or browse resources to determine what exists, where it is located, how it is related to other resources, and whether it is accessible or useful for subsequent actions.",
     "platforms": [
       "ATLAS"
     ],
@@ -2308,14 +2308,14 @@
   },
   "AML.T0089": {
     "id": "AML.T0089",
-    "name": "Process Discovery",
+    "name": "Enterprise Environment Discovery",
     "tactic": "Discovery",
-    "description": "Adversaries may attempt to get information about processes running on a system.",
+    "description": "Adversaries may discover configurations, conditions, relationships, activity, and other characteristics of an enterprise environment.",
     "reference_url": "https://atlas.mitre.org/techniques/AML.T0089",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-09-09",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
-    "description_full": "Adversaries may attempt to get information about processes running on a system. Once obtained, this information could be used to gain an understanding of common AI-related software/applications running on systems within the network. Administrator or otherwise elevated access may provide better process details. Identifying the AI software stack can then lead an adversary to new targets and attack pathways. AI-related software may require application tokens to authenticate with backend services. This provides opportunities for [Credential Access](/tactics/AML.TA0013) and [Lateral Movement](/tactics/AML.TA0015). In Windows environments, adversaries could obtain details on running processes using the Tasklist utility via cmd or `Get-Process` via PowerShell. Information about processes can also be extracted from the output of Native API calls such as `CreateToolhelp32Snapshot`. In Mac and Linux, this is accomplished with the `ps` command. Adversaries may also opt to enumerate processes via `/proc`.",
+    "description_full": "Adversaries may discover configurations, conditions, relationships, activity, and other characteristics of an enterprise environment. This may include system and network configuration; active connections, processes, windows, and users; permissions, trust relationships, and policy settings; installed defensive or backup capabilities; network traffic; browser and registry information; or environmental properties such as location, language, time, connectivity, virtualization, debugging, and sandbox indicators. Adversaries may query or passively observe this information to understand how the environment is configured and operating, identify access paths or security controls, detect monitoring or analysis, and select or adapt subsequent actions.",
     "platforms": [
       "ATLAS"
     ],

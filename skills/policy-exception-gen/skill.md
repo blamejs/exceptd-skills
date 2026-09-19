@@ -23,7 +23,7 @@ forward_watch:
   - EU CRA exceptions for AI pipeline components
   - NIST SP 800-204 series updates for microservices
   - FedRAMP updates for container/serverless authorization
-last_threat_review: "2026-06-10"
+last_threat_review: "2026-09-18"
 ---
 
 # Policy Exception Generation
@@ -88,18 +88,18 @@ This skill's exceptions exist precisely because the framework language has not c
 
 ---
 
-## TTP Mapping (MITRE ATLAS v2026.07 and ATT&CK)
+## TTP Mapping (MITRE ATLAS v2026.09 and ATT&CK)
 
 A granted exception does not remove the threat — it shifts the burden onto compensating controls. For each exception in this skill, the residual TTPs the compensating controls MUST still disrupt:
 
 | Exception | Residual TTPs the exception must still address | Compensating coverage requirement |
 |---|---|---|
 | Exception 1 — Ephemeral Infrastructure Asset Inventory | T1525 (Implant Internal Image), T1610 (Deploy Container), T1611 (Escape to Host), T1078.004 (Valid Cloud Accounts) | Image scanning in CI, IaC drift detection, cloud-asset-inventory API alerts on resources not in IaC registry |
-| Exception 2 — AI Pipeline Change Management | AML.T0020 (Poison Training Data), AML.T0018 (Backdoor ML Model), AML.T0051 (LLM Prompt Injection — emergent behavior on model upgrade), AML.T0054 (LLM Jailbreak) | Behavioral regression test suite, model version pinning, model fingerprinting on canonical prompts, provider changelog review |
+| Exception 2 — AI Pipeline Change Management | AML.T0020 (Training Data Poisoning), AML.T0018 (Manipulate AI Model), AML.T0051 (LLM Prompt Injection — emergent behavior on model upgrade), AML.T0054 (LLM Jailbreak) | Behavioral regression test suite, model version pinning, model fingerprinting on canonical prompts, provider changelog review |
 | Exception 3 — Zero Trust Architecture Network Segmentation | T1021 (Remote Services), T1570 (Lateral Tool Transfer), T1078 (Valid Accounts), T1199 (Trusted Relationship) | Workload identity (SPIFFE/SPIRE), per-request mTLS, device-posture verification, east-west behavioral analytics |
 | Exception 4 — Critical Systems No-Reboot Kernel Patching | T1068 (Exploitation for Privilege Escalation — Copy Fail class), T1548.001 (Setuid and Setgid), T1611 (Escape to Host) | Live kernel patch deployed and verified (`kpatch list` / `canonical-livepatch status`), eBPF/auditd exploitation-pattern rules, network-layer isolation if no live patch available, scheduled reboot window |
 
-The TTP source-of-truth is `data/atlas-ttps.json` (MITRE ATLAS v2026.07, May 2026) supplemented by ATT&CK Enterprise. No orphaned controls: no exception in this skill is granted without an enumerated residual-TTP set; an exception with no listed residual is theater.
+The TTP source-of-truth is `data/atlas-ttps.json` (MITRE ATLAS v2026.09, September 2026) supplemented by ATT&CK Enterprise. No orphaned controls: no exception in this skill is granted without an enumerated residual-TTP set; an exception with no listed residual is theater.
 
 ---
 
@@ -460,7 +460,7 @@ Every defensible exception names the residual TTPs in scope and the compensating
 |---|---|---|---|---|
 | Ephemeral Infrastructure (CM-8 / A.5.9) | T1610 (Deploy Container), T1525 (Implant Internal Image) | `D3-EFA` | Executable File Analysis (image-registry scanning, SBOM per image) | Build / registry — pre-deployment image integrity verification |
 | Ephemeral Infrastructure | T1525 | `D3-EAL` | Executable Allowlisting (signed-image-only deploy gate) | Cluster admission — only signed images reach the runtime |
-| AI Pipeline Change Management (CM-3 / A.8.32) | AML.T0018 (Backdoor ML Model), AML.T0020 (Poison Training Data) | `D3-FAPA` | File Access Pattern Analysis (training-data and model-artifact access baselining) | Data tier — detect anomalous access to corpora and weights |
+| AI Pipeline Change Management (CM-3 / A.8.32) | AML.T0018 (Manipulate AI Model), AML.T0020 (Training Data Poisoning) | `D3-FAPA` | File Access Pattern Analysis (training-data and model-artifact access baselining) | Data tier — detect anomalous access to corpora and weights |
 | AI Pipeline Change Management | AML.T0018 | `D3-IOPR` | Input/Output Profiling (behavioral regression suite, model-fingerprinting prompt set) | SDK / application — detect model substitution and drift |
 | Zero Trust Architecture Segmentation (SC-7 / A.8.22) | T1021 (Remote Services), T1570 (Lateral Tool Transfer) | `D3-NTPM` | Network Traffic Policy Mapping (SPIFFE / mTLS workload identity enforcement) | Network — per-workload-identity policy on east-west flows |
 | Zero Trust Architecture Segmentation | T1021 / T1570 | `D3-NTA` | Network Traffic Analysis (east-west behavioral analytics) | Network — detect lateral movement that policy alone cannot prevent |

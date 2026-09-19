@@ -20,7 +20,7 @@ data_deps:
 atlas_refs: []
 attack_refs: []
 framework_gaps: []
-last_threat_review: "2026-06-10"
+last_threat_review: "2026-09-18"
 ---
 
 # Framework Gap Analysis
@@ -66,14 +66,14 @@ The global-first requirement binds against the full expanded catalog, not the EU
 - **China (CN):** PIPL, DSL, CSL, Cybersecurity Review Measures (2022).
 - **Brazil (BR):** LGPD + ANPD guidance.
 - **Saudi Arabia (KSA):** PDPL + SDAIA Implementing Regulation 2023.
-- **Global standards:** ISO 27001:2022 / 27002:2022, ISO/IEC 42001:2023, CSA CCM v4, CIS Controls v8, MITRE ATLAS v2026.07.
+- **Global standards:** ISO 27001:2022 / 27002:2022, ISO/IEC 42001:2023, CSA CCM v4, CIS Controls v8, MITRE ATLAS v2026.09.
 - **US sub-national:** NYDFS 23 NYCRR 500 (amended Nov 2023, phased through Nov 2025); state privacy laws (CA CCPA/CPRA, CO CPA, CT CTDPA, IL BIPA, NY SHIELD, TX DPSA, VA CDPA).
 
 A gap declaration that closes section 6 (Global coverage check) without referencing at least the EU, UK, AU, ISO, and a representative selection from {IL, CH, HK, TW, ID, VN, JP-expanded, KR, CN, BR, NYDFS} for any org operating in those jurisdictions is incomplete: a global-first analysis must cover every applicable jurisdiction, not a US-centric subset. The exact set required depends on the org's footprint — but the analyst must consult `data/global-frameworks.json` to enumerate it rather than defaulting to the legacy four-jurisdiction shorthand.
 
-## TTP Mapping (MITRE ATLAS v2026.07 and ATT&CK)
+## TTP Mapping (MITRE ATLAS v2026.09 and ATT&CK)
 
-This skill maps framework controls to attacker TTPs on demand rather than statically. The authoritative TTP catalog is `data/atlas-ttps.json` (pinned to MITRE ATLAS v2026.07, May 2026) supplemented by MITRE ATT&CK Enterprise IDs for non-AI threats. The mapping convention used in every gap declaration this skill produces:
+This skill maps framework controls to attacker TTPs on demand rather than statically. The authoritative TTP catalog is `data/atlas-ttps.json` (pinned to MITRE ATLAS v2026.09, September 2026) supplemented by MITRE ATT&CK Enterprise IDs for non-AI threats. The mapping convention used in every gap declaration this skill produces:
 
 | Built-in gap | Primary TTP(s) | Gap flag |
 |---|---|---|
@@ -85,7 +85,7 @@ This skill maps framework controls to attacker TTPs on demand rather than static
 | ISO 27001 A.8.8 vs. CISA KEV class | T1068, T1203 | "Appropriate timescales" undefined for AI-accelerated weaponization |
 | SOC 2 CC6 vs. prompt injection | AML.T0051 | Authorization model has no prompt-level granularity |
 | PCI DSS 6.3.3 vs. AI-accelerated weaponization | T1068, T1190 | One-month window predates AI-assisted exploit development |
-| NIS2 Art. 21 vs. AI pipeline integrity | AML.T0020 (Poison Training Data), AML.T0010 | No AI-specific control surface |
+| NIS2 Art. 21 vs. AI pipeline integrity | AML.T0020 (Training Data Poisoning), AML.T0010 | No AI-specific control surface |
 | All frameworks vs. ephemeral inventory | T1610, T1525 | Asset-inventory assumption invalid on serverless/container |
 
 For any gap analysis this skill produces, every cited control must be paired with at least one ATLAS or ATT&CK ID drawn from `data/atlas-ttps.json`. Controls without a mapped TTP are orphaned controls and are rejected — every control recommendation must map to a real ATLAS or ATT&CK TTP.
@@ -393,12 +393,12 @@ Every Framework Lag Declaration this skill produces names the missing control. T
 | T1068 | SI-2 / A.8.8 patch SLA | `D3-SCA` | System Call Analysis | Endpoint — detects the deterministic LPE primitive at syscall layer before patch lands |
 | AML.T0051 (LLM Prompt Injection) — CVE-2025-53773 class | AC-2 / CC6 account-management as access control for AI agents | `D3-IOPR` | Input/Output Profiling Resource | SDK / application — content-aware inspection of prompt+completion at the model boundary |
 | AML.T0051 | AC-2 / CC6 | `D3-CSPP` | Client-server Payload Profiling | LLM gateway — gateway-layer inspection when SDK-side `D3-IOPR` is not deployable |
-| AML.T0010 (ML Supply Chain Compromise) — CVE-2026-30615 MCP class | A.5.19 / SA-12 vendor management as MCP trust boundary | `D3-EAL` | Executable Allowlisting | Managed endpoint — only sanctioned MCP servers and IDE assistants execute on developer workstations |
+| AML.T0010 (AI Supply Chain Compromise) — CVE-2026-30615 MCP class | A.5.19 / SA-12 vendor management as MCP trust boundary | `D3-EAL` | Executable Allowlisting | Managed endpoint — only sanctioned MCP servers and IDE assistants execute on developer workstations |
 | AML.T0010 | A.5.19 / SA-12 | `D3-EFA` | Executable File Analysis | Endpoint — pre-execution analysis of MCP server binaries and AI-assistant plugins |
 | AML.T0016 (Develop Capabilities — AI-generated payloads) — PROMPTFLUX class | SI-3 signature-based malware protection | `D3-PA` | Process Analysis | Endpoint — behavioral detection of in-process LLM-query patterns that signature engines cannot see |
 | AML.T0096 (LLM Integration Abuse — C2) — SesameOp class | SI-4 / CC7 anomaly detection without AI-API baseline | `D3-NTA` | Network Traffic Analysis | Network egress — per-identity baseline of model-API destinations |
 | T1190 (Exploit Public-Facing Application) — Dirty Frag IPsec | SC-8 / SC-28 cryptographic-control compensating-control claim | `D3-NI` | Network Isolation | Network — segmentation that does not depend on the compromised IPsec subsystem |
-| AML.T0020 (Poison Training Data) | NIS2 Art. 21 AI-pipeline integrity | `D3-FAPA` | File Access Pattern Analysis | Data tier — RAG-corpus and training-data access-pattern baselining |
+| AML.T0020 (Training Data Poisoning) | NIS2 Art. 21 AI-pipeline integrity | `D3-FAPA` | File Access Pattern Analysis | Data tier — RAG-corpus and training-data access-pattern baselining |
 
 **Defense-in-depth posture:** every Framework Lag Declaration produced by this skill must propose at least one D3FEND technique per cited offensive TTP. A declaration that names the gap without recommending a defensive technique is incomplete — operators receive a finding with no remediation path. Where the framework gap is multi-jurisdictional (per Section 6 of the Output Format), the same D3FEND technique satisfies the equivalent obligation in each cross-walked framework — the defensive control is technique-level, not framework-level.
 

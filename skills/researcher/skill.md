@@ -24,7 +24,7 @@ data_deps:
 atlas_refs: []
 attack_refs: []
 framework_gaps: []
-last_threat_review: "2026-05-11"
+last_threat_review: "2026-09-09"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief researcher` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
@@ -85,11 +85,11 @@ This is a routing skill. The TTP coverage of any specific output equals the TTP 
 
 | ATLAS / ATT&CK Class | Researcher Routes To |
 |---|---|
-| AML.T0010 (ML Supply Chain Compromise) | `mcp-agent-trust`, `ai-attack-surface` |
+| AML.T0010 (AI Supply Chain Compromise) | `mcp-agent-trust`, `ai-attack-surface` |
 | AML.T0016 (Obtain Capabilities: Develop Capabilities — AI-assisted) | `ai-attack-surface`, `kernel-lpe-triage`, `exploit-scoring` |
 | AML.T0017 (Discover ML Model Ontology) | `ai-attack-surface`, `mlops-security`, `api-security` |
-| AML.T0018 (Backdoor ML Model) | `ai-attack-surface` |
-| AML.T0020 (Poison Training Data) | `ai-attack-surface`, `rag-pipeline-security` |
+| AML.T0018 (Manipulate AI Model) | `ai-attack-surface` |
+| AML.T0020 (Training Data Poisoning) | `ai-attack-surface`, `rag-pipeline-security` |
 | AML.T0043 (Craft Adversarial Data) / AML.T0054 (LLM Jailbreak) | `ai-attack-surface`, `rag-pipeline-security` |
 | AML.T0051 (LLM Prompt Injection) | `ai-attack-surface`, `mcp-agent-trust` |
 | AML.T0096 (LLM Integration Abuse — C2) | `ai-c2-detection` |

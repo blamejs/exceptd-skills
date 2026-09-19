@@ -1680,7 +1680,7 @@
     },
     {
       "id": "ml-supply-chain-aml-t0010",
-      "title": "ATLAS AML.T0010 — ML Supply Chain Compromise",
+      "title": "ATLAS AML.T0010 — AI Supply Chain Compromise",
       "applies_to": {
         "atlas_ttp": "AML.T0010"
       }
