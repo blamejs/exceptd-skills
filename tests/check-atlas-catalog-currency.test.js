@@ -16,7 +16,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 
-const { parseNames, isRenderingOf } =
+const { parseNames, isRenderingOf, parentNameOf } =
   require(path.resolve(__dirname, '..', 'scripts', 'check-atlas-catalog-currency.js'));
 
 const SAMPLE = [
@@ -69,8 +69,26 @@ test('parseNames ignores an id that is not a name-bearing object', () => {
 });
 
 test('isRenderingOf accepts a sub-technique written with its parent', () => {
-  assert.equal(isRenderingOf('Publish Poisoned AI Artifacts: Datasets', 'Datasets'), true);
-  assert.equal(isRenderingOf('Use Alternate Authentication Material: Web Session Cookie', 'Web Session Cookie'), true);
+  assert.equal(isRenderingOf('Publish Poisoned AI Artifacts: Datasets', 'Datasets', 'Publish Poisoned AI Artifacts'), true);
+  assert.equal(isRenderingOf('Use Alternate Authentication Material: Web Session Cookie', 'Web Session Cookie', 'Use Alternate Authentication Material'), true);
+});
+
+test('isRenderingOf rejects a "Parent: Child" name whose prefix is not the parent', () => {
+  // The suffix matching upstream is not enough: an arbitrary or renamed parent
+  // would otherwise pass the gate.
+  assert.equal(isRenderingOf('Unrelated Technique: Datasets', 'Datasets', 'Publish Poisoned AI Artifacts'), false);
+});
+
+test('isRenderingOf rejects the "Parent: Child" form on a technique with no parent', () => {
+  assert.equal(isRenderingOf('Publish Poisoned AI Artifacts: Datasets', 'Datasets', null), false);
+  assert.equal(isRenderingOf('Publish Poisoned AI Artifacts: Datasets', 'Datasets'), false);
+});
+
+test('parentNameOf resolves a sub-technique to its parent and a technique to nothing', () => {
+  const up = new Map([['AML.T0115', 'Publish Poisoned AI Artifacts'], ['AML.T0115.000', 'Datasets']]);
+  assert.equal(parentNameOf('AML.T0115.000', up), 'Publish Poisoned AI Artifacts');
+  assert.equal(parentNameOf('AML.T0115', up), null);
+  assert.equal(parentNameOf('AML.T0999.001', up), null, 'an unknown parent resolves to nothing, not a guess');
 });
 
 test('isRenderingOf accepts a parenthetical qualifier', () => {

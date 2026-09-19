@@ -111,13 +111,22 @@ function parseNames(text) {
 
 // "Use Alternate Authentication Material: Web Session Cookie" renders upstream's
 // "Web Session Cookie" with its parent; "AI Agent (as Attacker Asset)" qualifies
-// upstream's "AI Agent". Neither names a different technique.
-function isRenderingOf(ours, theirs) {
+// upstream's "AI Agent". Neither names a different technique. The "Parent: Child"
+// form is accepted only for a sub-technique, and only when the prefix is the
+// upstream name of that sub-technique's parent.
+function isRenderingOf(ours, theirs, parentName) {
   if (!theirs) return false;
   const bare = ours.replace(/\s*\([^)]*\)\s*$/, "").trim();
   if (bare === theirs) return true;
   const i = ours.lastIndexOf(": ");
-  return i > 0 && ours.slice(i + 2).trim() === theirs;
+  if (i <= 0 || !parentName) return false;
+  return ours.slice(0, i).trim() === parentName && ours.slice(i + 2).trim() === theirs;
+}
+
+// The upstream name of a sub-technique's parent, or null for a technique.
+function parentNameOf(id, upstream) {
+  const m = /^(AML\.T\d+)\.\d+$/.exec(id);
+  return m ? upstream.get(m[1]) || null : null;
 }
 
 function readBaseline() {
@@ -173,7 +182,7 @@ async function main() {
     const ours = String(catalog[id].name || "").trim();
     if (!upstream.has(id)) { missing.push({ id, ours }); continue; }
     const theirs = upstream.get(id);
-    if (ours !== theirs && !isRenderingOf(ours, theirs)) misnamed.push({ id, ours, theirs });
+    if (ours !== theirs && !isRenderingOf(ours, theirs, parentNameOf(id, upstream))) misnamed.push({ id, ours, theirs });
   }
 
   for (const id of ids) {
@@ -242,6 +251,6 @@ if (require.main === module) {
   });
 }
 
-// Only the two pieces that carry judgment are exported; `main` is the CLI and
-// is reached through the guard above.
-module.exports = { parseNames, isRenderingOf };
+// Only the pieces that carry judgment are exported; `main` is the CLI and is
+// reached through the guard above.
+module.exports = { parseNames, isRenderingOf, parentNameOf };
