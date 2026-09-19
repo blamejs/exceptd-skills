@@ -36,7 +36,7 @@ data_deps:
   - cve-catalog.json          # files in data/ this skill reads
   - atlas-ttps.json
 atlas_refs:
-  - AML.T0043                 # MITRE ATLAS v2026.08 TTP IDs
+  - AML.T0043                 # MITRE ATLAS v2026.09 TTP IDs
   - AML.T0054
 attack_refs:
   - T1068                     # MITRE ATT&CK TTP IDs
@@ -131,7 +131,7 @@ Schema per entry:
   "AML.T0043": {
     "name": "Craft Adversarial Data",
     "tactic": "ML Attack Staging",
-    "atlas_version": "2026.08",
+    "atlas_version": "2026.09",
     "description": "...",
     "framework_coverage": {
       "NIST-800-53": {"covered": false, "nearest_control": null, "gap_description": "..."},
@@ -211,7 +211,7 @@ RWEP (Real-World Exploit Priority) scoring engine.
 
 - `score(cveId)` — Return RWEP score for a CVE in the catalog
 - `scoreCustom(factors)` — Score a custom factor set (for CVEs not yet in catalog)
-- `validate()` — Schema validation: check all skill data_deps resolve, all CVE entries are complete, all ATLAS refs are valid v2026.08 IDs
+- `validate()` — Schema validation: check all skill data_deps resolve, all CVE entries are complete, all ATLAS refs are valid v2026.09 IDs
 - `compare(cveId)` — Return CVSS vs. RWEP comparison with explanation of the delta
 
 RWEP factor weights. The key names here are the ones a catalog entry's

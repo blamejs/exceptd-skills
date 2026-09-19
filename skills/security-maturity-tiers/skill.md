@@ -44,7 +44,7 @@ forward_watch:
   - Framework updates that change minimum compliance baselines
   - New tooling that makes higher tiers more accessible
   - PQC tooling maturity shifting overkill to practical
-last_threat_review: "2026-09-09"
+last_threat_review: "2026-09-18"
 ---
 
 # Security Maturity Tiers
@@ -473,7 +473,7 @@ The divergences above are surfaced against US, EU, UK, AU and ISO 27001:2022 —
 
 ## TTP Mapping
 
-Per-tier TTP coverage is cumulative: Practical includes MVP's coverage plus additions; Overkill includes both plus additions. Source-of-truth: `data/atlas-ttps.json` (MITRE ATLAS v2026.08) and ATT&CK references in `data/cve-catalog.json`.
+Per-tier TTP coverage is cumulative: Practical includes MVP's coverage plus additions; Overkill includes both plus additions. Source-of-truth: `data/atlas-ttps.json` (MITRE ATLAS v2026.09) and ATT&CK references in `data/cve-catalog.json`.
 
 | Tier | Must cover | TTP | Source | Tier-specific control element |
 |---|---|---|---|---|

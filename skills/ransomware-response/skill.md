@@ -62,7 +62,7 @@ forward_watch:
   - HIPAA Security Rule update (NPRM late 2024 → final rule expected 2026) — explicit ransomware-recovery and encryption-at-rest requirements
   - No More Ransom Project decryptor releases — affiliate-takedown decryptor drops (Operation Cronos LockBit decryptor, BlackCat post-exit-scam decryptors)
   - SCOTUS or circuit-court rulings on ransomware payment, sanctions liability, and insurance-policy enforcement
-last_threat_review: "2026-06-10"
+last_threat_review: "2026-09-18"
 ---
 
 # Ransomware Response Playbook
@@ -129,7 +129,7 @@ Cross-cutting gap: **no security framework treats the four ransomware-specific d
 
 Shadow Copy deletion and exfil-staging via Web Service align to the parent IR playbook's `T1486` and `T1567` entries; the parent's `AML.T0096 / AML.T0017 / AML.T0051` entries do not apply to ransomware-as-a-class but may apply if AI-system data is exfiltrated within the ransomware operation.
 
-ATLAS pinned to v2026.07 (August 2026). ATT&CK pinned to v19.2 (August 2026). Both are explicit version pins — never silently upgraded.
+ATLAS pinned to v2026.09 (September 2026). ATT&CK pinned to v19.2 (August 2026). Both are explicit version pins — never silently upgraded.
 
 ---
 

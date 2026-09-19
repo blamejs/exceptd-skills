@@ -1,14 +1,14 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "atlas_version": "2026.08",
-    "atlas_release_date": "2026-08-31",
+    "atlas_version": "2026.09",
+    "atlas_release_date": "2026-09-15",
     "secure_ai_v2_release_date": "2026-05-06",
     "secure_ai_v2_source": "https://ctid.mitre.org/blog/2026/05/06/secure-ai-v2-release",
-    "last_updated": "2026-09-09",
-    "last_threat_review": "2026-09-09",
+    "last_updated": "2026-09-18",
+    "last_threat_review": "2026-09-18",
     "source": "https://atlas.mitre.org",
-    "note": "AI-relevant ATLAS TTPs with framework_gap field, curated as a subset of the full ATLAS matrix and pinned to v2026.08. ATLAS content follows a YYYY.MM calendar-versioning scheme; the CalVer scheme and the per-technique platform tags (Predictive AI, Generative AI, Agentic AI, Enterprise) were introduced in v2026.05. v2026.08 consolidated three separately-numbered publish-poisoned techniques — AML.T0019 (datasets), AML.T0058 (models) and AML.T0104 (agent tools) — under a single parent, AML.T0115 (Publish Poisoned AI Artifacts), with the artifact class recorded by sub-technique. Those three ids are retired upstream; entries carrying them here were re-keyed and declare a `supersedes` field so an operator holding older data can still join the two. v2026.08 also published AML.T0113 (Steal Web Session Cookie), AML.T0091.001 (Use Alternate Authentication Material: Web Session Cookie) and AML.T0114 (AI Service Web Interface), all three carried here, and refreshed AML.T0054 (LLM Jailbreak). This curated subset holds 174 techniques and intentionally trails the full matrix. framework_gap: no framework has a control that addresses this TTP. secure_ai_v2_layer flags entries included in the CTID Secure AI v2 layered set (May 2026); maturity reflects CTID's technique-maturity classification (low / moderate / high).",
+    "note": "AI-relevant ATLAS TTPs with framework_gap field, curated as a subset of the full ATLAS matrix and pinned to v2026.09. ATLAS content follows a YYYY.MM calendar-versioning scheme; the CalVer scheme and the per-technique platform tags (Predictive AI, Generative AI, Agentic AI, Enterprise) were introduced in v2026.05. v2026.09 consolidated three separately-numbered publish-poisoned techniques — AML.T0019 (datasets), AML.T0058 (models) and AML.T0104 (agent tools) — under a single parent, AML.T0115 (Publish Poisoned AI Artifacts), with the artifact class recorded by sub-technique. Those three ids are retired upstream; entries carrying them here were re-keyed and declare a `supersedes` field so an operator holding older data can still join the two. v2026.09 also published AML.T0113 (Steal Web Session Cookie), AML.T0091.001 (Use Alternate Authentication Material: Web Session Cookie) and AML.T0114 (AI Service Web Interface), all three carried here, and refreshed AML.T0054 (LLM Jailbreak). This curated subset holds 174 techniques and intentionally trails the full matrix. framework_gap: no framework has a control that addresses this TTP. secure_ai_v2_layer flags entries included in the CTID Secure AI v2 layered set (May 2026); maturity reflects CTID's technique-maturity classification (low / moderate / high).",
     "tlp": "CLEAR",
     "source_confidence": {
       "scheme": "Admiralty (A-F + 1-6)",

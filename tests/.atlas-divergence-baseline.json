@@ -1,7 +1,7 @@
 {
   "_comment": "Divergences between data/atlas-ttps.json and the ATLAS release it pins, which scripts/check-atlas-catalog-currency.js reports and allows. Any divergence not listed here fails the gate, and an entry listed here that no longer diverges also fails, so this file shrinks as the entries are repaired. Tracked in #397.",
-  "pinned_release": "2026.08",
-  "recorded_on": "2026-09-09",
+  "pinned_release": "2026.09",
+  "recorded_on": "2026-09-18",
   "names": {
     "AML.T0001": "Victim Research",
     "AML.T0040": "Tool / Plugin Compromise",
