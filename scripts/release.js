@@ -561,7 +561,20 @@ function cmdRelease() {
   }
 
   _section("verify npm");
-  var npmVersion = _capture("npm", ["view", PKG_NAME, "version"]).stdout;
+  // npm accepts a publish before the registry serves it ("Your package is being
+  // processed and may take a few minutes"), so `npm view` can report the
+  // previous version for a minute or two after release.yml succeeds. Poll for
+  // up to three minutes before reading a mismatch as a failed publish.
+  var npmVersion = "";
+  for (var _n = 0; _n < 18; _n++) {
+    npmVersion = _capture("npm", ["view", PKG_NAME, "version"]).stdout;
+    if (npmVersion === next) break;
+    if (_n < 17) {
+      console.log("npm " + PKG_NAME + ": " + (npmVersion || "(unable to query)") +
+        ", waiting for " + next + " (" + (_n + 1) + "/18)");
+      _spawn(process.execPath, ["-e", "setTimeout(function(){},10000)"], { stdio: "ignore" });
+    }
+  }
   console.log("npm " + PKG_NAME + ": " + (npmVersion || "(unable to query)") + "   (expected " + next + ")");
   // Positive confirmation only: an empty stdout is a mismatch, not a pass. The
   // hard failure is asserted at the end of the phase, after the tarball verify.
@@ -579,8 +592,8 @@ function cmdRelease() {
     throw new Error("release: scripts/verify-shipped-tarball.js missing — cannot verify the shipped artifact");
   }
 
-  // The workflow has finished by now, so an empty or mismatched version is not
-  // propagation lag — it must not read as a completed release.
+  // The workflow has finished and the registry has had three minutes, so an
+  // empty or mismatched version must not read as a completed release.
   if (npmVersion !== next) {
     throw new Error("release: npm shows " + (npmVersion || "(unable to query)") + " but expected " + next +
       " — publish did not complete or could not be confirmed; re-check release.yml before treating the release as done");

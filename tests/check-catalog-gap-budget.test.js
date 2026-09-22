@@ -82,11 +82,18 @@ test("PASS contract (isolated): empty catalogs -> zero findings -> exit 0", () =
   }
 });
 
+// The content-quality budget rises when a KEV entry ships with a field its
+// sources genuinely do not carry, so the over-budget fixtures below are sized
+// from the gate's own number rather than pinned to it.
+const CONTENT_QUALITY_BUDGET = Number(
+  /"content-quality":\s*(\d+)/.exec(fs.readFileSync(path.join(ROOT, "scripts", "check-catalog-gap-budget.js"), "utf8"))[1]
+);
+
 test("FAIL contract: a class over budget exits 1 and names the regressed class", () => {
-  // 15 CVEs with a sub-50-char `vector` each -> 15 content-quality findings,
-  // which exceeds the content-quality budget of 14.
+  // One sub-50-char `vector` per CVE is one content-quality finding, so one
+  // more CVE than the budget allows overflows the class.
   const cve = { _meta: {} };
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < CONTENT_QUALITY_BUDGET + 1; i++) {
     cve["CVE-2020-" + (1000 + i)] = { name: "n" + i, vector: "short", cvss_score: 5 };
   }
   const dir = stageGate({ "cve-catalog.json": cve });
@@ -101,16 +108,17 @@ test("FAIL contract: a class over budget exits 1 and names the regressed class",
 });
 
 test("the regression line reports actual > budget for the offending class", () => {
+  const over = CONTENT_QUALITY_BUDGET + 2;
   const cve = { _meta: {} };
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < over; i++) {
     cve["CVE-2019-" + (2000 + i)] = { name: "x" + i, vector: "tiny", cvss_score: 7 };
   }
   const dir = stageGate({ "cve-catalog.json": cve });
   try {
     const r = run(path.join(dir, "scripts", "check-catalog-gap-budget.js"));
     assert.equal(r.status, 1);
-    // The detail line shape: "content-quality: actual=16 > budget=14".
-    assert.match(r.stderr, /content-quality: actual=16 > budget=14/);
+    // The detail line shape: "content-quality: actual=<n> > budget=<n-2>".
+    assert.match(r.stderr, new RegExp(`content-quality: actual=${over} > budget=${CONTENT_QUALITY_BUDGET}`));
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
