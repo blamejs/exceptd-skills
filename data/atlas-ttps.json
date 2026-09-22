@@ -614,7 +614,8 @@
     "maturity": "high",
     "last_verified": "2026-05-19",
     "cve_refs": [
-      "CVE-2026-39884"
+      "CVE-2026-39884",
+      "CVE-2026-59822"
     ],
     "description_full": "Adversaries may use their access to an AI agent to invoke tools the agent has access to. LLMs are often connected to other services or resources via tools to increase their capabilities. Tools may include integrations with other applications, access to public or private data sources, and the ability to execute code. This may allow adversaries to execute API calls to integrated applications or services, providing the adversary with increased privileges on the system. Adversaries may take advantage of connected data sources to retrieve sensitive information. They may also use an LLM integrated with a command or script interpreter to execute arbitrary instructions. AI agents may be configured to have access to tools that are not directly accessible by users. Adversaries may abuse this to gain access to tools they otherwise wouldn't be able to use.",
     "platforms": [
@@ -1763,6 +1764,7 @@
       "CVE-2026-41947",
       "CVE-2026-41950",
       "CVE-2026-45829",
+      "CVE-2026-59822",
       "CVE-2026-64849"
     ]
   },
@@ -2939,7 +2941,10 @@
       "ATLAS"
     ],
     "stix_id": "attack-pattern--6635775c-5539-5512-95f1-a0e085770699",
-    "is_subtechnique": true
+    "is_subtechnique": true,
+    "cve_refs": [
+      "CVE-2025-25249"
+    ]
   },
   "AML.T0017.000": {
     "id": "AML.T0017.000",

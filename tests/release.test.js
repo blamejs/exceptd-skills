@@ -325,6 +325,21 @@ require("node:test").describe("release separates a failed publish from a failed 
     assert.match(block, /if \(concl !== "success"\)/);
     assert.match(block, /did not finish successfully/);
   });
+
+  test("the npm check polls the registry before reading a mismatch as a failure", () => {
+    // The registry serves a new version a minute or two after the publish job
+    // succeeds. One read reports the previous version and fails a good release.
+    const npm = SRC.slice(SRC.indexOf('_section("verify npm")'), SRC.indexOf('_section("fresh-tarball signature verify")'));
+    assert.ok(npm.length > 0, "the npm section must exist");
+    assert.match(npm, /for \(var _n = 0; _n < 18; _n\+\+\)/, "the registry read must be retried");
+    assert.match(npm, /if \(npmVersion === next\) break;/, "only the expected version ends the poll early");
+    assert.match(npm, /setTimeout\(function\(\)\{\},10000\)/, "the retries must be spaced out, not a tight loop");
+  });
+
+  test("a version still wrong after polling fails the phase", () => {
+    const tail = SRC.slice(SRC.indexOf('_section("fresh-tarball signature verify")'), SRC.indexOf("function cmdAll("));
+    assert.match(tail, /if \(npmVersion !== next\) \{\s*throw new Error/);
+  });
 });
 
 require("node:test").describe("regen re-derives artifacts on a release branch", () => {

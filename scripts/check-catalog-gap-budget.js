@@ -40,15 +40,18 @@ function loadAll() {
 // Per-class regression budgets, mirrored in
 // tests/shipped-catalog-integrity.test.js.
 const BUDGET = {
-  // Five KEV-listed entries whose vendors published no advisory at all. Each
+  // Six KEV-listed entries whose vendors published no advisory at all. Each
   // absence is control-tested rather than assumed: the Nagios XI changelog
   // names sibling CVE-2021-25299 and none of -25296/-25297/-25298, so the
   // search that finds nothing for those three is working. WinRAR's only vendor
   // reference is a rolling release-notes page that no longer mentions the
-  // defect, and Grandstream's advisory paths 404. An entry cannot cite an
-  // advisory that does not exist, and inventing a plausible URL would send an
-  // operator somewhere authoritative-looking and wrong.
-  "content-quality": 14,
+  // defect, and Grandstream's advisory paths 404. McAfee's page for
+  // CVE-2021-23874 is the one NVD itself marks a broken link, and the Wayback
+  // Machine holds no capture of it, so that entry tells the operator to confirm
+  // the installed build instead. An entry cannot cite an advisory that does not
+  // exist, and inventing a plausible URL would send an operator somewhere
+  // authoritative-looking and wrong.
+  "content-quality": 15,
   // temporal-staleness counts only the maintainer-controllable freshness fields,
   // which sit at 0 on fresh data; the headroom covers entries aging past a
   // threshold between refreshes.

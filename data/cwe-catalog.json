@@ -64,6 +64,7 @@
       "CVE-2015-2291",
       "CVE-2015-2545",
       "CVE-2016-0034",
+      "CVE-2016-0185",
       "CVE-2016-3714",
       "CVE-2016-7262",
       "CVE-2016-8562",
@@ -89,7 +90,9 @@
       "CVE-2018-0172",
       "CVE-2018-0173",
       "CVE-2018-0174",
+      "CVE-2018-0296",
       "CVE-2018-19949",
+      "CVE-2018-7600",
       "CVE-2018-8414",
       "CVE-2019-1068",
       "CVE-2019-11708",
@@ -97,9 +100,12 @@
       "CVE-2019-7193",
       "CVE-2020-0041",
       "CVE-2020-11261",
+      "CVE-2020-3161",
       "CVE-2020-3452",
+      "CVE-2020-8195",
       "CVE-2021-25489",
       "CVE-2021-35247",
+      "CVE-2021-38000",
       "CVE-2021-38646",
       "CVE-2021-42278",
       "CVE-2021-42321",
@@ -179,11 +185,14 @@
       "CVE-2015-4068",
       "CVE-2016-0752",
       "CVE-2017-12637",
+      "CVE-2018-0296",
+      "CVE-2018-13379",
       "CVE-2018-14847",
       "CVE-2018-18809",
       "CVE-2018-20250",
       "CVE-2018-5430",
       "CVE-2019-16278",
+      "CVE-2019-19781",
       "CVE-2019-3396",
       "CVE-2019-3398",
       "CVE-2019-5418",
@@ -194,7 +203,10 @@
       "CVE-2020-1631",
       "CVE-2020-3452",
       "CVE-2020-36193",
+      "CVE-2020-4430",
       "CVE-2020-5410",
+      "CVE-2020-5902",
+      "CVE-2020-8195",
       "CVE-2021-20090",
       "CVE-2021-20123",
       "CVE-2021-20124",
@@ -258,7 +270,8 @@
       "CVE-2026-34926",
       "CVE-2026-48282",
       "CVE-2026-59310",
-      "CVE-2026-66384"
+      "CVE-2026-66384",
+      "CVE-2026-85706"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-3",
@@ -409,7 +422,10 @@
       "CVE-2020-1956",
       "CVE-2020-2509",
       "CVE-2020-25223",
+      "CVE-2020-25506",
+      "CVE-2020-4428",
       "CVE-2020-7247",
+      "CVE-2020-8515",
       "CVE-2020-8816",
       "CVE-2020-9054",
       "CVE-2020-9377",
@@ -417,6 +433,7 @@
       "CVE-2021-1498",
       "CVE-2021-20035",
       "CVE-2021-21315",
+      "CVE-2021-22502",
       "CVE-2021-25296",
       "CVE-2021-25297",
       "CVE-2021-25298",
@@ -495,7 +512,9 @@
       "CVE-2026-39987",
       "CVE-2026-40933",
       "CVE-2026-42271",
-      "CVE-2026-73570"
+      "CVE-2026-49869",
+      "CVE-2026-73570",
+      "CVE-2026-83549"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -597,7 +616,8 @@
       "CVE-2026-24061",
       "CVE-2026-30623",
       "CVE-2026-31230",
-      "CVE-2026-39884"
+      "CVE-2026-39884",
+      "CVE-2026-86060"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10"
@@ -655,7 +675,9 @@
       "CVE-2026-42208",
       "CVE-2026-60137",
       "CVE-2026-72898",
-      "CVE-2026-9082"
+      "CVE-2026-76461",
+      "CVE-2026-9082",
+      "CVE-2026-9586"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -709,15 +731,18 @@
       "CVE-2015-1635",
       "CVE-2017-1000353",
       "CVE-2017-7494",
+      "CVE-2017-9822",
       "CVE-2017-9841",
       "CVE-2018-1273",
       "CVE-2018-14667",
       "CVE-2018-7602",
       "CVE-2019-0193",
       "CVE-2019-10758",
+      "CVE-2019-4716",
       "CVE-2019-7609",
       "CVE-2020-8218",
       "CVE-2021-22204",
+      "CVE-2021-22205",
       "CVE-2021-3129",
       "CVE-2021-39144",
       "CVE-2021-44529",
@@ -931,6 +956,7 @@
       "CVE-2019-0703",
       "CVE-2020-25078",
       "CVE-2020-3259",
+      "CVE-2021-22506",
       "CVE-2021-25369",
       "CVE-2021-41277",
       "CVE-2022-20821",
@@ -1061,6 +1087,8 @@
       "CVE-2019-1405",
       "CVE-2019-3010",
       "CVE-2020-1938",
+      "CVE-2020-8655",
+      "CVE-2021-23874",
       "CVE-2021-25337",
       "CVE-2021-34484",
       "CVE-2021-40450",
@@ -1084,7 +1112,8 @@
       "CVE-2025-62849",
       "CVE-2026-21533",
       "CVE-2026-41091",
-      "CVE-2026-46817"
+      "CVE-2026-46817",
+      "CVE-2026-84869"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-6",
@@ -1123,7 +1152,11 @@
       "CVE-2014-3120",
       "CVE-2015-4902",
       "CVE-2016-3427",
+      "CVE-2019-11634",
+      "CVE-2019-1653",
       "CVE-2020-2506",
+      "CVE-2020-8193",
+      "CVE-2020-8196",
       "CVE-2021-1870",
       "CVE-2021-1871",
       "CVE-2021-22941",
@@ -1147,7 +1180,8 @@
       "CVE-2026-21962",
       "CVE-2026-34908",
       "CVE-2026-35616",
-      "CVE-2026-48907"
+      "CVE-2026-48907",
+      "CVE-2026-81963"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-3",
@@ -1200,6 +1234,10 @@
       "CVE-2019-0543",
       "CVE-2019-19006",
       "CVE-2020-10148",
+      "CVE-2020-12812",
+      "CVE-2020-4427",
+      "CVE-2020-8193",
+      "CVE-2020-8196",
       "CVE-2021-27877",
       "CVE-2021-32030",
       "CVE-2021-32648",
@@ -1233,9 +1271,13 @@
       "CVE-2026-16232",
       "CVE-2026-20127",
       "CVE-2026-20182",
+      "CVE-2026-42018",
       "CVE-2026-46817",
+      "CVE-2026-49869",
       "CVE-2026-50751",
-      "CVE-2026-65400"
+      "CVE-2026-59822",
+      "CVE-2026-65400",
+      "CVE-2026-82329"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-IA-2",
@@ -1271,6 +1313,7 @@
     "evidence_cves": [
       "CVE-2017-10271",
       "CVE-2018-19410",
+      "CVE-2019-5591",
       "CVE-2019-7238",
       "CVE-2020-13927",
       "CVE-2020-24363",
@@ -1317,6 +1360,8 @@
       "CVE-2026-41940",
       "CVE-2026-46817",
       "CVE-2026-56164",
+      "CVE-2026-59822",
+      "CVE-2026-67277",
       "CVE-2026-72529"
     ],
     "framework_controls_partially_addressing": [
@@ -1406,7 +1451,9 @@
     "skills_referencing": [],
     "evidence_cves": [
       "CVE-2017-1000486",
-      "CVE-2017-11317"
+      "CVE-2017-11317",
+      "CVE-2018-15811",
+      "CVE-2018-18325"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SC-13",
@@ -1731,6 +1778,7 @@
       "CVE-2018-8589",
       "CVE-2020-17103-REREGRESSION-2026",
       "CVE-2021-0920",
+      "CVE-2021-21166",
       "CVE-2021-25394",
       "CVE-2021-25395",
       "CVE-2022-26904",
@@ -1787,6 +1835,7 @@
       "CVE-2015-5119",
       "CVE-2015-5122",
       "CVE-2015-5123",
+      "CVE-2016-0167",
       "CVE-2016-0984",
       "CVE-2016-7855",
       "CVE-2016-7892",
@@ -1802,20 +1851,27 @@
       "CVE-2019-5786",
       "CVE-2019-8526",
       "CVE-2019-8605",
+      "CVE-2020-16017",
       "CVE-2020-6572",
       "CVE-2020-9715",
       "CVE-2021-0920",
       "CVE-2021-1048",
+      "CVE-2021-21193",
+      "CVE-2021-21206",
       "CVE-2021-25370",
       "CVE-2021-25394",
       "CVE-2021-28550",
       "CVE-2021-28663",
       "CVE-2021-29256",
+      "CVE-2021-30554",
+      "CVE-2021-30633",
       "CVE-2021-30661",
       "CVE-2021-30762",
       "CVE-2021-30858",
       "CVE-2021-31166",
       "CVE-2021-34486",
+      "CVE-2021-37973",
+      "CVE-2021-37975",
       "CVE-2021-40449",
       "CVE-2021-4102",
       "CVE-2022-0609",
@@ -2040,10 +2096,12 @@
       "CVE-2020-2551",
       "CVE-2020-2883",
       "CVE-2020-5741",
+      "CVE-2020-7961",
       "CVE-2021-23758",
       "CVE-2021-27852",
       "CVE-2021-31010",
       "CVE-2021-31196",
+      "CVE-2021-35464",
       "CVE-2021-39144",
       "CVE-2021-42237",
       "CVE-2021-44228",
@@ -2188,7 +2246,9 @@
       "idp-incident-response"
     ],
     "evidence_cves": [
-      "CVE-2021-22681"
+      "CVE-2014-1812",
+      "CVE-2021-22681",
+      "CVE-2021-30116"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-IA-5",
@@ -2290,6 +2350,8 @@
       "BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND",
       "BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY",
       "CVE-2018-13374",
+      "CVE-2019-15752",
+      "CVE-2021-23874",
       "CVE-2021-36934",
       "CVE-2022-22960"
     ],
@@ -2438,8 +2500,13 @@
       "CVE-2019-7286",
       "CVE-2019-7287",
       "CVE-2020-0069",
+      "CVE-2020-0878",
       "CVE-2020-1027",
       "CVE-2020-11261",
+      "CVE-2020-15999",
+      "CVE-2020-16009",
+      "CVE-2020-16010",
+      "CVE-2020-16013",
       "CVE-2020-27930",
       "CVE-2020-3118",
       "CVE-2020-3837",
@@ -2449,15 +2516,19 @@
       "CVE-2020-9907",
       "CVE-2021-20038",
       "CVE-2021-21017",
+      "CVE-2021-21148",
+      "CVE-2021-21220",
       "CVE-2021-22555",
       "CVE-2021-25372",
       "CVE-2021-27562",
       "CVE-2021-28664",
+      "CVE-2021-30632",
       "CVE-2021-30665",
       "CVE-2021-30761",
       "CVE-2021-30807",
       "CVE-2021-30883",
       "CVE-2021-30900",
+      "CVE-2021-33742",
       "CVE-2021-38406",
       "CVE-2021-39793",
       "CVE-2021-4034",
@@ -2516,6 +2587,7 @@
       "CVE-2025-21042",
       "CVE-2025-21043",
       "CVE-2025-22457",
+      "CVE-2025-25249",
       "CVE-2025-27363",
       "CVE-2025-5419",
       "CVE-2025-6965",
@@ -2527,7 +2599,8 @@
       "CVE-2026-42945",
       "CVE-2026-43500",
       "CVE-2026-46300",
-      "CVE-2026-53362"
+      "CVE-2026-53362",
+      "CVE-2026-87491"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -2653,6 +2726,7 @@
     "evidence_cves": [
       "CVE-2021-30657",
       "CVE-2021-30713",
+      "CVE-2021-37976",
       "CVE-2021-39226",
       "CVE-2022-0492",
       "CVE-2022-0543",
@@ -2662,7 +2736,8 @@
       "CVE-2024-57726",
       "CVE-2025-20362",
       "CVE-2025-40602",
-      "CVE-2025-6205"
+      "CVE-2025-6205",
+      "CVE-2026-84869"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-3",
@@ -2720,7 +2795,8 @@
       "CVE-2025-21479",
       "CVE-2025-21480",
       "CVE-2025-24200",
-      "CVE-2025-55177"
+      "CVE-2025-55177",
+      "CVE-2026-42016"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-3",
@@ -2787,6 +2863,7 @@
       "webapp-security"
     ],
     "evidence_cves": [
+      "CVE-2016-3718",
       "CVE-2018-8581",
       "CVE-2019-9621",
       "CVE-2020-7796",
@@ -2795,6 +2872,7 @@
       "CVE-2021-21975",
       "CVE-2021-22054",
       "CVE-2021-22175",
+      "CVE-2021-22986",
       "CVE-2021-27103",
       "CVE-2021-39935",
       "CVE-2021-40438",
@@ -2814,7 +2892,9 @@
       "CVE-2026-15409",
       "CVE-2026-20230",
       "CVE-2026-22219",
-      "CVE-2026-64849"
+      "CVE-2026-49869",
+      "CVE-2026-64849",
+      "CVE-2026-83548"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SC-7",
@@ -3104,6 +3184,7 @@
     ],
     "evidence_cves": [
       "BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY",
+      "CVE-2021-38647",
       "CVE-2026-55040"
     ],
     "last_verified": "2026-05-18",
@@ -3151,7 +3232,8 @@
       "CVE-2025-40536",
       "CVE-2025-68668",
       "CVE-2026-21510",
-      "CVE-2026-21513"
+      "CVE-2026-21513",
+      "CVE-2026-58704"
     ],
     "last_verified": "2026-05-18",
     "notes": "Added v0.13.17 to back the UnDefend Defender update-disruption entry. CWE-693 is the canonical parent for failures-of-protection-mechanism — Defender continues running but its update mechanism has been corrupted, so the AV protection-mechanism fails silently while the host still passes 'is Defender running?' health checks."
@@ -3224,6 +3306,7 @@
       "CVE-2019-1315",
       "CVE-2019-1385",
       "CVE-2020-0638",
+      "CVE-2020-0683",
       "CVE-2020-0787",
       "CVE-2020-36193",
       "CVE-2021-34484",
@@ -3235,7 +3318,8 @@
       "CVE-2025-21391",
       "CVE-2025-48384",
       "CVE-2025-60710",
-      "CVE-2026-41091"
+      "CVE-2026-41091",
+      "CVE-2026-81963"
     ],
     "last_verified": "2026-05-18",
     "notes": "Added v0.13.17 KEV bulk-import."
@@ -3337,6 +3421,7 @@
       "CVE-2019-1297",
       "CVE-2019-8720",
       "CVE-2020-0796",
+      "CVE-2020-29557",
       "CVE-2021-22991",
       "CVE-2021-30666",
       "CVE-2022-22706",
@@ -3382,8 +3467,10 @@
       "CVE-2016-10174",
       "CVE-2016-6366",
       "CVE-2017-6862",
+      "CVE-2018-6789",
       "CVE-2019-11043",
       "CVE-2020-15069",
+      "CVE-2020-15999",
       "CVE-2020-5135",
       "CVE-2021-30983",
       "CVE-2022-26318",
@@ -3582,6 +3669,8 @@
       "CVE-2026-1603",
       "CVE-2026-18556",
       "CVE-2026-18577",
+      "CVE-2026-19490",
+      "CVE-2026-20079",
       "CVE-2026-23760",
       "CVE-2026-24206",
       "CVE-2026-24207",
@@ -3674,6 +3763,7 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
+      "CVE-2016-3715",
       "CVE-2020-17519",
       "CVE-2025-11371"
     ],
@@ -3695,6 +3785,7 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2009-3960",
+      "CVE-2019-13608",
       "CVE-2019-2616",
       "CVE-2019-9670",
       "CVE-2023-45727",
@@ -3723,7 +3814,8 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
-      "CVE-2026-20122"
+      "CVE-2026-20122",
+      "CVE-2026-76460"
     ],
     "last_verified": "2026-05-18",
     "notes": "Added v0.13.17 KEV bulk-import."
@@ -3829,8 +3921,13 @@
       "CVE-2019-0752",
       "CVE-2019-11707",
       "CVE-2019-8506",
+      "CVE-2020-16009",
       "CVE-2020-27932",
+      "CVE-2020-6418",
       "CVE-2021-1789",
+      "CVE-2021-21224",
+      "CVE-2021-30551",
+      "CVE-2021-30563",
       "CVE-2021-30869",
       "CVE-2022-1096",
       "CVE-2022-1364",
@@ -3853,7 +3950,8 @@
       "CVE-2025-30397",
       "CVE-2025-4919",
       "CVE-2025-6554",
-      "CVE-2026-21519"
+      "CVE-2026-21519",
+      "CVE-2026-85046"
     ],
     "last_verified": "2026-05-18",
     "notes": "Added v0.13.17 KEV bulk-import."
@@ -4008,6 +4106,8 @@
       "CVE-2015-3113",
       "CVE-2017-0005",
       "CVE-2019-3568",
+      "CVE-2020-16010",
+      "CVE-2021-1647",
       "CVE-2021-21017",
       "CVE-2023-23376",
       "CVE-2023-27997",
@@ -4021,9 +4121,11 @@
       "CVE-2025-21418",
       "CVE-2025-24985",
       "CVE-2025-24993",
+      "CVE-2025-25249",
       "CVE-2025-32706",
       "CVE-2026-22778",
-      "CVE-2026-53362"
+      "CVE-2026-53362",
+      "CVE-2026-85880"
     ],
     "last_verified": "2026-05-18",
     "notes": "Added v0.13.17 KEV bulk-import round 2."
@@ -4209,6 +4311,8 @@
       "CVE-2004-1464",
       "CVE-2017-12237",
       "CVE-2018-0161",
+      "CVE-2020-3566",
+      "CVE-2020-3569",
       "CVE-2021-44228",
       "CVE-2023-29552",
       "CVE-2023-38180",
@@ -4243,7 +4347,8 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2021-28799",
-      "CVE-2026-22252"
+      "CVE-2026-22252",
+      "CVE-2026-58704"
     ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
@@ -4428,7 +4533,8 @@
     "evidence_cves": [
       "CVE-2022-22536",
       "CVE-2023-41265",
-      "CVE-2023-48365"
+      "CVE-2023-48365",
+      "CVE-2026-48710"
     ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
@@ -4694,7 +4800,8 @@
     ],
     "related_weaknesses": [],
     "evidence_cves": [
-      "CVE-2012-0518"
+      "CVE-2012-0518",
+      "CVE-2021-38000"
     ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
@@ -4957,6 +5064,7 @@
       "CVE-2018-0154",
       "CVE-2018-0155",
       "CVE-2020-7247",
+      "CVE-2021-38003",
       "CVE-2022-44698",
       "CVE-2024-29748"
     ],
@@ -4980,6 +5088,8 @@
     "related_weaknesses": [],
     "evidence_cves": [
       "CVE-2017-12238",
+      "CVE-2020-3566",
+      "CVE-2020-3569",
       "CVE-2023-50387",
       "CVE-2025-30202"
     ],
@@ -5137,7 +5247,8 @@
       "CVE-2011-0609",
       "CVE-2016-0040",
       "CVE-2024-29745",
-      "CVE-2024-50302"
+      "CVE-2024-50302",
+      "CVE-2026-85880"
     ],
     "last_verified": "2026-05-19",
     "notes": "Bulk-imported v0.13.18 from the canonical MITRE Top 25 + commonly-referenced-class expansion.",
@@ -6052,6 +6163,7 @@
     ],
     "skills_referencing": [],
     "evidence_cves": [
+      "CVE-2014-1812",
       "CVE-2016-4437",
       "CVE-2025-30406"
     ],
@@ -6081,6 +6193,7 @@
     ],
     "skills_referencing": [],
     "evidence_cves": [
+      "CVE-2020-15505",
       "CVE-2025-24813"
     ],
     "framework_controls_partially_addressing": [
@@ -6503,7 +6616,8 @@
     ],
     "skills_referencing": [],
     "evidence_cves": [
-      "CVE-2024-5217"
+      "CVE-2024-5217",
+      "CVE-2026-49869"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -6588,7 +6702,8 @@
     "skills_referencing": [],
     "evidence_cves": [
       "CVE-2013-0632",
-      "CVE-2022-22948"
+      "CVE-2022-22948",
+      "CVE-2026-87886"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-6",
@@ -6798,7 +6913,8 @@
     "skills_referencing": [],
     "evidence_cves": [
       "CVE-2024-23692",
-      "CVE-2024-4040"
+      "CVE-2024-4040",
+      "CVE-2026-75650"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -7240,7 +7356,8 @@
     ],
     "related_attack_patterns_capec": [],
     "evidence_cves": [
-      "CVE-2013-2094"
+      "CVE-2013-2094",
+      "CVE-2021-1647"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-SI-10",
@@ -7270,7 +7387,8 @@
       "CAPEC-465"
     ],
     "evidence_cves": [
-      "CVE-2022-36537"
+      "CVE-2022-36537",
+      "CVE-2026-83548"
     ],
     "framework_controls_partially_addressing": [
       "NIST-800-53-AC-4",
@@ -7473,5 +7591,143 @@
     "real_requirement": "A structure that carries a security-relevant flag must be zeroed or fully assigned on every allocation path, not only the common one — the defect usually sits on a path added later that reuses an allocator the original author always initialised by hand. Compiler and allocator instrumentation that poisons fresh memory turns the class from silent into loud, and is what testing needs in order to see it at all.",
     "lag_notes": "SC-4 requires that information not leak through shared resources and reads as satisfied when nothing is deliberately shared; SI-2 treats the result as an ordinary defect on a patch cycle. Neither asks whether a security-relevant field is guaranteed to be written before it is read, so the flaw passes review and testing as long as the uninitialised value happens to be benign on the machine the tests run on.",
     "last_verified": "2026-08-17"
+  },
+  "CWE-178": {
+    "id": "CWE-178",
+    "name": "Improper Handling of Case Sensitivity",
+    "abstraction": "Base",
+    "category": "Authentication",
+    "description": "The product does not properly account for differences in case sensitivity when accessing or determining the properties of a resource, leading to inconsistent results. In an authentication flow, a username compared case-insensitively by one component and case-sensitively by another can skip a factor, as in FortiOS SSL VPN, where changing the case of a username logged the user in without the FortiToken prompt.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2020-12812"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-IA-2",
+      "ISO-27001-2022-A.8.28"
+    ],
+    "real_requirement": "Every component that makes an authentication or authorization decision about an identity must normalize that identity the same way before comparing it. Multi-factor enforcement must be tested with case, Unicode and whitespace variants of the same account name, and each variant must be challenged for every factor.",
+    "lag_notes": "IA-2 is evidenced by showing that multi-factor authentication is configured for the account population. It does not require testing that the second factor is enforced for every spelling of an account name, so a deployment can show IA-2 compliance while a case change skips the token.",
+    "last_verified": "2026-09-19"
+  },
+  "CWE-131": {
+    "id": "CWE-131",
+    "name": "Incorrect Calculation of Buffer Size",
+    "abstraction": "Base",
+    "category": "Memory Safety",
+    "description": "The product does not correctly calculate the size to be used when allocating a buffer, which could lead to a buffer overflow. In a kernel driver reachable from an unprivileged process, a buffer allocated with a miscalculated size becomes a pool overflow the caller can direct.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-100",
+      "CAPEC-47"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2020-17087"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-2",
+      "ISO-27001-2022-A.8.28",
+      "ISO-27001-2022-A.8.8"
+    ],
+    "real_requirement": "Size calculations that feed an allocation must be checked for overflow and truncation before the allocation, using checked arithmetic, and the driver interfaces that accept a caller-supplied length must be fuzzed with lengths at and around the integer width boundaries.",
+    "lag_notes": "A.8.28 secure coding and SI-2 flaw remediation are met by a coding standard and a patch process. Neither requires checked arithmetic on allocation sizes or boundary fuzzing of driver interfaces, so the class persists in code that passes both.",
+    "last_verified": "2026-09-19"
+  },
+  "CWE-497": {
+    "id": "CWE-497",
+    "name": "Exposure of Sensitive System Information to an Unauthorized Control Sphere",
+    "abstraction": "Base",
+    "category": "Information Exposure",
+    "description": "The product does not properly prevent sensitive system-level information from being accessed by unauthorized actors who do not have the same level of access to the underlying system as the product does. An unprivileged process that can read kernel addresses can defeat address-space layout randomization, which a kernel memory-corruption exploit usually needs first.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-170",
+      "CAPEC-694"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2021-31955"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-2",
+      "NIST-800-53-AC-6",
+      "ISO-27001-2022-A.8.8"
+    ],
+    "real_requirement": "Information disclosure flaws that expose kernel or system memory layout must be prioritized with the elevation-of-privilege flaws they enable, not scored alone. Remediation priority for a kernel information disclosure should follow from whether it is exploited alongside a privilege escalation, as recorded in KEV and vendor exploitation notes.",
+    "lag_notes": "SI-2 and A.8.8 prioritize by the severity of each flaw on its own. An information disclosure scores low in isolation, so it can sit in a longer patch window while the privilege-escalation flaw it unlocks is patched quickly, leaving the pair exploitable together on hosts that took one update and not the other.",
+    "last_verified": "2026-09-19"
+  },
+  "CWE-1289": {
+    "id": "CWE-1289",
+    "name": "Improper Validation of Unsafe Equivalence in Input",
+    "abstraction": "Base",
+    "category": "Validation",
+    "description": "The product receives an input value that is used as a resource identifier or other type of reference, but it does not validate or incorrectly validates that the input is equivalent to a potentially-unsafe value. In an HTTP framework, a Host header accepted without validation against the RFC grammar can make the URL that middleware checks differ from the path the router serves, as in Starlette before 1.0.1.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2026-48710"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-10",
+      "NIST-800-53-AC-3",
+      "ISO-27001-2022-A.8.28"
+    ],
+    "real_requirement": "An access decision must be made on the same representation of a resource identifier that the component serving the resource uses. Frameworks must validate identifiers such as the Host header against their grammar before building a URL from them, and authorization middleware must check the path the router actually dispatches.",
+    "lag_notes": "AC-3 access enforcement is assessed by confirming that rules exist and are applied, not by confirming that the rule and the router read the same value. A middleware check on a reconstructed URL satisfies AC-3 on paper while a malformed header routes around it.",
+    "last_verified": "2026-09-19"
+  },
+  "CWE-96": {
+    "id": "CWE-96",
+    "name": "Improper Neutralization of Directives in Statically Saved Code ('Static Code Injection')",
+    "abstraction": "Base",
+    "category": "Injection",
+    "description": "The product receives input from an upstream component, but it does not neutralize or incorrectly neutralizes code syntax before inserting the input into an executable resource, such as a library, configuration file, or template. When the resource is written by a request that needs no authentication, as in N-central before 2026.3.1.14, the result is pre-authentication remote code execution.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [
+      "CAPEC-35",
+      "CAPEC-73",
+      "CAPEC-77",
+      "CAPEC-81",
+      "CAPEC-85"
+    ],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2026-86218"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-10",
+      "ISO-27001-2022-A.8.28",
+      "NIST-800-218-SSDF"
+    ],
+    "real_requirement": "Input that reaches a file the product later executes or interprets must be rejected or encoded for that file's syntax before it is written, and the write path must require authentication. Where a product saves operator-supplied values into templates or configuration it evaluates, a test must show that code syntax in those values is not executed.",
+    "lag_notes": "SI-10 and A.8.28 ask for input validation and secure coding in general terms and are satisfied by a validation library on request parameters. Neither addresses input that is stored first and executed later, so a product can pass both while a saved value becomes code on the next load.",
+    "last_verified": "2026-09-19"
   }
 }

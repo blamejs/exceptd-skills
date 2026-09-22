@@ -278,7 +278,14 @@ test("shipped catalogs: missing-context budget is enforced per catalog (no silen
     // entry now carries a behavioral iocs block, so the missing-iocs count is 0.
     // This budget stays at 0 as a guard: any future entry shipped without iocs
     // is a regression and fails the gate.
-    "cve-catalog":     { iocs: 0 },
+    // One entry carries no weakness: for CVE-2021-33739 NVD records
+    // NVD-CWE-noinfo, the CVE record's ADP container says "Not enough
+    // information", the MSRC API returns an empty CWE list and CISA's KEV
+    // record calls the flaw unspecified, so no authority assigns one and no
+    // published analysis names a mechanism. The entry records that rather than
+    // carrying an invented class. This budget does not move for an entry whose
+    // weakness merely went unresearched.
+    "cve-catalog":     { iocs: 0, cwe_refs: 1 },
     "cwe-catalog":     {},
     "attack-techniques": {},
     "atlas-ttps":      {},
