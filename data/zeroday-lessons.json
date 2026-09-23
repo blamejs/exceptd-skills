@@ -2544,7 +2544,7 @@
       "theater_pattern": "access_control"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "human_researcher",
+    "ai_discovery_source": "vendor_research",
     "ai_assist_factor": "low",
     "new_control_requirements": [
       {
@@ -4027,7 +4027,7 @@
       "description": "Malformed WINDOW_UPDATE / PRIORITY / DATA frames trigger server-side stream resets while the backend continues processing, bypassing MAX_CONCURRENT_STREAMS and exhausting resources. Estimated 2.8M+ internet-facing instances vulnerable across Tomcat, Netty, Varnish, Fastly, F5.",
       "privileges_required": "none (unauthenticated single connection)",
       "complexity": "low (public PoC tooling)",
-      "ai_factor": "Not AI-discovered. Tel Aviv University academic protocol-fuzzing research paired with Imperva production traffic analysis. Specific AI-fuzzing tool credit was not published — proposal records the closest enum match as academic_ai_fuzzing but the published research did not attribute the discovery to a specific AI fuzzing system."
+      "ai_factor": "Not AI-discovered. Tel Aviv University academic protocol-fuzzing research paired with Imperva production traffic analysis. The published research does not attribute the discovery to an AI fuzzing system."
     },
     "framework_coverage": {
       "NIST-800-53-SC-5": {
@@ -94121,7 +94121,7 @@
     "name": "Apple Multiple Products Memory Corruption Vulnerability",
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -119601,7 +119601,7 @@
     "name": "Apple WebKit History API Use-After-Free (CVE-2022-22620)",
     "lesson_date": "2026-08-29",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -130742,7 +130742,7 @@
     "name": "Apple XNU Mach voucher locking race to kernel privilege on iOS, macOS, watchOS and tvOS (CVE-2021-1782)",
     "lesson_date": "2026-09-01",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -134980,7 +134980,7 @@
     "name": "Google Chrome Use-After-Free Vulnerability",
     "lesson_date": "2026-09-19",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -135321,7 +135321,7 @@
     "name": "Google Chromium Indexed DB API Use-After-Free Vulnerability",
     "lesson_date": "2026-09-19",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -139254,7 +139254,7 @@
     "name": "Google Chromium Blink Use-After-Free Vulnerability (CVE-2021-21206)",
     "lesson_date": "2026-09-19",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
