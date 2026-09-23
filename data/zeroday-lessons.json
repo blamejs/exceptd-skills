@@ -17,7 +17,7 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "entry_count": 1716
+    "entry_count": 1720
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -39922,7 +39922,7 @@
     ]
   },
   "CVE-2024-53104": {
-    "name": "Linux Kernel Out-of-Bounds Write Vulnerability",
+    "name": "Linux Kernel Out-of-Bounds Write Vulnerability (CVE-2024-53104)",
     "lesson_date": "2026-07-11",
     "attack_vector": {
       "description": "An attacker with physical (or emulated/virtual) access presents a malicious or specially crafted UVC device to a target host; the uvcvideo driver mis-sizes its frame buffer for UVC_VS_UNDEFINED frame types, causing an out-of-bounds kernel write that can be leveraged for privilege escalation.",
@@ -65408,7 +65408,7 @@
     ]
   },
   "CVE-2014-0196": {
-    "name": "Linux Kernel Race Condition Vulnerability",
+    "name": "Linux Kernel Race Condition Vulnerability (CVE-2014-0196)",
     "lesson_date": "2026-07-29",
     "ai_discovered_zeroday": false,
     "ai_discovery_source": "human_researcher",
@@ -141927,6 +141927,416 @@
         "gap_closes": [
           "NIS2-Art21-incident-handling",
           "UK-CAF-C1"
+        ]
+      }
+    ]
+  },
+  "CVE-2025-39964": {
+    "name": "Linux Kernel Race Condition Vulnerability (CVE-2025-39964)",
+    "lesson_date": "2026-09-23",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": null,
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "A local process opens an AF_ALG socket and writes to it from two tasks at once, either threads of one process or processes that share the descriptor. Before the fix, af_alg_sendmsg allowed two concurrent writers, which left the socket's internal state inconsistent; the kernelCTF description classifies the result as an out-of-bounds access, and the kernelCTF submissions turned it into privilege escalation on three kernelCTF targets.",
+      "privileges_required": "Local code execution as an unprivileged user or container workload. The kernelCTF metadata lists no required capabilities and only CONFIG_CRYPTO_USER_API as kernel configuration, and the kernelCTF vulnerability description states that user namespaces are not required.",
+      "complexity": "Low according to the NVD vector (AC:L); the kernelCTF metadata records a 99% success rate without a separate KASLR leak.",
+      "ai_factor": "Not AI-discovered. The upstream fix credits two reporters with starlabs.sg addresses, and no source names AI tooling in its discovery or exploitation."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Booting a kernel that carries the upstream fix (5.10.245, 5.15.194, 6.1.154, 6.6.108, 6.12.49, 6.16.9, 6.17 or a distribution backport), and on GKE running untrusted workloads in GKE Sandbox, which Google lists as not impacted. Where untrusted workloads do not use the kernel crypto API, a seccomp filter that denies socket() with domain 38 closes the interface only if the same profile also denies io_uring_setup() and the other io_uring system calls, because io_uring's IORING_OP_SOCKET operation (Linux 5.19 and later) creates an AF_ALG socket without a socket() system call. On kernels that provide the kernel.io_uring_disabled sysctl, setting it to 2 stops every process from creating an io_uring instance, and setting it to 1 stops unprivileged processes outside io_uring_group; instances created before the change still work. Where the interface is built as the af_alg module, preventing that module from loading (an install af_alg /bin/false line in a modprobe.d file) makes AF_ALG socket creation fail through both socket() and io_uring, provided the module is not already loaded; the setting has no effect on a kernel with the interface built in. No vendor source consulted publishes any of these measures as a mitigation for this CVE.",
+        "was_this_required": true,
+        "framework_requiring_it": "AU-Essential-8-Patch",
+        "adequacy": "The kernel update closes the flaw once the host runs the fixed build. It is not available for the Siemens S7-1500 MFP firmware or for the RHEL kernels Red Hat still lists as affected, and on those systems only compensating measures apply."
+      },
+      "detection": {
+        "what_would_have_worked": "Auditing AF_ALG socket creation (socket() with domain 38) and io_uring_setup() calls from processes that do not normally use the kernel crypto API or io_uring, tracing concurrent writes to one AF_ALG socket from two threads or processes, with a kernel probe on af_alg_sendmsg on hosts where io_uring is available, and alerting when an unprivileged process or container workload becomes root without a setuid transition.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "AF_ALG socket creation is a usable signal only after a baseline of legitimate users, because the Falco rule for it fires on every AF_ALG socket. That rule, and any other rule built on system calls, does not record an AF_ALG socket created through io_uring's IORING_OP_SOCKET operation or a write submitted through io_uring, so on hosts where workloads can use io_uring it misses an attempt made that way unless io_uring_setup() is also monitored or a kernel probe covers alg_create and af_alg_sendmsg. On a fixed kernel, EBUSY failures from af_alg_sendmsg show a second concurrent writer on one socket, and a legitimate program that shares a socket between threads or processes produces the same error, so both signals need a baseline and correlation with the root-transition alert before they indicate an attempt."
+      },
+      "response": {
+        "what_would_have_worked": "Capturing volatile data (memory, running processes and kernel logs) from each host where untrusted local users or containers ran code on a vulnerable kernel before installing the kernel update, since the reboot into the fixed kernel clears memory; then treating that host as possibly compromised at kernel level: reviewing it before returning it to service, rebuilding it where compromise cannot be ruled out, and rotating the node and workload credentials stored on it. The KEV entry marks forensic triage as required for this CVE. Under BOD 26-04, a Federal Civilian Executive Branch agency must remediate or mitigate the flaw within three days on each publicly exposed asset and carry out a forensic triage of that asset to assess whether it is compromised. For an asset that is not publicly exposed, Table 1 of the directive sets 14 days and no forensic triage for a KEV flaw that CISA rates not automatable with total technical impact, which is how CISA rates this one. CISA's triage guidance tells agencies to acquire volatile data first, not to alter or remediate a system before evidence is collected when possible, and to collect all required evidence before patching, because patching may jeopardize the availability of artifacts.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 26-04 (US Federal Civilian Executive Branch agencies, publicly exposed assets)",
+        "adequacy": "A reboot into the fixed kernel removes the flaw but not anything an attacker installed or copied with kernel-level access, so credential rotation and host review are required to recover from exploitation, and the evidence for that review has to be collected before the reboot. BOD 26-04 applies only to Federal Civilian Executive Branch agencies, and for this CVE it requires the triage only on publicly exposed assets. An internal Kubernetes node or shared build host where untrusted containers or users ran code falls in the 14-day row with no triage requirement, although a local attacker there has the access the exploit needs. CISA's guidance gives target timelines for each triage step and states that the directive requires an adequate triage rather than those timelines."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A remediation period set from the NVD base score of 5.5 or from Red Hat's Moderate rating places an exploited privilege escalation among medium-severity fixes."
+      },
+      "NIST-800-53-SC-39": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Per-container namespaces are recorded as process isolation while any workload on an unpatched node can attack the kernel that enforces them."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Siemens S7-1500 MFP controllers have no fix for this CVE, and Article 21 does not define the state of an exploited flaw held open with compensating measures only."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Whether the kernel exposes the AF_ALG user API and whether untrusted code runs locally decide exposure, and B4 does not name either."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Internal servers get one month below Maturity Level Three although the flaw needs only local code execution, and no window starts on RHEL kernels without a released fix."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "An asset register that records controller firmware versions does not show the exploited Linux kernel inside the Siemens MFP CPU's GNU/Linux subsystem."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "When a flaw is added to the Known Exploited Vulnerabilities catalog, the affected estate is scoped and a mitigation is in place within four hours of the listing, whatever base score the flaw carries.",
+        "evidence": "CVE-2025-39964 in the Linux kernel's AF_ALG interface has an NVD base score of 5.5 with availability impact only, yet CISA added it to KEV on 2026-09-18 with a 2026-09-21 due date, Google's bulletin GCP-2026-003 rates it High as a privilege escalation on Container-Optimized OS nodes, and a public kernelCTF exploit records a 99% success rate. A queue ordered by NVD base score places it among medium-severity fixes.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "AU-Essential-8-Patch"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-145",
+        "name": "ACTIVELY-EXPLOITED-OS-LPE-REMEDIATION-WINDOW-ENFORCEMENT",
+        "description": "When an operating-system privilege-escalation flaw is listed as exploited, the fixed build must be installed and the host rebooted into it within the remediation window, and compliance must be measured from the build each host is running rather than from its installed package list.",
+        "evidence": "For CVE-2025-39964, an installed Linux kernel package does not remove the flaw until the host boots it, and no source consulted documents a live patch for this fix. Red Hat's record lists RHSA-2026:70403 (kernel-rt 4.18.0-553.166.1.rt7.507.el8_10) as its only released RHEL fix, and GKE node pools are fixed only at the node versions listed in GCP-2026-003.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "AU-Essential-8-Patch"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-038",
+        "name": "MITIGATION-ACTIVE-PATCH-PENDING-VERDICT-CLASS",
+        "description": "A compliance verdict must record a system that has only vendor-published compensating measures in place, with no fix available, as a separate state from a patched system, and must state the residual exposure.",
+        "evidence": "Siemens SSA-019113 (V1.1, updated 2026-09-08) lists every firmware version from V3.1.6 of the SIMATIC S7-1500 CPU 1518(F)-4 PN/DP MFP and SIPLUS S7-1500 CPU 1518-4 PN/DP MFP as affected by CVE-2025-39964 with no fix available. Its mitigations restrict which applications run in the additional GNU/Linux subsystem and who can reach its interactive shell, and a controller with those measures in place is still exposed to any code that does run in that subsystem.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management",
+          "UK-CAF-B4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-003",
+        "name": "KERNEL-EXPLOITATION-DETECTION",
+        "description": "Privilege-escalation detection rules must be deployed on shared and multi-tenant hosts, covering use of rarely used operating-system interfaces that unprivileged processes can open and unexpected transitions to root, and must alert within 60 seconds.",
+        "evidence": "CVE-2025-39964 is reached through an AF_ALG socket (socket family 38) written to concurrently. The kernel CVE record states that alg_create(), alg_bind() and alg_setkey() perform no capability checks, the kernelCTF metadata lists no required capabilities, the kernelCTF vulnerability description states that user namespaces are not required, and Google lists GKE Standard and Autopilot clusters as impacted. A published Falco rule matches socket() calls with domain 38, and it does not record a socket created through io_uring's IORING_OP_SOCKET operation on kernels 5.19 and later. On a fixed kernel, EBUSY failures from af_alg_sendmsg show a second writer on one socket, which a legitimate multi-threaded program can also cause.",
+        "gap_closes": [
+          "NIST-800-53-SC-39",
+          "UK-CAF-B4"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-7273": {
+    "name": "Zyxel GS1900 Series Switches Stack-Based Buffer Overflow Vulnerability",
+    "lesson_date": "2026-09-23",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": null,
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "A crafted HTTP or HTTPS request from an unauthenticated client that can reach the GS1900 web management interface overflows a stack buffer in the switch CGI program and allows operating-system command execution on the switch. The observed campaign then read the device configuration and local hashed credentials and exfiltrated them.",
+      "privileges_required": "None. The request needs no authentication, only the ability to reach the switch web management interface over HTTP or HTTPS; the observed campaign reached internet-exposed interfaces from its own infrastructure.",
+      "complexity": "Low per the CVSS 3.1 vector (AV:A/AC:L/PR:N/UI:N). The observed exploit fingerprinted firmware and offered a deterministic GOT mode (a single request) and an ASLR brute-force stack mode (about 2,048 requests on average).",
+      "ai_factor": "Not AI-discovered; reported by ISCAS researchers. GreyNoise did not identify specific AI tools in the attacking operation but suspected a large language model helped build the actor's custom tooling, an unconfirmed observation."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Applying the fixed firmware build for the model within the Essential Eight window that ran from the 2026-06-16 release, removing the switch web management interface from the internet and restricting it to a dedicated management network unreachable from user and adjacent segments, and changing factory-default credentials.",
+        "was_this_required": true,
+        "framework_requiring_it": "AU-Essential-8-Patch",
+        "adequacy": "The Essential Eight patch controls required the fixed firmware within two weeks of the release for an internet-facing switch (ISM-1694) and within one month for an internal one (ISM-1695, and ISM-1902 at Maturity Level Three); those windows closed on 2026-06-30 and 2026-07-16, before exploitation began on or about 2026-08-17. The update is the only remediation, and it restarts the switch. The patch controls do not require the management-interface restriction or the default-credential change, which the UK CAF B4 guidance names; restricting the interface removes the network access the overflow needs and works before a patch exists, but it does not fix the overflow."
+      },
+      "detection": {
+        "what_would_have_worked": "Alerting when a GS1900 switch fetches and runs a file over TFTP to or from an unapproved host, spawns a shell from its web management CGI, opens an unexpected listener, or stages data at /home/web/tmp/info.txt, and watching for many web management requests from one external source.",
+        "was_this_required": false,
+        "framework_requiring_it": "ISO-27001-2022-A.8.16",
+        "adequacy": "These signals depend on monitoring the switch management segment and its egress traffic. The campaign ran against 996 switches around 2026-08-17, about five weeks before GreyNoise publicly documented it on 2026-09-21."
+      },
+      "response": {
+        "what_would_have_worked": "Treating an exploited switch as compromised: collect evidence before any change, including the running, startup and backup configurations and the flash and buffer logs; then install the fixed firmware on both image partitions, compare the startup and backup configurations against a known-good copy made before the compromise or reset the switch to factory defaults and rebuild its configuration, and rotate every credential the switch held (local administrator, SNMP, and any RADIUS, TACACS+ or shared keys), because the observed campaign exfiltrated the configuration and hashed credentials.",
+        "was_this_required": false,
+        "framework_requiring_it": "NIS2-Art21-incident-handling",
+        "adequacy": "Installing the fixed firmware does not by itself return an exploited switch to a trusted state. Zyxel's GS1900 Series User's Guide describes the active and backup firmware as images saved on flash partitions, and a firmware upload writes one of those partition images; the startup and backup configurations are separate files held on the switch. A firmware update therefore leaves the saved configurations in place, including any account, SNMP community or access rule an attacker saved to them, and the other image partition keeps whatever image it held until the fixed build is written to it. The saved configurations must be compared against a known-good copy from before the compromise, or the switch reset to factory defaults and rebuilt, and the credentials must be rotated, because the exfiltrated configuration and hashed credentials stay usable after the update. Evidence must be collected first: the guide states that logs held in the switch's memory buffer are erased when the switch reboots, and CISA's BOD 26-04 guidance states that patching may jeopardize the availability of artifacts."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "SI-2 leaves the remediation period organization-defined with no maximum, so a period of 62 days or more from the 2026-06-16 release could leave a switch unpatched at the exploitation on or about 2026-08-17, and a period of 97 days or more could also leave it unpatched at the 2026-09-21 KEV listing. SI-2 does not require the period to shorten once exploitation is confirmed."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Article 21 sets no KEV-tied response tier for a pre-authentication command-execution flaw in a managed switch and does not require the management interface to be unreachable from the internet or the segments the switch serves."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "B4 does not define promptly, and the LAN-based (AV:A) rating invites classifying the switch management interface as not externally exposed, which allows the slower partially-achieved tier even though the interface was exploited from the internet."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": true,
+        "gap": "Meeting the applicable window would have patched each switch before the campaign: the two-week (ISM-1694) and one-month (ISM-1695, ISM-1902) windows from the 2026-06-16 release closed on 2026-06-30 and 2026-07-16, before exploitation began on or about 2026-08-17. For a switch that missed its window, the patch controls are met by installing the update and do not require a compromise assessment or credential rotation. A version 1 GS1900-24HP or GS1900-48HP has no fixed build in Zyxel's advisory, and ISM-1501 requires replacing it."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Where GS1900 switches are recorded as generic network hardware without a firmware build, the per-model affected-build boundary cannot be evaluated and appropriate timescales default to a routine cycle rather than an hours-scale response."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "A CISA KEV listing starts a mitigation clock measured in hours, and vulnerability response is driven on that clock rather than on the periodic patch cycle a routine advisory follows.",
+        "evidence": "CISA listed CVE-2026-7273 in the KEV catalog on 2026-09-21 with a 2026-09-24 due date, about five weeks after GreyNoise observed exploitation of GS1900 switches around 2026-08-17. Because the listing came after the campaign, a KEV-anchored clock governs only switches still unpatched on 2026-09-21. No KEV signal existed before then; the earlier exposure could have been closed by applying the vendor's 2026-06-16 release under a patch program or by restricting the switch web management interface to a dedicated management network.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-134",
+        "name": "DEVICE-MANAGEMENT-GATEWAY-CONFIG-ENDPOINT-AUTH-INPUT-NEUTRALIZATION",
+        "description": "A network device's web management interface is a privileged execution surface; every configuration endpoint must authenticate the caller and neutralize request input before any process invocation, and the interface must not be reachable from untrusted networks, including the internet and the user segments the device serves.",
+        "evidence": "The GS1900 web management CGI allows operating-system command execution from an unauthenticated crafted HTTP or HTTPS request through a stack buffer overflow; no credential is required and the switch runs attacker commands. GreyNoise observed the flaw exploited on 996 internet-exposed switches across 48 countries, so the interface has to be removed from the internet and restricted to a management network, have its input neutralized, and run the fixed firmware. A switch confirmed exploited also needs evidence collection, a comparison of its startup and backup configurations against a known-good copy, and credential rotation rather than a patch-and-close, because the firmware update leaves those saved configurations on the switch.",
+        "gap_closes": [
+          "UK-CAF-B4",
+          "NIS2-Art21-network-security"
+        ]
+      }
+    ]
+  },
+  "CVE-2025-39682": {
+    "name": "Linux Kernel Improper Check for Unusual or Exceptional Conditions Vulnerability",
+    "lesson_date": "2026-09-23",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": null,
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "The flaw is in the kernel TLS receive path. When the first record a recvmsg() call processes comes from the rx_list and has zero length, the call skips the check that stops it from mixing record types, and Red Hat states that a mixed record-type sequence can then slip past the per-call type constraint and proceed to data processing. CISA describes the result as later TLS records being processed with incorrect zero-copy and queuing assumptions. The Linux kernel CNA's record describes the memory effect as a use-after-free and double free: the strparser's anchor buffer is freed while the strparser still uses it, the next recvmsg() copies freed kernel memory into the user buffer, incoming data is written into the freed buffer, and socket teardown frees the anchor and its frag_list buffers twice. A remote peer reaches the path on any connection where the host has enabled kernel TLS receive: the Linux kernel CNA's record states that an anonymous client of a kTLS server, or a malicious server that a kTLS client connects to, is enough, and describes the trigger as three back-to-back records, a data record, a zero-length non-data record and another data record. A local user reaches the path by enabling kernel TLS on a socket of their own, and the public kernelCTF exploits, which list no required capabilities, are local privilege escalations for the lts-6.12.40, mitigation-v4-6.6 and Container-Optimized OS cos-121-18867.90.97 targets.",
+      "privileges_required": "None for the remote peer of a connection on which the host has enabled kernel TLS receive, whether the peer is a client of a kernel TLS server or a server that a kernel TLS client connects to: NVD scores the flaw PR:N, and Red Hat states it can be triggered remotely only when kernel TLS is in use. Locally, a user with no capabilities can attach the tls upper-layer protocol to their own socket wherever the tls code is built into the kernel or the tls module is already loaded; only automatic loading of the module requires CAP_NET_ADMIN, and the public exploits list no required capabilities.",
+      "complexity": "NVD rates attack complexity low and Red Hat rates it high (CVSS 7.0, AC:H). The Linux kernel CNA's record describes a deterministic trigger on the victim's ordinary recvmsg() loop and states that a TLS 1.2 session needs no unusual kernel configuration or socket option. Remote reachability depends on the host using kernel TLS receive on the connection, and the public local exploits state a 99% success rate on their kernelCTF targets.",
+      "ai_factor": "No source attributes the discovery or the weaponization of this flaw to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Installing the fixed kernel for the host's product and rebooting into it closes the flaw. Upstream, the fixed kernels are 6.1.149, 6.6.103, 6.12.44 and 6.16.4. On Red Hat Enterprise Linux the fixed builds are kernel-0:6.12.0-55.37.1.el10_0 on RHEL 10 (RHSA-2025:16904), kernel-0:5.14.0-570.49.1.el9_6 on RHEL 9 (RHSA-2025:16880), kernel-0:5.14.0-427.96.1.el9_4 on RHEL 9.4 Extended Update Support (RHSA-2025:19104), and kernel-0:5.14.0-284.144.1.el9_2 (RHSA-2025:19224) or kernel-rt-0:5.14.0-284.144.1.rt14.429.el9_2 (RHSA-2025:19223) on RHEL 9.2 Update Services for SAP Solutions, and SUSE Liberty Linux 9 takes the RHEL 9 build, kernel 5.14.0-570.49.1.el9_6 (RHSA-2025:16880). On SUSE the fixed build depends on the product and kernel flavor: kernel-default 6.4.0-150600.23.73.1 on SUSE Linux Enterprise Server 15 SP6, its SAP Applications edition, SUSE Linux Enterprise Desktop 15 SP6 and openSUSE Leap 15.6; kernel-default 6.4.0-150700.53.19.1 on SUSE Linux Enterprise Server 15 SP7, its SAP Applications edition and SUSE Linux Enterprise Desktop 15 SP7; kernel-default 6.12.0-160000.6.1 on SUSE Linux Enterprise Server 16.0, SUSE Linux Enterprise Server for SAP applications 16.0, openSUSE Leap 16.0 and SUSE Linux Micro 6.2; kernel-default 6.4.0-35.1 on SUSE Linux Micro 6.0 and 6.1; kernel-coco 6.4.0-15061.32.coco15sp6.1 in the Confidential Computing Technical Preview 15 SP6 module; and the separately numbered kernel-rt and kernel-azure builds SUSE lists for real-time and Azure hosts. On Debian the fixed packages are linux 6.1.153-1 on Debian 12 (DSA-6009-1), linux 6.12.48-1 on Debian 13 (DSA-6008-1) and linux-6.1 6.1.153-1~deb11u1 on Debian 11 (DLA 4328-1). On Container-Optimized OS the fix is the first fixed build of the instance's milestone or later (cos-109-17800-570-40, cos-113-18244-448-36, cos-117-18613-339-52 or cos-121-18867-199-52), and on the SIMATIC CN 4100 it is firmware V5.0 or later (SSA-032379). Where SUSE lists a kernel-livepatch package for the running kernel, installing it applies the fix without a reboot. On hosts where no application uses kernel TLS, Red Hat's stated mitigation is to block the tls module.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST-800-53-SI-2",
+        "adequacy": "The fixed kernel removes the flaw once the host has rebooted into it, and a SUSE live patch removes it from the running kernel build it is made for without a reboot. SUSE lists no fixed kernel-azure build for SUSE Linux Enterprise Server 16.0, its SAP applications edition or openSUSE Leap 16.0, so hosts running that flavor stay exposed until SUSE releases one, the host moves to SUSE Linux Enterprise Server 16.1 (SUSE lists kernel-azure 6.12.0-160099.45.1 as fixed there), or the tls module is blocked. Blocking the module removes the remote and local attack paths only on hosts that do not need kernel TLS and build tls as a module, and it does not unload a copy of the module that is already loaded."
+      },
+      "detection": {
+        "what_would_have_worked": "Recording which processes enable kernel TLS on their sockets (the TCP_ULP and TLS_RX socket options), on inbound and outbound connections alike, watching the TlsRxSw and TlsRxDevice counters in /proc/net/tls_stat in every network namespace for receive sessions opened on hosts expected to have none, with TlsCurrRxSw and TlsCurrRxDevice as a point-in-time view, and alerting on kernel warnings, oopses, panics, KASAN use-after-free or double-free reports and slab or list-corruption reports whose call traces run through the kernel TLS code, including the recvmsg() path, the TLS strparser and socket teardown.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "These signals show where the vulnerable path is in use, not whether a record sent to it was malicious. On TLS 1.2 a sensor that reads record headers can see a non-data record of the smallest ciphertext size between data records, but in TLS 1.3 the record type is encrypted, so a network sensor without the session keys cannot see the non-data records the flaw depends on."
+      },
+      "response": {
+        "what_would_have_worked": "Rebooting into a fixed kernel or applying the vendor live patch and, on hosts that used kernel TLS on an affected build with untrusted peers, as a server or as a client, investigating for kernel-level compromise rather than only restarting the affected process, since CISA's SSVC entry records technical impact as total.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 26-04 forensic triage (flagged in the KEV entry), for agencies bound by the directive",
+        "adequacy": "A reboot into the fixed kernel or a live patch closes the flaw, but neither shows whether the host was compromised before the update, and no source consulted gives host artifacts left by exploitation of this CVE."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false
+      },
+      "NIST-800-53-CM-7": {
+        "covered": true,
+        "adequate": false
+      },
+      "NIST-800-53-SC-8": {
+        "covered": false,
+        "adequate": false
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "An actively exploited vulnerability receives a mitigation deadline measured in hours from its exploitation listing, whatever severity the supplier assigned when it released the fix.",
+        "evidence": "CVE-2025-39682 in the Linux kernel TLS receive path was published by NVD on 2025-09-05. Exploit code for three kernelCTF targets was public in pull request #251 to Google's google/security-research repository from 2025-09-22 and was merged on 2026-02-25. Red Hat shipped RHSA-2025:16880 and RHSA-2025:16904 on 2025-09-29 rated Moderate, when NVD had not yet scored the flaw. NVD scored it 7.1 as a local flaw on 2026-01-27, the Linux kernel CNA added a network 9.8 vector on 2026-07-30, and NVD adopted 9.8 on 2026-09-21, three days after CISA listed the CVE in KEV on 2026-09-18. A schedule set from the supplier's rating at release gave the flaw no added urgency when the exploit appeared or when the listing came.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "AU-Essential-8-Patch",
+          "NIS2-Art21-patch-management"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-009",
+        "name": "KERNEL-MODULE-INVENTORY-AND-DISABLE",
+        "description": "Keep a per-host inventory of loadable operating-system protocol modules, record the business need for each one that is loaded, and block the modules no workload needs from loading.",
+        "evidence": "Red Hat's mitigation for CVE-2025-39682 is to prevent the Linux tls module from loading, and it states the flaw is reachable remotely only when kernel TLS is in use. The kernel TLS documentation says transmit and receive are set up separately, with the TLS_TX and TLS_RX socket options, and lists per-namespace counters in /proc/net/tls_stat for the transmit and receive sessions opened (TlsTxSw, TlsRxSw, TlsTxDevice and TlsRxDevice) as well as for those currently installed. The kernel's net/tls/tls_main.c decreases only the currently-installed counters when a socket closes, and it frees a namespace's counters when the namespace is deleted. A host where lsmod lists tls and all four opened-session counters read zero in every network namespace on the host has opened no kernel TLS session in those namespaces since their counters were created, so the module is loaded without a workload that uses it there; the reading does not cover namespaces that have already been deleted. A host with transmit sessions opened and no receive sessions opened shows zero receive counters but needs the module for its workload, so blocking the module is not an option there, and that host stays exposed to this receive-path flaw from local users until it runs the fixed kernel. Because net/ipv4/tcp_ulp.c requires CAP_NET_ADMIN only to load the module automatically, any local user can enable TLS_RX on a socket of their own while the module is loaded, and the public kernelCTF exploits list no required capabilities.",
+        "gap_closes": [
+          "NIST-800-53-CM-7",
+          "UK-CAF-B4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-008",
+        "name": "CRYPTO-SUBSYSTEM-CVE-DISCLOSURE",
+        "description": "When a vulnerability affects the operating-system component that implements a cryptographic protocol, controls that rely on that component for transmission protection are recorded as depending on it until the fix is running.",
+        "evidence": "CVE-2025-39682 is in the Linux kernel TLS receive path, which decrypts records for sockets whose application has set the TLS_RX option, and Red Hat states it can be triggered remotely only when kernel TLS is in use. The Linux kernel CNA's record names OpenSSL with kTLS, NFS-over-TLS and SMB/RPC over TLS through net/handshake as consumers the remote peer can reach, including a kTLS client that connects to a malicious server, and describes the trigger on a TLS 1.2 session, which is zero-copy capable by default. A host that uses kernel TLS for transmission protection, as a server or as a client and on TLS 1.2 or TLS 1.3, relies on the vulnerable code for that protection.",
+        "gap_closes": [
+          "NIST-800-53-SC-8"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-038",
+        "name": "MITIGATION-ACTIVE-PATCH-PENDING-VERDICT-CLASS",
+        "description": "A compliance verdict records a host that blocks the vulnerable component while still running an unfixed build as mitigated with residual risk, separately from a host that is running the fixed build.",
+        "evidence": "For CVE-2025-39682, a Red Hat Enterprise Linux 9 host that blocks the tls module but has not installed kernel-0:5.14.0-570.49.1.el9_6 (RHSA-2025:16880) is mitigated rather than fixed, and a change that lets the module load again reopens the flaw. A host that installed the fixed Linux kernel package but has not rebooted is still running the vulnerable kernel.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-53266": {
+    "name": "Linux Kernel Out-of-Bounds Write Vulnerability (CVE-2026-53266)",
+    "lesson_date": "2026-09-23",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": null,
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "The attack needs a bridge with an ebtables nat rule that uses the snat target with ARP rewrite, and an ARP frame whose sender hardware address sits in a socket-buffer fragment backed by a file page imported with splice(). The snat target then copies the rule's six-byte MAC address into that file page through skb_store_bits(). The kernel CNA states that the rule path needs CAP_NET_ADMIN but is reachable with namespace-local privileges through user and network namespaces, so a local user who can create those namespaces can set up the bridge and the rule without init-namespace root. The kernel's ebtables rule-set handler checks CAP_NET_ADMIN against the user namespace that owns the network namespace, so a container or service granted CAP_NET_ADMIN in its own network namespace passes the same check without creating a user namespace.",
+      "privileges_required": "Low local privileges in the kernel CNA's CVSS vector (AV:L/PR:L); the CNA's rationale states that CAP_NET_ADMIN inside a user and network namespace is enough, and CAP_NET_ADMIN held by a container in its own network namespace also passes the kernel's ebtables capability check. Red Hat states that the flaw requires specific bridge netfilter rules to be configured, and SUSE scores it as adjacent-network with no privileges.",
+      "complexity": "Low in the kernel CNA's score and high in Red Hat's. No public exploit code was found; Red Hat's known-exploit mark rests on the CISA KEV listing.",
+      "ai_factor": "Not AI-discovered. The fix commit names Yiming Qian as reporter, and no source says AI tooling was used in discovery or exploitation."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Running a kernel with commit 67ba971ae025 (5.10.259, 5.15.210, 6.1.176, 6.6.143, 6.12.94, 6.18.36, 7.0.13, 7.1, or the fixed RHEL 8.10, RHEL 8.6 Advanced Mission Critical Update Support and Extended Update Support Long-Life, RHEL 9, SLES 15 SP7, SLES 16.0, SUSE Linux Micro 6.x, Debian, Ubuntu 24.04 linux-hwe-7.0 and Ubuntu 26.04 packages). Until then, keeping the ARP rewrite option out of ebtables SNAT rules as Red Hat advises, blocking the ebt_snat module from loading on hosts that do not use it, restricting user namespaces where no workload needs them, and removing CAP_NET_ADMIN from containers and services that do not need it.",
+        "was_this_required": true,
+        "framework_requiring_it": "AU-Essential-8-Patch",
+        "adequacy": "The kernel update removes the flaw. Red Hat's rule change removes the vulnerable path only from rules the administrator controls. On hosts where unprivileged users can create user namespaces, or where any container or service holds CAP_NET_ADMIN in its own network namespace, the rule change does not replace the update: the kernel CNA states that the rule path is reachable through user and network namespaces, and the kernel's ebtables handler checks the capability against the user namespace that owns the network namespace. Blocking the ebt_snat module covers both paths, but only where the target is built as a module and is not already loaded. Restricting user namespaces does not affect a container that already holds CAP_NET_ADMIN, and it also stops any workload that creates user namespaces. All of these steps are interim measures."
+      },
+      "detection": {
+        "what_would_have_worked": "Auditing changes to the ebtables nat table in every network namespace, the loading of the ebt_snat module, the creation of user and network namespaces by unprivileged accounts and the creation of bridge devices by containers that hold CAP_NET_ADMIN, alerting on package-verification mismatches on setuid binaries, and alerting on processes that gain root without an authorization event.",
+        "was_this_required": false,
+        "framework_requiring_it": "NIST-800-53-SI-4",
+        "adequacy": "No source publishes a detection rule for this CVE. These signals are heuristics built from the mechanism. The write itself is made by the kernel's bridge code, so no write system call on the file is recorded, and a rule created in a short-lived namespace leaves nothing to list after the namespace exits."
+      },
+      "response": {
+        "what_would_have_worked": "Before rebooting a host into the fixed kernel, checking whether it was compromised: capturing package-verification results against setuid binaries and files under /etc, the ebtables nat table in each network namespace and the kernel log, because a reboot clears cached file pages and the running kernel's state.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 26-04 forensic triage (flagged in the KEV entry), for agencies bound by the directive",
+        "adequacy": "CISA's KEV entry flags this CVE for forensic triage under BOD 26-04, which binds only US federal civilian agencies; none of the frameworks mapped here requires the check before the reboot, so a routine patch cycle can remove the evidence."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The remediation period starts at vendor release, and the Ubuntu 26.04 linux-azure-fde kernel, the Ubuntu 24.04 linux package, the Ubuntu 22.04, 20.04 and 18.04 5.4-based kernels, RHEL 10, RHEL for NVIDIA 26, SLES 15 SP4 to SP6 LTSS, SLES for SAP Applications 15 SP4 to SP6, SLE HPC 15 SP4 and SP5 LTSS and SLE Micro 5.3 to 5.5 had no fixed package after the KEV listing, and RHEL 8.6 Advanced Mission Critical Update Support and Extended Update Support Long-Life had none until 23 September 2026. Red Hat's VEX file lists the RHEL 6 and 7 kernels the same way, while its CVE data lists them as not affected."
+      },
+      "NIST-800-53-CM-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Least-functionality reviews of ports and services do not enumerate the ebtables snat target, its --snat-arp option, unprivileged user namespace creation or CAP_NET_ADMIN grants to containers."
+      },
+      "NIST-800-53-SI-4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The kernel copies the MAC address into the file page without a write system call, so file-event monitoring has no event to raise."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No timeframe is set, and the additional measures required where no patch exists are not specified, so Red Hat's ebtables rule change alone can meet it while the namespace paths stay open."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A version-based assessment does not check the ebtables nat rules in each network namespace, whether unprivileged users can create user namespaces or which containers hold CAP_NET_ADMIN, and each of these affects exposure."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "On RHEL 10 and RHEL for NVIDIA 26, and on the RHEL 6 and 7 kernels that Red Hat's VEX file lists as affected, the window covers Red Hat's ebtables mitigation, which leaves the namespace paths open, and no window has started for the unfixed Ubuntu kernels, the SLES 15 SP4 to SP6 LTSS, SLES for SAP Applications 15 SP4 to SP6 and SLE HPC 15 SP4 and SP5 LTSS kernels, or the SLE Micro 5.3 to 5.5 kernels, all of which have neither a fix nor a vendor mitigation."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Vendor scores disagree, Red Hat's two feeds disagree on whether RHEL 6 and 7 are affected, and the register holds package versions, while exposure also depends on the host's ebtables rules, on whether unprivileged user namespaces are allowed and on which containers hold CAP_NET_ADMIN."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "A vulnerability listed in the KEV catalog gets a mitigation deadline measured in hours from the listing, and the deadline is met with a configuration change where no fixed build exists yet.",
+        "evidence": "CISA listed CVE-2026-53266 in the Linux kernel on 2026-09-18 with a 2026-09-21 due date. As of 22 September 2026 Ubuntu listed its 26.04 linux-azure-fde kernel, its 24.04 linux package, its 22.04 and 20.04 kernels and its 18.04 5.4-based kernels as vulnerable with no fixed package, Red Hat's CVE data lists RHEL 10 and RHEL for NVIDIA 26 as affected with no fix, Red Hat released the RHEL 8.6 Advanced Mission Critical Update Support and 8.6 Extended Update Support Long-Life kernel fix (RHSA-2026:70797) only on 23 September 2026, two days after the due date, Red Hat's VEX file, as of 23 September 2026, also lists the RHEL 6 kernel and the RHEL 7 kernel and kernel-rt that way although its CVE data lists them as not affected, and SUSE lists SLES 15 SP4, SP5 and SP6 LTSS, SLES for SAP Applications 15 SP4 to SP6, SLE HPC 15 SP4 and SP5 LTSS and SLE Micro 5.3 to 5.5 as affected with no fix. On those hosts the deadline can be met only with interim measures. Red Hat's ebtables rule change covers rules the administrator configured. The kernel CNA states that the rule path is reachable through user and network namespaces, and a container or service granted CAP_NET_ADMIN in its own network namespace passes the same capability check in the kernel's ebtables handler, so blocking the ebt_snat module is needed as well; restricting user namespaces and removing unneeded CAP_NET_ADMIN grants each close only one of those paths. Ubuntu 24.04 hosts can instead move to the fixed linux-hwe-7.0 kernel.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-025",
+        "name": "CONFIGURATION-SIDE-LIVE-PATCH-INVENTORY",
+        "description": "Where a supplier publishes a configuration change that closes the vulnerable path, the change is recorded for each affected host, tested, and deployable on its own schedule, separate from the update and restart cycle.",
+        "evidence": "Red Hat's mitigation for CVE-2026-53266 is to disable ARP hardware address rewriting in ebtables SNAT rules or remove ebtables SNAT rules that operate on ARP traffic on bridge interfaces; the ebtables man page documents that rewrite as the --snat-arp option of the snat target. The change applies without a reboot but covers only rules the administrator configures: the kernel CNA states that the rule path is reachable with namespace-local privileges through user and network namespaces, and a container or service granted CAP_NET_ADMIN in its own network namespace passes the same capability check in the kernel's ebtables handler. For the Linux kernels with no fixed package (RHEL 10, RHEL for NVIDIA 26, the RHEL 6 and 7 kernels that Red Hat's VEX file lists as affected with no fix, SLES 15 SP4 to SP6 LTSS, SLES for SAP Applications 15 SP4 to SP6, SLE HPC 15 SP4 and SP5 LTSS, SLE Micro 5.3 to 5.5, the Ubuntu 26.04 linux-azure-fde kernel, the Ubuntu 24.04 linux package and the Ubuntu 22.04, 20.04 and 18.04 5.4-based kernels), the record for each host needs the rule change together with an ebt_snat module block, which covers both paths. A user namespace restriction and the removal of unneeded CAP_NET_ADMIN grants from containers are additional steps that each close one path.",
+        "gap_closes": [
+          "UK-CAF-B4",
+          "NIS2-Art21-patch-management",
+          "AU-Essential-8-Patch"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-009",
+        "name": "KERNEL-MODULE-INVENTORY-AND-DISABLE",
+        "description": "Maintain a per-host inventory of loaded and loadable operating-system modules, and block the loading of packet-filtering and protocol modules that have no business use on that host.",
+        "evidence": "The flaw in CVE-2026-53266 is in net/bridge/netfilter/ebt_snat.c, the ebtables snat target of the Linux kernel, and the fix adds a writability check to ebt_snat_tg. A host that does not use ebtables NAT on a bridge has no use for that target. The kernel CNA states that the rule path is reachable with namespace-local privileges through user and network namespaces, and the kernel's ebtables rule-set handler checks CAP_NET_ADMIN against the user namespace that owns the network namespace, so removing the administrator's rules does not keep the target from running when an unprivileged user creates namespaces or a container holds CAP_NET_ADMIN. Where the target is built as the ebt_snat module, an install ebt_snat /bin/false line under /etc/modprobe.d makes modprobe run that command instead of inserting the module, which keeps the vulnerable function from running on a host where the module is not already loaded.",
+        "gap_closes": [
+          "NIST-800-53-CM-7",
+          "UK-CAF-B4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-016",
+        "name": "PAGE-CACHE-INTEGRITY-VERIFICATION",
+        "description": "For privileged executables and security-relevant configuration files, compare a hash read through the running system's file cache with the packaged or known-good hash on a schedule and on alert, so that a change held only in memory is detected.",
+        "evidence": "In CVE-2026-53266 the ebtables snat target in the Linux kernel copies the rule's six-byte MAC address into a socket-buffer fragment backed by a file page imported with splice(), as the fix commit's message describes. The copy is made by the bridge netfilter code rather than by a write() call on the file, so monitoring of file write events records nothing, and a hash read through the cache is a check that can see the altered page.",
+        "gap_closes": [
+          "NIST-800-53-SI-4"
         ]
       }
     ]
