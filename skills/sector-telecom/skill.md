@@ -29,7 +29,7 @@ data_deps:
   - cve-catalog.json
   - framework-control-gaps.json
 atlas_refs:
-  - AML.T0040
+  - AML.T0010
 attack_refs:
   - T1071
   - T1078
@@ -43,7 +43,7 @@ framework_gaps:
   - NIS2-Annex-I-Telecom
   - DORA-Art-21-Telecom-ICT
   - UK-CAF-B5
-  - AU-ISM-1556
+  - AU-ISM-1173-Telecom-NMS
   - GSMA-NESAS-Deployment
   - 3GPP-TR-33.926
   - ITU-T-X.805
@@ -92,15 +92,15 @@ Telecom security mandates lag the current threat reality because the regulatory 
 
 | Tactic | ATT&CK | ATLAS | Description |
 |---|---|---|---|
-| Initial Access | T1199 Trusted Relationship | AML.T0040 (Tool/Plugin Compromise) | OEM vendor remote-support tunnel or AI-RAN plugin compromise opens a path into the operator network |
+| Initial Access | T1199 Trusted Relationship | AML.T0010 (AI Supply Chain Compromise) | OEM vendor remote-support tunnel or AI-RAN plugin compromise opens a path into the operator network |
 | Initial Access | T1190 Exploit Public-Facing Application | — | Internet-facing OSS / EMS / NMS exposed services (Salt Typhoon access pattern) |
 | Persistence | T1098 Account Manipulation | — | Persistent admin role grants on NMS / EMS / OSS after initial compromise |
 | Defense Evasion | T1556 Modify Authentication Process | — | LI-gateway credential pivot — operator account credentials forged or replayed against LI provisioning subsystem |
 | Credential Access | T1078 Valid Accounts | — | Stolen LI-gateway operator credentials used directly, no separate exploitation path |
 | Command and Control | T1071 Application Layer Protocol | — | Living-off-the-land C2 over telecom internal management protocols (SNMP, NETCONF, Telco-IP-fabric) |
-| Collection | T1199 (downstream) | AML.T0040 (downstream) | Pulling subscriber call-detail records, location data, and LI feed contents via compromised access |
+| Collection | T1199 (downstream) | AML.T0010 (downstream) | Pulling subscriber call-detail records, location data, and LI feed contents via compromised access |
 
-ATLAS AML.T0040 (Tool / Plugin Compromise) anchors the AI-RAN attack class: plugin-layer compromise of an O-RAN xApp or rApp can route traffic through an adversary-controlled inference path while the NMS believes the legitimate xApp is still in use.
+ATLAS AML.T0010 (AI Supply Chain Compromise) anchors the AI-RAN attack class: plugin-layer compromise of an O-RAN xApp or rApp can route traffic through an adversary-controlled inference path while the NMS believes the legitimate xApp is still in use.
 
 ## Exploit Availability Matrix
 
@@ -111,7 +111,7 @@ ATLAS AML.T0040 (Tool / Plugin Compromise) anchors the AI-RAN attack class: plug
 | SS7 / Diameter signaling abuse | Public (signaling-research community) | Commodity | Low | Pre-dates AI-augmented attack landscape |
 | GTP-U tunneling attacks | Public | Demonstrated | Low | Operator-side defense via signaling firewalls |
 | 5G core N4 abuse (PFCP) | Researcher PoCs | Demonstrated | Low | Defense via N4 isolation per TS 33.501 |
-| AI-RAN xApp tampering | No public PoC | Speculative | High (ATLAS AML.T0040 class) | CTID Secure AI v2 forward-watch |
+| AI-RAN xApp tampering | No public PoC | Speculative | High (ATLAS AML.T0010 class) | CTID Secure AI v2 forward-watch |
 | gNB firmware tampering | Researcher PoCs (vendor-specific) | Demonstrated against vendor pre-prod | Low | GSMA NESAS scope gap |
 | Slice mismapping (cross-slice leak) | Researcher PoCs against test cores | Demonstrated | Low | TS 33.501 control surface |
 
@@ -165,7 +165,7 @@ Walk every indicator's `false_positive_checks_required` list before submitting a
 
 ### Correlation
 
-Match captured artifacts against `data/cve-catalog.json` entries with `attack_class: telecom` or matching `attack_refs`. Cross-reference against `data/framework-control-gaps.json` for FCC-CPNI-4.1, FCC-Cyber-Incident-Notification-2024, NIS2-Annex-I-Telecom, DORA-Art-21-Telecom-ICT, UK-CAF-B5, AU-ISM-1556, GSMA-NESAS-Deployment, 3GPP-TR-33.926, ITU-T-X.805. Score blast-radius based on subscriber count + LI-feed-exposure dimension + AI-RAN slice-mismapping potential.
+Match captured artifacts against `data/cve-catalog.json` entries with `attack_class: telecom` or matching `attack_refs`. Cross-reference against `data/framework-control-gaps.json` for FCC-CPNI-4.1, FCC-Cyber-Incident-Notification-2024, NIS2-Annex-I-Telecom, DORA-Art-21-Telecom-ICT, UK-CAF-B5, AU-ISM-1173-Telecom-NMS, GSMA-NESAS-Deployment, 3GPP-TR-33.926, ITU-T-X.805. Score blast-radius based on subscriber count + LI-feed-exposure dimension + AI-RAN slice-mismapping potential.
 
 ### Priority-sorted remediation
 
@@ -253,4 +253,4 @@ Theater patterns specific to telecom posture:
 - **framework-gap-analysis** — invoke for downstream Hard-Rule-5 gap mapping against catalog framework_gaps.
 - **cred-stores** *(playbook chain, not a skill)* — LI-gateway operator credential storage falls under the `cred-stores` playbook for secret-management depth.
 - **sector-federal-government** — national-security adjacency on LI-system compromise touches federal investigation scope.
-- **mcp-agent-trust** — AI-RAN xApp / rApp compromise (ATLAS AML.T0040 class) crosses into MCP-class agent-tool trust boundaries.
+- **mcp-agent-trust** — AI-RAN xApp / rApp compromise (ATLAS AML.T0010 class) crosses into MCP-class agent-tool trust boundaries.

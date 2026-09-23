@@ -67,8 +67,7 @@
     "name": "CI/CD pipeline + runner + OIDC + signing-key trust boundary",
     "attack_class": "supply-chain",
     "atlas_refs": [
-      "AML.T0010",
-      "AML.T0016"
+      "AML.T0010"
     ],
     "attack_refs": [
       "T1195.002",

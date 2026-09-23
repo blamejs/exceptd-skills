@@ -8,15 +8,18 @@
  * MITRE. An id can therefore carry a name MITRE gives to a different technique,
  * or name a sub-technique that does not exist, and every gate stays green.
  *
- * Three things are compared, for the release named in `_meta.atlas_version`:
+ * Four things are compared, for the release named in `_meta.atlas_version`:
  *   1. every AML id in the catalog exists upstream
  *   2. every catalog name is the name upstream gives that id
  *   3. every AML sub-technique id named inside a `subtechniques` list exists
+ *   4. every tactic an entry lists is one upstream assigns to that technique; a
+ *      sub-technique with no tactics of its own is checked against its parent's
  *
  * Divergences recorded in tests/.atlas-divergence-baseline.json are reported and
  * allowed, so known work in progress does not block a release while any NEW
  * divergence does. An entry that has been repaired and is still in the baseline
- * is also an error, so the file shrinks instead of going stale.
+ * is also an error, so the file shrinks instead of going stale. Tactics have no
+ * baseline, so a wrong tactic always fails.
  *
  * Two naming conventions are accepted without a baseline entry, because they
  * render the same technique rather than a different one: a sub-technique may be
@@ -129,6 +132,38 @@ function parentNameOf(id, upstream) {
   return m ? upstream.get(m[1]) || null : null;
 }
 
+// Format 6 records each technique's tactics as `achieves` relationships in the
+// top-level `relationships` section. Returns technique id -> set of tactic names.
+function parseTactics(text, names) {
+  const out = new Map();
+  const at = text.indexOf("\nrelationships:");
+  if (at < 0) return out;
+  const re = /- source: (AML\.T[0-9.]+)\n\s+target: (AML\.TA[0-9]+)\n\s+relationship-type: achieves\b/g;
+  const rel = text.slice(at);
+  let m;
+  while ((m = re.exec(rel)) !== null) {
+    if (!out.has(m[1])) out.set(m[1], new Set());
+    out.get(m[1]).add(names.get(m[2]) || m[2]);
+  }
+  return out;
+}
+
+// The tactic values an entry lists that upstream does not assign to it. An
+// entry may list fewer tactics than upstream; it may not list a different one.
+// A sub-technique with no tactics of its own is checked against its parent's,
+// and an id upstream assigns no tactic to is not checked.
+function tacticProblems(id, tactic, tactics) {
+  const values = (Array.isArray(tactic) ? tactic : [tactic])
+    .map((t) => String(t == null ? "" : t).trim())
+    .filter(Boolean);
+  if (!values.length) return [];
+  const parent = /^(AML\.T\d+)\.\d+$/.exec(id);
+  const allowed = (tactics.get(id) && tactics.get(id).size ? tactics.get(id) : null) ||
+    (parent ? tactics.get(parent[1]) : null);
+  if (!allowed || !allowed.size) return [];
+  return values.filter((v) => !allowed.has(v)).map((v) => ({ id, ours: v, theirs: [...allowed].sort() }));
+}
+
 function readBaseline() {
   if (!fs.existsSync(BASELINE)) return { names: {}, missing_ids: [], missing_subtechniques: [] };
   try {
@@ -194,6 +229,13 @@ async function main() {
     }
   }
 
+  const upstreamTactics = parseTactics(release.text, upstream);
+  const wrongTactic = [];
+  for (const id of ids) {
+    if (!AML_ID.test(id) || !upstream.has(id)) continue;
+    wrongTactic.push(...tacticProblems(id, catalog[id].tactic, upstreamTactics));
+  }
+
   // Each allowance covers exactly one finding. A recorded name does not excuse a
   // sub-technique id, and a recorded sub-technique id does not excuse its
   // siblings, so a new bad id under an entry that already diverges still fails.
@@ -218,6 +260,7 @@ async function main() {
   for (const x of newMisnamed) problems.push(`${x.id} is named ${JSON.stringify(x.ours)}; ATLAS ${pin} names it ${JSON.stringify(x.theirs)}`);
   for (const x of newMissing) problems.push(`${x.id} (${JSON.stringify(x.ours)}) does not exist in ATLAS ${pin}`);
   for (const x of newMissingSub) problems.push(`${x.id} names sub-technique ${x.sub}, which does not exist in ATLAS ${pin}`);
+  for (const x of wrongTactic) problems.push(`${x.id} lists tactic ${JSON.stringify(x.ours)}; ATLAS ${pin} assigns ${x.theirs.map((t) => JSON.stringify(t)).join(", ")}`);
   for (const id of staleNames) problems.push(`${id} is recorded as a name divergence but now agrees with upstream; remove it from ${path.relative(ROOT, BASELINE)}`);
   for (const id of staleMissing) problems.push(`${id} is recorded as absent upstream but now resolves; remove it from ${path.relative(ROOT, BASELINE)}`);
   for (const sub of staleSubs) problems.push(`${sub} is recorded as absent upstream but is no longer named or now resolves; remove it from ${path.relative(ROOT, BASELINE)}`);
@@ -241,7 +284,7 @@ async function main() {
     return;
   }
 
-  emit(`[check-atlas-catalog-currency] PASS — every id and name agrees with ATLAS ${pin}, or is a recorded divergence`);
+  emit(`[check-atlas-catalog-currency] PASS — every id, name and tactic agrees with ATLAS ${pin}, or is a recorded divergence`);
 }
 
 if (require.main === module) {
@@ -253,4 +296,4 @@ if (require.main === module) {
 
 // Only the pieces that carry judgment are exported; `main` is the CLI and is
 // reached through the guard above.
-module.exports = { parseNames, isRenderingOf, parentNameOf };
+module.exports = { parseNames, isRenderingOf, parentNameOf, parseTactics, tacticProblems };

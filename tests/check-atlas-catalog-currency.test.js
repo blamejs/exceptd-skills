@@ -16,7 +16,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 
-const { parseNames, isRenderingOf, parentNameOf } =
+const { parseNames, isRenderingOf, parentNameOf, parseTactics, tacticProblems } =
   require(path.resolve(__dirname, '..', 'scripts', 'check-atlas-catalog-currency.js'));
 
 const SAMPLE = [
@@ -66,6 +66,78 @@ test('parseNames ignores an id that is not a name-bearing object', () => {
   const withRef = SAMPLE + "\nrelationships:\n  - target: AML.T0072\n    kind: related\n";
   const m = parseNames(withRef);
   assert.equal(m.size, 6);
+});
+
+const TACTIC_SAMPLE = [
+  "tactics:",
+  "  AML.TA0000:",
+  "    name: AI Model Access",
+  "  AML.TA0001:",
+  "    name: AI Attack Adaptation",
+  "  AML.TA0006:",
+  "    name: Persistence",
+  "techniques:",
+  "  AML.T0018:",
+  "    name: Manipulate AI Model",
+  "  AML.T0018.000:",
+  "    name: Poison AI Model",
+  "  AML.T0044:",
+  "    name: Full AI Model Access",
+  "relationships:",
+  "  AML.T0018:",
+  "    achieves:",
+  "    - source: AML.T0018",
+  "      target: AML.TA0001",
+  "      relationship-type: achieves",
+  "    - source: AML.T0018",
+  "      target: AML.TA0006",
+  "      relationship-type: achieves",
+  "  AML.T0044:",
+  "    achieves:",
+  "    - source: AML.T0044",
+  "      target: AML.TA0000",
+  "      relationship-type: achieves",
+  "    employs:",
+  "    - source: AML.CS0001",
+  "      target: AML.T0044",
+  "      relationship-type: employs",
+  "",
+].join("\n");
+
+test('parseTactics reads each technique\'s tactics from its achieves relationships', () => {
+  const t = parseTactics(TACTIC_SAMPLE, parseNames(TACTIC_SAMPLE));
+  assert.deepEqual([...t.get('AML.T0018')].sort(), ['AI Attack Adaptation', 'Persistence']);
+  assert.deepEqual([...t.get('AML.T0044')], ['AI Model Access']);
+  assert.equal(t.has('AML.CS0001'), false, 'an employs relationship does not assign a tactic');
+});
+
+test('tacticProblems accepts a tactic upstream assigns, alone or as part of a list', () => {
+  const t = parseTactics(TACTIC_SAMPLE, parseNames(TACTIC_SAMPLE));
+  assert.deepEqual(tacticProblems('AML.T0044', 'AI Model Access', t), []);
+  assert.deepEqual(tacticProblems('AML.T0018', ['Persistence', 'AI Attack Adaptation'], t), []);
+  assert.deepEqual(tacticProblems('AML.T0018', 'Persistence', t), [], 'listing fewer tactics than upstream is allowed');
+});
+
+test('tacticProblems reports a tactic upstream does not assign, including a stale slug', () => {
+  const t = parseTactics(TACTIC_SAMPLE, parseNames(TACTIC_SAMPLE));
+  assert.deepEqual(tacticProblems('AML.T0044', 'Collection', t),
+    [{ id: 'AML.T0044', ours: 'Collection', theirs: ['AI Model Access'] }]);
+  const p = tacticProblems('AML.T0018', ['Persistence', 'ai-attack-staging'], t);
+  assert.equal(p.length, 1);
+  assert.equal(p[0].ours, 'ai-attack-staging');
+});
+
+test('tacticProblems checks a sub-technique with no tactics of its own against its parent', () => {
+  const t = parseTactics(TACTIC_SAMPLE, parseNames(TACTIC_SAMPLE));
+  assert.deepEqual(tacticProblems('AML.T0018.000', 'Persistence', t), []);
+  assert.equal(tacticProblems('AML.T0018.000', 'Impact', t).length, 1);
+});
+
+test('tacticProblems does not check an empty tactic or an id upstream assigns none to', () => {
+  const t = parseTactics(TACTIC_SAMPLE, parseNames(TACTIC_SAMPLE));
+  assert.deepEqual(tacticProblems('AML.T0044', '', t), []);
+  assert.deepEqual(tacticProblems('AML.T0044', [], t), []);
+  assert.deepEqual(tacticProblems('AML.T0999', 'Impact', t), []);
 });
 
 test('isRenderingOf accepts a sub-technique written with its parent', () => {
@@ -130,7 +202,6 @@ test('the baseline records sub-technique ids one at a time, never their parent',
   // after the baseline was taken would inherit the exemption and pass unseen.
   const fs = require('node:fs');
   const b = JSON.parse(fs.readFileSync(path.resolve(__dirname, '.atlas-divergence-baseline.json'), 'utf8'));
-  assert.ok(b.missing_subtechniques.length > 0, 'the recorded divergences include sub-technique ids');
   for (const id of b.missing_subtechniques) {
     assert.match(id, /^AML\.T[0-9]+\.[0-9]+$/,
       `${id} must be a full sub-technique id; a bare parent id would exempt its siblings`);

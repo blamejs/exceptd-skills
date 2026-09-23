@@ -260,21 +260,21 @@
         "authority": "Australian Signals Directorate (ASD)",
         "source": "https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/ism",
         "effective_date": "Monthly updates",
-        "version": "2026-03",
+        "version": "2026-09",
         "patch_sla": 48,
-        "patch_sla_note": "ISM-1623: 48h for critical with existing exploit. Best non-CISA-aware SLA of any major framework.",
+        "patch_sla_note": "ISM-1876 and ISM-1877: online services and the operating systems of internet-facing servers and network devices are patched within 48 hours of release when the vendor rates a vulnerability critical or a working exploit exists, at every Essential Eight maturity level. Browsers, office suites, email clients and workstation operating systems get 48 hours only at Maturity Level Three (ISM-1692, ISM-1696).",
         "critical_controls": [
-          "ISM-1623 — Critical patches with exploits: 48h remediation",
-          "ISM-1754 — Patches with existing exploit for extreme risk: emergency patching",
-          "ISM-1698 — Application control (allowlisting)",
-          "ISM-0974 — Multi-factor authentication",
-          "ISM-1585 — Privileged access workstations"
+          "ISM-1876: online services patched within 48 hours of release when critical or a working exploit exists",
+          "ISM-1877: operating systems of internet-facing servers and network devices patched within 48 hours of release when critical or a working exploit exists",
+          "ISM-0843: application control implemented on workstations",
+          "ISM-1173: multi-factor authentication for privileged users",
+          "ISM-1380: privileged users use separate privileged and unprivileged operating environments"
         ],
         "framework_gaps": [
-          "ISM-1623 48h SLA still too long for CISA KEV + deterministic 732-byte PoC",
+          "The 48-hour windows (ISM-1876, ISM-1877) run from the vendor's release, which is still too long for a CISA KEV entry with a deterministic public exploit and does not start at all while no fix exists",
           "Live kernel patching: not a required capability",
-          "AI/ML systems: no ISM controls specifically for AI security",
-          "MCP server trust: not addressed",
+          "AI/ML systems: the ISM has AI application controls (ISM-1924 prompt injection, ISM-2086 to ISM-2088 model and training-data integrity, ISM-2092 and ISM-2093 AI access control) but none is in an Essential Eight maturity profile, so they are not assessed by the maturity model",
+          "MCP server trust: ISM-2156 and ISM-2157 restrict agentic AI to the minimum tools with task-scoped authorization, but no control addresses where an MCP server package came from",
           "PQC: under development; quantum computing risk guidance exists but no mandate"
         ],
         "ai_coverage": "AI systems recommended to apply ISM; no AI-specific controls as of 2026-03",
@@ -2888,10 +2888,10 @@
         "note": "CISA KEV does not set a universal SLA — BOD 22-01 requires 14 days for federal agencies"
       },
       {
-        "framework": "ASD ISM + Essential 8 ML3 (AU)",
+        "framework": "ASD ISM + Essential 8 (AU)",
         "sla_hours": 48,
         "sla_days": 2,
-        "note": "ISM-1623: exploit-confirmed critical patches"
+        "note": "ISM-1876 and ISM-1877: online services and internet-facing operating systems, critical or with a working exploit, at every maturity level; browsers, office suites and workstation operating systems reach 48 hours only at Maturity Level Three"
       },
       {
         "framework": "UK Cyber Essentials (UK)",

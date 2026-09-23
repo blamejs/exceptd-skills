@@ -1,7 +1,7 @@
 ---
 name: security-maturity-tiers
 version: "1.0.0"
-description: Three-tier implementation roadmap — MVP you can ship today, practical best practices useable now, overkill gold standard for defense-in-depth
+description: Three-tier implementation roadmap — MVP you can ship today, practical best practices usable now, overkill gold standard for defense-in-depth
 triggers:
   - security maturity
   - implementation roadmap
@@ -457,7 +457,7 @@ Each tier diverges from at least one widely-cited framework control because the 
 | MVP | PCI DSS 4.0 6.3.3 | Critical patches within 1 month | Same divergence — RWEP >= 70 must be live-patched within hours | 1 month is multiple AI-accelerated exploit cycles |
 | MVP | EU NIS2 Art. 21(2)(f) (vulnerability handling) | "Policies/procedures to assess vulnerability handling measures" | Concrete RWEP-anchored SLA published as policy | "Procedures to assess" is meta-control, not a control |
 | MVP | UK Cyber Essentials | High-risk patches within 14 days | Same divergence — 14 days insufficient for KEV-class deterministic LPE | Better than NIST but still loses to AI-accelerated weaponization |
-| MVP | AU ASD ISM-1623 / Essential 8 ML3 | 48h patch when exploit exists | Aligned at the framework level; tier adds live-patch capability requirement | Closest national framework alignment globally; still no live-patch mandate |
+| MVP | AU ASD ISM-1877 and ISM-1696 / Essential 8 | 48h patch when a working exploit exists (internet-facing systems at every maturity level, workstations at ML3) | Aligned at the framework level; tier adds live-patch capability requirement | Closest national framework alignment globally; still no live-patch mandate |
 | MVP | CISA BOD 26-04 (Prioritizing Security Updates Based on Risk) | Urgency set by four decision points — asset exposure, KEV status, exploit automation, technical impact — 3 days at the top band, "fix on system upgrade" at the bottom | RWEP-indexed SLA with the live patch verified within hours for KEV-listed deterministic LPE | Closest framework alignment to risk-indexed remediation to date, but the top band is still 3 days, there is no live-patch requirement, and it binds only US federal civilian agencies |
 | Practical | ISO 27001:2022 A.5.9 (Inventory of information and other associated assets) | Point-in-time CMDB / asset register | Ephemeral-aware inventory snapshots (continuous, container/serverless-native) | Point-in-time CMDB misses ephemeral workloads; Practical Tier requires an inventory that reflects actual workload existence within minutes, not days |
 | Practical | NIST 800-53 CM-8 (System component inventory) | Documented inventory, updated periodically | Same divergence — continuous, attestation-based inventory | CM-8 cadence is multi-day at best; AI-speed reconnaissance (36,000 probes/sec) requires continuous attack-surface awareness |
@@ -482,10 +482,10 @@ Per-tier TTP coverage is cumulative: Practical includes MVP's coverage plus addi
 | MVP | ML Supply Chain Compromise (MCP) | AML.T0010 | atlas-ttps.json | MCP server inventory + version pinning + tool allowlist |
 | MVP | LLM Jailbreak | AML.T0054 | atlas-ttps.json | Same control as AML.T0051; the two are operationally adjacent — adversarial-instruction injection bypasses guardrails |
 | Practical | Exploit Public-Facing Application | T1190 (ATT&CK) | cve-catalog.json (CVE-2025-53773 attack_refs) | External attack-surface management + AI-mediated T1190 coverage |
-| Practical | Discover ML Model Ontology | AML.T0017 | atlas-ttps.json | Inference-API rate + shape monitoring; reconstruct adversary's model-family map |
+| Practical | Discover AI Model Ontology | AML.T0013 | atlas-ttps.json | Inference-API rate + shape monitoring; reconstruct adversary's model-family map |
 | Practical | Poison Training Data | AML.T0020 | atlas-ttps.json | Training-pipeline integrity verification for any in-house ML used in decisions |
-| Practical | Obtain Capabilities: Develop Capabilities (AI-assisted weaponization) | AML.T0016 | atlas-ttps.json | RWEP-anchored monitoring; treat KEV+PoC as immediate live-patch trigger; phishing detection updated for AI-generated content; behavioural signals primary |
-| Overkill | LLM Integration Abuse (C2) | AML.T0096 | atlas-ttps.json | AI-traffic content inspection + SesameOp-pattern detection with behavioural baseline |
+| Practical | Obtain / Develop Capabilities (AI-assisted weaponization) | AML.T0016, AML.T0017 | atlas-ttps.json | RWEP-anchored monitoring; treat KEV+PoC as immediate live-patch trigger; phishing detection updated for AI-generated content; behavioural signals primary |
+| Overkill | AI Service API (C2) | AML.T0096 | atlas-ttps.json | AI-traffic content inspection + SesameOp-pattern detection with behavioural baseline |
 | Overkill | Backdoor ML Model | AML.T0018 | atlas-ttps.json | Model integrity verification (behavioural regression tests, model signing) |
 | Overkill | Craft Adversarial Data (RAG/general) | AML.T0043 | atlas-ttps.json | Vector-store access controls + retrieval-anomaly monitoring |
 
@@ -504,11 +504,11 @@ D3FEND references from `data/d3fend-catalog.json`. This skill prescribes a roadm
 | MVP | AML.T0010 (ML Supply Chain Compromise — MCP) | `D3-EAL` | Executable Allowlisting (tool allowlist + version pinning) | `mcp-agent-trust` |
 | MVP | T1190 (Exploit Public-Facing Application — self-hosted LLM infrastructure) | `D3-NI` + `D3-ITF` | Network Isolation + Inbound Traffic Filtering | `webapp-security` + `ai-attack-surface` |
 | Practical | T1190 (Exploit Public-Facing Application) | `D3-ITF` + `D3-NI` | Inbound Traffic Filtering + Network Isolation | `attack-surface-pentest` |
-| Practical | AML.T0017 (Discover ML Model Ontology) | `D3-CSPP` | Client-server Payload Profiling (inference-API rate and shape monitoring) | `ai-attack-surface` |
+| Practical | AML.T0013 (Discover AI Model Ontology) | `D3-CSPP` | Client-server Payload Profiling (inference-API rate and shape monitoring) | `ai-attack-surface` |
 | Practical | AML.T0020 (Training Data Poisoning) | `D3-FAPA` | File Access Pattern Analysis (training-pipeline integrity) | `mlops-security` |
-| Practical | AML.T0016 (Develop Capabilities — AI-assisted weaponization) | `D3-CSPP` + `D3-MFA` | Client-server Payload Profiling + Multi-factor Authentication (passkey class) | `email-security-anti-phishing` + `identity-assurance` |
+| Practical | AML.T0016 (Obtain Capabilities, AI-generated phishing and payloads) | `D3-CSPP` + `D3-MFA` | Client-server Payload Profiling + Multi-factor Authentication (passkey class) | `email-security-anti-phishing` + `identity-assurance` |
 | Practical | Harvest-now-decrypt-later (T1040, T1557) | `D3-MENCR` | Message Encryption (PQC-hybrid KEM per RFC 9954) | `pqc-first` |
-| Overkill | AML.T0096 (LLM Integration Abuse — C2) | `D3-NTA` + `D3-OTF` | Network Traffic Analysis + Outbound Traffic Filtering | `ai-c2-detection` |
+| Overkill | AML.T0096 (AI Service API, C2) | `D3-NTA` + `D3-OTF` | Network Traffic Analysis + Outbound Traffic Filtering | `ai-c2-detection` |
 | Overkill | AML.T0018 (Manipulate AI Model) | `D3-EFA` + `D3-FAPA` | Executable File Analysis (model signing) + File Access Pattern Analysis | `mlops-security` |
 | Overkill | AML.T0043 (Craft Adversarial Data — RAG) | `D3-IOPR` + `D3-FAPA` | Input/Output Profiling + File Access Pattern Analysis (vector-store access control) | `rag-pipeline-security` |
 

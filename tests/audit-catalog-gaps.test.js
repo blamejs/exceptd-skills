@@ -87,7 +87,7 @@ test("inspectRefs() detects dangling cross-catalog references", () => {
     },
     "cwe-catalog": { _meta: {}, "CWE-79": { name: "XSS" } },
     "attack-techniques": { _meta: {}, "T1190": { name: "Exploit" } },
-    "atlas-ttps": { _meta: {}, "AML.T0001": { name: "Victim Research" } },
+    "atlas-ttps": { _meta: {}, "AML.T0001": { name: "Search Open AI Vulnerability Analysis" } },
     "framework-control-gaps": { _meta: {}, "NIST-800-53-SI-2": {} }
   };
   const findings = MOD.inspectRefs(synth);

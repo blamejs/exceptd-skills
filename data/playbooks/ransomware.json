@@ -351,9 +351,9 @@
           },
           {
             "framework": "au-ism",
-            "control_id": "ISM-1554 (Incident response plan is exercised)",
-            "designed_for": "Tabletop / live exercise of the incident response plan.",
-            "insufficient_because": "Exercise frequency is named; exercise content is not. A generic IR tabletop satisfies ISM-1554 without ever rehearsing the sanctions-screening blocker on a ransom decision."
+            "control_id": "ISM-1784 (incident response plan exercised at least annually)",
+            "designed_for": "ISM-1784 requires the cyber security incident management policy, including its incident response plan, to be exercised at least annually.",
+            "insufficient_because": "Exercise frequency is named; exercise content is not. A generic IR tabletop satisfies ISM-1784 without ever rehearsing the sanctions-screening blocker on a ransom decision."
           },
           {
             "framework": "hipaa",

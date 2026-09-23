@@ -598,10 +598,10 @@ const TESTS = {
     evidence_required: ["tabletop execution log", "FCC notification draft", "cross-jurisdiction timing matrix"],
     verdict_when_failed: PAPER
   },
-  'AU-ISM-1556': {
-    claim: "Our telecom posture satisfies AU ISM control 1556 for signaling-protocol abuse.",
-    test: "Confirm signaling-anomaly baselines per PLMN-pair, gNB firmware hash attestation, and LI-gateway audit. Pull the past 90 days of signaling alerts; confirm triage records. Theater verdict if any of those streams is missing, or if signaling anomalies are unmonitored.",
-    evidence_required: ["signaling baseline document with PLMN-pair coverage", "gNB attestation telemetry", "alert-triage records"],
+  'AU-ISM-1173-Telecom-NMS': {
+    claim: "Privileged users of our telecom network management systems authenticate with multi-factor authentication, which satisfies ISM-1173.",
+    test: "List every administrative path into the network management system, element managers, operations support systems and lawful-intercept gateways, including OEM remote-support tunnels. For each, confirm the factor in use and whether it is phishing-resistant, and confirm no credential for it is shared through a mailbox or ticket. Theater verdict if any path accepts a password alone, if lawful-intercept operator accounts are not classified as privileged, or if a support tunnel's credential is shared.",
+    evidence_required: ["inventory of administrative paths with the authentication factor used on each", "privileged-role classification covering lawful-intercept gateway operators", "OEM remote-support credential handling record"],
     verdict_when_failed: PAPER
   },
   'GSMA-NESAS-Deployment': {
@@ -636,10 +636,10 @@ const TESTS = {
     evidence_required: ["IdP tenant inventory", "off-boarding/dormant alerting configuration", "claim-transformation review cadence document"],
     verdict_when_failed: PAPER
   },
-  'AU-ISM-1559-IdP': {
-    claim: "Our IdP posture satisfies AU ISM 1559 for identity provider security.",
-    test: "Confirm IdP token-signing certificate rotation alerting, claim-transformation change-control, management-API token TTL/scope/source-IP enforcement. Confirm the IdP is treated as critical-infrastructure-tier in the asset inventory. Theater verdict if IdP is in 'IT vendor' tier rather than critical-infrastructure tier.",
-    evidence_required: ["IdP control-plane monitoring rule export", "asset-tier classification record", "management-API token inventory"],
+  'AU-ISM-1685-IdP': {
+    claim: "Our identity provider's privileged and service credentials are managed, which satisfies ISM-1685.",
+    test: "Confirm alerting on token-signing certificate rotation, change control on claim transformations, and enforced lifetime, scope and source-address limits on management-API tokens. Confirm the identity provider is classified in the critical-infrastructure tier of the asset inventory. Theater verdict if it is classified as an ordinary IT vendor, or if management-API tokens have no lifetime or scope limit.",
+    evidence_required: ["identity provider control-plane monitoring rule export", "asset-tier classification record", "management-API token inventory with lifetime and scope"],
     verdict_when_failed: PAPER
   },
   'OFAC-Sanctions-Threat-Actor-Negotiation': {
@@ -666,8 +666,8 @@ const TESTS = {
     evidence_required: ["cross-account assume-role policy sample", "monitoring rule for chain depth", "external-ID enforcement evidence"],
     verdict_when_failed: PAPER
   },
-  'AU-ISM-1546-Cloud-Service-Account': {
-    claim: "Our cloud service-account posture satisfies AU ISM 1546.",
+  'AU-ISM-1685-Cloud-Service-Account': {
+    claim: "Our cloud service-account credentials are managed, which satisfies ISM-1685.",
     test: "Inventory cloud service accounts. Confirm short-lived OIDC tokens (workload identity federation) are used in preference to static keys; for any remaining static keys, confirm rotation policy ≤90 days and source-IP allowlisting. Theater verdict if static keys exist without rotation/IP-allowlisting, or if workload identity federation is available but not adopted.",
     evidence_required: ["cloud service-account inventory by auth method", "rotation policy document", "source-IP allowlist configuration"],
     verdict_when_failed: PAPER

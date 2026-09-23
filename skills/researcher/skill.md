@@ -86,13 +86,13 @@ This is a routing skill. The TTP coverage of any specific output equals the TTP 
 | ATLAS / ATT&CK Class | Researcher Routes To |
 |---|---|
 | AML.T0010 (AI Supply Chain Compromise) | `mcp-agent-trust`, `ai-attack-surface` |
-| AML.T0016 (Obtain Capabilities: Develop Capabilities — AI-assisted) | `ai-attack-surface`, `kernel-lpe-triage`, `exploit-scoring` |
-| AML.T0017 (Discover ML Model Ontology) | `ai-attack-surface`, `mlops-security`, `api-security` |
+| AML.T0016 / AML.T0017 (Obtain Capabilities / Develop Capabilities, AI-assisted) | `ai-attack-surface`, `kernel-lpe-triage`, `exploit-scoring` |
+| AML.T0013 (Discover AI Model Ontology) | `ai-attack-surface`, `mlops-security`, `api-security` |
 | AML.T0018 (Manipulate AI Model) | `ai-attack-surface` |
 | AML.T0020 (Training Data Poisoning) | `ai-attack-surface`, `rag-pipeline-security` |
 | AML.T0043 (Craft Adversarial Data) / AML.T0054 (LLM Jailbreak) | `ai-attack-surface`, `rag-pipeline-security` |
 | AML.T0051 (LLM Prompt Injection) | `ai-attack-surface`, `mcp-agent-trust` |
-| AML.T0096 (LLM Integration Abuse — C2) | `ai-c2-detection` |
+| AML.T0096 (AI Service API, C2) | `ai-c2-detection` |
 | ATT&CK T1068 / T1548.001 (Privilege Escalation) | `kernel-lpe-triage` |
 | ATT&CK T1195.001 (Supply Chain Compromise) | `mcp-agent-trust` |
 | ATT&CK T1071 / T1102 (Application Layer / Web Service C2) | `ai-c2-detection` |

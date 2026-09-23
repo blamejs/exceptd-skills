@@ -229,9 +229,9 @@
           },
           {
             "framework": "au-ism",
-            "control_id": "ISM-1546",
-            "designed_for": "Australian Government ISM control on managing authentication credentials, including their secure storage.",
-            "insufficient_because": "Secure-storage requirement is met by any credential vault. Co-resident plaintext credential files on developer machines (npmrc, pip.conf, aws/credentials) are not exhaustively enumerated by the control's audit method."
+            "control_id": "ISM-2142",
+            "designed_for": "ISM-2142 requires static credentials used by applications and workloads to be centrally managed using a credential or secrets management solution; ISM-2141 prefers short-lived, dynamically issued credentials over long-lived static ones.",
+            "insufficient_because": "The storage requirement is met once a secrets manager holds the workload credentials. Co-resident plaintext credential files on developer machines (npmrc, pip.conf, aws/credentials) are not exhaustively enumerated by the control's audit method."
           }
         ]
       },
@@ -249,7 +249,7 @@
         "monitor": 60,
         "close": 30
       },
-      "framework_lag_declaration": "NIST 800-63b AAL specs, NIST 800-53 IA-2/IA-5, ISO A.5.16/A.5.17, NIS2 Art.21(2)(j), PCI-DSS Req.8 collectively specify target authenticator properties (phishing-resistant, short-lived, MFA-gated). They do not require enumeration of credentials actually present on developer endpoints. SSO + MFA attestation is accepted as evidence even when local credential stores hold long-lived bearer tokens that bypass SSO. Gap = ~25 days between credential-store drift (new PAT issued, new long-lived AWS key created) and any framework's review cadence. UK CAF Principle B2 (Identity and Access Control) defines authentication outcomes and credential-management practice, but does not require enumeration of credentials persisted in local credential stores outside the SSO/IdP envelope. AU Essential 8 ML2 MFA (E8 M.4) + Restrict Admin Privileges (E8 M.5) and ACSC ISM-1546 cover authenticator strength and admin-privilege scope but treat long-lived bearer tokens stored in dotfiles / OS keychains as out of frame — Essential 8 evidence passes while landed-attacker credential harvest stays trivial.",
+      "framework_lag_declaration": "NIST 800-63b AAL specs, NIST 800-53 IA-2/IA-5, ISO A.5.16/A.5.17, NIS2 Art.21(2)(j), PCI-DSS Req.8 collectively specify target authenticator properties (phishing-resistant, short-lived, MFA-gated). They do not require enumeration of credentials actually present on developer endpoints. SSO + MFA attestation is accepted as evidence even when local credential stores hold long-lived bearer tokens that bypass SSO. Gap = ~25 days between credential-store drift (new PAT issued, new long-lived AWS key created) and any framework's review cadence. UK CAF Principle B2 (Identity and Access Control) defines authentication outcomes and credential-management practice, but does not require enumeration of credentials persisted in local credential stores outside the SSO/IdP envelope. AU Essential 8 MFA + Restrict Admin Privileges and ACSC ISM-2141 and ISM-2142 (short-lived workload credentials preferred; static ones held in a secrets manager) cover authenticator strength, admin-privilege scope and workload credentials, but none of them reaches long-lived bearer tokens a developer leaves in dotfiles or an OS keychain, so Essential 8 evidence passes while a landed attacker's credential harvest stays trivial.",
       "skill_chain": [
         {
           "skill": "identity-assurance",

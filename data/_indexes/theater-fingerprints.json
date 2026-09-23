@@ -159,7 +159,7 @@
       ],
       "evidence": {
         "campaign": "SesameOp",
-        "rationale": "AML.T0096 LLM Integration Abuse as C2 — no detection triggers exist, so IR procedures have no input"
+        "rationale": "AML.T0096 AI Service API as C2 — no detection triggers exist, so IR procedures have no input"
       },
       "ttps": [
         "AML.T0020",

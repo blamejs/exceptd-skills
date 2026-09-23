@@ -1,7 +1,7 @@
 ---
 name: skill-update-loop
 version: "1.0.0"
-description: Meta-skill for keeping all exceptd skills current — fires on new CVEs, ATLAS updates, framework changes, and forward_watch triggers
+description: Meta-skill for keeping all exceptd skills current — fires on new CVEs and CISA KEV listings, ATLAS updates, framework changes, and forward_watch triggers, and scores each skill's currency
 triggers:
   - update skills
   - skill review
@@ -71,10 +71,10 @@ This skill defends against drift; the TTPs that EXPLOIT a drifted skill are:
 | Tactic | TTP | What drift enables |
 |---|---|---|
 | Defense Evasion | T1685 (Disable or Modify Tools) | Stale skill recommends only the controls the current adversary class already evades |
-| Resource Development | AML.T0016 (Obtain Capabilities: Develop Capabilities) | Attacker capability outpaces the catalog the skill cites |
+| Resource Development | AML.T0016 / AML.T0017 (Obtain / Develop Capabilities) | Attacker capability outpaces the catalog the skill cites |
 | Initial Access | AML.T0010 (Supply Chain Compromise) | New attack class (e.g. MCP plugin compromise) isn't yet a skill |
 | Defense Evasion | T1027 (Obfuscated Files or Information) | Detection rules in a skill are for an older obfuscation generation |
-| Impact | AML.T0048 (Erode ML Model Integrity) | Drift in the threat-context section means the operator's mental model is wrong by months |
+| Impact | AML.T0031 (Erode AI Model Integrity) | Drift in the threat-context section means the operator's mental model is wrong by months |
 | Discovery | T1518 (Software Discovery) | The catalog the skill scans doesn't recognize the adversary's current tool inventory |
 
 The update loop does not detect these TTPs — it prevents the skill set from being *vulnerable* to them by structural staleness.

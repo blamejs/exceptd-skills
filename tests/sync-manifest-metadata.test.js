@@ -38,7 +38,7 @@ const lint = require(path.join(ROOT, "lib", "lint-skills.js"));
 
 // The field partition the script declares. Kept in sync with the script's
 // header: these are the three sync disciplines that must remain distinct.
-const MIRRORED_SCALAR = ["last_threat_review"];
+const MIRRORED_SCALAR = ["description", "last_threat_review"];
 const MIRRORED_ARRAY = ["forward_watch"];
 const MIRRORED_COVER = ["data_deps", "framework_gaps", "atlas_refs", "attack_refs", "rfc_refs", "cwe_refs", "d3fend_refs"];
 
@@ -63,8 +63,8 @@ test("the real sync script is a no-op on the in-sync repo (reports 0 synced, exi
 
 test("the script declares the three sync disciplines as distinct field sets", () => {
   const src = fs.readFileSync(SCRIPT, "utf8");
-  assert.match(src, /const MIRRORED_SCALAR = \[\s*"last_threat_review"\s*\]/,
-    "last_threat_review must be a MIRROR (scalar, exact-copy) field");
+  assert.match(src, /const MIRRORED_SCALAR = \[\s*"description",\s*"last_threat_review"\s*\]/,
+    "description and last_threat_review must be MIRROR (scalar, exact-copy) fields");
   assert.match(src, /const MIRRORED_ARRAY = \[\s*"forward_watch"\s*\]/,
     "forward_watch must be a MIRRORED_ARRAY (exact-copy) field");
   // Every cross-reference array must be in the COVER (union) set — moving one
@@ -132,6 +132,31 @@ test("MIRROR replaces last_threat_review exactly (frontmatter wins over a stale 
   assert.equal(changed, 1, "the stale scalar is replaced (one change)");
   assert.equal(manifest.skills[0].last_threat_review, "2026-06-21",
     "MIRROR copies the frontmatter value verbatim");
+});
+
+test("MIRROR replaces description exactly, so `exceptd skill` lists the frontmatter text", () => {
+  const fm = frontmatterFrom([
+    "name: demo",
+    "description: Current description of the demo skill",
+    "last_threat_review: 2026-06-21",
+  ]);
+  const manifest = { skills: [{ id: "demo", description: "Stale cached description", last_threat_review: "2026-06-21" }] };
+  const changed = syncManifest(manifest, { demo: fm });
+  assert.equal(changed, 1, "only the stale description changes");
+  assert.equal(manifest.skills[0].description, "Current description of the demo skill");
+});
+
+test("every manifest description matches its skill's frontmatter", () => {
+  const manifest = JSON.parse(fs.readFileSync(MANIFEST, "utf8"));
+  const drift = [];
+  for (const entry of manifest.skills) {
+    const id = entry.id || entry.name;
+    const md = fs.readFileSync(path.join(ROOT, "skills", id, "skill.md"), "utf8");
+    const fm = lint.parseFrontmatter(lint.extractFrontmatterBlock(md).frontmatter);
+    if (typeof fm.description !== "string" || fm.description.length === 0) drift.push(`${id}: frontmatter has no description`);
+    else if (entry.description !== fm.description) drift.push(id);
+  }
+  assert.deepEqual(drift, [], "run `node scripts/sync-manifest-metadata.js` to refresh the cached descriptions");
 });
 
 test("MIRRORED_ARRAY replaces forward_watch exactly (not a union)", () => {

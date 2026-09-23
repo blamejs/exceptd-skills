@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.21.0 — 2026-09-23
+
+Australian ISM citations now name the controls they describe. Most ISM control numbers in the catalog, the framework-gap registry, the skills and the playbooks pointed at a different control from the one the surrounding text described. ISM-1546, which 207 entries cited as the patching control, requires users to be authenticated before they are granted access to a system. ISM-1556, ISM-1559 and ISM-1808 were also cited for obligations they do not contain. Every citation was checked against the OSCAL catalog ASD publishes for ISM release 2026.09.4. Each citation now names the control whose statement matches the claim, or it was removed where no control makes that claim.
+
+Four framework-gap keys are renamed because the control named in the key was wrong. Update saved attestations, policy exceptions and queries that use them:
+
+- `AU-ISM-1546-Cloud-Service-Account` is now `AU-ISM-1685-Cloud-Service-Account`
+- `AU-ISM-1556` is now `AU-ISM-1173-Telecom-NMS` for telecom network management. Skills that cited it for update integrity, input validation, event-log protection or database access now cite `AU-ISM-0298`, `AU-ISM-1240`, `AU-ISM-1815` or `AU-ISM-1268`.
+- `AU-ISM-1559-IdP` is now `AU-ISM-1685-IdP`
+- `ATLAS-AML.T0048` is now `ATLAS-AML.T0010`
+
+`AU-ISM-1546` and `AU-ISM-1808` keep their keys and now describe their real controls: authentication before access, and a vulnerability scanner with a current vulnerability database. Of the 207 entries that cited `AU-ISM-1546`, 193 now cite `AU-Essential-8-Patch` with a statement that names the ISM control for the product's asset class, 12 describe an authentication bypass and keep `AU-ISM-1546`, and 2 describe a supplier compromise. The supply-chain gap recorded under `AU-ISM-1808` moved to a new key, `AU-ISM-1452`. New keys `AU-ISM-0298`, `AU-ISM-1240`, `AU-ISM-1815` and `AU-ISM-1268` cover update integrity, input validation, protection of event logs and need-to-know database access, which skills had cited under unrelated control numbers. Four lessons that used an unregistered Australian key for the wrong control now name the control they describe; the Copy Fail lesson, for example, cited ISM-1623, which covers PowerShell logging.
+
+The Essential Eight patching gap now gives the window for each maturity level. Release 0.20.1 stated a 48-hour window for browsers, office suites, email clients, PDF readers and security products. That window applies only at Maturity Level Three (ISM-1692). At Maturity Levels One and Two the window for those applications is two weeks (ISM-1691), and workstation operating systems get one month (ISM-1695). The 48-hour window at every level covers online services (ISM-1876) and the operating systems of internet-facing servers and network devices (ISM-1877). Patching drivers and firmware is a Maturity Level Three requirement only.
+
+Statements for server software now depend on how the instance is exposed. ASD defines an online service as any service directly accessible over the internet, including one behind a perimeter firewall, so an internet-accessible web application, API, management console or model-serving endpoint falls under ISM-1876 and ISM-1690 at every maturity level: 48 hours from release when the vendor rates the flaw critical or a working exploit exists, and two weeks otherwise. An instance reachable only internally is an other application under ISM-1693, one month from Maturity Level Two. Libraries and model loaders that run inside a user's own process stay under ISM-1693.
+
+Skills that said the ISM has no AI controls, or that its post-quantum guidance is advisory, now cite the controls: the ISM carries controls for AI systems and MCP servers, although none are in the Essential Eight, and ISM-1917 and ISM-2073 require post-quantum support and a transition plan.
+
+A new pre-publish check compares every `ISM-NNNN` citation in the repository, and every `AU-ISM` registry key, with the ISM release pinned in `sources/index.json`. It fails when a citation names a control the release does not contain, or when a registry entry's `control_name` does not begin with the statement of the control its key names. It fetches `ISM_catalog.json` from ASD's `ism-oscal` repository at the pinned tag and caches it under `.cache/upstream/ism/`, and it exits non-zero when it cannot reach the release.
+
+The eight ATLAS entries that carried another technique's name now match ATLAS v2026.09, and the analysis they held moved to the technique it describes:
+
+- AML.T0001 is Search Open AI Vulnerability Analysis.
+- AML.T0016 is Obtain Capabilities and AML.T0017 is Develop Capabilities. Citations of AI-assisted exploit development now use AML.T0017, and citations of public AI services used to write phishing, malware or evasion code use AML.T0016.
+- The model ontology discovery content that sat under AML.T0017 is now under AML.T0013 (Discover AI Model Ontology), and citations of model exfiltration through the inference API use AML.T0024.
+- AML.T0040 is AI Model Inference API Access. Tool and plugin compromise is under AML.T0110 (AI Agent Tool Poisoning), and AI-RAN xApp compromise under AML.T0010.
+- AML.T0047 is AI-Enabled Product or Service. System prompt extraction is under AML.T0056.
+- AML.T0048 is External Harms. Gradual erosion of model integrity is under AML.T0031.
+- AML.T0053 is AI Agent Tool Invocation.
+- AML.T0096 is AI Service API. Several skills printed it as "LLM Integration Abuse".
+
+Every sub-technique list in the ATLAS catalog now holds the ids ATLAS publishes for that technique. Fifty-four ids that do not exist upstream were removed, and lists that gave real ids the wrong names were regenerated. Nine CVE entries cited one of these ids for its old meaning. Eight now cite the technique that matches, and the NGINX rewrite-module overflow (CVE-2026-42945) no longer cites an ATLAS technique. The ATLAS currency check records no divergences.
+
+Every ATLAS entry's `tactic` now uses the tactic names ATLAS v2026.09 assigns. Fifteen entries named a tactic ATLAS does not assign to the technique; for example, AML.T0020 (Training Data Poisoning) is Persistence and AML.T0044 (Full AI Model Access) is AI Model Access. Twenty-one entries stored the tactic as a STIX slug such as `ai-attack-staging`, which also carried the name ATLAS replaced with AI Attack Adaptation in 2026.08, and AML.T0012 (Valid Accounts) now includes Lateral Movement. The ATLAS currency check now also fails when an entry lists a tactic the pinned release does not assign to that technique. The ATLAS refresher maps every tactic slug the STIX mirror has used to the tactic's current name, so new rows no longer arrive with `lateral-movement`, `ai-model-access` or `ai-attack-staging`.
+
+`exceptd skill` now lists each skill's current description. Eleven skills showed a stale one cached in the manifest.
+
 ## 0.20.1 — 2026-09-22
 
 The catalog holds 1,716 CVEs after 99 additions from CISA KEV. Twenty-eight are from 2021 and twenty-six from 2020, twenty-five carry a 2026 identifier, and the oldest is from 2014. Google accounts for 25, of which 24 are Chrome or Chromium; Microsoft for 13, Cisco for 8 and Citrix for 7. Eighteen carry CISA's ransomware designation, 64 have an obtainable public exploit, 35 need a restart before the fix is running, and two have no vendor fix at all.

@@ -178,7 +178,7 @@ Note: ATLAS refs are intentionally empty in frontmatter — these are Linux kern
 
 Run this check for any org claiming patch-management compliance for kernel LPE class CVEs:
 
-> "Your patch-management control (NIST SI-2 / ISO 27001:2022 A.8.8 / PCI-DSS v4 6.3.3 / NIS2 Art. 21(2)(g) / UK-CAF B4 / AU-ISM-1493) documents a 30-day remediation window for Critical/High CVEs. CVE-2026-31431 (Copy Fail) is CISA KEV listed with a public deterministic exploit requiring no privileges and KEV listing dated 2026-05-01. What is the actual time, on this fleet, between KEV listing and confirmed patch-or-mitigate for the affected kernel versions? If that interval exceeds 72 hours without live-patching as a deployed capability for the affected hosts, the patch-management control is theater for the KEV-class kernel-LPE threat surface."
+> "Your patch-management control (NIST SI-2 / ISO 27001:2022 A.8.8 / PCI-DSS v4 6.3.3 / NIS2 Art. 21(2)(g) / UK-CAF B4 / AU ISM-1695) documents a 30-day remediation window for Critical/High CVEs. CVE-2026-31431 (Copy Fail) is CISA KEV listed with a public deterministic exploit requiring no privileges and KEV listing dated 2026-05-01. What is the actual time, on this fleet, between KEV listing and confirmed patch-or-mitigate for the affected kernel versions? If that interval exceeds 72 hours without live-patching as a deployed capability for the affected hosts, the patch-management control is theater for the KEV-class kernel-LPE threat surface."
 
 **Theater fingerprints (any of these reduces the control to paper compliance):**
 

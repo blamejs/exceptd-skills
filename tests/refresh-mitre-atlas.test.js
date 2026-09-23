@@ -145,7 +145,7 @@ test("refreshAtlas adds a new AML.* technique from a synthetic STIX bundle (depe
   const row = written.obj["AML.T9999"];
   assert.ok(row, "AML.T9999 must be present in the written catalog");
   assert.equal(row.name, "Synthetic Model Evasion");
-  assert.equal(row.tactic, "AI Attack Staging", "kill-chain phase must map to the ATLAS tactic name");
+  assert.equal(row.tactic, "AI Attack Adaptation", "kill-chain phase must map to the current ATLAS tactic name");
   assert.equal(row._intake_method, "mitre-atlas-stix", "the row records its intake method");
   assert.equal(row._auto_imported, true, "auto-imported rows are flagged so operator curation is preserved");
   assert.match(row.description, /evade an ML model/i, "the short description is the first sentence");
@@ -155,6 +155,40 @@ test("refreshAtlas adds a new AML.* technique from a synthetic STIX bundle (depe
   // _meta is advanced + the version bumped on a real change.
   assert.equal(written.obj._meta.atlas_version, "2026.05");
   assert.notEqual(written.obj._meta.last_updated, "2026-01-01", "last_updated advances on a real change");
+});
+
+test("refreshAtlas writes current ATLAS tactic names for every slug the STIX mirror has used", async () => {
+  // Each of these slugs once passed through unmapped, or mapped to a name ATLAS
+  // has since replaced, and landed in the catalog as-is.
+  const cases = [
+    { id: "AML.T9001", phases: ["lateral-movement"], want: "Lateral Movement" },
+    { id: "AML.T9002", phases: ["ai-model-access"], want: "AI Model Access" },
+    { id: "AML.T9003", phases: ["ai-attack-staging"], want: "AI Attack Adaptation" },
+    { id: "AML.T9004", phases: ["initial-access", "lateral-movement"], want: ["Initial Access", "Lateral Movement"] },
+  ];
+  const bundle = JSON.stringify({
+    objects: [
+      { type: "x-mitre-matrix", name: "ATLAS Matrix", x_mitre_version: "2026.09" },
+      ...cases.map((c) => ({
+        type: "attack-pattern",
+        id: `attack-pattern--${c.id}`,
+        name: `Synthetic ${c.id}`,
+        description: "Fixture technique. Second sentence.",
+        external_references: [{ source_name: "mitre-atlas", external_id: c.id, url: `https://atlas.mitre.org/techniques/${c.id}` }],
+        kill_chain_phases: c.phases.map((p) => ({ kill_chain_name: "mitre-atlas", phase_name: p })),
+      })),
+    ],
+  });
+  let written = null;
+  const deps = {
+    fetchUrl: async () => bundle,
+    loadCatalog: () => ({ _meta: { atlas_version: "2026.09", last_updated: "2026-01-01", last_threat_review: "2026-01-01" } }),
+    writeCatalog: (rel, obj) => { written = { rel, obj }; },
+  };
+  await UPSTREAM.refreshAtlas({ _deps: deps });
+  for (const c of cases) {
+    assert.deepEqual(written.obj[c.id].tactic, c.want, `${c.phases.join(", ")} must map to ${JSON.stringify(c.want)}`);
+  }
 });
 
 test("refreshAtlas DRY-RUN reports the add but never writes the catalog", async () => {

@@ -80,8 +80,7 @@
     "name": "Post-compromise supply-chain recovery",
     "attack_class": "supply-chain",
     "atlas_refs": [
-      "AML.T0010",
-      "AML.T0016"
+      "AML.T0010"
     ],
     "attack_refs": [
       "T1195.002",

@@ -713,8 +713,7 @@
       "T1005",
       "T1041",
       "AML.T0051",
-      "AML.T0017",
-      "AML.T0017"
+      "AML.T0013"
     ],
     "digital_artifacts_addressed": [
       "Process",
@@ -756,7 +755,7 @@
       "NIST-AI-RMF-MEASURE-2.5",
       "ISO-27001-2022-A.8.16"
     ],
-    "ai_pipeline_applicability": "Primary detection control for prompt injection (AML.T0051) and model ontology discovery (AML.T0017). Applies natively to AI pipelines — operates at the application layer where ephemeral runtime is irrelevant. Output-side IOPR (classifying AI responses) is more reliable than input-side (prompt classification) given the variety of injection encodings.",
+    "ai_pipeline_applicability": "Primary detection control for prompt injection (AML.T0051) and model ontology discovery (AML.T0013). Applies natively to AI pipelines — operates at the application layer where ephemeral runtime is irrelevant. Output-side IOPR (classifying AI responses) is more reliable than input-side (prompt classification) given the variety of injection encodings.",
     "lag_notes": "NIST AI RMF MEASURE-2.5 recommends 'measurement of AI system trustworthiness characteristics' but is non-prescriptive. No framework requires runtime output safety scoring or input adversarial classification. OWASP LLM Top 10 documents the need; compliance frameworks have not incorporated it.",
     "last_verified": "2026-05-19",
     "description_full": "Limiting access to computer input/output (IO) ports to restrict unauthorized devices.",

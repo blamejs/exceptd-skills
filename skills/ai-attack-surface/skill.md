@@ -22,6 +22,7 @@ atlas_refs:
   - AML.T0096
   - AML.T0016
   - AML.T0017
+  - AML.T0013
   - AML.T0018
 attack_refs:
   - T1566
@@ -96,13 +97,13 @@ This is a supply chain attack surface. Every MCP server a user installs is a pot
 
 The implication: the time between a vulnerability's introduction into a codebase and its reliable exploitation has compressed from months or years to hours or days for AI-capable threat actors. Patch management SLAs designed for human-speed exploit development are structurally inadequate.
 
-**ATLAS ref:** AML.T0016 (Obtain Capabilities: Develop Capabilities)
+**ATLAS ref:** AML.T0017 (Develop Capabilities)
 
 ### 4. AI Credential Phishing Acceleration
 
 Credential theft driven by AI increased 160% in 2025. 82.6% of phishing emails now contain AI-generated content undetectable by grammar/style checks. Traditional phishing detection heuristics (poor grammar, unusual phrasing, template patterns) are no longer reliable detectors.
 
-**ATLAS ref:** AML.T0016 (Obtain Capabilities: Develop Capabilities — misuse of public AI APIs to generate phishing payloads)
+**ATLAS ref:** AML.T0016 (Obtain Capabilities), covering public AI APIs misused to generate phishing payloads
 
 ### 5. AI as Covert C2 — SesameOp
 
@@ -140,7 +141,7 @@ AI-assisted reconnaissance is observed at 36,000 probes per second per campaign.
 
 ### 11. AI-Discovered + AI-Weaponized Supply-Chain Worms
 
-**CVE-2026-45321** — Mini Shai-Hulud TanStack npm worm (CVSS 9.6, ~150M weekly downloads across 42 @tanstack/* packages, CISA KEV pending). Disclosed 2026-05-11. The attack chain — Pwn-Request via `pull_request_target` on TanStack's bundle-size workflow, pnpm-store cache poisoning under the `actions/cache` key, and OIDC-token theft on the next main push — is engineering-grade and weaponizes three independently-benign primitives. While attribution (TeamPCP) records no AI-assisted exploit development for this specific instance, the worm pattern is exactly what AML.T0016-class capability-development now produces at AI cadence: chained CI/CD primitives that no individual component owner recognises as exploitable. Treat the @tanstack/* surface as an exemplar of the broader AML.T0010 (AI Supply Chain Compromise) threat applied to JS toolchains that the AI assistant ecosystem depends on.
+**CVE-2026-45321** — Mini Shai-Hulud TanStack npm worm (CVSS 9.6, ~150M weekly downloads across 42 @tanstack/* packages, CISA KEV pending). Disclosed 2026-05-11. The attack chain — Pwn-Request via `pull_request_target` on TanStack's bundle-size workflow, pnpm-store cache poisoning under the `actions/cache` key, and OIDC-token theft on the next main push — is engineering-grade and weaponizes three independently-benign primitives. While attribution (TeamPCP) records no AI-assisted exploit development for this specific instance, the worm pattern is exactly what AML.T0017-class capability development now produces at AI cadence: chained CI/CD primitives that no individual component owner recognises as exploitable. Treat the @tanstack/* surface as an exemplar of the broader AML.T0010 (AI Supply Chain Compromise) threat applied to JS toolchains that the AI assistant ecosystem depends on.
 
 ---
 
@@ -164,7 +165,7 @@ AI-assisted reconnaissance is observed at 36,000 probes per second per campaign.
 | UK NCSC CAF | Principle A4 (Supply Chain), B2 (Identity and Access Control), B4 (System Security), C1 (Security Monitoring) | Outcome-based language. NCSC's 2024 guidance on securing AI systems and the DSIT AI Cyber Code of Practice (2025) name the attack classes at the principle level (prompt injection, model supply chain, monitoring), but the CAF outcome statements are unchanged. An organisation achieves CAF outcomes at Achieved level with zero MCP-trust controls and zero prompt-injection detection. |
 | UK DSIT AI Cyber Code of Practice (2025) | 13 principles for secure AI development and deployment | Principles-based. Names training-data integrity, model-deployment security, monitoring, and supply chain — but as principles, not testable controls. No technical floor for prompt-injection defence, MCP allowlisting, or AI-as-C2 detection. |
 | AU ASD Essential 8 | Strategy: Application Control + User Application Hardening + Restrict Administrative Privileges | Application Control (allowlisting) covers what runs locally; it does not cover AI-assistant tool-use chains where the AI agent dynamically composes the executed action. None of the eight strategies address prompt injection, model supply chain, or LLM-as-C2 channel. |
-| AU ASD ISM | ISM-1808 (cloud consumer responsibilities) + ISM-1728 (supply chain risk) + ISM-1228 (event monitoring) | ISM-1728 supply-chain control is scoped to traditional vendor classes; LLM APIs and MCP servers fall outside enumerated supply-chain categories. ISM-1228 event-log monitoring assumes signature-or-rule detection over known indicators — AI API egress as C2 and prompt-injection-coerced actions produce no traditional indicator. |
+| AU ASD ISM | ISM-2156, ISM-2157 and ISM-2158 (agentic AI: minimum tools, task-scoped authorization, retrieved content treated as untrusted) + ISM-1924 (prompt injection) + ISM-1452 (supply chain risk assessment) + ISM-1228 (event analysis) | The ISM names agentic AI directly, so the gap is narrower than a missing control. ISM-1452's supplier assessment gives no method for rating an LLM API or MCP server provider, and ISM-1228's event analysis has no indicator for AI API egress used as C2 or for an action a prompt injection coerced, because both produce ordinary, authorized traffic. |
 | AU Voluntary AI Safety Standard (10 guardrails, 2024) | Guardrails 5 (test and monitor), 6 (transparency), 8 (record-keeping) | Voluntary, principles-language. Operationally identical to the UK DSIT AI Cyber Code lag — names the right concerns at the principle layer without testable controls for prompt injection, MCP trust, or AI-as-C2 detection. |
 | AU APRA CPS 234 | Para 27 (information security capability proportional to vulnerabilities and threats) + APRA CPG 235 (managing data risk) | "Proportional" capability language. APRA-regulated entities deploying AI assistants meet CPS 234 attestation with traditional information-security capability; AI-specific attack surface is not an examined capability class. APRA Information Paper on AI (2024) names the risks at the supervisory level without altering CPS 234 obligations. |
 
@@ -176,12 +177,13 @@ AI-assisted reconnaissance is observed at 36,000 probes per second per campaign.
 |---|---|---|---|---|
 | AML.T0054 | LLM Jailbreak | Missing in all major frameworks | No control covers adversarial-instruction injection that bypasses guardrails and coerces the model into attacker-chosen actions | CVE-2025-53773 (GitHub Copilot YOLO-mode RCE) |
 | AML.T0010 | AI Supply Chain Compromise | Partial (ISO A.8.30) | A.8.30 covers outsourced development; does not cover MCP server trust, package signing for AI tools | CVE-2026-30615 (Windsurf MCP) |
-| AML.T0096 | LLM Integration Abuse (C2) | Missing in all major frameworks | No framework has a control for AI API traffic as C2 channel | SesameOp campaign |
+| AML.T0096 | AI Service API (C2) | Missing in all major frameworks | No framework has a control for AI API traffic as C2 channel | SesameOp campaign |
 | AML.T0020 | Training Data Poisoning | Partial (NIST AI RMF) | NIST AI RMF identifies the risk; no specific technical control | Supply chain logistics model poisoning |
 | AML.T0043 | Craft Adversarial Data | Partial (SI-10) | SI-10 covers web input validation; not semantic injection in LLM prompts | RAG vector manipulation |
 | AML.T0051 | LLM Prompt Injection | Missing in all major frameworks | Zero controls in NIST, ISO, SOC 2, PCI for prompt injection | CVE-2025-53773, indirect injection via retrieved docs |
-| AML.T0017 | Discover ML Model Ontology | Partial (awareness only) | No framework requires monitoring for adversary mapping of deployed model family, guardrail surface, or system-prompt structure via inference-API probing | Reconnaissance step preceding PROMPTSTEAL-class targeting; AML-model registry exposure |
-| AML.T0016 | Obtain Capabilities: Develop Capabilities | Missing (misuse dimension) | Frameworks don't address adversary AI-assisted exploit development or use of public AI APIs to craft malware/phishing payloads | Copy Fail AI discovery (41% of 2025 0-days), PROMPTFLUX, PROMPTSTEAL, phishing generation |
+| AML.T0013 | Discover AI Model Ontology | Partial (awareness only) | No framework requires monitoring for adversary mapping of deployed model family, guardrail surface, or system-prompt structure via inference-API probing | Reconnaissance step preceding PROMPTSTEAL-class targeting; AML-model registry exposure |
+| AML.T0017 | Develop Capabilities | Missing (misuse dimension) | Frameworks don't address adversary AI-assisted exploit development | Copy Fail AI discovery (41% of 2025 0-days) |
+| AML.T0016 | Obtain Capabilities | Missing (misuse dimension) | Frameworks don't address adversary use of public AI APIs to craft malware/phishing payloads | PROMPTFLUX, PROMPTSTEAL, phishing generation |
 | AML.T0018 | Manipulate AI Model | Partial (NIST AI RMF) | No technical control requirements for model integrity verification | Training pipeline poisoning |
 
 ---
@@ -313,11 +315,11 @@ D3FEND v1.3.0+ references from `data/d3fend-catalog.json`. The AI attack surface
 
 | D3FEND ID | Name | Layer | Rationale (what it counters here) |
 |---|---|---|---|
-| `D3-IOPR` | Input/Output Profiling | SDK / application | SDK-level prompt and completion inspection — the foundational control for AML.T0051 (prompt injection), AML.T0096 (LLM C2), AML.T0054 (extraction). Without per-call I/O profiling, every detection step below is degraded. |
+| `D3-IOPR` | Input/Output Profiling | SDK / application | SDK-level prompt and completion inspection — the foundational control for AML.T0051 (prompt injection), AML.T0096 (LLM C2), AML.T0054 (jailbreak). Without per-call I/O profiling, every detection step below is degraded. |
 | `D3-CSPP` | Client-server Payload Profiling | LLM / MCP gateway | Gateway-layer inspection of tool-call args and prompt/completion bodies. Necessary when the AI client (mobile app, browser extension, IDE) cannot host `D3-IOPR` instrumentation in-process — the gateway becomes the only content-aware control. |
 | `D3-EAL` | Executable Allowlisting | Endpoint / managed host | Restricts which AI-tool binaries (IDE assistants, browser extensions, MCP servers) can execute on managed endpoints. Direct counter to AML.T0010 (ML supply-chain compromise) for tooling shipped as native binaries; precondition for managed-endpoint clipboard- and code-completion controls. |
 | `D3-FAPA` | File Access Pattern Analysis | Endpoint / data tier | Detects RAG-corpus and training-data abuse by pattern-matching the file-access shape of AML.T0018 (model poisoning at training time) and AML.T0020 (RAG retrieval abuse). Anchors the data-tier defence against poisoning that prompt-layer controls cannot see. |
-| `D3-NTA` | Network Traffic Analysis | Network egress | Per-identity baseline of model-API and MCP-server egress. Catches the AML.T0017 capability-development pattern (PROMPTFLUX-style rapid querying) and the AML.T0096 covert-C2 destination shape when SDK instrumentation is partial or missing. |
+| `D3-NTA` | Network Traffic Analysis | Network egress | Per-identity baseline of model-API and MCP-server egress. Catches the AML.T0016 generative-AI misuse pattern (PROMPTFLUX-style rapid querying) and the AML.T0096 covert-C2 destination shape when SDK instrumentation is partial or missing. |
 
 **Defense-in-depth posture:** `D3-EAL` is the prerequisite endpoint layer (only sanctioned AI clients run); `D3-FAPA` is the data-tier layer (RAG and training corpora); `D3-IOPR` and `D3-CSPP` are the content-aware application and gateway layers; `D3-NTA` is the network-observability backstop. Skills that recommend a single layer alone are flagged as incomplete during Analysis Procedure Step 7.
 

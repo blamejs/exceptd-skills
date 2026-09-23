@@ -229,11 +229,11 @@ Introduced to the House of Commons on 2025-11-12; through Lords stages during Ju
 
 The Australian ISM is the most frequently updated major framework — monthly updates give it the shortest lag of any national framework. Key controls relevant to 2026:
 
-- **ISM-1623**: Patch operating systems and applications within 48 hours when exploits exist (closest to RWEP-aligned patching in any national framework)
-- **ISM-1694**: Employ application control to prevent execution of malicious code
-- **ISM-1691**: Configure Microsoft Office macro settings (relevant for AI document processing pipelines)
+- **ISM-1876 and ISM-1877**: Patch online services and the operating systems of internet-facing servers and network devices within 48 hours of release when the vendor rates a vulnerability critical or a working exploit exists, at every Essential Eight maturity level. Browsers, office suites, email clients and workstation operating systems get 48 hours only at Maturity Level Three (ISM-1692, ISM-1696).
+- **ISM-0843**: Implement application control on workstations (ISM-1490 extends it to internet-facing servers from Maturity Level Two).
+- **ISM-1488**: Block Microsoft Office macros in files that originate from the internet (relevant for AI document processing pipelines).
 
-**ISM strength:** 48-hour patching for exploited vulnerabilities is the best standard practice in any national framework. Aligns with ASD Essential 8 Maturity Level 3.
+**ISM strength:** 48-hour patching for exploited vulnerabilities is the best standard practice in any national framework. It applies to internet-facing systems at every Essential Eight maturity level, and to workstations at Maturity Level Three.
 
 **ISM gap:** No specific controls for AI pipeline security, MCP trust boundaries, or prompt injection as of mid-2026 monthly updates.
 
@@ -434,10 +434,10 @@ D3FEND references from `data/d3fend-catalog.json`. This skill produces jurisdict
 | Prompt injection as access-control failure | AML.T0051 (LLM Prompt Injection) | `D3-IOPR` + `D3-CSPP` | Input/Output Profiling + Client-server Payload Profiling | `ai-attack-surface` |
 | MCP/agent tool trust boundaries | AML.T0010 (AI Supply Chain Compromise) | `D3-EAL` + `D3-EFA` | Executable Allowlisting + Executable File Analysis | `mcp-agent-trust` |
 | AI pipeline integrity (model versioning + behavioural regression) | AML.T0018 (Manipulate AI Model), AML.T0020 (Training Data Poisoning) | `D3-FAPA` + `D3-EFA` | File Access Pattern Analysis + Executable File Analysis | `mlops-security` |
-| AI-as-C2 detection | AML.T0096 (LLM Integration Abuse — C2) | `D3-NTA` + `D3-OTF` | Network Traffic Analysis + Outbound Traffic Filtering | `ai-c2-detection` |
+| AI-as-C2 detection | AML.T0096 (AI Service API, C2) | `D3-NTA` + `D3-OTF` | Network Traffic Analysis + Outbound Traffic Filtering | `ai-c2-detection` |
 | Live kernel patching as required capability | T1068 (Exploitation for Privilege Escalation) | `D3-KBPI` + `D3-SCA` | Kernel-Based Process Isolation + System Call Analysis | `kernel-lpe-triage` |
 | CISA KEV-indexed patch SLAs | T1190 (Exploit Public-Facing Application) | `D3-NI` | Network Isolation for the unpatched window | `exploit-scoring` + `kernel-lpe-triage` |
-| AI-generated phishing detection update requirement | T1566 (Phishing), AML.T0016 (Develop Capabilities) | `D3-MFA` + `D3-CSPP` | Multi-factor Authentication (passkey class) + Client-server Payload Profiling | `email-security-anti-phishing` |
+| AI-generated phishing detection update requirement | T1566 (Phishing), AML.T0016 (Obtain Capabilities) | `D3-MFA` + `D3-CSPP` | Multi-factor Authentication (passkey class) + Client-server Payload Profiling | `email-security-anti-phishing` |
 | RAG pipeline security | AML.T0051, AML.T0020 | `D3-IOPR` + `D3-FAPA` | Input/Output Profiling + File Access Pattern Analysis | `rag-pipeline-security` |
 | Post-quantum cryptography migration mandate | T1040 (Network Sniffing), T1557 (Adversary-in-the-Middle) — harvest-now-decrypt-later | `D3-MENCR` + `D3-FE` | Message Encryption (PQC-hybrid KEM) + File Encryption (PQC-wrapped envelope) | `pqc-first` |
 
@@ -502,7 +502,7 @@ Every applicable framework has at least one structural gap against mid-2026 thre
 | EU | EU CRA Annex I | "No known exploitable vulnerabilities" is a strict obligation but the conformity-assessment regime is new; market-surveillance authorities have limited tooling to test against ATLAS or KEV catalogs. |
 | UK | NCSC CAF v4.0 Principles A–D | Principle-based, deliberately not prescriptive; currency of interpretation depends on the individual assessor. v4.0 added secure software development/maintenance coverage and automated-decision-making outcomes under B4.a/B4.b, plus an ETSI Securing AI reference — the first AI-relevant content in any UK regulatory assessment framework. Still no contributing outcome naming prompt injection, MCP/agent tool trust, RAG pipeline integrity, or AI-as-C2. |
 | UK | Cyber Essentials Plus | 14-day high-risk patch SLA — better than NIST but still insufficient for KEV-class deterministic LPE. No AI-tool coverage. |
-| AU | ASD ISM-1623 / Essential 8 ML3 | 48-hour patch window for known-exploit vulnerabilities is the best operational standard in any national framework — but does not mandate live-patching capability and has no AI-pipeline controls. |
+| AU | ASD ISM-1877 and ISM-1696 / Essential 8 | 48-hour patch window for known-exploit vulnerabilities is the best operational standard in any national framework — but does not mandate live-patching capability and has no AI-pipeline controls. |
 | AU | APRA CPS 234 | "Commensurate with vulnerabilities and threats" — requires the regulated entity to keep its own threat catalog current. No CPS 234 controls mention AI surfaces explicitly. |
 | SG | MAS TRM (2021, updates) | 1-month critical patch SLA still in force; AI governance handled in a parallel document (FEAT) with incomplete bridge to TRM technical controls. |
 | IN | CERT-In Directions | 6-hour notification is fastest globally for the trigger set listed, but the trigger set predates the AI-mediated attack patterns now common — categorisation of an AI-mediated breach against the listed 20+ trigger types is interpretive. |
@@ -512,7 +512,7 @@ Every applicable framework has at least one structural gap against mid-2026 thre
 | Global | CSA CCM v4 AIS / STA | AIS controls predate the LLM/MCP attack surface; STA covers supply chain but not AI-plugin trust boundaries. AI Controls supplement (2025) is not yet integrated into CCM v4 core. |
 | US (for contrast) | NIST 800-53 SI-2, AC-2, SC-7 | 30-day patch window; no prompt-injection control; perimeter-centric SC-7 boundary protection misses AI-API egress. Cited here only to show parity with the global frameworks — US controls are not adequate either. |
 
-Universal lag: every jurisdiction except Australia (ISM-1623) lacks an operationally testable patch-SLA for KEV-class deterministic LPE. Every jurisdiction lacks AI-pipeline-integrity controls in force as of mid-2026. The EU AI Act will be the first, but not until Art. 15 applies — 2027-12-02 for Annex III systems, 2028-08-02 for Annex I — following the Digital Omnibus deferral. The UK is marginally ahead in practice: NCSC CAF v4.0 B4.a/B4.b carry automated-decision-making outcomes a regulator can assess today, though they are not AI-pipeline-integrity controls in the full sense.
+Universal lag: every jurisdiction except Australia (ISM-1877 for internet-facing systems at every maturity level, ISM-1696 for workstations at Maturity Level Three) lacks an operationally testable patch-SLA for KEV-class deterministic LPE. Every jurisdiction lacks AI-pipeline-integrity controls in force as of mid-2026. The EU AI Act will be the first, but not until Art. 15 applies — 2027-12-02 for Annex III systems, 2028-08-02 for Annex I — following the Digital Omnibus deferral. The UK is marginally ahead in practice: NCSC CAF v4.0 B4.a/B4.b carry automated-decision-making outcomes a regulator can assess today, though they are not AI-pipeline-integrity controls in the full sense.
 
 **Expanded jurisdictional coverage (per `data/global-frameworks.json`).** The EU/UK/AU/ISO baseline is no longer sufficient — the catalog tracks 21+ jurisdictions and the cross-border data-flow obligations are where most of the operational lag now lives:
 
@@ -545,9 +545,9 @@ A summary of the multi-jurisdiction control surface vs. the high-priority TTPs f
 | LLM C2 abuse (SesameOp) | AML.T0096 | None | All — no jurisdiction has a control for AI-API as C2 |
 | Poison Training Data | AML.T0020 | EU AI Act Art. 10 (data and data governance for high-risk AI) | All others |
 | LLM Jailbreak | AML.T0054 | None — same gap as AML.T0051 | All |
-| Discover ML Model Ontology | AML.T0017 | None — adversary reconnaissance against deployed models, no mapped control | All |
-| Obtain Capabilities: Develop Capabilities (AI-assisted weaponization) | AML.T0016 | None — adversary capability, not directly controllable | All |
-| Privilege escalation (T1068) | ATT&CK T1068 | AU ISM-1623 / Essential 8 ML3 (48h patch with exploit) | EU (no specific SLA), UK (14d generic), SG (30d), JP, IN, CA |
+| Discover AI Model Ontology | AML.T0013 | None — adversary reconnaissance against deployed models, no mapped control | All |
+| Develop Capabilities (AI-assisted weaponization) | AML.T0017 | None — adversary capability, not directly controllable | All |
+| Privilege escalation (T1068) | ATT&CK T1068 | AU ISM-1696 / Essential 8 ML3 (48h patch with exploit) | EU (no specific SLA), UK (14d generic), SG (30d), JP, IN, CA |
 | Exploit public-facing app (T1190) | ATT&CK T1190 | AU Essential 8 (patching applications) | All — none address AI-mediated T1190 like CVE-2025-53773 |
 | Phishing (T1566) | ATT&CK T1566 | None updated for AI-generated content | All — phishing guidance generally pre-AI-baseline |
 

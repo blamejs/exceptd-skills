@@ -84,7 +84,7 @@
         "ASD_ISM": {
           "patch_sla": {
             "hours": 48,
-            "note": "ISM-1623: 48h for critical with existing exploit. Best non-CISA-aware SLA of any major framework.",
+            "note": "ISM-1876 and ISM-1877: online services and the operating systems of internet-facing servers and network devices are patched within 48 hours of release when the vendor rates a vulnerability critical or a working exploit exists, at every Essential Eight maturity level. Browsers, office suites, email clients and workstation operating systems get 48 hours only at Maturity Level Three (ISM-1692, ISM-1696).",
             "source": "https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/ism",
             "authority": "Australian Signals Directorate (ASD)"
           },
@@ -937,7 +937,7 @@
       "jurisdiction": "AU",
       "framework": "ASD_ISM",
       "hours": 48,
-      "note": "ISM-1623: 48h for critical with existing exploit. Best non-CISA-aware SLA of any major framework."
+      "note": "ISM-1876 and ISM-1877: online services and the operating systems of internet-facing servers and network devices are patched within 48 hours of release when the vendor rates a vulnerability critical or a working exploit exists, at every Essential Eight maturity level. Browsers, office suites, email clients and workstation operating systems get 48 hours only at Maturity Level Three (ISM-1692, ISM-1696)."
     },
     {
       "jurisdiction": "AU",

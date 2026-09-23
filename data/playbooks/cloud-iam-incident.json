@@ -17,7 +17,7 @@
           "SOC2-CC6-Access-Key-Leak-Public-Repo",
           "AWS-Security-Hub-Coverage-Gap",
           "UK-CAF-B2-Cloud-IAM",
-          "AU-ISM-1546-Cloud-Service-Account"
+          "AU-ISM-1685-Cloud-Service-Account"
         ]
       }
     ],
@@ -284,7 +284,7 @@
         }
       ],
       "framework_context": {
-        "gap_summary": "Cloud-IAM frameworks (NIST 800-53 AC-2 Account Management, ISO/IEC 27017 cloud-services controls, SOC 2 CC6 logical-access criteria, FedRAMP IL5 baseline, AWS Security Hub control library, GCP CIS, Azure Security Benchmark) target conventional account lifecycle and resource-policy posture. They were authored against single-account, single-principal models. The dominant 2024-2026 cloud-account-compromise vectors — cross-account assume-role chains initiated from a compromised principal, federated SAML / OIDC trust abuse, long-lived access-key exfiltration from public repositories, managed-identity token replay against the metadata API — are session-based and cross-boundary. Account-lifecycle controls cannot see them. CISA's Snowflake AA24 advisory (June 2024) documented the third-party-IdP-to-cloud-IAM credential reuse chain as a class of compromise; no framework names this chain as a distinct control class. FedRAMP IL5 baseline assumes single-cloud-tenant deployments and does not contemplate federated IL6 sovereign-cloud trust patterns. UK CAF Principle B2 (Identity and Access Control) is outcome-based on credential lifecycle and treats cloud-IAM as a sub-case of conventional IAM. AU ISM-1546 covers MFA on privileged human users; cloud service-account access keys (which now hold the actual operational privileges) are out of scope. SCOPE: this playbook investigates a specific cloud account (or account-set) for IAM-compromise indicators in CloudTrail / Cloud Audit Logs / Activity Logs over the last 90 days, plus current IAM-principal posture (long-lived keys, federated trust configuration, SCP/Org-Policy state, recently-modified resource policies).",
+        "gap_summary": "Cloud-IAM frameworks (NIST 800-53 AC-2 Account Management, ISO/IEC 27017 cloud-services controls, SOC 2 CC6 logical-access criteria, FedRAMP IL5 baseline, AWS Security Hub control library, GCP CIS, Azure Security Benchmark) target conventional account lifecycle and resource-policy posture. They were authored against single-account, single-principal models. The dominant 2024-2026 cloud-account-compromise vectors — cross-account assume-role chains initiated from a compromised principal, federated SAML / OIDC trust abuse, long-lived access-key exfiltration from public repositories, managed-identity token replay against the metadata API — are session-based and cross-boundary. Account-lifecycle controls cannot see them. CISA's Snowflake AA24 advisory (June 2024) documented the third-party-IdP-to-cloud-IAM credential reuse chain as a class of compromise; no framework names this chain as a distinct control class. FedRAMP IL5 baseline assumes single-cloud-tenant deployments and does not contemplate federated IL6 sovereign-cloud trust patterns. UK CAF Principle B2 (Identity and Access Control) is outcome-based on credential lifecycle and treats cloud-IAM as a sub-case of conventional IAM. AU ISM-1173 covers MFA on privileged human users; cloud service-account access keys (which now hold the actual operational privileges) fall under ISM-1685, which a long, unique key satisfies even though it works from anywhere once it leaks. SCOPE: this playbook investigates a specific cloud account (or account-set) for IAM-compromise indicators in CloudTrail / Cloud Audit Logs / Activity Logs over the last 90 days, plus current IAM-principal posture (long-lived keys, federated trust configuration, SCP/Org-Policy state, recently-modified resource policies).",
         "lag_score": 60,
         "per_framework_gaps": [
           {
@@ -325,9 +325,9 @@
           },
           {
             "framework": "au-ism",
-            "control_id": "ISM-1546",
-            "designed_for": "Multi-factor authentication for privileged users and remote access.",
-            "insufficient_because": "ISM-1546 covers human-principal authentication. Cloud service-account access keys, IAM-role assume-role chains initiated by service principals, and managed-identity tokens never cross the human-MFA gate. Captured in `data/framework-control-gaps.json#AU-ISM-1546-Cloud-Service-Account`."
+            "control_id": "ISM-1173 / ISM-1685",
+            "designed_for": "ISM-1173 requires multi-factor authentication for privileged human users; ISM-1685 requires break glass, local administrator and service-account credentials to be long, unique, unpredictable and managed; ISM-2141 prefers short-lived, dynamically issued workload credentials.",
+            "insufficient_because": "ISM-1173 covers human principals, and ISM-1685 is met by a long, unique key that still works from anywhere once it leaks. Cloud service-account access keys, IAM-role assume-role chains initiated by service principals, and managed-identity tokens never cross the human-MFA gate. Captured in `data/framework-control-gaps.json#AU-ISM-1685-Cloud-Service-Account`."
           },
           {
             "framework": "au-essential-8",
@@ -364,7 +364,7 @@
         "monitor": 70,
         "close": 30
       },
-      "framework_lag_declaration": "NIST 800-53 AC-2 (Account Management) does not model cross-account assume-role chains — each link is a valid AC-2-compliant action; the compromise is the chain. ISO/IEC 27001:2022 A.5.15-A.5.18 cover account lifecycle, not session-based IAM observability. ISO/IEC 27017 cloud-specific controls (A.5.23 equivalent) lag on managed-identity token replay — A.9.2.1 'Managing user registration and de-registration' and Annex A cloud controls do not enumerate token-binding to instance identity. SOC 2 CC6 logical-access criteria treat the authenticated session as the access boundary; access-key-leak-to-public-repo produces a fully-authenticated session whose CC6 evidence is satisfied. CISA's Snowflake AA24 advisory documented the third-party-IdP-to-cloud-IAM credential-reuse chain as a class; no framework names this chain as a distinct control class — captured in `data/framework-control-gaps.json#CISA-Snowflake-AA24-IdP-Cloud`. AWS Security Hub / GCP Security Command Center / Azure Defender for Cloud are coverage-based posture tools, not breach detection; 'all green' attestations have ~0 correlation with absence of behavioural anomalies (captured in `data/framework-control-gaps.json#AWS-Security-Hub-Coverage-Gap`). UK CAF Principle B2 is outcome-based on credential-lifecycle hygiene and lacks cloud-IAM specificity (captured in `UK-CAF-B2-Cloud-IAM`). AU Essential 8 ML2 Strategy 4 (MFA) covers human MFA; cloud service-account access keys, OIDC federation tokens, SAML assertions are bearer credentials that bypass MFA entirely (captured in `AU-ISM-1546-Cloud-Service-Account`). FedRAMP IL5 baseline is insufficient for federated cloud / IL6 sovereign-trust patterns (captured in `FedRAMP-IL5-IAM-Federated`). CIS Controls v8 align conceptually but lack a cloud-specific maturity ladder. PCI DSS 4.0 Req.7-8 cover access-control objectives generically; cloud-IAM-specific requirements are not enumerated. Practical gap = ~90 days between audit-cycle evidence (quarterly access review) and adversary timeline (hours-to-days). Every framework in scope assumes the audit cadence; the threat model assumes continuous behavioural monitoring.",
+      "framework_lag_declaration": "NIST 800-53 AC-2 (Account Management) does not model cross-account assume-role chains — each link is a valid AC-2-compliant action; the compromise is the chain. ISO/IEC 27001:2022 A.5.15-A.5.18 cover account lifecycle, not session-based IAM observability. ISO/IEC 27017 cloud-specific controls (A.5.23 equivalent) lag on managed-identity token replay — A.9.2.1 'Managing user registration and de-registration' and Annex A cloud controls do not enumerate token-binding to instance identity. SOC 2 CC6 logical-access criteria treat the authenticated session as the access boundary; access-key-leak-to-public-repo produces a fully-authenticated session whose CC6 evidence is satisfied. CISA's Snowflake AA24 advisory documented the third-party-IdP-to-cloud-IAM credential-reuse chain as a class; no framework names this chain as a distinct control class — captured in `data/framework-control-gaps.json#CISA-Snowflake-AA24-IdP-Cloud`. AWS Security Hub / GCP Security Command Center / Azure Defender for Cloud are coverage-based posture tools, not breach detection; 'all green' attestations have ~0 correlation with absence of behavioural anomalies (captured in `data/framework-control-gaps.json#AWS-Security-Hub-Coverage-Gap`). UK CAF Principle B2 is outcome-based on credential-lifecycle hygiene and lacks cloud-IAM specificity (captured in `UK-CAF-B2-Cloud-IAM`). AU Essential 8 ML2 Strategy 4 (MFA) covers human MFA; cloud service-account access keys, OIDC federation tokens, SAML assertions are bearer credentials that bypass MFA entirely (captured in `AU-ISM-1685-Cloud-Service-Account`). FedRAMP IL5 baseline is insufficient for federated cloud / IL6 sovereign-trust patterns (captured in `FedRAMP-IL5-IAM-Federated`). CIS Controls v8 align conceptually but lack a cloud-specific maturity ladder. PCI DSS 4.0 Req.7-8 cover access-control objectives generically; cloud-IAM-specific requirements are not enumerated. Practical gap = ~90 days between audit-cycle evidence (quarterly access review) and adversary timeline (hours-to-days). Every framework in scope assumes the audit cadence; the threat model assumes continuous behavioural monitoring.",
       "skill_chain": [
         {
           "skill": "cloud-security",
@@ -378,7 +378,7 @@
         },
         {
           "skill": "framework-gap-analysis",
-          "purpose": "Map findings to which framework controls claim to address cloud-IAM hygiene and where the gap is (NIST AC-2 cross-account, ISO 27017, SOC 2 CC6, FedRAMP IL5, UK CAF B2, AU ISM-1546).",
+          "purpose": "Map findings to which framework controls claim to address cloud-IAM hygiene and where the gap is (NIST AC-2 cross-account, ISO 27017, SOC 2 CC6, FedRAMP IL5, UK CAF B2, AU ISM-1173 and ISM-1685).",
           "required": true
         },
         {
@@ -930,9 +930,9 @@
         {
           "finding_id": "cloud-service-account-mfa-gap",
           "framework": "au-ism",
-          "claimed_control": "ISM-1546 — Multi-factor authentication for privileged users",
-          "actual_gap": "ISM-1546 covers human-principal MFA. Cloud service-account access keys, IAM-role assume-role chains initiated by service principals, and managed-identity tokens bypass MFA entirely.",
-          "required_control": "ISM-1546 extension enumerating cloud non-human-principal credential hygiene with explicit bearer-token TTL ceilings + audience binding + per-action audit logging. Captured in `data/framework-control-gaps.json#AU-ISM-1546-Cloud-Service-Account`."
+          "claimed_control": "ISM-1173: multi-factor authentication for privileged users",
+          "actual_gap": "ISM-1173 covers human-principal MFA. Cloud service-account access keys, IAM-role assume-role chains initiated by service principals, and managed-identity tokens bypass MFA entirely.",
+          "required_control": "ISM-1685 extension enumerating cloud non-human-principal credential hygiene with explicit bearer-token TTL ceilings + audience binding + per-action audit logging. Captured in `data/framework-control-gaps.json#AU-ISM-1685-Cloud-Service-Account`."
         },
         {
           "finding_id": "uk-caf-b2-cloud-iam",
@@ -1211,7 +1211,7 @@
         "lesson_template": {
           "attack_vector": "Cloud-IAM compromise via $vector ($csp): root-login-from-new-ASN / cross-account-assume-role-chain / leaked-access-key-from-public-repo / managed-identity-token-replay / federated-trust-wildcard-subject / IMDSv1-SSRF / mass-IAM-creation-outside-IaC.",
           "control_gap": "Account-lifecycle controls (NIST AC-2, ISO A.5.15, SOC 2 CC6) treat principals individually and miss cross-boundary chains. Posture tools (Security Hub / SCC / Defender for Cloud) are coverage-based and miss behavioural anomalies. Federated-trust hygiene is not enumerated in any framework's evidence surface.",
-          "framework_gap": "NIST 800-53 AC-2 + ISO/IEC 27001:2022 A.5.15-A.5.18 + SOC 2 CC6 + FedRAMP IL5 baseline + UK CAF B2 + AU ISM-1546 + AU Essential 8 Strategy 4 collectively cover account lifecycle + human MFA + posture-tool deployment. None name cross-account assume-role chains, federated-trust wildcard-subject claims, managed-identity token replay, or IMDS-version-hardening as distinct control classes.",
+          "framework_gap": "NIST 800-53 AC-2 + ISO/IEC 27001:2022 A.5.15-A.5.18 + SOC 2 CC6 + FedRAMP IL5 baseline + UK CAF B2 + AU ISM-1173 and ISM-1685 + AU Essential 8 Strategy 4 collectively cover account lifecycle + human MFA + posture-tool deployment. None name cross-account assume-role chains, federated-trust wildcard-subject claims, managed-identity token replay, or IMDS-version-hardening as distinct control classes.",
           "new_control_requirement": "Continuous behavioural CloudTrail / audit-log analytics keyed off the detect.indicators in this playbook; federated-trust hygiene attestation (non-wildcard subject claims, audience-pinned); IMDSv2-required SCP / Org Policy enforced org-wide; cross-account assume-role graph monitoring over rolling 24h windows; managed-identity / service-account credential TTL ceilings with audience binding; cross-system credential-reuse mapping for every federated IdP."
         },
         "feeds_back_to_skills": [

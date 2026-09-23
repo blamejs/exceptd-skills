@@ -537,14 +537,21 @@ async function refreshIcsAttack({ dry = false, cap = Infinity, _deps = {} } = {}
 
 const ATLAS_SRC = "https://raw.githubusercontent.com/mitre-atlas/atlas-navigator-data/main/dist/stix-atlas.json";
 
+// The STIX mirror trails ATLAS releases, so a phase can arrive under a slug
+// ATLAS has since renamed. Every slug a release has used for a tactic maps to
+// that tactic's current name: AML.TA0000 is AI Model Access and AML.TA0001 is
+// AI Attack Adaptation.
 function atlasTactic(phases) {
   const map = {
     "reconnaissance": "Reconnaissance", "resource-development": "Resource Development",
-    "initial-access": "Initial Access", "ml-model-access": "AI Model Access",
+    "initial-access": "Initial Access",
+    "ml-model-access": "AI Model Access", "ai-model-access": "AI Model Access",
     "execution": "Execution", "persistence": "Persistence",
     "privilege-escalation": "Privilege Escalation", "defense-evasion": "Defense Evasion",
     "credential-access": "Credential Access", "discovery": "Discovery",
-    "collection": "Collection", "ml-attack-staging": "AI Attack Staging",
+    "lateral-movement": "Lateral Movement", "collection": "Collection",
+    "ml-attack-staging": "AI Attack Adaptation", "ai-attack-staging": "AI Attack Adaptation",
+    "ai-attack-adaptation": "AI Attack Adaptation",
     "command-and-control": "Command and Control", "exfiltration": "Exfiltration",
     "impact": "Impact"
   };

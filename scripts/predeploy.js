@@ -209,6 +209,15 @@ const GATES = [
     args: [path.join(ROOT, "scripts", "check-atlas-catalog-currency.js")],
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
+  {
+    // Every ISM-NNNN citation must name a control in the pinned ism-oscal
+    // release, and every AU-ISM-NNNN registry key must describe that control.
+    // Fetches the release catalog on a cold cache; a tag is immutable.
+    name: "ISM control references (citations vs. the pinned ISM release)",
+    command: process.execPath,
+    args: [path.join(ROOT, "scripts", "check-ism-control-references.js")],
+    ciJobName: "Data integrity (catalog + manifest snapshot)",
+  },
 ];
 
 function runGate(gate) {

@@ -6,8 +6,11 @@
  * diff-coverage gates cannot see.
  *
  * Counts DECLARATIONS statically across `tests/*.test.js` — `test(` and `it(`
- * with their `.only` / `.skip` variants. `describe(` is NOT counted: a container
- * is not a test. Blind spot: a test neutered in place still counts as one.
+ * with their `.only` variants. `describe(` is NOT counted: a container is not
+ * a test. `test.skip(`, and a declaration whose options on the same line set
+ * `skip` to `true` or to a string, are not counted, so a test disabled in place
+ * reads as a lost test. A conditional skip such as `{ skip: !HAS_KEY }` still
+ * counts, and so does a skip set on a later line of a multi-line options object.
  *
  * exit 0 at or above baseline minus tolerance, 1 when it drops further, 2 when
  * the baseline file is missing or malformed.
@@ -48,7 +51,10 @@ function countTests(filePath) {
     // Drop a trailing line comment too (`test('x'); // disabled`).
     const stripped = noStrings.replace(/\/\/.*$/, '').trim();
     if (!stripped) continue;
-    if (/(?<![A-Za-z0-9_$.])(?:test|it)(?:\.only|\.skip)?\s*\(/.test(stripped)) count++;
+    if (!/(?<![A-Za-z0-9_$.])(?:test|it)(?:\.only)?\s*\(/.test(stripped)) continue;
+    // String literals are blanked to '' above, so `skip: 'reason'` reads as `skip: ''`.
+    if (/\bskip\s*:\s*(?:true\b|''\s*[,}])/.test(stripped)) continue;
+    count++;
   }
   return count;
 }
