@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.21.1 — 2026-09-23
+
+The catalog holds 1,720 CVEs after four additions from CISA KEV. Three are Linux kernel flaws CISA listed on 18 September 2026: the AF_ALG crypto interface race (CVE-2025-39964), the kernel TLS receive-path flaw (CVE-2025-39682) and the ebtables SNAT out-of-bounds write (CVE-2026-53266). The fourth is the Zyxel GS1900 switch web management overflow (CVE-2026-7273), listed on 21 September.
+
+CISA marks all four for forensic triage under BOD 26-04. Each entry records the flag and says to check exposed hosts and switches for compromise, not only to patch them.
+
+The kernel entries give the fixed build for each distribution and product line they name, among them Red Hat, SUSE, Debian, Ubuntu, Google Container-Optimized OS and Siemens. Compare a distribution kernel by its package version or image build: a patched distribution kernel can report a `uname -r` version inside the upstream affected range. The kernel TLS entry lists the SUSE Linux Enterprise 15 SP6 and SP7 live patches, which apply the fix without a reboot.
+
+Four entries now include their CVE id in the title, because CISA names these flaws by product and defect class and the same name already covered another record: the new AF_ALG and ebtables entries, and the existing CVE-2014-0196 and CVE-2024-53104 entries whose names they share.
+
 ## 0.21.0 — 2026-09-23
 
 Australian ISM citations now name the controls they describe. Most ISM control numbers in the catalog, the framework-gap registry, the skills and the playbooks pointed at a different control from the one the surrounding text described. ISM-1546, which 207 entries cited as the patching control, requires users to be authenticated before they are granted access to a system. ISM-1556, ISM-1559 and ISM-1808 were also cited for obligations they do not contain. Every citation was checked against the OSCAL catalog ASD publishes for ISM release 2026.09.4. Each citation now names the control whose statement matches the claim, or it was removed where no control makes that claim.
