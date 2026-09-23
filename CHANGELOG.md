@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.21.2 — 2026-09-23
+
+`ai_discovery_source` now records who found each vulnerability, and every catalog entry and its zero-day lesson carry the same value. The affected product's own vendor or project team is `vendor_research`. An outside researcher, security company, incident responder or bug-bounty reporter, named or anonymous, is `human_researcher`, or `bug_bounty_ai_augmented` when AI tooling found the flaw. `unknown` means no source identifies who found or reported the flaw.
+
+389 entries changed, each decided from its own discovery notes:
+
+- 255 that credit an outside researcher or company with finding the flaw, or with reporting it or its exploitation in the wild to the vendor, moved from `vendor_research` to `human_researcher`. CVE-2020-15415, which credits the CLP-team researcher group, is one of them.
+- 87 that name no finder moved from `vendor_research` to `unknown`.
+- The 20 entries that had no value now have one.
+- Five AI-found entries credited to an outside company's AI system moved to `bug_bounty_ai_augmented`: Horizon3, GreyNoise, CERT Polska, and Google's Big Sleep on SQLite and on FFmpeg.
+- Four entries with `ai_discovered` false that carried an AI-only value now read `human_researcher`.
+- 18 others were corrected from their notes, among them six whose notes credit an anonymous outside reporter, which moved from `unknown` to `human_researcher`.
+
+668 lessons were updated to match their catalog entry, and the eight exploit-availability records whose value differed now match their catalog entry. Discovery notes that stated a value the entry does not hold were corrected.
+
+Batch curation now records `unknown` when a judgment names no finder, instead of `vendor_research`, and fills a lesson's value from its entry. The catalog validator reports an AI-only value on an entry whose `ai_discovered` is not true, `human_researcher` on an AI-discovered entry, and a lesson whose value differs from its catalog entry. Under `--strict`, which the pre-publish gate uses, each is an error.
+
 ## 0.21.1 — 2026-09-23
 
 The catalog holds 1,720 CVEs after four additions from CISA KEV. Three are Linux kernel flaws CISA listed on 18 September 2026: the AF_ALG crypto interface race (CVE-2025-39964), the kernel TLS receive-path flaw (CVE-2025-39682) and the ebtables SNAT out-of-bounds write (CVE-2026-53266). The fourth is the Zyxel GS1900 switch web management overflow (CVE-2026-7273), listed on 21 September.
