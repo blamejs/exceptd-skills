@@ -112,7 +112,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": true,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "bug_bounty_ai_augmented",
     "ai_discovery_date": "2026-04-15",
     "ai_assist_factor": "very_high"
   },
@@ -262,7 +262,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "human_researcher",
+    "ai_discovery_source": "bug_bounty_ai_augmented",
     "ai_assist_factor": "low"
   },
   "CVE-2026-43500": {
@@ -328,7 +328,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "human_researcher",
+    "ai_discovery_source": "bug_bounty_ai_augmented",
     "ai_assist_factor": "low"
   },
   "CVE-2026-30615": {
@@ -487,7 +487,7 @@
       "theater_pattern": "provenance_signed_therefore_safe"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "threat_actor_ai_built",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2026-05-11",
     "ai_assist_factor": "low"
   },
@@ -827,7 +827,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "human_researcher",
+    "ai_discovery_source": "bug_bounty_ai_augmented",
     "ai_assist_factor": "low"
   },
   "CVE-2024-3094": {
@@ -996,7 +996,7 @@
       "theater_pattern": "vendor_patch_sla_anchored"
     },
     "ai_discovered_zeroday": true,
-    "ai_discovery_source": "academic_ai_fuzzing",
+    "ai_discovery_source": "bug_bounty_ai_augmented",
     "ai_discovery_date": "2026-05-13",
     "ai_assist_factor": "very_high"
   },
@@ -1643,7 +1643,7 @@
       "theater_pattern": "incomplete_patch_treated_as_discrete_finding"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2026-04-28",
     "ai_assist_factor": "low"
   },
@@ -1742,7 +1742,7 @@
       "theater_pattern": "edr_assumed_defense_never_vulnerability"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2026-04-22",
     "ai_assist_factor": "low"
   },
@@ -1850,7 +1850,7 @@
       "theater_pattern": "maintainer_account_integrity_assumed_without_evidence"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2026-05-14",
     "ai_assist_factor": "low"
   },
@@ -2029,7 +2029,7 @@
       "theater_pattern": "sbom_and_provenance"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "threat_actor_release",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "high"
   },
   "CVE-2024-3154": {
@@ -2084,7 +2084,7 @@
       "theater_pattern": "least_functionality"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "human_researcher",
+    "ai_discovery_source": "vendor_research",
     "ai_assist_factor": "low",
     "new_control_requirements": [
       {
@@ -3468,7 +3468,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": "2025-12-15",
     "ai_assist_factor": "none"
   },
@@ -3676,7 +3676,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": "2025-08-20",
     "ai_assist_factor": "none"
   },
@@ -3741,7 +3741,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": "2025-09-02",
     "ai_assist_factor": "none"
   },
@@ -3898,7 +3898,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2025-02-13",
     "ai_assist_factor": "none"
   },
@@ -3961,7 +3961,7 @@
       "theater_pattern": "secure_coding_theater"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2025-10-06",
     "ai_assist_factor": "none"
   },
@@ -4016,7 +4016,7 @@
       "theater_pattern": "detection_gap"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": "2025-11-19",
     "ai_assist_factor": "none"
   },
@@ -4070,7 +4070,7 @@
       "theater_pattern": "detection_gap"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "academic_ai_fuzzing",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2025-08-13",
     "ai_assist_factor": "low"
   },
@@ -4127,7 +4127,7 @@
       "theater_pattern": "vulnerability_management_theater"
     },
     "ai_discovered_zeroday": true,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "bug_bounty_ai_augmented",
     "ai_discovery_date": "2025-07-15",
     "ai_assist_factor": "very_high"
   },
@@ -4176,7 +4176,7 @@
       "theater_pattern": "ai_supply_chain_trust"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2026-01-15",
     "ai_assist_factor": "none"
   },
@@ -4231,7 +4231,7 @@
       "theater_pattern": "ai_supply_chain_trust"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": "2026-04-14",
     "ai_assist_factor": "none"
   },
@@ -4300,7 +4300,7 @@
       "theater_pattern": "ai_supply_chain_trust"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2025-12-09",
     "ai_assist_factor": "medium"
   },
@@ -6119,7 +6119,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2025-03-04",
     "ai_assist_factor": "none"
   },
@@ -6182,7 +6182,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2025-03-04",
     "ai_assist_factor": "none"
   },
@@ -6239,7 +6239,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2025-03-04",
     "ai_assist_factor": "none"
   },
@@ -6315,7 +6315,7 @@
       "theater_pattern": "ai_supply_chain_trust"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2024-12-05",
     "ai_assist_factor": "none"
   },
@@ -6387,7 +6387,7 @@
       "theater_pattern": "vendor_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2026-05-12",
     "ai_assist_factor": "none"
   },
@@ -6442,7 +6442,7 @@
       "theater_pattern": "vendor_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2025-05-25",
     "ai_assist_factor": "none"
   },
@@ -6854,7 +6854,7 @@
       "theater_pattern": "vulnerability_management_theater"
     },
     "ai_discovered_zeroday": true,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "bug_bounty_ai_augmented",
     "ai_discovery_date": "2025-08-04",
     "ai_assist_factor": "very_high"
   },
@@ -7169,7 +7169,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -7263,7 +7263,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -7345,7 +7345,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -7428,7 +7428,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -7512,7 +7512,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -7596,7 +7596,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -7689,7 +7689,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -7781,7 +7781,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -7875,7 +7875,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -7960,7 +7960,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -8044,7 +8044,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -8116,7 +8116,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -8211,7 +8211,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -8304,7 +8304,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -8378,7 +8378,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -8457,7 +8457,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -8540,7 +8540,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -8608,7 +8608,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -8685,7 +8685,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -8760,7 +8760,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -8838,7 +8838,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -8924,7 +8924,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -9007,7 +9007,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -9094,7 +9094,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -9176,7 +9176,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -9270,7 +9270,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -9363,7 +9363,7 @@
       "theater_pattern": "update_channel_integrity_unverified"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -9441,7 +9441,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -9525,7 +9525,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -9608,7 +9608,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -9702,7 +9702,7 @@
       "theater_pattern": "update_channel_integrity_unverified"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -12202,7 +12202,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -12247,7 +12247,7 @@
       "theater_pattern": "detection_gap"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -12292,7 +12292,7 @@
       "theater_pattern": "detection_gap"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -12367,7 +12367,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -12451,7 +12451,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -12530,7 +12530,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -12607,7 +12607,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -12687,7 +12687,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -12770,7 +12770,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -12863,7 +12863,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -12936,7 +12936,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -13020,7 +13020,7 @@
       "theater_pattern": "encryption_in_transit_masks_plaintext_at_rest"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -13089,7 +13089,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -13176,7 +13176,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -13271,7 +13271,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -13355,7 +13355,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -13438,7 +13438,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -13523,7 +13523,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -13616,7 +13616,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -13697,7 +13697,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -13785,7 +13785,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -13864,7 +13864,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -13943,7 +13943,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -14026,7 +14026,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -14104,7 +14104,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -14190,7 +14190,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -14281,7 +14281,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -14365,7 +14365,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -14457,7 +14457,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -14540,7 +14540,7 @@
       "theater_pattern": "secure_coding"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -14632,7 +14632,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -14715,7 +14715,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -14809,7 +14809,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -14883,7 +14883,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -14970,7 +14970,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -15038,7 +15038,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -15123,7 +15123,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -15212,7 +15212,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -15297,7 +15297,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -15389,7 +15389,7 @@
       "theater_pattern": "update_channel_integrity_unverified"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -15481,7 +15481,7 @@
       "theater_pattern": "access_control"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -15559,7 +15559,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -15647,7 +15647,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -15725,7 +15725,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -15806,7 +15806,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -15877,7 +15877,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -15946,7 +15946,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -16038,7 +16038,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -16120,7 +16120,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -16205,7 +16205,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -16278,7 +16278,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -16362,7 +16362,7 @@
       "theater_pattern": "authentication_assumed_complete"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -16446,7 +16446,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -16540,7 +16540,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -16632,7 +16632,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -16718,7 +16718,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -16810,7 +16810,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -16895,7 +16895,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -16980,7 +16980,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -17057,7 +17057,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -17148,7 +17148,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -17231,7 +17231,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -17313,7 +17313,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -17409,7 +17409,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -17482,7 +17482,7 @@
       "theater_pattern": "maintainer_account_integrity_assumed_without_evidence"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -17575,7 +17575,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -17654,7 +17654,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -17739,7 +17739,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -17808,7 +17808,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -17891,7 +17891,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -17984,7 +17984,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -18057,7 +18057,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -18150,7 +18150,7 @@
       "theater_pattern": "update_channel_integrity_unverified"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -18234,7 +18234,7 @@
       "theater_pattern": "access_control"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -18317,7 +18317,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -18400,7 +18400,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -18483,7 +18483,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -18574,7 +18574,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -18655,7 +18655,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -18733,7 +18733,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -18811,7 +18811,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -18895,7 +18895,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -18978,7 +18978,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -19062,7 +19062,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -19153,7 +19153,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -19230,7 +19230,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -19299,7 +19299,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -19382,7 +19382,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -19454,7 +19454,7 @@
       "theater_pattern": "authentication_assumed_complete"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -19533,7 +19533,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -19619,7 +19619,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -19712,7 +19712,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -19797,7 +19797,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -19866,7 +19866,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -19960,7 +19960,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -20050,7 +20050,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -20133,7 +20133,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -20225,7 +20225,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -20303,7 +20303,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -20388,7 +20388,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -20462,7 +20462,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -20545,7 +20545,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -20629,7 +20629,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -20712,7 +20712,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -20804,7 +20804,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -20883,7 +20883,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -20976,7 +20976,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -21058,7 +21058,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -21136,7 +21136,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -21209,7 +21209,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -21292,7 +21292,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -21370,7 +21370,7 @@
       "theater_pattern": "secure_boot_signature_trust"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -21449,7 +21449,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -21537,7 +21537,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -21611,7 +21611,7 @@
       "theater_pattern": "authentication_assumed_complete"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -21701,7 +21701,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -21786,7 +21786,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -21863,7 +21863,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -21950,7 +21950,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -22033,7 +22033,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -22103,7 +22103,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -22191,7 +22191,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -22270,7 +22270,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -22352,7 +22352,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -22444,7 +22444,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -22529,7 +22529,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -22621,7 +22621,7 @@
       "theater_pattern": "authentication_assumed_complete"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -22708,7 +22708,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -22794,7 +22794,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -22873,7 +22873,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -22947,7 +22947,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -23038,7 +23038,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -23130,7 +23130,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -23213,7 +23213,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -23295,7 +23295,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -23389,7 +23389,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -23482,7 +23482,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -23561,7 +23561,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -23645,7 +23645,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -23729,7 +23729,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -23814,7 +23814,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -23907,7 +23907,7 @@
       "theater_pattern": "authentication_assumed_complete"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -23984,7 +23984,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -24076,7 +24076,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -24169,7 +24169,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -24250,7 +24250,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -24334,7 +24334,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -24408,7 +24408,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -24491,7 +24491,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -24582,7 +24582,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -24674,7 +24674,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -24762,7 +24762,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -24843,7 +24843,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -24930,7 +24930,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -25013,7 +25013,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -25105,7 +25105,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -25188,7 +25188,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -25266,7 +25266,7 @@
       "theater_pattern": "secure_coding"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -25350,7 +25350,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -25443,7 +25443,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -25535,7 +25535,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -25609,7 +25609,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -25687,7 +25687,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -25771,7 +25771,7 @@
       "theater_pattern": "access_control"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -25854,7 +25854,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -25945,7 +25945,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -26038,7 +26038,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -26130,7 +26130,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -26221,7 +26221,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -26314,7 +26314,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -26409,7 +26409,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -26483,7 +26483,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -26565,7 +26565,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -26642,7 +26642,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -26728,7 +26728,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -26824,7 +26824,7 @@
       "theater_pattern": "encryption_in_transit_masks_plaintext_at_rest"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -26907,7 +26907,7 @@
       "theater_pattern": "encryption_in_transit_masks_plaintext_at_rest"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -26991,7 +26991,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -27073,7 +27073,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -27167,7 +27167,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -27250,7 +27250,7 @@
       "theater_pattern": "authentication_assumed_complete"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -27338,7 +27338,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -27431,7 +27431,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -27509,7 +27509,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -27595,7 +27595,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -27679,7 +27679,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -27772,7 +27772,7 @@
       "theater_pattern": "secure_coding"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -27855,7 +27855,7 @@
       "theater_pattern": "authentication_assumed_complete"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -27934,7 +27934,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -28014,7 +28014,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -28100,7 +28100,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -28190,7 +28190,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -28275,7 +28275,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -28358,7 +28358,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -28440,7 +28440,7 @@
       "theater_pattern": "access_control"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -28524,7 +28524,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -28607,7 +28607,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -28699,7 +28699,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -28790,7 +28790,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -28873,7 +28873,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -28956,7 +28956,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -29039,7 +29039,7 @@
       "theater_pattern": "secure_coding"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -29122,7 +29122,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -29214,7 +29214,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -29308,7 +29308,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -29400,7 +29400,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -29492,7 +29492,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -29572,7 +29572,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -29650,7 +29650,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -29718,7 +29718,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -29807,7 +29807,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -30614,7 +30614,7 @@
       "theater_pattern": "supply_chain_first_party_only"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "human_researcher",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": "2025-03-14",
     "ai_assist_factor": "none"
   },
@@ -30683,7 +30683,7 @@
       "theater_pattern": "supply_chain_first_party_only"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "human_researcher",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": "2025-03-11",
     "ai_assist_factor": "none"
   },
@@ -30751,7 +30751,7 @@
       "theater_pattern": "endpoint_dev_tooling_unmanaged"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "human_researcher",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": "2026-05-19",
     "ai_assist_factor": "none"
   },
@@ -30822,7 +30822,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -30929,7 +30929,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -31032,7 +31032,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -31127,7 +31127,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -31209,7 +31209,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -31287,7 +31287,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -31363,7 +31363,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -31440,7 +31440,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -31521,7 +31521,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -31713,7 +31713,7 @@
       "theater_pattern": "ai_assistant_config_treated_as_trusted"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2026-05-25",
     "ai_assist_factor": "high"
   },
@@ -31793,7 +31793,7 @@
       "theater_pattern": "default_registry_resolution_assumed_safe"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2026-05-28",
     "ai_assist_factor": "low"
   },
@@ -32336,7 +32336,7 @@
       "theater_pattern": "availability_capacity_assumed_sufficient"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "academic_ai_fuzzing",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -32409,7 +32409,7 @@
       "theater_pattern": "availability_capacity_assumed_sufficient"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "academic_ai_fuzzing",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -32780,7 +32780,7 @@
       "theater_pattern": "embedded_media_library_unpatched_copies"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -32850,7 +32850,7 @@
       "theater_pattern": "os_lpe_monthly_patch_latency"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -32999,7 +32999,7 @@
       "theater_pattern": "perimeter_vpn_auth_bypass_trusted_enforcer"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -33312,7 +33312,7 @@
       "theater_pattern": "llm_gateway_mcp_unauth_exec"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -33410,7 +33410,7 @@
       "theater_pattern": "control_panel_plugin_user_to_root"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_disclosure",
+    "ai_discovery_source": "vendor_research",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -33458,7 +33458,7 @@
       "theater_pattern": "deprecated_vpn_protocol_auth_bypass_left_enabled"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -33557,7 +33557,7 @@
       "theater_pattern": "signed_installer_pipeline_compromise"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_disclosure",
+    "ai_discovery_source": "vendor_research",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -33626,7 +33626,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -33706,7 +33706,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -34139,7 +34139,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -34305,7 +34305,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -34723,7 +34723,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -34810,7 +34810,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -34968,7 +34968,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -35204,7 +35204,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -35625,7 +35625,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -35884,7 +35884,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -36385,7 +36385,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -36465,7 +36465,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -36552,7 +36552,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -36640,7 +36640,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -36718,7 +36718,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -36799,7 +36799,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -36868,7 +36868,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -36946,7 +36946,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_disclosure",
+    "ai_discovery_source": "vendor_research",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -37096,7 +37096,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_disclosure",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -38174,7 +38174,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_disclosure",
+    "ai_discovery_source": "unknown",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -38416,7 +38416,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_disclosure",
+    "ai_discovery_source": "vendor_research",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -38485,7 +38485,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_disclosure",
+    "ai_discovery_source": "vendor_research",
     "ai_assist_factor": "none",
     "new_control_requirements": [
       {
@@ -38582,7 +38582,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2026-48939": {
     "name": "iCagenda Unrestricted Upload of File with Dangerous Type Vulnerability",
@@ -38646,7 +38647,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2026-56290": {
     "name": "Joomlack Page Builder Improper Access Control Vulnerability",
@@ -38719,7 +38721,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2026-55255": {
     "name": "Langflow Authorization Bypass Through User-Controlled Key Vulnerability",
@@ -38794,7 +38797,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2026-48908": {
     "name": "JoomShaper SP Page Builder Unrestricted Upload of File with Dangerous Type Vulnerability",
@@ -38861,7 +38865,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2026-48282": {
     "name": "Adobe ColdFusion Path Traversal Vulnerability",
@@ -38936,7 +38941,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2025-23209": {
     "name": "Craft CMS Code Injection Vulnerability",
@@ -39000,7 +39006,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2025-0108": {
     "name": "Palo Alto Networks PAN-OS Authentication Bypass Vulnerability",
@@ -39069,7 +39076,8 @@
           "NIS2-Art21-network-security"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-53704": {
     "name": "SonicWall SonicOS SSLVPN Improper Authentication Vulnerability",
@@ -39129,7 +39137,8 @@
           "NIST-800-53-IA-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-57727": {
     "name": "SimpleHelp Path Traversal Vulnerability",
@@ -39197,7 +39206,8 @@
           "UK-CAF-B2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2025-24200": {
     "name": "Apple iOS and iPadOS Incorrect Authorization Vulnerability",
@@ -39256,7 +39266,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-41710": {
     "name": "Mitel SIP Phones Argument Injection Vulnerability",
@@ -39314,7 +39325,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2025-21418": {
     "name": "Microsoft Windows Ancillary Function Driver for WinSock Heap-Based Buffer Overflow Vulnerability",
@@ -39374,7 +39386,8 @@
           "UK-CAF-D1"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2025-21391": {
     "name": "Microsoft Windows Storage Link Following Vulnerability",
@@ -39423,7 +39436,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2024-40891": {
     "name": "Zyxel DSL CPE OS Command Injection Vulnerability",
@@ -39484,7 +39498,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-40890": {
     "name": "Zyxel DSL CPE OS Command Injection Vulnerability (CGI)",
@@ -39545,7 +39560,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2025-0994": {
     "name": "Trimble Cityworks Deserialization Vulnerability",
@@ -39605,7 +39621,8 @@
           "NIS2-Art21-vulnerability-handling"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2025-0411": {
     "name": "7-Zip Mark of the Web Bypass Vulnerability",
@@ -39674,7 +39691,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-21413": {
     "name": "Microsoft Outlook Improper Input Validation Vulnerability (MonikerLink)",
@@ -39735,7 +39753,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2022-23748": {
     "name": "Dante Discovery Process Control Vulnerability",
@@ -39793,7 +39812,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2020-29574": {
     "name": "CyberoamOS (CROS) SQL Injection Vulnerability",
@@ -39853,7 +39873,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2020-15069": {
     "name": "Sophos XG Firewall Buffer Overflow Vulnerability",
@@ -39919,7 +39940,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2024-53104": {
     "name": "Linux Kernel Out-of-Bounds Write Vulnerability (CVE-2024-53104)",
@@ -39992,7 +40014,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2024-45195": {
     "name": "Apache OFBiz Forced Browsing Vulnerability",
@@ -40057,7 +40080,8 @@
           "NIS2-Art21-vulnerability-handling"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-29059": {
     "name": "Microsoft .NET Framework Information Disclosure Vulnerability",
@@ -40130,7 +40154,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2018-9276": {
     "name": "Paessler PRTG Network Monitor OS Command Injection Vulnerability",
@@ -40203,7 +40228,8 @@
           "UK-CAF-B2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2018-19410": {
     "name": "Paessler PRTG Network Monitor Local File Inclusion Vulnerability",
@@ -40268,7 +40294,8 @@
           "ISO-27001-2022-A.8.9"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2025-24085": {
     "name": "Apple Multiple Products Use-After-Free Vulnerability",
@@ -40336,7 +40363,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2025-23006": {
     "name": "SonicWall SMA1000 Appliances Deserialization Vulnerability",
@@ -40406,7 +40434,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2020-11023": {
     "name": "JQuery Cross-Site Scripting (XSS) Vulnerability",
@@ -40466,7 +40495,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2024-50603": {
     "name": "Aviatrix Controllers OS Command Injection Vulnerability",
@@ -40536,7 +40566,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2025-21335": {
     "name": "Microsoft Windows Hyper-V NT Kernel Integration VSP Use-After-Free Vulnerability (CVE-2025-21335)",
@@ -40598,7 +40629,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2025-21334": {
     "name": "Microsoft Windows Hyper-V NT Kernel Integration VSP Use-After-Free Vulnerability (CVE-2025-21334)",
@@ -40660,7 +40692,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2025-21333": {
     "name": "Microsoft Windows Hyper-V NT Kernel Integration VSP Heap-based Buffer Overflow Vulnerability",
@@ -40722,7 +40755,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-55591": {
     "name": "Fortinet FortiOS and FortiProxy Authentication Bypass Vulnerability",
@@ -40792,7 +40826,8 @@
           "NIS2-Art21-incident-handling"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2024-12686": {
     "name": "BeyondTrust Privileged Remote Access (PRA) and Remote Support (RS) OS Command Injection Vulnerability",
@@ -40866,7 +40901,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2023-48365": {
     "name": "Qlik Sense HTTP Tunneling Vulnerability",
@@ -40939,7 +40975,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-55550": {
     "name": "Mitel MiCollab Path Traversal Vulnerability (CVE-2024-55550)",
@@ -41004,7 +41041,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-41713": {
     "name": "Mitel MiCollab Path Traversal Vulnerability (CVE-2024-41713)",
@@ -41070,7 +41108,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2020-2883": {
     "name": "Oracle WebLogic Server Unspecified Vulnerability (CVE-2020-2883)",
@@ -41136,7 +41175,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-3393": {
     "name": "Palo Alto Networks PAN-OS Malicious DNS Packet Vulnerability",
@@ -41211,7 +41251,8 @@
           "UK-CAF-D1"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2021-44207": {
     "name": "Acclaim Systems USAHERDS Use of Hard-Coded Credentials Vulnerability",
@@ -41278,7 +41319,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-12356": {
     "name": "BeyondTrust Privileged Remote Access (PRA) and Remote Support (RS) Command Injection Vulnerability",
@@ -41347,7 +41389,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2022-23227": {
     "name": "NUUO NVRmini2 Devices Missing Authentication Vulnerability",
@@ -41408,7 +41451,8 @@
           "NIST-800-53-CM-7"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2021-40407": {
     "name": "Reolink RLC-410W IP Camera OS Command Injection Vulnerability",
@@ -41469,7 +41513,8 @@
           "NIS2-Art21-network-security"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2019-11001": {
     "name": "Reolink Multiple IP Cameras OS Command Injection Vulnerability",
@@ -41541,7 +41586,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2018-14933": {
     "name": "NUUO NVRmini Devices OS Command Injection Vulnerability",
@@ -41610,7 +41656,8 @@
           "UK-CAF-C1"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-55956": {
     "name": "Cleo Multiple Products Unauthenticated File Upload Vulnerability",
@@ -41670,7 +41717,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-35250": {
     "name": "Microsoft Windows Kernel-Mode Driver Untrusted Pointer Dereference Vulnerability",
@@ -41740,7 +41788,8 @@
           "NIS2-Art21-patch-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-20767": {
     "name": "Adobe ColdFusion Improper Access Control Vulnerability",
@@ -41805,7 +41854,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-50623": {
     "name": "Cleo Multiple Products Unrestricted File Upload Vulnerability",
@@ -41880,7 +41930,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-49138": {
     "name": "Microsoft Windows Common Log File System (CLFS) Driver Heap-Based Buffer Overflow Vulnerability",
@@ -41947,7 +41998,8 @@
           "UK-CAF-B2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-51378": {
     "name": "CyberPanel Incorrect Default Permissions Vulnerability",
@@ -42022,7 +42074,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-11680": {
     "name": "ProjectSend Improper Authentication Vulnerability",
@@ -42095,7 +42148,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-11667": {
     "name": "Zyxel Multiple Firewalls Path Traversal Vulnerability",
@@ -42169,7 +42223,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-45727": {
     "name": "North Grid Proself Improper Restriction of XML External Entity (XXE) Reference Vulnerability",
@@ -42224,7 +42279,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-28461": {
     "name": "Array Networks AG and vxAG ArrayOS Missing Authentication for Critical Function Vulnerability",
@@ -42294,7 +42350,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2024-44309": {
     "name": "Apple Multiple Products Cross-Site Scripting (XSS) Vulnerability",
@@ -42354,7 +42411,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-44308": {
     "name": "Apple Multiple Products Code Execution Vulnerability",
@@ -42424,7 +42482,8 @@
           "NIST-800-53-CM-7"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-21287": {
     "name": "Oracle Agile Product Lifecycle Management (PLM) Incorrect Authorization Vulnerability",
@@ -42485,7 +42544,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-38813": {
     "name": "VMware vCenter Server Privilege Escalation Vulnerability",
@@ -42546,7 +42606,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2024-38812": {
     "name": "VMware vCenter Server Heap-Based Buffer Overflow Vulnerability",
@@ -42607,7 +42668,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2024-9474": {
     "name": "Palo Alto Networks PAN-OS Management Interface OS Command Injection Vulnerability",
@@ -42677,7 +42739,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2024-1212": {
     "name": "Progress Kemp LoadMaster OS Command Injection Vulnerability",
@@ -42746,7 +42809,8 @@
           "ISO-27001-2022-A.8.16"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-0012": {
     "name": "Palo Alto Networks PAN-OS Management Interface Authentication Bypass Vulnerability",
@@ -42816,7 +42880,8 @@
           "UK-CAF-B2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2024-9465": {
     "name": "Palo Alto Networks Expedition SQL Injection Vulnerability",
@@ -42876,7 +42941,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-9463": {
     "name": "Palo Alto Networks Expedition OS Command Injection Vulnerability",
@@ -42945,7 +43011,8 @@
           "UK-CAF-B2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-49039": {
     "name": "Microsoft Windows Task Scheduler Privilege Escalation Vulnerability",
@@ -43004,7 +43071,8 @@
           "NIS2-Art21-incident-handling"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-43451": {
     "name": "Microsoft Windows NTLMv2 Hash Disclosure Spoofing Vulnerability",
@@ -43053,7 +43121,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2021-41277": {
     "name": "Metabase GeoJSON API Local File Inclusion Vulnerability",
@@ -43122,7 +43191,8 @@
           "NIS2-Art21-patch-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2021-26086": {
     "name": "Atlassian Jira Server and Data Center Path Traversal Vulnerability",
@@ -43188,7 +43258,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2014-2120": {
     "name": "Cisco Adaptive Security Appliance (ASA) Cross-Site Scripting (XSS) Vulnerability",
@@ -43261,7 +43332,8 @@
           "UK-CAF-C1"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-5910": {
     "name": "Palo Alto Networks Expedition Missing Authentication Vulnerability",
@@ -43334,7 +43406,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2024-51567": {
     "name": "CyberPanel Incorrect Default Permissions Vulnerability",
@@ -43407,7 +43480,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-43093": {
     "name": "Android Framework Privilege Escalation Vulnerability",
@@ -43472,7 +43546,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2019-16278": {
     "name": "Nostromo nhttpd Directory Traversal Vulnerability",
@@ -43537,7 +43612,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-8957": {
     "name": "PTZOptics PT30X-SDI/NDI Cameras OS Command Injection Vulnerability",
@@ -43602,7 +43678,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "bug_bounty_ai_augmented"
   },
   "CVE-2024-8956": {
     "name": "PTZOptics PT30X-SDI/NDI Cameras Authentication Bypass Vulnerability",
@@ -43672,7 +43749,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "bug_bounty_ai_augmented"
   },
   "CVE-2024-37383": {
     "name": "RoundCube Webmail Cross-Site Scripting (XSS) Vulnerability",
@@ -43741,7 +43819,8 @@
           "NIS2-Art21-vulnerability-handling"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-20481": {
     "name": "Cisco ASA and FTD Denial-of-Service Vulnerability",
@@ -43800,7 +43879,8 @@
           "UK-CAF-D1"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2024-47575": {
     "name": "Fortinet FortiManager Missing Authentication Vulnerability",
@@ -43870,7 +43950,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2024-38094": {
     "name": "Microsoft SharePoint Deserialization Vulnerability",
@@ -43940,7 +44021,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2024-9537": {
     "name": "ScienceLogic SL1 Unspecified Vulnerability",
@@ -43999,7 +44081,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-40711": {
     "name": "Veeam Backup and Replication Deserialization Vulnerability",
@@ -44069,7 +44152,8 @@
           "DORA-Art10"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-9680": {
     "name": "Mozilla Firefox Use-After-Free Vulnerability",
@@ -44133,7 +44217,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-30088": {
     "name": "Microsoft Windows Kernel TOCTOU Race Condition Vulnerability",
@@ -44207,7 +44292,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-28987": {
     "name": "SolarWinds Web Help Desk Hardcoded Credential Vulnerability",
@@ -44274,7 +44360,8 @@
           "AU-ISM-1546"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-9380": {
     "name": "Ivanti Cloud Services Appliance (CSA) OS Command Injection Vulnerability",
@@ -44348,7 +44435,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2024-9379": {
     "name": "Ivanti Cloud Services Appliance (CSA) SQL Injection Vulnerability",
@@ -44413,7 +44501,8 @@
           "ISO-27001-2022-A.8.9"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2024-23113": {
     "name": "Fortinet Multiple Products Format String Vulnerability",
@@ -44480,7 +44569,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2024-43573": {
     "name": "Microsoft Windows MSHTML Platform Spoofing Vulnerability",
@@ -44544,7 +44634,8 @@
           "NIST-800-53-SI-3"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2024-43572": {
     "name": "Microsoft Windows Management Console Remote Code Execution Vulnerability",
@@ -44604,7 +44695,8 @@
           "NIST-800-53-CM-7"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-43047": {
     "name": "Qualcomm Multiple Chipsets Use-After-Free Vulnerability",
@@ -44665,7 +44757,8 @@
           "NIST-800-53-SI-3"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-45519": {
     "name": "Synacor Zimbra Collaboration Suite (ZCS) Command Execution Vulnerability",
@@ -44736,7 +44829,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2024-29824": {
     "name": "Ivanti Endpoint Manager (EPM) SQL Injection Vulnerability",
@@ -44805,7 +44899,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-25280": {
     "name": "D-Link DIR-820 Router OS Command Injection Vulnerability",
@@ -44868,7 +44963,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2020-15415": {
     "name": "DrayTek Multiple Vigor Routers OS Command Injection Vulnerability",
@@ -44930,7 +45026,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2019-0344": {
     "name": "SAP Commerce Cloud Deserialization of Untrusted Data Vulnerability",
@@ -44999,7 +45096,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2024-7593": {
     "name": "Ivanti Virtual Traffic Manager Authentication Bypass Vulnerability",
@@ -45068,7 +45166,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-8963": {
     "name": "Ivanti Cloud Services Appliance (CSA) Path Traversal Vulnerability",
@@ -45144,7 +45243,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2026-58644": {
     "name": "Microsoft SharePoint Deserialization of Untrusted Data Vulnerability (CVE-2026-58644)",
@@ -45204,7 +45304,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2026-25089": {
     "name": "Fortinet FortiSandbox OS Command Injection Vulnerability (CVE-2026-25089)",
@@ -45276,7 +45377,8 @@
           "NIS2-Art21-patch-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2026-39808": {
     "name": "Fortinet FortiSandbox OS Command Injection Vulnerability (CVE-2026-39808)",
@@ -45349,7 +45451,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2026-46817": {
     "name": "Oracle E-Business Suite Improper Privilege Management Vulnerability",
@@ -45410,7 +45513,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2023-4346": {
     "name": "KNX Association KNX Protocol Connection Authorization Option 1 Overly Restrictive Account Lockout Mechanism Vulnerability",
@@ -45471,7 +45575,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2026-56155": {
     "name": "Microsoft Active Directory Federation Services Insufficient Granularity of Access Control Vulnerability",
@@ -45539,7 +45644,8 @@
           "ISO-27001-2022-A.5.16-Federated"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2026-56164": {
     "name": "Microsoft SharePoint Server Missing Authentication for Critical Function Vulnerability",
@@ -45599,7 +45705,8 @@
           "NIS2-Art21-vulnerability-handling"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2026-15409": {
     "name": "SonicWall SMA1000 Appliances Server-Side Request Forgery Vulnerability (CVE-2026-15409)",
@@ -45658,7 +45765,8 @@
           "ISO-27001-2022-A.8.16"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2026-15410": {
     "name": "SonicWall SMA1000 Appliances Code Injection Vulnerability",
@@ -45727,7 +45835,8 @@
           "NIST-800-53-AC-6"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2008-4128": {
     "name": "Cisco IOS Cross-Site Request Forgery Vulnerability",
@@ -45796,7 +45905,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2020-14644": {
     "name": "Oracle WebLogic Server Remote Code Execution Vulnerability",
@@ -45866,7 +45976,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2022-21445": {
     "name": "Oracle ADF Faces Deserialization of Untrusted Data Vulnerability",
@@ -45926,7 +46037,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2020-0618": {
     "name": "Microsoft SQL Server Reporting Services Remote Code Execution Vulnerability",
@@ -45996,7 +46108,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-27348": {
     "name": "Apache HugeGraph-Server Improper Access Control Vulnerability",
@@ -46056,7 +46169,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2014-0502": {
     "name": "Adobe Flash Player Double Free Vulnerability",
@@ -46118,7 +46232,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2013-0648": {
     "name": "Adobe Flash Player Code Execution Vulnerability",
@@ -46179,7 +46294,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2013-0643": {
     "name": "Adobe Flash Player Incorrect Default Permissions Vulnerability",
@@ -46240,7 +46356,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2014-0497": {
     "name": "Adobe Flash Player Integer Underflow Vulnerablity",
@@ -46299,7 +46416,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-6670": {
     "name": "Progress WhatsUp Gold SQL Injection Vulnerability",
@@ -46370,7 +46488,8 @@
           "SOC2-CC6-logical-access"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-43461": {
     "name": "Microsoft Windows MSHTML Platform Spoofing Vulnerability (CVE-2024-43461)",
@@ -46430,7 +46549,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-8190": {
     "name": "Ivanti Cloud Services Appliance OS Command Injection Vulnerability",
@@ -46500,7 +46620,8 @@
           "NIST-800-53-SC-7"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2024-38217": {
     "name": "Microsoft Windows Mark of the Web (MOTW) Protection Mechanism Failure Vulnerability",
@@ -46570,7 +46691,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-38014": {
     "name": "Microsoft Windows Installer Improper Privilege Management Vulnerability",
@@ -46622,7 +46744,8 @@
           "NIST-800-53-AC-6"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-38226": {
     "name": "Microsoft Publisher Protection Mechanism Failure Vulnerability",
@@ -46680,7 +46803,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2024-40766": {
     "name": "SonicWall SonicOS Improper Access Control Vulnerability",
@@ -46749,7 +46873,8 @@
           "UK-CAF-D1"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2017-1000253": {
     "name": "Linux Kernel PIE Stack Buffer Corruption Vulnerability",
@@ -46820,7 +46945,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2016-3714": {
     "name": "ImageMagick Improper Input Validation Vulnerability",
@@ -46879,7 +47005,8 @@
           "NIST-800-53-SI-3"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-7262": {
     "name": "Kingsoft WPS Office Path Traversal Vulnerability",
@@ -46937,7 +47064,8 @@
           "ISO-27001-2022-A.8.7"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2021-20124": {
     "name": "Draytek VigorConnect Path Traversal Vulnerability (CVE-2021-20124)",
@@ -47007,7 +47135,8 @@
           "UK-CAF-B2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2021-20123": {
     "name": "DrayTek VigorConnect Path Traversal Vulnerability (CVE-2021-20123)",
@@ -47068,7 +47197,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-7965": {
     "name": "Google Chromium V8 Inappropriate Implementation Vulnerability",
@@ -47128,7 +47258,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-38856": {
     "name": "Apache OFBiz Incorrect Authorization Vulnerability",
@@ -47189,7 +47320,8 @@
           "NIS2-Art21-vulnerability-handling"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-7971": {
     "name": "Google Chromium V8 Type Confusion Vulnerability (CVE-2024-7971)",
@@ -47249,7 +47381,8 @@
           "NIS2-Art21-incident-handling"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-39717": {
     "name": "Versa Director Dangerous File Type Upload Vulnerability",
@@ -47319,7 +47452,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2021-31196": {
     "name": "Microsoft Exchange Server Remote Code Execution Vulnerability",
@@ -47381,7 +47515,8 @@
           "NIST-800-53-SC-7"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2022-0185": {
     "name": "Linux Kernel Heap-Based Buffer Overflow Vulnerability",
@@ -47452,7 +47587,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2021-33045": {
     "name": "Dahua IP Camera Authentication Bypass Vulnerability (CVE-2021-33045)",
@@ -47510,7 +47646,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2021-33044": {
     "name": "Dahua IP Camera Authentication Bypass Vulnerability (CVE-2021-33044)",
@@ -47571,7 +47708,8 @@
           "NIS2-Art21-network-security"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2024-23897": {
     "name": "Jenkins Command Line Interface (CLI) Path Traversal Vulnerability",
@@ -47641,7 +47779,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-28986": {
     "name": "SolarWinds Web Help Desk Deserialization of Untrusted Data Vulnerability (CVE-2024-28986)",
@@ -47701,7 +47840,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-38107": {
     "name": "Microsoft Windows Power Dependency Coordinator Privilege Escalation Vulnerability",
@@ -47762,7 +47902,8 @@
           "SOC2-CC7-anomaly-detection"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-38106": {
     "name": "Microsoft Windows Kernel Privilege Escalation Vulnerability (CVE-2024-38106)",
@@ -47822,7 +47963,8 @@
           "NIST-800-53-SI-4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2024-38193": {
     "name": "Microsoft Windows Ancillary Function Driver for WinSock Privilege Escalation Vulnerability",
@@ -47891,7 +48033,8 @@
           "NIS2-Art21-incident-handling"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-38213": {
     "name": "Microsoft Windows SmartScreen Security Feature Bypass Vulnerability",
@@ -47952,7 +48095,8 @@
           "ISO-27001-2022-A.8.7"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-38178": {
     "name": "Microsoft Windows Scripting Engine Memory Corruption Vulnerability",
@@ -48013,7 +48157,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-38189": {
     "name": "Microsoft Project Remote Code Execution Vulnerability",
@@ -48074,7 +48219,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-32113": {
     "name": "Apache OFBiz Path Traversal Vulnerability",
@@ -48135,7 +48281,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-36971": {
     "name": "Android Kernel Remote Code Execution Vulnerability",
@@ -48204,7 +48351,8 @@
           "NIST-800-53-AC-6"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2018-0824": {
     "name": "Microsoft COM for Windows Deserialization of Untrusted Data Vulnerability",
@@ -48264,7 +48412,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-37085": {
     "name": "VMware ESXi Authentication Bypass Vulnerability",
@@ -48331,7 +48480,8 @@
           "AU-Essential-8-Backup"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-45249": {
     "name": "Acronis Cyber Infrastructure (ACI) Insecure Default Password Vulnerability",
@@ -48402,7 +48552,8 @@
           "PCI-DSS-4.0-2.2.3"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2024-5217": {
     "name": "ServiceNow Incomplete List of Disallowed Inputs Vulnerability",
@@ -48471,7 +48622,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-4879": {
     "name": "ServiceNow Improper Input Validation Vulnerability",
@@ -48534,7 +48686,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-39891": {
     "name": "Twilio Authy Information Disclosure Vulnerability",
@@ -48582,7 +48735,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2012-4792": {
     "name": "Microsoft Internet Explorer Use-After-Free Vulnerability",
@@ -48634,7 +48788,8 @@
           "AU-Essential-8-App-Hardening"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2022-22948": {
     "name": "VMware vCenter Server Incorrect Default File Permissions Vulnerability",
@@ -48703,7 +48858,8 @@
           "UK-CAF-B2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-28995": {
     "name": "SolarWinds Serv-U Path Traversal Vulnerability",
@@ -48761,7 +48917,8 @@
           "UK-CAF-B2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-34102": {
     "name": "Adobe Commerce and Magento Open Source Improper Restriction of XML External Entity Reference (XXE) Vulnerability",
@@ -48829,7 +48986,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-36401": {
     "name": "OSGeo GeoServer GeoTools Eval Injection Vulnerability",
@@ -48901,7 +49059,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2024-23692": {
     "name": "Rejetto HTTP File Server Template Engine Injection Vulnerability",
@@ -48961,7 +49120,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-38080": {
     "name": "Microsoft Windows Hyper-V Privilege Escalation Vulnerability",
@@ -49022,7 +49182,8 @@
           "NIST-800-53-AC-6"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-38112": {
     "name": "Microsoft Windows MSHTML Platform Spoofing Vulnerability (CVE-2024-38112)",
@@ -49090,7 +49251,8 @@
           "NIST-800-53-CM-7"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-20399": {
     "name": "Cisco NX-OS Command Injection Vulnerability",
@@ -49151,7 +49313,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2020-13965": {
     "name": "Roundcube Webmail Cross-Site Scripting (XSS) Vulnerability",
@@ -49220,7 +49383,8 @@
           "AU-Essential-8-App-Hardening"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2022-2586": {
     "name": "Linux Kernel Use-After-Free Vulnerability (CVE-2022-2586)",
@@ -49290,7 +49454,8 @@
           "NIS2-Art21-patch-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2022-24816": {
     "name": "OSGeo GeoServer JAI-EXT Code Injection Vulnerability",
@@ -49362,7 +49527,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-4358": {
     "name": "Progress Telerik Report Server Authentication Bypass by Spoofing Vulnerability",
@@ -49424,7 +49590,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-26169": {
     "name": "Microsoft Windows Error Reporting Service Improper Privilege Management Vulnerability",
@@ -49486,7 +49653,8 @@
           "ISO-27001-2022-A.8.7"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-32896": {
     "name": "Android Pixel Privilege Escalation Vulnerability (CVE-2024-32896)",
@@ -49547,7 +49715,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2024-4577": {
     "name": "PHP-CGI OS Command Injection Vulnerability",
@@ -49617,7 +49786,8 @@
           "UK-CAF-D1"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-4610": {
     "name": "Arm Mali GPU Kernel Driver Use-After-Free Vulnerability",
@@ -49687,7 +49857,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2017-3506": {
     "name": "Oracle WebLogic Server OS Command Injection Vulnerability",
@@ -49747,7 +49918,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-1086": {
     "name": "Linux Kernel Use-After-Free Vulnerability (CVE-2024-1086)",
@@ -49816,7 +49988,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-24919": {
     "name": "Check Point Quantum Security Gateways Information Disclosure Vulnerability",
@@ -49885,7 +50058,8 @@
           "UK-CAF-C1"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2024-4978": {
     "name": "JAVS Viewer Installer Embedded Malicious Code Vulnerability",
@@ -49944,7 +50118,8 @@
           "NIS2-Art21-vulnerability-handling"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-5274": {
     "name": "Google Chromium V8 Type Confusion Vulnerability (CVE-2024-5274)",
@@ -49995,7 +50170,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2020-17519": {
     "name": "Apache Flink Improper Access Control Vulnerability",
@@ -50054,7 +50230,8 @@
           "NIS2-Art21-network-security"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-4947": {
     "name": "Google Chromium V8 Type Confusion Vulnerability (CVE-2024-4947)",
@@ -50114,7 +50291,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-43208": {
     "name": "NextGen Healthcare Mirth Connect Deserialization of Untrusted Data Vulnerability",
@@ -50185,7 +50363,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-4761": {
     "name": "Google Chromium V8 Out-of-Bounds Memory Write Vulnerability",
@@ -50236,7 +50415,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2021-40655": {
     "name": "D-Link DIR-605 Router Information Disclosure Vulnerability",
@@ -50300,7 +50480,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2014-100005": {
     "name": "D-Link DIR-600 Router Cross-Site Request Forgery (CSRF) Vulnerability",
@@ -50362,7 +50543,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-30040": {
     "name": "Microsoft Windows MSHTML Platform Security Feature Bypass Vulnerability",
@@ -50422,7 +50604,8 @@
           "NIS2-Art21-vulnerability-handling"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2024-30051": {
     "name": "Microsoft DWM Core Library Privilege Escalation Vulnerability",
@@ -50474,7 +50657,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-4671": {
     "name": "Google Chromium Visuals Use-After-Free Vulnerability",
@@ -50536,7 +50720,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-7028": {
     "name": "GitLab Community and Enterprise Editions Improper Access Control Vulnerability",
@@ -50585,7 +50770,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-29988": {
     "name": "Microsoft SmartScreen Prompt Security Feature Bypass Vulnerability",
@@ -50645,7 +50831,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-4040": {
     "name": "CrushFTP VFS Sandbox Escape Vulnerability",
@@ -50705,7 +50892,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2024-20359": {
     "name": "Cisco ASA and FTD Privilege Escalation Vulnerability",
@@ -50774,7 +50962,8 @@
           "UK-CAF-C1"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2024-20353": {
     "name": "Cisco ASA and FTD Web Services Denial of Service Vulnerability",
@@ -50844,7 +51033,8 @@
           "NIS2-Art21-network-security"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2022-38028": {
     "name": "Microsoft Windows Print Spooler Privilege Escalation Vulnerability",
@@ -50906,7 +51096,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-3400": {
     "name": "Palo Alto Networks PAN-OS Command Injection Vulnerability",
@@ -50978,7 +51169,8 @@
           "NIS2-Art21-incident-handling"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-3273": {
     "name": "D-Link Multiple NAS Devices Command Injection Vulnerability",
@@ -51039,7 +51231,8 @@
           "NIS2-Art21-network-security"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-3272": {
     "name": "D-Link Multiple NAS Devices Use of Hard-Coded Credentials Vulnerability",
@@ -51109,7 +51302,8 @@
           "ISO-27001-2022-A.8.9"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-29748": {
     "name": "Android Pixel Privilege Escalation Vulnerability (CVE-2024-29748)",
@@ -51170,7 +51364,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-29745": {
     "name": "Android Pixel Information Disclosure Vulnerability",
@@ -51231,7 +51426,8 @@
           "NIS2-Art21-patch-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-24955": {
     "name": "Microsoft SharePoint Server Code Injection Vulnerability",
@@ -51300,7 +51496,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2019-7256": {
     "name": "Nice Linear eMerge E3-Series OS Command Injection Vulnerability",
@@ -51369,7 +51566,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2021-44529": {
     "name": "Ivanti Endpoint Manager Cloud Service Appliance (EPM CSA) Code Injection Vulnerability",
@@ -51431,7 +51629,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-48788": {
     "name": "Fortinet FortiClient EMS SQL Injection Vulnerability (CVE-2023-48788)",
@@ -51501,7 +51700,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-27198": {
     "name": "JetBrains TeamCity Authentication Bypass Vulnerability",
@@ -51581,7 +51781,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-23225": {
     "name": "Apple Multiple Products Memory Corruption Vulnerability",
@@ -51661,7 +51862,8 @@
           "NIS2-Art21-patch-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-23296": {
     "name": "Apple Multiple Products Memory Corruption Vulnerability",
@@ -51750,7 +51952,8 @@
           "NIST-800-53-CM-7"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-21237": {
     "name": "Android Pixel Information Disclosure Vulnerability",
@@ -51830,7 +52033,8 @@
           "NIST-800-53-SI-4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2021-36380": {
     "name": "Sunhillo SureLine OS Command Injection Vulnerability",
@@ -51910,7 +52114,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-21338": {
     "name": "Microsoft Windows Kernel Exposed IOCTL with Insufficient Access Control Vulnerability",
@@ -51979,7 +52184,8 @@
           "ISO-27001-2022-A.8.7"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-29360": {
     "name": "Microsoft Streaming Service Untrusted Pointer Dereference Vulnerability",
@@ -52060,7 +52266,8 @@
           "UK-CAF-C1"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2020-3259": {
     "name": "Cisco ASA and FTD Information Disclosure Vulnerability",
@@ -52142,7 +52349,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-21410": {
     "name": "Microsoft Exchange Server Privilege Escalation Vulnerability (CVE-2024-21410)",
@@ -52223,7 +52431,8 @@
           "AU-Essential-8-App-Hardening"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2024-21412": {
     "name": "Microsoft Windows Internet Shortcut Files Security Feature Bypass Vulnerability",
@@ -52292,7 +52501,8 @@
           "ISO-27001-2022-A.8.7"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-21351": {
     "name": "Microsoft Windows SmartScreen Security Feature Bypass Vulnerability",
@@ -52361,7 +52571,8 @@
           "ISO-27001-2022-A.8.7"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-43770": {
     "name": "Roundcube Webmail Persistent Cross-Site Scripting (XSS) Vulnerability",
@@ -52450,7 +52661,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2023-4762": {
     "name": "Google Chromium V8 Type Confusion Vulnerability (CVE-2023-4762)",
@@ -52530,7 +52742,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2022-48618": {
     "name": "Apple Multiple Products Memory Corruption Vulnerability",
@@ -52621,7 +52834,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2024-21893": {
     "name": "Ivanti Connect Secure, Policy Secure, and Neurons Server-Side Request Forgery (SSRF) Vulnerability",
@@ -52701,7 +52915,8 @@
           "DORA-Art-9"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2023-22527": {
     "name": "Atlassian Confluence Data Center and Server Template Injection Vulnerability",
@@ -52782,7 +52997,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2024-23222": {
     "name": "Apple Multiple Products WebKit Type Confusion Vulnerability (CVE-2024-23222)",
@@ -52862,7 +53078,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2023-34048": {
     "name": "VMware vCenter Server Out-of-Bounds Write Vulnerability",
@@ -52951,7 +53168,8 @@
           "UK-CAF-C1"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2023-35082": {
     "name": "Ivanti Endpoint Manager Mobile (EPMM) and MobileIron Core Authentication Bypass Vulnerability",
@@ -53039,7 +53257,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-0519": {
     "name": "Google Chromium V8 Out-of-Bounds Memory Access Vulnerability",
@@ -53119,7 +53338,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2023-6549": {
     "name": "Citrix NetScaler ADC and NetScaler Gateway Buffer Overflow Vulnerability",
@@ -53199,7 +53419,8 @@
           "NIS2-Art21-network-security"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2023-6548": {
     "name": "Citrix NetScaler ADC and NetScaler Gateway Code Injection Vulnerability",
@@ -53279,7 +53500,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2018-15133": {
     "name": "Laravel Deserialization of Untrusted Data Vulnerability",
@@ -53348,7 +53570,8 @@
           "ISO-27001-2022-A.8.9"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2023-29357": {
     "name": "Microsoft SharePoint Server Privilege Escalation Vulnerability",
@@ -53437,7 +53660,8 @@
           "NIS2-Art21-patch-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-46805": {
     "name": "Ivanti Connect Secure and Policy Secure Authentication Bypass Vulnerability",
@@ -53525,7 +53749,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2024-21887": {
     "name": "Ivanti Connect Secure and Policy Secure Command Injection Vulnerability",
@@ -53613,7 +53838,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-23752": {
     "name": "Joomla! Improper Access Control Vulnerability",
@@ -53693,7 +53919,8 @@
           "UK-CAF-B2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2016-20017": {
     "name": "D-Link DSL-2750B Devices Command Injection Vulnerability",
@@ -53762,7 +53989,8 @@
           "NIS2-Art21-network-security"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2023-41990": {
     "name": "Apple Multiple Products Code Execution Vulnerability",
@@ -53831,7 +54059,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-27524": {
     "name": "Apache Superset Insecure Default Initialization of Resource Vulnerability",
@@ -53900,7 +54129,8 @@
           "ISO-27001-2022-A.8.9"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-29300": {
     "name": "Adobe ColdFusion Deserialization of Untrusted Data Vulnerability",
@@ -53980,7 +54210,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-38203": {
     "name": "Adobe ColdFusion Deserialization of Untrusted Data Vulnerability",
@@ -54070,7 +54301,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-7101": {
     "name": "Spreadsheet::ParseExcel Remote Code Execution Vulnerability",
@@ -54151,7 +54383,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-7024": {
     "name": "Google Chromium WebRTC Heap Buffer Overflow Vulnerability",
@@ -54230,7 +54463,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2023-49897": {
     "name": "FXC AE1021, AE1021PE OS Command Injection Vulnerability",
@@ -54309,7 +54543,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-47565": {
     "name": "QNAP VioStor NVR OS Command Injection Vulnerability",
@@ -54390,7 +54625,8 @@
           "NIS2-Art21-network-security"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-6448": {
     "name": "Unitronics Vision PLC and HMI Insecure Default Password Vulnerability",
@@ -54459,7 +54695,8 @@
           "AU-Essential-8-App-Hardening"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-41266": {
     "name": "Qlik Sense Path Traversal Vulnerability",
@@ -54539,7 +54776,8 @@
           "UK-CAF-C1"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-41265": {
     "name": "Qlik Sense HTTP Tunneling Vulnerability",
@@ -54630,7 +54868,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-33107": {
     "name": "Qualcomm Multiple Chipsets Integer Overflow Vulnerability",
@@ -54711,7 +54950,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-33106": {
     "name": "Qualcomm Multiple Chipsets Use of Out-of-Range Pointer Offset Vulnerability",
@@ -54791,7 +55031,8 @@
           "NIS2-Art21-patch-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-33063": {
     "name": "Qualcomm Multiple Chipsets Use-After-Free Vulnerability (DSP Services)",
@@ -54872,7 +55113,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2022-22071": {
     "name": "Qualcomm Multiple Chipsets Use-After-Free Vulnerability (process shell memory)",
@@ -54954,7 +55196,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2023-42917": {
     "name": "Apple Multiple Products WebKit Memory Corruption Vulnerability",
@@ -55044,7 +55287,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-42916": {
     "name": "Apple Multiple Products WebKit Out-of-Bounds Read Vulnerability",
@@ -55126,7 +55370,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-6345": {
     "name": "Google Skia Integer Overflow Vulnerability",
@@ -55207,7 +55452,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2023-49103": {
     "name": "ownCloud graphapi Information Disclosure Vulnerability",
@@ -55298,7 +55544,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2023-4911": {
     "name": "GNU C Library Buffer Overflow Vulnerability (Looney Tunables)",
@@ -55387,7 +55634,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-36584": {
     "name": "Microsoft Windows Mark of the Web (MOTW) Security Feature Bypass Vulnerability (CVE-2023-36584)",
@@ -55477,7 +55725,8 @@
           "NIS2-Art21-patch-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-1671": {
     "name": "Sophos Web Appliance Command Injection Vulnerability",
@@ -55566,7 +55815,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2020-2551": {
     "name": "Oracle Fusion Middleware WebLogic IIOP Deserialization RCE",
@@ -55648,7 +55898,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-36033": {
     "name": "Windows DWM Core Library Elevation of Privilege",
@@ -55730,7 +55981,8 @@
           "NIST-800-53-SI-4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-36025": {
     "name": "Windows SmartScreen Security Feature Bypass",
@@ -55799,7 +56051,8 @@
           "ISO-27001-2022-A.8.7"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-36036": {
     "name": "Windows Cloud Files Mini Filter Driver Elevation of Privilege",
@@ -55881,7 +56134,8 @@
           "NIST-800-53-SI-4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-47246": {
     "name": "SysAid Server Path Traversal to Code Execution",
@@ -55962,7 +56216,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2023-36844": {
     "name": "Juniper Junos OS EX Series J-Web PHP External Variable Modification",
@@ -56045,7 +56300,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2023-36845": {
     "name": "Juniper Junos OS EX/SRX J-Web PHPRC Modification RCE",
@@ -56152,7 +56408,8 @@
           "NIST-800-53-CM-7"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2023-36846": {
     "name": "Juniper Junos OS SRX J-Web Missing Authentication File Upload",
@@ -56234,7 +56491,8 @@
           "AU-Essential-8-App-Hardening"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2023-36847": {
     "name": "Juniper Junos OS EX J-Web Missing Authentication File Upload",
@@ -56325,7 +56583,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2023-36851": {
     "name": "Juniper Junos OS SRX J-Web Missing Authentication File Upload/Download",
@@ -56416,7 +56675,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2023-29552": {
     "name": "Service Location Protocol (SLP) Denial-of-Service Vulnerability",
@@ -56495,7 +56755,8 @@
           "ISO-27001-2022-A.8.9"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-22518": {
     "name": "Atlassian Confluence Data Center and Server Improper Authorization Vulnerability",
@@ -56576,7 +56837,8 @@
           "NIS2-Art21-vulnerability-handling"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2023-46604": {
     "name": "Apache ActiveMQ Deserialization of Untrusted Data Vulnerability",
@@ -56666,7 +56928,8 @@
           "NIS2-Art21-patch-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-46748": {
     "name": "F5 BIG-IP Configuration Utility SQL Injection Vulnerability",
@@ -56755,7 +57018,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-46747": {
     "name": "F5 BIG-IP Configuration Utility Authentication Bypass Vulnerability",
@@ -56844,7 +57108,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-5631": {
     "name": "Roundcube Webmail Persistent Cross-Site Scripting (XSS) Vulnerability",
@@ -56924,7 +57189,8 @@
           "NIS2-Art21-incident-handling"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-20273": {
     "name": "Cisco IOS XE Web UI Command Injection Vulnerability",
@@ -57014,7 +57280,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2023-4966": {
     "name": "Citrix NetScaler ADC and NetScaler Gateway Buffer Overflow Vulnerability",
@@ -57095,7 +57362,8 @@
           "NIST-800-53-IA-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2023-20198": {
     "name": "Cisco IOS XE Web UI Privilege Escalation Vulnerability",
@@ -57186,7 +57454,8 @@
           "NIST-800-53-AC-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2023-21608": {
     "name": "Adobe Acrobat and Reader Use-After-Free Vulnerability",
@@ -57266,7 +57535,8 @@
           "NIST-800-53-SI-3"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-20109": {
     "name": "Cisco IOS and IOS XE Group Encrypted Transport VPN Out-of-Bounds Write Vulnerability",
@@ -57355,7 +57625,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2023-41763": {
     "name": "Microsoft Skype for Business Privilege Escalation Vulnerability",
@@ -57426,7 +57697,8 @@
           "NIS2-Art21-vulnerability-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-36563": {
     "name": "Microsoft WordPad Information Disclosure Vulnerability",
@@ -57506,7 +57778,8 @@
           "NIS2-Art21-patch-management"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-22515": {
     "name": "Atlassian Confluence Data Center and Server Broken Access Control Vulnerability",
@@ -57595,7 +57868,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2023-40044": {
     "name": "Progress WS_FTP Server Deserialization of Untrusted Data Vulnerability",
@@ -57677,7 +57951,8 @@
           "AU-Essential-8-Patch"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-42824": {
     "name": "Apple iOS and iPadOS Kernel Privilege Escalation Vulnerability",
@@ -57765,7 +58040,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2023-42793": {
     "name": "JetBrains TeamCity Authentication Bypass Vulnerability",
@@ -57854,7 +58130,8 @@
           "NIS2-Art21-vulnerability-handling"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-28229": {
     "name": "Microsoft Windows CNG Key Isolation Service Privilege Escalation Vulnerability (CVE-2023-28229)",
@@ -57927,7 +58204,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-4211": {
     "name": "Arm Mali GPU Kernel Driver Use-After-Free Vulnerability",
@@ -58009,7 +58287,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-5217": {
     "name": "Google Chromium libvpx Heap Buffer Overflow Vulnerability",
@@ -58100,7 +58379,8 @@
           "AU-Essential-8-App-Hardening"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "vendor_research"
   },
   "CVE-2018-14667": {
     "name": "Red Hat JBoss RichFaces Framework Expression Language Injection Vulnerability",
@@ -58181,7 +58461,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-41991": {
     "name": "Apple Multiple Products Improper Certificate Validation Vulnerability",
@@ -58263,7 +58544,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-41992": {
     "name": "Apple Multiple Products Kernel Privilege Escalation Vulnerability",
@@ -58354,7 +58636,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-41993": {
     "name": "Apple Multiple Products WebKit Code Execution Vulnerability",
@@ -58434,7 +58717,8 @@
           "AU-Essential-8-App-Hardening"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-41179": {
     "name": "Trend Micro Apex One and Worry-Free Business Security Remote Code Execution Vulnerability",
@@ -58522,7 +58806,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2023-28434": {
     "name": "MinIO Security Feature Bypass Vulnerability",
@@ -58601,7 +58886,8 @@
           "NIS2-Art21-network-security"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2022-22265": {
     "name": "Samsung Mobile Devices Use-After-Free Vulnerability",
@@ -58682,7 +58968,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2014-8361": {
     "name": "Realtek SDK Improper Input Validation Vulnerability",
@@ -58763,7 +59050,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2017-6884": {
     "name": "Zyxel EMG2926 Routers Command Injection Vulnerability",
@@ -58846,7 +59134,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2021-3129": {
     "name": "Laravel Ignition File Upload Vulnerability",
@@ -58929,7 +59218,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-26369": {
     "name": "Adobe Acrobat and Reader Out-of-Bounds Write Vulnerability",
@@ -59009,7 +59299,8 @@
           "UK-CAF-B4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-35674": {
     "name": "Android Framework Privilege Escalation Vulnerability",
@@ -59091,7 +59382,8 @@
           "NIST-800-53-SI-2"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2023-20269": {
     "name": "Cisco Adaptive Security Appliance and Firepower Threat Defense Unauthorized Access Vulnerability",
@@ -59169,7 +59461,8 @@
           "NIS2-Art21-network-security"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "unknown"
   },
   "CVE-2023-4863": {
     "name": "Google Chromium WebP Heap-Based Buffer Overflow Vulnerability",
@@ -59250,7 +59543,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-36761": {
     "name": "Microsoft Word Information Disclosure Vulnerability",
@@ -59327,7 +59621,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-36802": {
     "name": "Microsoft Streaming Service Proxy Privilege Escalation Vulnerability",
@@ -59408,7 +59703,8 @@
           "NIST-800-53-AC-6"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-41064": {
     "name": "Apple iOS, iPadOS, and macOS ImageIO Buffer Overflow Vulnerability",
@@ -59499,7 +59795,8 @@
           "NIST-800-53-SI-4"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-41061": {
     "name": "Apple iOS, iPadOS, and watchOS Wallet Code Execution Vulnerability",
@@ -59588,7 +59885,8 @@
           "UK-CAF-D1"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-33246": {
     "name": "Apache RocketMQ Command Execution Vulnerability",
@@ -59677,7 +59975,8 @@
           "ISO-27001-2022-A.8.8"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2023-38831": {
     "name": "RARLAB WinRAR Code Execution Vulnerability",
@@ -59746,13 +60045,14 @@
           "ISO-27001-2022-A.8.28"
         ]
       }
-    ]
+    ],
+    "ai_discovery_source": "human_researcher"
   },
   "CVE-2026-60137": {
     "name": "WordPress Core SQL Injection Vulnerability",
     "lesson_date": "2026-07-21",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2026-07-17",
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -59836,7 +60136,7 @@
     "name": "WordPress Core Interpretation Conflict Vulnerability",
     "lesson_date": "2026-07-21",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2026-07-17",
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -59929,7 +60229,7 @@
     "name": "Langflow Inclusion of Functionality from Untrusted Control Sphere Vulnerability",
     "lesson_date": "2026-07-21",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2026-01-09",
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -60302,7 +60602,7 @@
     "name": "Check Point SmartConsole Improper Authentication Vulnerability",
     "lesson_date": "2026-07-29",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": "2026-07-22",
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -61813,7 +62113,7 @@
     "name": "Apple Multiple Products WebKit Code Execution Vulnerability (CVE-2023-37450)",
     "lesson_date": "2026-07-29",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": "2023-07-13",
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -62927,7 +63227,7 @@
     "name": "Samsung Mobile Devices Unspecified Vulnerability",
     "lesson_date": "2026-07-29",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": "2023-06-29",
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -68667,7 +68967,7 @@
     "name": "Fortinet FortiOS Path Traversal Vulnerability",
     "lesson_date": "2026-07-29",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": "2023-03-14",
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -69862,7 +70162,7 @@
     "name": "IBM Langflow Code Injection Vulnerability",
     "lesson_date": "2026-08-06",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": "2026-08-04",
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -70565,7 +70865,7 @@
     "name": "Fortra GoAnywhere MFT Remote Code Execution Vulnerability",
     "lesson_date": "2026-08-06",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": "2023-02-10",
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -73212,7 +73512,7 @@
     "name": "Fortinet FortiOS Heap-Based Buffer Overflow Vulnerability",
     "lesson_date": "2026-08-06",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": "2022-12-13",
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -73398,7 +73698,7 @@
     "name": "Citrix Application Delivery Controller (ADC) and Gateway Authentication Bypass Vulnerability",
     "lesson_date": "2026-08-06",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": "2022-12-13",
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -75906,7 +76206,7 @@
     "name": "Sophos Firewall Code Injection Vulnerability",
     "lesson_date": "2026-08-06",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": "2022-09-23",
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -76082,7 +76382,7 @@
     "name": "Trend Micro Apex One and Apex One as a Service Improper Validation Vulnerability",
     "lesson_date": "2026-08-06",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": "2022-09-15",
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -86134,7 +86434,7 @@
     "name": "SAP NetWeaver Unrestricted File Upload Vulnerability",
     "lesson_date": "2026-08-15",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": "2022-06-09",
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -89728,7 +90028,7 @@
     "name": "Microsoft Internet Explorer Memory Corruption Vulnerability",
     "lesson_date": "2026-08-17",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -111251,7 +111551,7 @@
     "name": "Cisco IOS Software for Cisco Industrial Ethernet Switches PROFINET Denial-of-Service Vulnerability",
     "lesson_date": "2026-08-21",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -111341,7 +111641,7 @@
     "name": "Cisco IOS Software Common Industrial Protocol Request Denial-of-Service Vulnerability (CVE-2017-12234)",
     "lesson_date": "2026-08-21",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -111431,7 +111731,7 @@
     "name": "Cisco IOS Software Common Industrial Protocol Request Denial-of-Service Vulnerability (CVE-2017-12233)",
     "lesson_date": "2026-08-21",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -111521,7 +111821,7 @@
     "name": "Cisco IOS Software for Cisco Integrated Services Routers Denial-of-Service Vulnerability",
     "lesson_date": "2026-08-21",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -111617,7 +111917,7 @@
     "name": "Cisco IOS Software Network Address Translation Denial-of-Service Vulnerability",
     "lesson_date": "2026-08-21",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -114701,7 +115001,7 @@
     "name": "Citrix NetScaler SAML PrefixList Pre-Auth Heap Overflow",
     "lesson_date": "2026-08-29",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -115992,7 +116292,7 @@
     "name": "Internet Explorer 8 CGenericElement Use-After-Free (CVE-2013-1347)",
     "lesson_date": "2026-08-29",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -116180,7 +116480,7 @@
     "name": "Adobe Reader AcroForm Sandbox-Escaping Memory Corruption",
     "lesson_date": "2026-08-29",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -117270,7 +117570,7 @@
     "name": "Adobe Reader Bundled libTIFF PDF Memory Corruption (CVE-2010-0188)",
     "lesson_date": "2026-08-29",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -118011,7 +118311,7 @@
     "name": "Microsoft Office Composite Moniker Remote Code Execution (CVE-2017-8570)",
     "lesson_date": "2026-08-29",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -118748,7 +119048,7 @@
     "name": "Windows VBScript Engine Class_Terminate Use-After-Free",
     "lesson_date": "2026-08-29",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -119485,7 +119785,7 @@
     "name": "Microsoft SMBv3 Compression Remote Code Execution Vulnerability (SMBGhost)",
     "lesson_date": "2026-08-29",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -119857,7 +120157,7 @@
     "name": "Oracle WebLogic wls-wsat XMLDecoder Unauthenticated Deserialisation (CVE-2017-10271)",
     "lesson_date": "2026-08-29",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -120046,7 +120346,7 @@
     "name": "Microsoft Office EPS Filter forall Type Confusion",
     "lesson_date": "2026-08-29",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -120786,7 +121086,7 @@
     "name": "Microsoft Win32k Privilege Escalation Vulnerability (CVE-2022-21882)",
     "lesson_date": "2026-08-29",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -121348,7 +121648,7 @@
     "name": "Internet Explorer CMarkup Use-After-Free (Operation Clandestine Fox)",
     "lesson_date": "2026-08-29",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -121891,7 +122191,7 @@
     "name": "SolarWinds Serv-U LDAP Query Input Validation (CVE-2021-35247)",
     "lesson_date": "2026-08-29",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -122619,7 +122919,7 @@
     "name": "systeminformation npm Array-Parameter Command Injection",
     "lesson_date": "2026-08-29",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -123163,7 +123463,7 @@
     "name": "VMware vCenter rhttpproxy URI Normalization Bypass (CVE-2021-22017)",
     "lesson_date": "2026-08-29",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -123581,7 +123881,7 @@
     "name": "Google Chrome Media Use-After-Free (CVE-2020-6572)",
     "lesson_date": "2022-01-10",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": null,
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": null,
     "ai_assist_factor": 0,
     "attack_vector": {
@@ -125003,7 +125303,7 @@
     "name": "Google Chromium V8 Use-After-Free (CVE-2021-4102)",
     "lesson_date": "2021-12-15",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": null,
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": null,
     "ai_assist_factor": 0,
     "attack_vector": {
@@ -126397,7 +126697,7 @@
     "name": "Qualcomm Snapdragon Display Driver Memory Corruption (CVE-2020-11261)",
     "lesson_date": "2021-12-01",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": null,
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": null,
     "ai_assist_factor": 0,
     "attack_vector": {
@@ -127277,7 +127577,7 @@
     "name": "Accellion FTA Unauthenticated OS Command Injection (CVE-2021-27104)",
     "lesson_date": "2026-09-01",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -127799,7 +128099,7 @@
     "name": "Adobe Acrobat and Reader Use-After-Free (CVE-2021-28550)",
     "lesson_date": "2021-11-03",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": null,
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": null,
     "ai_assist_factor": 0,
     "attack_vector": {
@@ -129191,7 +129491,7 @@
     "name": "Apache Struts Forced OGNL Double Evaluation S2-061 (CVE-2020-17530)",
     "lesson_date": "2021-11-03",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": null,
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": null,
     "ai_assist_factor": 0,
     "attack_vector": {
@@ -130548,7 +130848,7 @@
     "name": "Apple WebKit Logic Flaw Remote Code Execution (CVE-2021-1870)",
     "lesson_date": "2021-11-03",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": null,
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": null,
     "ai_assist_factor": 0,
     "attack_vector": {
@@ -131913,7 +132213,7 @@
     "name": "Arm Mali GPU Kernel Driver Read-Only Page Write (CVE-2021-28664)",
     "lesson_date": "2021-11-03",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": null,
+    "ai_discovery_source": "unknown",
     "ai_discovery_date": null,
     "ai_assist_factor": 0,
     "attack_vector": {
@@ -136625,7 +136925,7 @@
     "name": "MikroTik RouterOS Improper Neutralization of Argument Delimiters in a Command Vulnerability",
     "lesson_date": "2026-09-19",
     "ai_discovered_zeroday": true,
-    "ai_discovery_source": "academic_ai_fuzzing",
+    "ai_discovery_source": "bug_bounty_ai_augmented",
     "ai_discovery_date": null,
     "ai_assist_factor": "high",
     "attack_vector": {
@@ -138763,7 +139063,7 @@
     "name": "Google Chrome FreeType Heap Buffer Overflow Vulnerability",
     "lesson_date": "2026-09-19",
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "human_researcher",
     "ai_discovery_date": null,
     "ai_assist_factor": "none",
     "attack_vector": {
@@ -140012,7 +140312,7 @@
     "name": "Sangoma Switchvox SQL Injection Vulnerability",
     "lesson_date": "2026-09-19",
     "ai_discovered_zeroday": true,
-    "ai_discovery_source": "vendor_research",
+    "ai_discovery_source": "bug_bounty_ai_augmented",
     "ai_discovery_date": null,
     "ai_assist_factor": "high",
     "attack_vector": {
