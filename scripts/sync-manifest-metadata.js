@@ -6,11 +6,11 @@
  * Run it whenever frontmatter changes, then re-run sign-all — and, when a
  * cross-ref array changed, refresh-reverse-refs + build-indexes.
  *
- * `last_threat_review` and `forward_watch` MIRROR frontmatter exactly and sync
- * by replace. The cross-reference arrays are an enriched superset — the
- * manifest carries curated refs frontmatter does not — so they sync by UNION;
- * replacing them drops the curated refs build-indexes and refresh-reverse-refs
- * read. `description` is cached in the manifest but is not synced here.
+ * `description`, `last_threat_review` and `forward_watch` MIRROR frontmatter
+ * exactly and sync by replace. The cross-reference arrays are an enriched
+ * superset — the manifest carries curated refs frontmatter does not — so they
+ * sync by UNION; replacing them drops the curated refs build-indexes and
+ * refresh-reverse-refs read.
  *
  * Exit codes: 0 = wrote (or already in sync), 1 = a skill file was missing or
  * its frontmatter failed to parse.
@@ -23,7 +23,7 @@ const lint = require("../lib/lint-skills.js");
 const ROOT = path.resolve(__dirname, "..");
 const MANIFEST = path.join(ROOT, "manifest.json");
 
-const MIRRORED_SCALAR = ["last_threat_review"];
+const MIRRORED_SCALAR = ["description", "last_threat_review"];
 const MIRRORED_ARRAY = ["forward_watch"];
 // Union, never replace — a replace drops the manifest's curated refs.
 const MIRRORED_COVER = ["data_deps", "framework_gaps", "atlas_refs", "attack_refs", "rfc_refs", "cwe_refs", "d3fend_refs"];

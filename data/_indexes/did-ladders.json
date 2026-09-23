@@ -346,7 +346,7 @@
       "attack_class": "Model Weight / Training Data Exfiltration",
       "primary_ttps": [
         "AML.T0043",
-        "AML.T0017"
+        "AML.T0025"
       ],
       "layers": [
         {

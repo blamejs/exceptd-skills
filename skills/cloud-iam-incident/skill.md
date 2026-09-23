@@ -42,7 +42,7 @@ framework_gaps:
   - SOC2-CC6-Access-Key-Leak-Public-Repo
   - AWS-Security-Hub-Coverage-Gap
   - UK-CAF-B2-Cloud-IAM
-  - AU-ISM-1546-Cloud-Service-Account
+  - AU-ISM-1685-Cloud-Service-Account
 rfc_refs:
   - RFC-8693
   - RFC-7519
@@ -129,7 +129,7 @@ The playbook `cloud-iam-incident` operationalises this skill into a seven-phase 
 | DORA | Art. 6-9 — ICT Risk-Management Framework | Identify, protect, detect, respond, and recover for ICT risk | Principle-based. Cloud-IAM specifics are not enumerated in the binding articles; ESAs may publish Level-2/3 guidance over time. |
 | UK CAF | B2 — Identity and Access Control | Outcome that access to networks and information systems is controlled in line with the essential function's risk | Outcome-based on credential-lifecycle hygiene. Cloud-IAM specifics not enumerated against B2 evidence. Captured in `data/framework-control-gaps.json#UK-CAF-B2-Cloud-IAM`. |
 | AU Essential 8 | Strategy 4 — Multi-Factor Authentication (E8 M.4) | MFA on privileged and internet-facing accounts | Covers human-principal MFA. Cloud service-account access keys, OIDC federation tokens, and SAML assertions are bearer credentials that bypass MFA. |
-| AU ISM | ISM-1546 — MFA for privileged users and remote access | AU-government information-security baseline | Covers human-principal MFA. Cloud non-human principals out of scope. Captured in `data/framework-control-gaps.json#AU-ISM-1546-Cloud-Service-Account`. |
+| AU ISM | ISM-1685 (credentials for break glass, local administrator and service accounts are long, unique, unpredictable and managed) and ISM-1173 (MFA for privileged users) | AU-government information-security baseline | ISM-1173 covers human privileged users only. ISM-1685 covers service-account credentials, but a long, unique cloud access key still works from anywhere once it leaks, and platform-issued managed-identity tokens have no credential for the organization to manage. Captured in `data/framework-control-gaps.json#AU-ISM-1685-Cloud-Service-Account`. |
 | PCI DSS 4.0 | Req. 7-8 — Access Control + Identification | Access-control objectives generically | Cloud-IAM-specific requirements not enumerated. |
 | HIPAA | 164.312(a)(1) — Access Control | Technical safeguard for ePHI access | Generic access-control framing. Cloud-IAM specifics out of scope. |
 | AWS Security Hub | Foundational Security Best Practices | AWS-native posture tool | Coverage-based. Findings reflect configuration drift, not behavioural compromise. Captured in `data/framework-control-gaps.json#AWS-Security-Hub-Coverage-Gap`. |

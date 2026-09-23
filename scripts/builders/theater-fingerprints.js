@@ -59,7 +59,7 @@ const PATTERN_CONTROL_MAP = {
       { framework: "NIST 800-53", control_id: "IR-4", note: "Incident handling — phases defined but not AI-class triggers" },
       { framework: "ISO 27001:2022", control_id: "A.5.24-A.5.28", note: "IR planning/preparation/reporting/response/learning" },
     ],
-    evidence: { campaign: "SesameOp", rationale: "AML.T0096 LLM Integration Abuse as C2 — no detection triggers exist, so IR procedures have no input" },
+    evidence: { campaign: "SesameOp", rationale: "AML.T0096 AI Service API as C2 — no detection triggers exist, so IR procedures have no input" },
     ttps: ["AML.T0020", "AML.T0096", "AML.T0010"],
     fast_test: "Search IR playbooks for 'prompt injection', 'model poisoning', 'AI agent', 'LLM', 'MCP server'. Zero matches = THEATER FLAG.",
   },

@@ -1295,15 +1295,10 @@
           "sector-telecom"
         ]
       },
-      "AU-ISM-1556": {
-        "count": 6,
+      "AU-ISM-1173-Telecom-NMS": {
+        "count": 1,
         "skills": [
-          "decompression-dos",
-          "log-injection-telemetry",
-          "multitenancy-isolation",
-          "privacy-consent-ops",
-          "sector-telecom",
-          "self-update-integrity"
+          "sector-telecom"
         ]
       },
       "GSMA-NESAS-Deployment": {
@@ -1402,7 +1397,7 @@
           "cloud-iam-incident"
         ]
       },
-      "AU-ISM-1546-Cloud-Service-Account": {
+      "AU-ISM-1685-Cloud-Service-Account": {
         "count": 1,
         "skills": [
           "cloud-iam-incident"
@@ -1434,7 +1429,7 @@
           "idp-incident-response"
         ]
       },
-      "AU-ISM-1559-IdP": {
+      "AU-ISM-1685-IdP": {
         "count": 1,
         "skills": [
           "idp-incident-response"
@@ -1502,10 +1497,35 @@
           "self-update-integrity"
         ]
       },
+      "AU-ISM-0298": {
+        "count": 1,
+        "skills": [
+          "self-update-integrity"
+        ]
+      },
       "NIST-800-53-AC-3": {
         "count": 1,
         "skills": [
           "multitenancy-isolation"
+        ]
+      },
+      "AU-ISM-1268": {
+        "count": 1,
+        "skills": [
+          "multitenancy-isolation"
+        ]
+      },
+      "AU-ISM-1240": {
+        "count": 2,
+        "skills": [
+          "decompression-dos",
+          "privacy-consent-ops"
+        ]
+      },
+      "AU-ISM-1815": {
+        "count": 1,
+        "skills": [
+          "log-injection-telemetry"
         ]
       }
     },
@@ -1567,18 +1587,25 @@
         "count": 2,
         "skills": [
           "ai-attack-surface",
-          "mcp-agent-trust"
+          "ai-c2-detection"
         ]
       },
       "AML.T0017": {
-        "count": 10,
+        "count": 4,
         "skills": [
           "ai-attack-surface",
-          "ai-c2-detection",
+          "ai-risk-management",
+          "cloud-security",
+          "sector-healthcare"
+        ]
+      },
+      "AML.T0013": {
+        "count": 8,
+        "skills": [
+          "ai-attack-surface",
           "ai-risk-management",
           "api-security",
           "cloud-security",
-          "dlp-gap-analysis",
           "incident-response-playbook",
           "mlops-security",
           "sector-financial",
@@ -1594,7 +1621,7 @@
         ]
       },
       "AML.T0010": {
-        "count": 7,
+        "count": 8,
         "skills": [
           "attack-surface-pentest",
           "cloud-security",
@@ -1602,13 +1629,27 @@
           "mcp-agent-trust",
           "mlops-security",
           "ot-ics-security",
+          "sector-telecom",
           "supply-chain-integrity"
         ]
       },
-      "AML.T0040": {
+      "AML.T0053": {
         "count": 1,
         "skills": [
-          "sector-telecom"
+          "mcp-agent-trust"
+        ]
+      },
+      "AML.T0086": {
+        "count": 1,
+        "skills": [
+          "mcp-agent-trust"
+        ]
+      },
+      "AML.T0024": {
+        "count": 2,
+        "skills": [
+          "dlp-gap-analysis",
+          "incident-response-playbook"
         ]
       }
     },
@@ -2694,18 +2735,6 @@
         ]
       },
       {
-        "id": "AU-ISM-1556",
-        "count": 6,
-        "skills": [
-          "decompression-dos",
-          "log-injection-telemetry",
-          "multitenancy-isolation",
-          "privacy-consent-ops",
-          "sector-telecom",
-          "self-update-integrity"
-        ]
-      },
-      {
         "id": "ISO-27001-2022-A.8.28",
         "count": 6,
         "skills": [
@@ -2728,25 +2757,21 @@
           "ot-ics-security",
           "sector-energy"
         ]
+      },
+      {
+        "id": "NIST-800-53-SI-2",
+        "count": 6,
+        "skills": [
+          "audit-log-integrity",
+          "decompression-dos",
+          "kernel-lpe-triage",
+          "log-injection-telemetry",
+          "mail-server-hardening",
+          "privacy-consent-ops"
+        ]
       }
     ],
     "atlas_refs": [
-      {
-        "id": "AML.T0017",
-        "count": 10,
-        "skills": [
-          "ai-attack-surface",
-          "ai-c2-detection",
-          "ai-risk-management",
-          "api-security",
-          "cloud-security",
-          "dlp-gap-analysis",
-          "incident-response-playbook",
-          "mlops-security",
-          "sector-financial",
-          "sector-healthcare"
-        ]
-      },
       {
         "id": "AML.T0051",
         "count": 10,
@@ -2764,6 +2789,34 @@
         ]
       },
       {
+        "id": "AML.T0010",
+        "count": 8,
+        "skills": [
+          "attack-surface-pentest",
+          "cloud-security",
+          "container-runtime-security",
+          "mcp-agent-trust",
+          "mlops-security",
+          "ot-ics-security",
+          "sector-telecom",
+          "supply-chain-integrity"
+        ]
+      },
+      {
+        "id": "AML.T0013",
+        "count": 8,
+        "skills": [
+          "ai-attack-surface",
+          "ai-risk-management",
+          "api-security",
+          "cloud-security",
+          "incident-response-playbook",
+          "mlops-security",
+          "sector-financial",
+          "sector-healthcare"
+        ]
+      },
+      {
         "id": "AML.T0096",
         "count": 8,
         "skills": [
@@ -2778,19 +2831,6 @@
         ]
       },
       {
-        "id": "AML.T0010",
-        "count": 7,
-        "skills": [
-          "attack-surface-pentest",
-          "cloud-security",
-          "container-runtime-security",
-          "mcp-agent-trust",
-          "mlops-security",
-          "ot-ics-security",
-          "supply-chain-integrity"
-        ]
-      },
-      {
         "id": "AML.T0043",
         "count": 5,
         "skills": [
@@ -2799,6 +2839,16 @@
           "fuzz-testing-strategy",
           "mlops-security",
           "rag-pipeline-security"
+        ]
+      },
+      {
+        "id": "AML.T0017",
+        "count": 4,
+        "skills": [
+          "ai-attack-surface",
+          "ai-risk-management",
+          "cloud-security",
+          "sector-healthcare"
         ]
       },
       {
@@ -2824,22 +2874,15 @@
         "count": 2,
         "skills": [
           "ai-attack-surface",
-          "mcp-agent-trust"
+          "ai-c2-detection"
         ]
       },
       {
-        "id": "AML.T0054",
+        "id": "AML.T0024",
         "count": 2,
         "skills": [
-          "ai-attack-surface",
-          "rag-pipeline-security"
-        ]
-      },
-      {
-        "id": "AML.T0040",
-        "count": 1,
-        "skills": [
-          "sector-telecom"
+          "dlp-gap-analysis",
+          "incident-response-playbook"
         ]
       }
     ],
@@ -3110,8 +3153,12 @@
     "framework_gaps": [
       "3GPP-TR-33.926",
       "ALL-MCP-TOOL-TRUST",
-      "AU-ISM-1546-Cloud-Service-Account",
-      "AU-ISM-1559-IdP",
+      "AU-ISM-0298",
+      "AU-ISM-1173-Telecom-NMS",
+      "AU-ISM-1268",
+      "AU-ISM-1685-Cloud-Service-Account",
+      "AU-ISM-1685-IdP",
+      "AU-ISM-1815",
       "AWS-Security-Hub-Coverage-Gap",
       "CISA-Snowflake-AA24-IdP-Cloud",
       "CWE-Top-25-2024-meta",
@@ -3150,7 +3197,8 @@
       "VEX-CSAF-v2.1"
     ],
     "atlas_refs": [
-      "AML.T0040"
+      "AML.T0053",
+      "AML.T0086"
     ],
     "attack_refs": [
       "T1036",
@@ -3436,7 +3484,6 @@
       "AML.T0011.002",
       "AML.T0011.003",
       "AML.T0012",
-      "AML.T0013",
       "AML.T0014",
       "AML.T0015",
       "AML.T0016.000",
@@ -3447,7 +3494,6 @@
       "AML.T0018.001",
       "AML.T0018.002",
       "AML.T0021",
-      "AML.T0024",
       "AML.T0024.000",
       "AML.T0024.001",
       "AML.T0024.002",
@@ -3461,6 +3507,7 @@
       "AML.T0035",
       "AML.T0036",
       "AML.T0037",
+      "AML.T0040",
       "AML.T0041",
       "AML.T0042",
       "AML.T0043.000",
@@ -3485,7 +3532,6 @@
       "AML.T0052",
       "AML.T0052.000",
       "AML.T0052.001",
-      "AML.T0053",
       "AML.T0055",
       "AML.T0056",
       "AML.T0057",
@@ -3528,7 +3574,6 @@
       "AML.T0085",
       "AML.T0085.000",
       "AML.T0085.001",
-      "AML.T0086",
       "AML.T0087",
       "AML.T0088",
       "AML.T0089",
@@ -4009,7 +4054,8 @@
       "D3F-UGPH"
     ],
     "framework_gaps": [
-      "ATLAS-AML.T0048",
+      "ATLAS-AML.T0010",
+      "AU-ISM-1452",
       "AU-ISM-1546",
       "AU-ISM-1808",
       "CIS-Controls-v8-10.1",

@@ -1,7 +1,7 @@
 ---
 name: pqc-first
 version: "1.0.0"
-description: Post-quantum cryptography first mentality — hard version gates, algorithm sunset tracking, loopback learning for NIST/IETF standards evolution
+description: Post-quantum cryptography first mentality — hard version gates (OpenSSL 3.5+), algorithm sunset tracking, HNDL assessment, loopback learning for NIST/IETF standards evolution
 triggers:
   - pqc
   - post-quantum

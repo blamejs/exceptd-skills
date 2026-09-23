@@ -21,7 +21,8 @@ data_deps:
   - rfc-references.json
 atlas_refs:
   - AML.T0010
-  - AML.T0016
+  - AML.T0053
+  - AML.T0086
   - AML.T0096
 attack_refs:
   - T1195.001
@@ -150,7 +151,7 @@ Every MCP server listed in popular registries (MCP Hub, npm `@modelcontextprotoc
 | UK NCSC CAF | Principle A4 (Supply Chain), B4 (System Security), B2 (Identity and Access Control) | Outcome-based language. NCSC's 2024 guidance on securing AI systems names supply-chain integrity for AI tooling, but the CAF outcome statements are unchanged — an organisation can achieve A4 / B4 outcomes at Achieved level with zero MCP server allowlisting, no signature verification, and no per-server authentication. |
 | UK DSIT AI Cyber Code of Practice (2025) | Principle 7 (secure software supply chain) + Principle 8 (secure development) | Names supply-chain integrity for AI development but as a principle, not a testable control. No technical floor for MCP signing, allowlisting, or per-server auth. |
 | AU ASD Essential 8 | Strategy: Application Control + Restrict Administrative Privileges | Application Control (allowlisting) is the closest existing strategy to MCP allowlisting but is scoped to operating-system-level executables. MCP servers run as long-lived child processes spawned by the AI assistant's process — Application Control rarely reaches the npm/pip-installed JavaScript or Python that constitutes an MCP server. None of the eight strategies address agent-mediated tool execution. |
-| AU ASD ISM | ISM-1728 (managing cyber supply chain risk) + ISM-1808 (cloud consumer responsibilities) + ISM-0935 (application control) | ISM-1728 supply-chain language is scoped to traditional vendor classes; MCP servers fall outside enumerated supply-chain categories. ISM-0935 application control is operating-system-level and does not reach package-level MCP servers. |
+| AU ASD ISM | ISM-2156 and ISM-2157 (agentic AI restricted to minimum tools; each tool call authorized for the user and the task) + ISM-2159 (tool invocations centrally logged) + ISM-1452 (supply chain risk assessment) + ISM-1657 (application control) | ISM-2156 and ISM-2157 cover what an agent may call, but neither covers where an MCP server came from: ISM-1452 assesses suppliers, not individual packages pulled from a registry, and ISM-1657 application control restricts executables and scripts on the host rather than the tool definitions an MCP server advertises to the agent. |
 | AU APRA CPS 234 / CPS 230 | Para 27 (information security capability) + CPS 230 ICT-service-provider obligations | "Capability commensurate with vulnerabilities and threats" language. APRA-regulated entities deploying AI coding assistants meet CPS 234 attestation with traditional vendor-management capability; MCP-specific supply-chain capability is not an examined control. CPS 230 (effective 2025-07-01) third-party-arrangements obligations do not enumerate MCP servers as in-scope material service providers. |
 
 **Fundamental gap:** No current framework has a control category for "AI tool trust boundaries" — the concept that an AI model can be the authorization mechanism for code execution, and that this creates a new class of supply chain and access control risk.
@@ -165,7 +166,7 @@ Every MCP server listed in popular registries (MCP Hub, npm `@modelcontextprotoc
 |---|---|---|---|
 | AML.T0010 | AI Supply Chain Compromise | Direct: malicious MCP server in public registry compromises AI assistant's tool execution | ATLAS covers this conceptually; no framework has a technical control |
 | AML.T0054 | LLM Jailbreak | Indirect: adversarial prompt in tool response bypasses guardrails and triggers AI to call next malicious action | No framework control |
-| AML.T0096 | LLM Integration Abuse | AI assistant is the integration point being abused — MCP tool calls are the mechanism | Not in ATT&CK; only in ATLAS v2026.09 |
+| AML.T0053 | AI Agent Tool Invocation | AI assistant is the integration point being abused — MCP tool calls are the mechanism | Not in ATT&CK; only in ATLAS v2026.09 |
 | T1195.001 | Supply Chain Compromise: Compromise Software Dependencies | MCP server package as supply chain attack target | ATT&CK covers but enterprise controls don't reach developer MCP configs |
 | T1059 | Command and Script Interpreter | MCP server causes shell command execution via model-mediated tool call | Standard SI-3/EDR doesn't attribute this to the MCP server as origin |
 | T1190 | Exploit Public-Facing Application | CVE-2026-30615: MCP client vulnerability driven by a locally-installed malicious server (AV:L) | Standard vuln management covers client; MCP server trust is unaddressed |
@@ -359,7 +360,7 @@ D3FEND v1.3.0+ references from `data/d3fend-catalog.json`. MCP trust failures la
 |---|---|---|---|
 | `D3-EHB` | Executable Hash-based Allowlist | Host / MCP server registration | Pins each MCP server binary by hash so CVE-2026-30615-class supply-chain swaps (compromised `npx` package replaces the server with an exploit variant) cannot replace the trusted binary silently. Direct counter to AML.T0010 + T1195.001. |
 | `D3-EAL` | Executable Allowlisting | Host / shell-capable tool | Restricts which executables an MCP shell-tool or process-exec-capable server can spawn. Without this, a server with `bash`/`pwsh` tools is a shell on the developer workstation with the developer's authority. |
-| `D3-CAA` | Credential Access Auditing | Identity / MCP bearer-auth | Logs every MCP server's use of the bearer token / OAuth credential and the resources it touched. The audit anchor for AML.T0016 (model and credential exfiltration via tool calls); the only post-hoc evidence stream when an MCP server is trusted but malicious. |
+| `D3-CAA` | Credential Access Auditing | Identity / MCP bearer-auth | Logs every MCP server's use of the bearer token / OAuth credential and the resources it touched. The audit anchor for AML.T0086 (model and credential exfiltration via tool calls); the only post-hoc evidence stream when an MCP server is trusted but malicious. |
 | `D3-CSPP` | Client-server Payload Profiling | MCP gateway | Gateway-layer inspection of MCP tool-call args and tool-result bodies. The single control that can detect indirect prompt-injection payloads landing in `tools/call` results, AML.T0051 patterns reaching the assistant through document fetches, and AML.T0096 covert C2 over MCP transport. |
 | `D3-CBAN` | Certificate Analysis | Transport / MCP server-side | Validates the MCP server's TLS certificate chain and binds it to a pinned identity registered in the host's MCP catalog. Counters the "stand-up a malicious MCP server with a Let's Encrypt cert pretending to be a sanctioned vendor" pattern. |
 | `D3-MFA` | Multi-factor Authentication | Identity / OAuth client registration | Required for MCP servers registered as OAuth clients against enterprise IdPs. Without phishing-resistant MFA on the registration flow, a compromised developer credential can register an attacker-controlled MCP server inside the org's trust boundary. |

@@ -36,7 +36,7 @@ framework_gaps:
   - ISO-27001-2022-A.8.15
   - NIS2-Art21-network-security
   - UK-CAF-B4
-  - AU-ISM-1556
+  - AU-ISM-1815
 cwe_refs:
   - CWE-117
   - CWE-532

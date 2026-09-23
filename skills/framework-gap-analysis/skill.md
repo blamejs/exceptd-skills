@@ -81,7 +81,7 @@ This skill maps framework controls to attacker TTPs on demand rather than static
 | NIST 800-53 SC-8/SC-28 vs. Dirty Frag | T1190 (Exploit Public-Facing Application) via IPsec subsystem | Cryptographic control is the attack surface |
 | NIST 800-53 SI-2 vs. Fragnesia (Dirty Frag sequel) | T1068 (Exploitation for Privilege Escalation) via XFRM ESP-in-TCP skb coalesce | Patch SLA assumes patches close bug families; the Dirty Frag patch introduced this sibling bug |
 | NIST 800-53 AC-2 vs. prompt injection | AML.T0051 (LLM Prompt Injection), AML.T0054 | Authorized identity executes attacker intent |
-| NIST 800-53 SI-3 vs. AI-generated malware | AML.T0016 (adversary Develop Capabilities — payload generation), AML.T0018 | Signature-based detection has zero coverage |
+| NIST 800-53 SI-3 vs. AI-generated malware | AML.T0016 (adversary Obtain Capabilities, payload generation), AML.T0018 | Signature-based detection has zero coverage |
 | ISO 27001 A.8.8 vs. CISA KEV class | T1068, T1203 | "Appropriate timescales" undefined for AI-accelerated weaponization |
 | SOC 2 CC6 vs. prompt injection | AML.T0051 | Authorization model has no prompt-level granularity |
 | PCI DSS 6.3.3 vs. AI-accelerated weaponization | T1068, T1190 | One-month window predates AI-assisted exploit development |
@@ -395,8 +395,8 @@ Every Framework Lag Declaration this skill produces names the missing control. T
 | AML.T0051 | AC-2 / CC6 | `D3-CSPP` | Client-server Payload Profiling | LLM gateway — gateway-layer inspection when SDK-side `D3-IOPR` is not deployable |
 | AML.T0010 (AI Supply Chain Compromise) — CVE-2026-30615 MCP class | A.5.19 / SA-12 vendor management as MCP trust boundary | `D3-EAL` | Executable Allowlisting | Managed endpoint — only sanctioned MCP servers and IDE assistants execute on developer workstations |
 | AML.T0010 | A.5.19 / SA-12 | `D3-EFA` | Executable File Analysis | Endpoint — pre-execution analysis of MCP server binaries and AI-assistant plugins |
-| AML.T0016 (Develop Capabilities — AI-generated payloads) — PROMPTFLUX class | SI-3 signature-based malware protection | `D3-PA` | Process Analysis | Endpoint — behavioral detection of in-process LLM-query patterns that signature engines cannot see |
-| AML.T0096 (LLM Integration Abuse — C2) — SesameOp class | SI-4 / CC7 anomaly detection without AI-API baseline | `D3-NTA` | Network Traffic Analysis | Network egress — per-identity baseline of model-API destinations |
+| AML.T0016 (Obtain Capabilities, AI-generated payloads), PROMPTFLUX class | SI-3 signature-based malware protection | `D3-PA` | Process Analysis | Endpoint — behavioral detection of in-process LLM-query patterns that signature engines cannot see |
+| AML.T0096 (AI Service API, C2), SesameOp class | SI-4 / CC7 anomaly detection without AI-API baseline | `D3-NTA` | Network Traffic Analysis | Network egress — per-identity baseline of model-API destinations |
 | T1190 (Exploit Public-Facing Application) — Dirty Frag IPsec | SC-8 / SC-28 cryptographic-control compensating-control claim | `D3-NI` | Network Isolation | Network — segmentation that does not depend on the compromised IPsec subsystem |
 | AML.T0020 (Training Data Poisoning) | NIS2 Art. 21 AI-pipeline integrity | `D3-FAPA` | File Access Pattern Analysis | Data tier — RAG-corpus and training-data access-pattern baselining |
 

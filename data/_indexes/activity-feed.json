@@ -6,6 +6,22 @@
   },
   "events": [
     {
+      "date": "2026-09-22",
+      "type": "catalog_update",
+      "artifact": "data/atlas-ttps.json",
+      "path": "data/atlas-ttps.json",
+      "schema_version": "1.0.0",
+      "entry_count": 174
+    },
+    {
+      "date": "2026-09-22",
+      "type": "catalog_update",
+      "artifact": "data/framework-control-gaps.json",
+      "path": "data/framework-control-gaps.json",
+      "schema_version": "1.0.0",
+      "entry_count": 199
+    },
+    {
       "date": "2026-09-18",
       "type": "skill_review",
       "artifact": "ai-attack-surface",
@@ -80,14 +96,14 @@
       "type": "skill_review",
       "artifact": "skill-update-loop",
       "path": "skills/skill-update-loop/skill.md",
-      "note": "Meta-skill for keeping all exceptd skills current — fires on new CVEs, ATLAS updates, framework changes, and forward_watch triggers"
+      "note": "Meta-skill for keeping all exceptd skills current — fires on new CVEs and CISA KEV listings, ATLAS updates, framework changes, and forward_watch triggers, and scores each skill's currency"
     },
     {
       "date": "2026-09-18",
       "type": "skill_review",
       "artifact": "security-maturity-tiers",
       "path": "skills/security-maturity-tiers/skill.md",
-      "note": "Three-tier implementation roadmap — MVP you can ship today, practical best practices useable now, overkill gold standard for defense-in-depth"
+      "note": "Three-tier implementation roadmap — MVP you can ship today, practical best practices usable now, overkill gold standard for defense-in-depth"
     },
     {
       "date": "2026-09-18",
@@ -223,14 +239,6 @@
       "note": "Age-related gates and child online safety for mid-2026 — COPPA + CIPA + California AADC + GDPR Art. 8 + DSA Art. 28 + UK Online Safety Act + UK Children's Code + AU Online Safety Act + IN DPDPA child provisions + KOSA pending; age verification standards (IEEE 2089-2021, OpenID Connect age claims); AI product age policies"
     },
     {
-      "date": "2026-09-18",
-      "type": "catalog_update",
-      "artifact": "data/atlas-ttps.json",
-      "path": "data/atlas-ttps.json",
-      "schema_version": "1.0.0",
-      "entry_count": 174
-    },
-    {
       "date": "2026-09-09",
       "type": "skill_review",
       "artifact": "global-grc",
@@ -271,14 +279,6 @@
     {
       "date": "2026-08-19",
       "type": "catalog_update",
-      "artifact": "data/framework-control-gaps.json",
-      "path": "data/framework-control-gaps.json",
-      "schema_version": "1.0.0",
-      "entry_count": 194
-    },
-    {
-      "date": "2026-08-19",
-      "type": "catalog_update",
       "artifact": "data/zeroday-lessons.json",
       "path": "data/zeroday-lessons.json",
       "schema_version": "1.1.0",
@@ -289,7 +289,7 @@
       "type": "skill_review",
       "artifact": "pqc-first",
       "path": "skills/pqc-first/skill.md",
-      "note": "Post-quantum cryptography first mentality — hard version gates, algorithm sunset tracking, loopback learning for NIST/IETF standards evolution"
+      "note": "Post-quantum cryptography first mentality — hard version gates (OpenSSL 3.5+), algorithm sunset tracking, HNDL assessment, loopback learning for NIST/IETF standards evolution"
     },
     {
       "date": "2026-08-05",

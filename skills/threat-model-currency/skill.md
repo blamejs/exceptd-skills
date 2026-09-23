@@ -254,7 +254,7 @@ No major risk-assessment or threat-intelligence framework defines a currency met
 | EU | DORA Art. 6 (ICT risk management framework) | Requires identification of ICT risks "on an ongoing basis"; "ongoing" is undefined and unmetered. |
 | EU | EU AI Act Art. 9 (Risk Management System for high-risk AI) | Mandates "continuous iterative" risk management; provides no currency test, no mapping to ATLAS, no required refresh trigger. |
 | UK | NCSC CAF Principle A2 (Risk Management) | Principle-based, leaves currency to the assessor. No threat-class checklist, no minimum refresh cadence. |
-| AU | ISM-0042 / Essential 8 governance | Requires documented risk assessment; no currency metric. ISM updates monthly but does not require organisations' threat models to track its cadence. |
+| AU | ISM-1238 and ISM-2039 | Require threat modelling in the software development life cycle, and a review that keeps the model current with the as-built software and the threat environment. Neither sets a review cadence, and neither applies to threat models outside software development. |
 | Global | COSO ERM / ISO 31000 | Enterprise risk frameworks treat cyber as one risk category; no operational threat-currency requirement. |
 
 The recurring failure across all of the above: every framework treats threat modelling as a process to perform, not a knowledge artefact to keep fresh against external TTP catalogs. The 14-class checklist in this skill is the missing currency metric.
@@ -272,13 +272,13 @@ The 14-class checklist above *is* the TTP map. Each class is a coverage requirem
 | 3 — IPsec subsystem LPE | T1068 | cve-catalog.json: CVE-2026-43284 / CVE-2026-43500 / CVE-2026-46300 | Network-segmentation claimed as compensating control for the attack surface itself; patch-landed-therefore-safe assumes patches close bug families (Fragnesia disproved this in days) |
 | 4 — Prompt injection RCE | AML.T0051 (LLM Prompt Injection), AML.T0054 (LLM Jailbreak) | atlas-ttps.json + CVE-2025-53773 | Prompt injection treated as T&S, not security |
 | 5 — MCP supply chain RCE | AML.T0010 (AI Supply Chain Compromise), T1190 (Exploit Public-Facing Application) | atlas-ttps.json + CVE-2026-30615 | AI plugin ecosystem out of supply-chain scope |
-| 6 — AI-assisted weaponization | AML.T0016 (Obtain Capabilities: Develop Capabilities) | atlas-ttps.json | Patch SLAs sized for 2019 attacker speed |
-| 7 — AI as covert C2 | AML.T0096 (LLM Integration Abuse — C2) | atlas-ttps.json | C2 detection architecture has total blind spot |
-| 8 — AI-generated malware evasion | AML.T0016 (Obtain Capabilities: Develop Capabilities — payload generation) | atlas-ttps.json | Detection stack signature-bound; PROMPTFLUX bypasses by design |
+| 6 — AI-assisted weaponization | AML.T0017 (Develop Capabilities) | atlas-ttps.json | Patch SLAs sized for 2019 attacker speed |
+| 7 — AI as covert C2 | AML.T0096 (AI Service API, C2) | atlas-ttps.json | C2 detection architecture has total blind spot |
+| 8 — AI-generated malware evasion | AML.T0016 (Obtain Capabilities, payload generation) | atlas-ttps.json | Detection stack signature-bound; PROMPTFLUX bypasses by design |
 | 9 — RAG exfiltration | AML.T0043 (Craft Adversarial Data) | atlas-ttps.json | Vector store treated as database, not as semantic exfil surface |
 | 10 — Model poisoning | AML.T0020 (Training Data Poisoning) | atlas-ttps.json | ML decision systems treated as standard software |
 | 11 — AI-speed reconnaissance | T1595 (Active Scanning), T1190 | ATT&CK | Rate-based detection thresholds calibrated for human-speed scans |
-| 12 — AI-generated phishing | AML.T0016 (Obtain Capabilities: Develop Capabilities — payload crafting via public AI APIs), T1566 (Phishing) | atlas-ttps.json + ATT&CK | Detection rules tuned for 2021 phishing |
+| 12 — AI-generated phishing | AML.T0016 (Obtain Capabilities, payload crafting via public AI APIs), T1566 (Phishing) | atlas-ttps.json + ATT&CK | Detection rules tuned for 2021 phishing |
 | 13 — ATLAS coverage | All AML.T* in atlas-ttps.json | atlas-ttps.json `_meta.atlas_version` | SOC detection programs are ATT&CK-only |
 | 14 — Post-quantum adversary | T1557 (harvest-now-decrypt-later context) | global-frameworks.json (PQC standards) | Long-lived sensitive traffic captured today, decrypted later |
 
@@ -427,7 +427,7 @@ A threat model is current only when each of the 14 threat classes above has a na
 | 4 — Prompt injection RCE (gateway tier) | AML.T0051 | `D3-CSPP` | Client-server Payload Profiling | LLM gateway — when SDK-side instrumentation is not deployable |
 | 5 — MCP supply chain RCE | AML.T0010 | `D3-EAL` | Executable Allowlisting | Managed endpoint — only sanctioned MCP servers and IDE assistants execute |
 | 5 — MCP supply chain RCE | AML.T0010 | `D3-EFA` | Executable File Analysis | Endpoint — pre-execution analysis of MCP-server binaries |
-| 6 — AI-assisted weaponization | AML.T0016 | `D3-NTA` | Network Traffic Analysis | Network egress — detect attacker-side AI-API queries from compromised tooling |
+| 6 — AI-assisted weaponization | AML.T0017 | `D3-NTA` | Network Traffic Analysis | Network egress — detect attacker-side AI-API queries from compromised tooling |
 | 7 — AI as covert C2 (SesameOp) | AML.T0096 | `D3-NTA` | Network Traffic Analysis | Network egress — per-identity baseline of model-API destinations |
 | 8 — AI-generated malware evasion (PROMPTFLUX) | AML.T0016 | `D3-PA` | Process Analysis | Endpoint — behavioral detection of in-process LLM-query patterns |
 | 9 — RAG exfiltration | AML.T0043 | `D3-FAPA` | File Access Pattern Analysis | Data tier — RAG-corpus retrieval-pattern baselining |

@@ -102,6 +102,7 @@
           "AML.T0096",
           "AML.T0016",
           "AML.T0017",
+          "AML.T0013",
           "AML.T0018"
         ],
         "attack_refs": [
@@ -113,7 +114,7 @@
         "dlp_refs": []
       },
       "trigger_count": 9,
-      "atlas_count": 8,
+      "atlas_count": 9,
       "attack_count": 3,
       "framework_gap_count": 12,
       "cwe_count": 3,
@@ -160,7 +161,8 @@
         ],
         "atlas_refs": [
           "AML.T0010",
-          "AML.T0016",
+          "AML.T0053",
+          "AML.T0086",
           "AML.T0096"
         ],
         "attack_refs": [
@@ -180,7 +182,7 @@
         "dlp_refs": []
       },
       "trigger_count": 10,
-      "atlas_count": 3,
+      "atlas_count": 4,
       "attack_count": 3,
       "framework_gap_count": 10,
       "cwe_count": 8,
@@ -358,7 +360,7 @@
         ],
         "atlas_refs": [
           "AML.T0096",
-          "AML.T0017"
+          "AML.T0016"
         ],
         "attack_refs": [
           "T1071",
@@ -505,7 +507,7 @@
       "handoff_targets": []
     },
     "pqc-first": {
-      "description": "Post-quantum cryptography first mentality — hard version gates, algorithm sunset tracking, loopback learning for NIST/IETF standards evolution",
+      "description": "Post-quantum cryptography first mentality — hard version gates (OpenSSL 3.5+), algorithm sunset tracking, HNDL assessment, loopback learning for NIST/IETF standards evolution",
       "threat_context_excerpt": "The post-quantum migration is not a planning exercise. It is an operational deadline against an adversary that is already collecting ciphertext.",
       "produces": "The skill produces a structured PQC Readiness Assessment that scores the org's post-quantum migration posture against the NIST PQC standards (ML-KEM / FIPS 203, ML-DSA / FIPS 204, SLH-DSA / FIPS 205), CNSA 2.0, and the BSI / ANSSI / NCSC migration guidance. The shape below is consumed downstream by `crypto` playbook runs (which feed the assessment into the analysis correlation step), by `framework-gap-analysis` (for SC-8 / SC-13 / A.8.24 / A.10 lag declarations), and by `compliance-theater` (which compares the harvest-now-decrypt-later exposure against the org's data-classification claims). Pr ...",
       "key_xrefs": {
@@ -547,7 +549,7 @@
       "handoff_targets": []
     },
     "skill-update-loop": {
-      "description": "Meta-skill for keeping all exceptd skills current — fires on new CVEs, ATLAS updates, framework changes, and forward_watch triggers",
+      "description": "Meta-skill for keeping all exceptd skills current — fires on new CVEs and CISA KEV listings, ATLAS updates, framework changes, and forward_watch triggers, and scores each skill's currency",
       "threat_context_excerpt": "The threat context this skill defends against is not a specific adversary technique — it is the **drift attack against the platform's own currency**: an exceptd installation whose skills, catalogs, framework references, and ATLAS pins age silently between releases until the operator-facing analysis is calibrated to a threat model that no longer exists.",
       "produces": "The skill produces a Skill Update Loop Report covering per-skill `last_threat_review` currency, ATLAS / ATT&CK / D3FEND / CWE catalog version drift, CISA KEV additions since the last review, and the priority queue of skills requiring body updates before the next release. The shape below is consumed downstream by the release-cadence maintainer workflow, by `data/_meta` tracking, and by the predeploy `watchlist` gate. Preserve the per-skill drift columns verbatim — they are the auditable trigger for each forced body refresh.\n\n```\n## Skill Update Loop Report\n\n**Date:** YYYY-MM-DD\n**Last Full Revi ...",
       "key_xrefs": {
@@ -571,7 +573,7 @@
       "handoff_targets": []
     },
     "security-maturity-tiers": {
-      "description": "Three-tier implementation roadmap — MVP you can ship today, practical best practices useable now, overkill gold standard for defense-in-depth",
+      "description": "Three-tier implementation roadmap — MVP you can ship today, practical best practices usable now, overkill gold standard for defense-in-depth",
       "threat_context_excerpt": "The 2026 threat baseline forces an MVP that would have looked like a Practical tier in 2022. The cardinal observed change: attacker capability now compresses the time from disclosure to reliable exploitation to hours for an entire class of vulnerabilities, and AI-mediated attack surfaces (prompt injection, MCP supply chain, AI-API C2) sit outside the perimeter and identity controls every framework relies on. The implications by tier:",
       "produces": "The skill produces a Security Maturity Roadmap that scores each in-scope domain against the published tier definitions and surfaces the next-tier upgrade path with budget bands and dependency ordering. The shape below is consumed downstream by `policy-exception-gen` (for domains where the operator chooses a lower tier than the threat model requires), by `compliance-theater` (which compares the claimed tier against deployed controls), and by `global-grc` (for cross-jurisdictional tier obligations). Preserve the per-domain tier rows verbatim — they are the auditable baseline for the upgrade plan ...",
       "key_xrefs": {
@@ -765,7 +767,7 @@
         ],
         "atlas_refs": [
           "AML.T0096",
-          "AML.T0017",
+          "AML.T0024",
           "AML.T0051"
         ],
         "attack_refs": [
@@ -1200,14 +1202,15 @@
         "atlas_refs": [
           "AML.T0051",
           "AML.T0096",
-          "AML.T0017"
+          "AML.T0017",
+          "AML.T0013"
         ],
         "attack_refs": [],
         "rfc_refs": [],
         "dlp_refs": []
       },
       "trigger_count": 13,
-      "atlas_count": 3,
+      "atlas_count": 4,
       "attack_count": 0,
       "framework_gap_count": 7,
       "cwe_count": 2,
@@ -1256,7 +1259,8 @@
         ],
         "atlas_refs": [
           "AML.T0051",
-          "AML.T0017"
+          "AML.T0017",
+          "AML.T0013"
         ],
         "attack_refs": [
           "T1078",
@@ -1270,7 +1274,7 @@
         "dlp_refs": []
       },
       "trigger_count": 14,
-      "atlas_count": 2,
+      "atlas_count": 3,
       "attack_count": 3,
       "framework_gap_count": 7,
       "cwe_count": 4,
@@ -1322,7 +1326,7 @@
         ],
         "atlas_refs": [
           "AML.T0096",
-          "AML.T0017"
+          "AML.T0013"
         ],
         "attack_refs": [
           "T1078",
@@ -1502,13 +1506,13 @@
           "NIS2-Annex-I-Telecom",
           "DORA-Art-21-Telecom-ICT",
           "UK-CAF-B5",
-          "AU-ISM-1556",
+          "AU-ISM-1173-Telecom-NMS",
           "GSMA-NESAS-Deployment",
           "3GPP-TR-33.926",
           "ITU-T-X.805"
         ],
         "atlas_refs": [
-          "AML.T0040"
+          "AML.T0010"
         ],
         "attack_refs": [
           "T1071",
@@ -1568,7 +1572,7 @@
         ],
         "atlas_refs": [
           "AML.T0096",
-          "AML.T0017"
+          "AML.T0013"
         ],
         "attack_refs": [
           "T1190",
@@ -1635,7 +1639,8 @@
         ],
         "atlas_refs": [
           "AML.T0010",
-          "AML.T0017"
+          "AML.T0017",
+          "AML.T0013"
         ],
         "attack_refs": [
           "T1078",
@@ -1652,7 +1657,7 @@
         "dlp_refs": []
       },
       "trigger_count": 15,
-      "atlas_count": 2,
+      "atlas_count": 3,
       "attack_count": 4,
       "framework_gap_count": 7,
       "cwe_count": 6,
@@ -1778,7 +1783,7 @@
           "AML.T0018",
           "AML.T0020",
           "AML.T0043",
-          "AML.T0017"
+          "AML.T0013"
         ],
         "attack_refs": [
           "T1195.001",
@@ -1830,7 +1835,8 @@
         ],
         "atlas_refs": [
           "AML.T0096",
-          "AML.T0017",
+          "AML.T0013",
+          "AML.T0024",
           "AML.T0051"
         ],
         "attack_refs": [
@@ -1847,7 +1853,7 @@
         "dlp_refs": []
       },
       "trigger_count": 13,
-      "atlas_count": 3,
+      "atlas_count": 4,
       "attack_count": 4,
       "framework_gap_count": 6,
       "cwe_count": 0,
@@ -2065,7 +2071,7 @@
           "SOC2-CC6-Access-Key-Leak-Public-Repo",
           "AWS-Security-Hub-Coverage-Gap",
           "UK-CAF-B2-Cloud-IAM",
-          "AU-ISM-1546-Cloud-Service-Account"
+          "AU-ISM-1685-Cloud-Service-Account"
         ],
         "atlas_refs": [
           "AML.T0051"
@@ -2136,7 +2142,7 @@
           "ISO-27001-2022-A.5.16-Federated",
           "SOC2-CC6-OAuth-Consent",
           "UK-CAF-B2-IdP-Tenant",
-          "AU-ISM-1559-IdP",
+          "AU-ISM-1685-IdP",
           "NIS2-Art-21-Federated-Identity",
           "DORA-Art-19-IdP-4h",
           "OFAC-Sanctions-Threat-Actor-Negotiation"
@@ -2353,7 +2359,7 @@
           "NIST-800-53-SR-11",
           "NIS2-Art21-network-security",
           "UK-CAF-B4",
-          "AU-ISM-1556"
+          "AU-ISM-0298"
         ],
         "atlas_refs": [],
         "attack_refs": [
@@ -2391,7 +2397,7 @@
           "NIST-800-53-AC-3",
           "NIS2-Art21-network-security",
           "UK-CAF-B4",
-          "AU-ISM-1556"
+          "AU-ISM-1268"
         ],
         "atlas_refs": [],
         "attack_refs": [
@@ -2433,7 +2439,7 @@
           "NIST-800-53-SI-2",
           "NIS2-Art21-network-security",
           "UK-CAF-B4",
-          "AU-ISM-1556"
+          "AU-ISM-1240"
         ],
         "atlas_refs": [],
         "attack_refs": [
@@ -2472,7 +2478,7 @@
           "ISO-27001-2022-A.8.15",
           "NIS2-Art21-network-security",
           "UK-CAF-B4",
-          "AU-ISM-1556"
+          "AU-ISM-1815"
         ],
         "atlas_refs": [],
         "attack_refs": [
@@ -2510,7 +2516,7 @@
           "NIST-800-53-SI-2",
           "NIS2-Art21-network-security",
           "UK-CAF-B4",
-          "AU-ISM-1556"
+          "AU-ISM-1240"
         ],
         "atlas_refs": [],
         "attack_refs": [

@@ -339,7 +339,10 @@
       "ism": {
         "name": "Australian Government Information Security Manual",
         "url": "https://www.cyber.gov.au/resources-business-and-government/essential-cyber-security/ism",
-        "update_frequency": "monthly"
+        "update_frequency": "monthly",
+        "oscal_repo": "https://github.com/AustralianCyberSecurityCentre/ism-oscal",
+        "oscal_release": "v2026.09.4",
+        "oscal_release_date": "2026-09-01"
       },
       "essential_8": {
         "name": "ASD Essential Eight",

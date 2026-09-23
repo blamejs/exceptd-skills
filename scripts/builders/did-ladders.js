@@ -86,7 +86,7 @@ const LADDERS = [
   {
     id: "model-exfiltration",
     attack_class: "Model Weight / Training Data Exfiltration",
-    primary_ttps: ["AML.T0043", "AML.T0017"],
+    primary_ttps: ["AML.T0043", "AML.T0025"],
     layers: [
       { layer: "Storage", control: "Model weights in encrypted-at-rest object store; key access via KMS audit", source_skill: "mlops-security", d3fend: ["D3-FE", "D3-MENCR"] },
       { layer: "Access Control", control: "ML-engineer workstations get read-only via signed checkouts; production weights gated", source_skill: "identity-assurance", d3fend: ["D3-CBAN", "D3-MFA"] },

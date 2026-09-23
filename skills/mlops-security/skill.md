@@ -30,7 +30,7 @@ atlas_refs:
   - AML.T0018
   - AML.T0020
   - AML.T0043
-  - AML.T0017
+  - AML.T0013
 attack_refs:
   - T1195.001
   - T1565
@@ -119,7 +119,7 @@ Descriptions sourced from `data/atlas-ttps.json` (ATLAS v2026.09, released 2026-
 | AML.T0018 | Manipulate AI Model (sub-techniques: Poison Training Data, Trojan Model via direct weight manipulation, Federated Learning Poisoning) | Training pipeline and post-training tampering — adversary modifies weights either through poisoned training data persisted into weights or through direct binary edit of an unsigned checkpoint | No framework requires model-weight signature verification at registry write and at deployment read; CWE-502 deserialization risk on `.pt` / `SavedModel` is unmapped to compliance control |
 | AML.T0020 | Poison Training Data (sub-techniques: Inject at Scale, Craft Targeted, RAG Knowledge Base Poisoning) | Data ingestion → feature store → training. Adversary contaminates training corpus to embed targeted misbehavior. ATLAS carries this as a single technique with no sub-techniques; the RAG-corpus variant is covered in `rag-pipeline-security`, the training-pipeline variant here. | No framework requires training-data lineage attestation, source signing, or poisoning-detection scanning at ingestion. EU AI Act Art. 10 requires data-governance documentation but not cryptographic attestation. |
 | AML.T0043 | Craft Adversarial Data (White-Box, Black-Box, Physical) | Inference serving and feedback loop — adversary crafts inputs to either cause misclassification at inference time or to poison the feedback corpus when feedback is logged for retraining | No framework requires adversarial-robustness testing for deployed models or adversarial-input detection at the serving layer; AI RMF MEASURE-2.5 recommends but does not require |
-| AML.T0017 | Discover ML Model Ontology (Probe, Extract System Prompt, Map Filters) | Model registry exposure — adversary maps deployed model family, extracts metadata, infers training corpus, harvests prompts and guardrails | No framework requires model-registry RBAC at the granularity needed (per-project read scoping, signed registry queries, audit of model-extraction-pattern queries) |
+| AML.T0013 | Discover AI Model Ontology (probing, system prompt extraction, filter mapping) | Model registry exposure — adversary maps deployed model family, extracts metadata, infers training corpus, harvests prompts and guardrails | No framework requires model-registry RBAC at the granularity needed (per-project read scoping, signed registry queries, audit of model-extraction-pattern queries) |
 | T1195.001 | Supply Chain Compromise: Software Dependencies and Development Tools | Training pipeline dependency chain — Python wheels, CUDA drivers, ML framework versions, notebook kernels | SCA detects known-vulnerable; XZ-class novel compromise is not detectable without SLSA L3 + reproducible builds for the training environment |
 | T1565 | Data Manipulation (Stored, Transmitted, Runtime) | Cross-cuts every MLOps stage — manipulation of stored training data, transmitted features to inference, or runtime model state | SI-7 maps to traditional file/firmware integrity; extending to feature-store payload integrity and embedding-space integrity is not in current control |
 
@@ -150,7 +150,7 @@ Sourced from `data/cve-catalog.json`, public incident history, and `data/atlas-t
 **Tool maturity for defenders (mid-2026 baseline):**
 
 - **ProtectAI ModelScan** (open source) — static analysis on model artifacts for unsafe deserialization patterns; production-ready for `.pt`, `.h5`, ONNX, GGUF surface checks.
-- **Garak** (open source) — LLM red-team probing framework; useful for AML.T0017 and AML.T0043 coverage on deployed LLMs.
+- **Garak** (open source) — LLM red-team probing framework; useful for AML.T0013 and AML.T0043 coverage on deployed LLMs.
 - **CleverHans** (open source) — adversarial-input library; production use for AML.T0043 robustness testing.
 - **Hugging Face model scanner** — first-party scanning on uploaded artifacts; surface-level deserialization and known-malicious detection.
 - **Sigstore cosign + OpenSSF model-signing** — production signing for model weights via OCI registries.
@@ -219,7 +219,7 @@ Every artifact is untrusted until cryptographically verified.
    - **Semantic drift** — concept drift in input meaning; embedding-distribution shift over time; D3-IOPR-style profiling of input/output payloads.
    - **Cadence** — daily statistical, weekly semantic, alert on threshold breach. Quarterly drift review is not sufficient — that is miss-the-attacker territory.
 
-9. **Adversarial monitoring.** Input distribution profiling for OOD detection, prediction confidence anomaly detection, query-pattern profiling (D3-IOPR) to surface AML.T0017 (model probing) and AML.T0043 (adversarial inputs). For LLM-serving, integrate Garak-class probing into a continuous red-team loop.
+9. **Adversarial monitoring.** Input distribution profiling for OOD detection, prediction confidence anomaly detection, query-pattern profiling (D3-IOPR) to surface AML.T0013 (model probing) and AML.T0043 (adversarial inputs). For LLM-serving, integrate Garak-class probing into a continuous red-team loop.
 
 10. **Feedback loop integrity.** Every retrain run produces an in-toto attestation. Feedback sources are signed by the collecting service. Statistical detection of feedback distribution shift on a per-source basis. Holdout retraining — feedback is sampled and validated against a labeled baseline before incorporation, not wholesale ingested. Verify that every model in production carries a chain of attestations back to the original training run plus every retrain run since.
 
@@ -304,7 +304,7 @@ D3FEND techniques referenced (see `data/d3fend-catalog.json`). Each is annotated
 
 - **D3-EAL (Executable Allowlisting)** — Runtime restriction of execution to pre-approved executables, extended in the MLOps context to inference-service binary lineage. Closes the loop on training-run signing: even if a tampered training artifact reaches the serving host, D3-EAL on the serving container blocks unauthorized binary execution emerging from a deserialization-RCE in the model artifact. Defense-in-depth layer: runtime inference-service host. Least-privilege scope: serving container has a minimum binary allowlist for the model-serving framework only — no shell, no debugging utilities, no outbound-network utilities. Zero-trust posture: every binary execution is verified against the allowlist regardless of pathway. AI-pipeline applicability: ephemeral serving pods are reprovisioned with the allowlist baked into the immutable image; persistent training runs use a separate, broader allowlist scoped to training-only operations.
 
-- **D3-IOPR (Input/Output Profiling)** — Profiling of input and output payloads at inference services to detect adversarial inputs (AML.T0043) and model-probing patterns (AML.T0017). Defense-in-depth layer: serving-layer pre- and post-inference. Least-privilege scope: profiling service has read-only access to inference traffic at the serving proxy; no model-load privileges, no registry-write privileges. Zero-trust posture: every inference request is profiled regardless of source authentication — authenticated users execute AML.T0043 attacks too. AI-pipeline applicability: serves both ephemeral inference pods (profiling sidecar) and persistent monitoring services (drift-detection pipeline ingesting profiled telemetry).
+- **D3-IOPR (Input/Output Profiling)** — Profiling of input and output payloads at inference services to detect adversarial inputs (AML.T0043) and model-probing patterns (AML.T0013). Defense-in-depth layer: serving-layer pre- and post-inference. Least-privilege scope: profiling service has read-only access to inference traffic at the serving proxy; no model-load privileges, no registry-write privileges. Zero-trust posture: every inference request is profiled regardless of source authentication — authenticated users execute AML.T0043 attacks too. AI-pipeline applicability: serves both ephemeral inference pods (profiling sidecar) and persistent monitoring services (drift-detection pipeline ingesting profiled telemetry).
 
 MLOps stacks span three architectural layers, each requiring an explicit defense story (and each surfacing controls that are architecturally impossible in ephemeral environments):
 

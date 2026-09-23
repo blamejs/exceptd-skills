@@ -27,7 +27,7 @@ data_deps:
   - framework-control-gaps.json
 atlas_refs:
   - AML.T0096
-  - AML.T0017
+  - AML.T0013
 attack_refs:
   - T1078
   - T1190
@@ -153,7 +153,7 @@ In all three, the SCA evidence chain (the customer's authenticated session, the 
 | Ransomware against banking infrastructure | T1486 — Data Encrypted for Impact | ATT&CK Enterprise | LockBit-class, BlackBasta, ALPHV/BlackCat residuals 2024-2026; double-extortion + regulatory-threat-of-disclosure | NYDFS 500.17 ransom-payment notification (72h) + DORA major-incident reporting (Art. 19, 24h initial) + APRA CPS 234 para 26 (72h) — notification cadences harmonising slowly; ransom-payment legality fragmented (NYDFS reporting only, OFAC sanctions-screening, EU sanctions overlay) |
 | Data exfiltration including LLM-channel | T1567 — Exfiltration Over Web Service | ATT&CK Enterprise | LLM API egress (OpenAI, Anthropic, Google) as covert channel; AI-coding-assistant context leaks; KYC-document upload to consumer-grade AI | DLP controls in `data/dlp-controls.json` apply; SWIFT CSCF v2026 1.1 segregation assumption violated when AI-API egress crosses administrative jump zone |
 | AI-as-covert-C2 in trading / treasury systems | AML.T0096 — Use AI for C2 Communications | ATLAS v2026.09 | Steganographic encoding in trading-assistant prompts; LLM response decodes operator instructions; multi-agent covert relay in market-making bots | No ATT&CK Enterprise mapping; ATLAS v2026.09 names the technique but no financial-sector-specific detection. SOC tooling rarely monitors trading-system AI tool-use. |
-| Fraud-detection model extraction | AML.T0017 — Discover ML Model Ontology | ATLAS v2026.09 | Adversarial probing of card-not-present fraud models; chargeback-pattern fingerprinting; transaction-monitoring threshold discovery via test transactions | Fraud-model lifecycle governance under MAS TRM / OSFI B-13 / NYDFS 500.13 (asset management) — model-extraction probes are not classified as a cyber event in most institutions |
+| Fraud-detection model extraction | AML.T0013 (Discover AI Model Ontology) | ATLAS v2026.09 | Adversarial probing of card-not-present fraud models; chargeback-pattern fingerprinting; transaction-monitoring threshold discovery via test transactions | Fraud-model lifecycle governance under MAS TRM / OSFI B-13 / NYDFS 500.13 (asset management) — model-extraction probes are not classified as a cyber event in most institutions |
 | Hard-coded credentials in financial mobile / API clients | CWE-798 | CWE | Mobile-banking apps shipping API keys; partner-integration API tokens checked into Git; treasury-management-system local config | PSD2 RTS-SCA covers customer SCA, silent on partner-API credential hygiene; SWIFT CSCF 5.1/5.2 covers credential management for SWIFT users only |
 | Agent-initiated payment via prompt injection | (No native TTP — closest: T1078 + AML.T0051) | ATT&CK + ATLAS | LLM agent with payment-initiation tool-use receives injected instruction via email / document / web content; transaction executes under customer's authenticated session | RTS-SCA evidence chain is fully compliant; injected intent invisible. Captured in `data/framework-control-gaps.json#PSD2-RTS-SCA`. |
 | AI-generated SWIFT MT/MX message draft poisoning | (No native TTP — closest: T1565 + AML.T0051) | ATT&CK + ATLAS | LLM-assisted operator drafting tool produces subtly-wrong beneficiary BIC or amount; reviewer fatigue lets it pass 4-eyes principle | Captured in `data/framework-control-gaps.json#SWIFT-CSCF-v2026-1.1`. |
@@ -237,7 +237,7 @@ For NY-regulated entities:
 ### Step 6 — Fraud-detection model adversarial-resilience audit
 
 - Pull current fraud-detection model architecture, training data refresh cadence, drift-monitoring posture.
-- Per AML.T0017 (Discover ML Model Ontology): test the institution's ability to detect model-probing — incremental test transactions, threshold-discovery patterns, chargeback-pattern fingerprinting. If detection is "manual review of false-positive rate trends only," the model is functionally undefended against probing.
+- Per AML.T0013 (Discover AI Model Ontology): test the institution's ability to detect model-probing — incremental test transactions, threshold-discovery patterns, chargeback-pattern fingerprinting. If detection is "manual review of false-positive rate trends only," the model is functionally undefended against probing.
 - Validate model retraining cadence: monthly or faster for high-velocity surfaces (card-not-present); quarterly is theater for any adversary-evolving surface (see Theater Test 4).
 - Cross-walk to OSFI E-23 (Enterprise-Wide Model Risk Management) and SR 11-7 equivalents.
 
@@ -363,7 +363,7 @@ Ask: "What is your fraud-detection model retraining cadence, drift-monitoring ca
 
 - If the answer is "quarterly retraining, manual drift review, no adversarial testing": this is theater against any AI-augmented fraud adversary. Mid-2026 adversary capability evolves on a 2-4 week cycle for AI-augmented BEC and on a continuous cycle for card-not-present fraud-pattern adaptation.
 - If "we don't know when adversaries last successfully evaded": detection of evasion is the missing control. Successful evasions show up as chargeback-volume drift weeks later, not as fraud-system alerts.
-- Acceptable: monthly-or-faster retraining for high-velocity surfaces, continuous drift monitoring with alerting, scheduled adversarial-resilience testing (AML.T0017 detection), retrospective audit of evasion patterns from chargeback / customer-complaint signal.
+- Acceptable: monthly-or-faster retraining for high-velocity surfaces, continuous drift monitoring with alerting, scheduled adversarial-resilience testing (AML.T0013 detection), retrospective audit of evasion patterns from chargeback / customer-complaint signal.
 
 ---
 

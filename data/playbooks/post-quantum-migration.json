@@ -158,7 +158,7 @@
         },
         {
           "jurisdiction": "AU",
-          "regulation": "ACSC ISM-1546 / ISM-0457",
+          "regulation": "ACSC ISM-0471 / ISM-2073",
           "obligation": "submit_approved_algorithm_attestation",
           "window_hours": 8760,
           "clock_starts": "manual",
@@ -232,7 +232,7 @@
         }
       ],
       "framework_context": {
-        "gap_summary": "Frameworks treat PQC migration as policy + algorithm-selection rather than as a per-asset migration programme with enforceable deadlines. NIST 800-53 SC-13 cites FIPS-validated modules without distinguishing classical-only validations from FIPS 203/204/205 PQC validations; SC-8 does not require hybrid KEX. ISO 27001:2022 A.8.24 was published before FIPS 203/204/205 finalisation and has no scheduled amendment. PCI DSS 4.0 §3.6/§4.2.1 defines 'strong cryptography' with classical minimums, no PQC obligation for cardholder data with > 10y retention. NIS2 Art.21(2)(h) names cryptography as essential measure but defers algorithm specifics to implementing acts not yet published. DORA Art.9 inherits NIS2's gap. EU CRA Annex I uses 'state-of-the-art' as the standard, leaving PQC binding to interpretation. The US federal cycle is further along (CNSA 2.0 2027 deadline, OMB M-23-02 annual inventory, NIST SP 800-227 PQC-transition recommendations, NIST IR 8547 published migration roadmap) but the 800-53 control catalogue is unchanged. AU ISM-1546 transitions to PQC quarterly via approved-algorithm list updates but ISM remains advisory rather than binding for non-federal entities. The result: an organisation with no asset inventory, no per-asset migration plan, no vendor SLA, and no exposure-window analysis can satisfy every framework's literal language while being HNDL-vulnerable today across its long-retention data surface.",
+        "gap_summary": "Frameworks treat PQC migration as policy + algorithm-selection rather than as a per-asset migration programme with enforceable deadlines. NIST 800-53 SC-13 cites FIPS-validated modules without distinguishing classical-only validations from FIPS 203/204/205 PQC validations; SC-8 does not require hybrid KEX. ISO 27001:2022 A.8.24 was published before FIPS 203/204/205 finalisation and has no scheduled amendment. PCI DSS 4.0 §3.6/§4.2.1 defines 'strong cryptography' with classical minimums, no PQC obligation for cardholder data with > 10y retention. NIS2 Art.21(2)(h) names cryptography as essential measure but defers algorithm specifics to implementing acts not yet published. DORA Art.9 inherits NIS2's gap. EU CRA Annex I uses 'state-of-the-art' as the standard, leaving PQC binding to interpretation. The US federal cycle is further along (CNSA 2.0 2027 deadline, OMB M-23-02 annual inventory, NIST SP 800-227 PQC-transition recommendations, NIST IR 8547 published migration roadmap) but the 800-53 control catalogue is unchanged. AU ISM-1917 requires new cryptographic products to support ML-DSA-87 and ML-KEM-1024 by 2030 and ISM-2073 requires a transition plan, but neither sets a date for systems already deployed, and the ISM binds Australian Government entities while remaining voluntary for private organizations. The result: an organisation with no asset inventory, no per-asset migration plan, no vendor SLA, and no exposure-window analysis can satisfy every framework's literal language while being HNDL-vulnerable today across its long-retention data surface.",
         "lag_score": 365,
         "per_framework_gaps": [
           {
@@ -297,9 +297,9 @@
           },
           {
             "framework": "au-ism",
-            "control_id": "ISM-0457 / ISM-1546",
-            "designed_for": "Approved cryptographic algorithms for protecting Australian Government information.",
-            "insufficient_because": "ISM transition guidance is advisory in 2026-05. Quarterly publishing cadence lags FIPS 203/204/205 finalisation. Approved-algorithm list mixes classical and PQC entries without binding migration deadlines."
+            "control_id": "ISM-0471 / ISM-2073",
+            "designed_for": "ISM-0471 requires cryptographic equipment, applications and libraries to use only ASD-Approved Cryptographic Algorithms or high assurance algorithms; ISM-2073 requires a post-quantum cryptography transition plan, and ISM-1917 requires new cryptographic products to support ML-DSA-87, ML-KEM-1024, SHA-384, SHA-512 and AES-256 by no later than 2030.",
+            "insufficient_because": "ISM-0471 still accepts classical approved algorithms, ISM-1917's 2030 date binds new development and procurement only, and ISM-2073 requires a plan without a date for deployed systems, so an organization with classical key exchange everywhere is compliant today while its long-retention data is exposed to harvest-now-decrypt-later collection. None of the three is in an Essential Eight maturity profile."
           },
           {
             "framework": "sg-mas-trm",
@@ -337,7 +337,7 @@
         "monitor": 45,
         "close": 25
       },
-      "framework_lag_declaration": "NIST 800-53 SC-12/SC-13, ISO 27001:2022 A.8.24/A.8.25, PCI DSS 4.0 §3.6/§4.2.1, NIS2 Art.21(2)(h), DORA Art.9, EU CRA Annex I, UK CAF B3, AU ISM-0457/1546, SG MAS TRM §11.1, HIPAA §164.312(a)(2)(iv) all permit fully-classical cryptographic posture as compliant. NIST itself is the exception via NIST IR 8547 + FIPS 203/204/205 + OMB M-23-02 + CNSA 2.0 — but the 800-53 control catalogue is unchanged. ISO 27001:2022 was published before PQC finalisation and has no scheduled amendment. PCI Council and EU regulators publicly aware but have not amended binding controls. Lag = ~365 days behind operational PQC readiness (FIPS 203/204/205 finalised 2024-08-13) and 5-15 years behind the CRQC horizon that drives HNDL. Compensating controls (per-asset inventory + per-asset migration plan + vendor SLA + exposure-window analysis + downgrade-detection monitoring) must close this programme-level gap before SLA-only compliance can be accepted. None of the frameworks in scope require any of those five compensating controls.",
+      "framework_lag_declaration": "NIST 800-53 SC-12/SC-13, ISO 27001:2022 A.8.24/A.8.25, PCI DSS 4.0 §3.6/§4.2.1, NIS2 Art.21(2)(h), DORA Art.9, EU CRA Annex I, UK CAF B3, AU ISM-0471/2073, SG MAS TRM §11.1, HIPAA §164.312(a)(2)(iv) all permit fully-classical cryptographic posture as compliant. NIST itself is the exception via NIST IR 8547 + FIPS 203/204/205 + OMB M-23-02 + CNSA 2.0 — but the 800-53 control catalogue is unchanged. ISO 27001:2022 was published before PQC finalisation and has no scheduled amendment. PCI Council and EU regulators publicly aware but have not amended binding controls. Lag = ~365 days behind operational PQC readiness (FIPS 203/204/205 finalised 2024-08-13) and 5-15 years behind the CRQC horizon that drives HNDL. Compensating controls (per-asset inventory + per-asset migration plan + vendor SLA + exposure-window analysis + downgrade-detection monitoring) must close this programme-level gap before SLA-only compliance can be accepted. None of the frameworks in scope require any of those five compensating controls.",
       "skill_chain": [
         {
           "skill": "pqc-first",
@@ -803,7 +803,7 @@
         {
           "finding_id": "pqc-migration-programme-failure",
           "framework": "au-ism",
-          "claimed_control": "ISM-0457 / ISM-1546 — Approved cryptographic algorithms / Transition",
+          "claimed_control": "ISM-0471 / ISM-2073: approved cryptographic algorithms / post-quantum transition plan",
           "actual_gap": "ISM transition guidance advisory; quarterly cadence lags FIPS 203/204/205. Mixed classical + PQC approved-algorithm list without binding migration deadlines.",
           "required_control": "ISM update binding PQC migration deadlines per data classification + per asset class; per-Department register submission cadence aligned to ACSC quarterly cycle."
         },
@@ -1120,7 +1120,7 @@
         "lesson_template": {
           "attack_vector": "Harvest-now-decrypt-later at the programme level: operator has no per-asset register, no per-asset migration target, no vendor SLA, no downgrade detection, no regulator-deadline orchestration. Adversary records classical-encrypted traffic against operator's whole estate today; CRQC-day decryption recovers data across the full retention horizon.",
           "control_gap": "Frameworks treat PQC migration as policy + algorithm selection rather than as a per-asset migration programme. None require per-asset register + sunset dates + vendor SLAs + downgrade detection as a binding control set.",
-          "framework_gap": "NIST SC-12/SC-13, ISO A.8.24/A.8.25, PCI 3.6/4.2.1, NIS2 Art.21(2)(h), DORA Art.9, EU CRA Annex I, UK CAF B3, AU ISM-0457/1546, SG MAS TRM §11.1, HIPAA §164.312(a)(2)(iv) all permit classical-only posture as compliant. Federal cycle (CNSA 2.0, OMB M-23-02, NIST SP 800-227, NIST IR 8547) further along but commercial framework cadence ~365 days behind operational PQC readiness.",
+          "framework_gap": "NIST SC-12/SC-13, ISO A.8.24/A.8.25, PCI 3.6/4.2.1, NIS2 Art.21(2)(h), DORA Art.9, EU CRA Annex I, UK CAF B3, AU ISM-0471/2073, SG MAS TRM §11.1, HIPAA §164.312(a)(2)(iv) all permit classical-only posture as compliant. Federal cycle (CNSA 2.0, OMB M-23-02, NIST SP 800-227, NIST IR 8547) further along but commercial framework cadence ~365 days behind operational PQC readiness.",
           "new_control_requirement": "Add a 'cryptographic migration programme' sub-control across the eleven framework controls listed above requiring: (a) per-asset cryptographic register with mandatory fields, (b) per-vendor SLA naming PQC delivery date, (c) per-asset classical sunset date preceding retention horizon, (d) downgrade-detection control on every hybrid-configured asset, (e) per-jurisdiction regulator-deadline tracker refreshed at publication cadence, (f) annual programme review against published CRQC estimates and FIPS PQC standard amendments."
         },
         "feeds_back_to_skills": [
@@ -1188,14 +1188,14 @@
           "draft_notification": "CNSA 2.0 NSS PQC migration attestation: ${nss_entity} attests PQC migration status for NSS systems. Systems migrated: ${nss_migrated_count}. Systems on documented exception register: ${nss_exception_count}. Remediation milestones for unmigrated systems: ${remediation_milestones}."
         },
         {
-          "obligation_ref": "AU/ACSC ISM-1546 / ISM-0457 8760h",
+          "obligation_ref": "AU/ACSC ISM-0471 / ISM-2073 8760h",
           "deadline": "computed_at_runtime",
           "recipient": "internal_legal",
           "evidence_attached": [
             "approved_algorithm_register",
             "transition_plan_for_non_approved_algorithms"
           ],
-          "draft_notification": "ACSC ISM approved-algorithm attestation: ${au_entity} attests per-asset alignment with ISM-0457 approved-algorithm list and ISM-1546 transition guidance. Assets on approved-algorithm list: ${approved_count}. Assets with documented transition plan: ${transition_plan_count}. Quarterly review cycle: ${quarterly_cycle_date}."
+          "draft_notification": "ACSC ISM approved-algorithm attestation: ${au_entity} attests per-asset alignment with the ISM-0471 approved-algorithm requirement and the ISM-2073 post-quantum transition plan. Assets on approved-algorithm list: ${approved_count}. Assets with documented transition plan: ${transition_plan_count}. Quarterly review cycle: ${quarterly_cycle_date}."
         },
         {
           "obligation_ref": "DE/BSI TR-02102 (German Federal Office for Information Security) 8760h",

@@ -849,13 +849,8 @@
     "UK-CAF-B5": [
       "sector-telecom"
     ],
-    "AU-ISM-1556": [
-      "decompression-dos",
-      "log-injection-telemetry",
-      "multitenancy-isolation",
-      "privacy-consent-ops",
-      "sector-telecom",
-      "self-update-integrity"
+    "AU-ISM-1173-Telecom-NMS": [
+      "sector-telecom"
     ],
     "GSMA-NESAS-Deployment": [
       "sector-telecom"
@@ -905,7 +900,7 @@
     "UK-CAF-B2-Cloud-IAM": [
       "cloud-iam-incident"
     ],
-    "AU-ISM-1546-Cloud-Service-Account": [
+    "AU-ISM-1685-Cloud-Service-Account": [
       "cloud-iam-incident"
     ],
     "NIST-800-53-IA-5-Federated": [
@@ -922,7 +917,7 @@
     "UK-CAF-B2-IdP-Tenant": [
       "idp-incident-response"
     ],
-    "AU-ISM-1559-IdP": [
+    "AU-ISM-1685-IdP": [
       "idp-incident-response"
     ],
     "NIS2-Art-21-Federated-Identity": [
@@ -963,8 +958,21 @@
     "NIST-800-53-SR-11": [
       "self-update-integrity"
     ],
+    "AU-ISM-0298": [
+      "self-update-integrity"
+    ],
     "NIST-800-53-AC-3": [
       "multitenancy-isolation"
+    ],
+    "AU-ISM-1268": [
+      "multitenancy-isolation"
+    ],
+    "AU-ISM-1240": [
+      "decompression-dos",
+      "privacy-consent-ops"
+    ],
+    "AU-ISM-1815": [
+      "log-injection-telemetry"
     ]
   },
   "atlas_refs": {
@@ -1008,15 +1016,19 @@
     ],
     "AML.T0016": [
       "ai-attack-surface",
-      "mcp-agent-trust"
+      "ai-c2-detection"
     ],
     "AML.T0017": [
       "ai-attack-surface",
-      "ai-c2-detection",
+      "ai-risk-management",
+      "cloud-security",
+      "sector-healthcare"
+    ],
+    "AML.T0013": [
+      "ai-attack-surface",
       "ai-risk-management",
       "api-security",
       "cloud-security",
-      "dlp-gap-analysis",
       "incident-response-playbook",
       "mlops-security",
       "sector-financial",
@@ -1034,10 +1046,18 @@
       "mcp-agent-trust",
       "mlops-security",
       "ot-ics-security",
+      "sector-telecom",
       "supply-chain-integrity"
     ],
-    "AML.T0040": [
-      "sector-telecom"
+    "AML.T0053": [
+      "mcp-agent-trust"
+    ],
+    "AML.T0086": [
+      "mcp-agent-trust"
+    ],
+    "AML.T0024": [
+      "dlp-gap-analysis",
+      "incident-response-playbook"
     ]
   },
   "attack_refs": {

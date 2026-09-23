@@ -327,11 +327,11 @@ require("node:test").describe("release separates a failed publish from a failed 
   });
 
   test("the npm check polls the registry before reading a mismatch as a failure", () => {
-    // The registry serves a new version a minute or two after the publish job
-    // succeeds. One read reports the previous version and fails a good release.
+    // The registry can serve a new version several minutes after the publish
+    // job succeeds. One read reports the previous version and fails a good release.
     const npm = SRC.slice(SRC.indexOf('_section("verify npm")'), SRC.indexOf('_section("fresh-tarball signature verify")'));
     assert.ok(npm.length > 0, "the npm section must exist");
-    assert.match(npm, /for \(var _n = 0; _n < 18; _n\+\+\)/, "the registry read must be retried");
+    assert.match(npm, /for \(var _n = 0; _n < 60; _n\+\+\)/, "the registry read must be retried for up to ten minutes");
     assert.match(npm, /if \(npmVersion === next\) break;/, "only the expected version ends the poll early");
     assert.match(npm, /setTimeout\(function\(\)\{\},10000\)/, "the retries must be spaced out, not a tight loop");
   });

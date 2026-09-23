@@ -220,11 +220,16 @@ test('#11 lagScore resolves ASD_ISM via data-driven catalog_aliases', () => {
   // so neither the short key nor the display string matched literally and the
   // framework reported framework_specific_gaps:0 (framework_resolved_but_zero_gaps
   // would have been true). The data-driven catalog_aliases now bridge the
-  // divergent labels back to the framework, surfacing all 5 open ISM gaps.
+  // divergent labels back to the framework, surfacing every open ISM gap. The
+  // expected count comes from the registry keys, so an entry whose framework
+  // label the aliases miss still fails here.
+  const openIsm = Object.entries(controlGaps)
+    .filter(([k, v]) => k.startsWith('AU-ISM-') && v && v.status === 'open').length;
+  assert.ok(openIsm >= 5, 'the registry carries the open ISM gaps this test counts');
   const r = fg.lagScore('ASD_ISM', controlGaps, globalFrameworks);
   assert.equal(typeof r.breakdown.framework_specific_gaps, 'number');
-  assert.equal(r.breakdown.framework_specific_gaps, 5,
-    'ASD_ISM must surface all 5 open ISM gaps via catalog_aliases');
+  assert.equal(r.breakdown.framework_specific_gaps, openIsm,
+    `ASD_ISM must surface all ${openIsm} open ISM gaps via catalog_aliases`);
   // Resolving to a non-zero count proves the framework was matched, not that
   // it resolved to an empty bucket — pin the explicit flag so a regression
   // that resolves-but-finds-nothing trips here.

@@ -38,7 +38,7 @@ framework_gaps:
   - NIST-800-53-AC-3
   - NIS2-Art21-network-security
   - UK-CAF-B4
-  - AU-ISM-1556
+  - AU-ISM-1268
 cwe_refs:
   - CWE-639
   - CWE-770

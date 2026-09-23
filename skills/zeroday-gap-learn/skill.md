@@ -166,7 +166,7 @@ Output: Lesson entry for data/zeroday-lessons.json
 | NIST 800-53 SI-2 | Flaw Remediation | Present but insufficient: 30-day SLA is exploitation window for CISA KEV + public PoC |
 | ISO 27001 A.8.8 | Technical vulnerability management | Present but insufficient: "appropriate timescales" undefined; no live-patch requirement |
 | PCI DSS 6.3.3 | Critical patches within 1 month | Present but insufficient: same problem |
-| ASD ISM-1623 | Patch within 48h with exploit | Closest to adequate, but: no live-patch mandate, 48h window still long for 732-byte public exploit |
+| ASD ISM-1877 and ISM-1696 | Patch within 48h of release when a working exploit exists | Closest to adequate, but: no live-patch mandate, and 48h is still long for a 732-byte public exploit; for workstations the 48h window applies only at Maturity Level Three |
 | Any framework | Detection for LPE exploitation patterns | Missing entirely: no framework requires auditd/eBPF exploitation detection |
 | Any framework | Live kernel patching as required capability | Missing entirely |
 
@@ -221,7 +221,7 @@ Output: Lesson entry for data/zeroday-lessons.json
 | NIS2 Art. 21(2)(c) | Patch-management measures | Present but insufficient: undefined for fast-cycle kernel LPEs with public PoC; module-blacklist not in scope |
 | DORA Art. 9 | ICT incident management | Present but insufficient: presumes vendor-patch cadence; module-unload as immediate mitigation has no place in the typical DORA evidence pack |
 | UK CAF B4 | System security | Silent on subsystem module disable as a compensating control |
-| AU ISM-1546 / Essential 8 | Patch applications | ML3 48h anchors on advisory date, not PoC availability; still long for a deterministic public exploit |
+| AU Essential 8 (ISM-1692, ISM-1877) | Patch applications and operating systems | The 48h windows run from the vendor's release rather than from public-exploit availability, and are still long for a deterministic public exploit |
 | ISO 27001 A.5.7 | Threat intelligence | Collects feeds; does not require operational pivot when intel shows a same-family sequel to a previously-patched bug |
 | Any framework | Page-cache integrity verification | Missing entirely — on-disk file-integrity tools cannot detect this class |
 
@@ -296,7 +296,7 @@ Output: Lesson entry for data/zeroday-lessons.json
 
 ### Lesson: CVE-2026-45321 (Mini Shai-Hulud TanStack npm worm)
 
-**Attack vector:** Engineering-grade three-primitive chain against the TanStack monorepo, disclosed 2026-05-11. (1) `pull_request_target` on `bundle-size.yml` runs fork-PR code with base-repo permissions (classic Pwn Request). (2) That run poisons the `actions/cache` pnpm-store under the key `Linux-pnpm-store-${hashFiles('**/pnpm-lock.yaml')}` that `release.yml` later restores. (3) On the next main push, `release.yml` (which has `id-token: write` for npm publish) restores the poisoned cache and the worm captures the OIDC token. 84 malicious versions published across 42 @tanstack/* packages between 2026-05-11 19:20-19:26 UTC. ~150M weekly downloads in scope. CVSS 9.6; CISA KEV pending. Attribution: TeamPCP. No AI-assisted exploit-development attribution for this specific instance, but the chain shape is exactly what AML.T0016-class capability-development produces at AI cadence — chained CI/CD primitives that no individual component owner recognises as exploitable.
+**Attack vector:** Engineering-grade three-primitive chain against the TanStack monorepo, disclosed 2026-05-11. (1) `pull_request_target` on `bundle-size.yml` runs fork-PR code with base-repo permissions (classic Pwn Request). (2) That run poisons the `actions/cache` pnpm-store under the key `Linux-pnpm-store-${hashFiles('**/pnpm-lock.yaml')}` that `release.yml` later restores. (3) On the next main push, `release.yml` (which has `id-token: write` for npm publish) restores the poisoned cache and the worm captures the OIDC token. 84 malicious versions published across 42 @tanstack/* packages between 2026-05-11 19:20-19:26 UTC. ~150M weekly downloads in scope. CVSS 9.6; CISA KEV pending. Attribution: TeamPCP. No AI-assisted exploit-development attribution for this specific instance, but the chain shape is exactly what AML.T0017-class capability development produces at AI cadence — chained CI/CD primitives that no individual component owner recognises as exploitable.
 
 **What control should have prevented this:**
 - Workflow-privilege isolation: `pull_request_target` should never run fork-PR code with base-repo permissions in the same job as cache writes. The chain is broken if the bundle-size workflow runs with `permissions: contents: read` and writes to a separate cache key.

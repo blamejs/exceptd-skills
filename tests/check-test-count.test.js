@@ -5,9 +5,9 @@
  *
  * Subject coverage for scripts/check-test-count.js — the no-shrinkage
  * test-count gate. countTests() strips comments/strings before counting and
- * recognizes both test() and it() declarations (skip/only variants), while
- * refusing describe() containers and any test( token that only appears inside
- * a string or block comment.
+ * recognizes both test() and it() declarations (and their .only variants),
+ * while refusing describe() containers, skipped declarations, and any test(
+ * token that only appears inside a string or block comment.
  *
  * Fixtures live in isolated mkdtemp dirs; the repo tree is never mutated.
  */
@@ -36,11 +36,10 @@ function tmpFile(name, content) {
 // check-test-count counts both test() and it()
 // --------------------------------------------------------------------------
 
-test('#22 countTests counts 3 it() + 2 test() declarations as 5', () => {
+test('#22 countTests counts 2 it() + 2 test() declarations as 4', () => {
   const src = [
     "const { test, it } = require('node:test');",
     "it('a', () => {});",
-    "it.skip('b', () => {});",
     "it.only('c', () => {});",
     "test('d', () => {});",
     "test('e', () => {});",
@@ -49,7 +48,34 @@ test('#22 countTests counts 3 it() + 2 test() declarations as 5', () => {
   try {
     const n = countTests(p);
     assert.equal(typeof n, 'number');
-    assert.equal(n, 5);
+    assert.equal(n, 4);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('a test skipped in place is not counted, so the gate sees it as lost', () => {
+  const src = [
+    "test('kept', () => {});",
+    "test.skip('skipped by modifier', () => {});",
+    "it.skip('skipped it', () => {});",
+    "test('skipped by option', { skip: true }, () => {});",
+    "test('skipped with a reason', { skip: true, timeout: 5 }, () => {});",
+    "test('skipped with a message', { skip: 'broken on CI' }, () => {});",
+  ].join('\n');
+  const { dir, p } = tmpFile('count-skip.test.js', src);
+  try {
+    assert.equal(countTests(p), 1);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('a conditional skip still counts, because the test runs where the condition allows', () => {
+  const src = [
+    "test('needs a key', { skip: !HAS_KEY }, () => {});",
+    "test('posix only', { skip: process.platform === 'win32' }, () => {});",
+    "test('needs a key, with a message', { skip: !HAS_KEY && 'no key' }, () => {});",
+  ].join('\n');
+  const { dir, p } = tmpFile('count-conditional.test.js', src);
+  try {
+    assert.equal(countTests(p), 3);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
@@ -401,7 +427,7 @@ function buildRootTree(extraFiles /* { rel: content } */, opts = {}) {
   return root;
 }
 
-test('#22 countTests counts 3 it() + 2 test() declarations as 5', () => {
+test('#22 countTests counts 2 it() + 2 test() declarations as 4, and not the skipped one', () => {
   const src = [
     "const { test, it } = require('node:test');",
     "it('a', () => {});",
@@ -414,7 +440,7 @@ test('#22 countTests counts 3 it() + 2 test() declarations as 5', () => {
   try {
     const n = countTests(p);
     assert.equal(typeof n, 'number');
-    assert.equal(n, 5);
+    assert.equal(n, 4);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
