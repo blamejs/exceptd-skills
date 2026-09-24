@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.21.3 — 2026-09-24
+
+The catalog holds 1,755 CVEs after 35 additions from CISA KEV. Twenty-four are Microsoft flaws, among them two links of the ProxyShell Exchange chain (CVE-2021-31207 and CVE-2021-34473), the CryptoAPI certificate-validation spoofing flaw CVE-2020-0601, the SharePoint deserialization flaw CVE-2019-0604, and Win32k, Common Log File System and Windows Error Reporting privilege escalations. Five are Oracle WebLogic Server and Oracle Coherence flaws, two are Firefox and Thunderbird use-after-free flaws, and the rest cover Arista VeloCloud Orchestrator, Nagios XI, PlaySMS and Progress Telerik UI for ASP.NET AJAX.
+
+Twenty of the new entries have a public exploit, six carry CISA's ransomware designation, and 19 need a host restart before the fix takes effect.
+
+Twenty entries now include their CVE id in the title, because CISA names these flaws by product and defect class and the same name already covered another record. Seventeen are new entries, and three are existing ones: CVE-2017-11826, CVE-2020-14644 and CVE-2022-41082.
+
+`exceptd refresh --curate-batch` now writes a per-CVE test that accepts an empty `cwe_refs` list, which the catalog already allows for records NVD assigns no CWE. The test fails on any value that is not a `CWE-<number>` id.
+
 ## 0.21.2 — 2026-09-23
 
 `ai_discovery_source` now records who found each vulnerability, and every catalog entry and its zero-day lesson carry the same value. The affected product's own vendor or project team is `vendor_research`. An outside researcher, security company, incident responder or bug-bounty reporter, named or anonymous, is `human_researcher`, or `bug_bounty_ai_augmented` when AI tooling found the flaw. `unknown` means no source identifies who found or reported the flaw.
