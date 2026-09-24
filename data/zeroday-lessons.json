@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.1.0",
-    "last_updated": "2026-08-19",
+    "last_updated": "2026-09-24",
     "last_threat_review": "2026-05-17",
     "purpose": "Zero-day learning loop output. Each entry maps a CVE to: attack vector, defense chain analysis, framework coverage, new control requirements generated, and exposure scoring. v1.1.0 (2026-05-15): every entry now carries ai_discovered_zeroday boolean + ai_discovery_source enum + ai_discovery_date + ai_assist_factor ladder, per AGENTS.md Hard Rule #7.",
     "note": "Never delete entries. Closed gaps are marked status: closed. History is data.",
@@ -17,7 +17,7 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "entry_count": 1755
+    "entry_count": 1752
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -143690,90 +143690,6 @@
       }
     ]
   },
-  "CVE-2012-0158": {
-    "name": "Microsoft MSCOMCTL.OCX Remote Code Execution Vulnerability",
-    "lesson_date": "2026-09-23",
-    "ai_discovered_zeroday": false,
-    "ai_discovery_source": "unknown",
-    "ai_discovery_date": null,
-    "ai_assist_factor": "none",
-    "attack_vector": {
-      "description": "A crafted web page, Office document or RTF file embeds a malicious MSComctlLib ActiveX control that corrupts system state in MSCOMCTL.OCX, giving remote code execution with the rights of the user who opens it.",
-      "privileges_required": "None beyond convincing a user to open a crafted document or visit a crafted page; execution runs as the logged-on user.",
-      "complexity": "Low; the exploit is packaged as a document lure and is available as a Metasploit module.",
-      "ai_factor": "Not AI-discovered; no source claims AI tooling. The flaw was under limited targeted attack when the fix shipped in 2012."
-    },
-    "defense_chain": {
-      "prevention": {
-        "what_would_have_worked": "Applying the MS12-027 update across every product that embeds MSCOMCTL.OCX; where the update lagged, setting the kill bit for the four vulnerable class identifiers, which is documented for Internet Explorer and for Office 2007 and 2010, and not opening untrusted Office, WordPad or RTF documents.",
-        "was_this_required": true,
-        "framework_requiring_it": "AU-Essential-8-Patch",
-        "adequacy": "The update removes the flaw. The kill bit is documented to stop the controls in Internet Explorer and in Office 2007 and 2010, but it is not documented for WordPad or Office 2003, where the bulletin's interim measure is not opening untrusted documents. Coverage also depends on tracking every product that ships the shared control, which a product-name asset register often misses."
-      },
-      "detection": {
-        "what_would_have_worked": "Alerting when an Office application or WordPad spawns a shell or a dropped executable, and inspecting inbound documents for embedded ListView or TreeView controls.",
-        "was_this_required": false,
-        "framework_requiring_it": "ISO-27001-2022-A.8.8",
-        "adequacy": "The process-spawn signal is reliable, but it fires after the document is opened, so it detects rather than prevents the initial code execution."
-      },
-      "response": {
-        "what_would_have_worked": "Isolating the host, removing dropped payloads, and rotating credentials the user held after a confirmed document-lure execution.",
-        "was_this_required": false,
-        "framework_requiring_it": "UK-CAF-B4",
-        "adequacy": "Cleanup restores the endpoint, but because these lures deliver follow-on malware such as Dridex, credential rotation and a search for lateral movement are the load-bearing steps."
-      }
-    },
-    "framework_coverage": {
-      "NIST-800-53-SI-2": {
-        "covered": true,
-        "adequate": false
-      },
-      "NIS2-Art21-vulnerability-management": {
-        "covered": true,
-        "adequate": false
-      },
-      "UK-CAF-B4": {
-        "covered": true,
-        "adequate": false
-      },
-      "AU-Essential-8-Patch": {
-        "covered": true,
-        "adequate": false
-      },
-      "ISO-27001-2022-A.8.8": {
-        "covered": true,
-        "adequate": false
-      }
-    },
-    "new_control_requirements": [
-      {
-        "id": "NEW-CTRL-001",
-        "name": "CISA-KEV-RESPONSE-SLA",
-        "description": "When a vulnerability is listed in the national known-exploited catalog, treat it as an incident-tempo event and apply the vendor fix or a documented mitigation within a short, fixed service-level window rather than on the routine patch cycle.",
-        "evidence": "CVE-2012-0158 in the MSCOMCTL.OCX common controls was added to the CISA known-exploited catalog on 2021-11-03 with known ransomware use; CISA advisory AA20-133A lists it among the most exploited flaws of 2016-2019, ties it to Dridex and reports Chinese state cyber actors still frequently exploiting it as of December 2019, years after MS12-027 shipped in April 2012.",
-        "gap_closes": [
-          "NIST-800-53-SI-2",
-          "ISO-27001-2022-A.8.8",
-          "AU-Essential-8-Patch",
-          "UK-CAF-B4",
-          "NIS2-Art21-vulnerability-management"
-        ]
-      },
-      {
-        "id": "NEW-CTRL-122",
-        "name": "EOL-ASSET-DECOMMISSION",
-        "description": "Any product past vendor support, with no maintained patch path, is placed under mandatory compensating configuration and scheduled for isolation or removal within a bounded window.",
-        "evidence": "MS12-027 lists Office 2003, 2007 and 2010, SQL Server 2000 through 2008 R2, BizTalk Server 2002, Commerce Server 2002 through 2009 R2, Visual FoxPro 8.0 and 9.0 and the Visual Basic 6.0 Runtime as affected by the MSCOMCTL.OCX flaw. Microsoft's lifecycle pages show that Office 2010 left extended support in October 2020 and SQL Server 2008 R2 in July 2019, the newest Office and SQL Server releases the bulletin lists, so an install still running one of them receives no further security updates and must be migrated, with the MS12-027 update kept in place until it is.",
-        "gap_closes": [
-          "UK-CAF-B4",
-          "AU-Essential-8-Patch",
-          "ISO-27001-2022-A.8.8",
-          "NIST-800-53-SI-2",
-          "NIS2-Art21-vulnerability-management"
-        ]
-      }
-    ]
-  },
   "CVE-2021-38649": {
     "name": "Microsoft Open Management Infrastructure (OMI) Privilege Escalation Vulnerability (CVE-2021-38649)",
     "lesson_date": "2026-09-23",
@@ -145174,188 +145090,6 @@
         "evidence": "CVE-2015-4852: the WLS Security component in Oracle WebLogic Server deserializes attacker-supplied Java objects from T3 traffic and reaches the Apache Commons Collections InvokerTransformer gadget on the classpath (oracle_common/modules/com.bea.core.apache.commons.collections.jar). CERT/CC VU#576313 records that updating Apache Commons Collections to 3.2.2 or 4.1 disables that gadget but leaves other deserialization gadgets reachable, so type-bound decoding of T3 input is the durable control.",
         "gap_closes": [
           "ISO-27001-2022-A.8.28"
-        ]
-      }
-    ]
-  },
-  "CVE-2019-0803": {
-    "name": "Microsoft Win32k Privilege Escalation Vulnerability (CVE-2019-0803)",
-    "lesson_date": "2026-09-23",
-    "ai_discovered_zeroday": false,
-    "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": null,
-    "ai_assist_factor": "none",
-    "attack_vector": {
-      "description": "A user who is logged on to Windows runs a crafted application that triggers Win32k's mishandling of objects in memory and runs arbitrary code in kernel mode, which gives the application full control of the host.",
-      "privileges_required": "A logged-on account that can run an application. Microsoft's advisory says the attacker must first log on to the system, and NVD scores it PR:L.",
-      "complexity": "NVD scores attack complexity low (CVSS 3.1 base 7.8); Microsoft's own CVSS 3.0 vector scores it high (AC:H, base 7.0).",
-      "ai_factor": "None. Microsoft credits Donghai Zhu of Alibaba Cloud Intelligence Security Team, and no source claims AI tooling in the discovery or in the public exploit."
-    },
-    "defense_chain": {
-      "prevention": {
-        "what_would_have_worked": "Installing the April 9, 2019 update for each release and restarting the host: KB4493509 (Windows 10 1809, Server 2019), KB4493464 (1803), KB4493441 (1709), KB4493474 (1703), KB4493470 (1607, Server 2016), KB4493475 (original Windows 10 release), KB4493446 or KB4493467 (Windows 8.1, Server 2012 R2; KB4493446 for RT 8.1), KB4493451 or KB4493450 (Server 2012), KB4493472 or KB4493448 (Windows 7 SP1, Server 2008 R2 SP1) and KB4493471 or KB4493458 (Server 2008 SP2). Before that date, limiting which accounts can log on and run programs on shared servers reduced the number of accounts that could reach the flaw.",
-        "was_this_required": true,
-        "framework_requiring_it": "AU-Essential-8-Patch (ISM-1877 for internet-facing servers; ISM-1695 and ISM-1696 for workstations and non-internet-facing servers)",
-        "adequacy": "The update closes the flaw once the host restarts. It does not cover the exploitation that Microsoft's advisory already reported when the fix was first published on April 9, 2019, before any fix or mitigation existed."
-      },
-      "detection": {
-        "what_would_have_worked": "Alerting on a process at System integrity whose parent runs as an ordinary user, from Sysmon Event ID 1 IntegrityLevel and ParentUser fields, as Splunk's analytic Windows Privilege Escalation System Process Without System Parent does.",
-        "was_this_required": false,
-        "framework_requiring_it": null,
-        "adequacy": "The analytic is a general elevation heuristic that does not name this CVE. It fires only if a process starts at System integrity after the elevation, not on the kernel exploitation itself, and it depends on Sysmon process-creation events that carry integrity level and parent user data. Hosts that do not run Sysmon with those fields are not covered by it."
-      },
-      "response": {
-        "what_would_have_worked": "Treating a host where the elevation alert fired as compromised at the kernel level: capturing memory and disk evidence, reviewing accounts, group memberships and services created after the alert, and rebuilding the host rather than cleaning it.",
-        "was_this_required": false,
-        "framework_requiring_it": null,
-        "adequacy": "Code running in kernel mode can change what security tools on the same host report, so evidence taken from the running host after the alert can be incomplete; an offline image and a rebuild do not depend on the compromised kernel."
-      }
-    },
-    "framework_coverage": {
-      "NIST-800-53-SI-2": {
-        "covered": true,
-        "adequate": false,
-        "gap": "A remediation period keyed to Microsoft's Important rating treats a flaw Microsoft marked exploited at release as routine, and the fix needs a restart to take effect."
-      },
-      "NIS2-Art21-patch-management": {
-        "covered": true,
-        "adequate": false,
-        "gap": "Point 6.6.1 does not tie its reasonable time to the Exploited: Yes flag Microsoft set at release on a flaw it rated Important, and neither it nor Article 21(2)(e) addresses the exploitation before the April 9, 2019 disclosure."
-      },
-      "UK-CAF-B4": {
-        "covered": true,
-        "adequate": false,
-        "gap": "A process that applies the latest-release rating, Exploitation More Likely, to every host ranks the flaw below the Exploitation Detected rating Microsoft gave older releases."
-      },
-      "AU-Essential-8-Patch": {
-        "covered": true,
-        "adequate": false,
-        "gap": "Every window starts at the April 9, 2019 release, and Microsoft reported exploitation at that release, so the exploitation before the fix fell outside every window; a workstation at Maturity Level One or Two still had a month."
-      },
-      "ISO-27001-2022-A.8.8": {
-        "covered": true,
-        "adequate": false,
-        "gap": "An evaluation that takes exploit maturity from Microsoft's CVSS vector records proof-of-concept code (E:P) for a flaw the same record marks Exploited: Yes."
-      }
-    },
-    "new_control_requirements": [
-      {
-        "id": "NEW-CTRL-145",
-        "name": "ACTIVELY-EXPLOITED-OS-LPE-REMEDIATION-WINDOW-ENFORCEMENT",
-        "description": "When an operating system vendor marks a privilege-escalation fix as already exploited at release, the update must be installed and the host restarted within the exploited-flaw window, and the running state must be confirmed on each host rather than inferred from deployment status.",
-        "evidence": "CVE-2019-0803: Microsoft's April 9, 2019 advisory marks the Win32k flaw Exploited: Yes, and every update that fixes it, from KB4493509 for Windows 10 1809 and Server 2019 to KB4493472 or KB4493448 for Windows 7 SP1 and Server 2008 R2 SP1, is marked as requiring a restart. Microsoft rated the flaw Important, so a severity-keyed schedule does not accelerate it.",
-        "gap_closes": [
-          "AU-Essential-8-Patch",
-          "NIST-800-53-SI-2",
-          "UK-CAF-B4"
-        ]
-      },
-      {
-        "id": "NEW-CTRL-001",
-        "name": "CISA-KEV-RESPONSE-SLA",
-        "description": "Once a vulnerability is added to a known-exploited catalog, every affected host that still lacks the fix must be patched or isolated within a short fixed period measured from the listing date.",
-        "evidence": "CVE-2019-0803 was added to CISA KEV on 2021-11-03, more than two and a half years after Microsoft's April 9, 2019 fix, and the KEV entry records known ransomware use. A Windows host found without the April 2019 update at listing had been exposed for that whole period to a flaw Microsoft marked exploited at release.",
-        "gap_closes": [
-          "ISO-27001-2022-A.8.8"
-        ]
-      }
-    ]
-  },
-  "CVE-2019-0808": {
-    "name": "Microsoft Win32k Privilege Escalation Vulnerability (CVE-2019-0808)",
-    "lesson_date": "2026-09-23",
-    "ai_discovered_zeroday": false,
-    "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": null,
-    "ai_assist_factor": "none",
-    "attack_vector": {
-      "description": "Code running on a Windows 7, Windows Server 2008 or Windows Server 2008 R2 host, including code confined in Chrome's sandbox, calls NtUserMNDragOver under conditions that make win32k!MNGetpItemFromIndex dereference a NULL pointer, and uses that to run code in kernel mode. Google reported it exploited together with the Chrome flaw CVE-2019-5786 and stated that it can be used as a security sandbox escape.",
-      "privileges_required": "Low. Microsoft states that an attacker must first log on to the system and then run a specially crafted application; in the chain Google reported, code running inside Chrome's sandbox met that requirement.",
-      "complexity": "Microsoft scores attack complexity as high (CVSS 3.0 base 7.0) and NVD scores it as low (CVSS 3.1 base 7.8). Google believed exploitation may only be possible on Windows 7 because of exploit mitigations in newer Windows releases.",
-      "ai_factor": "Not AI-discovered. Google's Threat Analysis Group found it exploited in the wild and reported it to Microsoft; no source mentions AI tooling."
-    },
-    "defense_chain": {
-      "prevention": {
-        "what_would_have_worked": "Installing the March 12, 2019 update and restarting: KB4489878 or KB4489885 on Windows 7 SP1 and Windows Server 2008 R2 SP1, KB4489880 or KB4489876 on Windows Server 2008 SP2. Keeping Chrome at 72.0.3626.121 or later closes CVE-2019-5786, the Chrome flaw in the chain Google reported, and moving off Windows 7 to Windows 10, as Google advised, removes the exposure.",
-        "was_this_required": true,
-        "framework_requiring_it": "AU-Essential-8-Patch (ISM-1695 and ISM-1696 for workstation operating systems, ISM-1501 for replacing unsupported operating systems)",
-        "adequacy": "The update closes this flaw once the host restarts, but Microsoft published nothing that protected Windows 7 hosts between Google's February 27, 2019 report and March 12. From March 1, 2019, the Chrome 72.0.3626.121 update broke the chain Google reported, and moving to a Windows release that Microsoft does not list as affected (Google advised Windows 10) removed the exposure to local exploitation. The update does not change the support status of the platform: Windows 7's last Extended Security Update year ended on January 10, 2023."
-      },
-      "detection": {
-        "what_would_have_worked": "Alerting on a process that holds SYSTEM rights and descends from chrome.exe, and on any low- or medium-integrity process that starts a System-integrity child on a Windows 7, Windows Server 2008 or Windows Server 2008 R2 host, with repeated bug check events from those hosts collected and their memory dumps analyzed with !analyze -v, so that crashes whose faulting module is win32k.sys are reviewed as possible failed attempts.",
-        "was_this_required": false,
-        "framework_requiring_it": null,
-        "adequacy": "The process signals fire only after the kernel-mode step has succeeded, because standard Windows event logs do not record the NtUserMNDragOver system call. A bug check event is a weak signal on its own, since ordinary driver faults produce the same event, and the event lists the stop code and its four parameters, so the saved memory dump has to be analyzed to see whether win32k.sys was the faulting module."
-      },
-      "response": {
-        "what_would_have_worked": "When a SYSTEM process descended from a browser is found on an affected host, treating the kernel as compromised: capturing memory and disk evidence, then rebuilding the host on a supported Windows release rather than only installing the March 2019 update.",
-        "was_this_required": false,
-        "framework_requiring_it": null,
-        "adequacy": "Code that ran in kernel mode could have installed persistence that the update does not remove, so rebuilding is the step that restores trust in the host. Moving to a supported release also ends the exposure to later Win32k flaws on platforms that no longer receive fixes."
-      }
-    },
-    "framework_coverage": {
-      "NIST-800-53-SI-2": {
-        "covered": true,
-        "adequate": false,
-        "gap": "No update existed for at least 13 days after Google reported the exploitation, and a period keyed to the Important rating treats the March 2019 fix as routine."
-      },
-      "NIST-800-53-SI-4": {
-        "covered": true,
-        "adequate": false,
-        "gap": "The system call is not logged and SI-4 does not require process lineage or integrity-level monitoring, which is where the only observable sign of this sandbox escape appears."
-      },
-      "NIS2-Art21-patch-management": {
-        "covered": true,
-        "adequate": false,
-        "gap": "The additional measures Annex point 6.6.1 requires before a patch is available are not named, and the ones that affected this chain were a Chrome update and a move to Windows 10."
-      },
-      "UK-CAF-B4": {
-        "covered": true,
-        "adequate": false,
-        "gap": "Prioritization by each flaw's own attack vector ranks this local flaw below internet-facing ones, although it was the second step of a remote browser chain."
-      },
-      "AU-Essential-8-Patch": {
-        "covered": true,
-        "adequate": false,
-        "gap": "No window ran before March 12, 2019, and below Maturity Level Three a Windows 7 workstation had one month to apply a fix for a confirmed exploit."
-      },
-      "ISO-27001-2022-A.8.8": {
-        "covered": true,
-        "adequate": false,
-        "gap": "Severity-keyed timescales place an Important, CVSS 7.0 to 7.8 flaw in the routine cycle although the vendor record marks it exploited."
-      }
-    },
-    "new_control_requirements": [
-      {
-        "id": "NEW-CTRL-145",
-        "name": "ACTIVELY-EXPLOITED-OS-LPE-REMEDIATION-WINDOW-ENFORCEMENT",
-        "description": "When an operating system flaw that raises privilege is confirmed exploited, its fix must be installed and the host restarted within the shortest window the organization defines, whatever severity rating the supplier assigns, and the installed state must be checked on the host.",
-        "evidence": "Microsoft's March 2019 update data for CVE-2019-0808 rates it Important, marks it exploited and publicly disclosed, and lists KB4489878 and KB4489885 for Windows 7 SP1 and Windows Server 2008 R2 SP1 and KB4489880 and KB4489876 for Windows Server 2008 SP2, each requiring a restart. Google's Threat Analysis Group had reported the exploitation to Microsoft on February 27, 2019, so a window keyed to the Important rating treats a confirmed zero-day as a routine item.",
-        "gap_closes": [
-          "NIST-800-53-SI-2",
-          "AU-Essential-8-Patch",
-          "ISO-27001-2022-A.8.8"
-        ]
-      },
-      {
-        "id": "NEW-CTRL-122",
-        "name": "EOL-ASSET-DECOMMISSION",
-        "description": "Operating systems that no longer receive security updates from their supplier must be removed from service, or isolated from untrusted content within a set period, with compensating restrictions applied until they are removed.",
-        "evidence": "Every platform Microsoft lists as affected by CVE-2019-0808 (Windows 7 SP1, Windows Server 2008 SP2, Windows Server 2008 R2 SP1) is past end of support. Microsoft gives January 14, 2020 as the end of Windows 7 support and January 10, 2023 as the end of its last Extended Security Update year, and its list of products whose support ended in 2024 shows the Azure-only fourth Extended Security Update year for Windows Server 2008 and 2008 R2 ending on January 9, 2024. Google's disclosure advised moving to Windows 10 because it believed newer Windows mitigations prevent exploitation of this flaw.",
-        "gap_closes": [
-          "UK-CAF-B4",
-          "AU-Essential-8-Patch",
-          "NIS2-Art21-patch-management"
-        ]
-      },
-      {
-        "id": "NEW-CTRL-003",
-        "name": "KERNEL-EXPLOITATION-DETECTION",
-        "description": "Endpoint monitoring must alert within minutes when a low- or medium-integrity process, or a sandboxed child of a browser, gains system-level rights or starts a system-level child process.",
-        "evidence": "Google's Threat Analysis Group reported CVE-2019-0808 exploited together with the Chrome flaw CVE-2019-5786, stated that it can be used as a security sandbox escape, and observed exploitation only against Windows 7 32-bit systems. The kernel-mode step is reached through the NtUserMNDragOver system call, which standard Windows event logs do not record, so a process that gains SYSTEM rights inside a chrome.exe process tree is the first observable sign.",
-        "gap_closes": [
-          "NIST-800-53-SI-4"
         ]
       }
     ]

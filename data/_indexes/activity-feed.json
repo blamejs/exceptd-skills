@@ -6,6 +6,22 @@
   },
   "events": [
     {
+      "date": "2026-09-24",
+      "type": "catalog_update",
+      "artifact": "data/cve-catalog.json",
+      "path": "data/cve-catalog.json",
+      "schema_version": "1.0.0",
+      "entry_count": 1752
+    },
+    {
+      "date": "2026-09-24",
+      "type": "catalog_update",
+      "artifact": "data/zeroday-lessons.json",
+      "path": "data/zeroday-lessons.json",
+      "schema_version": "1.1.0",
+      "entry_count": 1752
+    },
+    {
       "date": "2026-09-22",
       "type": "catalog_update",
       "artifact": "data/atlas-ttps.json",
@@ -253,14 +269,6 @@
       "note": "Triage entry-point for raw threat intel — researches an input across all exceptd data catalogs, RWEP-scores it, and routes the operator to the right specialized skill(s)"
     },
     {
-      "date": "2026-08-22",
-      "type": "catalog_update",
-      "artifact": "data/cve-catalog.json",
-      "path": "data/cve-catalog.json",
-      "schema_version": "1.0.0",
-      "entry_count": 1755
-    },
-    {
       "date": "2026-08-19",
       "type": "catalog_update",
       "artifact": "data/attack-techniques.json",
@@ -275,14 +283,6 @@
       "path": "data/cwe-catalog.json",
       "schema_version": "1.0.0",
       "entry_count": 241
-    },
-    {
-      "date": "2026-08-19",
-      "type": "catalog_update",
-      "artifact": "data/zeroday-lessons.json",
-      "path": "data/zeroday-lessons.json",
-      "schema_version": "1.1.0",
-      "entry_count": 1755
     },
     {
       "date": "2026-08-05",

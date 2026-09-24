@@ -2,13 +2,13 @@
 
 ## 0.21.3 — 2026-09-24
 
-The catalog holds 1,755 CVEs after 35 additions from CISA KEV. Twenty-four are Microsoft flaws, among them two links of the ProxyShell Exchange chain (CVE-2021-31207 and CVE-2021-34473), the CryptoAPI certificate-validation spoofing flaw CVE-2020-0601, the SharePoint deserialization flaw CVE-2019-0604, and Win32k, Common Log File System and Windows Error Reporting privilege escalations. Five are Oracle WebLogic Server and Oracle Coherence flaws, two are Firefox and Thunderbird use-after-free flaws, and the rest cover Arista VeloCloud Orchestrator, Nagios XI, PlaySMS and Progress Telerik UI for ASP.NET AJAX.
+The catalog holds 1,752 CVEs after 32 additions from CISA KEV. Twenty-one are Microsoft flaws, among them two links of the ProxyShell Exchange chain (CVE-2021-31207 and CVE-2021-34473), the CryptoAPI certificate-validation spoofing flaw CVE-2020-0601, the SharePoint deserialization flaw CVE-2019-0604, and Win32k, Common Log File System and Windows Error Reporting privilege escalations. Five are Oracle WebLogic Server and Oracle Coherence flaws, two are Firefox and Thunderbird use-after-free flaws, and the rest cover Arista VeloCloud Orchestrator, Nagios XI, PlaySMS and Progress Telerik UI for ASP.NET AJAX.
 
-Twenty of the new entries have a public exploit, six carry CISA's ransomware designation, and 19 need a host restart before the fix takes effect.
+Seventeen of the new entries have a public exploit, four carry CISA's ransomware designation, and 16 need a host restart before the fix takes effect.
 
-Twenty entries now include their CVE id in the title, because CISA names these flaws by product and defect class and the same name already covered another record. Seventeen are new entries, and three are existing ones: CVE-2017-11826, CVE-2020-14644 and CVE-2022-41082.
+Eighteen entries now include their CVE id in the title, because CISA names these flaws by product and defect class and the same name already covered another record. Fifteen are new entries, and three are existing ones: CVE-2017-11826, CVE-2020-14644 and CVE-2022-41082.
 
-`exceptd refresh --curate-batch` now writes a per-CVE test that accepts an empty `cwe_refs` list, which the catalog already allows for records NVD assigns no CWE. The test fails on any value that is not a `CWE-<number>` id.
+`exceptd refresh --curate-batch` now writes a per-CVE test that accepts an empty `cwe_refs` list, which the catalog already allows for records NVD assigns no CWE. The test fails on any value that is not a `CWE-<number>` id. The command also sets `_meta.last_updated` in `data/cve-catalog.json` and `data/zeroday-lessons.json` to the date it applies a batch, and it writes a curator-supplied advisory in the `{ vendor, id, url, published }` form with the `advisory_id`, `severity` and `published_date` fields every other advisory uses.
 
 ## 0.21.2 — 2026-09-23
 
