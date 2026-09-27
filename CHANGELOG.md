@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.21.5 — 2026-09-27
+
+The catalog holds 1,755 CVEs after three additions from CISA KEV, all SonicWall flaws that carry CISA's ransomware designation: CVE-2021-20021, an improper privilege management flaw in SonicWall Email Security, CVE-2021-20023, a path traversal in the same product, and CVE-2021-20016, a SQL injection in the SMA 100 series SSL VPN. None has a public exploit, and all three need a restart before the fix takes effect.
+
 ## 0.21.4 — 2026-09-26
 
 `exceptd refresh --curate-batch` now refuses a batch whose new catalog entries or zero-day lessons cite the curation input instead of a source, as in "Packet: ...", "Packet fields: ...", "the packet names ...", "the packet's own ..." or "per the packet", and it writes nothing when it does. It checks every submitted entry and lesson, including one marked `_auto_imported`. The catalog gap audit has a matching `pipeline-wording` class: `npm run audit-catalog-gaps -- --class pipeline-wording` lists the 2,159 existing texts with that wording (2,157 lesson texts and 2 catalog fields), and the predeploy budget gate fails if the count grows. Wording about network packets, such as "packet data", "Packet fields are not validated", "the malformed packet: its length" or "the packet socket (AF_PACKET)", and the exploit archive Packet Storm do not match.
