@@ -17,7 +17,7 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "entry_count": 1754
+    "entry_count": 1757
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -145454,6 +145454,266 @@
         "evidence": "From January 22 to February 2, 2021 SonicWall published interim measures for SMA 100 series 10.x (access restrictions and MFA from January 22, then password resets on February 1, then the built-in Web Application Firewall on February 2) before the 10.2.0.5-29sv firmware shipped on February 3, and it stated that the WAF does not replace the need to apply the patch and should only be used as a safety measure until the patched firmware is installed. An SMA 100 with the WAF enabled and firmware below 10.2.0.5-29sv is mitigated with residual risk, not remediated.",
         "gap_closes": [
           "NIST-800-53-SI-2"
+        ]
+      }
+    ]
+  },
+  "CVE-2021-22893": {
+    "name": "Ivanti Pulse Connect Secure Use-After-Free Vulnerability",
+    "lesson_date": "2026-09-23",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": null,
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "A crafted request to the Pulse Connect Secure license-server handling endpoints triggers a use-after-free that runs code as root on the gateway. The endpoints are present regardless of whether the license-server role is set, so the flaw is reachable without authentication and, combined with the Windows File Share Browser and Pulse Secure Collaboration features, forms an authentication bypass to remote code execution.",
+      "privileges_required": "none; the flaw is reachable by an unauthenticated remote attacker",
+      "complexity": "low; exploited in the wild as a zero-day before a fix existed",
+      "ai_factor": "None. Found during an incident investigation; no source claims AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrading to Pulse Connect Secure 9.1R11.4 after running the Integrity Checker Tool, and before the fix existed importing the vendor Workaround-2104.xml or restricting source addresses to the gateway",
+        "was_this_required": true,
+        "framework_requiring_it": "NIS2-Art21-patch-management",
+        "adequacy": "The 9.1R11.4 upgrade removes the flaw, but as a zero-day exploited before any fix the only pre-patch protection was the vendor XML mitigation and source-address restriction, which reduce but do not eliminate reach for a license-server deployment."
+      },
+      "detection": {
+        "what_would_have_worked": "Enabling the Unauthenticated Requests log, shipping it to an off-device collector, and running the Integrity Checker Tool to flag modified appliance files",
+        "was_this_required": false,
+        "framework_requiring_it": "UK-CAF-C1",
+        "adequacy": "These signals catch the request and the file modifications, but the appliance does not log unauthenticated requests by default and the actor cleared on-device logs, so detection depends on both being configured before the intrusion."
+      },
+      "response": {
+        "what_would_have_worked": "Treating an appliance on which the Integrity Checker Tool finds mismatches as compromised: isolating it with the power on, capturing memory and disk images with the vendor, factory-resetting it through the serial console, upgrading to 9.1R11.4, re-importing the saved configuration and changing the passwords of every account that passed through the gateway",
+        "was_this_required": false,
+        "framework_requiring_it": "ISO-27001-2022-A.8.8",
+        "adequacy": "Because the actor maintained persistence across upgrades, a patch alone does not recover a device compromised earlier; the factory reset and the password changes are the load-bearing steps."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false
+      },
+      "UK-CAF-C1": {
+        "covered": true,
+        "adequate": false
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-131",
+        "name": "PERIMETER-VPN-GATEWAY-AUTH-BYPASS-EXPEDITED-REMEDIATION",
+        "description": "A remote-access gateway that is itself the network authentication enforcement point has an authentication-bypass flaw remediated on a listing-tied expedited clock rather than the routine appliance patch window, with every reachable authentication path enumerated and interim reachability restricted until the fixed build is running.",
+        "evidence": "CVE-2021-22893 is a use-after-free reachable through a Pulse Connect Secure license-server handling endpoint that lets an unauthenticated attacker execute code with root privileges, and CERT/CC Vulnerability Note VU#213092 states that having the license server configured is not a prerequisite because the vulnerable endpoints are present regardless; the appliance is the network authentication enforcement point, so it warranted the expedited clock rather than the routine window the pre-patch zero-day period defeated.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "AU-ISM-1546",
+          "ISO-27001-2022-A.8.8",
+          "NIS2-Art21-patch-management"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-031",
+        "name": "FIREWALL-EGRESS-TELEMETRY-SEPARATE-TRUST-ZONE",
+        "description": "Trust-boundary network devices forward their access, threat and authentication logs to a collector held in a separate trust zone with an independent management plane, so the record survives when the device itself is taken over.",
+        "evidence": "Mandiant reports the actor cleared relevant log files on the Pulse Connect Secure appliance with a utility it tracks as THINBLOOD, and CISA alert AA21-110A documents further cleanup by timestomping and rm of temporary files; because CERT/CC notes exploitation of this unauthenticated flaw may be recorded only in the Unauthenticated Requests Log, forwarding the gateway's access and authentication logs to a collector in a separate trust zone would preserve evidence the device itself lost.",
+        "gap_closes": [
+          "UK-CAF-C1"
+        ]
+      }
+    ]
+  },
+  "CVE-2021-38645": {
+    "name": "Microsoft Open Management Infrastructure (OMI) Privilege Escalation Vulnerability",
+    "lesson_date": "2026-09-23",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": null,
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "A local low-privileged process connects to the world-writable omiserver.sock socket, poses as omiserver and sends the omiengine an authentication-success response with uid 0 and gid 0 for a client connection it also opened, so commands issued on that connection run as root.",
+      "privileges_required": "Any existing unprivileged local account on a Linux host running OMI below 1.6.8-1.",
+      "complexity": "Low per the CVSS vector (AC:L). Wiz describes the attack as answering before omiserver's real response and guessing the client's socket id, which it says is usually below 10. Wiz also says exploitation is quite complex and statistical, because a separate use-after-free in the same code path keeps crashing the omiengine.",
+      "ai_factor": "None. Reported to Microsoft by Wiz researchers; no source states that AI tooling was used to find or exploit the flaw."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Inventorying every OMI copy, including those installed by Azure VM extensions, on-premises Log Analytics agents, on-premises DSC nodes, Operations Manager, Azure Marketplace VM images, the Container Monitoring Solution image and HDInsight clusters, and moving each to its fixed build: OMI 1.6.8-1, OMS Agent for Linux GA v1.13.40-0, LAD v4.0.15 or v3.0.135, Linux DSC agent 2.71.1.25, 2.70.0.30 or 3.0.0.3, Azure Stack Hub extensions 1.14.02 and 3.1.135, the Container Monitoring Solution image sha256:12b7682d8f9a2f67752bf121029e315abcae89bc0c34a0e05f07baec72280707, and Microsoft's update script on HDInsight nodes that did not update automatically.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST-800-53-SI-2",
+        "adequacy": "The fixed builds close CVE-2021-38645 together with its three OMI siblings, but only on hosts where the inventory records OMI; a copy that Azure did not update automatically stays vulnerable until someone finds it."
+      },
+      "detection": {
+        "what_would_have_worked": "Collecting auditd execve records (AUOMS through the Syslog connector in Microsoft Sentinel) and alerting on any uid 0 process whose working directory is /var/opt/microsoft/scx/tmp, whichever of the ExecuteCommand, ExecuteShellCommand or ExecuteScript RunAs classes started it, or on a command line that runs a script from /etc/opt/microsoft/scx/conf/tmpdir/, similar to /bin/sh /etc/opt/microsoft/scx/conf/tmpdir/scx* (SCXcore deletes each such script as soon as it has run, so a later listing of that directory does not show it); enabling scxadmin verbose logging and searching scx.log for Invoke_Execute to capture entries from all three classes; and auditing connections to /var/opt/omi/run/omiserver.sock from accounts other than root and omi.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The SCX signals show root command execution through the OMI providers, which follows any of the four OMI flaws, but the scx.log entries appear only after verbose logging is enabled and neither signal separates an attack from a scheduled management action. The socket audit is the signal closest to this local path, and it is a general heuristic rather than a published vendor rule."
+      },
+      "response": {
+        "what_would_have_worked": "Treating any host that ran OMI below 1.6.8-1 with untrusted local accounts as possibly compromised at root: reviewing SCX logs and auditd history for root commands issued through OMI, checking for persistence, and rotating credentials and keys stored on the host.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Updating OMI stops further use of the flaw but does not remove root access already obtained, so a host with untrusted local users needs the compromise review in addition to the package update."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A process that matched Microsoft's advisory only as published on 2021-09-14 missed products added on 2021-09-16 and 2021-09-17, and the advisory does not list HDInsight clusters, whose manual update is given in Microsoft's separate guidance post."
+      },
+      "NIST-800-53-AC-6": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Least-privilege review of the VM's own accounts does not test the privilege boundary between omiengine and the root-running omiserver."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The reasonable-time requirement cannot be met for OMI copies that Azure did not update and the entity has not identified."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Closing the OMI ports counts as the OMI mitigation in an assessment while the local socket escalation stays open."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "At Maturity Level One a non-listening or internally reachable OMI instance is an other application with no patch timeframe."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Marketplace VM images that Microsoft flagged through Service Health notifications and HDInsight clusters are not products in the advisory, so a register that lists the image or cluster rather than the OMI package has no advisory entry to match."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-021",
+        "name": "TIER-3-DEPENDENCY-INVENTORY",
+        "description": "The software inventory records every component that another product or platform agent installs on a host, with that component's own version, so that a bundled component is matched against advisories and patched on the same schedule as software the organization installed itself.",
+        "evidence": "OMI below 1.6.8-1 was installed on Linux VMs by Azure VM management extensions (the Log Analytics agent, the Linux Diagnostic extension and the DSC agent) and was also present in Operations Manager deployments, the Container Monitoring Solution image and HDInsight clusters, per Microsoft's September 2021 Additional Guidance post covering CVE-2021-38645. Wiz found over 65% of sampled Azure customers exposed and describes OMI's functions in Azure VMs as almost completely undocumented.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-patch-management"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-135",
+        "name": "CONTROL-PANEL-PLUGIN-USER-SURFACE-MUST-NOT-REACH-ROOT-OPERATIONS",
+        "description": "A privileged service that accepts requests from unprivileged local users must establish each request's identity from a source those users cannot forge, and a message arriving on an endpoint they can write must never set the privileges under which later requests run.",
+        "evidence": "In OMI below 1.6.8-1 any local user can write to /var/opt/omi/run/omiserver.sock, and Wiz's analysis of CVE-2021-38645 shows the omiengine handling messages from clients and from omiserver the same way, so a local process posing as omiserver can have a connection recorded as uid 0 and gid 0 and then run commands as root.",
+        "gap_closes": [
+          "NIST-800-53-AC-6",
+          "UK-CAF-B4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-038",
+        "name": "MITIGATION-ACTIVE-PATCH-PENDING-VERDICT-CLASS",
+        "description": "A compliance verdict that credits a compensating measure names the specific flaws that measure blocks, and a host that relies on it for a flaw it does not block is recorded as unpatched for that flaw.",
+        "evidence": "Microsoft's Additional Guidance post offers restricting TCP 5985, 5986 and 1270 as protection against the remote-code-execution flaw CVE-2021-38647 only. CVE-2021-38645 runs over the local omiserver.sock socket, so a Linux host below OMI 1.6.8-1 with those ports closed can still be escalated to root and has to be recorded as unpatched for this CVE.",
+        "gap_closes": [
+          "UK-CAF-B4",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2021-20022": {
+    "name": "SonicWall Email Security Unrestricted Upload of File Vulnerability",
+    "lesson_date": "2026-09-26",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": null,
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An attacker who holds an administrator session uploads a branding-package ZIP whose entries use directory-traversal paths; Email Security extracts them without confining them to the branding directory, writing a BEHINDER JSP web shell into a web-accessible Apache Tomcat directory. On the Windows installation Mandiant examined, the Tomcat process runs as NT AUTHORITY\\SYSTEM, so the web shell runs with those rights.",
+      "privileges_required": "an authenticated administrator session, which the chained CVE-2021-20021 authentication bypass supplies",
+      "complexity": "low",
+      "ai_factor": "None. Credited to human researchers at Mandiant; no AI tooling is claimed."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Installing Hotfix 10.0.9.6103 (Windows software) or 10.0.9.6105 (hardware and virtual appliance), then 10.0.9.6173 or 10.0.9.6177 to close the exploited chain, and not exposing the Email Security administration interface to the internet.",
+        "was_this_required": true,
+        "framework_requiring_it": "AU-Essential-8-Patch",
+        "adequacy": "Hotfix 10.0.9.6103 or 10.0.9.6105 closes this flaw, but the exploited chain with CVE-2021-20021 and CVE-2021-20023 stays open until 10.0.9.6173 or 10.0.9.6177 is installed. The operator could not add the missing validation to the vendor's branding feature and had to wait for the vendor build, and the end-of-life 7.0.0 through 9.2.2 releases receive no fix."
+      },
+      "detection": {
+        "what_would_have_worked": "Alerting on branding uploads followed by new .jsp files under the web root, and on the Tomcat process spawning cmd.exe.",
+        "was_this_required": false,
+        "framework_requiring_it": "NIST-800-53-SI-10",
+        "adequacy": "The web-shell and process-spawn signals are reliable but fire after a file was already written to an executable web path."
+      },
+      "response": {
+        "what_would_have_worked": "Removing web shells from web-accessible directories, rotating credentials, rebuilding compromised instances, and installing Hotfix 10.0.9.6103 or 10.0.9.6105 and then 10.0.9.6173 or 10.0.9.6177, which closes the chain.",
+        "was_this_required": false,
+        "framework_requiring_it": "NIS2-Art21-network-security",
+        "adequacy": "Patching stops new uploads, but because a web shell may already run with NT AUTHORITY\\SYSTEM rights on a Windows installation, a compromised instance must be rebuilt and its credentials rotated."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The archive-path check sits in SonicWall's branding code, which the organization cannot change, so SI-10 was met for this input only by installing the hotfix."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Article 21(2)(a) and (e) set no rating method, so a medium-rated post-authentication flaw assessed alone understates a chain that ended in a SYSTEM-level web shell."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "'Promptly' is not defined against exploitation that began in March 2021 before the April 9 hotfix, and the unsupported 7.0.0 through 9.2.2 releases have no in-line fix, while the vendor's IPS signature runs only on SonicWall firewalls."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A working exploit exists, so an internet-facing instance had 48 hours from the April 9, 2021 hotfix (ISM-1876 for the Windows software, ISM-1877 for an appliance), but exploitation began in March 2021, before any fix, and no window covers that period."
+      },
+      "ISO-27001-2022-A.8.28": {
+        "covered": true,
+        "adequate": true,
+        "gap": "Secure coding against Zip Slip, applied by the developer to the branding feature, would have prevented the traversal write; the control is adequate."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-119",
+        "name": "ARCHIVE-CONTENT-TYPE-PROVENANCE",
+        "description": "Upload and archive handlers must dispatch on the content-verified type rather than the supplied name or path, must confine extracted entries to their intended directory, and must never write uploaded content where the web server can execute it.",
+        "evidence": "SonicWall advisory SNWLID-2021-0008 states that CVE-2021-20022 lets a post-authenticated attacker upload an arbitrary file to SonicWall Email Security. Mandiant's report 'Zero-Day Exploits in SonicWall Email Security Lead to Enterprise Compromise' states that an attacker uploaded a ZIP archive from the administrative panel's branding page whose Zip Slip traversal entries exploited CVE-2021-20022 and wrote a BEHINDER JSP web shell into the web-accessible Apache Tomcat directory under webapps. Confining extracted entries to their target directory and refusing to write uploads where the web server executes them removes the file-write primitive the attacker used.",
+        "gap_closes": [
+          "NIST-800-53-SI-10"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "The incident-response default for a network-reachable appliance hit by an actively exploited pre-authentication chain must be to export its configuration, rebuild it and rotate every credential it held, not to patch it in place.",
+        "evidence": "Mandiant documented CVE-2021-20022 used in March 2021 to plant a web shell on an internet-accessible SonicWall Email Security installation on Windows Server 2012, as part of the chain with CVE-2021-20021, so a compromised instance must be rebuilt and its credentials rotated rather than only upgraded to Hotfix 10.0.9.6103 or 10.0.9.6105, or to 10.0.9.6173 or 10.0.9.6177, which closes the chain.",
+        "gap_closes": [
+          "NIS2-Art21-network-security",
+          "UK-CAF-B4"
         ]
       }
     ]

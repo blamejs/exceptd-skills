@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.21.6 — 2026-09-27
+
+The catalog holds 1,757 CVEs after three additions from CISA KEV: CVE-2021-22893, an authentication bypass in Pulse Connect Secure, CVE-2021-20022, an arbitrary file upload in SonicWall Email Security, and CVE-2021-38645, a local privilege escalation in Microsoft's Open Management Infrastructure. None has a public exploit. The Pulse Connect Secure and SonicWall flaws carry CISA's ransomware designation and need a restart before the fix takes effect.
+
 ## 0.21.5 — 2026-09-27
 
 The catalog holds 1,754 CVEs after two additions from CISA KEV, both SonicWall flaws that carry CISA's ransomware designation: CVE-2021-20021, an improper privilege management flaw in SonicWall Email Security, and CVE-2021-20016, a SQL injection in the SMA 100 series SSL VPN. Neither has a public exploit, and both need a restart before the fix takes effect.
