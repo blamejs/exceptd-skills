@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.1.0",
-    "last_updated": "2026-09-24",
+    "last_updated": "2026-09-27",
     "last_threat_review": "2026-05-17",
     "purpose": "Zero-day learning loop output. Each entry maps a CVE to: attack vector, defense chain analysis, framework coverage, new control requirements generated, and exposure scoring. v1.1.0 (2026-05-15): every entry now carries ai_discovered_zeroday boolean + ai_discovery_source enum + ai_discovery_date + ai_assist_factor ladder, per AGENTS.md Hard Rule #7.",
     "note": "Never delete entries. Closed gaps are marked status: closed. History is data.",
@@ -17,7 +17,7 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "entry_count": 1752
+    "entry_count": 1754
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -145294,6 +145294,166 @@
         "gap_closes": [
           "NIST-800-53-SI-2",
           "NIS2-Art21-patch-management"
+        ]
+      }
+    ]
+  },
+  "CVE-2021-20021": {
+    "name": "SonicWall Email Security Improper Privilege Management Vulnerability",
+    "lesson_date": "2026-09-26",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": null,
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An unauthenticated attacker sends a GET or POST to the /createou endpoint with an XML document, which Email Security processes without checking authentication and which creates a role.ouadmin administrator account; the attacker then logs in as that account and administers the product.",
+      "privileges_required": "none; the /createou endpoint accepts an unauthenticated network request",
+      "complexity": "low",
+      "ai_factor": "None. Credited to human researchers at Mandiant; no AI tooling is claimed."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Installing Hotfix 10.0.9.6103 (Windows software) or 10.0.9.6105 (hardware and virtual appliance), which requires authentication on the administrative endpoint, then 10.0.9.6173 or 10.0.9.6177 to close the exploited chain, and not exposing the Email Security administration interface to the internet.",
+        "was_this_required": true,
+        "framework_requiring_it": "AU-ISM-1546",
+        "adequacy": "Hotfix 10.0.9.6103 or 10.0.9.6105 closes this flaw, but the exploited chain with CVE-2021-20022 and CVE-2021-20023 stays open until 10.0.9.6173 or 10.0.9.6177 is installed. The operator could not add the missing check to the vendor's endpoint and had to wait for the vendor build, and the end-of-life 7.0.0 through 9.2.2 releases receive no fix."
+      },
+      "detection": {
+        "what_would_have_worked": "Alerting on unauthenticated requests to /createou and on the creation of an administrator account that no operator initiated, and reviewing multi_accounts.xml and the perhost, perldap and perou account files for accounts no operator created.",
+        "was_this_required": false,
+        "framework_requiring_it": "NIST-800-53-AC-3",
+        "adequacy": "The request and account-creation signals are reliable, but they fire after the attacker already holds an administrator account."
+      },
+      "response": {
+        "what_would_have_worked": "Removing unexpected administrator accounts, rotating credentials, checking for web shells planted through the chained flaws, and installing Hotfix 10.0.9.6103 or 10.0.9.6105 and then 10.0.9.6173 or 10.0.9.6177, which closes the chain.",
+        "was_this_required": false,
+        "framework_requiring_it": "NIS2-Art21-network-security",
+        "adequacy": "Patching closes the endpoint, but because the flaw led an exploit chain to code execution, the instance must be examined and, where compromised, rebuilt."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The vendor's /createou form created an administrator account without prior authentication, and the organization could not apply its own access enforcement inside that form."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "For entities within Implementing Regulation 2024/2690, points 6.7.2 and 6.8.2 would have kept the administration interface off the internet; for other entities, Article 21(2)(e) sets no timeframe and names no interim measure for the exploitation that began in March 2021, before the April 9, 2021 hotfix."
+      },
+      "UK-CAF-B2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The request that created the administrator account was never individually authenticated, and a B2 privileged-account review finds the account only after it has been used."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The /createou form accepted unauthenticated requests on the latest 10.0.9 build then available, so the configured authentication did not cover it until the April 9, 2021 hotfix."
+      },
+      "ISO-27001-2022-A.5.15": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access rules for the administration panel were in place, yet an unauthenticated request created a role.ouadmin account outside them."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-134",
+        "name": "DEVICE-MANAGEMENT-GATEWAY-CONFIG-ENDPOINT-AUTH-INPUT-NEUTRALIZATION",
+        "description": "A management or configuration endpoint on a network-edge appliance must authenticate the caller and neutralize supplied input before it can invoke a privileged internal function, on every request path rather than on the primary one.",
+        "evidence": "SonicWall Email Security builds before 10.0.9.6103 (Windows software and Hosted Email Security) and 10.0.9.6105 (appliances) exposed an administrative endpoint, /createou, that created a role.ouadmin account without verifying prior authentication (SonicWall advisory SNWLID-2021-0007), which Mandiant observed exploited in the wild; authenticating that configuration endpoint on every request path before it acts closes the bypass.",
+        "gap_closes": [
+          "NIST-800-53-AC-3",
+          "UK-CAF-B2"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "The incident-response default for a network-reachable appliance hit by an actively exploited pre-authentication flaw must be to export its configuration, rebuild it and rotate every credential it held, not to patch it in place.",
+        "evidence": "Mandiant found CVE-2021-20021 used in March 2021 to create an administrator account on an internet-accessible SonicWall Email Security installation on Windows Server 2012, chained to a web shell that ran with NT AUTHORITY\\SYSTEM rights, so an exposed instance must be treated as compromised and rebuilt with credentials rotated rather than only upgraded to Hotfix 10.0.9.6103 or 10.0.9.6105, or to 10.0.9.6173 or 10.0.9.6177, which closes the chain.",
+        "gap_closes": [
+          "NIS2-Art21-network-security",
+          "UK-CAF-B2"
+        ]
+      }
+    ]
+  },
+  "CVE-2021-20016": {
+    "name": "SonicWall SSLVPN SMA100 SQL Injection Vulnerability",
+    "lesson_date": "2026-09-26",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": null,
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "A remote, unauthenticated attacker submits a crafted SQL query to the SMA 100 series SSL VPN web interface and reads usernames, passwords and session information from the appliance's database, which can then be used to log in to the appliance.",
+      "privileges_required": "none; the request is unauthenticated and is sent directly to the internet-facing SSL VPN interface",
+      "complexity": "low; a single crafted request returns credential and session data",
+      "ai_factor": "None. Reported by the NCC Group; no AI tooling is claimed."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Enabling the built-in WAF and MFA immediately, then upgrading SMA 100 10.x devices to 10.2.0.6-32sv, which includes the fix first shipped in 10.2.0.5-29sv and which SonicWall directs devices already on 10.2.0.5-29sv to install; blocking the appliance at the firewall or shutting it down while no fix was available.",
+        "was_this_required": false,
+        "framework_requiring_it": "AU-Essential-8-Patch",
+        "adequacy": "SonicWall's WAF neutralized the flaw in testing but was explicitly a stopgap, not a replacement for the firmware; MFA limits reuse of stolen credentials but does not stop the SQL injection itself."
+      },
+      "detection": {
+        "what_would_have_worked": "Watching for unauthenticated requests to the SMA 100 web interface that return account or session data, and treating any pre-patch exposure as suspect because SonicWall was not aware of any forensic data a user could view to determine whether a device had been attacked.",
+        "was_this_required": false,
+        "framework_requiring_it": "ISO-27001-2022-A.8.8",
+        "adequacy": "SonicWall stated it had no forensic data a user could view to determine whether a device was attacked, so detection depends on external network logging rather than on-device evidence."
+      },
+      "response": {
+        "what_would_have_worked": "Resetting passwords for every account that logged in through the SMA 100 web interface and enabling MFA after upgrading, as SonicWall directed.",
+        "was_this_required": false,
+        "framework_requiring_it": "UK-CAF-B4",
+        "adequacy": "Because the flaw exposed usernames, passwords and session information, credential reset is the load-bearing step; upgrading firmware without it leaves harvested credentials usable."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "After an internet-facing appliance is exposed to an actively exploited flaw that returns stored credentials or session data, the response rotates every credential the appliance held and does not treat installing the fixed build as the end of remediation.",
+        "evidence": "SonicWall's notice for SNWLID-2021-0001 (CVE-2021-20016) cites the potential credential exposure and directs SMA 100 series 10.x customers to upgrade the firmware, reset the passwords of any users who may have logged in to the device through the web interface, and enable multifactor authentication. UNC2447 exploited the flaw before 10.2.0.5-29sv shipped on February 3, 2021, so the firmware alone left any credentials read before it usable.",
+        "gap_closes": [
+          "UK-CAF-B4",
+          "AU-Essential-8-Patch"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-038",
+        "name": "MITIGATION-ACTIVE-PATCH-PENDING-VERDICT-CLASS",
+        "description": "A remediation record tracks a vendor's interim mitigation as its own state from the vendor's first mitigation notice, and records a device that runs an unfixed build behind that mitigation as mitigated with residual risk, separately from a device running the fixed build.",
+        "evidence": "From January 22 to February 2, 2021 SonicWall published interim measures for SMA 100 series 10.x (access restrictions and MFA from January 22, then password resets on February 1, then the built-in Web Application Firewall on February 2) before the 10.2.0.5-29sv firmware shipped on February 3, and it stated that the WAF does not replace the need to apply the patch and should only be used as a safety measure until the patched firmware is installed. An SMA 100 with the WAF enabled and firmware below 10.2.0.5-29sv is mitigated with residual risk, not remediated.",
+        "gap_closes": [
+          "NIST-800-53-SI-2"
         ]
       }
     ]
