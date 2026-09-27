@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.21.8 — 2026-09-27
+
+1,998 zero-day lesson texts and 2 catalog fields no longer cite the curation input instead of a source, as in "Packet: ...", "Packet fields for CVE-...", "the packet's own ..." or a catalog field name such as `cisa_kev` or `live_patch_notes` quoted as evidence. Each text now states the fact directly, and names CISA's KEV entry or the vendor advisory where that is the source. The `pipeline-wording` class in the catalog gap audit falls from 2,159 texts to 159, and the predeploy budget gate now holds it at 159.
+
 ## 0.21.7 — 2026-09-27
 
 The catalog holds 1,758 CVEs after one addition from CISA KEV: CVE-2021-1905, a use-after-free in the Qualcomm Adreno GPU driver on Android and other Snapdragon devices. It has no public exploit, and the fix needs a device restart. Google's Threat Analysis Group attributes its use as a zero-day to the commercial surveillance vendor Intellexa.
