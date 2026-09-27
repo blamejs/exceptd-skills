@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.21.4 — 2026-09-26
+
+`exceptd refresh --curate-batch` now refuses a batch whose new catalog entries or zero-day lessons cite the curation input instead of a source, as in "Packet: ...", "Packet fields: ...", "the packet names ..." or "per the packet", and it writes nothing when it does. The catalog gap audit has a matching `pipeline-wording` class: `npm run audit-catalog-gaps -- --class pipeline-wording` lists the 1,699 existing lesson texts with that wording, and the predeploy budget gate fails if the count grows. Wording about network packets, such as "packet data" or "the packet socket (AF_PACKET)", and the exploit archive Packet Storm do not match.
+
+`npm run audit-catalog-gaps -- --class` now accepts every class the gap detectors report.
+
 ## 0.21.3 — 2026-09-24
 
 The catalog holds 1,752 CVEs after 32 additions from CISA KEV. Twenty-one are Microsoft flaws, among them two links of the ProxyShell Exchange chain (CVE-2021-31207 and CVE-2021-34473), the CryptoAPI certificate-validation spoofing flaw CVE-2020-0601, the SharePoint deserialization flaw CVE-2019-0604, and Win32k, Common Log File System and Windows Error Reporting privilege escalations. Five are Oracle WebLogic Server and Oracle Coherence flaws, two are Firefox and Thunderbird use-after-free flaws, and the rest cover Arista VeloCloud Orchestrator, Nagios XI, PlaySMS and Progress Telerik UI for ASP.NET AJAX.

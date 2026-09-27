@@ -345,11 +345,14 @@ function cmdPush() {
   _run("git", ["push", "-u", "origin", branch]);
   _ok("pushed " + branch);
 
-  if (_openPrNumber(branch)) {
-    _ok("PR already open for " + branch + " (resume mode)");
+  var section = _changelogSection(next);
+  var title = _releaseSubject(next, section);
+  var existing = _openPrNumber(branch);
+  if (existing) {
+    // The PR title and body follow the current CHANGELOG section on every push.
+    _run("gh", ["pr", "edit", existing, "--title", title, "--body", section]);
+    _ok("PR #" + existing + " already open for " + branch + " (resume mode); title and body updated from CHANGELOG.md");
   } else {
-    var section = _changelogSection(next);
-    var title = _releaseSubject(next, section);
     _run("gh", ["pr", "create", "--base", "main", "--head", branch,
       "--title", title, "--body", section]);
     _ok("PR opened");
@@ -452,8 +455,13 @@ function cmdMerge() {
     throw new Error("release: refusing to merge PR #" + prNum + " — " +
       unresolved.length + " unresolved review thread(s); run watch again");
   }
+  // The squash commit takes its subject and body from the CHANGELOG section, not
+  // from the branch's commit messages.
+  var section = _changelogSection(next);
+  var subject = _releaseSubject(next, section) + " (#" + prNum + ")";
   // Solo-maintainer protection requires 0 approvals; --admin covers required checks.
-  _run("gh", ["pr", "merge", prNum, "--squash", "--admin", "--delete-branch"]);
+  _run("gh", ["pr", "merge", prNum, "--squash", "--admin", "--delete-branch",
+    "--subject", subject, "--body", section]);
   _ok("PR #" + prNum + " squash-merged");
 
   _run("git", ["checkout", "main"]);

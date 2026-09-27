@@ -167,6 +167,27 @@ test("--class with unknown value exits 2 and prints valid options", () => {
     "stderr must enumerate the valid class names");
 });
 
+test("--class accepts every class lib/gap-detectors.js declares", () => {
+  const { spawnSync } = require("node:child_process");
+  const { DETECTOR_CLASSES } = require(path.join(__dirname, "..", "lib", "gap-detectors.js"));
+  assert.ok(DETECTOR_CLASSES.includes("pipeline-wording"));
+  const r = spawnSync(
+    process.execPath,
+    [path.join(__dirname, "..", "scripts", "audit-catalog-gaps.js"), "--class", "bogus-class"],
+    { encoding: "utf8" }
+  );
+  const listed = (r.stderr.match(/valid:\s*(.*)/) || [, ""])[1].split(/,\s*/).map((s) => s.trim());
+  for (const cls of DETECTOR_CLASSES) assert.ok(listed.includes(cls), `${cls} must be a valid --class value`);
+  const ok = spawnSync(
+    process.execPath,
+    [path.join(__dirname, "..", "scripts", "audit-catalog-gaps.js"), "--class", "pipeline-wording"],
+    { encoding: "utf8" }
+  );
+  const json = JSON.parse(ok.stdout);
+  assert.equal(json.class_filter, "pipeline-wording");
+  assert.equal(typeof json.totals.extended["pipeline-wording"], "number");
+});
+
 // v0.13.20 audit-test split: the live-catalog assertion moved to
 // tests/shipped-catalog-integrity.test.js so the detector-logic tests
 // here run against synthetic inputs only. Bundling them led to

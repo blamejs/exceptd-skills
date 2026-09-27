@@ -387,3 +387,26 @@ require("node:test").describe("regen re-derives artifacts on a release branch", 
     assert.match(body, /regenerating against " \+ dirty\.length/, "what it is regenerating against must be visible");
   });
 });
+
+require("node:test").describe("merge and push carry the CHANGELOG section", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const SRC = fs.readFileSync(path.join(__dirname, "..", "scripts", "release.js"), "utf8");
+  const merge = SRC.slice(SRC.indexOf("function cmdMerge()"), SRC.indexOf("function cmdTag()"));
+  const push = SRC.slice(SRC.indexOf("function cmdPush()"), SRC.indexOf("function cmdWatch()"));
+
+  test("the squash commit takes its subject and body from the CHANGELOG section", () => {
+    // Without them GitHub concatenates every branch commit into the squash body.
+    assert.match(merge, /var section = _changelogSection\(next\);/);
+    assert.match(merge, /var subject = _releaseSubject\(next, section\) \+ " \(#" \+ prNum \+ "\)";/);
+    assert.match(merge, /"--squash", "--admin", "--delete-branch",\s*"--subject", subject, "--body", section\]/);
+  });
+
+  test("a resumed push updates the open PR's title and body", () => {
+    assert.match(push, /_run\("gh", \["pr", "edit", existing, "--title", title, "--body", section\]\);/);
+    assert.ok(push.indexOf("var section = _changelogSection(next);") < push.indexOf("if (existing)"),
+      "the section is read before the resume branch, so both paths use it");
+  });
+});

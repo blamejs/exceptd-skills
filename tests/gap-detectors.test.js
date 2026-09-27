@@ -298,7 +298,8 @@ test("DETECTOR_CLASSES: canonical class list matches runAllDetectors output (cod
     "cross-ref-completeness",
     "schema-evolution",
     "operator-action-sla",
-    "unused-orphan"
+    "unused-orphan",
+    "pipeline-wording"
   ]);
   const declared = new Set(D.DETECTOR_CLASSES);
   assert.deepEqual(declared, expectedClasses,
@@ -318,6 +319,58 @@ test("runAllDetectors: composes all seven classes into one flat array", () => {
   const classes = new Set(f.map((x) => x.class));
   assert.ok(classes.has("content-quality"), "content-quality must be in the union");
   assert.ok(classes.has("logical-consistency"), "logical-consistency must be in the union");
+});
+
+// ---------- pipeline-wording ----------
+
+test("hasPipelineWording matches curation-input citations and not network-packet wording", () => {
+  for (const s of [
+    "Packet: pod-spec attributes reach the modprobe argument path",
+    "Packet attack_vector: 'Integer overflow in the CNI IP-allocation path'",
+    "Packet fields for CVE-2026-20128: cwe_refs CWE-257",
+    "the attacker uploads a file (the packet names a web shell)",
+    "per the packet the malicious code was embedded",
+    "According to the packet, the fix shipped in 7.2.",
+  ]) assert.equal(D.hasPipelineWording(s), true, s);
+  for (const s of [
+    "Cisco IOS and IOS XE Software improperly validates packet data",
+    "a flaw in the packet socket (AF_PACKET) implementation",
+    "Because the overflow lands in the packet-engine process",
+    "Exploit code was published on Packet Storm.",
+    "the packet contains a malformed length field",
+    "",
+  ]) assert.equal(D.hasPipelineWording(s), false, s);
+  assert.equal(D.hasPipelineWording(null), false);
+});
+
+test("PIPELINE_WORDING: every pattern is a stateless RegExp", () => {
+  // A /g or /y pattern keeps lastIndex between .test() calls and skips matches.
+  assert.ok(Array.isArray(D.PIPELINE_WORDING) && D.PIPELINE_WORDING.length > 0);
+  for (const re of D.PIPELINE_WORDING) {
+    assert.ok(re instanceof RegExp, String(re));
+    assert.ok(!re.global && !re.sticky, `${re} must not carry the g or y flag`);
+  }
+  const s = "Packet: the endpoint resolves paths";
+  assert.equal(D.hasPipelineWording(s), true);
+  assert.equal(D.hasPipelineWording(s), true, "a second call on the same text still matches");
+});
+
+test("pipelineWordingFindings: one finding per curated text, with its field path; drafts are skipped", () => {
+  const f = D.pipelineWordingFindings({
+    "cve-catalog": { _meta: {},
+      "CVE-2026-0001": { iocs: { _ioc_source_note: "Read from the NVD description; Packet: none." } },
+      "CVE-2026-0002": { _auto_imported: true, vector: "Packet: draft text" } },
+    "zeroday-lessons": { _meta: {},
+      "CVE-2026-0001": { new_control_requirements: [
+        { evidence: "Packet fields: cvss 9.8", description: "A general control." },
+        { evidence: "Cisco advisory cisco-sa-x states the fixed release.", description: "per the packet, patch." }] } },
+  });
+  assert.deepEqual(f.map((x) => `${x.catalog} ${x.id} ${x.field}`).sort(), [
+    "cve-catalog CVE-2026-0001 iocs._ioc_source_note",
+    "zeroday-lessons CVE-2026-0001 new_control_requirements[0].evidence",
+    "zeroday-lessons CVE-2026-0001 new_control_requirements[1].description",
+  ]);
+  assert.ok(f.every((x) => x.class === "pipeline-wording"));
 });
 
 // ---------- placeholder + daysSince helpers ----------
@@ -645,7 +698,8 @@ function loadAll() {
     "cwe-catalog": JSON.parse(fs.readFileSync(path.join(data, "cwe-catalog.json"), "utf8")),
     "attack-techniques": JSON.parse(fs.readFileSync(path.join(data, "attack-techniques.json"), "utf8")),
     "atlas-ttps": JSON.parse(fs.readFileSync(path.join(data, "atlas-ttps.json"), "utf8")),
-    "framework-control-gaps": JSON.parse(fs.readFileSync(path.join(data, "framework-control-gaps.json"), "utf8"))
+    "framework-control-gaps": JSON.parse(fs.readFileSync(path.join(data, "framework-control-gaps.json"), "utf8")),
+    "zeroday-lessons": JSON.parse(fs.readFileSync(path.join(data, "zeroday-lessons.json"), "utf8"))
   };
 }
 
@@ -673,7 +727,8 @@ test("shipped catalogs: extended-detector budgets (no silent regression on v0.13
     "cross-ref-completeness": 5,
     "schema-evolution": 0,
     "operator-action-sla": 0,     // no entries currently exceed the SLA window
-    "unused-orphan": 1400         // bulk-imported CWE / RFC orphans by design
+    "unused-orphan": 1400,        // bulk-imported CWE / RFC orphans by design
+    "pipeline-wording": 1699      // lesson texts citing the curation input; comes down as they are rewritten
   };
   const regressions = [];
   for (const [cls, count] of Object.entries(byClass)) {
