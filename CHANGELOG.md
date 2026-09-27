@@ -2,7 +2,7 @@
 
 ## 0.21.4 — 2026-09-26
 
-`exceptd refresh --curate-batch` now refuses a batch whose new catalog entries or zero-day lessons cite the curation input instead of a source, as in "Packet: ...", "Packet fields: ...", "the packet names ..." or "per the packet", and it writes nothing when it does. The catalog gap audit has a matching `pipeline-wording` class: `npm run audit-catalog-gaps -- --class pipeline-wording` lists the 1,699 existing lesson texts with that wording, and the predeploy budget gate fails if the count grows. Wording about network packets, such as "packet data" or "the packet socket (AF_PACKET)", and the exploit archive Packet Storm do not match.
+`exceptd refresh --curate-batch` now refuses a batch whose new catalog entries or zero-day lessons cite the curation input instead of a source, as in "Packet: ...", "Packet fields: ...", "the packet names ...", "the packet's own ..." or "per the packet", and it writes nothing when it does. It checks every submitted entry and lesson, including one marked `_auto_imported`. The catalog gap audit has a matching `pipeline-wording` class: `npm run audit-catalog-gaps -- --class pipeline-wording` lists the 2,074 existing texts with that wording (2,072 lesson texts and 2 catalog fields), and the predeploy budget gate fails if the count grows. Wording about network packets, such as "packet data" or "the packet socket (AF_PACKET)", and the exploit archive Packet Storm do not match.
 
 `npm run audit-catalog-gaps -- --class` now accepts every class the gap detectors report.
 

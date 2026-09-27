@@ -331,6 +331,11 @@ test("hasPipelineWording matches curation-input citations and not network-packet
     "the attacker uploads a file (the packet names a web shell)",
     "per the packet the malicious code was embedded",
     "According to the packet, the fix shipped in 7.2.",
+    "packet: cisa_kev true, active_exploitation confirmed",
+    "The packet's own references array for this CVE is empty",
+    "the packet's vector states an unauthenticated attacker",
+    "the packet's live-patch note says a restart is needed",
+    "packet attack_vector: 'crafted request'",
   ]) assert.equal(D.hasPipelineWording(s), true, s);
   for (const s of [
     "Cisco IOS and IOS XE Software improperly validates packet data",
@@ -338,6 +343,9 @@ test("hasPipelineWording matches curation-input citations and not network-packet
     "Because the overflow lands in the packet-engine process",
     "Exploit code was published on Packet Storm.",
     "the packet contains a malformed length field",
+    "SNMPv3 privacy protects the packet's confidentiality",
+    "the parser copies bytes from the packet into a fixed buffer",
+    "malformed packet fields crash the daemon",
     "",
   ]) assert.equal(D.hasPipelineWording(s), false, s);
   assert.equal(D.hasPipelineWording(null), false);
@@ -371,6 +379,14 @@ test("pipelineWordingFindings: one finding per curated text, with its field path
     "zeroday-lessons CVE-2026-0001 new_control_requirements[1].description",
   ]);
   assert.ok(f.every((x) => x.class === "pipeline-wording"));
+});
+
+test("pipelineWordingFindings: includeDrafts checks objects marked _auto_imported", () => {
+  const loaded = { "zeroday-lessons": { _meta: {},
+    "CVE-2026-0003": { _auto_imported: true, new_control_requirements: [{ evidence: "Packet: submitted text" }] } } };
+  assert.deepEqual(D.pipelineWordingFindings(loaded), [], "the shipped-catalog audit skips drafts");
+  const f = D.pipelineWordingFindings(loaded, { includeDrafts: true });
+  assert.deepEqual(f.map((x) => `${x.id} ${x.field}`), ["CVE-2026-0003 new_control_requirements[0].evidence"]);
 });
 
 // ---------- placeholder + daysSince helpers ----------
@@ -728,7 +744,7 @@ test("shipped catalogs: extended-detector budgets (no silent regression on v0.13
     "schema-evolution": 0,
     "operator-action-sla": 0,     // no entries currently exceed the SLA window
     "unused-orphan": 1400,        // bulk-imported CWE / RFC orphans by design
-    "pipeline-wording": 1699      // lesson texts citing the curation input; comes down as they are rewritten
+    "pipeline-wording": 2074      // lesson and catalog texts citing the curation input; comes down as they are rewritten
   };
   const regressions = [];
   for (const [cls, count] of Object.entries(byClass)) {
