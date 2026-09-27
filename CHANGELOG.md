@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.21.7 — 2026-09-27
+
+The catalog holds 1,758 CVEs after one addition from CISA KEV: CVE-2021-1905, a use-after-free in the Qualcomm Adreno GPU driver on Android and other Snapdragon devices. It has no public exploit, and the fix needs a device restart. Google's Threat Analysis Group attributes its use as a zero-day to the commercial surveillance vendor Intellexa.
+
+Four Qualcomm entries now include their CVE id in the title, because CISA gives them the same name: the new CVE-2021-1905 and the existing CVE-2022-22071, CVE-2023-33063 and CVE-2025-27038.
+
+The framework gap for Australian ISM control ISM-0298 now also covers the check that an applied update carries the fix for a given vulnerability, such as an Android device whose security patch level is not one the vendor's bulletin lists the fix under. Its theater test asks for that evidence for one remediated CVE, and CVE-2021-1905 is the gap's first evidence entry.
+
 ## 0.21.6 — 2026-09-27
 
 The catalog holds 1,757 CVEs after three additions from CISA KEV: CVE-2021-22893, an authentication bypass in Pulse Connect Secure, CVE-2021-20022, an arbitrary file upload in SonicWall Email Security, and CVE-2021-38645, a local privilege escalation in Microsoft's Open Management Infrastructure. None has a public exploit. The Pulse Connect Secure and SonicWall flaws carry CISA's ransomware designation and need a restart before the fix takes effect.

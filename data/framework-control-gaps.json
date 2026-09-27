@@ -3886,6 +3886,7 @@
       "CVE-2021-1870",
       "CVE-2021-1871",
       "CVE-2021-1879",
+      "CVE-2021-1905",
       "CVE-2021-20016",
       "CVE-2021-20028",
       "CVE-2021-20035",
@@ -5270,6 +5271,7 @@
       "CVE-2021-1789",
       "CVE-2021-1871",
       "CVE-2021-1879",
+      "CVE-2021-1905",
       "CVE-2021-20016",
       "CVE-2021-20028",
       "CVE-2021-21148",
@@ -6245,6 +6247,7 @@
       "CVE-2020-0986",
       "CVE-2020-17087",
       "CVE-2021-1782",
+      "CVE-2021-1905",
       "CVE-2021-22600",
       "CVE-2021-25370",
       "CVE-2021-28664",
@@ -12810,6 +12813,7 @@
       "CVE-2021-1789",
       "CVE-2021-1870",
       "CVE-2021-1879",
+      "CVE-2021-1905",
       "CVE-2021-20016",
       "CVE-2021-20022",
       "CVE-2021-20028",
@@ -14870,12 +14874,15 @@
     "misses": [
       "Software that updates itself (browsers, agents, desktop applications, device firmware) fetches and applies updates outside any centralised system, so the integrity check the control requires never runs on those updates",
       "Integrity is usually taken to mean the vendor's signature verified, which does not detect a signed update from a compromised build system or a rollback to an older signed build",
-      "Confirmation that an update applied records the installed version, not that the binary running matches what the vendor published"
+      "Confirmation that an update applied records the installed version, not that the binary running matches what the vendor published",
+      "Confirmation that an update applied does not show that it carries the fix for a given vulnerability: an Android device can apply its monthly update successfully and report a security patch level that the vendor's bulletin does not list the fix under"
     ],
-    "real_requirement": "Update integrity evidence must cover self-updating software as well as centrally patched software: signature verification before apply, pinning of the update signing key out of band, rejection of rollbacks to older signed builds, and a post-install check that the running binary matches the published artifact.",
+    "real_requirement": "Update integrity evidence must cover self-updating software as well as centrally patched software: signature verification before apply, pinning of the update signing key out of band, rejection of rollbacks to older signed builds, and a post-install check that the running binary matches the published artifact. For each vulnerability being remediated, the evidence must also show that the installed build or security patch level is one the vendor lists the fix under, not only that an update applied.",
     "status": "open",
     "opened_date": "2026-09-22",
-    "evidence_cves": [],
+    "evidence_cves": [
+      "CVE-2021-1905"
+    ],
     "atlas_refs": [],
     "attack_refs": [
       "T1195.002",
@@ -14883,16 +14890,15 @@
     ],
     "theater_test": {
       "claim": "Our patches and updates keep their integrity and are confirmed applied, which satisfies ISM-0298.",
-      "test": "List the software on a sample host that updates itself outside the central patching system. For each, confirm the update client verifies a signature before applying, rejects a rollback to an older signed build, and that someone can show the installed binary matches the vendor's published artifact. Theater verdict if the evidence covers only centrally deployed patches, or if any self-updating product has no documented integrity check.",
+      "test": "List the software on a sample host that updates itself outside the central patching system. For each, confirm the update client verifies a signature before applying, rejects a rollback to an older signed build, and that someone can show the installed binary matches the vendor's published artifact. Then pick one remediated CVE and confirm the record shows an installed build or security patch level that the vendor lists its fix under. Theater verdict if the evidence covers only centrally deployed patches, if any self-updating product has no documented integrity check, or if the remediated CVE is recorded as fixed on the strength of an applied update alone.",
       "evidence_required": [
         "inventory of self-updating software on a sampled host",
         "per-product record of signature verification and rollback protection",
-        "post-install artifact comparison for one sampled update"
+        "post-install artifact comparison for one sampled update",
+        "for one remediated CVE, the installed build or security patch level compared with the level the vendor lists its fix under"
       ],
       "verdict_when_failed": "compliance-theater"
-    },
-    "forward_looking": true,
-    "forward_looking_reason": "No CVE in the catalog anchors this gap yet; it records the control class without binding it to a single incident."
+    }
   },
   "AU-ISM-1240": {
     "framework": "Australian Government Information Security Manual (ISM)",
