@@ -249,19 +249,11 @@ function emitPretty(report) {
   return lines.join("\n");
 }
 
-// Names `--class` accepts; the extended ones are implemented in lib/gap-detectors.js.
-const VALID_CLASSES = new Set([
-  "missing-context", "dangling-ref", "draft-debt",
-  "content-quality", "temporal-staleness", "logical-consistency",
-  "cross-ref-completeness", "schema-evolution", "operator-action-sla",
-  "unused-orphan"
-]);
-const EXTENDED_CLASS_NAMES = new Set([
-  "content-quality", "temporal-staleness", "logical-consistency",
-  "cross-ref-completeness", "schema-evolution", "operator-action-sla",
-  "unused-orphan"
-]);
+// Names `--class` accepts; the extended ones are implemented in lib/gap-detectors.js
+// and taken from its DETECTOR_CLASSES.
 const EXTENDED_DETECTORS = require("../lib/gap-detectors.js");
+const EXTENDED_CLASS_NAMES = new Set(EXTENDED_DETECTORS.DETECTOR_CLASSES);
+const VALID_CLASSES = new Set(["missing-context", "dangling-ref", "draft-debt", ...EXTENDED_DETECTORS.DETECTOR_CLASSES]);
 
 function main() {
   const opts = parseArgs(process.argv);

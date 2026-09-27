@@ -60,7 +60,12 @@ const BUDGET = {
   "cross-ref-completeness": 5,
   "schema-evolution": 0,
   "operator-action-sla": 0,
-  "unused-orphan": 1400
+  "unused-orphan": 1400,
+  // Lesson and catalog texts that cite the curation input ("Packet: ...", "the
+  // packet names ...", "the packet's own ...") instead of stating the fact and
+  // its source. refresh --curate-batch refuses new ones; the budget comes down
+  // as existing texts are rewritten.
+  "pipeline-wording": 2159
 };
 
 function main() {

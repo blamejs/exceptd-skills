@@ -298,7 +298,8 @@ test("DETECTOR_CLASSES: canonical class list matches runAllDetectors output (cod
     "cross-ref-completeness",
     "schema-evolution",
     "operator-action-sla",
-    "unused-orphan"
+    "unused-orphan",
+    "pipeline-wording"
   ]);
   const declared = new Set(D.DETECTOR_CLASSES);
   assert.deepEqual(declared, expectedClasses,
@@ -318,6 +319,117 @@ test("runAllDetectors: composes all seven classes into one flat array", () => {
   const classes = new Set(f.map((x) => x.class));
   assert.ok(classes.has("content-quality"), "content-quality must be in the union");
   assert.ok(classes.has("logical-consistency"), "logical-consistency must be in the union");
+});
+
+// ---------- pipeline-wording ----------
+
+test("hasPipelineWording matches curation-input citations and not network-packet wording", () => {
+  for (const s of [
+    "Packet: pod-spec attributes reach the modprobe argument path",
+    "Packet attack_vector: 'Integer overflow in the CNI IP-allocation path'",
+    "Packet fields for CVE-2026-20128: cwe_refs CWE-257",
+    "the attacker uploads a file (the packet names a web shell)",
+    "per the packet the malicious code was embedded",
+    "According to the packet, the fix shipped in 7.2.",
+    "packet: cisa_kev true, active_exploitation confirmed",
+    "The packet's own references array for this CVE is empty",
+    "the packet's vector states an unauthenticated attacker",
+    "the packet's live-patch note says a restart is needed",
+    "packet attack_vector: 'crafted request'",
+    "Packet fields for this entry: cvss 9.8",
+    "Packet vector names an unauthenticated request",
+    "Remediation per the packet: patch_available is true",
+    "Affected models named in the packet: RV016, RV042",
+    "Priority follows the packet: unauthenticated remote code execution",
+    "The packet: sudo's -R option lets a local user",
+    "the specific trap in this packet: the ranges given",
+    "packet: unauthenticated remote code execution",
+    "the packet: unauthenticated remote code execution",
+    "CVSS 9.8. packet: unauthenticated remote code execution",
+    "the fixed branches (7.2 and 7.4).' Packet: affected_versions lists 7.0",
+    "the vendor note ends here.\" Packet: the fix is in 3.1",
+    "see the list (every branch) packet: affected_versions 7.0 through 7.2",
+    "The packet's flaw is an unauthenticated SQL injection",
+    "the packet's attacker never authenticates",
+    "book the restart the packet's requiredAction implies",
+    "the packet's nist-800-53-si-2 gap records the window",
+    "the packet's live_patch_notes say a restart is needed",
+  ]) assert.equal(D.hasPipelineWording(s), true, s);
+  // Every curation noun the possessive form accepts; a later narrowing must keep them.
+  for (const noun of ["own", "vector", "stated", "attack vector", "attack path", "exploitation", "remediation",
+    "live-patch", "livepatch", "chain", "fix", "attacker", "outcome", "affected_versions", "flaw", "precondition",
+    "primitive", "rwep", "kev", "gaps", "description", "cited", "confirmed", "cwe", "escalation", "requiredAction",
+    "product", "framing", "cvss", "timeline", "campaign", "title", "coverage", "vendor", "mitigation",
+    "references", "notes", "framework", "facts", "advisory", "versions", "summary", "deadline",
+    "uk-caf-b4", "au-essential-8-patch", "live_patch_notes", "cisa_kev_due_date", "vendor_update_paths"]) {
+    assert.equal(D.hasPipelineWording(`the packet's ${noun} says so`), true, `packet's ${noun}`);
+  }
+  assert.equal(D.hasPipelineWording("the packet's version field is 4"), false, "an IP header field");
+  // A label opens a text, sentence or parenthetical. Mid-sentence, "the packet:" is
+  // network prose unless curation wording (per, in, from, follows, this, own) leads it.
+  assert.equal(D.hasPipelineWording("The parser rejects the packet: its length exceeds the buffer."), false);
+  for (const s of [
+    "Cisco IOS and IOS XE Software improperly validates packet data",
+    "a flaw in the packet socket (AF_PACKET) implementation",
+    "Because the overflow lands in the packet-engine process",
+    "Exploit code was published on Packet Storm.",
+    "the packet contains a malformed length field",
+    "SNMPv3 privacy protects the packet's confidentiality",
+    "the parser copies bytes from the packet into a fixed buffer",
+    "malformed packet fields crash the daemon",
+    "Packet fields are not validated before the buffer copy.",
+    "The parser rejects the malformed packet: its length exceeds the buffer.",
+    "Packet vectors from the scanner were logged.",
+    "the packet's header length is not checked",
+    "a redirect filter the packet's payload already created",
+    "The packet's fragment offset is not validated before reassembly.",
+    "The packet's total length exceeds the allocated buffer.",
+    "The packet's path through the firewall is not filtered.",
+    "the packet's sequence numbers repeat",
+    "The packet's actual length is shorter than the advertised length.",
+    "The packet's fragment_offset causes an out-of-bounds write.",
+    "The packet's only option byte is ignored.",
+    "",
+  ]) assert.equal(D.hasPipelineWording(s), false, s);
+  assert.equal(D.hasPipelineWording(null), false);
+});
+
+test("PIPELINE_WORDING: every pattern is a stateless RegExp", () => {
+  // A /g or /y pattern keeps lastIndex between .test() calls and skips matches.
+  assert.ok(Array.isArray(D.PIPELINE_WORDING) && D.PIPELINE_WORDING.length > 0);
+  for (const re of D.PIPELINE_WORDING) {
+    assert.ok(re instanceof RegExp, String(re));
+    assert.ok(!re.global && !re.sticky, `${re} must not carry the g or y flag`);
+  }
+  const s = "Packet: the endpoint resolves paths";
+  assert.equal(D.hasPipelineWording(s), true);
+  assert.equal(D.hasPipelineWording(s), true, "a second call on the same text still matches");
+});
+
+test("pipelineWordingFindings: one finding per curated text, with its field path; drafts are skipped", () => {
+  const f = D.pipelineWordingFindings({
+    "cve-catalog": { _meta: {},
+      "CVE-2026-0001": { iocs: { _ioc_source_note: "Read from the NVD description; Packet: none." } },
+      "CVE-2026-0002": { _auto_imported: true, vector: "Packet: draft text" } },
+    "zeroday-lessons": { _meta: {},
+      "CVE-2026-0001": { new_control_requirements: [
+        { evidence: "Packet fields: cvss 9.8", description: "A general control." },
+        { evidence: "Cisco advisory cisco-sa-x states the fixed release.", description: "per the packet, patch." }] } },
+  });
+  assert.deepEqual(f.map((x) => `${x.catalog} ${x.id} ${x.field}`).sort(), [
+    "cve-catalog CVE-2026-0001 iocs._ioc_source_note",
+    "zeroday-lessons CVE-2026-0001 new_control_requirements[0].evidence",
+    "zeroday-lessons CVE-2026-0001 new_control_requirements[1].description",
+  ]);
+  assert.ok(f.every((x) => x.class === "pipeline-wording"));
+});
+
+test("pipelineWordingFindings: includeDrafts checks objects marked _auto_imported", () => {
+  const loaded = { "zeroday-lessons": { _meta: {},
+    "CVE-2026-0003": { _auto_imported: true, new_control_requirements: [{ evidence: "Packet: submitted text" }] } } };
+  assert.deepEqual(D.pipelineWordingFindings(loaded), [], "the shipped-catalog audit skips drafts");
+  const f = D.pipelineWordingFindings(loaded, { includeDrafts: true });
+  assert.deepEqual(f.map((x) => `${x.id} ${x.field}`), ["CVE-2026-0003 new_control_requirements[0].evidence"]);
 });
 
 // ---------- placeholder + daysSince helpers ----------
@@ -645,7 +757,8 @@ function loadAll() {
     "cwe-catalog": JSON.parse(fs.readFileSync(path.join(data, "cwe-catalog.json"), "utf8")),
     "attack-techniques": JSON.parse(fs.readFileSync(path.join(data, "attack-techniques.json"), "utf8")),
     "atlas-ttps": JSON.parse(fs.readFileSync(path.join(data, "atlas-ttps.json"), "utf8")),
-    "framework-control-gaps": JSON.parse(fs.readFileSync(path.join(data, "framework-control-gaps.json"), "utf8"))
+    "framework-control-gaps": JSON.parse(fs.readFileSync(path.join(data, "framework-control-gaps.json"), "utf8")),
+    "zeroday-lessons": JSON.parse(fs.readFileSync(path.join(data, "zeroday-lessons.json"), "utf8"))
   };
 }
 
@@ -673,7 +786,8 @@ test("shipped catalogs: extended-detector budgets (no silent regression on v0.13
     "cross-ref-completeness": 5,
     "schema-evolution": 0,
     "operator-action-sla": 0,     // no entries currently exceed the SLA window
-    "unused-orphan": 1400         // bulk-imported CWE / RFC orphans by design
+    "unused-orphan": 1400,        // bulk-imported CWE / RFC orphans by design
+    "pipeline-wording": 2159      // lesson and catalog texts citing the curation input; comes down as they are rewritten
   };
   const regressions = [];
   for (const [cls, count] of Object.entries(byClass)) {
