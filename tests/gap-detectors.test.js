@@ -336,7 +336,38 @@ test("hasPipelineWording matches curation-input citations and not network-packet
     "the packet's vector states an unauthenticated attacker",
     "the packet's live-patch note says a restart is needed",
     "packet attack_vector: 'crafted request'",
+    "Packet fields for this entry: cvss 9.8",
+    "Packet vector names an unauthenticated request",
+    "Remediation per the packet: patch_available is true",
+    "Affected models named in the packet: RV016, RV042",
+    "Priority follows the packet: unauthenticated remote code execution",
+    "The packet: sudo's -R option lets a local user",
+    "the specific trap in this packet: the ranges given",
+    "packet: unauthenticated remote code execution",
+    "the packet: unauthenticated remote code execution",
+    "CVSS 9.8. packet: unauthenticated remote code execution",
+    "the fixed branches (7.2 and 7.4).' Packet: affected_versions lists 7.0",
+    "the vendor note ends here.\" Packet: the fix is in 3.1",
+    "see the list (every branch) packet: affected_versions 7.0 through 7.2",
+    "The packet's flaw is an unauthenticated SQL injection",
+    "the packet's attacker never authenticates",
+    "book the restart the packet's requiredAction implies",
+    "the packet's nist-800-53-si-2 gap records the window",
+    "the packet's live_patch_notes say a restart is needed",
   ]) assert.equal(D.hasPipelineWording(s), true, s);
+  // Every curation noun the possessive form accepts; a later narrowing must keep them.
+  for (const noun of ["own", "vector", "stated", "attack vector", "attack path", "exploitation", "remediation",
+    "live-patch", "livepatch", "chain", "fix", "attacker", "outcome", "affected_versions", "flaw", "precondition",
+    "primitive", "rwep", "kev", "gaps", "description", "cited", "confirmed", "cwe", "escalation", "requiredAction",
+    "product", "framing", "cvss", "timeline", "campaign", "title", "coverage", "vendor", "mitigation",
+    "references", "notes", "framework", "facts", "advisory", "versions", "summary", "deadline",
+    "uk-caf-b4", "au-essential-8-patch", "live_patch_notes", "cisa_kev_due_date", "vendor_update_paths"]) {
+    assert.equal(D.hasPipelineWording(`the packet's ${noun} says so`), true, `packet's ${noun}`);
+  }
+  assert.equal(D.hasPipelineWording("the packet's version field is 4"), false, "an IP header field");
+  // A label opens a text, sentence or parenthetical. Mid-sentence, "the packet:" is
+  // network prose unless curation wording (per, in, from, follows, this, own) leads it.
+  assert.equal(D.hasPipelineWording("The parser rejects the packet: its length exceeds the buffer."), false);
   for (const s of [
     "Cisco IOS and IOS XE Software improperly validates packet data",
     "a flaw in the packet socket (AF_PACKET) implementation",
@@ -346,6 +377,18 @@ test("hasPipelineWording matches curation-input citations and not network-packet
     "SNMPv3 privacy protects the packet's confidentiality",
     "the parser copies bytes from the packet into a fixed buffer",
     "malformed packet fields crash the daemon",
+    "Packet fields are not validated before the buffer copy.",
+    "The parser rejects the malformed packet: its length exceeds the buffer.",
+    "Packet vectors from the scanner were logged.",
+    "the packet's header length is not checked",
+    "a redirect filter the packet's payload already created",
+    "The packet's fragment offset is not validated before reassembly.",
+    "The packet's total length exceeds the allocated buffer.",
+    "The packet's path through the firewall is not filtered.",
+    "the packet's sequence numbers repeat",
+    "The packet's actual length is shorter than the advertised length.",
+    "The packet's fragment_offset causes an out-of-bounds write.",
+    "The packet's only option byte is ignored.",
     "",
   ]) assert.equal(D.hasPipelineWording(s), false, s);
   assert.equal(D.hasPipelineWording(null), false);
@@ -744,7 +787,7 @@ test("shipped catalogs: extended-detector budgets (no silent regression on v0.13
     "schema-evolution": 0,
     "operator-action-sla": 0,     // no entries currently exceed the SLA window
     "unused-orphan": 1400,        // bulk-imported CWE / RFC orphans by design
-    "pipeline-wording": 2074      // lesson and catalog texts citing the curation input; comes down as they are rewritten
+    "pipeline-wording": 2159      // lesson and catalog texts citing the curation input; comes down as they are rewritten
   };
   const regressions = [];
   for (const [cls, count] of Object.entries(byClass)) {
