@@ -17,7 +17,7 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "entry_count": 1757
+    "entry_count": 1758
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -28139,7 +28139,7 @@
     ]
   },
   "CVE-2025-27038": {
-    "name": "Qualcomm Multiple Chipsets Use-After-Free Vulnerability",
+    "name": "Qualcomm Multiple Chipsets Use-After-Free Vulnerability (CVE-2025-27038)",
     "lesson_date": "2026-05-29",
     "attack_vector": {
       "description": "a use-after-free (CWE-416) in the Qualcomm Adreno GPU driver, exploited by a local foothold to escalate privilege on the device. CISA KEV-listed 2025-06-03 with confirmed in-the-wild exploitation; LPEs of this class are routinely paired with an initial-access primitive.",
@@ -145714,6 +145714,86 @@
         "gap_closes": [
           "NIS2-Art21-network-security",
           "UK-CAF-B4"
+        ]
+      }
+    ]
+  },
+  "CVE-2021-1905": {
+    "name": "Qualcomm Multiple Chipsets Use-After-Free Vulnerability (CVE-2021-1905)",
+    "lesson_date": "2026-09-26",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "unknown",
+    "ai_discovery_date": null,
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "The Qualcomm Adreno GPU kernel driver mishandles GPU memory mappings shared by multiple processes: a shared mapping with several virtual memory areas plus a race between two processes mapping the same GPU memory leaves a freed mapping structure reachable. Project Zero did not have the exploit sample and writes that it is hard to say whether the attack used classical memory corruption through the freed object or a GPU-specific route, such as granting an attacker-controlled GPU context arbitrary physical memory read and write; the CVSS vectors rate the impact as high for confidentiality, integrity and availability.",
+      "privileges_required": "local; the attacker needs code execution in any unprivileged local process on the device, such as a malicious installed app or a process compromised by an earlier exploit in a chain, for example a remote-code-execution and sandbox-escape pair. Google TAG's Buying Spying report describes spyware-vendor exploit chains in which a local privilege escalation is usually the final step, after a remote-code-execution exploit and a sandbox escape.",
+      "complexity": "low per the CVSS vectors from NVD and Qualcomm (AC:L); the trigger is a state error in kgsl_gpumem_vm_close followed by a race between two processes in kgsl_get_unmapped_area",
+      "ai_factor": "None. No AI tooling is claimed and no finder is named."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Applying the Android 2021-05-05 security patch level, or on other platforms the maker's update that integrates the Qualcomm driver fix, on affected devices, which corrects the GPU memory-mapping handling that allows the use-after-free",
+        "was_this_required": true,
+        "framework_requiring_it": "ASD ISM-1878, which applies to operating systems of IT equipment other than workstations, servers and network devices, including handsets: patches are applied within 48 hours of release when the vendor rates the flaw critical or a working exploit exists",
+        "adequacy": "The patch removes the flaw, but it reaches a device only when its maker ships the update, so on a fleet prevention depends on OEM rollout that can lag the platform fix while targeted exploitation is reported."
+      },
+      "detection": {
+        "what_would_have_worked": "Watching for any local process, including an untrusted app or a browser process, making heavy use of the GPU memory-mapping interface and forking to share GPU mappings, and for a local process gaining kernel privilege, using on-device telemetry",
+        "was_this_required": false,
+        "framework_requiring_it": "NIST-800-53-SC-39",
+        "adequacy": "Kernel-escalation signals are hard to observe on mobile endpoints, and the race-based trigger has no network footprint, so detection is weak compared with keeping devices at the fixed patch level."
+      },
+      "response": {
+        "what_would_have_worked": "Bringing affected devices to the 2021-05-05 patch level and rebooting, and quarantining devices that cannot reach it from organizational data until their maker ships the update. For a device of a user who fits a commercial-spyware targeting profile and that ran a security patch level below 2021-05-05, also assessing the device for compromise and capturing evidence before it is reset or reissued.",
+        "was_this_required": false,
+        "framework_requiring_it": "NIS2-Art21-patch-management",
+        "adequacy": "Enforcing the fixed patch level closes the flaw on devices that can install the fix, but installing the update does not show whether a device was compromised before it was updated. Google TAG attributes 0-day use of this flaw against Android to the commercial surveillance vendor Intellexa, so for devices of users who fit a spyware targeting profile, patching without a compromise assessment can leave an earlier compromise undetected."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SC-39": {
+        "covered": true,
+        "adequate": false
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false
+      },
+      "AU-ISM-0298": {
+        "covered": true,
+        "adequate": false
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-126",
+        "name": "MOBILE-OS-MINIMUM-PATCH-LEVEL-ENFORCEMENT",
+        "description": "Access to organizational data from a managed mobile device depends on the device meeting a minimum operating-system security-patch level that carries the fix, and devices below it are blocked or quarantined rather than accepted on a compliance dashboard.",
+        "evidence": "The Android Security Bulletin for May 2021 lists CVE-2021-1905 under the 2021-05-05 security patch level, not the 2021-05-01 level, and Qualcomm's May 2021 bulletin says OEMs were notified and strongly recommended to release patches on end devices. Gating organizational-data access on a device reporting 2021-05-05 or later, and quarantining devices that report an earlier level, including 2021-05-01, closes the fleet exposure until each device's maker ships that level.",
+        "gap_closes": [
+          "UK-CAF-B4",
+          "ISO-27001-2022-A.8.8",
+          "NIS2-Art21-patch-management",
+          "AU-ISM-0298"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-003",
+        "name": "KERNEL-EXPLOITATION-DETECTION",
+        "description": "Host-level detection rules for privilege-escalation indicators are deployed and alert within seconds, so exploitation of a local escalation flaw is observed even before the fix is installed.",
+        "evidence": "The Android Security Bulletin for May 2021 reports indications that CVE-2021-1905, a use-after-free in the Qualcomm Adreno GPU kernel driver reached by a local process, may be under limited, targeted exploitation. Google Project Zero's root-cause analysis says runtime anomaly detection might be one way to detect similar 0-days but would require specialist tooling, so on-device detection is a compensating signal only where that tooling is deployed on devices that do not yet carry the 2021-05-05 security patch level.",
+        "gap_closes": [
+          "NIST-800-53-SC-39",
+          "ISO-27001-2022-A.8.8"
         ]
       }
     ]
