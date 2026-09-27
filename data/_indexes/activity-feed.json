@@ -6,20 +6,20 @@
   },
   "events": [
     {
-      "date": "2026-09-24",
+      "date": "2026-09-27",
       "type": "catalog_update",
       "artifact": "data/cve-catalog.json",
       "path": "data/cve-catalog.json",
       "schema_version": "1.0.0",
-      "entry_count": 1752
+      "entry_count": 1754
     },
     {
-      "date": "2026-09-24",
+      "date": "2026-09-27",
       "type": "catalog_update",
       "artifact": "data/zeroday-lessons.json",
       "path": "data/zeroday-lessons.json",
       "schema_version": "1.1.0",
-      "entry_count": 1752
+      "entry_count": 1754
     },
     {
       "date": "2026-09-22",

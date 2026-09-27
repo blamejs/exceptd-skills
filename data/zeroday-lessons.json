@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.1.0",
-    "last_updated": "2026-09-24",
+    "last_updated": "2026-09-27",
     "last_threat_review": "2026-05-17",
     "purpose": "Zero-day learning loop output. Each entry maps a CVE to: attack vector, defense chain analysis, framework coverage, new control requirements generated, and exposure scoring. v1.1.0 (2026-05-15): every entry now carries ai_discovered_zeroday boolean + ai_discovery_source enum + ai_discovery_date + ai_assist_factor ladder, per AGENTS.md Hard Rule #7.",
     "note": "Never delete entries. Closed gaps are marked status: closed. History is data.",
@@ -17,7 +17,7 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "entry_count": 1752
+    "entry_count": 1754
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -145294,6 +145294,157 @@
         "gap_closes": [
           "NIST-800-53-SI-2",
           "NIS2-Art21-patch-management"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-0938": {
+    "name": "Microsoft Windows Adobe Font Manager Library Remote Code Execution Vulnerability",
+    "lesson_date": "2026-09-23",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": null,
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An attacker crafts an Adobe Type 1 multi-master font that the Windows Adobe Type Manager Library mishandles, producing an out-of-bounds write. In the recovered in-the-wild use, the font was loaded from a low-privilege browser process reached through a watering-hole site, escaping the Chrome renderer sandbox and escalating privilege on Windows 8.1 and earlier; the flaw can also be reached by opening a document or previewing it in the Windows Explorer preview pane. On systems before Windows 10 this yields remote code execution; on Windows 10 it is confined to an AppContainer sandbox.",
+      "privileges_required": "none for the document and preview-pane paths; in the observed attack the attacker already held low-privilege code execution inside the browser sandbox and used this flaw to escalate",
+      "complexity": "low for delivery; the flaw was used in the wild in targeted attacks before a patch existed",
+      "ai_factor": "None. Credited to human research teams at Qi'anxin Group and Google; no AI tooling is claimed."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Installing the April 2020 update for the running release (for example KB4550964, KB4550961, KB4549949, KB4549951 or KB4550922) and rebooting, and replacing Windows 8 and Windows Vista hosts, which received no update; before the update shipped, on Windows 8.1 and earlier, disabling ATMFD or renaming ATMFD.DLL followed by a system restart, which fully mitigates the flaw once the restart is done, or, to reduce exposure, disabling the WebClient service and disabling the Windows Explorer preview and details panes, which takes effect after all open instances of Windows Explorer are closed",
+        "was_this_required": true,
+        "framework_requiring_it": "AU-Essential-8-Patch",
+        "adequacy": "The update removes the flaw, but it did not exist during the targeted attacks. On Windows 8.1 and earlier, disabling ATMFD or renaming ATMFD.DLL fully mitigated the flaw in that period once the system had restarted, and neither change took effect before that restart, while disabling only the preview pane or WebClient left a document opened outside the preview pane able to reach the parser."
+      },
+      "detection": {
+        "what_would_have_worked": "Watching for crashes in atmfd.dll on Windows 8.1 and earlier or fontdrvhost.exe on Windows 10, for a low-privilege process such as a browser renderer loading a Type 1 multi-master font from memory through NtGdiAddRemoteFontToDC on Windows 8.1 and earlier, and for documents carrying embedded multi-master Type 1 fonts arriving by email or download",
+        "was_this_required": false,
+        "framework_requiring_it": "ISO-27001-2022-A.8.8",
+        "adequacy": "Crash telemetry catches unreliable exploitation attempts but a precise write may not crash; font-content inspection requires document parsing that most mail and endpoint tooling does not perform."
+      },
+      "response": {
+        "what_would_have_worked": "Isolating hosts that previewed or opened untrusted documents, or ran a browser reaching a watering-hole site, before patching, and applying the April 2020 update fleet-wide",
+        "was_this_required": false,
+        "framework_requiring_it": "NIST-800-53-SI-2",
+        "adequacy": "Response is constrained by the preview-pane vector, which can fire without a user opening the file, so triage must consider documents displayed in the Windows Explorer Preview or Details pane, not only those explicitly opened."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The flaw was exploited before Microsoft published any fix, and the update did not exist until 2020-04-14, so SI-2's install clock could not start against the primitive during the exposure."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "During the ADV200006 window the additional-measures clause governed, and while DisableATMFD or renaming ATMFD.DLL fully mitigated on Windows 8.1 and earlier once the system had restarted, the preview-pane and WebClient changes left the document-open path reachable."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A B4 posture keyed to advisory-dated patching had no update to apply before 2020-04-14, and its interim mitigations were full on pre-Windows-10 only through DisableATMFD or renaming ATMFD.DLL followed by a system restart, partial otherwise."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The window ran from the 2020-03-23 mitigation date, but the flaw was exploited before then, so the pre-mitigation period was open at every maturity level, and the out-of-support Windows 7, Server 2008 and 2008 R2, Windows 8 and Windows Vista fell under the replace-or-remove control."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Targeted exploitation came before 2020-03-23, when Microsoft first published information or any measure for this flaw, so A.8.8 had nothing to act on during that period."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-038",
+        "name": "MITIGATION-ACTIVE-PATCH-PENDING-VERDICT-CLASS",
+        "description": "A compliance verdict separates a deployed binary fix from an active configuration mitigation that carries residual risk, and does not record a mitigated-but-unpatched system as fully patched.",
+        "evidence": "For CVE-2020-0938 the ADV200006 workarounds differed in effect: on Windows 8.1 and earlier, disabling ATMFD or renaming ATMFD.DLL fully mitigated the flaw once the system had restarted, while disabling only the preview pane or WebClient left the document-open path reachable, so a verdict that recorded either posture as patched, or recorded a host as mitigated before its restart, lost that distinction until the April 2020 update.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "AU-Essential-8-Patch"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-025",
+        "name": "CONFIGURATION-SIDE-LIVE-PATCH-INVENTORY",
+        "description": "Any vulnerability that has a configuration-side mitigation is tracked with that mitigation inventoried and tested so it can be deployed on its own, separately from and ahead of the vendor binary update.",
+        "evidence": "CVE-2020-0938 had configuration-side mitigations, DisableATMFD or renaming ATMFD.DLL on Windows 8.1 and earlier, each followed by a system restart, and disabling the preview pane or WebClient, published as ADV200006 on 2020-03-23, three weeks before the update, so an organization should have had them inventoried and ready to deploy during the pre-patch window against a font flaw already under targeted attack.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management",
+          "UK-CAF-B4"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-1464": {
+    "name": "Microsoft Windows Spoofing Vulnerability",
+    "lesson_date": "2026-09-23",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": null,
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "Windows keeps the Authenticode signature of a file valid after content is appended past the signed structure. An attacker appends a malicious JAR to an MSI signed by a trusted publisher and renames it to .jar, so the file still reports a valid signature while javaw executes the appended code with the running user's privileges.",
+      "privileges_required": "none beyond convincing a user to run the signed-looking file; the abuse runs with that user's privileges",
+      "complexity": "low, reproducible from a documented copy-and-rename technique, though it needs a delivery and execution step",
+      "ai_factor": "Not AI-discovered; reported by a human researcher at VirusTotal, with no AI tooling claimed."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Applying the August 11, 2020 Windows update, and enforcing content provenance so a file whose size exceeds its signed length or an MSI renamed to .jar is blocked from executing regardless of an intact signature.",
+        "was_this_required": false,
+        "framework_requiring_it": "AU-Essential-8-Patch",
+        "adequacy": "The update removes the flaw, but for the two years before it shipped the only prevention was distrusting signature-only verdicts and blocking appended-content files, which the updated Sysinternals Sigcheck can flag."
+      },
+      "detection": {
+        "what_would_have_worked": "Alerting on files that carry a valid trusted signature yet have content appended beyond the signed structure, and on execution of a .jar that is byte-for-byte a signed MSI.",
+        "was_this_required": false,
+        "framework_requiring_it": "ISO-27001-2022-A.8.7",
+        "adequacy": "Reliable once anti-malware stops trusting signature validity alone, but absent wherever a signed file skips in-depth scanning."
+      },
+      "response": {
+        "what_would_have_worked": "Treating any endpoint that ran a signed-but-appended file before patching as suspect and inspecting it for the dropped Java payload.",
+        "was_this_required": false,
+        "framework_requiring_it": "NIST-800-53-SI-2",
+        "adequacy": "Applying the update stops new abuse but does not by itself find code that already executed under a trusted signature."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false
+      },
+      "NIS2-Art21-vulnerability-handling": {
+        "covered": true,
+        "adequate": false
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false
+      },
+      "ISO-27001-2022-A.8.7": {
+        "covered": true,
+        "adequate": false
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-120",
+        "name": "DOWNLOAD-PROVENANCE-ENFORCEMENT",
+        "description": "Enforce content provenance on internet-sourced files and block execution of provenance-stripped or appended-content files regardless of a valid-looking signature or reputation verdict.",
+        "evidence": "The GlueBall technique appends a malicious JAR to an MSI signed by a trusted publisher and renames it to .jar, so Windows reports a valid signature while javaw runs the appended code; blocking a file whose on-disk size exceeds its signed length, as the updated Sysinternals Sigcheck flags, stops execution regardless of the intact signature.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.7",
+          "UK-CAF-B4"
         ]
       }
     ]
