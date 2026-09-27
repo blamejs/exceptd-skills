@@ -65,7 +65,7 @@ const BUDGET = {
   // packet names ...", "the packet's own ...") instead of stating the fact and
   // its source. refresh --curate-batch refuses new ones; the budget comes down
   // as existing texts are rewritten.
-  "pipeline-wording": 2159
+  "pipeline-wording": 159
 };
 
 function main() {
