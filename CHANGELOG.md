@@ -2,7 +2,7 @@
 
 ## 0.21.5 — 2026-09-27
 
-The catalog holds 1,755 CVEs after three additions from CISA KEV, all SonicWall flaws that carry CISA's ransomware designation: CVE-2021-20021, an improper privilege management flaw in SonicWall Email Security, CVE-2021-20023, a path traversal in the same product, and CVE-2021-20016, a SQL injection in the SMA 100 series SSL VPN. None has a public exploit, and all three need a restart before the fix takes effect.
+The catalog holds 1,754 CVEs after two additions from CISA KEV, both SonicWall flaws that carry CISA's ransomware designation: CVE-2021-20021, an improper privilege management flaw in SonicWall Email Security, and CVE-2021-20016, a SQL injection in the SMA 100 series SSL VPN. Neither has a public exploit, and both need a restart before the fix takes effect.
 
 ## 0.21.4 — 2026-09-26
 

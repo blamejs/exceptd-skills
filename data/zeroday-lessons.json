@@ -17,7 +17,7 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "entry_count": 1755
+    "entry_count": 1754
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -145377,74 +145377,6 @@
         "gap_closes": [
           "NIS2-Art21-network-security",
           "UK-CAF-B2"
-        ]
-      }
-    ]
-  },
-  "CVE-2021-20023": {
-    "name": "SonicWall Email Security Path Traversal Vulnerability",
-    "lesson_date": "2026-09-26",
-    "ai_discovered_zeroday": false,
-    "ai_discovery_source": "human_researcher",
-    "ai_discovery_date": null,
-    "ai_assist_factor": "none",
-    "attack_vector": {
-      "description": "A post-authenticated request to the branding feature's /dload_apps resource carries a directory-traversal path parameter (such as path=..%2Fmulti_accounts.xml), which reads a file outside the \\data\\updates working directory. Because the Apache Tomcat process runs as NT AUTHORITY\\SYSTEM, any file on the host is readable, and in the observed chain the read pulled stored account details and Active Directory credentials.",
-      "privileges_required": "an authenticated administrative session; in the observed intrusion this was obtained first through CVE-2021-20021, which creates an administrator account without authentication",
-      "complexity": "low once a session exists; the request is a single crafted GET to /dload_apps",
-      "ai_factor": "None. Credited to Mandiant researchers; no AI tooling is claimed."
-    },
-    "defense_chain": {
-      "prevention": {
-        "what_would_have_worked": "Keeping the Email Security administrative web interface off the internet, and applying the 10.0.9.6173 (Windows) or 10.0.9.6177 (appliance) hotfix.",
-        "was_this_required": false,
-        "framework_requiring_it": "UK-CAF-B4",
-        "adequacy": "Not reaching the interface removes the file read; the hotfix removes the traversal. Neither undoes a compromise that already occurred through the chain, so both had to be paired with a post-incident review."
-      },
-      "detection": {
-        "what_would_have_worked": "Inspecting the Apache Tomcat logs and the webui.json application log for /dload_apps requests whose path parameter carries ..%2F traversal to files such as multi_accounts.xml, and, where webui.json has been cleared, reviewing the other log files and any virtual server snapshot created before the compromise.",
-        "was_this_required": false,
-        "framework_requiring_it": "ISO-27001-2022-A.8.8",
-        "adequacy": "Mandiant names these logs as places where evidence of malicious web requests may be found, but in the observed chain the actor cleared webui.json shortly after installing the web shell, so a missing /dload_apps entry there does not show the device was not exploited. Mandiant reconstructed the activity from additional log files and a previously created virtual server snapshot. The signal exists only where request-level logging is retained, which authentication-only logging misses."
-      },
-      "response": {
-        "what_would_have_worked": "Rebuilding the appliance and rotating the local and Active Directory credentials held in multi_accounts.xml and multi_ldap.xml after confirming exploitation.",
-        "was_this_required": false,
-        "framework_requiring_it": "UK-CAF-B4",
-        "adequacy": "Credential rotation is the load-bearing step because the file read exposed stored account material and Active Directory credentials; applying the hotfix restores the code but not the secrets."
-      }
-    },
-    "framework_coverage": {
-      "NIST-800-53-SI-2": {
-        "covered": true,
-        "adequate": false
-      },
-      "NIS2-Art21-patch-management": {
-        "covered": true,
-        "adequate": false
-      },
-      "UK-CAF-B4": {
-        "covered": true,
-        "adequate": false
-      },
-      "AU-Essential-8-Patch": {
-        "covered": true,
-        "adequate": false
-      },
-      "ISO-27001-2022-A.8.8": {
-        "covered": true,
-        "adequate": false
-      }
-    },
-    "new_control_requirements": [
-      {
-        "id": "NEW-CTRL-032",
-        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
-        "description": "After an internet-facing appliance is compromised through an actively exploited flaw, the response defaults to capturing its configuration, rebuilding the device and rotating every credential it held, not to patching the running system.",
-        "evidence": "In the intrusion Mandiant investigated, a SonicWall Email Security software install on Windows Server 2012, the actor used CVE-2021-20023 to read multi_accounts.xml and multi_ldap.xml as SYSTEM, used CVE-2021-20022 to write a BEHINDER web shell under the Tomcat webapps directory, and in post-exploitation dumped registry hives with reg save. Applying the 10.0.9.6173 (Windows) or 10.0.9.6177 (appliance) hotfix to a system already in that state leaves the harvested credentials usable.",
-        "gap_closes": [
-          "UK-CAF-B4",
-          "AU-Essential-8-Patch"
         ]
       }
     ]
