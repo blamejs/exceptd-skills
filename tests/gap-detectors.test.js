@@ -372,6 +372,9 @@ test("isTemplateRestartCredit: only the template forms of the claim are definite
     "The claim that the vendor patch requires a service restart or system reboot per the KEV requiredAction is unsupported.",
     "The control must not state: the vendor patch requires a service restart or system reboot per the KEV requiredAction.",
     "Do not write: the vendor patch typically requires a service restart or system reboot per the KEV requiredAction.",
+    "The vendor patch requires a service restart or system reboot per the KEV requiredAction, which is incorrect.",
+    "The vendor patch requires a service restart or system reboot per the KEV requiredAction, a claim that is unsupported.",
+    "\"The vendor patch requires a service restart or system reboot per the KEV requiredAction\", which is not what CISA says.",
     "Some operators assume the vendor patch requires a service restart or system reboot per the KEV requiredAction.",
     "The vendor patch requires a service restart or system reboot per the KEV requiredAction is an unsupported reading.",
   ]) assert.equal(D.isTemplateRestartCredit(s), false, s);
