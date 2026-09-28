@@ -144,10 +144,13 @@ test("logical-consistency: a lesson stating another KEV listing date fires, with
     "zeroday-lessons": { "CVE-2011-0609": { new_control_requirements: [
       { id: "NEW-CTRL-122", description: "put those on the interim clock against the 2025-10-20 KEV listing, and replace the rest" },
       { id: "NEW-CTRL-001", description: "CISA added the flaw to its Known Exploited Vulnerabilities catalog on 2021-01-01." },
+      { id: "NEW-CTRL-002", description: "It was kev-listed 2026-02-10 with a public PoC." },
+      { id: "NEW-CTRL-003", description: "Unlike CVE-2020-0002, this flaw was KEV-listed 2020-01-01." },
     ] } }
   });
   const f = D.logicalConsistencyFindings(cats).filter((x) => x.rule === "stated_kev_listing_date_matches_entry");
-  assert.deepEqual(f.map((x) => x.field), ["new_control_requirements[0].description", "new_control_requirements[1].description"]);
+  assert.deepEqual(f.map((x) => x.field), ["new_control_requirements[0].description", "new_control_requirements[1].description",
+    "new_control_requirements[2].description", "new_control_requirements[3].description"]);
   assert.equal(f[0].catalog, "zeroday-lessons");
   assert.match(f[0].reason, /2025-10-20.*2022-06-08/);
 });
@@ -161,6 +164,8 @@ test("logical-consistency: KEV listing dates that match, due dates, and a named 
       "KEV due date (2022-06-22) is the binding clock",
       "sibling CVE-2011-0611 was KEV-listed 2022-06-09 in the same batch",
       "CISA added CVE-2011-0611 to its Known Exploited Vulnerabilities catalog on 2022-06-09.",
+      "CVE-2011-0611, a sibling in the same bulletin, was KEV-listed 2022-06-09.",
+      "For sibling CVE-2011-0611, it was KEV-listed 2022-06-09.",
     ] } }
   });
   assert.deepEqual(D.kevListingDateFindings(cats), []);
@@ -406,8 +411,9 @@ test("hasPipelineWording matches curation-input citations and not network-packet
     "the packet ties this CWE-78 sink to the Metro server",
     "Priority follows the packet rather than the CVSS band",
     "not a claim the packet makes.",
-    "the Staging Sync Server upload path named in the packet is the surface",
     "a public exploit recorded in the packet",
+    "the CISA KEV short description in the packet names the classes",
+    "the earlier Secunia advisory listed in the packet is a third-party aggregation",
     "the packet is explicit that no user interaction is involved",
     "the packet has an authenticated, local attacker reading a credential file",
     "the fixed build plus reboot the packet requires",
@@ -494,6 +500,11 @@ test("hasPipelineWording matches curation-input citations and not network-packet
     "the packet's timing gap is too short",
     "the packet is clear of options",
     "the packet does not identify the sender",
+    "the protocol version named in the packet",
+    "the component named in the packet is parsed first",
+    "the options listed in the packet header are ignored",
+    "the exploit recorded in the packet capture replays the handshake",
+    "the SDP description carried in the packet body",
     "",
   ]) assert.equal(D.hasPipelineWording(s), false, s);
   assert.equal(D.hasPipelineWording(null), false);
@@ -892,7 +903,7 @@ test("shipped catalogs: extended-detector budgets (no silent regression on v0.13
     "schema-evolution": 0,
     "operator-action-sla": 0,     // no entries currently exceed the SLA window
     "unused-orphan": 1400,        // bulk-imported CWE / RFC orphans by design
-    "pipeline-wording": 324       // lesson and catalog texts citing the curation input; comes down as they are rewritten
+    "pipeline-wording": 323       // lesson and catalog texts citing the curation input; comes down as they are rewritten
   };
   const regressions = [];
   for (const [cls, count] of Object.entries(byClass)) {
