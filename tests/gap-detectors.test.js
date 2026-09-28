@@ -373,6 +373,8 @@ test("isTemplateRestartCredit: only the template forms of the claim are definite
     "The claim that the vendor patch requires a service restart or system reboot per the KEV requiredAction is unsupported.",
     "The control must not state: the vendor patch requires a service restart or system reboot per the KEV requiredAction.",
     "Do not write: the vendor patch typically requires a service restart or system reboot per the KEV requiredAction.",
+    "Do not write:\nthe vendor patch typically requires a service restart or system reboot per the KEV requiredAction.",
+    "Documentation does not say that\nthe vendor patch requires a service restart or system reboot per the KEV requiredAction.",
     "The vendor patch requires a service restart or system reboot per the KEV requiredAction, which is incorrect.",
     "Do not claim, without evidence, the vendor patch requires a service restart or system reboot per the KEV requiredAction.",
     "Reviewers should never, in any control text, write that the vendor patch requires a service restart or system reboot per the KEV requiredAction.",
