@@ -273,6 +273,7 @@ test("creditsRestartToKevAction matches a restart credited to the KEV required a
     "Apply mitigations per the KEV requiredAction, then schedule the reboot.",
     "The vendor patch typically requires a service restart or system reboot.",
     "Apply mitigations as required per the KEV requiredAction.",
+    "Apply mitigations as required per the KEV requiredAction, and then restart the service per vendor guidance.",
     "",
   ]) assert.equal(D.creditsRestartToKevAction(s), false, s);
   for (const re of D.KEV_ACTION_RESTART_CREDIT) assert.ok(!re.global && !re.sticky, String(re));
