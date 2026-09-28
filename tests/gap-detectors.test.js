@@ -220,7 +220,10 @@ test("kevListingDateFindings: definite is true only when the text assigns the da
       x: "CVE-2011-0609: KEV-listed 2025-11-12.",
       y: "CVE-2011-0609, the AVM2 flaw, was KEV-listed on 2025-11-13.",
       z: "CVE-2011-0609, like CVE-2011-0611, was KEV-listed on 2025-11-14.",
+      aa: "The KEV listing date for CVE-2011-0609 is 2025-11-15.",
+      ab: "CISA added variants of CVE-2011-0609 to KEV on 2025-11-16.",
     } } });
+  // ab: the id follows a preposition inside the verb's object, so the date is the variants' and not definite.
   // z: the appositive names another CVE, so the finding is a warning, not definite.
   // v and w name this entry earlier in the sentence, so they are warnings rather than skipped.
   // n: a singular verb binds to the nearest id (CVE-2011-0611), so the finding is not definite; this entry is
@@ -228,7 +231,7 @@ test("kevListingDateFindings: definite is true only when the text assigns the da
   // r: the id follows a preposition inside the sentence, so the finding is not definite.
   assert.deepEqual(f.map((x) => [x.field, x.definite]),
     [["a", true], ["b", false], ["c", false], ["d", false], ["e", true], ["f", true], ["g", true], ["h", true], ["i", true],
-      ["j", true], ["k", true], ["l", true], ["m", true], ["n", false], ["o", true], ["p", true], ["q", true], ["r", false], ["s", true], ["t", true], ["u", true], ["v", false], ["w", false], ["x", true], ["y", true], ["z", false]]);
+      ["j", true], ["k", true], ["l", true], ["m", true], ["n", false], ["o", true], ["p", true], ["q", true], ["r", false], ["s", true], ["t", true], ["u", true], ["v", false], ["w", false], ["x", true], ["y", true], ["z", false], ["aa", true], ["ab", false]]);
 });
 
 test("kevListingDateFindings: a date two patterns both match is one finding", () => {
