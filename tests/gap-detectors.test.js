@@ -138,6 +138,47 @@ test("logical-consistency: confirmed exploitation needs >= 2 verification_source
     "confirmed exploitation with < 2 sources must surface");
 });
 
+test("logical-consistency: a lesson stating another KEV listing date fires, with its field path", () => {
+  const cats = makeCatalogs({
+    "cve-catalog": { _meta: {}, "CVE-2011-0609": { cisa_kev: true, cisa_kev_date: "2022-06-08" } },
+    "zeroday-lessons": { "CVE-2011-0609": { new_control_requirements: [
+      { id: "NEW-CTRL-122", description: "put those on the interim clock against the 2025-10-20 KEV listing, and replace the rest" },
+      { id: "NEW-CTRL-001", description: "CISA added the flaw to its Known Exploited Vulnerabilities catalog on 2021-01-01." },
+    ] } }
+  });
+  const f = D.logicalConsistencyFindings(cats).filter((x) => x.rule === "stated_kev_listing_date_matches_entry");
+  assert.deepEqual(f.map((x) => x.field), ["new_control_requirements[0].description", "new_control_requirements[1].description"]);
+  assert.equal(f[0].catalog, "zeroday-lessons");
+  assert.match(f[0].reason, /2025-10-20.*2022-06-08/);
+});
+
+test("logical-consistency: KEV listing dates that match, due dates, and a named sibling's date do not fire", () => {
+  const cats = makeCatalogs({
+    "cve-catalog": { _meta: {}, "CVE-2011-0609": { cisa_kev: true, cisa_kev_date: "2022-06-08",
+      vector: "KEV-listed 2022-06-08 with confirmed exploitation." } },
+    "zeroday-lessons": { "CVE-2011-0609": { evidence: [
+      "the KEV clock that opened 2022-06-08 governs the fix",
+      "KEV due date (2022-06-22) is the binding clock",
+      "sibling CVE-2011-0611 was KEV-listed 2022-06-09 in the same batch",
+      "CISA added CVE-2011-0611 to its Known Exploited Vulnerabilities catalog on 2022-06-09.",
+    ] } }
+  });
+  assert.deepEqual(D.kevListingDateFindings(cats), []);
+});
+
+test("kevListingDateFindings: opts.entries supplies cisa_kev_date for a batch's lessons", () => {
+  const entries = { "CVE-2026-0001": { cisa_kev_date: "2026-03-01" } };
+  const f = D.kevListingDateFindings({ "zeroday-lessons": { "CVE-2026-0001": { t: "KEV-listed 2026-02-10 with a public PoC." } } }, { entries });
+  assert.equal(f.length, 1);
+  assert.equal(f[0].field, "t");
+});
+
+test("KEV_LISTING_DATE: every pattern is global and captures one date", () => {
+  for (const re of D.KEV_LISTING_DATE) {
+    assert.ok(re instanceof RegExp && re.global, `${re} must be a global RegExp for matchAll`);
+  }
+});
+
 // ---------- 4. cross-ref-completeness ----------
 
 test("cross-ref-completeness: CWE entry missing back-ref fires", () => {
@@ -354,6 +395,31 @@ test("hasPipelineWording matches curation-input citations and not network-packet
     "book the restart the packet's requiredAction implies",
     "the packet's nist-800-53-si-2 gap records the window",
     "the packet's live_patch_notes say a restart is needed",
+    "Packet records CWE-78, CVSS 9.8, RWEP 40",
+    "Packet attack vector: an attacker-controlled document",
+    "Packet affected: 'Zyxel ATP series firewalls'",
+    "Packet name: 'Fortinet Multiple Products Authentication Bypass'",
+    "Packet NIST-800-53-SI-2 gap: '30-day flaw-remediation SLA'",
+    "Packet CVE-2025-0282 \"Ivanti Connect Secure stack overflow\"",
+    "Packet names the affected product as 'Adobe Experience Manager Forms'",
+    "The packet places this CVE as the elevation step",
+    "the packet ties this CWE-78 sink to the Metro server",
+    "Priority follows the packet rather than the CVSS band",
+    "not a claim the packet makes.",
+    "the Staging Sync Server upload path named in the packet is the surface",
+    "a public exploit recorded in the packet",
+    "the packet is explicit that no user interaction is involved",
+    "the packet has an authenticated, local attacker reading a credential file",
+    "the fixed build plus reboot the packet requires",
+    "The packet identifies the affected component as the Agere Modem Driver",
+    "The packet's path ends in OS command execution",
+    "the packet's only stated access requirement is network access",
+    "the packet's boundary-protection gap records that the console is exposed",
+    "two packet details decide how the SLA is measured",
+    "The packet sets ai_discovered true for this entry.",
+    "The packet makes driver reachability the precondition",
+    "All from the packet for CVE-2024-43573:",
+    "Corroborating packet fields: patch_required_reboot false",
   ]) assert.equal(D.hasPipelineWording(s), true, s);
   // Every curation noun the possessive form accepts; a later narrowing must keep them.
   for (const noun of ["own", "vector", "stated", "attack vector", "attack path", "exploitation", "remediation",
@@ -389,6 +455,45 @@ test("hasPipelineWording matches curation-input citations and not network-packet
     "The packet's actual length is shorter than the advertised length.",
     "The packet's fragment_offset causes an out-of-bounds write.",
     "The packet's only option byte is ignored.",
+    "a device merely forwarding the packet is in scope",
+    "confirm the packet is dropped",
+    "segmentation bounds who can send the packet",
+    "the packet has a malformed length field",
+    "the packet sets the DF bit",
+    "the packet identifies the sender",
+    "the packet requires fragmentation",
+    "Packet records are written to the capture file.",
+    "the architecture diagram and nowhere in the packet path.",
+    "root on the packet engine means the signing keys",
+    "the packet's inter-frame gap is too short",
+    "the packet reaches the service before authentication",
+    "the packet carries no payload",
+    "the packet makes it through the firewall",
+    "the arriving packet names a class to instantiate",
+    "The length supplied in the packet is trusted without validation.",
+    "the value carried in the packet overflows the buffer",
+    "the size given in the packet is not checked",
+    "the file named in the packet is written to disk",
+    "the timestamp recorded in the packet is ignored",
+    "the DNS record in the packet is cached",
+    "the packet has the service type field set",
+    "the packet identifies the protocol version",
+    "a SYN packet establishes a connection",
+    "the packet establishes a session with the peer",
+    "the packet points to a buffer outside the ring",
+    "the packet attributes are parsed before authentication",
+    "the packet labels are swapped at each hop",
+    "this packet allows an attacker to reboot the device",
+    "this packet makes it past the filter",
+    "the packet places the payload at offset 12",
+    "the packet measures 1500 bytes",
+    "Packet gap between frames is enforced.",
+    "Packet attack vectors include flooding.",
+    "the packet's path is determined by routing",
+    "the packet's delivery path is multicast",
+    "the packet's timing gap is too short",
+    "the packet is clear of options",
+    "the packet does not identify the sender",
     "",
   ]) assert.equal(D.hasPipelineWording(s), false, s);
   assert.equal(D.hasPipelineWording(null), false);
@@ -787,7 +892,7 @@ test("shipped catalogs: extended-detector budgets (no silent regression on v0.13
     "schema-evolution": 0,
     "operator-action-sla": 0,     // no entries currently exceed the SLA window
     "unused-orphan": 1400,        // bulk-imported CWE / RFC orphans by design
-    "pipeline-wording": 159       // lesson and catalog texts citing the curation input; comes down as they are rewritten
+    "pipeline-wording": 324       // lesson and catalog texts citing the curation input; comes down as they are rewritten
   };
   const regressions = [];
   for (const [cls, count] of Object.entries(byClass)) {
