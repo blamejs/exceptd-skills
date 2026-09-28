@@ -271,6 +271,15 @@ test("creditsRestartToKevAction matches a restart credited to the KEV required a
     "The patch is out. Per CISA's KEV required action, restart the appliance after installing it.",
     "The KEV entry’s required action requires a reboot.",
     "The KEV entry's required action requires a reboot.",
+    "The vendor patch typically requires a service restart or system reboot per the KEV requiredAction, so a server that took the update without restarting still runs the vulnerable code.",
+    "The fix per the KEV requiredAction typically requires a service restart, so a unit that has not restarted is still exposed.",
+    "The KEV requiredAction requires a service restart but no system reboot.",
+    "No live patch exists, but the vendor patch requires a restart per the KEV requiredAction.",
+    "No reboot is needed, but a service restart is required per the KEV requiredAction.",
+    "There is no restart-free path and a reboot is required per the KEV requiredAction.",
+    "No system reboot is needed per the KEV requiredAction, but a service restart is needed per the KEV requiredAction.",
+    "No system reboot is needed and a service restart is required per the KEV requiredAction.",
+    "No reboot is needed because the KEV requiredAction requires a service restart.",
   ]) assert.equal(D.creditsRestartToKevAction(s), true, s);
   for (const s of [
     "Block internet traffic to affected products immediately (CISA required action), then upgrade and restart Confluence.",
@@ -291,6 +300,9 @@ test("creditsRestartToKevAction matches a restart credited to the KEV required a
     "The update applies without a restart per the KEV requiredAction.",
     "The KEV requiredAction requires no restart.",
     "Per the KEV requiredAction, no reboot is needed.",
+    "No service restart or system reboot is required per the KEV requiredAction.",
+    "Neither a restart nor a reboot is required per the KEV requiredAction.",
+    "No restart or reboot is needed, per the KEV required action.",
     "",
   ]) assert.equal(D.creditsRestartToKevAction(s), false, s);
   for (const re of D.KEV_ACTION_RESTART_CREDIT) assert.ok(!re.global && !re.sticky, String(re));
