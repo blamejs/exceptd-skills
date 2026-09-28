@@ -284,6 +284,9 @@ test("creditsRestartToKevAction matches a restart credited to the KEV required a
     "The service restart is mandated by CISA's KEV required action.",
     "Per the KEV requiredAction, restart is required.",
     "Per the KEV requiredAction, reboot is mandatory after the update.",
+    "Remediation: Per the KEV requiredAction, reboot the service.",
+    "Per the KEV requiredAction, restart is mandatory even if exploitation has not been observed.",
+    "Per the KEV requiredAction, reboot the host when the service does not respond.",
   ]) assert.equal(D.creditsRestartToKevAction(s), true, s);
   for (const s of [
     "Block internet traffic to affected products immediately (CISA required action), then upgrade and restart Confluence.",
@@ -311,6 +314,10 @@ test("creditsRestartToKevAction matches a restart credited to the KEV required a
     "Per the KEV requiredAction, reboots are not needed.",
     "Per the KEV requiredAction, restart isn't required.",
     "Per the KEV requiredAction, reboot does not apply.",
+    "Per the KEV requiredAction, restart may not be required.",
+    "Per the KEV requiredAction, a reboot might not be needed.",
+    "Per the KEV requiredAction, restart could no longer be required.",
+    "Per the KEV requiredAction, reboot shouldn't be necessary.",
     "A reboot isn't required by the KEV requiredAction.",
     "A service restart wasn’t mandated by CISA's KEV required action.",
     "A restart isn't required per the KEV requiredAction.",
@@ -323,13 +330,37 @@ test("creditsRestartToKevAction matches a restart credited to the KEV required a
   for (const re of D.KEV_ACTION_RESTART_CREDIT) assert.ok(!re.global && !re.sticky, String(re));
 });
 
+test("isTemplateRestartCredit: only the template forms of the claim are definite", () => {
+  for (const s of [
+    "The vendor patch typically requires a service restart or system reboot per the KEV requiredAction.",
+    "Vendor patch typically requires service restart or system reboot per the KEV requiredAction.",
+    "No live-patch tool is registered, and the vendor patch typically requires a service restart or system reboot, per the required action in CISA's KEV entry.",
+    "the vendor patch follows the KEV requiredAction (service restart or system reboot).",
+  ]) assert.equal(D.isTemplateRestartCredit(s), true, s);
+  // Accurate sentences an adversarial probe found the prose detector matching;
+  // none of them may stop a batch.
+  for (const s of [
+    "Nothing in the KEV requiredAction requires a reboot.",
+    "It is not true that the KEV requiredAction requires a reboot.",
+    "Apply the restart-free hotpatch per the KEV requiredAction.",
+    "Apply the hotpatch that avoids a reboot per the KEV requiredAction.",
+    "No additional restart is required per the KEV requiredAction.",
+    "Operators are not required to reboot per the KEV requiredAction.",
+    "Whether a restart is required per the KEV requiredAction depends on the vendor instructions it points to.",
+    "Per the KEV requiredAction, restart is neither required nor recommended.",
+    "Taking the fix means a service restart or reboot of the appliance per the KEV required action.",
+    "The vendor patch never requires a service restart or system reboot per the KEV requiredAction.",
+  ]) assert.equal(D.isTemplateRestartCredit(s), false, s);
+  for (const re of D.KEV_ACTION_RESTART_TEMPLATE) assert.ok(!re.global && !re.sticky, String(re));
+});
+
 test("kevActionRestartFindings: a finding per text, marked logical-consistency; drafts only with includeDrafts", () => {
   const loaded = { "cve-catalog": {
     "CVE-2026-0001": { live_patch_notes: "The vendor patch typically requires a service restart or system reboot per the KEV requiredAction." },
     "CVE-2026-0002": { _auto_imported: true, live_patch_notes: "Reboot per the KEV requiredAction." },
   } };
   const f = D.kevActionRestartFindings(loaded);
-  assert.deepEqual(f.map((x) => [x.id, x.field, x.rule]), [["CVE-2026-0001", "live_patch_notes", "restart_not_credited_to_kev_required_action"]]);
+  assert.deepEqual(f.map((x) => [x.id, x.field, x.rule, x.definite]), [["CVE-2026-0001", "live_patch_notes", "restart_not_credited_to_kev_required_action", true]]);
   assert.equal(D.kevActionRestartFindings(loaded, { includeDrafts: true }).length, 2);
 });
 
