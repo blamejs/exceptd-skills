@@ -256,6 +256,38 @@ test("kevListingDateFindings: a date-first sentence is attributed from the verb'
   for (const re of D.KEV_LISTING_DATE_FIRST) assert.ok(re.global, `${re} must be a global RegExp for matchAll`);
 });
 
+test("creditsRestartToKevAction matches a restart credited to the KEV required action and nothing else", () => {
+  for (const s of [
+    "The vendor patch typically requires a service restart or system reboot per the KEV requiredAction.",
+    "Remediation requires a service restart or system reboot, per the required action in CISA's KEV entry.",
+    "There is a vendor patch and a fix that per the KEV requiredAction typically requires a service restart.",
+    "Book the service restart or reboot the KEV requiredAction calls for inside the clock.",
+    "The remediation is the vendor update plus the restart the KEV requiredAction implies;",
+    "Completion is measured as the package plus the reboot that the vendor patch typically requires per the KEV requiredAction.",
+    "the vendor patch follows the KEV requiredAction (service restart or system reboot).",
+    "Taking the fix means a service restart or reboot of the appliance per the KEV required action.",
+  ]) assert.equal(D.creditsRestartToKevAction(s), true, s);
+  for (const s of [
+    "Block internet traffic to affected products immediately (CISA required action), then upgrade and restart Confluence.",
+    "A vendor fix is available, so the required action from the 2025-12-22 KEV listing is the vendor firmware update, and the update lands only across a device restart.",
+    "Apply mitigations per the KEV requiredAction, then schedule the reboot.",
+    "The vendor patch typically requires a service restart or system reboot.",
+    "Apply mitigations as required per the KEV requiredAction.",
+    "",
+  ]) assert.equal(D.creditsRestartToKevAction(s), false, s);
+  for (const re of D.KEV_ACTION_RESTART_CREDIT) assert.ok(!re.global && !re.sticky, String(re));
+});
+
+test("kevActionRestartFindings: a finding per text, marked logical-consistency; drafts only with includeDrafts", () => {
+  const loaded = { "cve-catalog": {
+    "CVE-2026-0001": { live_patch_notes: "The vendor patch typically requires a service restart or system reboot per the KEV requiredAction." },
+    "CVE-2026-0002": { _auto_imported: true, live_patch_notes: "Reboot per the KEV requiredAction." },
+  } };
+  const f = D.kevActionRestartFindings(loaded);
+  assert.deepEqual(f.map((x) => [x.id, x.field, x.rule]), [["CVE-2026-0001", "live_patch_notes", "restart_not_credited_to_kev_required_action"]]);
+  assert.equal(D.kevActionRestartFindings(loaded, { includeDrafts: true }).length, 2);
+});
+
 test("kevListingDateFindings: a date two patterns both match is one finding", () => {
   const f = D.kevListingDateFindings({ "cve-catalog": { X: { cisa_kev_date: "2022-06-08" } },
     "zeroday-lessons": { X: { t: "It was added to the KEV catalog on 2021-06-06." } } });
