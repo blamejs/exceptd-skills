@@ -349,6 +349,8 @@ test("isTemplateRestartCredit: only the template forms of the claim are definite
     "The vendor patch requires a service restart or system reboot per the KEV requiredAction even when downtime is not acceptable.",
     "The vendor patch typically requires a service restart or system reboot per CISA's KEV requiredAction.",
     "The vendor patch typically requires a service restart or system reboot per CISA’s KEV requiredAction.",
+    "Remediation: the vendor patch typically requires a service restart or system reboot per the KEV requiredAction.",
+    "Closure is the vendor update, and there is no live-patch tool: the vendor patch typically requires a service restart or system reboot per the KEV requiredAction.",
   ]) assert.equal(D.isTemplateRestartCredit(s), true, s);
   // Accurate sentences an adversarial probe found the prose detector matching;
   // none of them may stop a batch.
@@ -368,6 +370,8 @@ test("isTemplateRestartCredit: only the template forms of the claim are definite
     "Whether the patch requires a service restart or system reboot per the KEV requiredAction depends on the vendor.",
     "Saying the patch requires a service restart or system reboot per the KEV requiredAction is incorrect.",
     "The claim that the vendor patch requires a service restart or system reboot per the KEV requiredAction is unsupported.",
+    "The control must not state: the vendor patch requires a service restart or system reboot per the KEV requiredAction.",
+    "Do not write: the vendor patch typically requires a service restart or system reboot per the KEV requiredAction.",
     "Some operators assume the vendor patch requires a service restart or system reboot per the KEV requiredAction.",
     "The vendor patch requires a service restart or system reboot per the KEV requiredAction is an unsupported reading.",
   ]) assert.equal(D.isTemplateRestartCredit(s), false, s);
