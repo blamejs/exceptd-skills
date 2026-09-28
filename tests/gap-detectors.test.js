@@ -336,6 +336,11 @@ test("isTemplateRestartCredit: only the template forms of the claim are definite
     "Vendor patch typically requires service restart or system reboot per the KEV requiredAction.",
     "No live-patch tool is registered, and the vendor patch typically requires a service restart or system reboot, per the required action in CISA's KEV entry.",
     "the vendor patch follows the KEV requiredAction (service restart or system reboot).",
+    "A fixed release is available, and no live patch is available (the vendor patch typically requires a service restart or system reboot per the KEV required action).",
+    "There is a vendor patch, no live-patch path, and live_patch_notes stating the vendor patch typically requires a service restart or system reboot per the KEV requiredAction — so remediation is not complete until the restart.",
+    "No live patch is available because the vendor patch requires a service restart or system reboot per the KEV requiredAction.",
+    "Documentation does not say that the patch requires a service restart or system reboot per the KEV requiredAction, but the vendor confirms that the patch requires a service restart or system reboot per the KEV requiredAction.",
+    "The vendor patch requires a service restart or system reboot per the KEV requiredAction even when downtime is not acceptable.",
   ]) assert.equal(D.isTemplateRestartCredit(s), true, s);
   // Accurate sentences an adversarial probe found the prose detector matching;
   // none of them may stop a batch.
@@ -350,6 +355,10 @@ test("isTemplateRestartCredit: only the template forms of the claim are definite
     "Per the KEV requiredAction, restart is neither required nor recommended.",
     "Taking the fix means a service restart or reboot of the appliance per the KEV required action.",
     "The vendor patch never requires a service restart or system reboot per the KEV requiredAction.",
+    "Documentation does not say that the vendor patch requires a service restart or system reboot per the KEV requiredAction.",
+    "It is false that the patch requires a service restart or system reboot per the KEV requiredAction.",
+    "Whether the patch requires a service restart or system reboot per the KEV requiredAction depends on the vendor.",
+    "Saying the patch requires a service restart or system reboot per the KEV requiredAction is incorrect.",
   ]) assert.equal(D.isTemplateRestartCredit(s), false, s);
   for (const re of D.KEV_ACTION_RESTART_TEMPLATE) assert.ok(!re.global && !re.sticky, String(re));
 });
