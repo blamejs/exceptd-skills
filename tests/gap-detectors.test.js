@@ -280,6 +280,10 @@ test("creditsRestartToKevAction matches a restart credited to the KEV required a
     "No system reboot is needed per the KEV requiredAction, but a service restart is needed per the KEV requiredAction.",
     "No system reboot is needed and a service restart is required per the KEV requiredAction.",
     "No reboot is needed because the KEV requiredAction requires a service restart.",
+    "A system reboot is required by the KEV requiredAction.",
+    "The service restart is mandated by CISA's KEV required action.",
+    "Per the KEV requiredAction, restart is required.",
+    "Per the KEV requiredAction, reboot is mandatory after the update.",
   ]) assert.equal(D.creditsRestartToKevAction(s), true, s);
   for (const s of [
     "Block internet traffic to affected products immediately (CISA required action), then upgrade and restart Confluence.",
@@ -303,6 +307,17 @@ test("creditsRestartToKevAction matches a restart credited to the KEV required a
     "No service restart or system reboot is required per the KEV requiredAction.",
     "Neither a restart nor a reboot is required per the KEV requiredAction.",
     "No restart or reboot is needed, per the KEV required action.",
+    "Per the KEV requiredAction, restart is not required.",
+    "Per the KEV requiredAction, reboots are not needed.",
+    "Per the KEV requiredAction, restart isn't required.",
+    "Per the KEV requiredAction, reboot does not apply.",
+    "A reboot isn't required by the KEV requiredAction.",
+    "A service restart wasn’t mandated by CISA's KEV required action.",
+    "A restart isn't required per the KEV requiredAction.",
+    "A reboot cannot be required per the KEV requiredAction.",
+    "A reboot is not required by the KEV requiredAction.",
+    "No system reboot is required by the KEV requiredAction.",
+    "Apply mitigations as required by the KEV requiredAction, then restart the service.",
     "",
   ]) assert.equal(D.creditsRestartToKevAction(s), false, s);
   for (const re of D.KEV_ACTION_RESTART_CREDIT) assert.ok(!re.global && !re.sticky, String(re));
