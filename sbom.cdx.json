@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:bd392e3f-4352-4cc1-b8e2-7a3707e4eb18",
+  "serialNumber": "urn:uuid:0e43be9b-1e91-469f-98d8-5221db4ecba5",
   "version": 1,
   "metadata": {
     "timestamp": "2026-09-28T00:00:00.000Z",
@@ -29,7 +29,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "4d641c72b1c5a76d3d0843717881d580570f7793c90b66dee33d33c45b703895"
+          "content": "7521562cfc92d5283e345186aa06eacb6da381f7aefe58f57608e37133165b8a"
         }
       ],
       "externalReferences": [
@@ -124,11 +124,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "49d8e21998efb061ce5bbbe352249221291a8240db413b3fcf6e2e10694b4fbb"
+          "content": "258eac3803af6d0be86262b6d77654854bb370983ea323d3dac249062bab68ef"
         },
         {
           "alg": "SHA3-512",
-          "content": "04ba96eabec8a3e7c1afc5cea489658078c13bb61c0efddf543e5860ef1190dcada61b71f7d95ea02a21ece4e22a2726de802514da4be1d7b65cd3d9b3d3022e"
+          "content": "fb955b6e437229a6527466c7a42d788b01132a22e21330140e708e48abbec5b68a076d53ddcff47b47b3df35d1e84deb6e5bcaf4db82d906df618873a84f5f2c"
         }
       ]
     },
@@ -334,11 +334,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "27b423a605833d7c65a1bc6b103612602b95c2f78b0cdb9a48a8bc656a6ad2e9"
+          "content": "50f9854883cc3c9865759fc544d7460d987141e4cfe8b42dc73eccd0658e3244"
         },
         {
           "alg": "SHA3-512",
-          "content": "c789ab07fd33865e39e05256ae4dcc21321e9c05fae40b70cf6079949d6e1919cd00e4079d85c8c3817c2a37758da9f578aa293ef7984cf4e67bee96bc3cffdc"
+          "content": "3b36163d124e2357fe93d71b4e5719d2c6e7d99407c6aa149af301408cb483d205119de7c35b9606bbb482372d00f843d28a780edfb4a68083f4b62aac334888"
         }
       ]
     },
@@ -1954,11 +1954,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "9574bcf9df8434bd8949f335ec78a1d91562492ccbd3c8355995577da301954c"
+          "content": "0b9e0b95a1332e293c7a4b91aa4b9db34db6c1fa87b075b54030550c13909ec4"
         },
         {
           "alg": "SHA3-512",
-          "content": "97103d100dafe524707d2aed302cc51380c5d31554d1c4e44b9747c33b4958303a1844908b396470c8eb85a5b508b20651c4c5d027065b41d60d1590c638bdd5"
+          "content": "798f8c699c176d310cc41cc6e87d898a87e26452905bee78fb175e118880809a44e12cd9ebaf833fd13aaa549d8127e0dccb43c88cc7edb84a90a4237e83b63b"
         }
       ]
     },
