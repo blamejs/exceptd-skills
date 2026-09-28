@@ -152,10 +152,12 @@ test("logical-consistency: a lesson stating another KEV listing date fires, with
       { id: "NEW-CTRL-007", description: "CISA said \"CVE-2020-0002 is unrelated.\" KEV-listed 2021-05-05." },
       { id: "NEW-CTRL-008", description: "It was added to the KEV catalog on 2021-06-06." },
       { id: "NEW-CTRL-009", description: "The flaw entered CISA's KEV catalog on 2021-07-07." },
+      { id: "NEW-CTRL-010", description: "CISA KEV-listed the flaw on 2026-02-10." },
+      { id: "NEW-CTRL-011", description: "CISA listed the CVE in its KEV catalog on 2026-02-11." },
     ] } }
   });
   const f = D.logicalConsistencyFindings(cats).filter((x) => x.rule === "stated_kev_listing_date_matches_entry");
-  assert.deepEqual(f.map((x) => x.field), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => `new_control_requirements[${i}].description`));
+  assert.deepEqual(f.map((x) => x.field), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((i) => `new_control_requirements[${i}].description`));
   assert.equal(f[0].catalog, "zeroday-lessons");
   assert.match(f[0].reason, /2025-10-20.*2022-06-08/);
 });
