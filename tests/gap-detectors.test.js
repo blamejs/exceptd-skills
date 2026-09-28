@@ -218,14 +218,17 @@ test("kevListingDateFindings: definite is true only when the text assigns the da
       v: "CVE-2011-0609, together with CVE-2011-0611, were added to KEV on 2025-11-10.",
       w: "CVE-2011-0609 is a variant of CVE-2011-0611, which was KEV-listed on 2025-11-11.",
       x: "CVE-2011-0609: KEV-listed 2025-11-12.",
+      y: "CVE-2011-0609, the AVM2 flaw, was KEV-listed on 2025-11-13.",
+      z: "CVE-2011-0609, like CVE-2011-0611, was KEV-listed on 2025-11-14.",
     } } });
+  // z: the appositive names another CVE, so the finding is a warning, not definite.
   // v and w name this entry earlier in the sentence, so they are warnings rather than skipped.
   // n: a singular verb binds to the nearest id (CVE-2011-0611), so the finding is not definite; this entry is
   // named earlier in the sentence, so it is a warning rather than skipped.
   // r: the id follows a preposition inside the sentence, so the finding is not definite.
   assert.deepEqual(f.map((x) => [x.field, x.definite]),
     [["a", true], ["b", false], ["c", false], ["d", false], ["e", true], ["f", true], ["g", true], ["h", true], ["i", true],
-      ["j", true], ["k", true], ["l", true], ["m", true], ["n", false], ["o", true], ["p", true], ["q", true], ["r", false], ["s", true], ["t", true], ["u", true], ["v", false], ["w", false], ["x", true]]);
+      ["j", true], ["k", true], ["l", true], ["m", true], ["n", false], ["o", true], ["p", true], ["q", true], ["r", false], ["s", true], ["t", true], ["u", true], ["v", false], ["w", false], ["x", true], ["y", true], ["z", false]]);
 });
 
 test("kevListingDateFindings: a date two patterns both match is one finding", () => {
@@ -625,6 +628,8 @@ test("hasPipelineFieldCitation matches a catalog field cited after packet and no
     "Packet fields - patch_available true",
     "Packet fields: vector, cisa_kev true",
     "Packet fields for this CVE: affected, patch_available true",
+    "Packet fields: cvss 9.8, cisa_kev true",
+    "Packet fields: version 4; cisa_kev true",
   ]) assert.equal(D.hasPipelineFieldCitation(s), true, s);
   for (const s of [
     "The IDS logged the drop (packet: 1514 bytes, TCP port 445).",
@@ -637,6 +642,7 @@ test("hasPipelineFieldCitation matches a catalog field cited after packet and no
     "Packet fields for CVE-2025-0108: IP version, header length, and fragment offset",
     "Corroborating packet fields from the capture show a zero-length option",
     "Packet fields: version, IHL. The patch_available flag is set.",
+    "The malformed packet: TCP port 445. The patch_available flag is true.",
     "",
   ]) assert.equal(D.hasPipelineFieldCitation(s), false, s);
   assert.ok(D.PACKET_FIELD_TOKEN.global, "matchAll needs a global pattern");
