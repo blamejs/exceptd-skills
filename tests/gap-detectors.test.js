@@ -203,9 +203,16 @@ test("kevListingDateFindings: definite is true only when the text assigns the da
       g: "CVE-2011-0609 (the Flash AVM2 flaw) was added to KEV on 2025-10-26.",
       h: "CISA KEV-listed CVE-2011-0609 on 2025-10-27.",
       i: "CVE-2011-0609 entered KEV on 2025-10-28.",
+      j: "cve-2011-0609 was KEV-listed on 2025-10-29.",
+      k: "CISA added CVE-2011-0609 and CVE-2011-0611 to KEV on 2025-10-30.",
+      l: "CVE-2011-0609, which was KEV-listed on 2025-10-31, affects Flash.",
+      m: "CVE-2011-0611 and CVE-2011-0609 were added to KEV on 2025-11-01.",
+      n: "The bulletin covers CVE-2011-0609 and CVE-2011-0611, which was KEV-listed on 2025-11-02.",
     } } });
+  // n: a singular verb binds to the nearest id (CVE-2011-0611), so the date is the sibling's and not a finding.
   assert.deepEqual(f.map((x) => [x.field, x.definite]),
-    [["a", true], ["b", false], ["c", false], ["d", false], ["e", true], ["f", true], ["g", true], ["h", true], ["i", true]]);
+    [["a", true], ["b", false], ["c", false], ["d", false], ["e", true], ["f", true], ["g", true], ["h", true], ["i", true],
+      ["j", true], ["k", true], ["l", true], ["m", true]]);
 });
 
 test("kevListingDateFindings: a date two patterns both match is one finding", () => {
