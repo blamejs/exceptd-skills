@@ -315,6 +315,8 @@ test("creditsRestartToKevAction matches a restart credited to the KEV required a
     "Neither a restart nor a reboot is required per the KEV requiredAction.",
     "No restart or reboot is needed, per the KEV required action.",
     "Per the KEV requiredAction, restart is not required.",
+    "The vendor patch does not require a service restart or system reboot per the KEV requiredAction.",
+    "The update does not need a reboot per the KEV requiredAction.",
     "Per the KEV requiredAction, reboots are not needed.",
     "Per the KEV requiredAction, restart isn't required.",
     "Per the KEV requiredAction, reboot does not apply.",
