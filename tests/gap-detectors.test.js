@@ -191,6 +191,23 @@ test("logical-consistency: KEV listing dates that match, due dates, and a named 
   assert.deepEqual(D.kevListingDateFindings(cats), []);
 });
 
+test("kevListingDateFindings: definite is true only when the text assigns the date to the entry's own id", () => {
+  const f = D.kevListingDateFindings({ "cve-catalog": { "CVE-2011-0609": { cisa_kev_date: "2022-06-08" } },
+    "zeroday-lessons": { "CVE-2011-0609": {
+      a: "CVE-2011-0609 was KEV-listed 2025-10-20.",
+      b: "It was KEV-listed 2025-10-21.",
+      c: "Unlike CVE-2011-0611, this flaw was KEV-listed 2025-10-22.",
+      d: "The predecessor of CVE-2011-0609 was KEV-listed on 2025-10-23.",
+      e: "CISA added CVE-2011-0609 to KEV on 2025-10-24.",
+      f: "CVE-2011-0609's KEV listing date is 2025-10-25.",
+      g: "CVE-2011-0609 (the Flash AVM2 flaw) was added to KEV on 2025-10-26.",
+      h: "CISA KEV-listed CVE-2011-0609 on 2025-10-27.",
+      i: "CVE-2011-0609 entered KEV on 2025-10-28.",
+    } } });
+  assert.deepEqual(f.map((x) => [x.field, x.definite]),
+    [["a", true], ["b", false], ["c", false], ["d", false], ["e", true], ["f", true], ["g", true], ["h", true], ["i", true]]);
+});
+
 test("kevListingDateFindings: a date two patterns both match is one finding", () => {
   const f = D.kevListingDateFindings({ "cve-catalog": { X: { cisa_kev_date: "2022-06-08" } },
     "zeroday-lessons": { X: { t: "It was added to the KEV catalog on 2021-06-06." } } });
@@ -576,6 +593,8 @@ test("hasPipelineFieldCitation matches a catalog field cited after packet and no
     "packet: patch_available true, live_patch_available false",
     "the packet’s live_patch_notes record a restart",
     "Corroborating packet fields: patch_required_reboot false",
+    "Packet fields: cisa_kev true, active_exploitation confirmed",
+    "Packet field: cvss_score 9.8",
   ]) assert.equal(D.hasPipelineFieldCitation(s), true, s);
   for (const s of [
     "The IDS logged the drop (packet: 1514 bytes, TCP port 445).",
