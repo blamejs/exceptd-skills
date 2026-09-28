@@ -208,11 +208,12 @@ test("kevListingDateFindings: definite is true only when the text assigns the da
       l: "CVE-2011-0609, which was KEV-listed on 2025-10-31, affects Flash.",
       m: "CVE-2011-0611 and CVE-2011-0609 were added to KEV on 2025-11-01.",
       n: "The bulletin covers CVE-2011-0609 and CVE-2011-0611, which was KEV-listed on 2025-11-02.",
+      o: "CISA added CVE-2011-0609/CVE-2011-0611 to KEV on 2025-11-03.",
     } } });
   // n: a singular verb binds to the nearest id (CVE-2011-0611), so the date is the sibling's and not a finding.
   assert.deepEqual(f.map((x) => [x.field, x.definite]),
     [["a", true], ["b", false], ["c", false], ["d", false], ["e", true], ["f", true], ["g", true], ["h", true], ["i", true],
-      ["j", true], ["k", true], ["l", true], ["m", true]]);
+      ["j", true], ["k", true], ["l", true], ["m", true], ["o", true]]);
 });
 
 test("kevListingDateFindings: a date two patterns both match is one finding", () => {
@@ -602,6 +603,9 @@ test("hasPipelineFieldCitation matches a catalog field cited after packet and no
     "Corroborating packet fields: patch_required_reboot false",
     "Packet fields: cisa_kev true, active_exploitation confirmed",
     "Packet field: cvss_score 9.8",
+    "Packet fields: source_verified 2026-09-01",
+    "the packet's remediation_status is patched",
+    "packet: _auto_imported true",
   ]) assert.equal(D.hasPipelineFieldCitation(s), true, s);
   for (const s of [
     "The IDS logged the drop (packet: 1514 bytes, TCP port 445).",
