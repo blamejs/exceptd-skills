@@ -222,6 +222,7 @@ test("kevListingDateFindings: definite is true only when the text assigns the da
       z: "CVE-2011-0609, like CVE-2011-0611, was KEV-listed on 2025-11-14.",
       aa: "The KEV listing date for CVE-2011-0609 is 2025-11-15.",
       ab: "CISA added variants of CVE-2011-0609 to KEV on 2025-11-16.",
+      ac: "CISA added CVE-2011-0611, CVE-2011-0612 and CVE-2011-0609 to KEV on 2025-11-17.",
     } } });
   // ab: the id follows a preposition inside the verb's object, so the date is the variants' and not definite.
   // z: the appositive names another CVE, so the finding is a warning, not definite.
@@ -231,7 +232,7 @@ test("kevListingDateFindings: definite is true only when the text assigns the da
   // r: the id follows a preposition inside the sentence, so the finding is not definite.
   assert.deepEqual(f.map((x) => [x.field, x.definite]),
     [["a", true], ["b", false], ["c", false], ["d", false], ["e", true], ["f", true], ["g", true], ["h", true], ["i", true],
-      ["j", true], ["k", true], ["l", true], ["m", true], ["n", false], ["o", true], ["p", true], ["q", true], ["r", false], ["s", true], ["t", true], ["u", true], ["v", false], ["w", false], ["x", true], ["y", true], ["z", false], ["aa", true], ["ab", false]]);
+      ["j", true], ["k", true], ["l", true], ["m", true], ["n", false], ["o", true], ["p", true], ["q", true], ["r", false], ["s", true], ["t", true], ["u", true], ["v", false], ["w", false], ["x", true], ["y", true], ["z", false], ["aa", true], ["ab", false], ["ac", true]]);
 });
 
 test("kevListingDateFindings: a date-first sentence is attributed from the verb's object", () => {
@@ -243,9 +244,10 @@ test("kevListingDateFindings: a date-first sentence is attributed from the verb'
       d: "On 2026-02-13, CISA added variants of CVE-2011-0609 to KEV.",
       e: "On 2026-02-14, CISA added variants of CVE-2011-0611 and CVE-2011-0609 to KEV.",
       g: "On 2026-02-15, CISA added CVE-2011-0611 and CVE-2011-0609 to KEV.",
+      h: "On 2026-02-16, CISA added CVE-2011-0609 & CVE-2011-0611 to KEV.",
     } } });
   // b names only a sibling, so it is not a finding.
-  assert.deepEqual(f.map((x) => [x.field, x.definite]), [["a", true], ["c", false], ["d", false], ["e", false], ["g", true]]);
+  assert.deepEqual(f.map((x) => [x.field, x.definite]), [["a", true], ["c", false], ["d", false], ["e", false], ["g", true], ["h", true]]);
   for (const re of D.KEV_LISTING_DATE_FIRST) assert.ok(re.global, `${re} must be a global RegExp for matchAll`);
 });
 
