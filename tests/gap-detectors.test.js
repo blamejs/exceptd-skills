@@ -234,6 +234,21 @@ test("kevListingDateFindings: definite is true only when the text assigns the da
       ["j", true], ["k", true], ["l", true], ["m", true], ["n", false], ["o", true], ["p", true], ["q", true], ["r", false], ["s", true], ["t", true], ["u", true], ["v", false], ["w", false], ["x", true], ["y", true], ["z", false], ["aa", true], ["ab", false]]);
 });
 
+test("kevListingDateFindings: a date-first sentence is attributed from the verb's object", () => {
+  const f = D.kevListingDateFindings({ "cve-catalog": { "CVE-2011-0609": { cisa_kev_date: "2022-06-08" } },
+    "zeroday-lessons": { "CVE-2011-0609": {
+      a: "On 2026-02-10, CISA added CVE-2011-0609 to KEV.",
+      b: "On 2026-02-11, CISA added CVE-2011-0611 to KEV.",
+      c: "On 2026-02-12, CISA added it to its KEV catalog.",
+      d: "On 2026-02-13, CISA added variants of CVE-2011-0609 to KEV.",
+      e: "On 2026-02-14, CISA added variants of CVE-2011-0611 and CVE-2011-0609 to KEV.",
+      g: "On 2026-02-15, CISA added CVE-2011-0611 and CVE-2011-0609 to KEV.",
+    } } });
+  // b names only a sibling, so it is not a finding.
+  assert.deepEqual(f.map((x) => [x.field, x.definite]), [["a", true], ["c", false], ["d", false], ["e", false], ["g", true]]);
+  for (const re of D.KEV_LISTING_DATE_FIRST) assert.ok(re.global, `${re} must be a global RegExp for matchAll`);
+});
+
 test("kevListingDateFindings: a date two patterns both match is one finding", () => {
   const f = D.kevListingDateFindings({ "cve-catalog": { X: { cisa_kev_date: "2022-06-08" } },
     "zeroday-lessons": { X: { t: "It was added to the KEV catalog on 2021-06-06." } } });
