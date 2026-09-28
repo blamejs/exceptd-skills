@@ -298,7 +298,15 @@ function main() {
         : [])
     : extendedFindings;
 
+  // Every extended class the run covers is listed, so a class with no
+  // findings reports 0 rather than being absent from the totals.
   const extendedByClass = {};
+  if (!opts.catalog) {
+    const covered = opts.klass
+      ? (EXTENDED_CLASS_NAMES.has(opts.klass) ? [opts.klass] : [])
+      : [...EXTENDED_CLASS_NAMES];
+    for (const cls of covered) extendedByClass[cls] = [];
+  }
   for (const f of filteredExtended) {
     if (!extendedByClass[f.class]) extendedByClass[f.class] = [];
     extendedByClass[f.class].push(f);

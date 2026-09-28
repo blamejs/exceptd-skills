@@ -1235,7 +1235,7 @@ test("shipped catalogs: extended-detector budgets (no silent regression on v0.13
     "schema-evolution": 0,
     "operator-action-sla": 0,     // no entries currently exceed the SLA window
     "unused-orphan": 1400,        // bulk-imported CWE / RFC orphans by design
-    "pipeline-wording": 326       // lesson and catalog texts citing the curation input; comes down as they are rewritten
+    "pipeline-wording": 0         // lesson and catalog texts citing the curation input; none remain
   };
   const regressions = [];
   for (const [cls, count] of Object.entries(byClass)) {

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.21.11 — 2026-09-28
+
+446 zero-day lesson texts and 7 catalog fields on 341 CVEs no longer cite the curation input. Evidence and control texts that read "Packet records cisa_kev true with kev_date 2025-10-02, poc_available true" or "the packet places the defect in ..." now state each fact in a sentence and name its source where there is one: CISA's KEV entry, the vendor advisory, or a framework gap recorded for the entry. Every quotation attributed to CISA's KEV entry matches the KEV record. The catalog gap audit's `pipeline-wording` class now reports no texts, and the predeploy budget gate holds it at 0.
+
+The discovery note on CVE-2017-17562 said the KEV entry lists no vendor. The KEV entry names Embedthis as the vendor and links no vendor advisory, and the note now says so.
+
+`scripts/audit-catalog-gaps.js` now lists every extended class it covers under `totals.extended` and `extended_findings`, with a count of 0 for a class that has no findings. It used to leave such a class out, so `--class pipeline-wording` returned no count at all once the class reached 0.
+
 ## 0.21.10 — 2026-09-28
 
 626 catalog and zero-day lesson texts on 240 CVEs no longer say that CISA's KEV required action calls for a restart or reboot. CISA's required action for these CVEs says to apply mitigations per vendor instructions, follow BOD 22-01 guidance for cloud services, or discontinue use of the product. Every one of these entries records `patch_required_reboot: true`, so each text keeps the restart and drops only the attribution: "the vendor patch typically requires a service restart or system reboot per the KEV requiredAction" now ends at "system reboot". 239 of the texts are `live_patch_notes` fields in the catalog.
