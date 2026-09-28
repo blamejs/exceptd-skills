@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.21.10 — 2026-09-28
+
+626 catalog and zero-day lesson texts on 240 CVEs no longer say that CISA's KEV required action calls for a restart or reboot. CISA's required action for these CVEs says to apply mitigations per vendor instructions, follow BOD 22-01 guidance for cloud services, or discontinue use of the product. Every one of these entries records `patch_required_reboot: true`, so each text keeps the restart and drops only the attribution: "the vendor patch typically requires a service restart or system reboot per the KEV requiredAction" now ends at "system reboot". 239 of the texts are `live_patch_notes` fields in the catalog.
+
+The catalog gap audit's `logical-consistency` class now reports a text that credits a restart or reboot to the KEV required action, and `exceptd refresh --curate-batch` refuses to apply a batch whose new entry or lesson uses the form these texts shared, "requires a service restart or system reboot per the KEV requiredAction", and lists any other phrasing the check matches under `warnings`. An accurate reference to the required action, such as "apply mitigations per the KEV requiredAction", does not match, and neither does a negated restart, such as "no service restart or system reboot is required per the KEV requiredAction".
+
 ## 0.21.9 — 2026-09-27
 
 159 more zero-day lesson texts that cited the curation input instead of a source now state the fact directly. The `pipeline-wording` class in the catalog gap audit now also recognizes labels such as "Packet records ...", "Packet attack vector: ..." and "Packet NIST-800-53-SI-2 gap: ...", and phrases such as "the packet places ...", "a public exploit recorded in the packet", "Priority follows the packet rather than ..." and "the packet's boundary-protection gap". The class reports 326 texts, and the predeploy budget gate now holds it at 326. Network wording such as "a device forwarding the packet", "the length supplied in the packet", "the protocol version named in the packet", "the options listed in the packet header" or "the packet's inter-frame gap" does not match.

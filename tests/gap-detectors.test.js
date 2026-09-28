@@ -256,6 +256,147 @@ test("kevListingDateFindings: a date-first sentence is attributed from the verb'
   for (const re of D.KEV_LISTING_DATE_FIRST) assert.ok(re.global, `${re} must be a global RegExp for matchAll`);
 });
 
+test("creditsRestartToKevAction matches a restart credited to the KEV required action and nothing else", () => {
+  for (const s of [
+    "The vendor patch typically requires a service restart or system reboot per the KEV requiredAction.",
+    "Remediation requires a service restart or system reboot, per the required action in CISA's KEV entry.",
+    "There is a vendor patch and a fix that per the KEV requiredAction typically requires a service restart.",
+    "Book the service restart or reboot the KEV requiredAction calls for inside the clock.",
+    "The remediation is the vendor update plus the restart the KEV requiredAction implies;",
+    "Completion is measured as the package plus the reboot that the vendor patch typically requires per the KEV requiredAction.",
+    "the vendor patch follows the KEV requiredAction (service restart or system reboot).",
+    "Taking the fix means a service restart or reboot of the appliance per the KEV required action.",
+    "The KEV requiredAction requires a system reboot.",
+    "Per the KEV requiredAction, reboot the service.",
+    "The patch is out. Per CISA's KEV required action, restart the appliance after installing it.",
+    "The KEV entry’s required action requires a reboot.",
+    "The KEV entry's required action requires a reboot.",
+    "The vendor patch typically requires a service restart or system reboot per the KEV requiredAction, so a server that took the update without restarting still runs the vulnerable code.",
+    "The fix per the KEV requiredAction typically requires a service restart, so a unit that has not restarted is still exposed.",
+    "The KEV requiredAction requires a service restart but no system reboot.",
+    "No live patch exists, but the vendor patch requires a restart per the KEV requiredAction.",
+    "No reboot is needed, but a service restart is required per the KEV requiredAction.",
+    "There is no restart-free path and a reboot is required per the KEV requiredAction.",
+    "No system reboot is needed per the KEV requiredAction, but a service restart is needed per the KEV requiredAction.",
+    "No system reboot is needed and a service restart is required per the KEV requiredAction.",
+    "No reboot is needed because the KEV requiredAction requires a service restart.",
+    "A system reboot is required by the KEV requiredAction.",
+    "The service restart is mandated by CISA's KEV required action.",
+    "Per the KEV requiredAction, restart is required.",
+    "Per the KEV requiredAction, reboot is mandatory after the update.",
+    "Remediation: Per the KEV requiredAction, reboot the service.",
+    "CISA's KEV requiredAction requires a reboot.",
+    "Per CISA's KEV requiredAction, restart the appliance.",
+    "Per the KEV requiredAction, a system reboot is required.",
+    "Per the KEV requiredAction, the service restart comes after the update.",
+    "Per the KEV requiredAction, restart is mandatory even if exploitation has not been observed.",
+    "Per the KEV requiredAction, reboot the host when the service does not respond.",
+  ]) assert.equal(D.creditsRestartToKevAction(s), true, s);
+  for (const s of [
+    "Block internet traffic to affected products immediately (CISA required action), then upgrade and restart Confluence.",
+    "A vendor fix is available, so the required action from the 2025-12-22 KEV listing is the vendor firmware update, and the update lands only across a device restart.",
+    "Apply mitigations per the KEV requiredAction, then schedule the reboot.",
+    "The vendor patch typically requires a service restart or system reboot.",
+    "Apply mitigations as required per the KEV requiredAction.",
+    "Apply mitigations as required per the KEV requiredAction, and then restart the service per vendor guidance.",
+    "Apply the patch per the KEV requiredAction, then reboot the host.",
+    "The KEV requiredAction requires applying the vendor patch; the patch itself needs a reboot.",
+    "Per the KEV requiredAction, apply the update and then restart the service.",
+    "Restart, then patch per the KEV requiredAction.",
+    "Restart then patch per the KEV requiredAction.",
+    "Restart the host and apply updates as required per the KEV requiredAction.",
+    "Reboot once the patch is applied per the KEV requiredAction.",
+    "A service restart is not required per the KEV required action.",
+    "A reboot is never required per the KEV requiredAction.",
+    "The update applies without a restart per the KEV requiredAction.",
+    "The KEV requiredAction requires no restart.",
+    "Per the KEV requiredAction, no reboot is needed.",
+    "No service restart or system reboot is required per the KEV requiredAction.",
+    "Neither a restart nor a reboot is required per the KEV requiredAction.",
+    "No restart or reboot is needed, per the KEV required action.",
+    "Per the KEV requiredAction, restart is not required.",
+    "The vendor patch does not require a service restart or system reboot per the KEV requiredAction.",
+    "The update does not need a reboot per the KEV requiredAction.",
+    "Per the KEV requiredAction, reboots are not needed.",
+    "Per the KEV requiredAction, restart isn't required.",
+    "Per the KEV requiredAction, reboot does not apply.",
+    "Per the KEV requiredAction, restart may not be required.",
+    "Per the KEV requiredAction, a reboot might not be needed.",
+    "Per the KEV requiredAction, restart could no longer be required.",
+    "Per the KEV requiredAction, reboot shouldn't be necessary.",
+    "A reboot isn't required by the KEV requiredAction.",
+    "A service restart wasn’t mandated by CISA's KEV required action.",
+    "A restart isn't required per the KEV requiredAction.",
+    "A reboot cannot be required per the KEV requiredAction.",
+    "A reboot is not required by the KEV requiredAction.",
+    "No system reboot is required by the KEV requiredAction.",
+    "Apply mitigations as required by the KEV requiredAction, then restart the service.",
+    "",
+  ]) assert.equal(D.creditsRestartToKevAction(s), false, s);
+  for (const re of D.KEV_ACTION_RESTART_CREDIT) assert.ok(!re.global && !re.sticky, String(re));
+});
+
+test("isTemplateRestartCredit: only the template forms of the claim are definite", () => {
+  for (const s of [
+    "The vendor patch typically requires a service restart or system reboot per the KEV requiredAction.",
+    "Vendor patch typically requires service restart or system reboot per the KEV requiredAction.",
+    "No live-patch tool is registered, and the vendor patch typically requires a service restart or system reboot, per the required action in CISA's KEV entry.",
+    "the vendor patch follows the KEV requiredAction (service restart or system reboot).",
+    "A fixed release is available, and no live patch is available (the vendor patch typically requires a service restart or system reboot per the KEV required action).",
+    "There is a vendor patch, no live-patch path, and live_patch_notes stating the vendor patch typically requires a service restart or system reboot per the KEV requiredAction — so remediation is not complete until the restart.",
+    "No live patch is available because the vendor patch requires a service restart or system reboot per the KEV requiredAction.",
+    "It is not the case that the patch requires a service restart or system reboot per the KEV requiredAction, but the vendor patch requires a service restart or system reboot per the KEV requiredAction.",
+    "Live patches do not exist, and the vendor patch requires a service restart or system reboot per the KEV requiredAction.",
+    "The vendor patch requires a service restart or system reboot per the KEV requiredAction even when downtime is not acceptable.",
+    "The vendor patch typically requires a service restart or system reboot per CISA's KEV requiredAction.",
+    "The vendor patch typically requires a service restart or system reboot per CISA’s KEV requiredAction.",
+    "Remediation: the vendor patch typically requires a service restart or system reboot per the KEV requiredAction.",
+    "Closure is the vendor update, and there is no live-patch tool: the vendor patch typically requires a service restart or system reboot per the KEV requiredAction.",
+  ]) assert.equal(D.isTemplateRestartCredit(s), true, s);
+  // Accurate sentences an adversarial probe found the prose detector matching;
+  // none of them may stop a batch.
+  for (const s of [
+    "Nothing in the KEV requiredAction requires a reboot.",
+    "It is not true that the KEV requiredAction requires a reboot.",
+    "Apply the restart-free hotpatch per the KEV requiredAction.",
+    "Apply the hotpatch that avoids a reboot per the KEV requiredAction.",
+    "No additional restart is required per the KEV requiredAction.",
+    "Operators are not required to reboot per the KEV requiredAction.",
+    "Whether a restart is required per the KEV requiredAction depends on the vendor instructions it points to.",
+    "Per the KEV requiredAction, restart is neither required nor recommended.",
+    "Taking the fix means a service restart or reboot of the appliance per the KEV required action.",
+    "The vendor patch never requires a service restart or system reboot per the KEV requiredAction.",
+    "Documentation does not say that the vendor patch requires a service restart or system reboot per the KEV requiredAction.",
+    "It is false that the patch requires a service restart or system reboot per the KEV requiredAction.",
+    "Whether the patch requires a service restart or system reboot per the KEV requiredAction depends on the vendor.",
+    "Saying the patch requires a service restart or system reboot per the KEV requiredAction is incorrect.",
+    "The claim that the vendor patch requires a service restart or system reboot per the KEV requiredAction is unsupported.",
+    "The control must not state: the vendor patch requires a service restart or system reboot per the KEV requiredAction.",
+    "Do not write: the vendor patch typically requires a service restart or system reboot per the KEV requiredAction.",
+    "Do not write:\nthe vendor patch typically requires a service restart or system reboot per the KEV requiredAction.",
+    "Documentation does not say that\nthe vendor patch requires a service restart or system reboot per the KEV requiredAction.",
+    "We do not make this assertion (the vendor patch requires a service restart or system reboot per the KEV requiredAction).",
+    "The vendor patch requires a service restart or system reboot per the KEV requiredAction, which is incorrect.",
+    "Do not claim, without evidence, the vendor patch requires a service restart or system reboot per the KEV requiredAction.",
+    "Reviewers should never, in any control text, write that the vendor patch requires a service restart or system reboot per the KEV requiredAction.",
+    "The vendor patch requires a service restart or system reboot per the KEV requiredAction, a claim that is unsupported.",
+    "\"The vendor patch requires a service restart or system reboot per the KEV requiredAction\", which is not what CISA says.",
+    "Some operators assume the vendor patch requires a service restart or system reboot per the KEV requiredAction.",
+    "The vendor patch requires a service restart or system reboot per the KEV requiredAction is an unsupported reading.",
+  ]) assert.equal(D.isTemplateRestartCredit(s), false, s);
+  for (const re of D.KEV_ACTION_RESTART_TEMPLATE) assert.ok(!re.global && !re.sticky, String(re));
+});
+
+test("kevActionRestartFindings: a finding per text, marked logical-consistency; drafts only with includeDrafts", () => {
+  const loaded = { "cve-catalog": {
+    "CVE-2026-0001": { live_patch_notes: "The vendor patch typically requires a service restart or system reboot per the KEV requiredAction." },
+    "CVE-2026-0002": { _auto_imported: true, live_patch_notes: "Reboot per the KEV requiredAction." },
+  } };
+  const f = D.kevActionRestartFindings(loaded);
+  assert.deepEqual(f.map((x) => [x.id, x.field, x.rule, x.definite]), [["CVE-2026-0001", "live_patch_notes", "restart_not_credited_to_kev_required_action", true]]);
+  assert.equal(D.kevActionRestartFindings(loaded, { includeDrafts: true }).length, 2);
+});
+
 test("kevListingDateFindings: a date two patterns both match is one finding", () => {
   const f = D.kevListingDateFindings({ "cve-catalog": { X: { cisa_kev_date: "2022-06-08" } },
     "zeroday-lessons": { X: { t: "It was added to the KEV catalog on 2021-06-06." } } });
