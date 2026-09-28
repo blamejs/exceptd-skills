@@ -285,6 +285,8 @@ test("creditsRestartToKevAction matches a restart credited to the KEV required a
     "Per the KEV requiredAction, restart is required.",
     "Per the KEV requiredAction, reboot is mandatory after the update.",
     "Remediation: Per the KEV requiredAction, reboot the service.",
+    "CISA's KEV requiredAction requires a reboot.",
+    "Per CISA's KEV requiredAction, restart the appliance.",
     "Per the KEV requiredAction, restart is mandatory even if exploitation has not been observed.",
     "Per the KEV requiredAction, reboot the host when the service does not respond.",
   ]) assert.equal(D.creditsRestartToKevAction(s), true, s);
@@ -341,6 +343,8 @@ test("isTemplateRestartCredit: only the template forms of the claim are definite
     "No live patch is available because the vendor patch requires a service restart or system reboot per the KEV requiredAction.",
     "Documentation does not say that the patch requires a service restart or system reboot per the KEV requiredAction, but the vendor confirms that the patch requires a service restart or system reboot per the KEV requiredAction.",
     "The vendor patch requires a service restart or system reboot per the KEV requiredAction even when downtime is not acceptable.",
+    "The vendor patch typically requires a service restart or system reboot per CISA's KEV requiredAction.",
+    "The vendor patch typically requires a service restart or system reboot per CISA’s KEV requiredAction.",
   ]) assert.equal(D.isTemplateRestartCredit(s), true, s);
   // Accurate sentences an adversarial probe found the prose detector matching;
   // none of them may stop a batch.
