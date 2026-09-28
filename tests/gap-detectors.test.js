@@ -286,6 +286,11 @@ test("creditsRestartToKevAction matches a restart credited to the KEV required a
     "Restart then patch per the KEV requiredAction.",
     "Restart the host and apply updates as required per the KEV requiredAction.",
     "Reboot once the patch is applied per the KEV requiredAction.",
+    "A service restart is not required per the KEV required action.",
+    "A reboot is never required per the KEV requiredAction.",
+    "The update applies without a restart per the KEV requiredAction.",
+    "The KEV requiredAction requires no restart.",
+    "Per the KEV requiredAction, no reboot is needed.",
     "",
   ]) assert.equal(D.creditsRestartToKevAction(s), false, s);
   for (const re of D.KEV_ACTION_RESTART_CREDIT) assert.ok(!re.global && !re.sticky, String(re));
