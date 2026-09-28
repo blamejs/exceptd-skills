@@ -212,12 +212,13 @@ test("kevListingDateFindings: definite is true only when the text assigns the da
       p: "For CVE-2011-0609, CISA added it to KEV on 2025-11-04.",
       q: "For CVE-2011-0609, it was KEV-listed on 2025-11-05.",
       r: "The fix for CVE-2011-0609 was KEV-listed on 2025-11-06.",
+      s: "CVE-2011-0609 has a KEV listing date of 2025-11-07.",
     } } });
   // n: a singular verb binds to the nearest id (CVE-2011-0611), so the date is the sibling's and not a finding.
   // r: the id follows a preposition inside the sentence, so the finding is not definite.
   assert.deepEqual(f.map((x) => [x.field, x.definite]),
     [["a", true], ["b", false], ["c", false], ["d", false], ["e", true], ["f", true], ["g", true], ["h", true], ["i", true],
-      ["j", true], ["k", true], ["l", true], ["m", true], ["o", true], ["p", true], ["q", true], ["r", false]]);
+      ["j", true], ["k", true], ["l", true], ["m", true], ["o", true], ["p", true], ["q", true], ["r", false], ["s", true]]);
 });
 
 test("kevListingDateFindings: a date two patterns both match is one finding", () => {
@@ -612,6 +613,7 @@ test("hasPipelineFieldCitation matches a catalog field cited after packet and no
     "packet: _auto_imported true",
     "Packet fields: _draft false",
     "the packet's status_verified date",
+    "Packet fields for this CVE: cisa_kev true",
   ]) assert.equal(D.hasPipelineFieldCitation(s), true, s);
   for (const s of [
     "The IDS logged the drop (packet: 1514 bytes, TCP port 445).",
