@@ -155,10 +155,13 @@ test("logical-consistency: a lesson stating another KEV listing date fires, with
       { id: "NEW-CTRL-010", description: "CISA KEV-listed the flaw on 2026-02-10." },
       { id: "NEW-CTRL-011", description: "CISA listed the CVE in its KEV catalog on 2026-02-11." },
       { id: "NEW-CTRL-012", description: "Unlike CVE-2020-0002, the flaw was KEV-listed 2020-01-01." },
+      { id: "NEW-CTRL-013", description: "CISA added the vulnerability to KEV on 2026-02-10." },
+      { id: "NEW-CTRL-014", description: "CISA added this CVE to KEV catalog on 2026-02-12." },
+      { id: "NEW-CTRL-015", description: "CISA put it on its KEV list on 2026-02-13." },
     ] } }
   });
   const f = D.logicalConsistencyFindings(cats).filter((x) => x.rule === "stated_kev_listing_date_matches_entry");
-  assert.deepEqual(f.map((x) => x.field), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((i) => `new_control_requirements[${i}].description`));
+  assert.deepEqual(f.map((x) => x.field), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((i) => `new_control_requirements[${i}].description`));
   assert.equal(f[0].catalog, "zeroday-lessons");
   assert.match(f[0].reason, /2025-10-20.*2022-06-08/);
 });
@@ -174,6 +177,7 @@ test("logical-consistency: KEV listing dates that match, due dates, and a named 
       "CISA added CVE-2011-0611 to its Known Exploited Vulnerabilities catalog on 2022-06-09.",
       "CVE-2011-0611, a sibling in the same bulletin, was KEV-listed 2022-06-09.",
       "For sibling CVE-2011-0611, it was KEV-listed 2022-06-09.",
+      "The sibling is CVE-2011-0611; it was KEV-listed 2022-06-09.",
     ] } }
   });
   assert.deepEqual(D.kevListingDateFindings(cats), []);
