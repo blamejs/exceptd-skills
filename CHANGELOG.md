@@ -4,7 +4,7 @@
 
 626 catalog and zero-day lesson texts on 240 CVEs no longer say that CISA's KEV required action calls for a restart or reboot. CISA's required action for these CVEs says to apply mitigations per vendor instructions, follow BOD 22-01 guidance for cloud services, or discontinue use of the product. Every one of these entries records `patch_required_reboot: true`, so each text keeps the restart and drops only the attribution: "the vendor patch typically requires a service restart or system reboot per the KEV requiredAction" now ends at "system reboot". 239 of the texts are `live_patch_notes` fields in the catalog.
 
-The catalog gap audit's `logical-consistency` class now reports a text that credits a restart or reboot to the KEV required action, and `exceptd refresh --curate-batch` lists a new entry or lesson that does so under `warnings`. An accurate reference to the required action, such as "apply mitigations per the KEV requiredAction", does not match.
+The catalog gap audit's `logical-consistency` class now reports a text that credits a restart or reboot to the KEV required action, and `exceptd refresh --curate-batch` refuses to apply a batch whose new entry or lesson does so. An accurate reference to the required action, such as "apply mitigations per the KEV requiredAction", does not match.
 
 ## 0.21.9 — 2026-09-27
 

@@ -266,6 +266,9 @@ test("creditsRestartToKevAction matches a restart credited to the KEV required a
     "Completion is measured as the package plus the reboot that the vendor patch typically requires per the KEV requiredAction.",
     "the vendor patch follows the KEV requiredAction (service restart or system reboot).",
     "Taking the fix means a service restart or reboot of the appliance per the KEV required action.",
+    "The KEV requiredAction requires a system reboot.",
+    "Per the KEV requiredAction, reboot the service.",
+    "The patch is out. Per CISA's KEV required action, restart the appliance after installing it.",
   ]) assert.equal(D.creditsRestartToKevAction(s), true, s);
   for (const s of [
     "Block internet traffic to affected products immediately (CISA required action), then upgrade and restart Confluence.",
@@ -274,6 +277,9 @@ test("creditsRestartToKevAction matches a restart credited to the KEV required a
     "The vendor patch typically requires a service restart or system reboot.",
     "Apply mitigations as required per the KEV requiredAction.",
     "Apply mitigations as required per the KEV requiredAction, and then restart the service per vendor guidance.",
+    "Apply the patch per the KEV requiredAction, then reboot the host.",
+    "The KEV requiredAction requires applying the vendor patch; the patch itself needs a reboot.",
+    "Per the KEV requiredAction, apply the update and then restart the service.",
     "",
   ]) assert.equal(D.creditsRestartToKevAction(s), false, s);
   for (const re of D.KEV_ACTION_RESTART_CREDIT) assert.ok(!re.global && !re.sticky, String(re));
