@@ -138,6 +138,143 @@ test("logical-consistency: confirmed exploitation needs >= 2 verification_source
     "confirmed exploitation with < 2 sources must surface");
 });
 
+test("logical-consistency: a lesson stating another KEV listing date fires, with its field path", () => {
+  const cats = makeCatalogs({
+    "cve-catalog": { _meta: {}, "CVE-2011-0609": { cisa_kev: true, cisa_kev_date: "2022-06-08" } },
+    "zeroday-lessons": { "CVE-2011-0609": { new_control_requirements: [
+      { id: "NEW-CTRL-122", description: "put those on the interim clock against the 2025-10-20 KEV listing, and replace the rest" },
+      { id: "NEW-CTRL-001", description: "CISA added the flaw to its Known Exploited Vulnerabilities catalog on 2021-01-01." },
+      { id: "NEW-CTRL-002", description: "It was kev-listed 2026-02-10 with a public PoC." },
+      { id: "NEW-CTRL-003", description: "Unlike CVE-2020-0002, this flaw was KEV-listed 2020-01-01." },
+      { id: "NEW-CTRL-004", description: "CISA listed this CVE in its KEV catalog on 2021-02-02." },
+      { id: "NEW-CTRL-005", description: "CISA KEV-listed this flaw on 2021-03-03." },
+      { id: "NEW-CTRL-006", description: "CVE-2020-0002 has a separate history.\nKEV-listed 2021-04-04 with a public PoC." },
+      { id: "NEW-CTRL-007", description: "CISA said \"CVE-2020-0002 is unrelated.\" KEV-listed 2021-05-05." },
+      { id: "NEW-CTRL-008", description: "It was added to the KEV catalog on 2021-06-06." },
+      { id: "NEW-CTRL-009", description: "The flaw entered CISA's KEV catalog on 2021-07-07." },
+      { id: "NEW-CTRL-010", description: "CISA KEV-listed the flaw on 2026-02-10." },
+      { id: "NEW-CTRL-011", description: "CISA listed the CVE in its KEV catalog on 2026-02-11." },
+      { id: "NEW-CTRL-012", description: "Unlike CVE-2020-0002, the flaw was KEV-listed 2020-01-01." },
+      { id: "NEW-CTRL-013", description: "CISA added the vulnerability to KEV on 2026-02-10." },
+      { id: "NEW-CTRL-014", description: "CISA added this CVE to KEV catalog on 2026-02-12." },
+      { id: "NEW-CTRL-015", description: "CISA put it on its KEV list on 2026-02-13." },
+      { id: "NEW-CTRL-016", description: "KEV listing date: 2026-02-14." },
+      { id: "NEW-CTRL-017", description: "The KEV listing date is 2026-02-15." },
+      { id: "NEW-CTRL-018", description: "The text states a KEV listing date of 2026-02-16." },
+      { id: "NEW-CTRL-019", description: "CISA added the flaw to CISA’s KEV catalog on 2026-02-17." },
+      { id: "NEW-CTRL-020", description: "It was added to the CISA KEV catalog on 2026-02-18." },
+      { id: "NEW-CTRL-021", description: "It was listed in the KEV catalogue on 2026-02-19." },
+      { id: "NEW-CTRL-022", description: "CISA added it to its Known Exploited Vulnerabilities (KEV) catalog on 2026-02-20." },
+      { id: "NEW-CTRL-023", description: "It joined CISA's KEV list on 2026-02-21." },
+    ] } }
+  });
+  const f = D.logicalConsistencyFindings(cats).filter((x) => x.rule === "stated_kev_listing_date_matches_entry");
+  assert.deepEqual(f.map((x) => x.field), Array.from({ length: 24 }, (_, i) => `new_control_requirements[${i}].description`));
+  assert.equal(f[0].catalog, "zeroday-lessons");
+  assert.match(f[0].reason, /2025-10-20.*2022-06-08/);
+});
+
+test("logical-consistency: KEV listing dates that match, due dates, and a named sibling's date do not fire", () => {
+  const cats = makeCatalogs({
+    "cve-catalog": { _meta: {}, "CVE-2011-0609": { cisa_kev: true, cisa_kev_date: "2022-06-08",
+      vector: "KEV-listed 2022-06-08 with confirmed exploitation." } },
+    "zeroday-lessons": { "CVE-2011-0609": { evidence: [
+      "the KEV clock that opened 2022-06-08 governs the fix",
+      "KEV due date (2022-06-22) is the binding clock",
+      "sibling CVE-2011-0611 was KEV-listed 2022-06-09 in the same batch",
+      "CISA added CVE-2011-0611 to its Known Exploited Vulnerabilities catalog on 2022-06-09.",
+      "CVE-2011-0611, a sibling in the same bulletin, was KEV-listed 2022-06-09.",
+      "For sibling CVE-2011-0611, it was KEV-listed 2022-06-09.",
+      "The sibling is CVE-2011-0611; it was KEV-listed 2022-06-09.",
+    ] } }
+  });
+  assert.deepEqual(D.kevListingDateFindings(cats), []);
+});
+
+test("kevListingDateFindings: definite is true only when the text assigns the date to the entry's own id", () => {
+  const f = D.kevListingDateFindings({ "cve-catalog": { "CVE-2011-0609": { cisa_kev_date: "2022-06-08" } },
+    "zeroday-lessons": { "CVE-2011-0609": {
+      a: "CVE-2011-0609 was KEV-listed 2025-10-20.",
+      b: "It was KEV-listed 2025-10-21.",
+      c: "Unlike CVE-2011-0611, this flaw was KEV-listed 2025-10-22.",
+      d: "The predecessor of CVE-2011-0609 was KEV-listed on 2025-10-23.",
+      e: "CISA added CVE-2011-0609 to KEV on 2025-10-24.",
+      f: "CVE-2011-0609's KEV listing date is 2025-10-25.",
+      g: "CVE-2011-0609 (the Flash AVM2 flaw) was added to KEV on 2025-10-26.",
+      h: "CISA KEV-listed CVE-2011-0609 on 2025-10-27.",
+      i: "CVE-2011-0609 entered KEV on 2025-10-28.",
+      j: "cve-2011-0609 was KEV-listed on 2025-10-29.",
+      k: "CISA added CVE-2011-0609 and CVE-2011-0611 to KEV on 2025-10-30.",
+      l: "CVE-2011-0609, which was KEV-listed on 2025-10-31, affects Flash.",
+      m: "CVE-2011-0611 and CVE-2011-0609 were added to KEV on 2025-11-01.",
+      n: "The bulletin covers CVE-2011-0609 and CVE-2011-0611, which was KEV-listed on 2025-11-02.",
+      o: "CISA added CVE-2011-0609/CVE-2011-0611 to KEV on 2025-11-03.",
+      p: "For CVE-2011-0609, CISA added it to KEV on 2025-11-04.",
+      q: "For CVE-2011-0609, it was KEV-listed on 2025-11-05.",
+      r: "The fix for CVE-2011-0609 was KEV-listed on 2025-11-06.",
+      s: "CVE-2011-0609 has a KEV listing date of 2025-11-07.",
+      t: "The Flash AVM2 flaw (CVE-2011-0609) was KEV-listed on 2025-11-08.",
+      u: "CVE-2011-0609 itself was KEV-listed on 2025-11-09.",
+      v: "CVE-2011-0609, together with CVE-2011-0611, were added to KEV on 2025-11-10.",
+      w: "CVE-2011-0609 is a variant of CVE-2011-0611, which was KEV-listed on 2025-11-11.",
+      x: "CVE-2011-0609: KEV-listed 2025-11-12.",
+      y: "CVE-2011-0609, the AVM2 flaw, was KEV-listed on 2025-11-13.",
+      z: "CVE-2011-0609, like CVE-2011-0611, was KEV-listed on 2025-11-14.",
+      aa: "The KEV listing date for CVE-2011-0609 is 2025-11-15.",
+      ab: "CISA added variants of CVE-2011-0609 to KEV on 2025-11-16.",
+      ac: "CISA added CVE-2011-0611, CVE-2011-0612 and CVE-2011-0609 to KEV on 2025-11-17.",
+      ad: "CVE-2011-0609 was KEV-listed by CISA on 2025-11-18.",
+      ae: "CVE-2011-0609 was added to KEV by CISA on 2025-11-19.",
+      af: "CVE-2011-0609 was KEV-listed (2025-11-20) with a public PoC.",
+      ag: "CVE-2011-0609: KEV dateAdded: 2025-11-21",
+      ah: "For CVE-2011-0609, the KEV listing date is 2025-11-22.",
+    } } });
+  // ab: the id follows a preposition inside the verb's object, so the date is the variants' and not definite.
+  // z: the appositive names another CVE, so the finding is a warning, not definite.
+  // v and w name this entry earlier in the sentence, so they are warnings rather than skipped.
+  // n: a singular verb binds to the nearest id (CVE-2011-0611), so the finding is not definite; this entry is
+  // named earlier in the sentence, so it is a warning rather than skipped.
+  // r: the id follows a preposition inside the sentence, so the finding is not definite.
+  assert.deepEqual(f.map((x) => [x.field, x.definite]),
+    [["a", true], ["b", false], ["c", false], ["d", false], ["e", true], ["f", true], ["g", true], ["h", true], ["i", true],
+      ["j", true], ["k", true], ["l", true], ["m", true], ["n", false], ["o", true], ["p", true], ["q", true], ["r", false], ["s", true], ["t", true], ["u", true], ["v", false], ["w", false], ["x", true], ["y", true], ["z", false], ["aa", true], ["ab", false], ["ac", true], ["ad", true], ["ae", true], ["af", true], ["ag", true], ["ah", true]]);
+});
+
+test("kevListingDateFindings: a date-first sentence is attributed from the verb's object", () => {
+  const f = D.kevListingDateFindings({ "cve-catalog": { "CVE-2011-0609": { cisa_kev_date: "2022-06-08" } },
+    "zeroday-lessons": { "CVE-2011-0609": {
+      a: "On 2026-02-10, CISA added CVE-2011-0609 to KEV.",
+      b: "On 2026-02-11, CISA added CVE-2011-0611 to KEV.",
+      c: "On 2026-02-12, CISA added it to its KEV catalog.",
+      d: "On 2026-02-13, CISA added variants of CVE-2011-0609 to KEV.",
+      e: "On 2026-02-14, CISA added variants of CVE-2011-0611 and CVE-2011-0609 to KEV.",
+      g: "On 2026-02-15, CISA added CVE-2011-0611 and CVE-2011-0609 to KEV.",
+      h: "On 2026-02-16, CISA added CVE-2011-0609 & CVE-2011-0611 to KEV.",
+    } } });
+  // b names only a sibling, so it is not a finding.
+  assert.deepEqual(f.map((x) => [x.field, x.definite]), [["a", true], ["c", false], ["d", false], ["e", false], ["g", true], ["h", true]]);
+  for (const re of D.KEV_LISTING_DATE_FIRST) assert.ok(re.global, `${re} must be a global RegExp for matchAll`);
+});
+
+test("kevListingDateFindings: a date two patterns both match is one finding", () => {
+  const f = D.kevListingDateFindings({ "cve-catalog": { X: { cisa_kev_date: "2022-06-08" } },
+    "zeroday-lessons": { X: { t: "It was added to the KEV catalog on 2021-06-06." } } });
+  assert.equal(f.length, 1);
+});
+
+test("kevListingDateFindings: opts.entries supplies cisa_kev_date for a batch's lessons", () => {
+  const entries = { "CVE-2026-0001": { cisa_kev_date: "2026-03-01" } };
+  const f = D.kevListingDateFindings({ "zeroday-lessons": { "CVE-2026-0001": { t: "KEV-listed 2026-02-10 with a public PoC." } } }, { entries });
+  assert.equal(f.length, 1);
+  assert.equal(f[0].field, "t");
+});
+
+test("KEV_LISTING_DATE: every pattern is global and captures one date", () => {
+  for (const re of D.KEV_LISTING_DATE) {
+    assert.ok(re instanceof RegExp && re.global, `${re} must be a global RegExp for matchAll`);
+  }
+});
+
 // ---------- 4. cross-ref-completeness ----------
 
 test("cross-ref-completeness: CWE entry missing back-ref fires", () => {
@@ -354,6 +491,48 @@ test("hasPipelineWording matches curation-input citations and not network-packet
     "book the restart the packet's requiredAction implies",
     "the packet's nist-800-53-si-2 gap records the window",
     "the packet's live_patch_notes say a restart is needed",
+    "Packet records CWE-78, CVSS 9.8, RWEP 40",
+    "Packet attack vector: an attacker-controlled document",
+    "Packet affected: 'Zyxel ATP series firewalls'",
+    "Packet name: 'Fortinet Multiple Products Authentication Bypass'",
+    "Packet NIST-800-53-SI-2 gap: '30-day flaw-remediation SLA'",
+    "Packet CVE-2025-0282 \"Ivanti Connect Secure stack overflow\"",
+    "Packet names the affected product as 'Adobe Experience Manager Forms'",
+    "The packet places this CVE as the elevation step",
+    "the packet ties this CWE-78 sink to the Metro server",
+    "Priority follows the packet rather than the CVSS band",
+    "not a claim the packet makes.",
+    "a public exploit recorded in the packet",
+    "the CISA KEV short description in the packet names the classes",
+    "the earlier Secunia advisory cited in the packet is a third-party aggregation",
+    "packet attack vector: crafted request",
+    "CWE-79 in the packet reflects sibling cross-site scripting findings",
+    "packet affected: Foo Server 2.1",
+    "the packet is explicit that no user interaction is involved",
+    "the packet has an authenticated, local attacker reading a credential file",
+    "the fixed build plus reboot the packet requires",
+    "The packet identifies the affected component as the Agere Modem Driver",
+    "The packet's path ends in OS command execution",
+    "the packet's only stated access requirement is network access",
+    "the packet's boundary-protection gap records that the console is exposed",
+    "two packet details decide how the SLA is measured",
+    "The packet sets ai_discovered true for this entry.",
+    "The packet makes driver reachability the precondition",
+    "All from the packet for CVE-2024-43573:",
+    "Corroborating packet fields: patch_required_reboot false",
+    "Packet records a path-traversal flaw (CWE-22) letting an attacker read files",
+    "Packet records an out-of-bounds write (CWE-787) in libimagecodec",
+    "Packet records CVSS 10 with RWEP 79",
+    "The packet characterizes the CLFS driver as a recurring kernel-LPE target",
+    "the packet ties the use-after-free to that browser's iepeers component",
+    "the packet ties the affected Skia to Chrome",
+    "The packet pairs a pre-auth RCE on the appliance with confirmed exploitation",
+    "The packet pairs a 2024-03-07 KEV listing with a public PoC",
+    "The packet conditions the crash on DNS Security logging being enabled",
+    "the packet attributes the exposure to how the Actuator is configured",
+    "the packet's path needs no credentials and no authentication",
+    "the packet's end state is arbitrary command execution on the Core server",
+    "the packet's range runs from 12.2.0.13110 up to but excluding 12.2.0.16412",
   ]) assert.equal(D.hasPipelineWording(s), true, s);
   // Every curation noun the possessive form accepts; a later narrowing must keep them.
   for (const noun of ["own", "vector", "stated", "attack vector", "attack path", "exploitation", "remediation",
@@ -389,9 +568,137 @@ test("hasPipelineWording matches curation-input citations and not network-packet
     "The packet's actual length is shorter than the advertised length.",
     "The packet's fragment_offset causes an out-of-bounds write.",
     "The packet's only option byte is ignored.",
+    "a device merely forwarding the packet is in scope",
+    "confirm the packet is dropped",
+    "segmentation bounds who can send the packet",
+    "the packet has a malformed length field",
+    "the packet sets the DF bit",
+    "the packet identifies the sender",
+    "the packet requires fragmentation",
+    "Packet records are written to the capture file.",
+    "the architecture diagram and nowhere in the packet path.",
+    "root on the packet engine means the signing keys",
+    "the packet's inter-frame gap is too short",
+    "the packet reaches the service before authentication",
+    "the packet carries no payload",
+    "the packet makes it through the firewall",
+    "the arriving packet names a class to instantiate",
+    "The length supplied in the packet is trusted without validation.",
+    "the value carried in the packet overflows the buffer",
+    "the size given in the packet is not checked",
+    "the file named in the packet is written to disk",
+    "the timestamp recorded in the packet is ignored",
+    "the DNS record in the packet is cached",
+    "the packet has the service type field set",
+    "the packet identifies the protocol version",
+    "a SYN packet establishes a connection",
+    "the packet establishes a session with the peer",
+    "the packet points to a buffer outside the ring",
+    "the packet attributes are parsed before authentication",
+    "the packet labels are swapped at each hop",
+    "this packet allows an attacker to reboot the device",
+    "this packet makes it past the filter",
+    "the packet places the payload at offset 12",
+    "the packet measures 1500 bytes",
+    "Packet gap between frames is enforced.",
+    "Packet attack vectors include flooding.",
+    "the packet's path is determined by routing",
+    "the packet's delivery path is multicast",
+    "the packet's timing gap is too short",
+    "the packet is clear of options",
+    "the packet does not identify the sender",
+    "The packet has an attacker-controlled length field.",
+    "This packet makes it an attractive amplification target.",
+    "The cipher suites listed in the packet are unsupported.",
+    "CWE-20 in the packet parser lets a short frame through.",
+    "CWE-787 in the packet-processing path corrupts the heap.",
+    "the exploit recorded in the packet handler trace",
+    "packet records contain the timestamp and length.",
+    "Packet records contain the timestamp and length.",
+    "the packet requires the fixed-size header",
+    "the packet does not establish a session",
+    "the packet's path goes from the client to the server",
+    "the packet's range runs from 0 to 65535",
+    "the packet pairs a request with a reply",
+    "the packet's flow-control gap widens",
+    "the packet ties the session to the source address",
+    "the packet's end state is a closed socket",
+    "the packet has a length field that the attacker controls",
+    "the protocol version named in the packet",
+    "the component named in the packet is parsed first",
+    "the options listed in the packet header are ignored",
+    "the exploit recorded in the packet capture replays the handshake",
+    "the SDP description carried in the packet body",
     "",
   ]) assert.equal(D.hasPipelineWording(s), false, s);
   assert.equal(D.hasPipelineWording(null), false);
+});
+
+test("hasPipelineFieldCitation matches a catalog field cited after packet and no network prose", () => {
+  for (const s of [
+    "Packet fields for CVE-2025-0108: cisa_kev true",
+    "the packet's cisa_kev field says so",
+    "packet: patch_available true, live_patch_available false",
+    "the packet’s live_patch_notes record a restart",
+    "Corroborating packet fields: patch_required_reboot false",
+    "Packet fields: cisa_kev true, active_exploitation confirmed",
+    "Packet field: cvss_score 9.8",
+    "Packet fields: source_verified 2026-09-01",
+    "the packet's remediation_status is patched",
+    "packet: _auto_imported true",
+    "Packet fields: _draft false",
+    "the packet's status_verified date",
+    "Packet fields for this CVE: cisa_kev true",
+    "Packet fields for this CVE include cisa_kev true",
+    "Packet fields - patch_available true",
+    "Packet fields: vector, cisa_kev true",
+    "Packet fields for this CVE: affected, patch_available true",
+    "Packet fields: cvss 9.8, cisa_kev true",
+    "Packet fields: version 4; cisa_kev true",
+    "Packet fields:\n- cisa_kev: true\n- patch_available: true",
+    "Packet fields:\n  version 4\n  cisa_kev true",
+    "Packet fields:\n1. cisa_kev: true\n2. patch_available: true",
+    "Packet fields:\n1) version 4\n2) cisa_kev true",
+    "the packet's field cisa_kev says true",
+    "the packet's field named patch_available is true",
+  ]) assert.equal(D.hasPipelineFieldCitation(s), true, s);
+  for (const s of [
+    "The IDS logged the drop (packet: 1514 bytes, TCP port 445).",
+    "Packet fields: version, IHL, DSCP, total length and fragment offset.",
+    "Packet vector processing in VPP reads up to 256 buffers per frame.",
+    "When IP Record Route is enabled, the packet records the address of each router.",
+    "Wireshark reports the frame as Malformed packet: vector length exceeds the table.",
+    "the packet's attack surface is the parser",
+    "Packet fields: src_ip, dst_ip and tcp_flags",
+    "Packet fields for CVE-2025-0108: IP version, header length, and fragment offset",
+    "Corroborating packet fields from the capture show a zero-length option",
+    "Packet fields: version, IHL. The patch_available flag is set.",
+    "The malformed packet: TCP port 445. The patch_available flag is true.",
+    "Packet fields:\n- version\n- IHL\nThe patch_available flag is set.",
+    "",
+  ]) assert.equal(D.hasPipelineFieldCitation(s), false, s);
+  assert.ok(D.PACKET_FIELD_TOKEN.global, "matchAll needs a global pattern");
+  for (let i = 0; i < 3; i++) assert.equal(D.hasPipelineFieldCitation("packet: cisa_kev true"), true, "repeat calls agree");
+});
+
+test("CATALOG_FIELD_NAMES holds every snake_case field the CVE catalog and its schema use", () => {
+  const names = new Set();
+  const schema = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "lib", "schemas", "cve-catalog.schema.json"), "utf8"));
+  (function walk(o) {
+    if (!o || typeof o !== "object") return;
+    if (o.properties && typeof o.properties === "object") for (const k of Object.keys(o.properties)) names.add(k);
+    for (const v of Object.values(o)) walk(v);
+  })(schema);
+  const cat = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "cve-catalog.json"), "utf8"));
+  for (const [id, e] of Object.entries(cat)) if (id !== "_meta") for (const k of Object.keys(e)) names.add(k);
+  const missing = [...names].filter((k) => /_/.test(k) && !D.CATALOG_FIELD_NAMES.has(k));
+  assert.deepEqual(missing, [], "add these names to CATALOG_FIELD_NAMES in lib/gap-detectors.js");
+});
+
+test("pipelineWordingFindings: a field citation is marked field_citation", () => {
+  const f = D.pipelineWordingFindings({ "zeroday-lessons": { "CVE-2026-0001": {
+    a: "Packet fields for CVE-2026-0001: cisa_kev true", b: "the packet names a web shell" } } });
+  assert.deepEqual(f.map((x) => [x.field, x.field_citation]), [["a", true], ["b", false]]);
 });
 
 test("PIPELINE_WORDING: every pattern is a stateless RegExp", () => {
@@ -787,7 +1094,7 @@ test("shipped catalogs: extended-detector budgets (no silent regression on v0.13
     "schema-evolution": 0,
     "operator-action-sla": 0,     // no entries currently exceed the SLA window
     "unused-orphan": 1400,        // bulk-imported CWE / RFC orphans by design
-    "pipeline-wording": 159       // lesson and catalog texts citing the curation input; comes down as they are rewritten
+    "pipeline-wording": 326       // lesson and catalog texts citing the curation input; comes down as they are rewritten
   };
   const regressions = [];
   for (const [cls, count] of Object.entries(byClass)) {
