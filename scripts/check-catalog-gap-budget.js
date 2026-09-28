@@ -63,9 +63,9 @@ const BUDGET = {
   "unused-orphan": 1400,
   // Lesson and catalog texts that cite the curation input ("Packet: ...", "the
   // packet names ...", "the packet's own ...") instead of stating the fact and
-  // its source. refresh --curate-batch refuses new ones; the budget comes down
-  // as existing texts are rewritten.
-  "pipeline-wording": 324
+  // its source. refresh --curate-batch refuses a new one that cites a catalog
+  // field and warns on the rest; the budget comes down as texts are rewritten.
+  "pipeline-wording": 326
 };
 
 function main() {

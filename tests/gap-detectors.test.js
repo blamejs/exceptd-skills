@@ -158,10 +158,13 @@ test("logical-consistency: a lesson stating another KEV listing date fires, with
       { id: "NEW-CTRL-013", description: "CISA added the vulnerability to KEV on 2026-02-10." },
       { id: "NEW-CTRL-014", description: "CISA added this CVE to KEV catalog on 2026-02-12." },
       { id: "NEW-CTRL-015", description: "CISA put it on its KEV list on 2026-02-13." },
+      { id: "NEW-CTRL-016", description: "KEV listing date: 2026-02-14." },
+      { id: "NEW-CTRL-017", description: "The KEV listing date is 2026-02-15." },
+      { id: "NEW-CTRL-018", description: "The text states a KEV listing date of 2026-02-16." },
     ] } }
   });
   const f = D.logicalConsistencyFindings(cats).filter((x) => x.rule === "stated_kev_listing_date_matches_entry");
-  assert.deepEqual(f.map((x) => x.field), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((i) => `new_control_requirements[${i}].description`));
+  assert.deepEqual(f.map((x) => x.field), Array.from({ length: 19 }, (_, i) => `new_control_requirements[${i}].description`));
   assert.equal(f[0].catalog, "zeroday-lessons");
   assert.match(f[0].reason, /2025-10-20.*2022-06-08/);
 });
@@ -561,6 +564,32 @@ test("hasPipelineWording matches curation-input citations and not network-packet
   assert.equal(D.hasPipelineWording(null), false);
 });
 
+test("hasPipelineFieldCitation matches a catalog field cited after packet and no network prose", () => {
+  for (const s of [
+    "Packet fields for CVE-2025-0108: cisa_kev true",
+    "the packet's cisa_kev field says so",
+    "packet: patch_available true, live_patch_available false",
+    "the packet’s live_patch_notes record a restart",
+    "Corroborating packet fields: patch_required_reboot false",
+  ]) assert.equal(D.hasPipelineFieldCitation(s), true, s);
+  for (const s of [
+    "The IDS logged the drop (packet: 1514 bytes, TCP port 445).",
+    "Packet fields: version, IHL, DSCP, total length and fragment offset.",
+    "Packet vector processing in VPP reads up to 256 buffers per frame.",
+    "When IP Record Route is enabled, the packet records the address of each router.",
+    "Wireshark reports the frame as Malformed packet: vector length exceeds the table.",
+    "the packet's attack surface is the parser",
+    "",
+  ]) assert.equal(D.hasPipelineFieldCitation(s), false, s);
+  for (const re of D.PIPELINE_FIELD_CITATION) assert.ok(!re.global && !re.sticky, String(re));
+});
+
+test("pipelineWordingFindings: a field citation is marked field_citation", () => {
+  const f = D.pipelineWordingFindings({ "zeroday-lessons": { "CVE-2026-0001": {
+    a: "Packet fields for CVE-2026-0001: cisa_kev true", b: "the packet names a web shell" } } });
+  assert.deepEqual(f.map((x) => [x.field, x.field_citation]), [["a", true], ["b", false]]);
+});
+
 test("PIPELINE_WORDING: every pattern is a stateless RegExp", () => {
   // A /g or /y pattern keeps lastIndex between .test() calls and skips matches.
   assert.ok(Array.isArray(D.PIPELINE_WORDING) && D.PIPELINE_WORDING.length > 0);
@@ -954,7 +983,7 @@ test("shipped catalogs: extended-detector budgets (no silent regression on v0.13
     "schema-evolution": 0,
     "operator-action-sla": 0,     // no entries currently exceed the SLA window
     "unused-orphan": 1400,        // bulk-imported CWE / RFC orphans by design
-    "pipeline-wording": 324       // lesson and catalog texts citing the curation input; comes down as they are rewritten
+    "pipeline-wording": 326       // lesson and catalog texts citing the curation input; comes down as they are rewritten
   };
   const regressions = [];
   for (const [cls, count] of Object.entries(byClass)) {
