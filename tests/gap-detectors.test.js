@@ -209,11 +209,15 @@ test("kevListingDateFindings: definite is true only when the text assigns the da
       m: "CVE-2011-0611 and CVE-2011-0609 were added to KEV on 2025-11-01.",
       n: "The bulletin covers CVE-2011-0609 and CVE-2011-0611, which was KEV-listed on 2025-11-02.",
       o: "CISA added CVE-2011-0609/CVE-2011-0611 to KEV on 2025-11-03.",
+      p: "For CVE-2011-0609, CISA added it to KEV on 2025-11-04.",
+      q: "For CVE-2011-0609, it was KEV-listed on 2025-11-05.",
+      r: "The fix for CVE-2011-0609 was KEV-listed on 2025-11-06.",
     } } });
   // n: a singular verb binds to the nearest id (CVE-2011-0611), so the date is the sibling's and not a finding.
+  // r: the id follows a preposition inside the sentence, so the finding is not definite.
   assert.deepEqual(f.map((x) => [x.field, x.definite]),
     [["a", true], ["b", false], ["c", false], ["d", false], ["e", true], ["f", true], ["g", true], ["h", true], ["i", true],
-      ["j", true], ["k", true], ["l", true], ["m", true], ["o", true]]);
+      ["j", true], ["k", true], ["l", true], ["m", true], ["o", true], ["p", true], ["q", true], ["r", false]]);
 });
 
 test("kevListingDateFindings: a date two patterns both match is one finding", () => {
@@ -606,6 +610,8 @@ test("hasPipelineFieldCitation matches a catalog field cited after packet and no
     "Packet fields: source_verified 2026-09-01",
     "the packet's remediation_status is patched",
     "packet: _auto_imported true",
+    "Packet fields: _draft false",
+    "the packet's status_verified date",
   ]) assert.equal(D.hasPipelineFieldCitation(s), true, s);
   for (const s of [
     "The IDS logged the drop (packet: 1514 bytes, TCP port 445).",
@@ -614,9 +620,25 @@ test("hasPipelineFieldCitation matches a catalog field cited after packet and no
     "When IP Record Route is enabled, the packet records the address of each router.",
     "Wireshark reports the frame as Malformed packet: vector length exceeds the table.",
     "the packet's attack surface is the parser",
+    "Packet fields: src_ip, dst_ip and tcp_flags",
     "",
   ]) assert.equal(D.hasPipelineFieldCitation(s), false, s);
   for (const re of D.PIPELINE_FIELD_CITATION) assert.ok(!re.global && !re.sticky, String(re));
+  for (let i = 0; i < 3; i++) assert.equal(D.hasPipelineFieldCitation("packet: cisa_kev true"), true, "repeat calls agree");
+});
+
+test("CATALOG_FIELD_NAMES holds every snake_case field the CVE catalog and its schema use", () => {
+  const names = new Set();
+  const schema = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "lib", "schemas", "cve-catalog.schema.json"), "utf8"));
+  (function walk(o) {
+    if (!o || typeof o !== "object") return;
+    if (o.properties && typeof o.properties === "object") for (const k of Object.keys(o.properties)) names.add(k);
+    for (const v of Object.values(o)) walk(v);
+  })(schema);
+  const cat = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "cve-catalog.json"), "utf8"));
+  for (const [id, e] of Object.entries(cat)) if (id !== "_meta") for (const k of Object.keys(e)) names.add(k);
+  const missing = [...names].filter((k) => /_/.test(k) && !D.CATALOG_FIELD_NAMES.has(k));
+  assert.deepEqual(missing, [], "add these names to CATALOG_FIELD_NAMES in lib/gap-detectors.js");
 });
 
 test("pipelineWordingFindings: a field citation is marked field_citation", () => {
