@@ -186,6 +186,19 @@ test("--class accepts every class lib/gap-detectors.js declares", () => {
   const json = JSON.parse(ok.stdout);
   assert.equal(json.class_filter, "pipeline-wording");
   assert.equal(typeof json.totals.extended["pipeline-wording"], "number");
+  assert.ok(Array.isArray(json.extended_findings["pipeline-wording"]));
+  assert.equal(json.totals.extended["pipeline-wording"], json.extended_findings["pipeline-wording"].length);
+});
+
+test("an unfiltered run reports every extended class, including those with 0 findings", () => {
+  const { spawnSync } = require("node:child_process");
+  const { DETECTOR_CLASSES } = require(path.join(__dirname, "..", "lib", "gap-detectors.js"));
+  const r = spawnSync(process.execPath, [path.join(__dirname, "..", "scripts", "audit-catalog-gaps.js")], { encoding: "utf8" });
+  const json = JSON.parse(r.stdout);
+  for (const cls of DETECTOR_CLASSES) {
+    assert.equal(typeof json.totals.extended[cls], "number", `${cls} must carry a count`);
+    assert.equal(json.totals.extended[cls], json.extended_findings[cls].length, cls);
+  }
 });
 
 // v0.13.20 audit-test split: the live-catalog assertion moved to
