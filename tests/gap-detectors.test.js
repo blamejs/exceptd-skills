@@ -426,6 +426,19 @@ test("hasPipelineWording matches curation-input citations and not network-packet
     "The packet makes driver reachability the precondition",
     "All from the packet for CVE-2024-43573:",
     "Corroborating packet fields: patch_required_reboot false",
+    "Packet records a path-traversal flaw (CWE-22) letting an attacker read files",
+    "Packet records an out-of-bounds write (CWE-787) in libimagecodec",
+    "Packet records CVSS 10 with RWEP 79",
+    "The packet characterizes the CLFS driver as a recurring kernel-LPE target",
+    "the packet ties the use-after-free to that browser's iepeers component",
+    "the packet ties the affected Skia to Chrome",
+    "The packet pairs a pre-auth RCE on the appliance with confirmed exploitation",
+    "The packet pairs a 2024-03-07 KEV listing with a public PoC",
+    "The packet conditions the crash on DNS Security logging being enabled",
+    "the packet attributes the exposure to how the Actuator is configured",
+    "the packet's path needs no credentials and no authentication",
+    "the packet's end state is arbitrary command execution on the Core server",
+    "the packet's range runs from 12.2.0.13110 up to but excluding 12.2.0.16412",
   ]) assert.equal(D.hasPipelineWording(s), true, s);
   // Every curation noun the possessive form accepts; a later narrowing must keep them.
   for (const noun of ["own", "vector", "stated", "attack vector", "attack path", "exploitation", "remediation",
@@ -500,6 +513,17 @@ test("hasPipelineWording matches curation-input citations and not network-packet
     "the packet's timing gap is too short",
     "the packet is clear of options",
     "the packet does not identify the sender",
+    "The packet has an attacker-controlled length field.",
+    "Packet records contain the timestamp and length.",
+    "the packet requires the fixed-size header",
+    "the packet does not establish a session",
+    "the packet's path goes from the client to the server",
+    "the packet's range runs from 0 to 65535",
+    "the packet pairs a request with a reply",
+    "the packet's flow-control gap widens",
+    "the packet ties the session to the source address",
+    "the packet's end state is a closed socket",
+    "the packet has a length field that the attacker controls",
     "the protocol version named in the packet",
     "the component named in the packet is parsed first",
     "the options listed in the packet header are ignored",
@@ -903,7 +927,7 @@ test("shipped catalogs: extended-detector budgets (no silent regression on v0.13
     "schema-evolution": 0,
     "operator-action-sla": 0,     // no entries currently exceed the SLA window
     "unused-orphan": 1400,        // bulk-imported CWE / RFC orphans by design
-    "pipeline-wording": 323       // lesson and catalog texts citing the curation input; comes down as they are rewritten
+    "pipeline-wording": 324       // lesson and catalog texts citing the curation input; comes down as they are rewritten
   };
   const regressions = [];
   for (const [cls, count] of Object.entries(byClass)) {
