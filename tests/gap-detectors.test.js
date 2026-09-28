@@ -146,11 +146,16 @@ test("logical-consistency: a lesson stating another KEV listing date fires, with
       { id: "NEW-CTRL-001", description: "CISA added the flaw to its Known Exploited Vulnerabilities catalog on 2021-01-01." },
       { id: "NEW-CTRL-002", description: "It was kev-listed 2026-02-10 with a public PoC." },
       { id: "NEW-CTRL-003", description: "Unlike CVE-2020-0002, this flaw was KEV-listed 2020-01-01." },
+      { id: "NEW-CTRL-004", description: "CISA listed this CVE in its KEV catalog on 2021-02-02." },
+      { id: "NEW-CTRL-005", description: "CISA KEV-listed this flaw on 2021-03-03." },
+      { id: "NEW-CTRL-006", description: "CVE-2020-0002 has a separate history.\nKEV-listed 2021-04-04 with a public PoC." },
+      { id: "NEW-CTRL-007", description: "CISA said \"CVE-2020-0002 is unrelated.\" KEV-listed 2021-05-05." },
+      { id: "NEW-CTRL-008", description: "It was added to the KEV catalog on 2021-06-06." },
+      { id: "NEW-CTRL-009", description: "The flaw entered CISA's KEV catalog on 2021-07-07." },
     ] } }
   });
   const f = D.logicalConsistencyFindings(cats).filter((x) => x.rule === "stated_kev_listing_date_matches_entry");
-  assert.deepEqual(f.map((x) => x.field), ["new_control_requirements[0].description", "new_control_requirements[1].description",
-    "new_control_requirements[2].description", "new_control_requirements[3].description"]);
+  assert.deepEqual(f.map((x) => x.field), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => `new_control_requirements[${i}].description`));
   assert.equal(f[0].catalog, "zeroday-lessons");
   assert.match(f[0].reason, /2025-10-20.*2022-06-08/);
 });
@@ -169,6 +174,12 @@ test("logical-consistency: KEV listing dates that match, due dates, and a named 
     ] } }
   });
   assert.deepEqual(D.kevListingDateFindings(cats), []);
+});
+
+test("kevListingDateFindings: a date two patterns both match is one finding", () => {
+  const f = D.kevListingDateFindings({ "cve-catalog": { X: { cisa_kev_date: "2022-06-08" } },
+    "zeroday-lessons": { X: { t: "It was added to the KEV catalog on 2021-06-06." } } });
+  assert.equal(f.length, 1);
 });
 
 test("kevListingDateFindings: opts.entries supplies cisa_kev_date for a batch's lessons", () => {
@@ -514,6 +525,7 @@ test("hasPipelineWording matches curation-input citations and not network-packet
     "the packet is clear of options",
     "the packet does not identify the sender",
     "The packet has an attacker-controlled length field.",
+    "This packet makes it an attractive amplification target.",
     "Packet records contain the timestamp and length.",
     "the packet requires the fixed-size header",
     "the packet does not establish a session",
