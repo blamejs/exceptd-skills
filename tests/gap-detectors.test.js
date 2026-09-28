@@ -161,10 +161,15 @@ test("logical-consistency: a lesson stating another KEV listing date fires, with
       { id: "NEW-CTRL-016", description: "KEV listing date: 2026-02-14." },
       { id: "NEW-CTRL-017", description: "The KEV listing date is 2026-02-15." },
       { id: "NEW-CTRL-018", description: "The text states a KEV listing date of 2026-02-16." },
+      { id: "NEW-CTRL-019", description: "CISA added the flaw to CISA’s KEV catalog on 2026-02-17." },
+      { id: "NEW-CTRL-020", description: "It was added to the CISA KEV catalog on 2026-02-18." },
+      { id: "NEW-CTRL-021", description: "It was listed in the KEV catalogue on 2026-02-19." },
+      { id: "NEW-CTRL-022", description: "CISA added it to its Known Exploited Vulnerabilities (KEV) catalog on 2026-02-20." },
+      { id: "NEW-CTRL-023", description: "It joined CISA's KEV list on 2026-02-21." },
     ] } }
   });
   const f = D.logicalConsistencyFindings(cats).filter((x) => x.rule === "stated_kev_listing_date_matches_entry");
-  assert.deepEqual(f.map((x) => x.field), Array.from({ length: 19 }, (_, i) => `new_control_requirements[${i}].description`));
+  assert.deepEqual(f.map((x) => x.field), Array.from({ length: 24 }, (_, i) => `new_control_requirements[${i}].description`));
   assert.equal(f[0].catalog, "zeroday-lessons");
   assert.match(f[0].reason, /2025-10-20.*2022-06-08/);
 });
