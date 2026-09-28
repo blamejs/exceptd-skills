@@ -621,9 +621,11 @@ test("hasPipelineFieldCitation matches a catalog field cited after packet and no
     "Wireshark reports the frame as Malformed packet: vector length exceeds the table.",
     "the packet's attack surface is the parser",
     "Packet fields: src_ip, dst_ip and tcp_flags",
+    "Packet fields for CVE-2025-0108: IP version, header length, and fragment offset",
+    "Corroborating packet fields from the capture show a zero-length option",
     "",
   ]) assert.equal(D.hasPipelineFieldCitation(s), false, s);
-  for (const re of D.PIPELINE_FIELD_CITATION) assert.ok(!re.global && !re.sticky, String(re));
+  assert.ok(D.PACKET_FIELD_TOKEN.global, "matchAll needs a global pattern");
   for (let i = 0; i < 3; i++) assert.equal(D.hasPipelineFieldCitation("packet: cisa_kev true"), true, "repeat calls agree");
 });
 
