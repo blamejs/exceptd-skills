@@ -54,7 +54,11 @@ function columnKind(header) {
   return null;
 }
 
-function compareCell(kind, cell, e, say) {
+/** A cell's text with Markdown emphasis and code marks removed. */
+const plain = (cell) => cell.replace(/[*_`]/g, "").trim();
+
+function compareCell(kind, raw, e, say) {
+  const cell = plain(raw);
   if (kind === "cvss") {
     const m = /^(\d{1,2}(?:\.\d)?)\b/.exec(cell);
     if (m && Number(m[1]) !== e.cvss_score) say(`CVSS ${m[1]}, catalog ${e.cvss_score}`);
@@ -207,7 +211,7 @@ function checkSkill(file, catalog) {
       const ids = uniqueCves(idCell);
       if (ids.length > 1) {
         const known = ids.filter((id) => catalog[id]);
-        const scored = header.some((kind, k) => (kind === "cvss" || kind === "rwep") && /^\d/.test(cells[k] || ""));
+        const scored = header.some((kind, k) => (kind === "cvss" || kind === "rwep") && /^\d/.test(plain(cells[k] || "")));
         if (known.length && scored) push(`${where} ${ids.join(", ")}: ${UNATTRIBUTED}`);
         return;
       }

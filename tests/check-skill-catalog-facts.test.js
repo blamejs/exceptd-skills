@@ -249,6 +249,25 @@ test("factor points accept a leading plus, hyphen-minus or Unicode minus, and no
   ]), ["4 CVE-2099-0001: factor table Patch Available -10, catalog rwep_factors.patch_available -15"]);
 });
 
+test("Markdown emphasis and code marks in a cell are ignored when comparing it", () => {
+  assert.deepEqual(failuresFor([
+    "| CVE | RWEP | CVSS | KEV |",
+    "|---|---|---|---|",
+    "| CVE-2099-0001 | **12** | **6.1** | `Yes` |",
+    "| CVE-2099-0002 | **80** | _9.8_ | **Yes** (2099-02-03) |",
+  ]), [
+    "3 CVE-2099-0001: RWEP 12, catalog 35",
+    "3 CVE-2099-0001: CVSS 6.1, catalog 7.8",
+    '3 CVE-2099-0001: KEV "Yes", catalog not listed',
+  ]);
+  const msg = 'states a score for several CVEs outside per-CVE parentheses; write each as "CVE-X (name, RWEP n, CVSS n.n)"';
+  assert.deepEqual(failuresFor([
+    "| Pair | RWEP |",
+    "|---|---|",
+    "| CVE-2099-0001 / CVE-2099-0002 | **80** |",
+  ]), [`3 CVE-2099-0001, CVE-2099-0002: ${msg}`]);
+});
+
 test("cells that state no comparable value are not compared", () => {
   assert.deepEqual(failuresFor([
     "| CVE | CVSS | RWEP | KEV | Public PoC |",
