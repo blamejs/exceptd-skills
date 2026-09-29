@@ -178,10 +178,28 @@ const FACTOR_KEYS = [
  * the points must equal that CVE's rwep_factors entry, and the RWEP row must
  * equal its rwep_score.
  */
+/** Factor rows whose Value cell states a catalog boolean, with how to read it. */
+const FACTOR_VALUES = [
+  [/^cisa kev$/, (e) => Boolean(e.cisa_kev), "cisa_kev"],
+  [/^poc public$|^public poc$/, (e) => Boolean(e.poc_available), "poc_available"],
+  [/^ai[- ]discovered$/, (e) => Boolean(e.ai_discovered), "ai_discovered"],
+  [/^ai[- ](?:assisted|factor)$/, (e) => Boolean(e.ai_discovered) || Boolean(e.ai_assisted_weaponization), "ai_discovered / ai_assisted_weaponization"],
+  [/^patch available$/, (e) => Boolean(e.patch_available), "patch_available"],
+  [/^live patch available$/, (e) => Boolean(e.live_patch_available), "live_patch_available"],
+  [/^reboot required$/, (e) => Boolean(e.patch_required_reboot), "patch_required_reboot"],
+];
+
 function compareFactorRow(cells, rawHeader, e, say) {
   const pointsCol = rawHeader.findIndex((h) => /^\s*points\s*$/i.test(h));
   if (pointsCol < 1) return false;
   const label = (cells[0] || "").replace(/\*/g, "").trim().toLowerCase();
+  const valueCol = rawHeader.findIndex((h) => /^\s*value\s*$/i.test(h));
+  const valueRule = FACTOR_VALUES.find(([re]) => re.test(label));
+  if (valueCol > 0 && valueRule) {
+    const cell = plain(cells[valueCol] || "");
+    const v = /^partial\b/i.test(cell) && valueRule[2] === "poc_available" ? true : yesNo(cell);
+    if (v !== null && v !== valueRule[1](e)) say(`factor table ${cells[0].replace(/\*/g, "").trim()} value "${cell.slice(0, 40)}", catalog ${valueRule[2]} ${valueRule[1](e)}`);
+  }
   const m = /^\*{0,2}\s*([+\-−]?\d{1,3})\b/.exec(cells[pointsCol] || "");
   if (!m) return false;
   const points = Number(m[1].replace("−", "-"));

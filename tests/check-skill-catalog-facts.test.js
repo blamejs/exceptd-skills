@@ -159,6 +159,7 @@ test("a factor table under a single-CVE heading is compared with that CVE's rwep
     "| **RWEP** | | **20** |",
   ]), [
     "6 CVE-2099-0001: factor table PoC Public 10, catalog rwep_factors.poc_available 20",
+    '7 CVE-2099-0001: factor table AI-Assisted value "No", catalog ai_discovered / ai_assisted_weaponization true',
     "7 CVE-2099-0001: factor table AI-Assisted 0, catalog rwep_factors.ai_factor 15",
     "9 CVE-2099-0001: factor table RWEP 20, catalog 35",
   ]);
@@ -230,8 +231,39 @@ test("a Partial public-exploit cell is read as a PoC the catalog scores as avail
   ]), ['4 CVE-2099-0002: public exploit "Partial", catalog poc_available false']);
 });
 
+test("a factor row's Yes/No value is compared with the catalog field it scores", () => {
+  const cat = { ...CATALOG, "CVE-2099-0002": { ...CATALOG["CVE-2099-0002"], patch_available: true, live_patch_available: false, patch_required_reboot: true, rwep_factors: { cisa_kev: 25, poc_available: 0, live_patch_available: 0, reboot_required: 5 } } };
+  const run = (lines) => withSkill(lines.join("\n") + "\n", (file) => checkSkill(file, cat).failures.map((f) => f.replace(/^.*skill\.md:/, "")));
+  assert.deepEqual(run([
+    "### CVE-2099-0002 — Demo",
+    "| Factor | Value | Points |",
+    "|---|---|---|",
+    "| CISA KEV | No | +25 |",
+    "| PoC Public | Partial | 0 |",
+    "| Live Patch Available | No (vendor has none) | 0 |",
+    "| Reboot Required | Yes | +5 |",
+    "| Active Exploitation | Confirmed | +20 |",
+  ]), [
+    '4 CVE-2099-0002: factor table CISA KEV value "No", catalog cisa_kev true',
+    '5 CVE-2099-0002: factor table PoC Public value "Partial", catalog poc_available false',
+  ]);
+});
+
+test("an AI-Discovered factor row reads discovery alone; AI-Assisted also counts weaponization", () => {
+  const cat = { ...CATALOG, "CVE-2099-0003": { ...CATALOG["CVE-2099-0003"], rwep_factors: { ai_factor: 15 } } };
+  const run = (lines) => withSkill(lines.join("\n") + "\n", (file) => checkSkill(file, cat).failures.map((f) => f.replace(/^.*skill\.md:/, "")));
+  assert.deepEqual(run([
+    "### CVE-2099-0003 — Demo",
+    "| Factor | Value | Points |",
+    "|---|---|---|",
+    "| AI-Discovered | No | +15 |",
+    "| AI-Assisted | Yes | +15 |",
+    "| AI-Discovered | Yes | +15 |",
+  ]), ['6 CVE-2099-0003: factor table AI-Discovered value "Yes", catalog ai_discovered false']);
+});
+
 test("factor points accept a leading plus, hyphen-minus or Unicode minus, and nothing else", () => {
-  const cat = { ...CATALOG, "CVE-2099-0001": { ...CATALOG["CVE-2099-0001"], rwep_factors: { patch_available: -15, poc_available: 20, blast_radius: 25 } } };
+  const cat = { ...CATALOG, "CVE-2099-0001": { ...CATALOG["CVE-2099-0001"], patch_available: true, rwep_factors: { patch_available: -15, poc_available: 20, blast_radius: 25 } } };
   const run = (lines) => withSkill(lines.join("\n") + "\n", (file) => checkSkill(file, cat).failures.map((f) => f.replace(/^.*skill\.md:/, "")));
   assert.deepEqual(run([
     "### CVE-2099-0001 — Demo",
