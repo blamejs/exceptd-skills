@@ -6,6 +6,22 @@
   },
   "events": [
     {
+      "date": "2026-09-29",
+      "type": "catalog_update",
+      "artifact": "data/cve-catalog.json",
+      "path": "data/cve-catalog.json",
+      "schema_version": "1.0.0",
+      "entry_count": 1759
+    },
+    {
+      "date": "2026-09-29",
+      "type": "catalog_update",
+      "artifact": "data/zeroday-lessons.json",
+      "path": "data/zeroday-lessons.json",
+      "schema_version": "1.1.0",
+      "entry_count": 1759
+    },
+    {
       "date": "2026-09-28",
       "type": "skill_review",
       "artifact": "kernel-lpe-triage",
@@ -102,22 +118,6 @@
       "artifact": "idp-incident-response",
       "path": "skills/idp-incident-response/skill.md",
       "note": "Identity-provider incident response for mid-2026 — Okta, Entra ID, Auth0, Ping, OneLogin tenant compromise, federated-trust abuse, OAuth app consent abuse, Midnight Blizzard and Scattered Spider TTPs against the IdP control plane"
-    },
-    {
-      "date": "2026-09-28",
-      "type": "catalog_update",
-      "artifact": "data/cve-catalog.json",
-      "path": "data/cve-catalog.json",
-      "schema_version": "1.0.0",
-      "entry_count": 1758
-    },
-    {
-      "date": "2026-09-28",
-      "type": "catalog_update",
-      "artifact": "data/zeroday-lessons.json",
-      "path": "data/zeroday-lessons.json",
-      "schema_version": "1.1.0",
-      "entry_count": 1758
     },
     {
       "date": "2026-09-22",

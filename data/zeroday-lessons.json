@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.1.0",
-    "last_updated": "2026-09-28",
+    "last_updated": "2026-09-29",
     "last_threat_review": "2026-05-17",
     "purpose": "Zero-day learning loop output. Each entry maps a CVE to: attack vector, defense chain analysis, framework coverage, new control requirements generated, and exposure scoring. v1.1.0 (2026-05-15): every entry now carries ai_discovered_zeroday boolean + ai_discovery_source enum + ai_discovery_date + ai_assist_factor ladder, per AGENTS.md Hard Rule #7.",
     "note": "Never delete entries. Closed gaps are marked status: closed. History is data.",
@@ -17,7 +17,7 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "entry_count": 1758
+    "entry_count": 1759
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -145794,6 +145794,103 @@
         "gap_closes": [
           "NIST-800-53-SC-39",
           "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-88772": {
+    "name": "Citrix NetScaler Improper Restriction of Operations within the Bounds of a Memory Buffer Vulnerability",
+    "lesson_date": "2026-09-28",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "unknown",
+    "ai_discovery_date": null,
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An unauthenticated attacker who sends a crafted DTLS packet to a DTLS-enabled virtual server on a NetScaler ADC or NetScaler Gateway can trigger a memory overflow that leads to remote code execution or denial of service. DTLS is enabled by default on VPN virtual servers unless -dtls OFF is set, and virtual servers configured with type DTLS are also affected.",
+      "privileges_required": "None; the CVSS vector Citrix publishes sets privileges required to none, and DTLS is on by default on VPN virtual servers unless -dtls OFF is set.",
+      "complexity": "High; the CVSS vector Citrix publishes sets attack complexity high, and Rapid7 says reliable exploitation may be more difficult for an attacker than for the input-validation flaw CVE-2026-88771 in the same bulletin.",
+      "ai_factor": "Not AI-discovered as far as any source states. The Citrix acknowledgment is not tied to this CVE, and no source claims AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Keeping DTLS off where DTLS transport was not needed, by setting -dtls OFF on VPN virtual servers of type SSL and not configuring virtual servers of type DTLS, which takes an appliance out of the precondition CTX697096 describes, and upgrading edge appliances on a compressed, exposure-driven schedule.",
+        "was_this_required": true,
+        "framework_requiring_it": "AU-Essential-8-Patch",
+        "adequacy": "Keeping DTLS off takes an appliance out of this flaw's precondition, which makes it mitigated with residual risk for this CVE, but it is not a mitigation Citrix publishes and it leaves the vulnerable build in place. Every build below the fixed releases is also affected by CVE-2026-88771, which Citrix reports as exploited and which affects the default configuration with no feature enabled, so DTLS being off does not make it safe to defer the upgrade. Re-enabling DTLS or adding a DTLS-type virtual server reopens CVE-2026-88772 until 14.1-73.37, 13.1-64.23, 14.1-73.37 FIPS or 13.1.37.279 is installed; on a 13.1 appliance where show ns variable returns any variables, watchTowr reports that 13.1-64.24 should be used to avoid a known reboot loop during the upgrade."
+      },
+      "detection": {
+        "what_would_have_worked": "Alerting on unexplained packet-engine crashes, restarts and NSPPE- core files under /var/core, excluding those produced by an operator's own core-file collection; watching DTLS traffic from untrusted sources to the UDP port of each DTLS-enabled virtual server; and forwarding appliance logs to a collector in a separate trust zone.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "No source names the component that overflows, so a crash is an assumed symptom of the denial-of-service outcome rather than a confirmed artifact, and a successful code-execution attempt may leave none. Normal VPN clients also send DTLS, so the traffic shows exposure rather than attack. Off-box logging matters because an attacker with code execution on the appliance can alter its local logs."
+      },
+      "response": {
+        "what_would_have_worked": "Following CISA's BOD 26-04 triage order and Citrix CTX694799 on every in-scope appliance: run the Citrix indicators of compromise in the NetScaler console; record the system time, timezone and NTP settings; preserve local, remote syslog and NetScaler Console logs; snapshot each VPX instance; collect a technical support bundle; generate a packet-engine core file, which warm-restarts the appliance; on MPX and SDX hardware, image the disks through local incident-response processes after memory preservation; then upgrade, and where compromise is found, isolate and rebuild the appliance, upgrade firmware, and rotate every credential, secret, and certificate it held.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 26-04 forensic triage (flagged in the KEV entry), for agencies bound by the directive",
+        "adequacy": "Patching in place does not evict an attacker who gained access before the fix, so the KEV entry's forensic-triage requirement calls for evidence capture and a compromise assessment ahead of any reboot or rebuild. Generating a packet-engine core file restarts the appliance, so it follows the other live collection steps."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The period runs from the 2026-09-27 release and SI-2 asks for no interim measure, so DTLS exposure before the fix, on by default for VPN virtual servers, falls outside it."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Citrix published no interim measure, and disabling DTLS on SSL VPN virtual servers leaves DTLS-type virtual servers exposed, so residual-risk tracking must follow DTLS state and not just the build."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Promptly is not defined against exploitation that began before the 2026-09-27 fix, and a DTLS change on SSL VPN virtual servers leaves DTLS-type virtual servers exposed."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Internet-facing appliances get 48 hours from the 2026-09-27 release, but an internal ADC hosting a DTLS virtual server gets one month below Maturity Level Three, and no window ran during the exploitation that preceded the fix."
+      },
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The flaw requires no privileges, so the appliance acts on DTLS input before any authentication and the authenticate-before-access outcome is not met at the product level."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Exposure cannot be judged from the build alone because it depends on DTLS state, and the required measure must include a compromise assessment."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-030",
+        "name": "PERIMETER-DEVICE-ZERODAY-SLA-TIER",
+        "description": "Internet-facing perimeter appliances are placed in a dedicated, compressed remediation tier whose clock starts at evidence of exploitation and runs faster than the general patch schedule, independent of the severity a vendor assigns.",
+        "evidence": "CVE-2026-88772 is a DTLS memory-overflow remote code execution flaw in Citrix NetScaler ADC and Gateway, KEV-listed on 2026-09-27 with active exploitation and DTLS enabled by default on VPN virtual servers per bulletin CTX697096, so this internet-facing appliance class needs a compressed remediation tier distinct from routine patching.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "NIST-800-53-SI-2"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-038",
+        "name": "MITIGATION-ACTIVE-PATCH-PENDING-VERDICT-CLASS",
+        "description": "A compliance verdict distinguishes a deployed fixed build from an active configuration mitigation that leaves the vulnerable build in place, records the latter as mitigated with residual risk, and flags that reverting the configuration reopens the flaw.",
+        "evidence": "Bulletin CTX697096 states that a NetScaler VPN virtual server of type SSL set with -dtls OFF does not meet the CVE-2026-88772 precondition, while any virtual server configured with type DTLS does, and it names only the upgrade as the fix. An appliance whose build predates 14.1-73.37, 13.1-64.23, 14.1-73.37 FIPS or 13.1.37.279 on its product line, with -dtls OFF on every VPN virtual server of type SSL and no virtual server of type DTLS, is recorded for CVE-2026-88772 as mitigated with residual risk, not fixed: the vulnerable build stays in place, and re-enabling DTLS or adding a DTLS-type virtual server restores exposure without any version change. The same build remains exposed to CVE-2026-88771, which the same bulletin reports as exploited, which affects those builds in the default configuration with no feature enabled, and which the same builds close, so it is tracked as a separate open finding and the upgrade stays required.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management",
+          "ISO-27001-2022-A.8.8"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "A network-reachable appliance that suffers an actively exploited pre-authentication compromise is met with a pre-rehearsed runbook that captures forensic evidence, then rebuilds the device and rotates its stored credentials, rather than patching it in place.",
+        "evidence": "Citrix article CTX694799 tells operators who suspect NetScaler compromise to snapshot the VPX instance, capture a packet-engine core dump, isolate and rebuild the appliance, and rotate stored secrets; for the actively exploited CVE-2026-88772 that forensic-and-rebuild path takes priority over patching a possibly already-compromised device.",
+        "gap_closes": [
+          "UK-CAF-B4"
         ]
       }
     ]
