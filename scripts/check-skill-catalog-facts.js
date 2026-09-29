@@ -37,6 +37,18 @@ function yesNo(cell) {
   return null;
 }
 
+/**
+ * An AI cell's claim: a leading Yes/No, a declarative form the column counts as
+ * yes ("AI-discovered", "AI-weaponized"), or "Human-discovered" as no.
+ */
+function aiValue(cell, yesForm) {
+  const v = yesNo(cell);
+  if (v !== null) return v;
+  if (yesForm.test(cell)) return true;
+  if (/^human[- ](?:discovered|found)\b/i.test(cell)) return false;
+  return null;
+}
+
 /** The CVSS major version a text names ("CVSS 4.0", "CVSS v3.1"), or null. */
 function cvssVersion(vector) {
   const m = /^CVSS:(\d)/.exec(vector || "");
@@ -79,10 +91,10 @@ function compareCell(kind, raw, e, say) {
     const v = /^partial\b/i.test(cell) ? true : yesNo(cell);
     if (v !== null && v !== Boolean(e.poc_available)) say(`public exploit "${cell.slice(0, 40)}", catalog poc_available ${e.poc_available}`);
   } else if (kind === "ai_discovered") {
-    const v = yesNo(cell);
+    const v = aiValue(cell, /^ai[- ](?:discovered|assisted)\b/i);
     if (v !== null && v !== Boolean(e.ai_discovered)) say(`AI-discovered "${cell.slice(0, 40)}", catalog ai_discovered ${e.ai_discovered}`);
   } else if (kind === "ai_any") {
-    const v = yesNo(cell);
+    const v = aiValue(cell, /^ai[- ](?:discovered|assisted|accelerated|enabled|weaponi[sz]ed)\b/i);
     const expected = Boolean(e.ai_discovered) || Boolean(e.ai_assisted_weaponization);
     if (v !== null && v !== expected) say(`AI "${cell.slice(0, 40)}", catalog ai_discovered ${e.ai_discovered} / ai_assisted_weaponization ${e.ai_assisted_weaponization}`);
   }

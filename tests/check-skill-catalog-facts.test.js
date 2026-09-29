@@ -268,6 +268,21 @@ test("Markdown emphasis and code marks in a cell are ignored when comparing it",
   ]), [`3 CVE-2099-0001, CVE-2099-0002: ${msg}`]);
 });
 
+test("declarative AI cells are read: AI-discovered, AI-weaponized and Human-discovered", () => {
+  assert.deepEqual(failuresFor([
+    "| CVE | AI factor | AI-Discovered |",
+    "|---|---|---|",
+    "| CVE-2099-0001 | AI-assisted discovery | AI-discovered |",
+    "| CVE-2099-0003 | AI-weaponized | Human-discovered |",
+    "| CVE-2099-0001 | Human-discovered | Human-discovered |",
+    "| CVE-2099-0002 | AI-accelerated | AI-weaponized |",
+  ]), [
+    '5 CVE-2099-0001: AI "Human-discovered", catalog ai_discovered true / ai_assisted_weaponization false',
+    '5 CVE-2099-0001: AI-discovered "Human-discovered", catalog ai_discovered true',
+    '6 CVE-2099-0002: AI "AI-accelerated", catalog ai_discovered false / ai_assisted_weaponization false',
+  ]);
+});
+
 test("cells that state no comparable value are not compared", () => {
   assert.deepEqual(failuresFor([
     "| CVE | CVSS | RWEP | KEV | Public PoC |",

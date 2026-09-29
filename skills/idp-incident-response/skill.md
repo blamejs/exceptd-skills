@@ -151,7 +151,7 @@ Agentic AI is the emerging structural problem on top. AI agents operating on beh
 | ScreenConnect identity-class CVE | 7.5 (CVSS) | high (CISA KEV) | Yes (2024-02) | Yes — public PoC | No | Confirmed exploitation against IdP-adjacent MSP surface | Yes — vendor patch | Patch-class | EDR + tenant audit if integration logged |
 | CVE-2024-1709 ScreenConnect authentication bypass | 10.0 | 75 | Yes (2024-02-22) | Yes | No | Confirmed exploitation 2024 | Yes | No | Vendor-side patching + IdP-side conditional-access tightening |
 | CVE-2023-3519 Citrix NetScaler RCE | 9.8 | 80 | Yes (2023-07-19) | Yes | No | Confirmed exploitation 2023-2024 (financial-sector and federal targets) | Yes | No | Network telemetry + IdP-tenant access-pattern alerting |
-| CVE-2026-30615 Windsurf MCP — adjacent identity surface | 8.0 | 35 | No | Yes | No | Suspected | Mitigation + vendor patch | n/a | MCP-tool-trust telemetry |
+| CVE-2026-30615 Windsurf MCP — adjacent identity surface | 8.0 | 35 | No | Yes | No | Suspected | Mitigation + vendor patch | Yes (IDE update) | MCP-tool-trust telemetry |
 
 **Honest gap statement.** IdP-specific CVEs (Okta Auth0 Workforce CVEs, Entra ID Graph CVEs, Auth0 platform CVEs, Ping platform CVEs, OneLogin platform CVEs) are not exhaustively inventoried in `data/cve-catalog.json`. Authoritative sources: vendor advisories (Okta Security, Microsoft MSRC + Security Update Guide, Auth0 Security Advisories, Ping Identity Security Notices, One Identity Customer Advisory), CISA KEV for cross-sector exposure, CISA AA24 series for federal-targeting advisories, and sector intel feeds. Forward-watched.
 
