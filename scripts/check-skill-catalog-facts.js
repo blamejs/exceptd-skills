@@ -81,17 +81,22 @@ function columnKind(header) {
 const SUBJECT_HEADER = /\b(?:cve|vulnerabilit|threat|incident|class|surface|flaw|evidence)/i;
 
 /**
- * Patch cell: a leading Yes/No, or "Vendor patch/update/fix" read as available
- * unless the words after it deny it ("Vendor patch unavailable", "Vendor update
- * not yet available", "Vendor fix pending").
+ * Patch cell: a leading Yes/No, or "Vendor patch/update/fix" read by the words
+ * after it. A denial or a future state ("unavailable", "not yet released",
+ * "pending", "planned", "in development") reads as no patch; an unknown status
+ * is not compared; the bare phrase, a joined addition ("Vendor patch + config
+ * hardening") or an affirmative word ("shipped", "released") reads as a patch.
  */
 function patchValue(cell) {
   const v = yesNo(cell);
   if (v !== null) return v;
   const m = /^vendor (?:patch|update|fix)(?:es)?\b(.{0,40})/i.exec(cell);
   if (!m) return null;
-  if (/\b(?:unavailable|unreleased|not (?:yet )?(?:available|released|shipped|published)|pending)\b/i.test(m[1])) return false;
-  return true;
+  const rest = m[1].trim();
+  if (/\b(?:unavailable|unreleased|not (?:yet )?(?:available|released|shipped|published)|pending|planned|in development|expected|forthcoming|upcoming)\b/i.test(rest)) return false;
+  if (/\bunknown\b/i.test(rest)) return null;
+  if (rest === "" || /^(?:[+,;(—–-]|and\b|via\b|from\b)/i.test(rest) || /\b(?:available|released|shipped|published|issued|applied)\b/i.test(rest)) return true;
+  return null;
 }
 
 /** Active-exploitation cell: Confirmed, Suspected, None/No, Unknown or Theoretical. */
@@ -287,7 +292,11 @@ function checkSkill(file, catalog) {
         if (compareFactorRow(cells, rawHeader, catalog[sectionCve], (msg) => push(`${where} ${sectionCve}: ${msg}`))) compared++;
         return;
       }
-      const idCol = cells.findIndex((c, k) => uniqueCves(c).length > 0 && SUBJECT_HEADER.test(rawHeader[k] || ""));
+      // A header that names a CVE ("CVE", "Evidence CVE") outranks a broad one
+      // ("Threat", "Class", "Surface") when both columns cite a CVE.
+      const bearsCve = (k) => uniqueCves(cells[k] || "").length > 0;
+      let idCol = cells.findIndex((c, k) => bearsCve(k) && /\bcve\b/i.test(rawHeader[k] || ""));
+      if (idCol < 0) idCol = cells.findIndex((c, k) => bearsCve(k) && SUBJECT_HEADER.test(rawHeader[k] || ""));
       if (idCol < 0) return;
       const idCell = cells[idCol];
       if (/^(?:no|n\/a)\b/i.test(idCell) || /\bsee\s+CVE-/i.test(idCell)) return;

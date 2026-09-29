@@ -368,6 +368,31 @@ test("a vendor-patch cell that denies availability reads as no patch", () => {
   ]);
 });
 
+test("a vendor-patch cell reads as a patch only when it affirms one", () => {
+  const cat = { ...CATALOG, "CVE-2099-0002": { ...CATALOG["CVE-2099-0002"], patch_available: false } };
+  const run = (lines) => withSkill(lines.join("\n") + "\n", (file) => checkSkill(file, cat).failures.map((f) => f.replace(/^.*skill\.md:/, "")));
+  assert.deepEqual(run([
+    "| CVE | Patch Available |",
+    "|---|---|",
+    "| CVE-2099-0002 | Vendor patch planned |",
+    "| CVE-2099-0002 | Vendor patch in development |",
+    "| CVE-2099-0002 | Vendor patch status unknown |",
+    "| CVE-2099-0002 | Vendor patch |",
+    "| CVE-2099-0002 | Vendor patch + config hardening |",
+  ]), [
+    '6 CVE-2099-0002: patch "Vendor patch", catalog patch_available false',
+    '7 CVE-2099-0002: patch "Vendor patch + config hardening", catalog patch_available false',
+  ]);
+});
+
+test("a column headed CVE outranks a broad subject column", () => {
+  assert.deepEqual(failuresFor([
+    "| Related Threat | Evidence CVE | RWEP |",
+    "|---|---|---|",
+    "| Chained with CVE-2099-0002 | CVE-2099-0001 | 99 |",
+  ]), ["3 CVE-2099-0001: RWEP 99, catalog 35"]);
+});
+
 test("an exploitation claim is compared with an unknown or theoretical catalog state too", () => {
   const cat = {
     ...CATALOG,
