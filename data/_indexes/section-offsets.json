@@ -19,7 +19,7 @@
   "skills": {
     "kernel-lpe-triage": {
       "path": "skills/kernel-lpe-triage/skill.md",
-      "total_bytes": 31304,
+      "total_bytes": 31309,
       "total_lines": 397,
       "frontmatter": {
         "line_start": 1,
@@ -33,16 +33,16 @@
           "normalized_name": "threat-context",
           "line": 60,
           "byte_start": 1758,
-          "byte_end": 7596,
-          "bytes": 5838,
+          "byte_end": 7601,
+          "bytes": 5843,
           "h3_count": 3
         },
         {
           "name": "Framework Lag Declaration",
           "normalized_name": "framework-lag-declaration",
           "line": 133,
-          "byte_start": 7596,
-          "byte_end": 10115,
+          "byte_start": 7601,
+          "byte_end": 10120,
           "bytes": 2519,
           "h3_count": 0
         },
@@ -50,8 +50,8 @@
           "name": "TTP Mapping (MITRE ATT&CK Enterprise, mid-2026)",
           "normalized_name": "ttp-mapping",
           "line": 149,
-          "byte_start": 10115,
-          "byte_end": 13032,
+          "byte_start": 10120,
+          "byte_end": 13037,
           "bytes": 2917,
           "h3_count": 0
         },
@@ -59,8 +59,8 @@
           "name": "Exploit Availability Matrix",
           "normalized_name": "exploit-availability-matrix",
           "line": 166,
-          "byte_start": 13032,
-          "byte_end": 13931,
+          "byte_start": 13037,
+          "byte_end": 13936,
           "bytes": 899,
           "h3_count": 0
         },
@@ -68,8 +68,8 @@
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
           "line": 177,
-          "byte_start": 13931,
-          "byte_end": 16003,
+          "byte_start": 13936,
+          "byte_end": 16008,
           "bytes": 2072,
           "h3_count": 0
         },
@@ -77,8 +77,8 @@
           "name": "Analysis Procedure",
           "normalized_name": "analysis-procedure",
           "line": 195,
-          "byte_start": 16003,
-          "byte_end": 21303,
+          "byte_start": 16008,
+          "byte_end": 21308,
           "bytes": 5300,
           "h3_count": 6
         },
@@ -86,8 +86,8 @@
           "name": "Output Format",
           "normalized_name": "output-format",
           "line": 303,
-          "byte_start": 21303,
-          "byte_end": 23696,
+          "byte_start": 21308,
+          "byte_end": 23701,
           "bytes": 2393,
           "h3_count": 0
         },
@@ -95,8 +95,8 @@
           "name": "Detection Rules",
           "normalized_name": "detection-rules",
           "line": 348,
-          "byte_start": 23696,
-          "byte_end": 24385,
+          "byte_start": 23701,
+          "byte_end": 24390,
           "bytes": 689,
           "h3_count": 0
         },
@@ -104,8 +104,8 @@
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
           "line": 371,
-          "byte_start": 24385,
-          "byte_end": 29059,
+          "byte_start": 24390,
+          "byte_end": 29064,
           "bytes": 4674,
           "h3_count": 0
         },
@@ -113,8 +113,8 @@
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
           "line": 388,
-          "byte_start": 29059,
-          "byte_end": 31304,
+          "byte_start": 29064,
+          "byte_end": 31309,
           "bytes": 2245,
           "h3_count": 0
         }
@@ -516,8 +516,8 @@
     },
     "exploit-scoring": {
       "path": "skills/exploit-scoring/skill.md",
-      "total_bytes": 30436,
-      "total_lines": 391,
+      "total_bytes": 30437,
+      "total_lines": 393,
       "frontmatter": {
         "line_start": 1,
         "line_end": 25,
@@ -584,52 +584,52 @@
           "normalized_name": "pre-calculated-rwep-scores",
           "line": 159,
           "byte_start": 13515,
-          "byte_end": 19324,
-          "bytes": 5809,
+          "byte_end": 19325,
+          "bytes": 5810,
           "h3_count": 5
         },
         {
           "name": "RWEP vs. CVSS Delta Analysis",
           "normalized_name": "rwep-vs-cvss-delta-analysis",
-          "line": 253,
-          "byte_start": 19324,
-          "byte_end": 20833,
+          "line": 255,
+          "byte_start": 19325,
+          "byte_end": 20834,
           "bytes": 1509,
           "h3_count": 0
         },
         {
           "name": "Analysis Procedure",
           "normalized_name": "analysis-procedure",
-          "line": 277,
-          "byte_start": 20833,
-          "byte_end": 22526,
+          "line": 279,
+          "byte_start": 20834,
+          "byte_end": 22527,
           "bytes": 1693,
           "h3_count": 4
         },
         {
           "name": "Output Format",
           "normalized_name": "output-format",
-          "line": 315,
-          "byte_start": 22526,
-          "byte_end": 24171,
+          "line": 317,
+          "byte_start": 22527,
+          "byte_end": 24172,
           "bytes": 1645,
           "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 355,
-          "byte_start": 24171,
-          "byte_end": 26206,
+          "line": 357,
+          "byte_start": 24172,
+          "byte_end": 26207,
           "bytes": 2035,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 367,
-          "byte_start": 26206,
-          "byte_end": 30436,
+          "line": 369,
+          "byte_start": 26207,
+          "byte_end": 30437,
           "bytes": 4230,
           "h3_count": 0
         }

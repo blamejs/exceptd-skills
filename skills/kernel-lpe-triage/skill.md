@@ -83,7 +83,7 @@ The attack abuses a write primitive in the copy-on-write path of the page cache.
 ### Dirty Frag — CVE-2026-43284 + CVE-2026-43500
 
 **Classification:** Local Privilege Escalation Chain | Breaks IPsec Mitigations  
-**CVSS:** 8.8 (High) for CVE-2026-43284, 7.6 (High) for CVE-2026-43500 | **RWEP:** 53/100 and 47/100
+**CVSS / RWEP:** CVE-2026-43284 (CVSS 8.8 High, RWEP 53/100), CVE-2026-43500 (CVSS 7.6 High, RWEP 47/100)
 
 Discovered by Hyunwoo Kim with AI assistance, per Sysdig's write-up. A two-CVE chain exploiting page-cache write primitives in:
 - ESP/IPsec subsystem (CVE-2026-43284)

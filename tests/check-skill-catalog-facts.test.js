@@ -103,6 +103,47 @@ test("a bare number in parentheses is read as RWEP only on a line that mentions 
   assert.deepEqual(failuresFor(["By RWEP: CVE-2099-0001 (12), CVE-2099-0002 (80)."]), ["1 CVE-2099-0001: RWEP 12, catalog 35"]);
 });
 
+test("parentheses that open with a CVE id carry that CVE's values", () => {
+  assert.deepEqual(failuresFor([
+    "spanning prompt-injection RCE (CVE-2099-0003, CVSS 7.8 / AV:L) and MCP RCE (CVE-2099-0001, CVSS 8.0 / AV:L).",
+  ]), ["1 CVE-2099-0001: CVSS 8.0, catalog 7.8"]);
+});
+
+test("a score stated for several CVEs outside per-CVE parentheses fails as unattributable", () => {
+  const msg = 'states a score for several CVEs outside per-CVE parentheses; write each as "CVE-X (name, RWEP n, CVSS n.n)"';
+  assert.deepEqual(failuresFor([
+    "**CVSS:** 8.8 for CVE-2099-0001, 9.8 for CVE-2099-0002 | **RWEP:** 35/100 and 80/100",
+    "RWEP 35 applies; hosts mitigated for CVE-2099-0001 / CVE-2099-0002 are covered.",
+  ]), [`1 CVE-2099-0001, CVE-2099-0002: ${msg}`, `2 CVE-2099-0001, CVE-2099-0002: ${msg}`]);
+  assert.deepEqual(failuresFor([
+    "| Chain | CVSS | RWEP |",
+    "|---|---|---|",
+    "| CVE-2099-0001 / CVE-2099-0002 | 7.8 | 35 |",
+    "| CVE-2099-0001 / CVE-2099-0002 | High | varies |",
+  ]), [`3 CVE-2099-0001, CVE-2099-0002: ${msg}`]);
+});
+
+test("a CVE the catalog does not hold still counts when attributing a line's scores", () => {
+  const msg = 'states a score for several CVEs outside per-CVE parentheses; write each as "CVE-X (name, RWEP n, CVSS n.n)"';
+  assert.deepEqual(failuresFor(["CVE-2099-0001 (CVSS 7.8, RWEP 35) and CVE-2000-9999 (CVSS 9.8, RWEP 80) are chained."]), []);
+  assert.deepEqual(failuresFor(["RWEP 80 applies to the pair CVE-2099-0001 and CVE-2000-9999."]), [`1 CVE-2099-0001, CVE-2000-9999: ${msg}`]);
+  assert.deepEqual(failuresFor(["RWEP 80 applies to the pair CVE-2000-9998 and CVE-2000-9999."]), []);
+  assert.deepEqual(failuresFor([
+    "| Pair | RWEP |",
+    "|---|---|",
+    "| CVE-2099-0001 / CVE-2000-9999 | 80 |",
+  ]), [`3 CVE-2099-0001, CVE-2000-9999: ${msg}`]);
+});
+
+test("a multi-CVE line with no score, a threshold, or a superseded value is not unattributable", () => {
+  assert.deepEqual(failuresFor([
+    "Hosts mitigated for CVE-2099-0001 / CVE-2099-0002 are already covered.",
+    "Every CVE with RWEP >= 50, such as CVE-2099-0001 and CVE-2099-0002, must appear.",
+    "CVE-2099-0001 and CVE-2099-0002 share a vendor; the initial CVSS 9.1 was withdrawn.",
+    "CVE-2099-0001 (Demo, RWEP 35) and CVE-2099-0002 (Other, RWEP 80) are chained.",
+  ]), []);
+});
+
 test("a disagreement stated once on a single-CVE line is reported once", () => {
   assert.deepEqual(failuresFor(["CVE-2099-0001 (Demo, RWEP 12, CVSS 7.8) is the example."]), ["1 CVE-2099-0001: RWEP 12, catalog 35"]);
 });

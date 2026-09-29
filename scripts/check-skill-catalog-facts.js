@@ -110,14 +110,23 @@ function compareProse(line, e, say) {
 }
 
 /**
- * Values in the parentheses that follow a CVE id belong to that CVE:
- * "CVE-X (Copy Fail, RWEP 90, CVSS 7.8)" or "CVE-X (Dirty Frag, 38, CVSS 7.8)".
- * A bare 1-3 digit item is read as RWEP when the line mentions RWEP.
+ * Values in the parentheses that follow a CVE id, or that open with one, belong
+ * to that CVE: "CVE-X (Copy Fail, RWEP 90, CVSS 7.8)", "CVE-X (Dirty Frag, 38,
+ * CVSS 7.8)" or "(CVE-X, CVSS 7.8 / AV:L)". A bare 1-3 digit item is read as
+ * RWEP when the line mentions RWEP.
  */
+const PER_CVE = /(CVE-\d{4}-\d{4,})\s*\(([^()]*)\)|\((CVE-\d{4}-\d{4,})[,;:]\s*([^()]*)\)/g;
+
+const UNATTRIBUTED = 'states a score for several CVEs outside per-CVE parentheses; write each as "CVE-X (name, RWEP n, CVSS n.n)"';
+
+/** A score statement: "RWEP 53", "CVSS 8.8", "**RWEP:** 53/100". */
+const SCORE = /RWEP(?: score)?\*{0,2}(?:\s*(?:of|is|=|:))?\*{0,2}\s*\d{1,3}(?![\d+–-]|\.\d)|CVSS(?:\s*v?\d(?:\.\d)?\b)?(?:\s*(?:score|base score))?\*{0,2}(?:\s*(?:of|is|=|:))?\*{0,2}\s*\d{1,2}\.\d\b|\b\d{1,3}\/100\b/i;
+
 function compareParentheticals(line, catalog, say) {
   const rwepContext = /\bRWEP\b/i.test(line);
   let found = 0;
-  for (const m of line.matchAll(/(CVE-\d{4}-\d{4,})\s*\(([^()]*)\)/g)) {
+  for (const raw of line.matchAll(PER_CVE)) {
+    const m = raw[1] ? [raw[0], raw[1], raw[2]] : [raw[0], raw[3], raw[4]];
     const e = catalog[m[1]];
     if (!e) continue;
     found++;
@@ -148,9 +157,15 @@ function checkSkill(file, catalog) {
       if (header === null) { header = cells.map(columnKind); return; }
       if (isDivider(cells)) return;
       const idCell = cells.find((c) => uniqueCves(c).length > 0) || "";
-      const ids = uniqueCves(idCell);
-      if (ids.length !== 1 || !catalog[ids[0]]) return;
       if (/^(?:no|n\/a)\b/i.test(idCell) || /\bsee\s+CVE-/i.test(idCell)) return;
+      const ids = uniqueCves(idCell);
+      if (ids.length > 1) {
+        const known = ids.filter((id) => catalog[id]);
+        const scored = header.some((kind, k) => (kind === "cvss" || kind === "rwep") && /^\d/.test(cells[k] || ""));
+        if (known.length && scored) push(`${where} ${ids.join(", ")}: ${UNATTRIBUTED}`);
+        return;
+      }
+      if (ids.length !== 1 || !catalog[ids[0]]) return;
       const e = catalog[ids[0]];
       compared++;
       header.forEach((kind, k) => {
@@ -160,6 +175,12 @@ function checkSkill(file, catalog) {
     }
     header = null;
     const ids = uniqueCves(line);
+    if (ids.length > 1) {
+      const rest = line.replace(PER_CVE, " ");
+      const m = SCORE.exec(rest);
+      if (ids.some((id) => catalog[id]) && m && !historical(rest, m)) push(`${where} ${ids.join(", ")}: ${UNATTRIBUTED}`);
+      return;
+    }
     if (ids.length !== 1 || !catalog[ids[0]]) return;
     compared++;
     compareProse(line, catalog[ids[0]], (msg) => push(`${where} ${ids[0]}: ${msg}`));

@@ -4,7 +4,7 @@
 
 14 skills stated CVSS, RWEP, KEV, public-exploit or AI-discovery values for catalog CVEs that disagreed with the catalog, and now match it. The cloud-IAM incident skill listed runc CVE-2024-21626 and the xz backdoor CVE-2024-3094 as KEV-listed with RWEP 88 and 70; CISA has listed neither, and the catalog scores them 35 and 45. The Dirty Frag and Fragnesia CVEs (CVE-2026-43284, CVE-2026-43500, CVE-2026-46300) now read as AI-assisted discoveries with RWEP 53, 47 and 35, where several skills said they were human-discovered and scored 38, 32 and 20; a KEV listing would take Fragnesia to 60, and confirmed exploitation to 80. The security maturity tiers now place the Dirty Frag pair in the Practical tier, which covers RWEP 30 and above. The Windsurf MCP entry (CVE-2026-30615) reads CVSS 8.0 with a public exploit throughout, and CVE-2026-45321 reads as KEV-listed on 2026-05-27 rather than pending.
 
-A new predeploy gate, `scripts/check-skill-catalog-facts.js`, compares every skill table row, prose line and parenthesized CVE list ("CVE-2026-43284 (Dirty Frag ESP/IPsec, 53, CVSS 8.8)") that states one of these values for a catalog CVE with `data/cve-catalog.json`, and fails when they disagree.
+A new predeploy gate, `scripts/check-skill-catalog-facts.js`, compares every skill table row, prose line and parenthesized CVE list ("CVE-2026-43284 (Dirty Frag ESP/IPsec, 53, CVSS 8.8)") that states one of these values for a catalog CVE with `data/cve-catalog.json`, and fails when they disagree or when a line states a score for several CVEs outside per-CVE parentheses.
 
 ## 0.21.13 — 2026-09-28
 

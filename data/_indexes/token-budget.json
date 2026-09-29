@@ -3,23 +3,23 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1771367,
-    "total_approx_tokens": 442845,
+    "total_chars": 1771373,
+    "total_approx_tokens": 442847,
     "skill_count": 51
   },
   "skills": {
     "kernel-lpe-triage": {
       "path": "skills/kernel-lpe-triage/skill.md",
-      "bytes": 31304,
-      "chars": 31133,
+      "bytes": 31309,
+      "chars": 31138,
       "lines": 397,
-      "approx_tokens": 7783,
+      "approx_tokens": 7785,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
-          "bytes": 5838,
-          "chars": 5790,
-          "approx_tokens": 1448
+          "bytes": 5843,
+          "chars": 5795,
+          "approx_tokens": 1449
         },
         "framework-lag-declaration": {
           "bytes": 2519,
@@ -300,9 +300,9 @@
     },
     "exploit-scoring": {
       "path": "skills/exploit-scoring/skill.md",
-      "bytes": 30436,
-      "chars": 30252,
-      "lines": 391,
+      "bytes": 30437,
+      "chars": 30253,
+      "lines": 393,
       "approx_tokens": 7563,
       "approx_chars_per_token": 4,
       "sections": {
@@ -337,8 +337,8 @@
           "approx_tokens": 714
         },
         "pre-calculated-rwep-scores": {
-          "bytes": 5809,
-          "chars": 5768,
+          "bytes": 5810,
+          "chars": 5769,
           "approx_tokens": 1442
         },
         "rwep-vs-cvss-delta-analysis": {
