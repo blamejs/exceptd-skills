@@ -23,7 +23,7 @@ forward_watch:
   - EU CRA exceptions for AI pipeline components
   - NIST SP 800-204 series updates for microservices
   - FedRAMP updates for container/serverless authorization
-last_threat_review: "2026-09-18"
+last_threat_review: "2026-09-28"
 ---
 
 # Policy Exception Generation
@@ -109,10 +109,10 @@ For each residual TTP an exception leaves in scope, the compensating control bun
 
 | Residual TTP | Evidence CVE / class | CVSS | RWEP tier | KEV | Public PoC | AI-accelerated | Live-patchable | Implication for compensating bundle |
 |---|---|---|---|---|---|---|---|---|
-| T1068 (Privilege Escalation — Copy Fail class) | CVE-2026-31431 | High | Critical | Yes | Yes (732 bytes, deterministic) | Yes | Yes (kpatch/livepatch) | Live patch within 4 hours OR network isolation — anything weaker is non-defensible |
-| T1190 (Exploit Public-Facing Application — IPsec subsystem) | CVE-2026-43284 (Dirty Frag) | High | High | Pending | Partial | No | Limited | eBPF kernel-text integrity monitoring + maintenance-window reboot SLA |
+| T1068 (Privilege Escalation — Copy Fail class) | CVE-2026-31431 | 7.8 | 90 | Yes (2026-05-01) | Yes (732 bytes, deterministic) | Yes | Yes (kpatch/livepatch) | Live patch within 4 hours OR network isolation — anything weaker is non-defensible |
+| T1190 (Exploit Public-Facing Application — IPsec subsystem) | CVE-2026-43284 (Dirty Frag) | 8.8 | 53 | No | Yes (chain component) | Yes (AI-assisted discovery) | Limited (kpatch RHEL-only) | eBPF kernel-text integrity monitoring + maintenance-window reboot SLA |
 | AML.T0051 (LLM Prompt Injection — emergent on model upgrade) | CVE-2025-53773 (Copilot YOLO-mode RCE) | 7.8 (AV:L) | 30 | No | Yes | Yes | Yes (SaaS push / IDE update) | Behavioral regression suite + system-prompt hardening + tool allowlist |
-| AML.T0010 (ML Supply Chain Compromise — MCP) | CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 (AV:L) | 35 | No | Partial | No | Yes (IDE update) | MCP server allowlist + signed-manifest enforcement + per-server auth |
+| AML.T0010 (ML Supply Chain Compromise — MCP) | CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 (AV:L) | 35 | No | Yes | No | Yes (IDE update) | MCP server allowlist + signed-manifest enforcement + per-server auth |
 | T1525 / T1610 (Implant Internal Image / Deploy Container) | Image-supply-chain class | Varies | High | N/A | Operational | Yes | N/A (image rebuild) | CI image scanning gate at CVSS ≥ 7.0, SBOM per image, image-registry signing |
 
 An exception that names a residual TTP without a compensating-control bundle of equal or greater RWEP-justified strength is theater. The compliance-theater skill's universal test (demand the bypassing TTP for any claimed compensating control) should be run against the bundle before the exception is approved.

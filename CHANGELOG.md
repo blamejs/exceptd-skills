@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.21.14 — 2026-09-28
+
+13 skills stated CVSS, RWEP, KEV, public-exploit or AI-discovery values for catalog CVEs that disagreed with the catalog, and now match it. The cloud-IAM incident skill listed runc CVE-2024-21626 and the xz backdoor CVE-2024-3094 as KEV-listed with RWEP 88 and 70; CISA has listed neither, and the catalog scores them 35 and 45. The Dirty Frag and Fragnesia CVEs (CVE-2026-43284, CVE-2026-43500, CVE-2026-46300) now read as AI-assisted discoveries with RWEP 53, 47 and 35, where several skills said they were human-discovered and scored 38, 32 and 20; a KEV listing would take Fragnesia to 60, and confirmed exploitation to 80. The Windsurf MCP entry (CVE-2026-30615) reads CVSS 8.0 with a public exploit throughout, and CVE-2026-45321 reads as KEV-listed on 2026-05-27 rather than pending.
+
+A new predeploy gate, `scripts/check-skill-catalog-facts.js`, compares every skill table row and prose line that states one of these values for a catalog CVE with `data/cve-catalog.json`, and fails when they disagree.
+
 ## 0.21.13 — 2026-09-28
 
 472 catalog and zero-day lesson texts on 337 entries no longer quote raw catalog field names as prose. An evidence text that read "KEV-listed 2024-11-18 with active_exploitation confirmed, poc_available true, RWEP 82" now reads "CISA added it to its Known Exploited Vulnerabilities catalog on 2024-11-18. Active exploitation is confirmed, a proof of concept is available, and the entry carries an RWEP score of 82", and "patch_required_reboot is false" now reads "applying the fix does not require a reboot". The rewritten texts include 324 lesson evidence and control texts, 44 `live_patch_notes`, 37 `poc_description` and 15 `rwep_correction_note` fields. Four indicators on CVE-2026-31431, CVE-2026-46300 and CVE-2026-39987 now test for a version "in the affected version range listed for this entry". The RWEP factor breakdowns in `rwep_notes` still use the scoring formula's field names.

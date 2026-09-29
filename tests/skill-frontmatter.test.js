@@ -7,8 +7,7 @@
  *   - standalone skills carry the discovery_mode: standalone frontmatter
  *     field.
  *   - CVE-2024-3094 (xz-utils) prose in three skills matches catalog ground
- *     truth (RWEP 70, CVSS 10.0, ai_discovered false), not the drifted
- *     pre-correction values.
+ *     truth (the catalog's RWEP, CVSS 10.0, ai_discovered false).
  *   - skill bodies use the canonical unhyphenated "Volt Typhoon" form.
  */
 
@@ -40,17 +39,17 @@ test('E: 16 skills carry discovery_mode: standalone frontmatter', () => {
 
 // ---------- CVE-2024-3094 prose matches catalog ground truth ----------
 
+// The skill rows state the catalog's RWEP for this CVE, read here rather than fixed.
+const XZ_RWEP = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'cve-catalog.json'), 'utf8'))['CVE-2024-3094'].rwep_score;
+
 test('F1/F2: CVE-2024-3094 in supply-chain-integrity skill matches catalog ground truth', () => {
   const body = fs.readFileSync(path.join(ROOT, 'skills', 'supply-chain-integrity', 'skill.md'), 'utf8');
   // Pre-correction claim: "not in current `data/cve-catalog.json` — pre-scope incident"
   assert.equal(/CVE-2024-3094[^\n]*not in current/.test(body), false,
     'supply-chain-integrity must not claim CVE-2024-3094 is "not in current catalog" (it is)');
-  // Corrected: the Exploit Availability Matrix table row pins RWEP 70 in
-  // the second pipe-cell after the name. Match any line that contains
-  // CVE-2024-3094 followed by ` 70 ` (with separators) on the same line.
   const lines = body.split('\n');
-  const row = lines.find((l) => /CVE-2024-3094/.test(l) && /\|\s*70\s*\(catalog/.test(l));
-  assert.ok(row, `supply-chain-integrity must have a CVE-2024-3094 table row with "70 (catalog: ...)"; matching lines: ${lines.filter(l => /CVE-2024-3094/.test(l)).join(' | ')}`);
+  const row = lines.find((l) => /CVE-2024-3094/.test(l) && new RegExp(`\\|\\s*${XZ_RWEP}\\s*\\(`).test(l));
+  assert.ok(row, `supply-chain-integrity must have a CVE-2024-3094 table row with RWEP "${XZ_RWEP} (...)"; matching lines: ${lines.filter(l => /CVE-2024-3094/.test(l)).join(' | ')}`);
 });
 
 test('F1/F2: CVE-2024-3094 in sector-federal-government skill matches catalog ground truth', () => {
@@ -58,8 +57,8 @@ test('F1/F2: CVE-2024-3094 in sector-federal-government skill matches catalog gr
   assert.equal(/CVE-2024-3094[^\n]*not in current/.test(body), false,
     'sector-federal-government must not claim CVE-2024-3094 is "not in current catalog"');
   const lines = body.split('\n');
-  const row = lines.find((l) => /CVE-2024-3094/.test(l) && /\|\s*70\s*\(catalog/.test(l));
-  assert.ok(row, 'sector-federal-government must have CVE-2024-3094 row with "70 (catalog: ...)"');
+  const row = lines.find((l) => /CVE-2024-3094/.test(l) && new RegExp(`\\|\\s*${XZ_RWEP}\\s*\\(`).test(l));
+  assert.ok(row, `sector-federal-government must have CVE-2024-3094 row with RWEP "${XZ_RWEP} (...)"`);
 });
 
 test('F1/F2: CVE-2024-3094 in cloud-iam-incident skill row matches catalog ground truth', () => {
@@ -67,8 +66,7 @@ test('F1/F2: CVE-2024-3094 in cloud-iam-incident skill row matches catalog groun
   // Find the table row containing CVE-2024-3094.
   const row = body.split('\n').find((l) => /CVE-2024-3094/.test(l));
   assert.ok(row, 'cloud-iam-incident must contain a CVE-2024-3094 row');
-  // Catalog ground truth: rwep_score 70, ai_discovered false, active_exploitation "suspected".
-  assert.match(row, /\|\s*10\.0\s*\|\s*70\s*\|/, `cloud-iam-incident CVE-2024-3094 row must show CVSS 10.0 / RWEP 70; got: ${row}`);
+  assert.match(row, new RegExp(`\\|\\s*10\\.0\\s*\\|\\s*${XZ_RWEP}\\s*\\|`), `cloud-iam-incident CVE-2024-3094 row must show CVSS 10.0 / RWEP ${XZ_RWEP}; got: ${row}`);
   // The drifted value said "Partially" for ai_discovered (catalog is false).
   assert.equal(/Partially/.test(row), false, 'ai_discovered "Partially" was the drifted value (catalog is false)');
 });

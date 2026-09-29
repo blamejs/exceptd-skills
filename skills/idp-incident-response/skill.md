@@ -76,7 +76,7 @@ forward_watch:
   - NIS2 implementing-act revision enumerating federated-identity control-plane indicators
   - Cross-tenant access settings evolution at Entra ID — partner-tenant attestation cadence and revocation latency
   - PSD3 / PSR final text on agent-initiated payments and the IdP-mediated agent-attestation surface
-last_threat_review: "2026-05-15"
+last_threat_review: "2026-09-28"
 ---
 
 # Identity-Provider Incident Response (mid-2026)
@@ -149,9 +149,9 @@ Agentic AI is the emerging structural problem on top. AI agents operating on beh
 | Help-desk social engineering (Scattered Spider) | n/a (social engineering) | high (MGM USD 100M, Caesars USD 15M as public reference) | n/a | Demonstrated at scale | n/a (AI-augmented reconnaissance) | Confirmed ongoing 2022-2026 | Mitigation only — out-of-band identity verification, video-callback to previously-registered number, knowledge-based + government-ID verification, never phone-only | n/a | Help-desk-system audit; vendor-fragmented |
 | SAML token forgery (Golden SAML / NobleSAML class) | n/a (design class) | high (state-actor priority) | n/a | Public research + active campaigns | n/a | Suspected ongoing against hybrid-identity tenants | Mitigation — signing-key rotation + signing-state attestation + audit-log alerting on signing-cert modification | n/a | Tenant audit log if signing-state modification alerts configured |
 | ScreenConnect identity-class CVE | 7.5 (CVSS) | high (CISA KEV) | Yes (2024-02) | Yes — public PoC | No | Confirmed exploitation against IdP-adjacent MSP surface | Yes — vendor patch | Patch-class | EDR + tenant audit if integration logged |
-| CVE-2024-1709 ScreenConnect authentication bypass | 10.0 | 95 | Yes | Yes | No | Confirmed exploitation 2024 | Yes | Limited — appliance reboot window | Vendor-side patching + IdP-side conditional-access tightening |
-| CVE-2023-3519 Citrix NetScaler RCE | 9.8 | 92 | Yes | Yes | No | Confirmed exploitation 2023-2024 (financial-sector and federal targets) | Yes | Limited — appliance reboot | Network telemetry + IdP-tenant access-pattern alerting |
-| CVE-2026-30615 Windsurf MCP — adjacent identity surface | 8.6 | 88 | Forward-watched | Yes | Yes | Suspected | Mitigation + vendor patch | n/a | MCP-tool-trust telemetry |
+| CVE-2024-1709 ScreenConnect authentication bypass | 10.0 | 75 | Yes (2024-02-22) | Yes | No | Confirmed exploitation 2024 | Yes | No | Vendor-side patching + IdP-side conditional-access tightening |
+| CVE-2023-3519 Citrix NetScaler RCE | 9.8 | 80 | Yes (2023-07-19) | Yes | No | Confirmed exploitation 2023-2024 (financial-sector and federal targets) | Yes | No | Network telemetry + IdP-tenant access-pattern alerting |
+| CVE-2026-30615 Windsurf MCP — adjacent identity surface | 8.0 | 35 | No | Yes | No | Suspected | Mitigation + vendor patch | n/a | MCP-tool-trust telemetry |
 
 **Honest gap statement.** IdP-specific CVEs (Okta Auth0 Workforce CVEs, Entra ID Graph CVEs, Auth0 platform CVEs, Ping platform CVEs, OneLogin platform CVEs) are not exhaustively inventoried in `data/cve-catalog.json`. Authoritative sources: vendor advisories (Okta Security, Microsoft MSRC + Security Update Guide, Auth0 Security Advisories, Ping Identity Security Notices, One Identity Customer Advisory), CISA KEV for cross-sector exposure, CISA AA24 series for federal-targeting advisories, and sector intel feeds. Forward-watched.
 

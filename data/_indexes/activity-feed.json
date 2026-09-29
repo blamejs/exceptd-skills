@@ -7,6 +7,97 @@
   "events": [
     {
       "date": "2026-09-28",
+      "type": "skill_review",
+      "artifact": "kernel-lpe-triage",
+      "path": "skills/kernel-lpe-triage/skill.md",
+      "note": "Assess Linux kernel LPE exposure — Copy Fail, Dirty Frag, Fragnesia, live-patch vs. reboot remediation paths, framework gap declarations"
+    },
+    {
+      "date": "2026-09-28",
+      "type": "skill_review",
+      "artifact": "ai-attack-surface",
+      "path": "skills/ai-attack-surface/skill.md",
+      "note": "Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v2026.09 with explicit framework gap flags"
+    },
+    {
+      "date": "2026-09-28",
+      "type": "skill_review",
+      "artifact": "framework-gap-analysis",
+      "path": "skills/framework-gap-analysis/skill.md",
+      "note": "Feed a framework control ID and threat scenario — receive the gap between what the control covers and what current TTPs require"
+    },
+    {
+      "date": "2026-09-28",
+      "type": "skill_review",
+      "artifact": "compliance-theater",
+      "path": "skills/compliance-theater/skill.md",
+      "note": "Detect where an organization passes an audit but remains exposed — seven documented compliance theater patterns with specific detection tests"
+    },
+    {
+      "date": "2026-09-28",
+      "type": "skill_review",
+      "artifact": "exploit-scoring",
+      "path": "skills/exploit-scoring/skill.md",
+      "note": "Real-World Exploit Priority (RWEP) scoring — CVSS plus KEV, PoC, AI-acceleration, blast radius, live-patch factors"
+    },
+    {
+      "date": "2026-09-28",
+      "type": "skill_review",
+      "artifact": "policy-exception-gen",
+      "path": "skills/policy-exception-gen/skill.md",
+      "note": "Generate defensible policy exceptions for architectural realities — ephemeral infra, AI pipelines, ZTA, no-reboot patching, with compensating controls and auditor-ready justification"
+    },
+    {
+      "date": "2026-09-28",
+      "type": "skill_review",
+      "artifact": "threat-model-currency",
+      "path": "skills/threat-model-currency/skill.md",
+      "note": "Score how current an org's threat model is against 2026 reality — 14-item checklist, currency percentage, prioritized update roadmap"
+    },
+    {
+      "date": "2026-09-28",
+      "type": "skill_review",
+      "artifact": "zeroday-gap-learn",
+      "path": "skills/zeroday-gap-learn/skill.md",
+      "note": "Run the zero-day learning loop — CVE to attack vector to control gap to framework gap to new control requirement"
+    },
+    {
+      "date": "2026-09-28",
+      "type": "skill_review",
+      "artifact": "supply-chain-integrity",
+      "path": "skills/supply-chain-integrity/skill.md",
+      "note": "Supply-chain integrity for mid-2026 — SLSA L3+, in-toto attestations, Sigstore signing, SBOM (CycloneDX/SPDX), VEX via CSAF 2.0, AI-generated code provenance, model weights as supply-chain artifacts"
+    },
+    {
+      "date": "2026-09-28",
+      "type": "skill_review",
+      "artifact": "sector-federal-government",
+      "path": "skills/sector-federal-government/skill.md",
+      "note": "Federal government + defense contractor cybersecurity for mid-2026 — FedRAMP Rev5, CMMC 2.0, EO 14028, NIST 800-171/172 CUI, FISMA, M-22-09 federal Zero Trust, OMB M-24-04 AI risk, CISA BOD/ED; cross-jurisdiction NCSC UK, ENISA EUCC, AU PSPF, IL government cyber methodology"
+    },
+    {
+      "date": "2026-09-28",
+      "type": "skill_review",
+      "artifact": "container-runtime-security",
+      "path": "skills/container-runtime-security/skill.md",
+      "note": "Container + Kubernetes runtime security for mid-2026 — CIS K8s Benchmark, NSA/CISA Hardening, Pod Security Standards, Kyverno/Gatekeeper admission, Sigstore policy-controller, eBPF runtime detection (Falco/Tetragon), AI inference workload hardening"
+    },
+    {
+      "date": "2026-09-28",
+      "type": "skill_review",
+      "artifact": "cloud-iam-incident",
+      "path": "skills/cloud-iam-incident/skill.md",
+      "note": "Cloud-IAM incident response for AWS / GCP / Azure — account takeover, IAM role assumption abuse, access-key compromise, cross-account assume-role chains, federated-trust attacks (IAM Identity Center / Workload Identity Federation / Azure managed identity), IMDS metadata exfiltration, and Snowflake-AA24-class IdP-to-cloud credential reuse"
+    },
+    {
+      "date": "2026-09-28",
+      "type": "skill_review",
+      "artifact": "idp-incident-response",
+      "path": "skills/idp-incident-response/skill.md",
+      "note": "Identity-provider incident response for mid-2026 — Okta, Entra ID, Auth0, Ping, OneLogin tenant compromise, federated-trust abuse, OAuth app consent abuse, Midnight Blizzard and Scattered Spider TTPs against the IdP control plane"
+    },
+    {
+      "date": "2026-09-28",
       "type": "catalog_update",
       "artifact": "data/cve-catalog.json",
       "path": "data/cve-catalog.json",
@@ -40,37 +131,9 @@
     {
       "date": "2026-09-18",
       "type": "skill_review",
-      "artifact": "ai-attack-surface",
-      "path": "skills/ai-attack-surface/skill.md",
-      "note": "Comprehensive AI/ML attack surface assessment mapped to MITRE ATLAS v2026.09 with explicit framework gap flags"
-    },
-    {
-      "date": "2026-09-18",
-      "type": "skill_review",
       "artifact": "mcp-agent-trust",
       "path": "skills/mcp-agent-trust/skill.md",
       "note": "Enumerate MCP trust boundary failures — tool allowlisting, signed manifests, bearer auth, zero-interaction RCE"
-    },
-    {
-      "date": "2026-09-18",
-      "type": "skill_review",
-      "artifact": "framework-gap-analysis",
-      "path": "skills/framework-gap-analysis/skill.md",
-      "note": "Feed a framework control ID and threat scenario — receive the gap between what the control covers and what current TTPs require"
-    },
-    {
-      "date": "2026-09-18",
-      "type": "skill_review",
-      "artifact": "compliance-theater",
-      "path": "skills/compliance-theater/skill.md",
-      "note": "Detect where an organization passes an audit but remains exposed — seven documented compliance theater patterns with specific detection tests"
-    },
-    {
-      "date": "2026-09-18",
-      "type": "skill_review",
-      "artifact": "exploit-scoring",
-      "path": "skills/exploit-scoring/skill.md",
-      "note": "Real-World Exploit Priority (RWEP) scoring — CVSS plus KEV, PoC, AI-acceleration, blast radius, live-patch factors"
     },
     {
       "date": "2026-09-18",
@@ -85,27 +148,6 @@
       "artifact": "ai-c2-detection",
       "path": "skills/ai-c2-detection/skill.md",
       "note": "Detect adversary use of AI APIs as covert C2 — SesameOp pattern, PROMPTFLUX/PROMPTSTEAL behavioral signatures, response playbook"
-    },
-    {
-      "date": "2026-09-18",
-      "type": "skill_review",
-      "artifact": "policy-exception-gen",
-      "path": "skills/policy-exception-gen/skill.md",
-      "note": "Generate defensible policy exceptions for architectural realities — ephemeral infra, AI pipelines, ZTA, no-reboot patching, with compensating controls and auditor-ready justification"
-    },
-    {
-      "date": "2026-09-18",
-      "type": "skill_review",
-      "artifact": "threat-model-currency",
-      "path": "skills/threat-model-currency/skill.md",
-      "note": "Score how current an org's threat model is against 2026 reality — 14-item checklist, currency percentage, prioritized update roadmap"
-    },
-    {
-      "date": "2026-09-18",
-      "type": "skill_review",
-      "artifact": "zeroday-gap-learn",
-      "path": "skills/zeroday-gap-learn/skill.md",
-      "note": "Run the zero-day learning loop — CVE to attack vector to control gap to framework gap to new control requirement"
     },
     {
       "date": "2026-09-18",
@@ -141,13 +183,6 @@
       "artifact": "dlp-gap-analysis",
       "path": "skills/dlp-gap-analysis/skill.md",
       "note": "DLP gap analysis for mid-2026 — legacy DLP misses LLM prompts, MCP tool args, RAG retrievals, embedding-store exfil, and code-completion telemetry. Audit channels, classifiers, protected surfaces, enforcement actions, and evidence trails against modern threat reality and cross-jurisdictional privacy regimes"
-    },
-    {
-      "date": "2026-09-18",
-      "type": "skill_review",
-      "artifact": "supply-chain-integrity",
-      "path": "skills/supply-chain-integrity/skill.md",
-      "note": "Supply-chain integrity for mid-2026 — SLSA L3+, in-toto attestations, Sigstore signing, SBOM (CycloneDX/SPDX), VEX via CSAF 2.0, AI-generated code provenance, model weights as supply-chain artifacts"
     },
     {
       "date": "2026-09-18",
@@ -194,13 +229,6 @@
     {
       "date": "2026-09-18",
       "type": "skill_review",
-      "artifact": "sector-federal-government",
-      "path": "skills/sector-federal-government/skill.md",
-      "note": "Federal government + defense contractor cybersecurity for mid-2026 — FedRAMP Rev5, CMMC 2.0, EO 14028, NIST 800-171/172 CUI, FISMA, M-22-09 federal Zero Trust, OMB M-24-04 AI risk, CISA BOD/ED; cross-jurisdiction NCSC UK, ENISA EUCC, AU PSPF, IL government cyber methodology"
-    },
-    {
-      "date": "2026-09-18",
-      "type": "skill_review",
       "artifact": "sector-energy",
       "path": "skills/sector-energy/skill.md",
       "note": "Electric power + oil & gas + water/wastewater + renewable-integration cybersecurity for mid-2026 — NERC CIP v6/v7, NIST 800-82r3, TSA Pipeline SD-2021-02C, AWWA cyber, EU NIS2 energy + NCCS-G (cross-border electricity), AU AESCSF + SOCI, ENISA energy sector"
@@ -218,13 +246,6 @@
       "artifact": "cloud-security",
       "path": "skills/cloud-security/skill.md",
       "note": "Cloud security for mid-2026 — CSPM/CWPP/CNAPP posture, CSA CCM v4, AWS/Azure/GCP shared responsibility, cloud workload identity federation, runtime security with eBPF, AI workloads on cloud"
-    },
-    {
-      "date": "2026-09-18",
-      "type": "skill_review",
-      "artifact": "container-runtime-security",
-      "path": "skills/container-runtime-security/skill.md",
-      "note": "Container + Kubernetes runtime security for mid-2026 — CIS K8s Benchmark, NSA/CISA Hardening, Pod Security Standards, Kyverno/Gatekeeper admission, Sigstore policy-controller, eBPF runtime detection (Falco/Tetragon), AI inference workload hardening"
     },
     {
       "date": "2026-09-18",
@@ -387,13 +408,6 @@
     {
       "date": "2026-05-15",
       "type": "skill_review",
-      "artifact": "kernel-lpe-triage",
-      "path": "skills/kernel-lpe-triage/skill.md",
-      "note": "Assess Linux kernel LPE exposure — Copy Fail, Dirty Frag, Fragnesia, live-patch vs. reboot remediation paths, framework gap declarations"
-    },
-    {
-      "date": "2026-05-15",
-      "type": "skill_review",
       "artifact": "ai-risk-management",
       "path": "skills/ai-risk-management/skill.md",
       "note": "AI governance and risk management for mid-2026 — ISO/IEC 23894 risk process, ISO/IEC 42001 management system, NIST AI RMF, EU AI Act high-risk obligations, AI impact assessments, AI red-team programs, AI incident lifecycle"
@@ -404,20 +418,6 @@
       "artifact": "sector-telecom",
       "path": "skills/sector-telecom/skill.md",
       "note": "Telecom and 5G security for mid-2026 — Salt Typhoon, Volt Typhoon, CALEA / IPA-LI gateway compromise, signaling-protocol abuse (SS7 / Diameter / GTP), 5G N6 / N9 isolation, gNB / DU / CU integrity, OEM-equipment supply-chain compromise, AI-RAN / O-RAN security; FCC CPNI + 4-business-day notification, NIS2 Annex I telecom essential entities, UK TSA 2021 + Ofcom, AU SOCI / TSSR, GSMA NESAS, 3GPP TR 33.926 + TS 33.501, ITU-T X.805."
-    },
-    {
-      "date": "2026-05-15",
-      "type": "skill_review",
-      "artifact": "cloud-iam-incident",
-      "path": "skills/cloud-iam-incident/skill.md",
-      "note": "Cloud-IAM incident response for AWS / GCP / Azure — account takeover, IAM role assumption abuse, access-key compromise, cross-account assume-role chains, federated-trust attacks (IAM Identity Center / Workload Identity Federation / Azure managed identity), IMDS metadata exfiltration, and Snowflake-AA24-class IdP-to-cloud credential reuse"
-    },
-    {
-      "date": "2026-05-15",
-      "type": "skill_review",
-      "artifact": "idp-incident-response",
-      "path": "skills/idp-incident-response/skill.md",
-      "note": "Identity-provider incident response for mid-2026 — Okta, Entra ID, Auth0, Ping, OneLogin tenant compromise, federated-trust abuse, OAuth app consent abuse, Midnight Blizzard and Scattered Spider TTPs against the IdP control plane"
     },
     {
       "date": "2026-05-15",

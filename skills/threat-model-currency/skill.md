@@ -22,7 +22,7 @@ forward_watch:
   - New CISA KEV entries in kernel/AI/supply chain categories
   - New MCP or agent protocol security disclosures
   - Emerging malware families using AI for evasion
-last_threat_review: "2026-09-18"
+last_threat_review: "2026-09-28"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief threat-model-currency` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
@@ -294,12 +294,12 @@ A threat model is "current" only if it accounts for every `data/cve-catalog.json
 |---|---|---|---|---|---|---|---|---|
 | CVE-2026-31431 | Copy Fail | 7.8 | 90 | Yes (2026-05-01, due 2026-05-15) | Yes — 732-byte deterministic | AI-discovered | Yes (kpatch / canonical-livepatch / kGraft) | Must name as named threat. Patch SLA must reflect KEV + deterministic class — live-patch within hours, not 30 days. |
 | CVE-2025-53773 | Copilot YOLO-mode RCE | 7.8 | 30 | No | Yes — demonstrated | AI-weaponized | Yes (SaaS vendor patch / IDE update) | Must include prompt-injection-driven YOLO-mode escalation as RCE vector if any developer uses Copilot. |
-| CVE-2026-30615 | Windsurf MCP local-vector RCE | 8.0 | 35 | No | Partial | No | Yes (IDE update) | Must include MCP supply chain if any developer uses any MCP-capable assistant. |
-| CVE-2026-43284 | Dirty Frag (ESP/IPsec) | 7.8 | 38 | No | Yes — chain component | No | No | Required if IPsec-based controls are claimed as compensating. |
-| CVE-2026-43500 | Dirty Frag (RxRPC) | 7.6 | 32 | No | Yes — chain component | No | No | Required when chained with CVE-2026-43284 in IR scenario planning. |
-| CVE-2026-46300 | Fragnesia | 7.8 | 20 (today) / 55+ on KEV | No (candidate) | Yes — one-liner vs /usr/bin/su | No (human-discovered by V12 security team) | Yes (kpatch / canonical-livepatch / KernelCare) | Required when the threat model claims patches close bug families — Fragnesia is the sibling bug introduced by the Dirty Frag patch; the same `blacklist esp4 / esp6 / rxrpc` mitigation covers both. Treat as the canonical "today" example of threat-intel decay measured in days, not quarters. |
+| CVE-2026-30615 | Windsurf MCP local-vector RCE | 8.0 | 35 | No | Yes | No | Yes (IDE update) | Must include MCP supply chain if any developer uses any MCP-capable assistant. |
+| CVE-2026-43284 | Dirty Frag (ESP/IPsec) | 8.8 | 53 | No | Yes — chain component | AI-assisted discovery | No | Required if IPsec-based controls are claimed as compensating. |
+| CVE-2026-43500 | Dirty Frag (RxRPC) | 7.6 | 47 | No | Yes — chain component | AI-assisted discovery | No | Required when chained with CVE-2026-43284 in IR scenario planning. |
+| CVE-2026-46300 | Fragnesia | 7.8 | 35 (60 if KEV-listed) | No (candidate) | Yes — one-liner vs /usr/bin/su | AI-assisted discovery (Zellic's agentic auditing tool) | Yes (kpatch / canonical-livepatch / KernelCare) | Required when the threat model claims patches close bug families — Fragnesia is the sibling bug introduced by the Dirty Frag patch; the same `blacklist esp4 / esp6 / rxrpc` mitigation covers both. Treat as the canonical "today" example of threat-intel decay measured in days, not quarters. |
 
-The hard rule for currency scoring: every CVE in the catalog with RWEP >= 50 (currently CVE-2026-31431) must appear in the threat model under its named threat or its CVE ID. RWEP 40–49 entries should appear if the org uses the affected technology. Sub-40 entries appear by exception.
+The hard rule for currency scoring: every CVE in the catalog with RWEP >= 50 (query `data/cve-catalog.json` for the current set) must appear in the threat model under its named threat or its CVE ID. RWEP 40–49 entries should appear if the org uses the affected technology. Sub-40 entries appear by exception.
 
 Run `node lib/scoring.js` to recompute RWEP if `data/cve-catalog.json` has been updated since `last_threat_review`.
 
