@@ -75,6 +75,38 @@ test("check() sweeps every skill directory and counts what it compared", () => {
   });
 });
 
+test("checkSkill() returns the failures and the comparison count for one skill file", () => {
+  withSkill("CVE-2099-0001: CVSS 7.8 / RWEP 20.\nCVE-2099-0002 is CVSS 9.8.\n", (file) => {
+    const r = checkSkill(file, CATALOG);
+    assert.equal(r.compared, 2);
+    assert.equal(r.failures.length, 1);
+    assert.match(r.failures[0], /skill\.md:1 CVE-2099-0001: RWEP 20, catalog 35$/);
+  });
+});
+
+test("a list of CVEs with parenthesized values is compared CVE by CVE", () => {
+  assert.deepEqual(failuresFor([
+    "| Tier | Coverage | Example CVEs |",
+    "|---|---|---|",
+    "| Overkill | RWEP >= 30 | CVE-2099-0002 (80), CVE-2099-0001 (Demo pair, 38, CVSS 8.8), CVE-2099-0003 (Demo, 30, CVSS 7.8) |",
+  ]), [
+    "3 CVE-2099-0001: CVSS 8.8, catalog 7.8",
+    "3 CVE-2099-0001: RWEP 38, catalog 35",
+  ]);
+  assert.deepEqual(failuresFor([
+    "Chained: CVE-2099-0001 (Demo, RWEP 12) and CVE-2099-0002 (Other, RWEP 80).",
+  ]), ["1 CVE-2099-0001: RWEP 12, catalog 35"]);
+});
+
+test("a bare number in parentheses is read as RWEP only on a line that mentions RWEP", () => {
+  assert.deepEqual(failuresFor(["CVE-2099-0001 (12) and CVE-2099-0002 (80) share a vendor."]), []);
+  assert.deepEqual(failuresFor(["By RWEP: CVE-2099-0001 (12), CVE-2099-0002 (80)."]), ["1 CVE-2099-0001: RWEP 12, catalog 35"]);
+});
+
+test("a disagreement stated once on a single-CVE line is reported once", () => {
+  assert.deepEqual(failuresFor(["CVE-2099-0001 (Demo, RWEP 12, CVSS 7.8) is the example."]), ["1 CVE-2099-0001: RWEP 12, catalog 35"]);
+});
+
 test("table columns are compared by header", () => {
   assert.deepEqual(failuresFor([
     "| CVE | CVSS | RWEP | CISA KEV | PoC Public | AI-Discovered |",

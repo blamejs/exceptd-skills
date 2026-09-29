@@ -1632,7 +1632,7 @@
     },
     "security-maturity-tiers": {
       "path": "skills/security-maturity-tiers/skill.md",
-      "total_bytes": 37417,
+      "total_bytes": 37597,
       "total_lines": 540,
       "frontmatter": {
         "line_start": 1,
@@ -1781,8 +1781,8 @@
           "normalized_name": "exploit-availability-matrix",
           "line": 525,
           "byte_start": 34752,
-          "byte_end": 37417,
-          "bytes": 2665,
+          "byte_end": 37597,
+          "bytes": 2845,
           "h3_count": 0
         }
       ]

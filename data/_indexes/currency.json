@@ -393,8 +393,8 @@
     },
     {
       "skill": "security-maturity-tiers",
-      "last_threat_review": "2026-09-18",
-      "days_since_review": -126,
+      "last_threat_review": "2026-09-28",
+      "days_since_review": -136,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 4,

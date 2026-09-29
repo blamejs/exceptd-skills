@@ -610,7 +610,7 @@
       "cwe_count": 1,
       "d3fend_count": 13,
       "rfc_count": 1,
-      "last_threat_review": "2026-09-18",
+      "last_threat_review": "2026-09-28",
       "path": "skills/security-maturity-tiers/skill.md",
       "handoff_targets": []
     },

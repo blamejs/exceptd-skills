@@ -44,7 +44,7 @@ forward_watch:
   - Framework updates that change minimum compliance baselines
   - New tooling that makes higher tiers more accessible
   - PQC tooling maturity shifting overkill to practical
-last_threat_review: "2026-09-18"
+last_threat_review: "2026-09-28"
 ---
 
 # Security Maturity Tiers
@@ -526,11 +526,11 @@ D3FEND references from `data/d3fend-catalog.json`. This skill prescribes a roadm
 
 Tiered to the current `data/cve-catalog.json`, using RWEP (`lib/scoring.js`) as the priority metric, not CVSS:
 
-| Tier | Coverage requirement | CVEs in scope as of 2026-05-01 | Available exploits | Required protective state |
+| Tier | Coverage requirement | Example CVEs in scope | Available exploits | Required protective state |
 |---|---|---|---|---|
 | MVP | RWEP >= 70 | CVE-2026-31431 (Copy Fail, RWEP 90, CVSS 7.8) | Public 732-byte deterministic PoC; KEV-listed 2026-05-01 (federal due 2026-05-15); AI-discovered; live-patch available (kpatch / canonical-livepatch / kGraft) | Live-patched within hours of KEV listing OR fully patched + rebooted OR network-isolated with documented reboot date |
-| Practical | RWEP >= 30 | CVE-2026-31431 (90), CVE-2026-30615 (Windsurf MCP local-vector RCE, 35, CVSS 8.0), CVE-2025-53773 (Copilot YOLO-mode RCE, 30, CVSS 7.8) | Copy Fail as above; CVE-2026-30615 + CVE-2025-53773 both AV:L local-vector, demonstrated PoC, vendor-patchable; AI-coding-assistant scope | All MVP coverage plus: prompt-injection classifier in front of any LLM processing external content; phishing simulation using AI-generated content; org-wide AI-coding-assistant version management; MCP server allowlisting with signed manifests |
-| Overkill | All catalog entries regardless of RWEP | CVE-2026-31431 (90), CVE-2026-43284 (Dirty Frag ESP/IPsec, 38, CVSS 7.8), CVE-2026-30615 (Windsurf MCP local-vector RCE, 35, CVSS 8.0), CVE-2026-43500 (Dirty Frag RxRPC, 32, CVSS 7.6), CVE-2025-53773 (Copilot YOLO-mode RCE, 30, CVSS 7.8) | Public PoC for all; Dirty Frag pair has no live patch (kpatch RHEL-only); Windsurf is local-vector supply-chain class; chained Dirty Frag requires kernel-version fingerprinting | All Practical coverage plus: kernel hardening (unprivileged_userns_clone=0, unprivileged_userfaultfd=0, kptr_restrict=2); seccomp profiles on all containers; eBPF runtime detection; immutable infrastructure for the workloads that tolerate it; sandboxed MCP execution; per-invocation capability tokens for AI agents |
+| Practical | RWEP >= 30 | CVE-2026-31431 (90), CVE-2026-43284 (Dirty Frag ESP/IPsec, 53, CVSS 8.8), CVE-2026-43500 (Dirty Frag RxRPC, 47, CVSS 7.6), CVE-2026-30615 (Windsurf MCP local-vector RCE, 35, CVSS 8.0), CVE-2025-53773 (Copilot YOLO-mode RCE, 30, CVSS 7.8) | Copy Fail as above; the Dirty Frag pair has a public chain PoC and no broad live patch (kpatch RHEL-only); CVE-2026-30615 + CVE-2025-53773 both AV:L local-vector, demonstrated PoC, vendor-patchable; AI-coding-assistant scope | All MVP coverage plus: prompt-injection classifier in front of any LLM processing external content; phishing simulation using AI-generated content; org-wide AI-coding-assistant version management; MCP server allowlisting with signed manifests |
+| Overkill | All catalog entries regardless of RWEP | CVE-2026-31431 (90), CVE-2026-43284 (Dirty Frag ESP/IPsec, 53, CVSS 8.8), CVE-2026-30615 (Windsurf MCP local-vector RCE, 35, CVSS 8.0), CVE-2026-43500 (Dirty Frag RxRPC, 47, CVSS 7.6), CVE-2025-53773 (Copilot YOLO-mode RCE, 30, CVSS 7.8) | Public PoC for all; Dirty Frag pair has no live patch (kpatch RHEL-only); Windsurf is local-vector supply-chain class; chained Dirty Frag requires kernel-version fingerprinting | All Practical coverage plus: kernel hardening (unprivileged_userns_clone=0, unprivileged_userfaultfd=0, kptr_restrict=2); seccomp profiles on all containers; eBPF runtime detection; immutable infrastructure for the workloads that tolerate it; sandboxed MCP execution; per-invocation capability tokens for AI agents |
 
 Refresh trigger: re-run `node lib/scoring.js` and rebuild this matrix whenever `data/cve-catalog.json` is updated. The zero-day learning loop also feeds back into the tier mapping when a new CVE is added.
 

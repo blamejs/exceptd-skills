@@ -3,8 +3,8 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1771187,
-    "total_approx_tokens": 442800,
+    "total_chars": 1771367,
+    "total_approx_tokens": 442845,
     "skill_count": 51
   },
   "skills": {
@@ -945,10 +945,10 @@
     },
     "security-maturity-tiers": {
       "path": "skills/security-maturity-tiers/skill.md",
-      "bytes": 37417,
-      "chars": 37219,
+      "bytes": 37597,
+      "chars": 37399,
       "lines": 540,
-      "approx_tokens": 9305,
+      "approx_tokens": 9350,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -1027,9 +1027,9 @@
           "approx_tokens": 1033
         },
         "exploit-availability-matrix": {
-          "bytes": 2665,
-          "chars": 2661,
-          "approx_tokens": 665
+          "bytes": 2845,
+          "chars": 2841,
+          "approx_tokens": 710
         }
       }
     },

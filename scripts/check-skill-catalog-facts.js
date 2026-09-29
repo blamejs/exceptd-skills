@@ -12,7 +12,9 @@
  * covers acceleration, enablement or weaponization is compared with
  * ai_discovered OR ai_assisted_weaponization. A prose line that names exactly one
  * catalog CVE is compared on "RWEP <n>", "CVSS <n.n>", "KEV-listed <date>" and
- * "not KEV-listed". A cell or line that states no comparable value is skipped,
+ * "not KEV-listed". On any line, the parentheses that follow a CVE id are read
+ * as that CVE's values, so a list such as "CVE-A (90), CVE-B (Dirty Frag, 38,
+ * CVSS 7.8)" is compared CVE by CVE. A cell or line that states no comparable value is skipped,
  * and so is a CVE the catalog does not hold, a row whose CVE cell only points
  * to one ("No vendor CVE; see CVE-..."), and a value the text marks as superseded.
  */
@@ -107,13 +109,40 @@ function compareProse(line, e, say) {
   }
 }
 
+/**
+ * Values in the parentheses that follow a CVE id belong to that CVE:
+ * "CVE-X (Copy Fail, RWEP 90, CVSS 7.8)" or "CVE-X (Dirty Frag, 38, CVSS 7.8)".
+ * A bare 1-3 digit item is read as RWEP when the line mentions RWEP.
+ */
+function compareParentheticals(line, catalog, say) {
+  const rwepContext = /\bRWEP\b/i.test(line);
+  let found = 0;
+  for (const m of line.matchAll(/(CVE-\d{4}-\d{4,})\s*\(([^()]*)\)/g)) {
+    const e = catalog[m[1]];
+    if (!e) continue;
+    found++;
+    const inner = m[2];
+    const tell = (msg) => say(m[1], msg);
+    compareProse(inner, e, tell);
+    if (rwepContext && !/\bRWEP\b/i.test(inner)) {
+      for (const item of inner.split(/[,;]/).map((s) => s.trim())) {
+        if (/^\d{1,3}$/.test(item) && Number(item) !== e.rwep_score) tell(`RWEP ${item}, catalog ${e.rwep_score}`);
+      }
+    }
+  }
+  return found;
+}
+
 function checkSkill(file, catalog) {
+  const seen = new Set();
   const failures = [];
+  const push = (msg) => { if (!seen.has(msg)) { seen.add(msg); failures.push(msg); } };
   let compared = 0;
   let header = null;
   const lines = fs.readFileSync(file, "utf8").split(/\r?\n/);
   lines.forEach((line, i) => {
     const where = `${path.relative(ROOT, file).replace(/\\/g, "/")}:${i + 1}`;
+    compared += compareParentheticals(line, catalog, (id, msg) => push(`${where} ${id}: ${msg}`));
     if (/^\s*\|/.test(line)) {
       const cells = splitRow(line);
       if (header === null) { header = cells.map(columnKind); return; }
@@ -125,7 +154,7 @@ function checkSkill(file, catalog) {
       const e = catalog[ids[0]];
       compared++;
       header.forEach((kind, k) => {
-        if (kind && cells[k] !== undefined) compareCell(kind, cells[k], e, (msg) => failures.push(`${where} ${ids[0]}: ${msg}`));
+        if (kind && cells[k] !== undefined) compareCell(kind, cells[k], e, (msg) => push(`${where} ${ids[0]}: ${msg}`));
       });
       return;
     }
@@ -133,7 +162,7 @@ function checkSkill(file, catalog) {
     const ids = uniqueCves(line);
     if (ids.length !== 1 || !catalog[ids[0]]) return;
     compared++;
-    compareProse(line, catalog[ids[0]], (msg) => failures.push(`${where} ${ids[0]}: ${msg}`));
+    compareProse(line, catalog[ids[0]], (msg) => push(`${where} ${ids[0]}: ${msg}`));
   });
   return { failures, compared };
 }

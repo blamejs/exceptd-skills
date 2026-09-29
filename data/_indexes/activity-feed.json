@@ -64,6 +64,13 @@
     {
       "date": "2026-09-28",
       "type": "skill_review",
+      "artifact": "security-maturity-tiers",
+      "path": "skills/security-maturity-tiers/skill.md",
+      "note": "Three-tier implementation roadmap — MVP you can ship today, practical best practices usable now, overkill gold standard for defense-in-depth"
+    },
+    {
+      "date": "2026-09-28",
+      "type": "skill_review",
       "artifact": "supply-chain-integrity",
       "path": "skills/supply-chain-integrity/skill.md",
       "note": "Supply-chain integrity for mid-2026 — SLSA L3+, in-toto attestations, Sigstore signing, SBOM (CycloneDX/SPDX), VEX via CSAF 2.0, AI-generated code provenance, model weights as supply-chain artifacts"
@@ -155,13 +162,6 @@
       "artifact": "skill-update-loop",
       "path": "skills/skill-update-loop/skill.md",
       "note": "Meta-skill for keeping all exceptd skills current — fires on new CVEs and CISA KEV listings, ATLAS updates, framework changes, and forward_watch triggers, and scores each skill's currency"
-    },
-    {
-      "date": "2026-09-18",
-      "type": "skill_review",
-      "artifact": "security-maturity-tiers",
-      "path": "skills/security-maturity-tiers/skill.md",
-      "note": "Three-tier implementation roadmap — MVP you can ship today, practical best practices usable now, overkill gold standard for defense-in-depth"
     },
     {
       "date": "2026-09-18",
