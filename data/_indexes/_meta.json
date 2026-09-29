@@ -1,14 +1,14 @@
 {
   "schema_version": "1.1.0",
-  "generated_at": "2026-09-28T21:45:53.908Z",
+  "generated_at": "2026-09-28T23:54:38.368Z",
   "generator": "scripts/build-indexes.js",
   "source_count": 64,
   "source_hashes": {
-    "manifest.json": "4458e5bbea371c93b1bd8b496097a9bd5cd9c99b3ac62d99b056e53e7ced9ebc",
+    "manifest.json": "c80b84138d5924a476f6b519bb0da79cbdb7d813283b91c17eb4406d7dc50292",
     "README.md": "864570c1f7fb221b0176d22d3b0823a8d077d6a7209edc6045b426b1e9ec555d",
     "data/atlas-ttps.json": "c36c0a27c8de8a37a7070923d7b187345c46db9db778f58e4637f1f81ca6d6b1",
     "data/attack-techniques.json": "9857a11bd035c8638e61b200cdabea0cc43f0115b239e4941a19682076a1cfd3",
-    "data/cve-catalog.json": "d225c9429a16992716ad62db3779cede31ed776bd9319c4f3a8d28269d09732c",
+    "data/cve-catalog.json": "09b9cf2690e17850f2134421dc3559e15426644b59f1eee31ba3e7f44d248770",
     "data/cwe-catalog.json": "2116d47911a3e50b46495b51a31b12d0aede23233a62ef1362cb72810680b57c",
     "data/d3fend-catalog.json": "feec37e4b0a40cd7bc14616b50e7b9bcdb58a92d8e9326f9e2e632896d8ea576",
     "data/dlp-controls.json": "791f6a46b19b0c0fa2f46630ac8b398afb7ec9c2f2019056828c8820fe255f19",
