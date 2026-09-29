@@ -80,11 +80,13 @@ function columnKind(header) {
  */
 const SUBJECT_HEADER = /\b(?:cve|vulnerabilit|threat|incident|class|surface|flaw|evidence)/i;
 
-/** Active-exploitation cell: "Confirmed ...", "Suspected ...", "None ..."/"No ...". */
+/** Active-exploitation cell: Confirmed, Suspected, None/No, Unknown or Theoretical. */
 function exploitationValue(cell) {
   if (/^confirmed\b/i.test(cell)) return "confirmed";
   if (/^suspected\b/i.test(cell)) return "suspected";
   if (/^(?:none|no)\b/i.test(cell)) return "none";
+  if (/^unknown\b/i.test(cell)) return "unknown";
+  if (/^theoretical\b/i.test(cell)) return "theoretical";
   return null;
 }
 
@@ -122,7 +124,7 @@ function compareCell(kind, raw, e, say) {
   } else if (kind === "active") {
     const v = exploitationValue(cell);
     const actual = String(e.active_exploitation || "").toLowerCase();
-    if (v && ["confirmed", "suspected", "none"].includes(actual) && v !== actual) say(`active exploitation "${cell.slice(0, 40)}", catalog ${actual}`);
+    if (v && actual && v !== actual) say(`active exploitation "${cell.slice(0, 40)}", catalog ${actual}`);
   } else if (kind === "patch") {
     const v = /^vendor (?:patch|update|fix)\b/i.test(cell) ? true : yesNo(cell);
     if (v !== null && v !== Boolean(e.patch_available)) say(`patch "${cell.slice(0, 40)}", catalog patch_available ${e.patch_available}`);
@@ -271,9 +273,9 @@ function checkSkill(file, catalog) {
         if (compareFactorRow(cells, rawHeader, catalog[sectionCve], (msg) => push(`${where} ${sectionCve}: ${msg}`))) compared++;
         return;
       }
-      const idCol = cells.findIndex((c) => uniqueCves(c).length > 0);
-      const idCell = idCol >= 0 ? cells[idCol] : "";
-      if (idCol >= 0 && !SUBJECT_HEADER.test(rawHeader[idCol] || "")) return;
+      const idCol = cells.findIndex((c, k) => uniqueCves(c).length > 0 && SUBJECT_HEADER.test(rawHeader[k] || ""));
+      if (idCol < 0) return;
+      const idCell = cells[idCol];
       if (/^(?:no|n\/a)\b/i.test(idCell) || /\bsee\s+CVE-/i.test(idCell)) return;
       const ids = uniqueCves(idCell);
       if (ids.length > 1) {

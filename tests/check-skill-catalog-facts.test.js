@@ -347,6 +347,34 @@ test("Active Exploitation, Patch and Live Patch columns are compared with the ca
   ]);
 });
 
+test("an exploitation claim is compared with an unknown or theoretical catalog state too", () => {
+  const cat = {
+    ...CATALOG,
+    "CVE-2099-0001": { ...CATALOG["CVE-2099-0001"], active_exploitation: "unknown" },
+    "CVE-2099-0002": { ...CATALOG["CVE-2099-0002"], active_exploitation: "theoretical" },
+  };
+  const run = (lines) => withSkill(lines.join("\n") + "\n", (file) => checkSkill(file, cat).failures.map((f) => f.replace(/^.*skill\.md:/, "")));
+  assert.deepEqual(run([
+    "| CVE | Active Exploitation |",
+    "|---|---|",
+    "| CVE-2099-0001 | Confirmed |",
+    "| CVE-2099-0001 | Unknown |",
+    "| CVE-2099-0002 | Theoretical only |",
+    "| CVE-2099-0002 | None observed |",
+  ]), [
+    '3 CVE-2099-0001: active exploitation "Confirmed", catalog unknown',
+    '6 CVE-2099-0002: active exploitation "None observed", catalog theoretical',
+  ]);
+});
+
+test("the row's CVE is taken from its subject column, not from an earlier citation", () => {
+  assert.deepEqual(failuresFor([
+    "| Notes | Evidence CVE | RWEP |",
+    "|---|---|---|",
+    "| Related to CVE-2099-0002 | CVE-2099-0001 | 99 |",
+  ]), ["3 CVE-2099-0001: RWEP 99, catalog 35"]);
+});
+
 test("a CVE mentioned outside the row's subject column is not compared", () => {
   assert.deepEqual(failuresFor([
     "| ATLAS Technique | PoC / Public Demo Available? | CISA KEV? |",
