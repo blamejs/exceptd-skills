@@ -347,6 +347,27 @@ test("Active Exploitation, Patch and Live Patch columns are compared with the ca
   ]);
 });
 
+test("a vendor-patch cell that denies availability reads as no patch", () => {
+  const cat = {
+    ...CATALOG,
+    "CVE-2099-0001": { ...CATALOG["CVE-2099-0001"], patch_available: true },
+    "CVE-2099-0002": { ...CATALOG["CVE-2099-0002"], patch_available: false },
+  };
+  const run = (lines) => withSkill(lines.join("\n") + "\n", (file) => checkSkill(file, cat).failures.map((f) => f.replace(/^.*skill\.md:/, "")));
+  assert.deepEqual(run([
+    "| CVE | Patch Available |",
+    "|---|---|",
+    "| CVE-2099-0001 | Vendor patch unavailable |",
+    "| CVE-2099-0002 | Vendor update not yet available |",
+    "| CVE-2099-0002 | Vendor fix pending |",
+    "| CVE-2099-0001 | Vendor patch + config hardening |",
+    "| CVE-2099-0002 | Vendor patches shipped 2099-01-01 |",
+  ]), [
+    '3 CVE-2099-0001: patch "Vendor patch unavailable", catalog patch_available true',
+    '7 CVE-2099-0002: patch "Vendor patches shipped 2099-01-01", catalog patch_available false',
+  ]);
+});
+
 test("an exploitation claim is compared with an unknown or theoretical catalog state too", () => {
   const cat = {
     ...CATALOG,

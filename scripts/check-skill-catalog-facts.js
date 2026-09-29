@@ -80,6 +80,20 @@ function columnKind(header) {
  */
 const SUBJECT_HEADER = /\b(?:cve|vulnerabilit|threat|incident|class|surface|flaw|evidence)/i;
 
+/**
+ * Patch cell: a leading Yes/No, or "Vendor patch/update/fix" read as available
+ * unless the words after it deny it ("Vendor patch unavailable", "Vendor update
+ * not yet available", "Vendor fix pending").
+ */
+function patchValue(cell) {
+  const v = yesNo(cell);
+  if (v !== null) return v;
+  const m = /^vendor (?:patch|update|fix)(?:es)?\b(.{0,40})/i.exec(cell);
+  if (!m) return null;
+  if (/\b(?:unavailable|unreleased|not (?:yet )?(?:available|released|shipped|published)|pending)\b/i.test(m[1])) return false;
+  return true;
+}
+
 /** Active-exploitation cell: Confirmed, Suspected, None/No, Unknown or Theoretical. */
 function exploitationValue(cell) {
   if (/^confirmed\b/i.test(cell)) return "confirmed";
@@ -126,7 +140,7 @@ function compareCell(kind, raw, e, say) {
     const actual = String(e.active_exploitation || "").toLowerCase();
     if (v && actual && v !== actual) say(`active exploitation "${cell.slice(0, 40)}", catalog ${actual}`);
   } else if (kind === "patch") {
-    const v = /^vendor (?:patch|update|fix)\b/i.test(cell) ? true : yesNo(cell);
+    const v = patchValue(cell);
     if (v !== null && v !== Boolean(e.patch_available)) say(`patch "${cell.slice(0, 40)}", catalog patch_available ${e.patch_available}`);
   } else if (kind === "live_patch") {
     // "Limited" is how the skills write a live patch the catalog scores as
