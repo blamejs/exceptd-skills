@@ -144,6 +144,45 @@ test("a multi-CVE line with no score, a threshold, or a superseded value is not 
   ]), []);
 });
 
+test("a factor table under a single-CVE heading is compared with that CVE's rwep_factors", () => {
+  const cat = { ...CATALOG, "CVE-2099-0001": { ...CATALOG["CVE-2099-0001"], rwep_factors: { cisa_kev: 0, poc_available: 20, ai_factor: 15, blast_radius: 25 } } };
+  const run = (lines) => withSkill(lines.join("\n") + "\n", (file) => checkSkill(file, cat).failures.map((f) => f.replace(/^.*skill\.md:/, "")));
+  assert.deepEqual(run([
+    "### CVE-2099-0001 — Demo",
+    "",
+    "| Factor | Value | Points |",
+    "|---|---|---|",
+    "| CISA KEV | No | 0 |",
+    "| PoC Public | Partial | +10 |",
+    "| AI-Assisted | No | 0 |",
+    "| Blast Radius | wide | +25 |",
+    "| **RWEP** | | **20** |",
+  ]), [
+    "6 CVE-2099-0001: factor table PoC Public 10, catalog rwep_factors.poc_available 20",
+    "7 CVE-2099-0001: factor table AI-Assisted 0, catalog rwep_factors.ai_factor 15",
+    "9 CVE-2099-0001: factor table RWEP 20, catalog 35",
+  ]);
+  assert.deepEqual(run([
+    "### CVE-2099-0001 — Demo",
+    "| Factor | Value | Points |",
+    "|---|---|---|",
+    "| **RWEP** | | **35** |",
+    "### RWEP Factor Breakdown",
+    "| Factor | Value | Points |",
+    "|---|---|---|",
+    "| **RWEP Total** | | **[score]** |",
+    "| PoC Public | Yes/No | +20/0 |",
+    "### CVE-2099-0001 and CVE-2099-0002",
+    "| Factor | Value | Points |",
+    "|---|---|---|",
+    "| **RWEP** | | **99** |",
+    "### CVE-2099-0001 — Demo",
+    "| Factor | Source | Meaning |",
+    "|---|---|---|",
+    "| RWEP | catalog | 99 |",
+  ]), []);
+});
+
 test("a disagreement stated once on a single-CVE line is reported once", () => {
   assert.deepEqual(failuresFor(["CVE-2099-0001 (Demo, RWEP 12, CVSS 7.8) is the example."]), ["1 CVE-2099-0001: RWEP 12, catalog 35"]);
 });

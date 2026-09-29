@@ -142,20 +142,64 @@ function compareParentheticals(line, catalog, say) {
   return found;
 }
 
+/** Factor-table row labels and the rwep_factors key each one scores. */
+const FACTOR_KEYS = [
+  [/^cisa kev$/, "cisa_kev"],
+  [/^poc public$|^public poc$/, "poc_available"],
+  [/^ai[- ](?:assisted|discovered|factor)$/, "ai_factor"],
+  [/^active exploitation$/, "active_exploitation"],
+  [/^blast radius$/, "blast_radius"],
+  [/^patch available$/, "patch_available"],
+  [/^live patch available$/, "live_patch_available"],
+  [/^reboot required$/, "reboot_required"],
+];
+
+/**
+ * A "Factor | Value | Points" row under a heading that names one catalog CVE:
+ * the points must equal that CVE's rwep_factors entry, and the RWEP row must
+ * equal its rwep_score.
+ */
+function compareFactorRow(cells, rawHeader, e, say) {
+  const pointsCol = rawHeader.findIndex((h) => /^\s*points\s*$/i.test(h));
+  if (pointsCol < 1) return false;
+  const label = (cells[0] || "").replace(/\*/g, "").trim().toLowerCase();
+  const m = /^\*{0,2}\s*([+-−]?\d{1,3})\b/.exec(cells[pointsCol] || "");
+  if (!m) return false;
+  const points = Number(m[1].replace("−", "-"));
+  if (/^rwep(?: total)?$/.test(label)) {
+    if (points !== e.rwep_score) say(`factor table RWEP ${points}, catalog ${e.rwep_score}`);
+    return true;
+  }
+  const hit = FACTOR_KEYS.find(([re]) => re.test(label));
+  if (!hit || !e.rwep_factors || typeof e.rwep_factors[hit[1]] !== "number") return false;
+  if (points !== e.rwep_factors[hit[1]]) say(`factor table ${cells[0].replace(/\*/g, "").trim()} ${points}, catalog rwep_factors.${hit[1]} ${e.rwep_factors[hit[1]]}`);
+  return true;
+}
+
 function checkSkill(file, catalog) {
   const seen = new Set();
   const failures = [];
   const push = (msg) => { if (!seen.has(msg)) { seen.add(msg); failures.push(msg); } };
   let compared = 0;
   let header = null;
+  let rawHeader = null;
+  let sectionCve = null;
   const lines = fs.readFileSync(file, "utf8").split(/\r?\n/);
   lines.forEach((line, i) => {
     const where = `${path.relative(ROOT, file).replace(/\\/g, "/")}:${i + 1}`;
+    if (/^#{1,6}\s/.test(line)) {
+      const headingIds = uniqueCves(line);
+      sectionCve = headingIds.length === 1 && catalog[headingIds[0]] ? headingIds[0] : null;
+    }
     compared += compareParentheticals(line, catalog, (id, msg) => push(`${where} ${id}: ${msg}`));
     if (/^\s*\|/.test(line)) {
       const cells = splitRow(line);
-      if (header === null) { header = cells.map(columnKind); return; }
+      if (header === null) { rawHeader = cells; header = cells.map(columnKind); return; }
       if (isDivider(cells)) return;
+      if (sectionCve && uniqueCves(line).length === 0) {
+        if (compareFactorRow(cells, rawHeader, catalog[sectionCve], (msg) => push(`${where} ${sectionCve}: ${msg}`))) compared++;
+        return;
+      }
       const idCell = cells.find((c) => uniqueCves(c).length > 0) || "";
       if (/^(?:no|n\/a)\b/i.test(idCell) || /\bsee\s+CVE-/i.test(idCell)) return;
       const ids = uniqueCves(idCell);
