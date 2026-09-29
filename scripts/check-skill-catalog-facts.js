@@ -68,7 +68,7 @@ function columnKind(header) {
   if (/^ai\b/.test(h)) return "ai_any";
   if (/^active exploitation\b/.test(h)) return "active";
   if (/live[- ]?patch/.test(h)) return "live_patch";
-  if (/^patch\b/.test(h)) return "patch";
+  if (/^patch\b/.test(h)) return /mitigation/.test(h) ? "patch_or_mitigation" : "patch";
   return null;
 }
 
@@ -79,6 +79,7 @@ function columnKind(header) {
  * the row's subject, not to the row.
  */
 const SUBJECT_HEADER = /\b(?:cve|vulnerabilit|threat|incident|class|surface|flaw|evidence)/i;
+const CONTEXT_HEADER = /\b(?:related|sibling|chained|see also|other|similar)\b/i;
 
 /**
  * Patch cell: a leading Yes/No, or "Vendor patch/update/fix" read by the words
@@ -101,6 +102,9 @@ function patchValue(cell) {
 
 /** Active-exploitation cell: Confirmed, Suspected, None/No, Unknown or Theoretical. */
 function exploitationValue(cell) {
+  // "No confirmed exploitation" denies confirmation, not exploitation: it is
+  // true of suspected and unknown entries alike.
+  if (/^no (?:confirmed|known|public(?:ly)? confirmed)\b/i.test(cell)) return null;
   if (/^confirmed\b/i.test(cell)) return "confirmed";
   if (/^suspected\b/i.test(cell)) return "suspected";
   if (/^(?:none|no)\b/i.test(cell)) return "none";
@@ -144,7 +148,10 @@ function compareCell(kind, raw, e, say) {
     const v = exploitationValue(cell);
     const actual = String(e.active_exploitation || "").toLowerCase();
     if (v && actual && v !== actual) say(`active exploitation "${cell.slice(0, 40)}", catalog ${actual}`);
-  } else if (kind === "patch") {
+  } else if (kind === "patch" || kind === "patch_or_mitigation") {
+    // In a "Patch / Mitigation" column a cell about a mitigation or workaround
+    // says nothing about whether a patch exists.
+    if (kind === "patch_or_mitigation" && /\b(?:mitigation|workaround|compensating)\b/i.test(cell)) return;
     const v = patchValue(cell);
     if (v !== null && v !== Boolean(e.patch_available)) say(`patch "${cell.slice(0, 40)}", catalog patch_available ${e.patch_available}`);
   } else if (kind === "live_patch") {
@@ -294,7 +301,9 @@ function checkSkill(file, catalog) {
       }
       // A header that names a CVE ("CVE", "Evidence CVE") outranks a broad one
       // ("Threat", "Class", "Surface") when both columns cite a CVE.
-      const bearsCve = (k) => uniqueCves(cells[k] || "").length > 0;
+      // A contextual header ("Related CVE", "Chained with") never names the
+      // row's subject.
+      const bearsCve = (k) => uniqueCves(cells[k] || "").length > 0 && !CONTEXT_HEADER.test(rawHeader[k] || "");
       let idCol = cells.findIndex((c, k) => bearsCve(k) && /\bcve\b/i.test(rawHeader[k] || ""));
       if (idCol < 0) idCol = cells.findIndex((c, k) => bearsCve(k) && SUBJECT_HEADER.test(rawHeader[k] || ""));
       if (idCol < 0) return;

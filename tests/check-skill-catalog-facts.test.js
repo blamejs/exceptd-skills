@@ -385,6 +385,25 @@ test("a vendor-patch cell reads as a patch only when it affirms one", () => {
   ]);
 });
 
+test("No confirmed exploitation, mitigation cells and Related CVE columns are not misread", () => {
+  const cat = {
+    ...CATALOG,
+    "CVE-2099-0001": { ...CATALOG["CVE-2099-0001"], active_exploitation: "suspected", patch_available: false },
+  };
+  const run = (lines) => withSkill(lines.join("\n") + "\n", (file) => checkSkill(file, cat).failures.map((f) => f.replace(/^.*skill\.md:/, "")));
+  assert.deepEqual(run([
+    "| CVE | Active Exploitation | Patch / Mitigation Available |",
+    "|---|---|---|",
+    "| CVE-2099-0001 | No confirmed exploitation | Yes — mitigation available; vendor patch pending |",
+    "| CVE-2099-0001 | Suspected | Yes |",
+  ]), ['4 CVE-2099-0001: patch "Yes", catalog patch_available false']);
+  assert.deepEqual(failuresFor([
+    "| Related CVE | Evidence CVE | RWEP |",
+    "|---|---|---|",
+    "| CVE-2099-0003 | CVE-2099-0001 | 30 |",
+  ]), ["3 CVE-2099-0001: RWEP 30, catalog 35"]);
+});
+
 test("a column headed CVE outranks a broad subject column", () => {
   assert.deepEqual(failuresFor([
     "| Related Threat | Evidence CVE | RWEP |",
@@ -505,7 +524,8 @@ test("helpers: column kinds and Yes/No cells", () => {
   assert.equal(columnKind("AI-Discovered / AI-Enabled"), "ai_any");
   assert.equal(columnKind("AI factor"), "ai_any");
   assert.equal(columnKind("Active Exploitation"), "active");
-  assert.equal(columnKind("Patch / Mitigation Available"), "patch");
+  assert.equal(columnKind("Patch / Mitigation Available"), "patch_or_mitigation");
+  assert.equal(columnKind("Patch Available?"), "patch");
   assert.equal(columnKind("Live-Patchable"), "live_patch");
   assert.equal(columnKind("Blast Radius"), null);
   assert.equal(yesNo("Yes — 732-byte script"), true);
