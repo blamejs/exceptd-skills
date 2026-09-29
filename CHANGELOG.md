@@ -2,7 +2,7 @@
 
 ## 0.21.15 — 2026-09-28
 
-The catalog adds CVE-2026-88772, a DTLS memory overflow in Citrix NetScaler ADC and NetScaler Gateway that can lead to remote code execution or denial of service. CISA added it to KEV on 2026-09-27 with a 2026-09-30 due date and requires forensic triage; Citrix bulletin CTX697096 reports exploitation in the wild. The fixed builds are 14.1-73.37, 13.1-64.23, 14.1-73.37 FIPS and 13.1.37.279, and the upgrade reboots the appliance. The entry puts the Citrix indicator scan and the CTX694799 evidence collection before any upgrade or reboot, and states that setting `-dtls OFF` does not make it safe to defer the upgrade, because the same builds are also affected by CVE-2026-88771. It scores RWEP 51. The catalog holds 1,759 CVEs.
+The catalog adds CVE-2026-88772, a DTLS memory overflow in Citrix NetScaler ADC and NetScaler Gateway that can lead to remote code execution or denial of service. CISA added it to KEV on 2026-09-27 with a 2026-09-30 due date and requires forensic triage; Citrix bulletin CTX697096 reports exploitation in the wild. The fixed builds are 14.1-73.37, 13.1-64.23, 14.1-73.37 FIPS and 13.1.37.279, and the upgrade reboots the appliance. The entry puts the Citrix indicator scan and the CTX694799 evidence collection before any upgrade or reboot. It records an appliance with `-dtls OFF` on every SSL VPN virtual server and no virtual server of type DTLS as mitigated with residual risk for this CVE, and states that the setting does not make it safe to defer the upgrade, because the same builds are also affected by CVE-2026-88771, whose KEV facts the entry gives. It scores RWEP 51. The catalog holds 1,759 CVEs.
 
 ## 0.21.14 — 2026-09-28
 
