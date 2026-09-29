@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.21.15 — 2026-09-28
+
+The catalog adds CVE-2026-88772, a DTLS memory overflow in Citrix NetScaler ADC and NetScaler Gateway that can lead to remote code execution or denial of service. CISA added it to KEV on 2026-09-27 with a 2026-09-30 due date and requires forensic triage; Citrix bulletin CTX697096 reports exploitation in the wild. The fixed builds are 14.1-73.37, 13.1-64.23, 14.1-73.37 FIPS and 13.1.37.279, and the upgrade reboots the appliance. The entry puts the Citrix indicator scan and the CTX694799 evidence collection before any upgrade or reboot, and states that setting `-dtls OFF` does not make it safe to defer the upgrade, because the same builds are also affected by CVE-2026-88771. It scores RWEP 51. The catalog holds 1,759 CVEs.
+
 ## 0.21.14 — 2026-09-28
 
 14 skills stated CVSS, RWEP, KEV, public-exploit or AI-discovery values for catalog CVEs that disagreed with the catalog, and now match it. The cloud-IAM incident skill listed runc CVE-2024-21626 and the xz backdoor CVE-2024-3094 as KEV-listed with RWEP 88 and 70; CISA has listed neither, and the catalog scores them 35 and 45. The Dirty Frag and Fragnesia CVEs (CVE-2026-43284, CVE-2026-43500, CVE-2026-46300) now read as AI-assisted discoveries with RWEP 53, 47 and 35, where several skills said they were human-discovered and scored 38, 32 and 20; a KEV listing would take Fragnesia to 60, and confirmed exploitation to 80. The security maturity tiers now place the Dirty Frag pair in the Practical tier, which covers RWEP 30 and above. The Windsurf MCP entry (CVE-2026-30615) reads CVSS 8.0 throughout, and CVE-2026-45321 reads as KEV-listed on 2026-05-27 rather than pending. The exploit-scoring factor breakdown for the Windsurf MCP entry gave its public exploit 10 points and its blast radius 20, so its rows summed to 15 against a stated RWEP of 35; they now read 20 and 30.
