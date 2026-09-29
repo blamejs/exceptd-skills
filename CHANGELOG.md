@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.21.16 — 2026-09-29
+
+The skill catalog-facts predeploy gate now also compares a skill table's Active Exploitation column (Confirmed, Suspected, None) with the catalog's `active_exploitation`, its Patch column with `patch_available`, and its Live Patch column with `live_patch_available`. A "Limited" live-patch cell, the skills' form for a live patch that covers one distribution only, reads as unavailable. A table row is compared only when its CVE sits in the row's subject column (a header such as CVE, Vulnerability, Threat, or Surface / CVE Class), so a CVE mentioned in another column, such as a PoC or rationale cell, is no longer read as the row's subject.
+
 ## 0.21.15 — 2026-09-28
 
 The catalog adds CVE-2026-88772, a DTLS memory overflow in Citrix NetScaler ADC and NetScaler Gateway that can lead to remote code execution or denial of service. CISA added it to KEV on 2026-09-27 with a 2026-09-30 due date and requires forensic triage; Citrix bulletin CTX697096 reports exploitation in the wild. The fixed builds are 14.1-73.37, 13.1-64.23, 14.1-73.37 FIPS and 13.1.37.279, and the upgrade reboots the appliance. The entry puts the Citrix indicator scan and the CTX694799 evidence collection before any upgrade or reboot. It records an appliance with `-dtls OFF` on every SSL VPN virtual server and no virtual server of type DTLS as mitigated with residual risk for this CVE, and states that the setting does not make it safe to defer the upgrade, because the same builds are also affected by CVE-2026-88771, whose KEV facts the entry gives. It scores RWEP 51. The catalog holds 1,759 CVEs.

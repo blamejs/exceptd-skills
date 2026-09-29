@@ -116,7 +116,7 @@ test("a score stated for several CVEs outside per-CVE parentheses fails as unatt
     "RWEP 35 applies; hosts mitigated for CVE-2099-0001 / CVE-2099-0002 are covered.",
   ]), [`1 CVE-2099-0001, CVE-2099-0002: ${msg}`, `2 CVE-2099-0001, CVE-2099-0002: ${msg}`]);
   assert.deepEqual(failuresFor([
-    "| Chain | CVSS | RWEP |",
+    "| CVE chain | CVSS | RWEP |",
     "|---|---|---|",
     "| CVE-2099-0001 / CVE-2099-0002 | 7.8 | 35 |",
     "| CVE-2099-0001 / CVE-2099-0002 | High | varies |",
@@ -129,7 +129,7 @@ test("a CVE the catalog does not hold still counts when attributing a line's sco
   assert.deepEqual(failuresFor(["RWEP 80 applies to the pair CVE-2099-0001 and CVE-2000-9999."]), [`1 CVE-2099-0001, CVE-2000-9999: ${msg}`]);
   assert.deepEqual(failuresFor(["RWEP 80 applies to the pair CVE-2000-9998 and CVE-2000-9999."]), []);
   assert.deepEqual(failuresFor([
-    "| Pair | RWEP |",
+    "| CVE pair | RWEP |",
     "|---|---|",
     "| CVE-2099-0001 / CVE-2000-9999 | 80 |",
   ]), [`3 CVE-2099-0001, CVE-2000-9999: ${msg}`]);
@@ -294,7 +294,7 @@ test("Markdown emphasis and code marks in a cell are ignored when comparing it",
   ]);
   const msg = 'states a score for several CVEs outside per-CVE parentheses; write each as "CVE-X (name, RWEP n, CVSS n.n)"';
   assert.deepEqual(failuresFor([
-    "| Pair | RWEP |",
+    "| CVE pair | RWEP |",
     "|---|---|",
     "| CVE-2099-0001 / CVE-2099-0002 | **80** |",
   ]), [`3 CVE-2099-0001, CVE-2099-0002: ${msg}`]);
@@ -324,6 +324,41 @@ test("declarative AI cells are read: AI-discovered, AI-weaponized and Human-disc
     '5 CVE-2099-0001: AI-discovered "Human-discovered", catalog ai_discovered true',
     '6 CVE-2099-0002: AI "AI-accelerated", catalog ai_discovered false / ai_assisted_weaponization false',
   ]);
+});
+
+test("Active Exploitation, Patch and Live Patch columns are compared with the catalog", () => {
+  const cat = {
+    ...CATALOG,
+    "CVE-2099-0001": { ...CATALOG["CVE-2099-0001"], active_exploitation: "suspected", patch_available: true, live_patch_available: false },
+    "CVE-2099-0002": { ...CATALOG["CVE-2099-0002"], active_exploitation: "none", patch_available: false, live_patch_available: true },
+  };
+  const run = (lines) => withSkill(lines.join("\n") + "\n", (file) => checkSkill(file, cat).failures.map((f) => f.replace(/^.*skill\.md:/, "")));
+  assert.deepEqual(run([
+    "| CVE | Active Exploitation | Patch / Mitigation Available | Live-Patchable |",
+    "|---|---|---|---|",
+    "| CVE-2099-0001 | Suspected | Vendor patch | Limited (kpatch RHEL-only) |",
+    "| CVE-2099-0002 | None observed | No | Yes (IDE update) |",
+    "| CVE-2099-0001 | Confirmed mass exploitation | No | Yes |",
+    "| CVE-2099-0002 | Patched in modern fleets | Mitigation + vendor patch | n/a |",
+  ]), [
+    '5 CVE-2099-0001: active exploitation "Confirmed mass exploitation", catalog suspected',
+    '5 CVE-2099-0001: patch "No", catalog patch_available true',
+    '5 CVE-2099-0001: live patch "Yes", catalog live_patch_available false',
+  ]);
+});
+
+test("a CVE mentioned outside the row's subject column is not compared", () => {
+  assert.deepEqual(failuresFor([
+    "| ATLAS Technique | PoC / Public Demo Available? | CISA KEV? |",
+    "|---|---|---|",
+    "| AML.T0051 | Yes — CVE-2099-0002 is the sibling case | No |",
+    "| Surface / CVE Class | CVSS | CISA KEV |",
+  ]), []);
+  assert.deepEqual(failuresFor([
+    "| Surface / CVE Class | CISA KEV |",
+    "|---|---|",
+    "| Demo flaw (CVE-2099-0002) | No |",
+  ]), ['3 CVE-2099-0002: KEV "No", catalog listed 2099-02-03']);
 });
 
 test("cells that state no comparable value are not compared", () => {
@@ -395,7 +430,10 @@ test("helpers: column kinds and Yes/No cells", () => {
   assert.equal(columnKind("AI-Discovered"), "ai_discovered");
   assert.equal(columnKind("AI-Discovered / AI-Enabled"), "ai_any");
   assert.equal(columnKind("AI factor"), "ai_any");
-  assert.equal(columnKind("Active Exploitation"), null);
+  assert.equal(columnKind("Active Exploitation"), "active");
+  assert.equal(columnKind("Patch / Mitigation Available"), "patch");
+  assert.equal(columnKind("Live-Patchable"), "live_patch");
+  assert.equal(columnKind("Blast Radius"), null);
   assert.equal(yesNo("Yes — 732-byte script"), true);
   assert.equal(yesNo("No (candidate)"), false);
   assert.equal(yesNo("Partial"), null);

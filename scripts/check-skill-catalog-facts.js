@@ -6,8 +6,11 @@
  * that differs from data/cve-catalog.json.
  *
  * A markdown table row is compared when the first cell that names a CVE names
- * exactly one catalog CVE. Its cells are compared by column header: CVSS, RWEP, a KEV column (Yes/No, and the listing date when the
- * cell gives one), a public-exploit column (Yes/No), and an AI column. An
+ * exactly one catalog CVE and sits under a subject header (CVE, Vulnerability,
+ * Threat, Incident, Class, Surface, Evidence). Its cells are compared by column
+ * header: CVSS, RWEP, a KEV column (Yes/No, and the listing date when the cell
+ * gives one), a public-exploit column (Yes/No), Active Exploitation (Confirmed,
+ * Suspected, None), Patch and Live Patch (Yes/No), and an AI column. An
  * "AI-Discovered" column is compared with ai_discovered; an AI column that also
  * covers acceleration, enablement or weaponization is compared with
  * ai_discovered OR ai_assisted_weaponization. A prose line that names exactly one
@@ -63,6 +66,25 @@ function columnKind(header) {
   if (/\bpoc\b|public exploit/.test(h)) return "poc";
   if (/^ai[- ]discovered$/.test(h)) return "ai_discovered";
   if (/^ai\b/.test(h)) return "ai_any";
+  if (/^active exploitation\b/.test(h)) return "active";
+  if (/live[- ]?patch/.test(h)) return "live_patch";
+  if (/^patch\b/.test(h)) return "patch";
+  return null;
+}
+
+/**
+ * A table's CVE-bearing cell is the row's subject only under a header that names
+ * one ("CVE", "Vulnerability", "Surface / CVE Class", "Threat", "Evidence CVE").
+ * A CVE mentioned in another column ("PoC / Public Demo Available?") belongs to
+ * the row's subject, not to the row.
+ */
+const SUBJECT_HEADER = /\b(?:cve|vulnerabilit|threat|incident|class|surface|flaw|evidence)/i;
+
+/** Active-exploitation cell: "Confirmed ...", "Suspected ...", "None ..."/"No ...". */
+function exploitationValue(cell) {
+  if (/^confirmed\b/i.test(cell)) return "confirmed";
+  if (/^suspected\b/i.test(cell)) return "suspected";
+  if (/^(?:none|no)\b/i.test(cell)) return "none";
   return null;
 }
 
@@ -97,6 +119,18 @@ function compareCell(kind, raw, e, say) {
     const v = aiValue(cell, /^ai[- ](?:discovered|assisted|accelerated|enabled|weaponi[sz]ed)\b/i);
     const expected = Boolean(e.ai_discovered) || Boolean(e.ai_assisted_weaponization);
     if (v !== null && v !== expected) say(`AI "${cell.slice(0, 40)}", catalog ai_discovered ${e.ai_discovered} / ai_assisted_weaponization ${e.ai_assisted_weaponization}`);
+  } else if (kind === "active") {
+    const v = exploitationValue(cell);
+    const actual = String(e.active_exploitation || "").toLowerCase();
+    if (v && ["confirmed", "suspected", "none"].includes(actual) && v !== actual) say(`active exploitation "${cell.slice(0, 40)}", catalog ${actual}`);
+  } else if (kind === "patch") {
+    const v = /^vendor (?:patch|update|fix)\b/i.test(cell) ? true : yesNo(cell);
+    if (v !== null && v !== Boolean(e.patch_available)) say(`patch "${cell.slice(0, 40)}", catalog patch_available ${e.patch_available}`);
+  } else if (kind === "live_patch") {
+    // "Limited" is how the skills write a live patch the catalog scores as
+    // unavailable because it covers one distribution only.
+    const v = /^limited\b/i.test(cell) ? false : yesNo(cell);
+    if (v !== null && v !== Boolean(e.live_patch_available)) say(`live patch "${cell.slice(0, 40)}", catalog live_patch_available ${e.live_patch_available}`);
   }
 }
 
@@ -237,7 +271,9 @@ function checkSkill(file, catalog) {
         if (compareFactorRow(cells, rawHeader, catalog[sectionCve], (msg) => push(`${where} ${sectionCve}: ${msg}`))) compared++;
         return;
       }
-      const idCell = cells.find((c) => uniqueCves(c).length > 0) || "";
+      const idCol = cells.findIndex((c) => uniqueCves(c).length > 0);
+      const idCell = idCol >= 0 ? cells[idCol] : "";
+      if (idCol >= 0 && !SUBJECT_HEADER.test(rawHeader[idCol] || "")) return;
       if (/^(?:no|n\/a)\b/i.test(idCell) || /\bsee\s+CVE-/i.test(idCell)) return;
       const ids = uniqueCves(idCell);
       if (ids.length > 1) {
