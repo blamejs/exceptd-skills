@@ -107,7 +107,8 @@ function historical(line, m) {
   return /\b(?:initial|original|previous(?:ly)?|earlier|former|prior)\s*$/i.test(before) || /^\s*(?:was|were|is)\s+(?:withdrawn|superseded|corrected|replaced)\b/i.test(after);
 }
 
-function compareProse(line, e, say) {
+function compareProse(text, e, say) {
+  const line = plain(text);
   for (const m of line.matchAll(/RWEP(?: score)?(?:\s*(?:of|is|=|:))?\s*(\d{1,3})(?![\d+–-]|\.\d)/gi)) {
     if (historical(line, m)) continue;
     if (Number(m[1]) !== e.rwep_score) say(`RWEP ${m[1]}, catalog ${e.rwep_score}`);
@@ -238,7 +239,7 @@ function checkSkill(file, catalog) {
     header = null;
     const ids = uniqueCves(line);
     if (ids.length > 1) {
-      const rest = line.replace(PER_CVE, " ");
+      const rest = plain(line.replace(PER_CVE, " "));
       const m = SCORE.exec(rest);
       if (ids.some((id) => catalog[id]) && m && !historical(rest, m)) push(`${where} ${ids.join(", ")}: ${UNATTRIBUTED}`);
       return;

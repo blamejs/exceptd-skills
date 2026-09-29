@@ -268,6 +268,17 @@ test("Markdown emphasis and code marks in a cell are ignored when comparing it",
   ]), [`3 CVE-2099-0001, CVE-2099-0002: ${msg}`]);
 });
 
+test("bold score labels in prose are compared like plain ones", () => {
+  assert.deepEqual(failuresFor([
+    "CVE-2099-0001: **RWEP:** 1, **CVSS:** 1.0",
+    "CVE-2099-0002 (**RWEP 12**, *CVSS 9.8*) is the example.",
+  ]), [
+    "1 CVE-2099-0001: RWEP 1, catalog 35",
+    "1 CVE-2099-0001: CVSS 1.0, catalog 7.8",
+    "2 CVE-2099-0002: RWEP 12, catalog 80",
+  ]);
+});
+
 test("declarative AI cells are read: AI-discovered, AI-weaponized and Human-discovered", () => {
   assert.deepEqual(failuresFor([
     "| CVE | AI factor | AI-Discovered |",
