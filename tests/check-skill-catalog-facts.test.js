@@ -221,6 +221,34 @@ test("an exact AI-Discovered column reads ai_discovered; a combined AI column al
   ]), ['4 CVE-2099-0001: AI "No", catalog ai_discovered true / ai_assisted_weaponization false']);
 });
 
+test("a Partial public-exploit cell is read as a PoC the catalog scores as available", () => {
+  assert.deepEqual(failuresFor([
+    "| CVE | Public PoC |",
+    "|---|---|",
+    "| CVE-2099-0001 | Partial — conceptual exploit demonstrated |",
+    "| CVE-2099-0002 | Partial |",
+  ]), ['4 CVE-2099-0002: public exploit "Partial", catalog poc_available false']);
+});
+
+test("factor points accept a leading plus, hyphen-minus or Unicode minus, and nothing else", () => {
+  const cat = { ...CATALOG, "CVE-2099-0001": { ...CATALOG["CVE-2099-0001"], rwep_factors: { patch_available: -15, poc_available: 20, blast_radius: 25 } } };
+  const run = (lines) => withSkill(lines.join("\n") + "\n", (file) => checkSkill(file, cat).failures.map((f) => f.replace(/^.*skill\.md:/, "")));
+  assert.deepEqual(run([
+    "### CVE-2099-0001 — Demo",
+    "| Factor | Value | Points |",
+    "|---|---|---|",
+    "| Patch Available | Yes | −15 |",
+    "| PoC Public | Yes | +20 |",
+    "| Blast Radius | wide | x25 |",
+  ]), []);
+  assert.deepEqual(run([
+    "### CVE-2099-0001 — Demo",
+    "| Factor | Value | Points |",
+    "|---|---|---|",
+    "| Patch Available | Yes | -10 |",
+  ]), ["4 CVE-2099-0001: factor table Patch Available -10, catalog rwep_factors.patch_available -15"]);
+});
+
 test("cells that state no comparable value are not compared", () => {
   assert.deepEqual(failuresFor([
     "| CVE | CVSS | RWEP | KEV | Public PoC |",

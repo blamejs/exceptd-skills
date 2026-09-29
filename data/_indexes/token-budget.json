@@ -945,7 +945,7 @@
     },
     "security-maturity-tiers": {
       "path": "skills/security-maturity-tiers/skill.md",
-      "bytes": 37597,
+      "bytes": 37593,
       "chars": 37399,
       "lines": 540,
       "approx_tokens": 9350,
@@ -1027,7 +1027,7 @@
           "approx_tokens": 1033
         },
         "exploit-availability-matrix": {
-          "bytes": 2845,
+          "bytes": 2841,
           "chars": 2841,
           "approx_tokens": 710
         }

@@ -70,7 +70,9 @@ function compareCell(kind, cell, e, say) {
       if (d && e.cisa_kev_date && d[0] !== e.cisa_kev_date) say(`KEV date ${d[0]}, catalog ${e.cisa_kev_date}`);
     }
   } else if (kind === "poc") {
-    const v = yesNo(cell);
+    // "Partial" is the catalog's own granular value for a conceptual or chain-only
+    // exploit, which it scores as poc_available true.
+    const v = /^partial\b/i.test(cell) ? true : yesNo(cell);
     if (v !== null && v !== Boolean(e.poc_available)) say(`public exploit "${cell.slice(0, 40)}", catalog poc_available ${e.poc_available}`);
   } else if (kind === "ai_discovered") {
     const v = yesNo(cell);
@@ -163,7 +165,7 @@ function compareFactorRow(cells, rawHeader, e, say) {
   const pointsCol = rawHeader.findIndex((h) => /^\s*points\s*$/i.test(h));
   if (pointsCol < 1) return false;
   const label = (cells[0] || "").replace(/\*/g, "").trim().toLowerCase();
-  const m = /^\*{0,2}\s*([+-−]?\d{1,3})\b/.exec(cells[pointsCol] || "");
+  const m = /^\*{0,2}\s*([+\-−]?\d{1,3})\b/.exec(cells[pointsCol] || "");
   if (!m) return false;
   const points = Number(m[1].replace("−", "-"));
   if (/^rwep(?: total)?$/.test(label)) {

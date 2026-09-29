@@ -534,6 +534,6 @@ Tiered to the current `data/cve-catalog.json`, using RWEP (`lib/scoring.js`) as 
 
 Refresh trigger: re-run `node lib/scoring.js` and rebuild this matrix whenever `data/cve-catalog.json` is updated. The zero-day learning loop also feeds back into the tier mapping when a new CVE is added.
 
-Note on CVSS divergence: every CVE in this catalog has a CVSS in the 7.6–8.0 range — CVSS alone would prioritise the highest-band CVE without distinguishing the AI-discovered KEV-listed deterministic LPE (Copy Fail) from the local-vector MCP supply-chain class (Windsurf). RWEP correctly ranks Copy Fail (90) above Windsurf (35) because KEV listing, deterministic exploitability, AI discovery, and broad blast radius dominate. The MVP tier protects against the right thing first.
+Note on CVSS divergence: every CVE in this matrix has a CVSS between 7.6 and 8.8, so CVSS alone would prioritize the highest-band CVE without distinguishing the AI-discovered KEV-listed deterministic LPE (Copy Fail) from the local-vector MCP supply-chain class (Windsurf). RWEP correctly ranks Copy Fail (90) above Windsurf (35) because KEV listing, deterministic exploitability, AI discovery, and broad blast radius dominate. The MVP tier protects against the right thing first.
 
 ---
