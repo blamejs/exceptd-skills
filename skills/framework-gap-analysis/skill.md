@@ -20,7 +20,7 @@ data_deps:
 atlas_refs: []
 attack_refs: []
 framework_gaps: []
-last_threat_review: "2026-09-18"
+last_threat_review: "2026-09-28"
 ---
 
 # Framework Gap Analysis
@@ -96,11 +96,11 @@ This skill consumes the matrix produced upstream by the exploit-scoring skill. T
 
 | CVE | CVSS | RWEP | KEV | Public PoC | AI-accelerated | Live-patchable | Active exploitation |
 |---|---|---|---|---|---|---|---|
-| CVE-2026-31431 (Copy Fail) | High | Critical | Yes | Yes (732 bytes, deterministic) | Yes (AI-discovered) | Yes (kpatch/livepatch) | Confirmed |
-| CVE-2026-43284 (Dirty Frag) | High | High | Pending | Partial | No | Limited (subsystem-dependent) | Suspected |
-| CVE-2026-46300 (Fragnesia) | 7.8 | 20 (today) / 55+ on KEV | No (candidate) | Yes (one-liner vs /usr/bin/su) | No | Yes (kpatch / canonical-livepatch / KernelCare) | None observed |
+| CVE-2026-31431 (Copy Fail) | 7.8 | 90 | Yes (2026-05-01) | Yes (732 bytes, deterministic) | Yes (AI-discovered) | Yes (kpatch/livepatch) | Confirmed |
+| CVE-2026-43284 (Dirty Frag) | 8.8 | 53 | No | Yes (chain component) | Yes (AI-assisted discovery) | Limited (kpatch RHEL-only) | Suspected |
+| CVE-2026-46300 (Fragnesia) | 7.8 | 35 (60 if KEV-listed) | No (candidate) | Yes (one-liner vs /usr/bin/su) | Yes (AI-assisted discovery) | Yes (kpatch / canonical-livepatch / KernelCare) | None observed |
 | CVE-2025-53773 (Copilot YOLO-mode RCE) | 7.8 | 30 | No | Yes (demonstrated) | Yes (AI tooling enables) | Yes (SaaS push / IDE update) | Suspected |
-| CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 | 35 | No | Partial | No | Yes (IDE update) | Suspected |
+| CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 | 35 | No | Yes | No | Yes (IDE update) | Suspected |
 
 When a gap analysis cites a CVE not in this matrix, the analyst must populate the row from `data/cve-catalog.json` before producing the declaration. A declaration without an evidence row is incomplete.
 

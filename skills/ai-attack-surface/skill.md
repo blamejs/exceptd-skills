@@ -60,7 +60,7 @@ forward_watch:
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — Chroma vector DB CWE-190 + CWE-362 chain by haehae; impacts RAG vector store integrity; track patch and downstream RAG advisory
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — NVIDIA Megatron Bridge overly permissive allowed list by Satoki Tsuji; AI training-stack supply-chain exposure; track patch and SBOM advisory
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — NVIDIA Megatron Bridge path traversal by haehae; AI training-stack file-system trust boundary; track patch and SBOM advisory
-last_threat_review: "2026-09-18"
+last_threat_review: "2026-09-28"
 ---
 
 # AI Attack Surface Assessment
@@ -141,7 +141,7 @@ AI-assisted reconnaissance is observed at 36,000 probes per second per campaign.
 
 ### 11. AI-Discovered + AI-Weaponized Supply-Chain Worms
 
-**CVE-2026-45321** — Mini Shai-Hulud TanStack npm worm (CVSS 9.6, ~150M weekly downloads across 42 @tanstack/* packages, CISA KEV pending). Disclosed 2026-05-11. The attack chain — Pwn-Request via `pull_request_target` on TanStack's bundle-size workflow, pnpm-store cache poisoning under the `actions/cache` key, and OIDC-token theft on the next main push — is engineering-grade and weaponizes three independently-benign primitives. While attribution (TeamPCP) records no AI-assisted exploit development for this specific instance, the worm pattern is exactly what AML.T0017-class capability development now produces at AI cadence: chained CI/CD primitives that no individual component owner recognises as exploitable. Treat the @tanstack/* surface as an exemplar of the broader AML.T0010 (AI Supply Chain Compromise) threat applied to JS toolchains that the AI assistant ecosystem depends on.
+**CVE-2026-45321** — Mini Shai-Hulud TanStack npm worm (CVSS 9.6, ~150M weekly downloads across 42 @tanstack/* packages, KEV-listed 2026-05-27). Disclosed 2026-05-11. The attack chain — Pwn-Request via `pull_request_target` on TanStack's bundle-size workflow, pnpm-store cache poisoning under the `actions/cache` key, and OIDC-token theft on the next main push — is engineering-grade and weaponizes three independently-benign primitives. While attribution (TeamPCP) records no AI-assisted exploit development for this specific instance, the worm pattern is exactly what AML.T0017-class capability development now produces at AI cadence: chained CI/CD primitives that no individual component owner recognises as exploitable. Treat the @tanstack/* surface as an exemplar of the broader AML.T0010 (AI Supply Chain Compromise) threat applied to JS toolchains that the AI assistant ecosystem depends on.
 
 ---
 

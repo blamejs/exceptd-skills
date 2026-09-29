@@ -57,7 +57,7 @@ d3fend_refs:
   - D3-IOPR
 forward_watch:
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — NVIDIA Container Toolkit container escape ($50K award) by chompie / IBM X-Force XOR; high-severity container/hypervisor boundary break; track patch and KEV add post-embargo
-last_threat_review: "2026-09-18"
+last_threat_review: "2026-09-28"
 ---
 
 # Container + Kubernetes Runtime Security (mid-2026)
@@ -145,7 +145,7 @@ CWE cross-walk (see `data/cwe-catalog.json`):
 | Class / CVE | CVSS | RWEP | CISA KEV | PoC Public | AI-Discovered | Active Exploitation | Patch / Mitigation | Admission-Detectable | Runtime-Detectable (Falco/Tetragon) |
 |---|---|---|---|---|---|---|---|---|---|
 | Host-kernel LPE as container escape — Copy Fail (CVE-2026-31431) | 7.8 | 90 (see `cve-catalog.json`) | Yes (2026-05-01, due 2026-05-15) | Yes — 732-byte script | Yes | Confirmed | Kernel patch + live-patch (kpatch/livepatch/kGraft) on supported distros; reboot rolling fleet on others | No (admission doesn't see kernel ops) | Yes — Falco/Tetragon catches the post-escape host operations; the in-kernel write itself is invisible to eBPF |
-| Container-runtime CVE class — runc CVE-2024-21626 ("LeakyVessels") family | 8.6 | varies (historical reference) | Yes (at time of disclosure) | Yes | No (manual disclosure) | Patched in modern fleets; brownfield self-managed clusters lag | runc / containerd / CRI-O upgrade | Partial — admission can require minimum runtime versions via node-feature labels | Yes — Tetragon can enforce SIGKILL on the abuse syscall sequence |
+| Container-runtime CVE class — runc CVE-2024-21626 ("LeakyVessels") family | 8.6 | 35 (see `cve-catalog.json`) | No | Yes | No (manual disclosure) | Patched in modern fleets; brownfield self-managed clusters lag | runc / containerd / CRI-O upgrade | Partial — admission can require minimum runtime versions via node-feature labels | Yes — Tetragon can enforce SIGKILL on the abuse syscall sequence |
 | Misconfigured PSS — `pod-security.kubernetes.io/enforce: privileged` on a workload namespace | n/a (class) | n/a | n/a | Trivial — `kubectl run --privileged` | Operator misconfig + AI-coding-assistant template drift | Routinely observed in incident response 2024–2026 | Set namespace label to `restricted`; remediate the workload | Yes — Kyverno PolicyReport + Kubescape surface this; PSA itself enforces on admit if label set |
 | Misconfigured RBAC — ServiceAccount with `create/patch` on `pods` or `secrets` cluster-wide | n/a (class) | n/a | n/a | Trivial — `can-i --list --as=system:serviceaccount:...` | Operator misconfig | Routinely observed | Replace wildcard ClusterRoles with scoped Roles; deny `automountServiceAccountToken: true` by default | Yes — Kyverno + OPA policies; kube-bench check | Yes — Falco detects token use from unexpected ServiceAccount |
 | Exposed kubelet 10250 / 10255 | n/a (class) | n/a | n/a | Trivial — Shodan / Censys queries; Peirates | n/a | Confirmed in self-managed / CI / lab clusters | Network policy default-deny; kubelet authentication + authorization; firewall | No (network-layer control) | Yes — Cilium L7 policy + Falco network rule |

@@ -52,7 +52,7 @@ forward_watch:
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12 or sooner via Patch Tuesday) — Windows 11 LPE heap buffer overflow by Marcin Wiązowski; track MSRC advisory and KEV add
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12 or sooner via Patch Tuesday) — Windows 11 LPE 2x use-after-free by Kentaro Kawane (GMO); track MSRC advisory and KEV add
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — RHEL race-condition LPE by chompie / IBM X-Force XOR; track Red Hat advisory and KEV add
-last_threat_review: "2026-05-15"
+last_threat_review: "2026-09-28"
 ---
 
 # Kernel LPE Triage
@@ -83,9 +83,9 @@ The attack abuses a write primitive in the copy-on-write path of the page cache.
 ### Dirty Frag — CVE-2026-43284 + CVE-2026-43500
 
 **Classification:** Local Privilege Escalation Chain | Breaks IPsec Mitigations  
-**CVSS:** 7.8 (High) | **RWEP:** 38/100
+**CVSS / RWEP:** CVE-2026-43284 (CVSS 8.8 High, RWEP 53/100), CVE-2026-43500 (CVSS 7.6 High, RWEP 47/100)
 
-Discovered by Hyunwoo Kim. A two-CVE chain exploiting page-cache write primitives in:
+Discovered by Hyunwoo Kim with AI assistance, per Sysdig's write-up. A two-CVE chain exploiting page-cache write primitives in:
 - ESP/IPsec subsystem (CVE-2026-43284)
 - RxRPC subsystem (CVE-2026-43500)
 
@@ -104,18 +104,18 @@ The IPsec dimension is critical: organizations with network segmentation control
 
 ### Fragnesia — CVE-2026-46300
 
-**Classification:** Local Privilege Escalation | Dirty Frag family sequel | Human-Discovered  
-**CVSS:** 7.8 (High) | **RWEP:** 20/100 (will jump to 55+ on CISA KEV listing)
+**Classification:** Local Privilege Escalation | Dirty Frag family sequel | AI-Assisted Discovery  
+**CVSS:** 7.8 (High) | **RWEP:** 35/100 (60 on a CISA KEV listing)
 
-Disclosed 2026-05-13 by William Bowling (V12 security team). Same primitive class as Dirty Frag — Fragnesia is the sibling bug introduced by the patch for CVE-2026-43284 / CVE-2026-43500. The defect is in `skb_try_coalesce()`: when transferring paged fragments between socket buffers, the kernel fails to propagate the `SKBFL_SHARED_FRAG` marker, losing track of externally-backed fragments (page-cache pages spliced from a file). An unprivileged local user can deterministically overwrite read-only file data in the kernel page cache without modifying the on-disk file. Public PoC targets `/usr/bin/su` for a one-line root shell.
+Disclosed 2026-05-13 by William Bowling (V12 security team). The Hacker News and Help Net Security attribute the discovery to William Bowling of Zellic working with Zellic's AI-agentic software auditing tool. Same primitive class as Dirty Frag — Fragnesia is the sibling bug introduced by the patch for CVE-2026-43284 / CVE-2026-43500. The defect is in `skb_try_coalesce()`: when transferring paged fragments between socket buffers, the kernel fails to propagate the `SKBFL_SHARED_FRAG` marker, losing track of externally-backed fragments (page-cache pages spliced from a file). An unprivileged local user can deterministically overwrite read-only file data in the kernel page cache without modifying the on-disk file. Public PoC targets `/usr/bin/su` for a one-line root shell.
 
 Key characteristics:
-- **Deterministic exploitation** — no race condition, no kernel-version fingerprinting beyond the affected_versions range.
+- **Deterministic exploitation** — no race condition, no kernel-version fingerprinting beyond the affected version range.
 - **Public PoC** — one-liner against `/usr/bin/su` from the V12 disclosure.
 - **Page-cache corruption without on-disk write** — file-integrity tools that hash on-disk bytes (AIDE, Tripwire, IMA in measure-only mode) cannot detect the corruption.
 - **Module-unload mitigation is identical to Dirty Frag** — blacklist `esp4`, `esp6`, `rxrpc` in `/etc/modprobe.d/`. Any host already mitigated for Dirty Frag by module blacklist is already mitigated for Fragnesia, with no further action required.
 - **Live-patch is non-reboot** — AlmaLinux + CloudLinux kernels in testing as of 2026-05-13; Canonical Livepatch + kpatch follow standard cadence.
-- **Not CISA KEV-listed as of 2026-05-14**, no active exploitation observed in the wild yet. RWEP today is 20; expect 55+ if KEV-listed, 65+ if active exploitation confirmed.
+- **Not CISA KEV-listed as of the 2026-09-27 KEV catalog**, and no active exploitation has been observed in the wild. RWEP is 35; a KEV listing takes it to 60, and confirmed active exploitation to 80.
 
 **Lesson for operators:** when a CVE patch lands, retain the pre-patch compensating controls (module blacklists, sysctl restrictions) until the patched code has soaked. Fragnesia is the canonical case — the Dirty Frag patch introduced Fragnesia, and the same `modprobe -r esp4 esp6 rxrpc` mitigation covers both.
 
@@ -168,9 +168,9 @@ Note: ATLAS refs are intentionally empty in frontmatter — these are Linux kern
 | CVE | CVSS | RWEP | CISA KEV | PoC Public | AI-Discovered | Active Exploitation | Patch Available | Live Patch | Reboot Required |
 |---|---|---|---|---|---|---|---|---|---|
 | CVE-2026-31431 (Copy Fail) | 7.8 | 90 | Yes (2026-05-01, due 2026-05-15) | Yes — 732-byte script | Yes | Confirmed | Yes | Yes (kpatch/livepatch/kGraft) | Yes |
-| CVE-2026-43284 (Dirty Frag ESP) | 7.8 | 38 | No | Yes | No | Suspected | Yes | No (kpatch RHEL-only) | Yes |
-| CVE-2026-43500 (Dirty Frag RxRPC) | 7.6 | 81 | No | Yes (chain component) | No | Suspected | Yes | Partial (kpatch) | Yes if no live patch |
-| CVE-2026-46300 (Fragnesia) | 7.8 | 20 | No (likely candidate) | Yes — one-liner vs /usr/bin/su | No | None observed | Yes (testing on Alma/CloudLinux) | Yes (kpatch / canonical-livepatch / KernelCare) | No (module-unload mitigation is non-reboot) |
+| CVE-2026-43284 (Dirty Frag ESP) | 8.8 | 53 | No | Yes | Yes (AI-assisted) | Suspected | Yes | No (kpatch RHEL-only) | Yes |
+| CVE-2026-43500 (Dirty Frag RxRPC) | 7.6 | 47 | No | Yes (chain component) | Yes (AI-assisted) | Suspected | Yes | No | Yes |
+| CVE-2026-46300 (Fragnesia) | 7.8 | 35 | No (likely candidate) | Yes — one-liner vs /usr/bin/su | Yes (AI-assisted) | None observed | Yes (testing on Alma/CloudLinux) | Yes (kpatch / canonical-livepatch / KernelCare) | No (module-unload mitigation is non-reboot) |
 
 ---
 
@@ -338,9 +338,9 @@ Produce this structure:
 
 ### RWEP Scores
 CVE-2026-31431: CVSS 7.8 / RWEP 90 — immediate action required (4h)
-CVE-2026-43284: CVSS 7.8 / RWEP 38 — remediate within 7 days; disable RxRPC/IPsec chain if not required
-CVE-2026-43500: CVSS 7.6 / RWEP 32 — remediate within 7 days; consider disabling RxRPC module
-CVE-2026-46300: CVSS 7.8 / RWEP 20 — patch within standard cycle; module unload (esp4/esp6/rxrpc) is the immediate non-reboot mitigation. Same mitigation set as Dirty Frag — already-blacklisted hosts are already covered. Reassess if CISA KEV-listed (expected RWEP 55+).
+CVE-2026-43284: CVSS 8.8 / RWEP 53 — remediate within 7 days; disable RxRPC/IPsec chain if not required
+CVE-2026-43500: CVSS 7.6 / RWEP 47 — remediate within 7 days; consider disabling RxRPC module
+CVE-2026-46300: CVSS 7.8 / RWEP 35 — patch within standard cycle; module unload (esp4/esp6/rxrpc) is the immediate non-reboot mitigation. Same mitigation set as Dirty Frag — already-blacklisted hosts are already covered. Reassess on a CISA KEV listing, which adds 25 points.
 ```
 
 ---
@@ -389,7 +389,7 @@ Maps the kernel LPE findings above to MITRE D3FEND techniques with explicit defe
 
 After producing the kernel LPE triage output, the operator should chain into the following skills. Each entry names a downstream or sibling skill and the specific reason to invoke it from this finding.
 
-- **`exploit-scoring`** — recalculate RWEP when any of the inputs that drive the score change post-triage: a new CISA KEV listing for Dirty Frag, a public PoC for CVE-2026-43500's RxRPC leg, or an AI-discovery flag flip. RWEP, not CVSS, is the prioritisation signal — re-run scoring rather than re-reading the static value in the matrix above.
+- **`exploit-scoring`** — recalculate RWEP when any of the inputs that drive the score change post-triage: a new CISA KEV listing for Dirty Frag, confirmed active exploitation of either leg, or an AI-discovery flag flip. RWEP, not CVSS, is the prioritisation signal — re-run scoring rather than re-reading the static value in the matrix above.
 - **`defensive-countermeasure-mapping`** — map each kernel LPE finding to D3FEND counters (D3-EAL for executable allowlisting at the kernel-module layer, D3-ASLR for address-space layout randomisation hardening, D3-PSEP for process self-modification prevention, D3-PHRA for process hardening / runtime attestation) and produce the defence-in-depth, least-privilege, zero-trust layered remediation plan rather than a single-control patch ticket.
 - **`attack-surface-pentest`** — verify that the kernel LPE class is in the organisation's pen-test scope (TIBER-EU / DORA TLPT for EU financial-sector orgs, CBEST for UK financial, or the equivalent red-team programme). Most 2025-vintage pen-test scopes are perimeter / web-app focused and do not exercise local LPE primitives against the patched-kernel claim.
 - **`compliance-theater`** — test whether the org's SI-2 / A.8.8 / PCI 6.3.3 patch-management evidence is CVSS-anchored theater for a KEV-listed, AI-discovered, 732-byte deterministic LPE. The 30-day window is the exploitation window; if the org cannot show live-patch-within-4-hours capability or documented compensating controls, the patch-management control is theater for this CVE class.

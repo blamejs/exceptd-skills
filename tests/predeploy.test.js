@@ -90,12 +90,12 @@ test("predeploy.js exports a non-empty ordered GATES list", () => {
   }
 });
 
-test("predeploy.js exports exactly 27 gates", () => {
+test("predeploy.js exports exactly 28 gates", () => {
   const gates = loadGates();
   assert.equal(
     gates.length,
-    27,
-    `expected 27 gates, got ${gates.length}`,
+    28,
+    `expected 28 gates, got ${gates.length}`,
   );
 });
 

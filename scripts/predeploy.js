@@ -218,6 +218,14 @@ const GATES = [
     args: [path.join(ROOT, "scripts", "check-ism-control-references.js")],
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
+  {
+    // A skill that states a CVE's CVSS, RWEP, KEV status, public-exploit or
+    // AI-discovery value must agree with data/cve-catalog.json.
+    name: "Skill catalog facts (skill CVE statements vs. the catalog)",
+    command: process.execPath,
+    args: [path.join(ROOT, "scripts", "check-skill-catalog-facts.js")],
+    ciJobName: "Data integrity (catalog + manifest snapshot)",
+  },
 ];
 
 function runGate(gate) {

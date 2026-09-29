@@ -23,7 +23,7 @@ forward_watch:
   - New ATLAS TTP additions in each ATLAS release
   - Framework updates that close previously open gaps
   - Vendor advisories for MCP/AI tool supply chain CVEs
-last_threat_review: "2026-09-18"
+last_threat_review: "2026-09-28"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief zeroday-gap-learn` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
@@ -94,13 +94,13 @@ Status of the learning-loop entry for each CVE currently in `data/cve-catalog.js
 | CVE | KEV | PoC | AI-Discovered / AI-Enabled | RWEP | Lesson-Entry Status in `zeroday-lessons.json` |
 |---|---|---|---|---|---|
 | CVE-2026-31431 (Copy Fail) | Yes | Yes (732-byte) | Yes (AI-discovered ~1h) | 90 | Complete — pre-run lesson encoded below; new control requirements CISA-KEV-RESPONSE-SLA, LIVE-PATCH-CAPABILITY, KERNEL-EXPLOITATION-DETECTION generated |
-| CVE-2026-43284 (Dirty Frag — ESP/IPsec) | No | Yes (chain) | No | 38 | Complete — pre-run lesson encoded; new control requirements CRYPTO-SUBSYSTEM-INTEGRITY, PRE-PATCH-DISCLOSURE-RESPONSE generated |
-| CVE-2026-43500 (Dirty Frag — RxRPC) | No | Yes (chain) | No | 32 | Complete — covered jointly with CVE-2026-43284 (chain partner) |
+| CVE-2026-43284 (Dirty Frag — ESP/IPsec) | No | Yes (chain) | Yes (AI-assisted discovery) | 53 | Complete — pre-run lesson encoded; new control requirements CRYPTO-SUBSYSTEM-INTEGRITY, PRE-PATCH-DISCLOSURE-RESPONSE generated |
+| CVE-2026-43500 (Dirty Frag — RxRPC) | No | Yes (chain) | Yes (AI-assisted discovery) | 47 | Complete — covered jointly with CVE-2026-43284 (chain partner) |
 | CVE-2025-53773 (Copilot YOLO-mode RCE) | No | Yes (demonstrated) | Yes (AI tooling enables) | 30 | Complete — pre-run lesson encoded; new control requirements AI-TOOL-ACTION-AUTHORIZATION, AI-TOOL-INPUT-SANITIZATION, PROMPT-INJECTION-MONITORING generated |
-| CVE-2026-30615 (Windsurf MCP local-vector RCE) | No | Partial | No (supply-chain) | 35 | Complete — pre-run lesson encoded; new control requirements MCP-SERVER-SIGNING, MCP-TOOL-ALLOWLIST, MCP-SUPPLY-CHAIN-AUDIT generated |
-| CVE-2026-45321 (Mini Shai-Hulud TanStack npm worm) | Pending | Yes (worm in-wild) | No (engineering-grade chain) | n/a | Pre-run exemplar lesson encoded below (chained CI/CD primitives — Pwn Request + pnpm-store poisoning + OIDC theft); new control requirements PR-WORKFLOW-PRIVILEGE-CAP, ACTIONS-CACHE-INTEGRITY, OIDC-PUBLISH-AUDIT generated |
+| CVE-2026-30615 (Windsurf MCP local-vector RCE) | No | Yes | No (supply-chain) | 35 | Complete — pre-run lesson encoded; new control requirements MCP-SERVER-SIGNING, MCP-TOOL-ALLOWLIST, MCP-SUPPLY-CHAIN-AUDIT generated |
+| CVE-2026-45321 (Mini Shai-Hulud TanStack npm worm) | Yes (2026-05-27) | Yes (worm in-wild) | No (engineering-grade chain) | 70 | Pre-run exemplar lesson encoded below (chained CI/CD primitives — Pwn Request + pnpm-store poisoning + OIDC theft); new control requirements PR-WORKFLOW-PRIVILEGE-CAP, ACTIONS-CACHE-INTEGRITY, OIDC-PUBLISH-AUDIT generated |
 | MAL-2026-3083 (Elementary-Data PyPI worm — forged release via GitHub Actions script-injection) | No (OSSF Malicious Packages dataset; CISA KEV catalogues vendor CVEs only) | Yes (orphan commit + exfil domain confirmed in-wild during 8h window) | No (manual chain) | n/a | Pre-run exemplar lesson encoded below; control requirements GHACTIONS-EVENT-INTERPOLATION-BAN, INSTALL-HOOK-AUDIT, OSSF-MALPACKAGES-INGEST generated |
-| CVE-2026-46300 (Fragnesia — Dirty Frag sequel) | No (candidate within days) | Yes (one-liner vs /usr/bin/su) | No (human-discovered by V12 security team) | 20 | Complete — pre-run lesson encoded below; control requirements PAGE-CACHE-INTEGRITY-VERIFICATION, BUG-FAMILY-MITIGATION-PERSISTENCE, SCANNER-PAPER-COMPLIANCE-TEST generated. Pattern: a patch for one bug class introduced a sibling bug in the same primitive class. |
+| CVE-2026-46300 (Fragnesia — Dirty Frag sequel) | No (candidate within days) | Yes (one-liner vs /usr/bin/su) | Yes (AI-assisted discovery with Zellic's agentic auditing tool) | 35 | Complete — pre-run lesson encoded below; control requirements PAGE-CACHE-INTEGRITY-VERIFICATION, BUG-FAMILY-MITIGATION-PERSISTENCE, SCANNER-PAPER-COMPLIANCE-TEST generated. Pattern: a patch for one bug class introduced a sibling bug in the same primitive class. |
 
 Every new entry added to `data/cve-catalog.json` must produce a corresponding entry here and in `data/zeroday-lessons.json` before the catalog change ships. Any CVE in the catalog without a complete lesson entry is a pre-ship-checklist failure.
 
@@ -234,7 +234,7 @@ Output: Lesson entry for data/zeroday-lessons.json
 3. **SCANNER-PAPER-COMPLIANCE-TEST**: A vulnerability scanner that reports "patched" based on kernel package version alone is paper compliance. The operational test: does the scan account for the module-unload mitigation surface, AND does it verify the kernel is on a build that includes the specific Fragnesia patch (not just any version newer than the Dirty Frag patch that introduced Fragnesia)?
 
 **Exposure scoring:**
-- RWEP: 20 today. Will jump to 55+ on CISA KEV listing (+25) and to 65+ on confirmed active exploitation (+20 more).
+- RWEP: 35 today. A CISA KEV listing adds 25 (60), and confirmed active exploitation adds 20 more (80).
 - Audit-passing orgs still exposed: ~75%. Operators who retained the Dirty Frag module blacklist are already mitigated. Operators who relied on kernel-package-version alone with vanilla SI-2 / A.8.8 SLAs are exposed during the patch window.
 - Coverage failure: on-disk file-integrity tools (AIDE, Tripwire) report clean while the page-cache copy of /usr/bin/su is corrupted.
 
@@ -296,7 +296,7 @@ Output: Lesson entry for data/zeroday-lessons.json
 
 ### Lesson: CVE-2026-45321 (Mini Shai-Hulud TanStack npm worm)
 
-**Attack vector:** Engineering-grade three-primitive chain against the TanStack monorepo, disclosed 2026-05-11. (1) `pull_request_target` on `bundle-size.yml` runs fork-PR code with base-repo permissions (classic Pwn Request). (2) That run poisons the `actions/cache` pnpm-store under the key `Linux-pnpm-store-${hashFiles('**/pnpm-lock.yaml')}` that `release.yml` later restores. (3) On the next main push, `release.yml` (which has `id-token: write` for npm publish) restores the poisoned cache and the worm captures the OIDC token. 84 malicious versions published across 42 @tanstack/* packages between 2026-05-11 19:20-19:26 UTC. ~150M weekly downloads in scope. CVSS 9.6; CISA KEV pending. Attribution: TeamPCP. No AI-assisted exploit-development attribution for this specific instance, but the chain shape is exactly what AML.T0017-class capability development produces at AI cadence — chained CI/CD primitives that no individual component owner recognises as exploitable.
+**Attack vector:** Engineering-grade three-primitive chain against the TanStack monorepo, disclosed 2026-05-11. (1) `pull_request_target` on `bundle-size.yml` runs fork-PR code with base-repo permissions (classic Pwn Request). (2) That run poisons the `actions/cache` pnpm-store under the key `Linux-pnpm-store-${hashFiles('**/pnpm-lock.yaml')}` that `release.yml` later restores. (3) On the next main push, `release.yml` (which has `id-token: write` for npm publish) restores the poisoned cache and the worm captures the OIDC token. 84 malicious versions published across 42 @tanstack/* packages between 2026-05-11 19:20-19:26 UTC. ~150M weekly downloads in scope. CVSS 9.6; CISA added it to KEV on 2026-05-27. Attribution: TeamPCP. No AI-assisted exploit-development attribution for this specific instance, but the chain shape is exactly what AML.T0017-class capability development produces at AI cadence — chained CI/CD primitives that no individual component owner recognises as exploitable.
 
 **What control should have prevented this:**
 - Workflow-privilege isolation: `pull_request_target` should never run fork-PR code with base-repo permissions in the same job as cache writes. The chain is broken if the bundle-size workflow runs with `permissions: contents: read` and writes to a separate cache key.

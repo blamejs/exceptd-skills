@@ -53,7 +53,7 @@
       "cwe_count": 5,
       "d3fend_count": 6,
       "rfc_count": 3,
-      "last_threat_review": "2026-05-15",
+      "last_threat_review": "2026-09-28",
       "path": "skills/kernel-lpe-triage/skill.md",
       "handoff_targets": [
         "attack-surface-pentest",
@@ -120,7 +120,7 @@
       "cwe_count": 3,
       "d3fend_count": 5,
       "rfc_count": 0,
-      "last_threat_review": "2026-09-18",
+      "last_threat_review": "2026-09-28",
       "path": "skills/ai-attack-surface/skill.md",
       "handoff_targets": []
     },
@@ -218,7 +218,7 @@
       "cwe_count": 0,
       "d3fend_count": 0,
       "rfc_count": 0,
-      "last_threat_review": "2026-09-18",
+      "last_threat_review": "2026-09-28",
       "path": "skills/framework-gap-analysis/skill.md",
       "handoff_targets": []
     },
@@ -247,7 +247,7 @@
       "cwe_count": 0,
       "d3fend_count": 0,
       "rfc_count": 0,
-      "last_threat_review": "2026-09-18",
+      "last_threat_review": "2026-09-28",
       "path": "skills/compliance-theater/skill.md",
       "handoff_targets": []
     },
@@ -274,7 +274,7 @@
       "cwe_count": 0,
       "d3fend_count": 0,
       "rfc_count": 0,
-      "last_threat_review": "2026-09-18",
+      "last_threat_review": "2026-09-28",
       "path": "skills/exploit-scoring/skill.md",
       "handoff_targets": []
     },
@@ -416,7 +416,7 @@
       "cwe_count": 1,
       "d3fend_count": 0,
       "rfc_count": 0,
-      "last_threat_review": "2026-09-18",
+      "last_threat_review": "2026-09-28",
       "path": "skills/policy-exception-gen/skill.md",
       "handoff_targets": []
     },
@@ -440,7 +440,7 @@
       "cwe_count": 0,
       "d3fend_count": 0,
       "rfc_count": 0,
-      "last_threat_review": "2026-09-18",
+      "last_threat_review": "2026-09-28",
       "path": "skills/threat-model-currency/skill.md",
       "handoff_targets": []
     },
@@ -502,7 +502,7 @@
       "cwe_count": 0,
       "d3fend_count": 0,
       "rfc_count": 0,
-      "last_threat_review": "2026-09-18",
+      "last_threat_review": "2026-09-28",
       "path": "skills/zeroday-gap-learn/skill.md",
       "handoff_targets": []
     },
@@ -610,7 +610,7 @@
       "cwe_count": 1,
       "d3fend_count": 13,
       "rfc_count": 1,
-      "last_threat_review": "2026-09-18",
+      "last_threat_review": "2026-09-28",
       "path": "skills/security-maturity-tiers/skill.md",
       "handoff_targets": []
     },
@@ -846,7 +846,7 @@
       "cwe_count": 5,
       "d3fend_count": 3,
       "rfc_count": 1,
-      "last_threat_review": "2026-09-18",
+      "last_threat_review": "2026-09-28",
       "path": "skills/supply-chain-integrity/skill.md",
       "handoff_targets": []
     },
@@ -1408,7 +1408,7 @@
       "cwe_count": 3,
       "d3fend_count": 3,
       "rfc_count": 2,
-      "last_threat_review": "2026-09-18",
+      "last_threat_review": "2026-09-28",
       "path": "skills/sector-federal-government/skill.md",
       "handoff_targets": [
         "ai-attack-surface",
@@ -1730,7 +1730,7 @@
       "cwe_count": 5,
       "d3fend_count": 6,
       "rfc_count": 2,
-      "last_threat_review": "2026-09-18",
+      "last_threat_review": "2026-09-28",
       "path": "skills/container-runtime-security/skill.md",
       "handoff_targets": [
         "ai-attack-surface",
@@ -2099,7 +2099,7 @@
       "cwe_count": 6,
       "d3fend_count": 5,
       "rfc_count": 4,
-      "last_threat_review": "2026-05-15",
+      "last_threat_review": "2026-09-28",
       "path": "skills/cloud-iam-incident/skill.md",
       "handoff_targets": [
         "ai-attack-surface",
@@ -2170,7 +2170,7 @@
       "cwe_count": 6,
       "d3fend_count": 4,
       "rfc_count": 4,
-      "last_threat_review": "2026-05-15",
+      "last_threat_review": "2026-09-28",
       "path": "skills/idp-incident-response/skill.md",
       "handoff_targets": [
         "ai-attack-surface",
