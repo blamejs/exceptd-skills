@@ -6,14 +6,27 @@
  * that differs from data/cve-catalog.json.
  *
  * A markdown table row is compared when the first cell that names a CVE names
- * exactly one catalog CVE and sits under a subject header (CVE, Vulnerability,
- * Threat, Incident, Class, Surface, Evidence). Its cells are compared by column
- * header: CVSS, RWEP, a KEV column (Yes/No, and the listing date when the cell
- * gives one), a public-exploit column (Yes/No), Active Exploitation (Confirmed,
- * Suspected, None), Patch and Live Patch (Yes/No), and an AI column. An
+ * exactly one catalog CVE. Its cells are compared by column header: CVSS, RWEP, a KEV column (Yes/No, and the listing date when the
+ * cell gives one), a public-exploit column (Yes/No), and an AI column. An
  * "AI-Discovered" column is compared with ai_discovered; an AI column that also
  * covers acceleration, enablement or weaponization is compared with
- * ai_discovered OR ai_assisted_weaponization. A prose line that names exactly one
+ * ai_discovered OR ai_assisted_weaponization. The Active Exploitation, Patch and
+ * Live Patch columns (the headers columnKind lists) are compared only when no
+ * cell in the row names another CVE, the row's CVE is under an identifier
+ * header (ID_HEADER_PART, with no ROLE_HEADER word) or, in a table with no
+ * identifier column, in the first column under a header that names no CVE and
+ * no role, and no other row in the same section
+ * (from one "#" or "##" heading outside a fenced code block to the next) has
+ * that CVE as its own row CVE (a row that names no CVE and leaves blank the
+ * cell under the row above's CVE continues that row): Active Exploitation in the
+ * STATE_FORMS,
+ * NONE_FORMS or NOT_CONFIRMED_FORMS wording ("No confirmed exploitation"
+ * differs only from Confirmed, and None agrees with Theoretical); Patch in one
+ * of the PATCH_FORMS wordings, or as a Yes alone or followed by a PATCH_FORMS
+ * patch statement (a bare Yes only in a plain Patch column); Live Patch as a Yes
+ * or No that ends the cell or is followed by a comma, semicolon, period, colon,
+ * dash or parenthesis, with no qualifying word or second answer after it. A
+ * prose line that names exactly one
  * catalog CVE is compared on "RWEP <n>", "CVSS <n.n>", "KEV-listed <date>" and
  * "not KEV-listed". On any line, the parentheses that follow a CVE id are read
  * as that CVE's values, so a list such as "CVE-A (90), CVE-B (Dirty Frag, 38,
@@ -66,55 +79,136 @@ function columnKind(header) {
   if (/\bpoc\b|public exploit/.test(h)) return "poc";
   if (/^ai[- ]discovered$/.test(h)) return "ai_discovered";
   if (/^ai\b/.test(h)) return "ai_any";
-  if (/^active exploitation\b/.test(h)) return "active";
-  if (/live[- ]?patch/.test(h)) return "live_patch";
-  if (/^patch\b/.test(h)) return /mitigation/.test(h) ? "patch_or_mitigation" : "patch";
+  // The exploitation, patch and live-patch columns are read only under these
+  // headers. Any other header ("Patch Reboot Required?", "Patch Downtime",
+  // "Active Exploitation Actor", "Patch / Live Patch") is not compared.
+  if (/^active exploitation$/.test(h)) return "active";
+  // "Live Patch" or "Live-Patch"; a bare "Livepatch" column names Canonical
+  // Livepatch alone in a per-vendor matrix.
+  if (/^live[- ]patch(?:able|es)?(?:\s+availab(?:le|ility))?$/.test(h)) return "live_patch";
+  if (/^patch(?:es)?(?:\s+availab(?:le|ility))?$/.test(h)) return "patch";
+  if (/^patch(?:es)?\s*\/\s*(?:mitigation|remediation|workaround)s?(?:\s+availab(?:le|ility))?$/.test(h)) return "patch_or_mitigation";
   return null;
 }
 
 /**
- * A table's CVE-bearing cell is the row's subject only under a header that names
- * one ("CVE", "Vulnerability", "Surface / CVE Class", "Threat", "Evidence CVE").
- * A CVE mentioned in another column ("PoC / Public Demo Available?") belongs to
- * the row's subject, not to the row.
+ * The vendor-patch phrase: "Vendor patch", "Vendor updates", "Vendor IDE update".
+ * The one qualifier word is a closed list, so a status word in that slot
+ * ("Vendor declined fix", "Vendor never patches") never forms the phrase.
  */
-const SUBJECT_HEADER = /\b(?:cve|vulnerabilit|threat|incident|class|surface|flaw|evidence)/i;
-const CONTEXT_HEADER = /\b(?:related|sibling|chained|see also|other|similar)\b/i;
+const PHRASE = "vendor(?: (?:ide|saas|firmware|security|product|os|kernel|browser|app|agent|server|client|cloud|library|platform))? (?:patch|update|fix)(?:e?s)?";
+// A word that can qualify or reverse the statement it follows ("Yes (kpatch
+// pending)", "Vendor patch + hardening still pending"). A live-patch cell whose text after
+// its leading Yes or No holds one, and a cell in a qualifiable PATCH_FORMS
+// wording that holds one, is not compared.
+const QUALIFYING = /\b(?:not|no|none|never|n\/a|tbd|tba|eta|pending|planned|expected|unavailable|unreleased|awaiting|awaited|outstanding|delayed|forthcoming|upcoming|coming|unknown|soon|later|next|progress|development|scheduled|future|until|needed|required|necessary|still|yet|q[1-4]|if|unless|except|but|although|however|withdrawn|revoked|reverted|pulled|superseded)\b/i;
 
 /**
- * Patch cell: a leading Yes/No, or "Vendor patch/update/fix" read by the words
- * after it. A denial or a future state ("unavailable", "not yet released",
- * "pending", "planned", "in development") reads as no patch; an unknown status
- * is not compared; the bare phrase, a joined addition ("Vendor patch + config
- * hardening") or an affirmative word ("shipped", "released") reads as a patch.
+ * The patch cells the gate reads, each matched against the whole cell, with the
+ * value it reads and whether a qualifying word leaves it not compared. Any other
+ * wording is not compared.
  */
-function patchValue(cell) {
-  const v = yesNo(cell);
-  if (v !== null) return v;
-  const m = /^vendor (?:patch|update|fix)(?:es)?\b(.{0,40})/i.exec(cell);
+const PATCH_FORMS = [
+  // "Vendor patch", "Vendor updates available", "Vendor patches shipped 2099-01-01".
+  [new RegExp(`^${PHRASE}(?:\\s+(?:is\\s+|are\\s+)?(?:available|released|shipped|published|issued|applied)(?:\\s+\\d{4}-\\d{2}-\\d{2})?)?\\s*\\.?$`, "i"), true, false], // allow:dynamic-regex — built from the static PHRASE literal
+  // "Vendor patch + config hardening", "Vendor IDE update + manifest signing".
+  // Each "+" item starts and ends on a non-space character and stops at "+", ";",
+  // "," or a parenthesis, so the spaces around a "+" can only match `\s*` and a
+  // failing match backtracks at most linearly.
+  [new RegExp(`^${PHRASE}(?:\\s*\\+\\s*[^+;,()\\s](?:[^+;,()]*[^+;,()\\s])?)+$`, "i"), true, true], // allow:dynamic-regex — static PHRASE
+  // "Mitigation + vendor patch".
+  [new RegExp(`^[a-z][a-z -]{0,40}\\+\\s*${PHRASE}\\s*\\.?$`, "i"), true, true], // allow:dynamic-regex — static PHRASE
+  // "Vendor patch pending", "Vendor fix unavailable", "Vendor update not yet available".
+  [new RegExp(`^${PHRASE}\\s+(?:is\\s+|are\\s+)?(?:unavailable|unreleased|pending|planned|not (?:yet )?(?:available|released|shipped|published|issued))\\s*\\.?$`, "i"), false, false], // allow:dynamic-regex — static PHRASE
+  // "No", "None", "No patch", "No vendor fix available", "No vendor patch (product EoL)".
+  [new RegExp(`^(?:no|none)(?:\\s+(?:${PHRASE}|patch(?:es)?|fix(?:es)?|updates?)(?:\\s+(?:is\\s+|are\\s+)?available)?)?(?:\\s+\\((?:product\\s+)?(?:eol|end[- ]of[- ]life|unsupported)\\))?\\s*\\.?$`, "i"), false, false], // allow:dynamic-regex — static PHRASE
+  // "Mitigation only; no vendor patch", "Workaround only, no vendor fix available".
+  [new RegExp(`^(?:mitigations?|workarounds?|compensating controls?)(?:\\s+only)?\\s*[;,]\\s*no\\s+${PHRASE}(?:\\s+available)?\\s*\\.?$`, "i"), false, false], // allow:dynamic-regex — static PHRASE
+];
+
+/**
+ * The value of the first PATCH_FORMS entry that matches the whole cell, or null
+ * when no entry matches or when that entry is qualifiable and the cell holds a
+ * QUALIFYING word.
+ */
+function patchForm(cell) {
+  for (const [re, value, qualifiable] of PATCH_FORMS) {
+    if (re.test(cell)) return qualifiable && QUALIFYING.test(cell) ? null : value;
+  }
+  return null;
+}
+
+/**
+ * A leading Yes or No that ends the cell or is followed by a comma, semicolon,
+ * period, colon, dash or parenthesis ("Yes (kpatch/livepatch)", "No — kpatch
+ * RHEL-only"), or null when another word or a hyphen follows it ("No-reboot
+ * hotpatch", "No reboot"), when a qualifying word comes after it ("Yes (kpatch
+ * pending)"), or when a later Yes follows it ("No (Ubuntu); Yes (RHEL
+ * kpatch)").
+ */
+function plainAnswer(cell) {
+  const m = /^(yes|no)(?=\s*(?:$|[,;.:(—–]|-\s))/i.exec(cell);
   if (!m) return null;
-  const rest = m[1].trim();
-  if (/\b(?:unavailable|unreleased|not (?:yet )?(?:available|released|shipped|published)|pending|planned|in development|expected|forthcoming|upcoming)\b/i.test(rest)) return false;
-  if (/\bunknown\b/i.test(rest)) return null;
-  if (rest === "" || /^(?:[+,;(—–-]|and\b|via\b|from\b)/i.test(rest) || /\b(?:available|released|shipped|published|issued|applied)\b/i.test(rest)) return true;
-  return null;
+  const rest = cell.slice(m[0].length);
+  if (QUALIFYING.test(rest) || /\byes\b/i.test(rest)) return null;
+  return m[1].toLowerCase() === "yes";
 }
 
-/** Active-exploitation cell: Confirmed, Suspected, None/No, Unknown or Theoretical. */
+/**
+ * A Patch column cell's claim. A Yes reads as a patch when a PATCH_FORMS patch
+ * statement follows it ("Yes, vendor patch"), or when it is the whole cell in a
+ * plain Patch column; in a "Patch / Mitigation", "Patch / Remediation" or "Patch
+ * / Workaround" column a bare Yes can answer for the mitigation and is not
+ * compared. A Yes with any other text after it ("Yes (workaround)", "Yes, if on
+ * 2.x") is not compared. Any other cell is read only when the whole cell is one
+ * of PATCH_FORMS.
+ */
+function patchCellValue(cell, kind) {
+  if (/^yes\b/i.test(cell)) {
+    // "Yes (vendor IDE update)" is read on the text inside the parentheses.
+    const wrapped = /^yes\s*\(([^()]*)\)\s*\.?$/i.exec(cell);
+    const rest = wrapped ? wrapped[1].trim() : cell.replace(/^yes\b[\s,;:—–-]*/i, "");
+    if (/^\.?$/.test(rest)) return kind === "patch" ? true : null;
+    return patchForm(rest) === true ? true : null;
+  }
+  return patchForm(cell);
+}
+
+/** The cells that read as no exploitation: "None", "None observed", "No exploitation observed in the wild". */
+const NONE_FORMS = /^(?:none|no)(?:\s+(?:in[- ]the[- ]wild\s+)?exploitation)?(?:\s+(?:observed|recorded|reported|seen|detected))?(?:\s+in[- ]the[- ]wild)?\s*\.?$/i;
+/** The cells that deny confirmation: "No confirmed exploitation", "No exploitation confirmed", "None known", "No known in-the-wild use". */
+const NOT_CONFIRMED_FORMS = /^(?:(?:no|none)\s+(?:yet\s+)?(?:publicly\s+)?(?:confirmed|known)(?:\s+(?:in[- ]the[- ]wild\s+)?(?:exploitation|use|attacks?))?(?:\s+in[- ]the[- ]wild)?|no\s+(?:in[- ]the[- ]wild\s+)?exploitation\s+(?:yet\s+)?(?:publicly\s+)?(?:confirmed|known))\s*\.?$/i;
+/** The cells that name a state: "Confirmed", "Confirmed mass exploitation", "Confirmed exploitation 2024", "Theoretical only". */
+const STATE_FORMS = /^(confirmed|suspected|unknown|theoretical)(?:\s+(?:mass\s+|active\s+)?exploitation)?(?:\s+\d{4}(?:\s*[-–]\s*\d{4})?)?(?:\s+only)?\s*\.?$/i;
+
+/**
+ * Active-exploitation cell, read only when the whole cell is one of STATE_FORMS,
+ * NONE_FORMS or NOT_CONFIRMED_FORMS. "No confirmed exploitation" (or "None
+ * known") denies confirmation, not exploitation: it is true of every state but
+ * confirmed, so it returns "not_confirmed", which differs only from a confirmed
+ * entry. Any other wording ("Confirmed PoC", "No confirmed mass exploitation",
+ * "Suspected (supply-chain)", "No data") is not compared.
+ */
 function exploitationValue(cell) {
-  // "No confirmed exploitation" denies confirmation, not exploitation: it is
-  // true of suspected and unknown entries alike.
-  if (/^no (?:confirmed|known|public(?:ly)? confirmed)\b/i.test(cell)) return null;
-  if (/^confirmed\b/i.test(cell)) return "confirmed";
-  if (/^suspected\b/i.test(cell)) return "suspected";
-  if (/^(?:none|no)\b/i.test(cell)) return "none";
-  if (/^unknown\b/i.test(cell)) return "unknown";
-  if (/^theoretical\b/i.test(cell)) return "theoretical";
-  return null;
+  if (NOT_CONFIRMED_FORMS.test(cell)) return "not_confirmed";
+  if (NONE_FORMS.test(cell)) return "none";
+  const m = STATE_FORMS.exec(cell);
+  return m ? m[1].toLowerCase() : null;
 }
 
 /** A cell's text with Markdown emphasis and code marks removed. */
 const plain = (cell) => cell.replace(/[*_`]/g, "").trim();
+
+/** The column kinds compared only on a row that names a single CVE. */
+const ROW_CVE_KINDS = new Set(["active", "patch", "patch_or_mitigation", "live_patch"]);
+/**
+ * One "/" part of an identifier column's header, with parenthetical notes
+ * removed: CVE or CVEs, optionally preceded by Evidence and followed by ID or
+ * Class ("CVE", "CVE ID", "Evidence CVE", "CVE Class", "CVE (if any)").
+ */
+const ID_HEADER_PART = /^(?:evidence\s+)?cves?(?:\s+(?:id|class))?$/i;
+/** A header word that marks a column as describing or citing a case, not naming the row. */
+const ROLE_HEADER = /\b(?:related|siblings?|similar|see[- ]also|examples?|e\.g|analog(?:ue)?s?|pocs?|demos?|exploits?|notes?|comments?|rationales?|reasons?|descriptions?|details?)\b/i;
 
 function compareCell(kind, raw, e, say) {
   const cell = plain(raw);
@@ -147,17 +241,16 @@ function compareCell(kind, raw, e, say) {
   } else if (kind === "active") {
     const v = exploitationValue(cell);
     const actual = String(e.active_exploitation || "").toLowerCase();
-    if (v && actual && v !== actual) say(`active exploitation "${cell.slice(0, 40)}", catalog ${actual}`);
+    // The catalog's theoretical state is a public PoC with no exploitation seen,
+    // so a None cell agrees with it, and a Theoretical cell with a none entry.
+    const quiet = (s) => s === "none" || s === "theoretical";
+    const differs = v === "not_confirmed" ? actual === "confirmed" : v !== actual && !(quiet(v) && quiet(actual));
+    if (v && actual && differs) say(`active exploitation "${cell.slice(0, 40)}", catalog ${actual}`);
   } else if (kind === "patch" || kind === "patch_or_mitigation") {
-    // In a "Patch / Mitigation" column a cell about a mitigation or workaround
-    // says nothing about whether a patch exists.
-    if (kind === "patch_or_mitigation" && /\b(?:mitigation|workaround|compensating)\b/i.test(cell)) return;
-    const v = patchValue(cell);
+    const v = patchCellValue(cell, kind);
     if (v !== null && v !== Boolean(e.patch_available)) say(`patch "${cell.slice(0, 40)}", catalog patch_available ${e.patch_available}`);
   } else if (kind === "live_patch") {
-    // "Limited" is how the skills write a live patch the catalog scores as
-    // unavailable because it covers one distribution only.
-    const v = /^limited\b/i.test(cell) ? false : yesNo(cell);
+    const v = plainAnswer(cell);
     if (v !== null && v !== Boolean(e.live_patch_available)) say(`live patch "${cell.slice(0, 40)}", catalog live_patch_available ${e.live_patch_available}`);
   }
 }
@@ -278,7 +371,34 @@ function compareFactorRow(cells, rawHeader, e, say) {
 function checkSkill(file, catalog) {
   const seen = new Set();
   const failures = [];
-  const push = (msg) => { if (!seen.has(msg)) { seen.add(msg); failures.push(msg); } };
+  // Each failure carries the order in which it was found, so failures held back
+  // until the section ends are still reported in line order.
+  let seq = 0;
+  const push = (msg, at = seq++) => { if (!seen.has(msg)) { seen.add(msg); failures.push([at, msg]); } };
+  // Exploitation, patch and live-patch failures are held until the section ends
+  // (the next "#" or "##" heading, or the end of the file) and kept only for a
+  // CVE that is the row CVE of exactly one row in that section. A per-distribution
+  // or per-version table ("RHEL 9 | Yes", "Ubuntu 24.04 | No"), one table or one
+  // "###" sub-heading per distribution, or a continuation row that leaves the CVE
+  // cell blank answers for one row at a time, not for the CVE.
+  let held = [];
+  let rowCves = new Map();
+  let lastRowCve = null;
+  let lastRowCol = -1;
+  const flush = () => {
+    for (const [at, cve, msg] of held) if (rowCves.get(cve) === 1) push(msg, at);
+    held = [];
+    rowCves = new Map();
+    lastRowCve = null;
+  };
+  // A "#" line inside a fenced code block does not end the section for the
+  // exploitation, patch and live-patch row count. A fence closes only on a line
+  // of its own character, at least as long as the opening run, with nothing
+  // after it. A nested code block that uses the other character or a shorter run
+  // leaves the outer fence open; a bare run of the same character at least as
+  // long as the outer one closes it.
+  let fence = null;
+  const countRow = (cve) => rowCves.set(cve, (rowCves.get(cve) || 0) + 1);
   let compared = 0;
   let header = null;
   let rawHeader = null;
@@ -286,41 +406,68 @@ function checkSkill(file, catalog) {
   const lines = fs.readFileSync(file, "utf8").split(/\r?\n/);
   lines.forEach((line, i) => {
     const where = `${path.relative(ROOT, file).replace(/\\/g, "/")}:${i + 1}`;
+    const fenceLine = /^\s*(`{3,}|~{3,})(.*)$/s.exec(line);
+    if (fenceLine && !fence) fence = fenceLine[1];
+    else if (fenceLine && fenceLine[1][0] === fence[0] && fenceLine[1].length >= fence.length && !fenceLine[2].trim()) fence = null;
     if (/^#{1,6}\s/.test(line)) {
+      // A "###" or deeper heading ("### RHEL 9", "### Ubuntu 24.04") stays in its
+      // parent section for the row count.
+      if (!fence && /^#{1,2}\s/.test(line)) flush();
       const headingIds = uniqueCves(line);
       sectionCve = headingIds.length === 1 && catalog[headingIds[0]] ? headingIds[0] : null;
     }
     compared += compareParentheticals(line, catalog, (id, msg) => push(`${where} ${id}: ${msg}`));
     if (/^\s*\|/.test(line)) {
       const cells = splitRow(line);
-      if (header === null) { rawHeader = cells; header = cells.map(columnKind); return; }
+      if (header === null) { rawHeader = cells; header = cells.map(columnKind); lastRowCve = null; return; }
       if (isDivider(cells)) return;
+      // A row that names no CVE and leaves blank the cell under the row above's
+      // CVE continues that row.
+      const continues = lastRowCve && !plain(cells[lastRowCol] || "") && uniqueCves(line).length === 0;
       if (sectionCve && uniqueCves(line).length === 0) {
+        if (continues) countRow(lastRowCve);
+        else lastRowCve = null;
         if (compareFactorRow(cells, rawHeader, catalog[sectionCve], (msg) => push(`${where} ${sectionCve}: ${msg}`))) compared++;
         return;
       }
-      // A header that names a CVE ("CVE", "Evidence CVE") outranks a broad one
-      // ("Threat", "Class", "Surface") when both columns cite a CVE.
-      // A contextual header ("Related CVE", "Chained with") never names the
-      // row's subject.
-      const bearsCve = (k) => uniqueCves(cells[k] || "").length > 0 && !CONTEXT_HEADER.test(rawHeader[k] || "");
-      let idCol = cells.findIndex((c, k) => bearsCve(k) && /\bcve\b/i.test(rawHeader[k] || ""));
-      if (idCol < 0) idCol = cells.findIndex((c, k) => bearsCve(k) && SUBJECT_HEADER.test(rawHeader[k] || ""));
-      if (idCol < 0) return;
-      const idCell = cells[idCol];
-      if (/^(?:no|n\/a)\b/i.test(idCell) || /\bsee\s+CVE-/i.test(idCell)) return;
+      const idCol = cells.findIndex((c) => uniqueCves(c).length > 0);
+      const idCell = cells[idCol] || "";
+      if (/^(?:no|n\/a)\b/i.test(idCell) || /\bsee\s+CVE-/i.test(idCell)) { lastRowCve = null; return; }
       const ids = uniqueCves(idCell);
       if (ids.length > 1) {
+        lastRowCve = null;
         const known = ids.filter((id) => catalog[id]);
         const scored = header.some((kind, k) => (kind === "cvss" || kind === "rwep") && /^\d/.test(plain(cells[k] || "")));
         if (known.length && scored) push(`${where} ${ids.join(", ")}: ${UNATTRIBUTED}`);
         return;
       }
-      if (ids.length !== 1 || !catalog[ids[0]]) return;
+      if (continues) { countRow(lastRowCve); return; }
+      if (ids.length !== 1 || !catalog[ids[0]]) { lastRowCve = null; return; }
       const e = catalog[ids[0]];
       compared++;
+      countRow(ids[0]);
+      lastRowCve = ids[0];
+      lastRowCol = idCol;
+      // The exploitation, patch and live-patch cells are read against the row's
+      // CVE only when no cell names another CVE and the CVE sits under an
+      // identifier header (ID_HEADER_PART), or, in a table with no identifier
+      // column, in the first column under a header that names no CVE and no role
+      // (ROLE_HEADER). A row whose CVE is a related
+      // case, cited in a PoC, notes, "Related CVE", "CVE (example)" or similar
+      // column, does not have them compared with that entry.
+      const single = cells.every((c) => uniqueCves(c).every((id) => id === ids[0]));
+      const norm = (h) => (h || "").replace(/[?*`_]/g, " ");
+      const idHeader = (h) => !ROLE_HEADER.test(h) && h.replace(/\([^)]*\)/g, " ").split("/").some((part) => ID_HEADER_PART.test(part.trim()));
+      const first = norm(rawHeader[0]);
+      const idColumn = rawHeader.some((h) => idHeader(norm(h)));
+      const named = idHeader(norm(rawHeader[idCol])) || (idCol === 0 && !idColumn && !/\bcves?\b/i.test(first) && !ROLE_HEADER.test(first));
       header.forEach((kind, k) => {
-        if (kind && cells[k] !== undefined) compareCell(kind, cells[k], e, (msg) => push(`${where} ${ids[0]}: ${msg}`));
+        if (!kind || cells[k] === undefined) return;
+        if (!ROW_CVE_KINDS.has(kind)) {
+          compareCell(kind, cells[k], e, (msg) => push(`${where} ${ids[0]}: ${msg}`));
+        } else if (single && named) {
+          compareCell(kind, cells[k], e, (msg) => held.push([seq++, ids[0], `${where} ${ids[0]}: ${msg}`]));
+        }
       });
       return;
     }
@@ -336,7 +483,8 @@ function checkSkill(file, catalog) {
     compared++;
     compareProse(line, catalog[ids[0]], (msg) => push(`${where} ${ids[0]}: ${msg}`));
   });
-  return { failures, compared };
+  flush();
+  return { failures: failures.sort((a, b) => a[0] - b[0]).map(([, msg]) => msg), compared };
 }
 
 function check(skillsDir, catalog) {
