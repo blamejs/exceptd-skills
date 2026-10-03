@@ -457,6 +457,11 @@ function main() {
     };
   }
 
+  // No verb reads --verbose. Verbs that check their flags refuse it as unknown.
+  if (argv.includes("--verbose")) {
+    process.stderr.write("[exceptd] note: --verbose is deprecated and no verb reads it; remove it from the invocation.\n");
+  }
+
   if (argv.length === 0) {
     printWelcome();
     safeExit(EXIT_CODES.SUCCESS); return;
@@ -844,15 +849,26 @@ function hasReadableStdin() {
 
 /**
  * The shape check runs BEFORE Date.parse: bare integers like "99" coerce to
- * 1999-12-01T00:00:00Z and silently filter the wrong years. Returns null on
- * success, or the error message for the caller to prefix with its own verb.
+ * 1999-12-01T00:00:00Z and silently filter the wrong years. The calendar date
+ * must also exist: Date.parse rolls 2026-02-30 over to 2026-03-02, so the
+ * YYYY-MM-DD part must read back unchanged from a UTC date set with
+ * setUTCFullYear. Returns null on success, or the error message for the caller
+ * to prefix with its own verb.
  */
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?$/;
 function validateIsoSince(raw, flagName = "--since") {
-  if (typeof raw !== "string" || !ISO_DATE_RE.test(raw) || isNaN(Date.parse(raw))) {
+  if (typeof raw !== "string" || !ISO_DATE_RE.test(raw) || isNaN(Date.parse(raw)) || !isCalendarDate(raw.slice(0, 10))) {
     return `${flagName} must be a parseable ISO-8601 calendar timestamp (e.g. 2026-05-01 or 2026-05-01T00:00:00Z). Got: ${JSON.stringify(String(raw)).slice(0, 80)}`;
   }
   return null;
+}
+
+// Date.UTC reads years 0 to 99 as 1900 to 1999; setUTCFullYear does not.
+function isCalendarDate(ymd) {
+  const [y, m, d] = ymd.split("-").map(Number);
+  const t = new Date(0);
+  t.setUTCFullYear(y, m - 1, d);
+  return t.getUTCFullYear() === y && t.getUTCMonth() === m - 1 && t.getUTCDate() === d;
 }
 
 /**
@@ -6917,6 +6933,10 @@ function cmdAiRun(runner, args, runOpts, pretty) {
     return;
   }
 
+  // Decoding each chunk separately turns a multibyte character split across a
+  // pipe chunk into U+FFFD replacement characters; the stream's decoder carries
+  // the partial bytes.
+  process.stdin.setEncoding("utf8");
   process.stdin.on("data", (chunk) => {
     buf += chunk.toString();
     let nl;

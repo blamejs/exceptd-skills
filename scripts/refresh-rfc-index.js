@@ -8,7 +8,12 @@
  * carries ~9000 entries, so an uncapped first run imports all of them at once.
  * Context backfill onto rows already curated is never capped.
  */
-const { refreshRfc } = require("./refresh-upstream-catalogs.js");
+const { refreshRfc, capFromEnv, CAP_ERROR } = require("./refresh-upstream-catalogs.js");
 const dry = process.argv.includes("--dry-run");
-const cap = Number(process.env.CAP || Infinity);
-refreshRfc({ dry, cap }).catch((e) => { console.error("[err]", e); process.exit(1); });
+const cap = capFromEnv(process.env.CAP);
+if (cap === null) {
+  console.error(`[err] ${CAP_ERROR} Got: ${JSON.stringify(process.env.CAP)}`);
+  process.exitCode = 2;
+} else {
+  refreshRfc({ dry, cap }).catch((e) => { console.error("[err]", e); process.exit(1); });
+}

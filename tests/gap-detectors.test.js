@@ -387,6 +387,23 @@ test("isTemplateRestartCredit: only the template forms of the claim are definite
   for (const re of D.KEV_ACTION_RESTART_TEMPLATE) assert.ok(!re.global && !re.sticky, String(re));
 });
 
+test("isTemplateRestartCredit: a long whitespace run in the clause subject stays fast and keeps the verdict", () => {
+  // TEMPLATE_SUBJECT on the raw subject takes one to seven seconds at 150
+  // spaces, so a regression fails the bound below instead of hanging the job.
+  const pad = " ".repeat(150);
+  const t0 = process.hrtime.bigint();
+  assert.equal(D.isTemplateRestartCredit(`The${pad}x requires a service restart or system reboot per the KEV requiredAction.`), false);
+  assert.equal(D.isTemplateRestartCredit(`Remediation: the${pad}vendor patch typically requires a service restart or system reboot per the KEV requiredAction.`), true);
+  assert.equal(D.isTemplateRestartCredit("The   vendor\n   patch    typically requires a service restart or system reboot per the KEV requiredAction."), true);
+  const ms = Number(process.hrtime.bigint() - t0) / 1e6;
+  assert.ok(ms < 250, `three checks took ${ms.toFixed(0)}ms`);
+  // Collapsing lets `live[_-]patch[_ ]notes` match across a line break or a run
+  // of spaces; the raw subject matched only a single space or underscore.
+  for (const gap of ["\n", "  ", " ", "_"]) {
+    assert.equal(D.isTemplateRestartCredit(`live-patch${gap}notes state that the vendor patch requires a service restart or system reboot per the KEV requiredAction.`), true, JSON.stringify(gap));
+  }
+});
+
 test("kevActionRestartFindings: a finding per text, marked logical-consistency; drafts only with includeDrafts", () => {
   const loaded = { "cve-catalog": {
     "CVE-2026-0001": { live_patch_notes: "The vendor patch typically requires a service restart or system reboot per the KEV requiredAction." },

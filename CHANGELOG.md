@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.21.19 — 2026-10-03
+
+`attest list --since`, `reattest --since`, `--bundle-epoch` and `attest prune --all-older-than` now refuse a date that does not exist. Before, `2026-02-30` passed validation and was read as 2026-03-02, so `attest prune --all-older-than 2026-02-30` also removed attestations from 2026-03-01.
+
+`ai-run` in streaming mode now decodes stdin as one UTF-8 stream. A multibyte character split across two pipe reads was decoded as U+FFFD replacement characters, which changed the evidence and its `evidence_hash`. The MITRE ATT&CK, ICS, ATLAS, D3FEND and RFC refreshers had the same defect when a response arrived in several chunks, and could write U+FFFD into `data/` catalogs.
+
+`run --upstream-check`, `doctor --registry-check` and `node scripts/validate-vendor-online.js` stop reading a response larger than 16 MiB.
+
+The KEV required-action restart detector, which the catalog-gap predeploy gate and `refresh --curate-batch` run over catalog text, no longer backtracks on long whitespace runs. A clause subject with 150 spaces took between one and seven seconds to check, depending on the machine; it now takes under a millisecond. The detector now reads each whitespace run in a clause subject as one space, so a line break between `live-patch` and `notes` no longer keeps it from matching.
+
+The refresh scripts refuse a `CAP` that is not a non-negative integer, and exit 2. `CAP=5x` was read as NaN, which disabled the cap and imported every upstream entry.
+
+`--verbose` is deprecated, and no verb reads it. Passing it now prints a note to stderr saying so; `--quiet` and `--json-stdout-only` suppress the note. Verbs that check their flags, such as `cve`, `skill` and `refresh`, still refuse it as an unknown flag.
+
+The codebase-pattern gate adds two blocking classes. `number-env-coerce` flags `Number(process.env...)`. `stream-chunk-string-decode` flags a stream `data` handler that appends chunks to a string, unless a `setEncoding` call on that stream or a `StringDecoder` appears above it in the same block and within 60 lines.
+
 ## 0.21.18 — 2026-10-03
 
 `exceptd framework-gap <framework> <CVE>` now prints what the catalog records for that CVE against each matching control: the catalog's statement of how the control applies to the CVE, and the zero-day lesson's covered and adequate verdict with its reason. `--json` carries them as `cve_analysis.controls`, one record per control with `control`, `framework`, `control_name`, `statement`, `covered`, `adequate` and `coverage_gap`, and `summary.cve_controls` counts them. A free-text scenario, an id the catalog does not carry, or an auto-imported draft entry reports `cve_analysis: null`. `all` lists every lesson control, including one the framework registry does not list. A narrower filter shows such a control when the filter, compared with case, spaces, hyphens and underscores ignored, is a prefix of the control's key, as `nist-800-53` is a prefix of `NIST-800-53-AC-2-7`. It also shows the control when the filter is contained in the framework name of a registry control whose key shares the most leading hyphen-separated segments with the control's key, at least two. `ISO/IEC 27001:2022` is contained in the framework name of `ISO-27001-2022-A.8.8`, which shares `ISO-27001-2022` with `ISO-27001-2022-A.5.30`. When the closest registry controls share exactly two segments, each of their framework names must contain the shortest one, so a key such as `NIST-800-171-3.14.1` is not shown under the other NIST 800 documents. The CLI accepts a filter only when it is contained in a registry framework name or starts a registry control key.

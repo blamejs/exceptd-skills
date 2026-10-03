@@ -150,3 +150,24 @@ test('buildFreshnessReport keeps days_since_latest_publish null when published_a
   });
   assert.equal(report.days_since_latest_publish, null);
 });
+
+// The registry read stops at a 16 MiB cap; an idle timeout does not bound a
+// response that keeps streaming.
+;(() => {
+  const { OVERSIZE, STOP_WITHIN, fakeGet, withFakeGet } = require('./_helpers/fake-https-get.js');
+
+  test('upstream-check refuses a registry response past the cap and stops reading', async () => {
+    const stats = { sent: 0 };
+    const r = await withFakeGet(fakeGet({ size: OVERSIZE }, stats), () => fetchLatestPublished({ timeoutMs: 5000 }));
+    assert.equal(r.ok, false);
+    assert.match(r.error, /exceeds 16777216-byte cap/);
+    assert.equal(r.source, 'offline');
+    assert.ok(stats.sent <= STOP_WITHIN, `read ${stats.sent} bytes; reading must stop at the cap`);
+  });
+
+  test('upstream-check still reads a normal registry response', async () => {
+    const body = Buffer.from(JSON.stringify({ 'dist-tags': { latest: '9.9.9' }, time: { '9.9.9': '2026-09-01T00:00:00Z' } }));
+    const r = await withFakeGet(fakeGet({ body }, { sent: 0 }), () => fetchLatestPublished({ timeoutMs: 5000 }));
+    assert.deepEqual(r, { ok: true, version: '9.9.9', published_at: '2026-09-01T00:00:00Z', source: 'npm-registry' });
+  });
+})();

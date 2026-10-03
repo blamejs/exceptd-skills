@@ -1101,6 +1101,26 @@ test('--quiet suppresses advisory stderr notes (keeps pipelines clean) but unkno
   assert.match((bogus.stdout || '') + (bogus.stderr || ''), /unknown flag/, 'the refusal names the unknown flag');
 });
 
+test('--verbose prints a deprecation note; --quiet and --json-stdout-only drop it; flag-checking verbs still refuse it', () => {
+  const NOTE = /\[exceptd\] note: --verbose is deprecated and no verb reads it/;
+  const r = cli(['version', '--verbose']);
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stderr, NOTE);
+  assert.match(r.stdout, /^\d+\.\d+\.\d+/m, 'the verb still runs');
+  assert.equal((r.stderr.match(/--verbose is deprecated/g) || []).length, 1, 'the note prints once');
+  const refused = cli(['cve', 'CVE-2022-2294', '--verbose']);
+  assert.equal(refused.status, 1, 'cve checks its flags and refuses --verbose');
+  assert.match(refused.stderr, /unknown flag\(s\): --verbose/);
+  const quiet = cli(['version', '--verbose', '--quiet']);
+  assert.equal(quiet.status, 0);
+  assert.doesNotMatch(quiet.stderr, NOTE);
+  const jsonOnly = cli(['version', '--verbose', '--json-stdout-only']);
+  assert.equal(jsonOnly.status, 0);
+  assert.doesNotMatch(jsonOnly.stderr, NOTE);
+  // Anti-coincidence: without the flag there is no note.
+  assert.doesNotMatch(cli(['version']).stderr, NOTE);
+});
+
 test('recipes --help shows real help, not the "no per-verb help available" fallback', () => {
   const r = cli(['recipes', '--help']);
   const out = (r.stdout || '') + (r.stderr || '');
