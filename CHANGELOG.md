@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.21.21 — 2026-10-03
+
+Registry-cooldown guidance now names settings that take effect. The `sbom` playbook, the `supply-chain-integrity` skill and the CVE-2026-45321 remediation recommended `before=72h` or `minimumReleaseAge=4320` in `.npmrc`. npm ignores `before=72h` because `before` takes a date, and it does not read `minimumReleaseAge`, which is pnpm's setting, so neither one sets a cooldown under npm. They now recommend `min-release-age=3` in `.npmrc` for npm 11.10.0 or later, or `minimumReleaseAge: 4320` in `pnpm-workspace.yaml` for pnpm 10.16.0 or later.
+
+The `sbom` playbook's `npm-registry-no-cooldown` indicator now checks each package manager the repository's lockfiles show against that manager's own setting: npm's `min-release-age` (npm 11.10.0 or later) or a date-valued `before=` in `.npmrc`, pnpm's `minimumReleaseAge` in `pnpm-workspace.yaml`, and Yarn's `npmMinimalAgeGate` in `.yarnrc.yml`. A setting for another package manager, or a `minimumReleaseAge=` line in `.npmrc`, no longer counts as an npm cooldown. Before, a repository that set npm's key was reported as having no cooldown, and a repository that set only the pnpm key in `.npmrc` passed.
+
+The repository's own `.npmrc` now sets `min-release-age=3`. Its `minimumReleaseAge=4320` line had no effect, and npm printed `Unknown project config "minimumReleaseAge"` on every command.
+
 ## 0.21.20 — 2026-10-03
 
 `scripts/release.js watch` and `merge` now read every page of a pull request's review threads. Before, they read only the first 50, so an unresolved thread past the fiftieth was not seen, and a failed GitHub query was read as zero unresolved threads. Both phases now stop with the error instead.

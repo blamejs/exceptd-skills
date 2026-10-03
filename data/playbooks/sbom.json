@@ -1,7 +1,7 @@
 {
   "_meta": {
     "id": "sbom",
-    "version": "1.4.0",
+    "version": "1.4.1",
     "last_threat_review": "2026-05-13",
     "threat_currency_score": 96,
     "changelog": [
@@ -63,6 +63,11 @@
         "version": "1.4.0",
         "date": "2026-05-31",
         "summary": "Add a CVE-reachability demoter (dependency-cve-unreachable: flags a matched-CVE dependency whose vulnerable module is not imported on a first-party path, over-approximating to reachable so it only demotes with an explicit reachability attestation; the package-matches-catalogued-cve matcher is unchanged), a publisher-identity-change detector (account-takeover/ownership-handoff precursor that fires on a publisher/provenance-identity change absent a capability change), and two compliance-theater fingerprints (license-policy and publisher-trust attested-but-not-enforced). Theater-fingerprint count 6 -> 8."
+      },
+      {
+        "version": "1.4.1",
+        "date": "2026-10-03",
+        "summary": "Correct the registry-cooldown settings that the npmrc-cooldown-policy artifact and the npm-registry-no-cooldown indicator look for and recommend. npm reads `min-release-age` (days, npm 11.10.0 and later) and a date-valued `before=` from .npmrc, pnpm reads `minimumReleaseAge` (minutes, pnpm 10.16.0 and later) from pnpm-workspace.yaml, and Yarn reads `npmMinimalAgeGate` from .yarnrc.yml. The indicator checks each package manager the lockfiles show against its own setting. Under npm, `minimumReleaseAge=` in .npmrc and `before=72h` set no cooldown."
       }
     ],
     "owner": "@blamejs/supply-chain",
@@ -341,7 +346,7 @@
         {
           "pattern_id": "publisher-trust-attested-but-not-enforced",
           "claim": "We vet upstream package publishers — maintainer identity, account MFA, and publish recency are part of our supply-chain controls.",
-          "fast_detection_test": "Locate the declared publisher-trust control (a maintainer-vetting policy, an MFA-on-publish requirement, a registry-cooldown / minimumReleaseAge setting, an abandoned/unmaintained-dependency review). Then confirm a build-time or intake gate actually ENFORCES it against the live resolved tree: does any pipeline step BLOCK on a dependency whose publishing account changed (ownership handoff / new-or-nonexistent author), whose maintainer lacks 2FA, that was published inside the cooldown window, or that is deprecated/unmaintained? Theater if the policy exists as a document but (a) no .npmrc before= / minimumReleaseAge cooldown is configured, (b) no dependency-review / publisher-identity gate can fail a build on an ownership change, or (c) deprecated/unmaintained dependencies are not surfaced for review. Publisher-trust as attestation without a blocking intake gate = paper compliance; the identity discontinuity that precedes account-takeover payloads (PyPI Revival Hijack class) passes an unenforced policy untouched.",
+          "fast_detection_test": "Locate the declared publisher-trust control (a maintainer-vetting policy, an MFA-on-publish requirement, a registry-cooldown setting, an abandoned/unmaintained-dependency review). Then confirm a build-time or intake gate actually ENFORCES it against the live resolved tree: does any pipeline step BLOCK on a dependency whose publishing account changed (ownership handoff / new-or-nonexistent author), whose maintainer lacks 2FA, that was published inside the cooldown window, or that is deprecated/unmaintained? Theater if the policy exists as a document but (a) no registry cooldown is configured (npm `min-release-age` or a date-valued `before=` in .npmrc, pnpm `minimumReleaseAge` in pnpm-workspace.yaml, Yarn `npmMinimalAgeGate` in .yarnrc.yml), (b) no dependency-review / publisher-identity gate can fail a build on an ownership change, or (c) deprecated/unmaintained dependencies are not surfaced for review. Publisher-trust as attestation without a blocking intake gate = paper compliance; the identity discontinuity that precedes account-takeover payloads (PyPI Revival Hijack class) passes an unenforced policy untouched.",
           "implicated_controls": [
             "nist-800-218-SSDF",
             "eu-cra-art13",
@@ -633,7 +638,7 @@
         {
           "id": "npmrc-cooldown-policy",
           "type": "config_file",
-          "source": "Read .npmrc (project) and $HOME/.npmrc (user) — look for `before=` or `minimumReleaseAge=` settings",
+          "source": "Read .npmrc (project) and $HOME/.npmrc (user) for npm's `min-release-age=` (days, npm 11.10.0 and later) or `before=` (an ISO date), pnpm-workspace.yaml for `minimumReleaseAge` (minutes, pnpm 10.16.0 and later), and .yarnrc.yml for `npmMinimalAgeGate`. npm does not read `minimumReleaseAge=` in .npmrc, and it ignores a `before=` value that is not a date, such as `before=72h`.",
           "description": "Mitigation status for CVE-2026-45321 and similar fresh-publish worms. Absence is a high-confidence finding for any project that consumes npm packages.",
           "required": false
         },
@@ -872,8 +877,8 @@
         {
           "id": "npm-registry-no-cooldown",
           "type": "file_path",
-          "value": "Within the npmrc-cooldown-policy artifact: .npmrc and ~/.npmrc both lack `before=` or `minimumReleaseAge=` settings, AND the project consumes any npm package (any repo-lockfiles entry of class npm/yarn/pnpm exists)",
-          "description": "Mitigation gap for CVE-2026-45321 and similar fresh-publish worms. Without a registry cooldown, `npm install` will accept a version published seconds ago. Recommended: `before=72h` (npm 11+) or `minimumReleaseAge=4320` minutes. The worm was caught publicly within 20 minutes; 72h is overkill-safe.",
+          "value": "Within the npmrc-cooldown-policy artifact, for each package manager whose lockfile the repo-lockfiles artifact shows, that manager has no cooldown of its own: package-lock.json or npm-shrinkwrap.json (npm) without `min-release-age=` above 0 or a date-valued `before=` in .npmrc or ~/.npmrc, or with an npm older than 11.10.0 when only `min-release-age=` is set; pnpm-lock.yaml (pnpm) without `minimumReleaseAge` above 0 in pnpm-workspace.yaml, or with a pnpm older than 10.16.0; yarn.lock (Yarn) without `npmMinimalAgeGate` above 0 in .yarnrc.yml. A value of 0 disables each setting. A setting for a different package manager does not count, and a `minimumReleaseAge=` line in .npmrc does not count for npm, because npm does not read it.",
+          "description": "Mitigation gap for CVE-2026-45321 and similar fresh-publish worms. Without a registry cooldown, `npm install` will accept a version published seconds ago. Recommended: `min-release-age=3` in .npmrc (npm 11.10.0 or later, in days), `minimumReleaseAge: 4320` in pnpm-workspace.yaml (pnpm 10.16.0 or later, in minutes), or `npmMinimalAgeGate` in .yarnrc.yml. The worm was caught publicly within 20 minutes; 72h is overkill-safe.",
           "confidence": "high",
           "deterministic": false
         },
@@ -987,7 +992,7 @@
             "Confirm the identity change is not a documented, legitimate maintainer transition: many healthy projects hand off to a new maintainer, add a co-maintainer, or migrate the org scope. Benign when the new publisher is announced in the project release notes / GOVERNANCE / README / a pinned issue AND the handoff is corroborated by the project own VCS (the new identity is an existing committer with merge rights, not an outside account). Demote to inconclusive and record the citation when the transition is publicly documented and VCS-corroborated.",
             "Distinguish an identity-STRING change from an identity-PRINCIPAL change: npm provenance OIDC subjects, CI runner identities, and signing-key rotations change routinely on legitimate infra migrations. Demote when the underlying principal is unchanged — same GitHub org/repo as the provenance source, key rotation cross-signed by the prior key, or 2FA-enforced account simply re-issuing a token. Elevate only when the principal itself (the human/org behind the publish) changed.",
             "Rule out first-publish / metadata-backfill noise: a package that had no prior recorded publisher in scope (first time this dependency entered the inventory) has nothing to diff against. Require a recorded prior publisher identity for this exact package before firing; demote to inconclusive when the prior-inventory identity is simply missing.",
-            "Confirm the new release publish age and cadence: a documented handoff that then publishes on the project normal cadence (not a sub-72h fresh publish, npm before=/minimumReleaseAge cooldown satisfied) is far lower risk. Demote normal-cadence post-handoff releases; ELEVATE when the identity change co-occurs with an off-cadence / sub-cooldown publish, a deleted-then-reclaimed maintainer handle, or a publishing account with zero prior history on any package.",
+            "Confirm the new release publish age and cadence: a documented handoff that then publishes on the project normal cadence (not a sub-72h fresh publish, registry cooldown satisfied) is far lower risk. Demote normal-cadence post-handoff releases; ELEVATE when the identity change co-occurs with an off-cadence / sub-cooldown publish, a deleted-then-reclaimed maintainer handle, or a publishing account with zero prior history on any package.",
             "Verify the package is actually a trust-bearing dependency in scope, not a dev/test-only artifact whose maintainer change cannot reach a runtime or build-output path. Confirm runtime or build-pipeline reachability before elevating; demote dev-only to low."
           ]
         }

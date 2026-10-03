@@ -411,7 +411,7 @@
         "adequacy": "Architectural — eliminates the chain. Hardest part is auditing every repo for the architectural pre-condition; this is what the sbom playbook's `ci-cache-poisoning-co-residency` indicator checks."
       },
       "detection": {
-        "what_would_have_worked": "Consumer-side fresh-publish cooldown (.npmrc before=72h or minimumReleaseAge=4320 minutes). External researchers caught this worm within 20 minutes of publish; 72h is overkill-safe.",
+        "what_would_have_worked": "Consumer-side fresh-publish cooldown (`min-release-age=3` in .npmrc for npm 11.10.0 or later, or `minimumReleaseAge: 4320` in pnpm-workspace.yaml for pnpm 10.16.0 or later). External researchers caught this worm within 20 minutes of publish; 72h is overkill-safe.",
         "was_this_required": false,
         "framework_requiring_it": null,
         "adequacy": "Defense in depth — operators who would have installed the malicious version on 2026-05-11 19:25Z would not have, because the cooldown would have rejected it."
@@ -464,7 +464,7 @@
       {
         "id": "NEW-CTRL-140",
         "name": "REGISTRY-COOLDOWN-POLICY",
-        "description": "Consumer-side registry cooldown (.npmrc before=72h or minimumReleaseAge=4320 minutes) refuses to install any version published within the last 72 hours.",
+        "description": "Consumer-side registry cooldown (`min-release-age=3` in .npmrc for npm 11.10.0 or later, or `minimumReleaseAge: 4320` in pnpm-workspace.yaml for pnpm 10.16.0 or later) refuses to install any version published within the last 72 hours.",
         "evidence": "CVE-2026-45321 — caught publicly within 20 minutes; 72h is overkill-safe",
         "gap_closes": [
           "NIST-800-53-SA-12",

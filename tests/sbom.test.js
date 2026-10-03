@@ -573,3 +573,31 @@ test("sbom: a document that opens and stats but cannot be read reports read_fail
   }
 });
 });
+
+// ---- routed from sbom-registry-cooldown ----
+require("node:test").describe("sbom playbook registry-cooldown guidance", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const pb = require("../data/playbooks/sbom.json");
+  const indicator = pb.phases.detect.indicators.find((i) => i.id === "npm-registry-no-cooldown");
+  const artifact = pb.phases.look.artifacts.find((a) => a.id === "npmrc-cooldown-policy");
+
+  test("npm-registry-no-cooldown checks each lockfile's package manager against its own setting, above 0", () => {
+    assert.ok(indicator, "the indicator exists");
+    const v = indicator.value;
+    // Each lockfile names its package manager's own key, and every key needs a value above 0.
+    assert.match(v, /package-lock\.json[^;]*`min-release-age=` above 0/);
+    assert.match(v, /pnpm-lock\.yaml[^;]*`minimumReleaseAge` above 0 in pnpm-workspace\.yaml/);
+    assert.match(v, /yarn\.lock[^.]*`npmMinimalAgeGate` above 0 in \.yarnrc\.yml/);
+    assert.match(v, /A setting for a different package manager does not count/);
+    assert.match(v, /`minimumReleaseAge=` line in \.npmrc does not count for npm/);
+  });
+
+  test("the cooldown guidance names no setting that npm ignores", () => {
+    for (const [where, text] of [["indicator.value", indicator.value], ["indicator.description", indicator.description], ["artifact.source", artifact.source]]) {
+      assert.doesNotMatch(text, /`before=72h` \(npm|minimumReleaseAge=4320/, where);
+    }
+    assert.match(indicator.description, /`min-release-age=3` in \.npmrc \(npm 11\.10\.0 or later/);
+    assert.match(artifact.source, /npm does not read `minimumReleaseAge=` in \.npmrc/);
+  });
+});
