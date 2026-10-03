@@ -582,15 +582,20 @@ require("node:test").describe("sbom playbook registry-cooldown guidance", () => 
   const indicator = pb.phases.detect.indicators.find((i) => i.id === "npm-registry-no-cooldown");
   const artifact = pb.phases.look.artifacts.find((a) => a.id === "npmrc-cooldown-policy");
 
-  test("npm-registry-no-cooldown checks each lockfile's package manager against its own setting, above 0", () => {
+  test("npm-registry-no-cooldown checks each lockfile's package manager against its own setting and version", () => {
     assert.ok(indicator, "the indicator exists");
     const v = indicator.value;
-    // Each lockfile names its package manager's own key, and every key needs a value above 0.
-    assert.match(v, /package-lock\.json[^;]*`min-release-age=` above 0/);
-    assert.match(v, /pnpm-lock\.yaml[^;]*`minimumReleaseAge` above 0 in pnpm-workspace\.yaml/);
-    assert.match(v, /yarn\.lock[^.]*`npmMinimalAgeGate` above 0 in \.yarnrc\.yml/);
+    // npm: a positive min-release-age on a version that reads it, or a before= date in the past.
+    assert.match(v, /package-lock\.json or npm-shrinkwrap\.json\) has one when \.npmrc or ~\/\.npmrc sets `min-release-age=` above 0 and npm is 11\.10\.0 or later, or sets a `before=` date earlier than the current time/);
+    // pnpm: a positive minimumReleaseAge in pnpm-workspace.yaml on a version that reads it.
+    assert.match(v, /pnpm-lock\.yaml\) has one when pnpm-workspace\.yaml sets `minimumReleaseAge` above 0 and pnpm is 10\.16\.0 or later/);
+    // Yarn 4.12 and later default the gate to 1d, so only an explicit 0 or an older Yarn removes it.
+    assert.match(v, /yarn\.lock\) has one on Yarn 4\.12 or later unless \.yarnrc\.yml sets `npmMinimalAgeGate` to 0/);
+    assert.match(v, /an older Yarn has none/);
     assert.match(v, /A setting for a different package manager does not count/);
-    assert.match(v, /`minimumReleaseAge=` line in \.npmrc does not count for npm/);
+    assert.match(v, /npm does not read a `minimumReleaseAge=` line in \.npmrc/);
+    assert.match(v, /version the artifact did not record, the verdict is inconclusive/);
+    assert.match(artifact.source, /Record the version of each package manager in use/);
   });
 
   test("the cooldown guidance names no setting that npm ignores", () => {
