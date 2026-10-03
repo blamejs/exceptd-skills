@@ -582,25 +582,25 @@ require("node:test").describe("sbom playbook registry-cooldown guidance", () => 
   const indicator = pb.phases.detect.indicators.find((i) => i.id === "npm-registry-no-cooldown");
   const artifact = pb.phases.look.artifacts.find((a) => a.id === "npmrc-cooldown-policy");
 
-  test("npm-registry-no-cooldown checks each lockfile's package manager against its own setting and version", () => {
+  test("npm-registry-no-cooldown asks for each manager's effective cooldown as that manager resolves it", () => {
     assert.ok(indicator, "the indicator exists");
     const v = indicator.value;
-    // npm: a positive min-release-age on a version that reads it, or a before= date in the past.
-    assert.match(v, /package-lock\.json or npm-shrinkwrap\.json\) has one when \.npmrc or ~\/\.npmrc sets `min-release-age=` above 0 and npm is 11\.10\.0 or later, or sets a `before=` date earlier than the current time/);
-    // pnpm: a positive minimumReleaseAge in pnpm-workspace.yaml on a version that reads it.
-    assert.match(v, /pnpm-lock\.yaml\) has one when pnpm-workspace\.yaml sets `minimumReleaseAge` above 0 and pnpm is 10\.16\.0 or later/);
-    // Yarn 4.10 reads an explicit gate; 4.12 also defaults it to 1d when the key is absent.
-    assert.match(v, /yarn\.lock\) has one when \.yarnrc\.yml sets `npmMinimalAgeGate` above 0 and Yarn is 4\.10 or later, or when the key is absent and Yarn is 4\.12 or later/);
-    assert.match(v, /a Yarn older than 4\.10 has none/);
-    // Exclusion lists remove the cooldown for a third-party dependency they match.
-    assert.match(v, /`min-release-age-exclude`, `minimumReleaseAgeExclude`, `npmPreapprovedPackages`\) that matches a third-party dependency/);
+    // The rule: effective value per manager, resolved with precedence, versioned default and exclusions.
+    assert.match(v, /has no effective registry cooldown, as that manager resolves its own configuration/);
+    assert.match(v, /for npm: command line, environment, project \.npmrc, user ~\/\.npmrc, global npmrc/);
+    assert.match(v, /the default for the recorded version, and the exclusion list where that version supports one/);
+    assert.match(v, /A value of 0 disables each setting/);
+    assert.match(v, /A setting for a different package manager does not count, and a `before=` date counts only when it is in the past/);
+    assert.match(v, /An exclusion entry that matches a third-party dependency in the lockfile removes the cooldown for that dependency/);
+    assert.match(v, /When the artifact cannot establish the effective value[^.]*, the verdict is inconclusive/);
+    // The reference facts, each with the version that introduced it.
+    assert.match(v, /npm reads `min-release-age` \(days\) from npm 11\.10\.0 and `min-release-age-exclude` from npm 11\.17\.0, applies the exclusion to a `before=` cutoff as well, and does not read `minimumReleaseAge=` in \.npmrc/);
+    assert.match(v, /pnpm reads `minimumReleaseAge` \(minutes\) and `minimumReleaseAgeExclude` from pnpm-workspace\.yaml from pnpm 10\.16\.0, and pnpm 11 defaults `minimumReleaseAge` to 1440/);
+    assert.match(v, /Yarn reads `npmMinimalAgeGate` and `npmPreapprovedPackages` from \.yarnrc\.yml from Yarn 4\.10, and Yarn 4\.12 defaults the gate to `1d`/);
+    // The artifact collects what the rule needs.
     assert.match(artifact.source, /`npmPreapprovedPackages` in \.yarnrc\.yml/);
-    // npm's arborist drops the `before` filter for an excluded package, whichever setting set it.
-    assert.match(v, /npm applies `min-release-age-exclude` to a `before=` cutoff as well as to `min-release-age`/);
-    assert.match(v, /A setting for a different package manager does not count/);
-    assert.match(v, /npm does not read a `minimumReleaseAge=` line in \.npmrc/);
-    assert.match(v, /version the artifact did not record, the verdict is inconclusive/);
     assert.match(artifact.source, /Record the version of each package manager in use/);
+    assert.match(artifact.source, /any cooldown setting the CI workflow passes on the command line or in the environment/);
   });
 
   test("the cooldown guidance names no setting that npm ignores", () => {
