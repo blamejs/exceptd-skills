@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.1.0",
-    "last_updated": "2026-10-02",
+    "last_updated": "2026-10-03",
     "last_threat_review": "2026-05-17",
     "purpose": "Zero-day learning loop output. Each entry maps a CVE to: attack vector, defense chain analysis, framework coverage, new control requirements generated, and exposure scoring. v1.1.0 (2026-05-15): every entry now carries ai_discovered_zeroday boolean + ai_discovery_source enum + ai_discovery_date + ai_assist_factor ladder, per AGENTS.md Hard Rule #7.",
     "note": "Never delete entries. Closed gaps are marked status: closed. History is data.",
@@ -158,7 +158,7 @@
       },
       "MITRE-ATLAS-v5.1.0": {
         "covered": true,
-        "adequate": "reference only",
+        "adequate": false,
         "gap": "ATLAS documents the technique (AML.T0051/AML.T0054) but no framework has implemented controls based on ATLAS"
       }
     },
@@ -302,7 +302,7 @@
       },
       "NIST-800-53-CM-7": {
         "covered": true,
-        "adequate": "partial",
+        "adequate": false,
         "gap": "CM-7 least functionality could require disabling RxRPC, but this is rarely implemented for kernel subsystems"
       },
       "ISO-27001-2022-A.8.8": {
@@ -1303,7 +1303,7 @@
       },
       "MITRE-ATLAS-v5.1.0": {
         "covered": true,
-        "adequate": "reference only",
+        "adequate": false,
         "gap": "ATLAS documents AML.T0010 (ML supply chain compromise) and AML.T0011 (ML model access) but no framework has implemented the developer-tooling-perimeter control class derived from these techniques."
       },
       "NIST-AI-RMF-MAP-3.4": {
@@ -1417,7 +1417,7 @@
       },
       "CIS-Critical-Security-Controls-v8-IG3-6.8": {
         "covered": true,
-        "adequate": "closest",
+        "adequate": false,
         "gap": "Account-management role-based access requires defined roles but does not force differentiation of fleet-management roles from application roles; closest match but does not enforce the privilege-tier separation."
       }
     },
@@ -1601,7 +1601,7 @@
       },
       "MITRE-ATTACK-T1566.002": {
         "covered": true,
-        "adequate": "reference only",
+        "adequate": false,
         "gap": "Spearphishing Link technique is documented but framework-side controls do not enforce LNK-class detonation regression as a result."
       }
     },
@@ -4248,12 +4248,12 @@
       "NIST-AI-RMF-MEASURE-2.7": {
         "covered": true,
         "adequate": false,
-        "gap": "Prompt-injection-driven serialisation round-trip not in published AI-risk taxonomy."
+        "gap": "The published AI-risk taxonomy does not include the prompt-injection-driven serialization round-trip."
       },
       "EU-AI-Act-Art15": {
         "covered": true,
         "adequate": false,
-        "gap": "Robustness control does not enumerate serialisation-deserialisation chain as an attack surface."
+        "gap": "The robustness control does not list the serialization-deserialization chain as an attack surface."
       },
       "ISO-IEC-42001-AIMS-A.6.2.5": {
         "covered": true,
@@ -4262,13 +4262,13 @@
       },
       "OWASP-LLM-Top-10-LLM01": {
         "covered": true,
-        "adequate": "reference only",
-        "gap": "Prompt injection enumerated; no implementation requirement for serialisation trust boundaries."
+        "adequate": false,
+        "gap": "The list enumerates prompt injection but sets no implementation requirement for serialization trust boundaries."
       },
       "OWASP-LLM-Top-10-LLM02": {
         "covered": true,
-        "adequate": "reference only",
-        "gap": "Insecure output handling enumerated; serialisation round-trip is the specific instance."
+        "adequate": false,
+        "gap": "The list enumerates insecure output handling, and the serialization round-trip is a specific instance of it, but the list is a reference taxonomy with no implementation requirement for the serialization trust boundary."
       }
     },
     "new_control_requirements": [
@@ -6607,13 +6607,13 @@
       },
       "OWASP-LLM-Top-10-LLM01": {
         "covered": true,
-        "adequate": "reference only",
+        "adequate": false,
         "gap": "Prompt injection enumerated; no IDE-host-execution requirement."
       },
       "OWASP-LLM-Top-10-LLM07": {
         "covered": true,
-        "adequate": "reference only",
-        "gap": "Insecure Plugin Design directly applicable to MCP integration class."
+        "adequate": false,
+        "gap": "Insecure Plugin Design applies directly to the MCP integration class, but the list is a reference taxonomy with no implementation requirement for MCP tool grants."
       }
     },
     "new_control_requirements": [

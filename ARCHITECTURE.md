@@ -240,9 +240,10 @@ Maps compliance framework control IDs to ATLAS/ATT&CK TTPs and produces gap anal
 
 Framework lag scoring and gap report generation.
 
-- `lagScore(frameworkId)` — Return a 0–100 lag score for a framework against current threat landscape
-- `gapReport(frameworkId, scope)` — Generate gap report for a framework within a scope (e.g., "kernel LPE", "AI attack surface")
-- `theaterCheck(controlId, orgControls)` — Run compliance theater detection for a specific control
+- `lagScore(frameworkId, controlGaps, globalFrameworks)` returns `{ score, label, breakdown }` for a framework against the current threat landscape, where `score` runs from 0 to 100.
+- `gapReport(frameworkIds, threatScenario, controlGaps, cveCatalog, opts)` builds the gap report for one or more frameworks against a CVE id or a free-text scenario (for example "kernel LPE"). For a catalog CVE, `cve_analysis` lists the entry's per-control statements with the zero-day lesson's covered and adequate verdicts; `opts.lessons` also supplies `new_control_requirements`.
+- `theaterCheck(controlGaps, cveCatalog)` runs the compliance-theater patterns against the control inventory.
+- `compareFrameworks(controlGaps, globalFrameworks)` ranks frameworks by lag score.
 
 ### `scripts/check-test-coverage.js`
 

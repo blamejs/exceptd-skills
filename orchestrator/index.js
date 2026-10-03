@@ -244,6 +244,8 @@ Examples:
     console.log();
   }
 
+  for (const line of cveAnalysisLines(report.cve_analysis)) console.log(line);
+
   if (report.theater_risks.length > 0) {
     console.log(`### Theater risk controls (compliant but exposed) — ${report.theater_risks.length}`);
     for (const t of report.theater_risks) {
@@ -252,7 +254,34 @@ Examples:
     console.log();
   }
 
-  console.log(`Summary: ${report.summary.total_gaps} matching gaps, ${report.summary.universal_gaps} universal, ${report.summary.new_control_requirements} new controls required, ${report.summary.theater_risk_controls} theater-risk controls`);
+  console.log(frameworkGapSummaryLine(report.summary));
+}
+
+/**
+ * Returns the text lines for a framework-gap report's cve_analysis section: a
+ * heading with the record count, then each control with its statement and lesson
+ * verdict, then a blank line. Returns no lines when the section carries no
+ * records.
+ */
+function cveAnalysisLines(cveAnalysis) {
+  if (!cveAnalysis || cveAnalysis.controls.length === 0) return [];
+  const lines = [`### ${cveAnalysis.cve_id} against each control: ${cveAnalysis.controls.length} record(s)`];
+  for (const c of cveAnalysis.controls) {
+    lines.push(`  - ${c.control}${c.control_name ? ` (${c.control_name})` : ''}`);
+    if (c.statement) lines.push(`    statement: ${c.statement}`);
+    const verdict = [
+      c.covered === true ? 'covered' : c.covered === false ? 'not covered' : null,
+      c.adequate === true ? 'adequate' : c.adequate === false ? 'not adequate' : null,
+    ].filter(Boolean).join(', ');
+    if (verdict || c.coverage_gap) lines.push(`    lesson: ${[verdict, c.coverage_gap].filter(Boolean).join('. ')}`);
+  }
+  lines.push('');
+  return lines;
+}
+
+/** Returns the closing Summary line of a framework-gap text report. */
+function frameworkGapSummaryLine(summary) {
+  return `Summary: ${summary.total_gaps} matching gaps, ${summary.universal_gaps} universal, ${summary.new_control_requirements} new controls required, ${summary.cve_controls} CVE control records, ${summary.theater_risk_controls} theater-risk controls`;
 }
 
 async function runScan() {
@@ -1926,4 +1955,6 @@ module.exports = {
   // Verb runners stay internal — reach them through the CLI surface.
   main,
   parseFlags,
+  cveAnalysisLines,
+  frameworkGapSummaryLine,
 };
