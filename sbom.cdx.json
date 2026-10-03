@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:e479dc69-ade4-4f72-a339-38fa7dd53c15",
+  "serialNumber": "urn:uuid:62f1d004-deb1-4ca4-bd98-055d6a34d09e",
   "version": 1,
   "metadata": {
     "timestamp": "2026-10-03T00:00:00.000Z",
@@ -29,7 +29,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "c5a88a6ca83c24498d23f447661859167699dbb3262562c2a662fcc07c3b2b0d"
+          "content": "76c89af3bd408e9717ad38a69f207b077f8c3022d22703bc8c98d0cf7fadca45"
         }
       ],
       "externalReferences": [
@@ -124,11 +124,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "cee2c5e48ab694c8d8579662aba86f9e8a1ebe8001db5c425c4698ee6ebd71b5"
+          "content": "e80e2c7de8cffb5b365332c1c4dce8da836e8110717463190400ddf7b73cf6c4"
         },
         {
           "alg": "SHA3-512",
-          "content": "63454fc9c4be620889a46ea13cda366319755c96d977b01accb84bb7ccb90dfbd60febcdc0cd2a54a904908541b3a43cc6c767b4dca0a7194815ebe357b9be3c"
+          "content": "8054240bba4cac658fd6fad023b786b309fbfe0363d16b5d8a3a2ef64472c28d9f40f9ec25fd6620805f0b3dff54bb57d7994be43b7125f000c24c23e7a129ed"
         }
       ]
     },
@@ -844,11 +844,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "6683025bac95d098c6c67f56f878df397b12b62bcd5b2b5f70ac0d13fc23ec47"
+          "content": "3d535d2980a476cb9a67d0e03bff43f2aad5ed68805790019de3a331dcf369c5"
         },
         {
           "alg": "SHA3-512",
-          "content": "cc9d150253cefc349c3cae070e297476036bd8e3240fbb76940aef189c11b0e13b207a6831ff8c1ac3205eb60a5c36303ccf669313a8d79409760398726211d1"
+          "content": "57b54c27e69d4caeaf996fd49d8cc00d66c198979c200cf3743807c8844006cfb0205b2a02fca8688016eda9479a3106d462f89b5d90510056b4a7092a4aaf59"
         }
       ]
     },
@@ -1954,11 +1954,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "66295ea54491963bb1a3f4a29e8c70cd5841248094a844f397471b82bd83e051"
+          "content": "0e0f9ae9be445f66db7d09b1f8ce855b713004d39e7d489f0cb013476f688a6a"
         },
         {
           "alg": "SHA3-512",
-          "content": "db9ca617ffe2f020a5e672fc8028b3ba157fabad9c243db3ab5f9fe8f75706d65830accb571a1e7b91a6313782e2740b7114ee721be96a7126eb19934a8c1640"
+          "content": "095c6a84276274f0568fa163f3d324d8f50a1ca35b6a0ba6dcdb05b6e055d83458ca4e13a601630e2405096b46184f7a0f501878529afcefc7d149219ac1397a"
         }
       ]
     },

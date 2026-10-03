@@ -589,9 +589,14 @@ require("node:test").describe("sbom playbook registry-cooldown guidance", () => 
     assert.match(v, /package-lock\.json or npm-shrinkwrap\.json\) has one when \.npmrc or ~\/\.npmrc sets `min-release-age=` above 0 and npm is 11\.10\.0 or later, or sets a `before=` date earlier than the current time/);
     // pnpm: a positive minimumReleaseAge in pnpm-workspace.yaml on a version that reads it.
     assert.match(v, /pnpm-lock\.yaml\) has one when pnpm-workspace\.yaml sets `minimumReleaseAge` above 0 and pnpm is 10\.16\.0 or later/);
-    // Yarn 4.12 and later default the gate to 1d, so only an explicit 0 or an older Yarn removes it.
-    assert.match(v, /yarn\.lock\) has one on Yarn 4\.12 or later unless \.yarnrc\.yml sets `npmMinimalAgeGate` to 0/);
-    assert.match(v, /an older Yarn has none/);
+    // Yarn 4.10 reads an explicit gate; 4.12 also defaults it to 1d when the key is absent.
+    assert.match(v, /yarn\.lock\) has one when \.yarnrc\.yml sets `npmMinimalAgeGate` above 0 and Yarn is 4\.10 or later, or when the key is absent and Yarn is 4\.12 or later/);
+    assert.match(v, /a Yarn older than 4\.10 has none/);
+    // Exclusion lists remove the cooldown for a third-party dependency they match.
+    assert.match(v, /`min-release-age-exclude`, `minimumReleaseAgeExclude`, `npmPreapprovedPackages`\) that matches a third-party dependency/);
+    assert.match(artifact.source, /`npmPreapprovedPackages` in \.yarnrc\.yml/);
+    // npm's arborist drops the `before` filter for an excluded package, whichever setting set it.
+    assert.match(v, /npm applies `min-release-age-exclude` to a `before=` cutoff as well as to `min-release-age`/);
     assert.match(v, /A setting for a different package manager does not count/);
     assert.match(v, /npm does not read a `minimumReleaseAge=` line in \.npmrc/);
     assert.match(v, /version the artifact did not record, the verdict is inconclusive/);
