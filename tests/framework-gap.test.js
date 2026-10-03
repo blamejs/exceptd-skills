@@ -529,6 +529,16 @@ test("M2: framework-gap refuses an unknown framework", () => {
   assert.ok(Array.isArray(body.known_frameworks) && body.known_frameworks.length > 0, "must list known frameworks");
 });
 
+test("M2: framework-gap refuses a filter that only the registry's _meta block would match", () => {
+  for (const fw of ["meta", "met"]) {
+    const r = cli(["framework-gap", fw, "CVE-2025-53773", "--json"]);
+    assert.equal(r.status, 1, `${fw} must be refused`);
+    const body = tryJson(r.stdout) || tryJson(r.stderr);
+    assert.ok(body && body.ok === false, `${fw} must emit a structured refusal`);
+    assert.match(body.error, /unknown framework/);
+  }
+});
+
 test("M2: documented short forms (NIST-800-53, PCI-DSS-4.0) still resolve", () => {
   for (const fw of ["NIST-800-53", "nist-800-53", "PCI-DSS-4.0"]) {
     const r = cli(["framework-gap", fw, "prompt injection", "--json"]);
@@ -920,34 +930,493 @@ require("node:test").describe("malformed controls never reach the renderer", () 
   });
 });
 
-// ---------- gapReport()'s fourth parameter is positional, not input ----------
+require("node:test").describe("a CVE's per-control statements and lesson verdicts reach cve_analysis", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const { gapReport } = require("../lib/framework-gap.js");
+  const controlGaps = require("../data/framework-control-gaps.json");
+  const cveCatalog = require("../data/cve-catalog.json");
+  const lessons = require("../data/zeroday-lessons.json");
+
+  // Resolved from the data so curation churn cannot turn these into tests of an
+  // absent entry: a CVE carrying an AU-Essential-8 statement and at least one
+  // statement under another framework, with lesson coverage and gap text for
+  // that AU key. The AU key the tests read is the one the predicate checked.
+  const auKey = (e, cov) => Object.keys((e && e.framework_control_gaps) || {}).find((k) =>
+    k.startsWith("AU-Essential-8") && cov[k] && typeof cov[k].adequate === "boolean" &&
+    typeof cov[k].gap === "string" && cov[k].gap.trim() !== "");
+  const [CVE, entry] = Object.entries(cveCatalog).find(([id, e]) => {
+    const keys = Object.keys((e && e.framework_control_gaps) || {});
+    const cov = (lessons[id] && lessons[id].framework_coverage) || {};
+    return id.startsWith("CVE-") && !e._auto_imported && !!auKey(e, cov) &&
+      keys.some((k) => !k.startsWith("AU-Essential-8"));
+  });
+  const AU = auKey(entry, lessons[CVE].framework_coverage);
+
+  test("with every framework, each statement and each coverage key reaches the report with its text", () => {
+    const r = gapReport(["all"], CVE, controlGaps, cveCatalog, { allFrameworks: true, lessons });
+    const cov = lessons[CVE].framework_coverage;
+    const expected = [...new Set([...Object.keys(entry.framework_control_gaps), ...Object.keys(cov)])].sort();
+    assert.equal(r.cve_analysis.cve_id, CVE);
+    assert.deepEqual(r.cve_analysis.controls.map((c) => c.control), expected);
+    assert.equal(r.summary.cve_controls, expected.length);
+    const au = r.cve_analysis.controls.find((c) => c.control === AU);
+    assert.equal(au.statement, entry.framework_control_gaps[AU]);
+    assert.equal(au.covered, cov[AU].covered);
+    assert.equal(au.adequate, cov[AU].adequate);
+    assert.equal(au.framework, controlGaps[AU].framework);
+    assert.equal(au.control_name, controlGaps[AU].control_name);
+    assert.ok(typeof au.statement === "string" && au.statement.length > 40,
+      "a record without the statement text tells the operator nothing");
+  });
+
+  test("a framework filter keeps only that framework's controls", () => {
+    const one = gapReport(["au-essential-8"], CVE, controlGaps, cveCatalog, { lessons });
+    const all = gapReport(["all"], CVE, controlGaps, cveCatalog, { allFrameworks: true, lessons });
+    assert.ok(one.cve_analysis.controls.length > 0);
+    for (const c of one.cve_analysis.controls) assert.match(c.control, /^AU-Essential-8/);
+    // Anti-coincidence: the unfiltered report carries more, so the filter did work.
+    assert.ok(all.cve_analysis.controls.length > one.cve_analysis.controls.length);
+    // A display-name filter matches through the registry's framework field.
+    const byName = gapReport([controlGaps[AU].framework], CVE, controlGaps, cveCatalog, { lessons });
+    assert.deepEqual(byName.cve_analysis.controls.map((c) => c.control), one.cve_analysis.controls.map((c) => c.control));
+  });
+
+  test("a free-text scenario, an id the catalog does not carry, and the catalog's _meta key resolve to null", () => {
+    // The last scenario carries a catalog id inside free text; only an exact id resolves.
+    for (const scenario of ["prompt injection", "CVE-1999-99999", "_meta", `${CVE} exploitation`]) {
+      const r = gapReport(["all"], scenario, controlGaps, cveCatalog, { allFrameworks: true, lessons });
+      assert.equal(r.cve_analysis, null, scenario);
+      assert.equal(r.summary.cve_controls, 0, scenario);
+    }
+  });
+
+  test("an id with an underscore inside it resolves; only a leading underscore marks a non-entry key", () => {
+    const ID = "VENDOR_ADV-2099-0001";
+    const cat = { [ID]: { framework_control_gaps: { "ZZ-SYNTHETIC-UNDERSCORE": "statement" } } };
+    const r = gapReport(["all"], ID, controlGaps, cat, { allFrameworks: true });
+    assert.equal(r.cve_analysis.cve_id, ID);
+    assert.equal(r.cve_analysis.controls.length, 1);
+  });
+
+  test("the CVE id matches case-insensitively", () => {
+    const r = gapReport(["all"], CVE.toLowerCase(), controlGaps, cveCatalog, { allFrameworks: true, lessons });
+    assert.equal(r.cve_analysis.cve_id, CVE);
+  });
+
+  test("an auto-imported draft reports no statements", () => {
+    const draft = { "CVE-2099-0001": { _auto_imported: true, framework_control_gaps: { [AU]: "placeholder" } } };
+    const r = gapReport(["all"], "CVE-2099-0001", controlGaps, draft, { allFrameworks: true });
+    assert.equal(r.cve_analysis, null);
+  });
+
+  test("a key outside the registry matches a filter on its prefix and appears with every framework", () => {
+    const KEY = "ZZ-SYNTHETIC-CONTROL-1";
+    assert.equal(controlGaps[KEY], undefined, "the fixture key must not exist in the registry");
+    const cat = { "CVE-2099-0002": { framework_control_gaps: { [KEY]: "statement text" } } };
+    const les = { "CVE-2099-0002": { framework_coverage: { [KEY]: { covered: true, adequate: false, gap: "g" } } } };
+    const all = gapReport(["all"], "CVE-2099-0002", controlGaps, cat, { allFrameworks: true, lessons: les });
+    assert.deepEqual(all.cve_analysis.controls, [{
+      control: KEY, framework: null, control_name: null,
+      statement: "statement text", covered: true, adequate: false, coverage_gap: "g",
+    }]);
+    assert.equal(gapReport(["zz-synthetic"], "CVE-2099-0002", controlGaps, cat, { lessons: les }).cve_analysis.controls.length, 1);
+    assert.equal(gapReport(["nist-800-53"], "CVE-2099-0002", controlGaps, cat, { lessons: les }).cve_analysis.controls.length, 0);
+  });
+
+  test("a key only the lesson carries and a key only the catalog carries both reach the report", () => {
+    const STATEMENT_ONLY = "ZZ-SYNTHETIC-STATEMENT-ONLY";
+    const COVERAGE_ONLY = "ZZ-SYNTHETIC-COVERAGE-ONLY";
+    const cat = { "CVE-2099-0004": { framework_control_gaps: { [STATEMENT_ONLY]: "statement text" } } };
+    const les = { "CVE-2099-0004": { framework_coverage: { [COVERAGE_ONLY]: { covered: false, adequate: false, gap: "lesson gap" } } } };
+    const r = gapReport(["all"], "CVE-2099-0004", controlGaps, cat, { allFrameworks: true, lessons: les });
+    assert.deepEqual(r.cve_analysis.controls, [
+      { control: COVERAGE_ONLY, framework: null, control_name: null, statement: null, covered: false, adequate: false, coverage_gap: "lesson gap" },
+      { control: STATEMENT_ONLY, framework: null, control_name: null, statement: "statement text", covered: null, adequate: null, coverage_gap: null },
+    ]);
+  });
+
+  test("a key the registry lacks matches a key-prefix filter, all, and the framework name of its nearest registry key", () => {
+    const NIST = "NIST-800-53-SI-2";
+    assert.ok(controlGaps[NIST] && controlGaps[NIST].framework, "the registry must carry NIST-800-53-SI-2");
+    const KEY = "NIST-800-53-ZZ-99";
+    assert.equal(controlGaps[KEY], undefined, "the fixture key must not exist in the registry");
+    const cat = { "CVE-2099-0005": { framework_control_gaps: { [NIST]: "registry statement" } } };
+    const les = { "CVE-2099-0005": { framework_coverage: { [KEY]: { covered: true, adequate: false, gap: "lesson-only" } } } };
+    const keysFor = (fw, opts = {}) => gapReport([fw], "CVE-2099-0005", controlGaps, cat, { lessons: les, ...opts }).cve_analysis.controls.map((c) => c.control);
+    assert.deepEqual(keysFor("nist-800-53"), [NIST, KEY].sort());
+    assert.deepEqual(keysFor("all", { allFrameworks: true }), [NIST, KEY].sort());
+    // The display name reaches the lesson-only key through the registry keys it
+    // shares NIST-800-53 with.
+    assert.deepEqual(keysFor(controlGaps[NIST].framework), [NIST, KEY].sort());
+    // Case, spaces, hyphens and underscores are ignored; the filter must be a
+    // prefix, so a fragment from the middle of the key does not match it.
+    assert.deepEqual(keysFor("nist_800_53"), keysFor("nist-800-53"));
+    assert.deepEqual(keysFor("NIST 800 53"), keysFor("nist-800-53"));
+    // A fragment from the middle of the key that names no framework does not select it.
+    assert.ok(!keysFor("zz-99").includes(KEY), "a filter that is neither a key prefix nor a framework name does not select it");
+  });
+
+  test("a lesson-only key takes the framework of the registry keys sharing the most leading segments, at least two", () => {
+    const registry = {
+      "AA-BB-C1": { framework: "Framework One" },
+      "AA-BB-C2": { framework: "Framework Two" },
+      "AA-BB-C2-X": { framework: "Framework Five" },
+      "AA-ZZ": { framework: "Framework Three" },
+      "QQ-RR": { framework: "Framework Four" },
+      "AA-BB-NONAME": { control_name: "no framework" },
+      "DD-EE-1": { framework: "Doc D" },
+      // Contains "Doc D" only once case, spaces and hyphens are ignored, and not
+      // at its start.
+      "DD-EE-2": { framework: "Updated DOC-D (2024 edition)" },
+      "DD-EE-FF": { control_name: "no framework" },
+    };
+    const les = { "CVE-2099-0016": { framework_coverage: {
+      // Two segments shared with keys of three different frameworks: ambiguous.
+      "AA-BB-C9": { covered: true, adequate: false, gap: "two segments, several frameworks" },
+      // Three segments shared with AA-BB-C2 and AA-BB-C2-X.
+      "AA-BB-C2-Y": { covered: true, adequate: false, gap: "three segments shared" },
+      "AA-QQ": { covered: true, adequate: false, gap: "one segment shared" },
+      // Segments compare without case: three shared with AA-BB-C1.
+      "aa-bb-c1-lower": { covered: true, adequate: false, gap: "lower case" },
+      // A case variant of a registry key shares every segment with it.
+      "aa-bb-c1": { covered: true, adequate: false, gap: "case variant of AA-BB-C1" },
+      // Two segments shared with two names of one framework.
+      "DD-EE-9": { covered: true, adequate: false, gap: "two segments, one framework" },
+      // Three segments shared with the entry that has no framework name, which is
+      // skipped, so the match falls back to DD-EE-1 and DD-EE-2.
+      "DD-EE-FF-1": { covered: true, adequate: false, gap: "nearest named keys share two" },
+    } } };
+    // A catalog statement on a registry key, which matches only its own framework.
+    const cat = { "CVE-2099-0016": { framework_control_gaps: { "AA-BB-C2": "registry statement" } } };
+    const keysFor = (fw) => gapReport([fw], "CVE-2099-0016", registry, cat, { lessons: les }).cve_analysis.controls.map((c) => c.control);
+    assert.deepEqual(keysFor("Framework One"), ["aa-bb-c1", "aa-bb-c1-lower"]);
+    assert.deepEqual(keysFor("framework two"), ["AA-BB-C2", "AA-BB-C2-Y"]);
+    assert.deepEqual(keysFor("Framework Five"), ["AA-BB-C2-Y"]);
+    assert.deepEqual(keysFor("Doc D"), ["DD-EE-9", "DD-EE-FF-1"]);
+    assert.deepEqual(keysFor("Updated DOC-D (2024 edition)"), ["DD-EE-9", "DD-EE-FF-1"]);
+    // A single shared segment is not enough, and an unrelated framework selects nothing.
+    assert.deepEqual(keysFor("Framework Three"), []);
+    assert.deepEqual(keysFor("Framework Four"), []);
+  });
+
+  test("a two-segment stem shared by several documents attributes a key to none of them", () => {
+    // NIST-800 starts the registry keys of several NIST 800 documents, and
+    // ISO-IEC those of several ISO/IEC standards.
+    const les = { "CVE-2099-0018": { framework_coverage: {
+      "NIST-800-171-3.14.1": { covered: true, adequate: false, gap: "g" },
+      "ISO-IEC-27001-2022-A.8.8": { covered: true, adequate: false, gap: "g" },
+    } } };
+    const keysFor = (fw) => gapReport([fw], "CVE-2099-0018", controlGaps, { "CVE-2099-0018": {} }, { lessons: les }).cve_analysis.controls.map((c) => c.control);
+    assert.equal(controlGaps["NIST-800-171-3.14.1"], undefined);
+    assert.deepEqual(keysFor("nist-800-53"), []);
+    assert.deepEqual(keysFor(controlGaps["NIST-800-53-SI-2"].framework), []);
+    const iso42001 = Object.keys(controlGaps).find((k) => /^ISO-IEC-42001/.test(k));
+    assert.ok(iso42001, "the registry must carry an ISO-IEC-42001 key");
+    assert.deepEqual(keysFor(controlGaps[iso42001].framework), []);
+    // `all` still lists both.
+    assert.equal(gapReport(["all"], "CVE-2099-0018", controlGaps, { "CVE-2099-0018": {} }, { allFrameworks: true, lessons: les }).cve_analysis.controls.length, 2);
+  });
+
+  test("a full framework name and its short form select the same lesson-only ISO control", () => {
+    const KEY = "ISO-27001-2022-A.99.99";
+    assert.equal(controlGaps[KEY], undefined, "the fixture key must not exist in the registry");
+    const les = { "CVE-2099-0017": { framework_coverage: { [KEY]: { covered: true, adequate: false, gap: "g" } } } };
+    const keysFor = (fw) => gapReport([fw], "CVE-2099-0017", controlGaps, { "CVE-2099-0017": {} }, { lessons: les }).cve_analysis.controls.map((c) => c.control);
+    assert.deepEqual(keysFor("ISO/IEC 27001:2022"), [KEY]);
+    assert.deepEqual(keysFor("iso-27001-2022"), [KEY]);
+    // A filter contained in the nearest key's framework name, and no key prefix.
+    assert.deepEqual(keysFor("ISO/IEC 27001"), [KEY]);
+    // ISO/IEC 27017 shares only the ISO segment with it.
+    const other = Object.keys(controlGaps).find((k) => /^ISO-27017-/.test(k));
+    assert.ok(other, "the registry must carry an ISO-27017 key");
+    assert.deepEqual(keysFor(controlGaps[other].framework), []);
+  });
+
+  test("several filters select the union of what each selects alone", () => {
+    const NIST = "NIST-800-53-SI-2";
+    const AU = "AU-Essential-8-Patch";
+    assert.ok(controlGaps[NIST] && controlGaps[AU], "the registry must carry both fixture keys");
+    const cat = { "CVE-2099-0011": { framework_control_gaps: { [NIST]: "s1", [AU]: "s2", "ISO-27001-2022-A.8.8": "s3" } } };
+    const keysFor = (ids) => gapReport(ids, "CVE-2099-0011", controlGaps, cat, {}).cve_analysis.controls.map((c) => c.control);
+    assert.deepEqual(keysFor(["nist-800-53"]), [NIST]);
+    assert.deepEqual(keysFor(["au-essential-8"]), [AU]);
+    assert.deepEqual(keysFor(["nist-800-53", "au-essential-8"]), [AU, NIST]);
+    assert.deepEqual(keysFor([controlGaps[NIST].framework, controlGaps[AU].framework]), [AU, NIST]);
+    assert.equal(gapReport(["nist-800-53", "au-essential-8"], "CVE-2099-0011", controlGaps, cat, {}).summary.cve_controls, 2);
+  });
+
+  test("a registry key matches a filter its framework name contains once normalized", () => {
+    // "essential-eight" reaches "ASD Essential Eight (AU)" only after case,
+    // spaces and hyphens are ignored; the key does not start with it.
+    const KEY = "AU-Essential-8-Patch";
+    assert.equal(controlGaps[KEY].framework, "ASD Essential Eight (AU)");
+    const cat = { "CVE-2099-0012": { framework_control_gaps: { [KEY]: "statement" } } };
+    assert.deepEqual(gapReport(["essential-eight"], "CVE-2099-0012", controlGaps, cat, {}).cve_analysis.controls.map((c) => c.control), [KEY]);
+  });
+
+  test("a registry entry with no framework name matches no filter, as in the registry-gap section", () => {
+    const registry = { "ZZ-NOFW-1": { control_name: "No framework", status: "open", evidence_cves: ["CVE-2099-0015"] } };
+    const cat = { "CVE-2099-0015": { framework_control_gaps: { "ZZ-NOFW-1": "statement" } } };
+    const report = (fw, opts = {}) => gapReport([fw], "CVE-2099-0015", registry, cat, opts);
+    for (const fw of ["zz-nofw", "defined"]) {
+      assert.deepEqual(report(fw).cve_analysis.controls, [], fw);
+      assert.equal(report(fw).frameworks[fw].gap_count, 0, `${fw}: the registry-gap section skips it too`);
+    }
+    // `all` still lists it.
+    assert.deepEqual(report("all", { allFrameworks: true }).cve_analysis.controls.map((c) => c.control), ["ZZ-NOFW-1"]);
+  });
+
+  test("only an exact catalog id resolves, not one that a longer id starts with or contains", () => {
+    const ids = Object.keys(cveCatalog).filter((k) => k.startsWith("CVE-") && !cveCatalog[k]._auto_imported);
+    const set = new Set(ids);
+    // A catalog id that is a proper prefix of another catalog id listed before it,
+    // so a lookup that matches by prefix or substring would return the longer id.
+    const shorter = ids.find((a) => ids.some((b) => b !== a && b.startsWith(a) && ids.indexOf(b) < ids.indexOf(a)));
+    assert.ok(shorter, "the catalog must carry an id that a longer, earlier-listed id starts with");
+    assert.equal(gapReport(["all"], shorter, controlGaps, cveCatalog, { allFrameworks: true, lessons }).cve_analysis.cve_id, shorter);
+    // A truncated id that is not itself a catalog id.
+    const truncated = ids.map((b) => b.slice(0, -1)).find((t) => !set.has(t) && ids.some((b) => b.startsWith(t)));
+    const r = gapReport(["all"], truncated, controlGaps, cveCatalog, { allFrameworks: true, lessons });
+    assert.equal(r.cve_analysis, null, truncated);
+    assert.equal(r.summary.cve_controls, 0);
+  });
+
+  test("a registry key matches a filter its framework name contains", () => {
+    // AU-ISM-1546's framework name contains "ISM"; its key does not start with it.
+    const KEY = "AU-ISM-1546";
+    assert.ok(controlGaps[KEY] && /\bISM\b/.test(controlGaps[KEY].framework), "the registry must carry AU-ISM-1546 under an ISM framework name");
+    const cat = { "CVE-2099-0006": { framework_control_gaps: { [KEY]: "statement" } } };
+    const r = gapReport(["ism"], "CVE-2099-0006", controlGaps, cat, {});
+    assert.deepEqual(r.cve_analysis.controls.map((c) => c.control), [KEY]);
+    assert.equal(r.summary.cve_controls, 1);
+  });
+
+  test("an entry or coverage value of the wrong shape is read as empty", () => {
+    const KEY = "ZZ-SYNTHETIC-SHAPE";
+    assert.equal(gapReport(["all"], "CVE-2099-0007", controlGaps, { "CVE-2099-0007": "not an object" }, { allFrameworks: true }).cve_analysis, null);
+    // An array entry is not an entry either, even with lesson coverage beside it.
+    const arrLes = { "CVE-2099-0007": { framework_coverage: { [KEY]: { covered: true, adequate: false, gap: "g" } } } };
+    assert.equal(gapReport(["all"], "CVE-2099-0007", controlGaps, { "CVE-2099-0007": [] }, { allFrameworks: true, lessons: arrLes }).cve_analysis, null);
+    const cat = { "CVE-2099-0008": { framework_control_gaps: ["not", "an", "object"] } };
+    const les = { "CVE-2099-0008": { framework_coverage: { [KEY]: "not an object" } } };
+    assert.deepEqual(gapReport(["all"], "CVE-2099-0008", controlGaps, cat, { allFrameworks: true, lessons: les }).cve_analysis.controls, []);
+    const cat2 = { "CVE-2099-0009": { framework_control_gaps: { [KEY]: "statement" } } };
+    const les2 = { "CVE-2099-0009": { framework_coverage: [{ covered: true, adequate: true, gap: "array element" }] } };
+    assert.deepEqual(gapReport(["all"], "CVE-2099-0009", controlGaps, cat2, { allFrameworks: true, lessons: les2 }).cve_analysis.controls, [
+      { control: KEY, framework: null, control_name: null, statement: "statement", covered: null, adequate: null, coverage_gap: null },
+    ]);
+    // JSON null in each position reads as empty rather than throwing.
+    assert.deepEqual(gapReport(["all"], "CVE-2099-0013", controlGaps, { "CVE-2099-0013": { framework_control_gaps: null } }, { allFrameworks: true }).cve_analysis.controls, []);
+    const stmtOnly = { "CVE-2099-0014": { framework_control_gaps: { [KEY]: "statement" } } };
+    const expected = [{ control: KEY, framework: null, control_name: null, statement: "statement", covered: null, adequate: null, coverage_gap: null }];
+    for (const coverage of [null, { [KEY]: null }]) {
+      const les3 = { "CVE-2099-0014": { framework_coverage: coverage } };
+      assert.deepEqual(gapReport(["all"], "CVE-2099-0014", controlGaps, stmtOnly, { allFrameworks: true, lessons: les3 }).cve_analysis.controls, expected, JSON.stringify(coverage));
+    }
+  });
+
+  test("the text section prints each control's statement and lesson line, and nothing for an empty section", () => {
+    const { cveAnalysisLines, frameworkGapSummaryLine } = require("../orchestrator/index.js");
+    assert.deepEqual(cveAnalysisLines(null), []);
+    assert.deepEqual(cveAnalysisLines({ cve_id: "CVE-2099-0010", controls: [] }), []);
+    const rec = (o) => ({ control: "K", framework: null, control_name: null, statement: null, covered: null, adequate: null, coverage_gap: null, ...o });
+    assert.deepEqual(cveAnalysisLines({ cve_id: "CVE-2099-0010", controls: [
+      rec({ control: "A", control_name: "Name A", statement: "stmt A", covered: true, adequate: false, coverage_gap: "gap A" }),
+      rec({ control: "B", covered: false, adequate: true }),
+      rec({ control: "C", coverage_gap: "gap only" }),
+      rec({ control: "D", statement: "stmt only" }),
+    ] }), [
+      "### CVE-2099-0010 against each control: 4 record(s)",
+      "  - A (Name A)",
+      "    statement: stmt A",
+      "    lesson: covered, not adequate. gap A",
+      "  - B",
+      "    lesson: not covered, adequate",
+      "  - C",
+      "    lesson: gap only",
+      "  - D",
+      "    statement: stmt only",
+      "",
+    ]);
+    // Five distinct counts, so a count printed in another count's slot fails.
+    assert.equal(
+      frameworkGapSummaryLine({ total_gaps: 1, universal_gaps: 2, new_control_requirements: 3, cve_controls: 4, theater_risk_controls: 5 }),
+      "Summary: 1 matching gaps, 2 universal, 3 new controls required, 4 CVE control records, 5 theater-risk controls",
+    );
+  });
+
+  test("a malformed value becomes null, and a record with nothing printable is dropped", () => {
+    const cat = { "CVE-2099-0003": { framework_control_gaps: { [AU]: { text: "not a string" }, "X-EMPTY": "   " } } };
+    const les = { "CVE-2099-0003": { framework_coverage: {
+      [AU]: { covered: "yes", adequate: "partial", gap: "the gap" },
+      "X-EMPTY": {},
+      "X-FALSE-ONLY": { covered: false, adequate: false },
+      "X-COVERED-ONLY": { covered: true },
+      "X-ADEQUATE-ONLY": { adequate: false },
+    } } };
+    const r = gapReport(["all"], "CVE-2099-0003", controlGaps, cat, { allFrameworks: true, lessons: les });
+    assert.deepEqual(r.cve_analysis.controls, [
+      {
+        control: AU, framework: controlGaps[AU].framework, control_name: controlGaps[AU].control_name,
+        statement: null, covered: null, adequate: null, coverage_gap: "the gap",
+      },
+      // A record with any one verdict, true or false, has something to print and is kept.
+      { control: "X-ADEQUATE-ONLY", framework: null, control_name: null, statement: null, covered: null, adequate: false, coverage_gap: null },
+      { control: "X-COVERED-ONLY", framework: null, control_name: null, statement: null, covered: true, adequate: null, coverage_gap: null },
+      { control: "X-FALSE-ONLY", framework: null, control_name: null, statement: null, covered: false, adequate: false, coverage_gap: null },
+    ]);
+  });
+
+  test("every lesson coverage verdict is boolean, and a gap, when present, is non-empty text", () => {
+    // The report prints covered/adequate as words; a string verdict such as
+    // "partial" would be dropped to null and the operator would lose it.
+    const bad = [];
+    for (const [id, l] of Object.entries(lessons)) {
+      for (const [k, v] of Object.entries((l && l.framework_coverage) || {})) {
+        if (!v || typeof v !== "object" || typeof v.covered !== "boolean" || typeof v.adequate !== "boolean") bad.push(`${id} ${k}: ${JSON.stringify(v).slice(0, 80)}`);
+        else if ("gap" in v && (typeof v.gap !== "string" || v.gap.trim() === "")) bad.push(`${id} ${k}: empty gap`);
+      }
+    }
+    assert.deepEqual(bad, []);
+    // Positive control: the sweep read real coverage entries.
+    assert.ok(Object.values(lessons).filter((l) => l && l.framework_coverage && Object.keys(l.framework_coverage).length).length > 1000);
+  });
+
+  test("the CLI prints the statement and the lesson verdict, and --json carries cve_analysis", () => {
+    const { makeSuiteHome, makeCli, tryJson } = require("./_helpers/cli");
+    const cli = makeCli(makeSuiteHome("exceptd-cve-analysis-"));
+    const cov = lessons[CVE].framework_coverage[AU];
+
+    const text = cli(["framework-gap", "au-essential-8", CVE]);
+    assert.equal(text.status, 0, text.stderr.slice(0, 300));
+    assert.ok(text.stdout.includes(`### ${CVE} against each control:`), "the section heading must print");
+    assert.ok(text.stdout.includes(`    statement: ${entry.framework_control_gaps[AU]}`), "the full statement must print, not a truncation");
+    const verdict = `${cov.covered ? "covered" : "not covered"}, ${cov.adequate ? "adequate" : "not adequate"}`;
+    assert.ok(text.stdout.includes(`    lesson: ${verdict}. ${cov.gap}`), `the lesson verdict and its reason must print as "${verdict}. <gap>"`);
+
+    const json = cli(["framework-gap", "au-essential-8", CVE, "--json"]);
+    assert.equal(json.status, 0);
+    const body = tryJson(json.stdout);
+    assert.ok(body && body.cve_analysis, "--json must carry cve_analysis");
+    const au = body.cve_analysis.controls.find((c) => c.control === AU);
+    assert.equal(au.statement, entry.framework_control_gaps[AU]);
+    assert.equal(au.adequate, cov.adequate);
+    assert.equal(body.summary.cve_controls, body.cve_analysis.controls.length);
+    assert.ok(text.stdout.includes(`### ${CVE} against each control: ${body.cve_analysis.controls.length} record(s)`));
+  });
+
+  test("the CLI prints the CVE record count in its summary slot and in the section heading", () => {
+    const { makeSuiteHome, makeCli, tryJson } = require("./_helpers/cli");
+    const cli = makeCli(makeSuiteHome("exceptd-cve-analysis-counts-"));
+    // A CVE whose cve_controls count differs from every other summary count, so
+    // the CVE record count printed in another slot fails. The order of the other
+    // counts is pinned by the frameworkGapSummaryLine test above.
+    const distinct = (s) => [s.total_gaps, s.universal_gaps, s.new_control_requirements, s.theater_risk_controls].every((n) => n !== s.cve_controls);
+    const id = Object.keys(cveCatalog).find((k) => k.startsWith("CVE-") && !cveCatalog[k]._auto_imported &&
+      distinct(gapReport(["all"], k, controlGaps, cveCatalog, { allFrameworks: true, lessons }).summary));
+    assert.ok(id, "a CVE whose cve_controls count differs from the other summary counts must exist");
+    const body = tryJson(cli(["framework-gap", "all", id, "--json"]).stdout);
+    const s = body.summary;
+    const out = cli(["framework-gap", "all", id]).stdout;
+    assert.equal(s.cve_controls, body.cve_analysis.controls.length);
+    assert.ok(out.includes(`### ${id} against each control: ${s.cve_controls} record(s)`), "the section heading carries the record count");
+    assert.ok(out.includes(`Summary: ${s.total_gaps} matching gaps, ${s.universal_gaps} universal, ${s.new_control_requirements} new controls required, ${s.cve_controls} CVE control records, ${s.theater_risk_controls} theater-risk controls`),
+      "the summary line carries the CVE record count in its own slot");
+  });
+
+  test("the CLI prints no CVE section for a free-text scenario or an id the catalog does not carry", () => {
+    const { makeSuiteHome, makeCli } = require("./_helpers/cli");
+    const cli = makeCli(makeSuiteHome("exceptd-cve-analysis-free-"));
+    for (const scenario of ["prompt injection", "CVE-1999-99999"]) {
+      const r = cli(["framework-gap", "all", scenario]);
+      assert.equal(r.status, 0, `${scenario}: ${r.stderr.slice(0, 300)}`);
+      assert.ok(!r.stdout.includes("against each control"), `${scenario}: no CVE section`);
+      assert.match(r.stdout, /, 0 CVE control records, /, scenario);
+    }
+  });
+
+  test("the CLI prints no lesson line for a control the lesson does not cover", () => {
+    const { makeSuiteHome, makeCli } = require("./_helpers/cli");
+    const cli = makeCli(makeSuiteHome("exceptd-cve-analysis-nolesson-"));
+    // A registry control with a catalog statement and no lesson coverage entry.
+    let key;
+    const id = Object.keys(cveCatalog).find((k) => {
+      if (!k.startsWith("CVE-") || cveCatalog[k]._auto_imported) return false;
+      const cov = (lessons[k] && lessons[k].framework_coverage) || {};
+      key = Object.keys(cveCatalog[k].framework_control_gaps || {}).find((c) => controlGaps[c] && !(c in cov) &&
+        typeof cveCatalog[k].framework_control_gaps[c] === "string" && cveCatalog[k].framework_control_gaps[c].trim() !== "");
+      return !!key;
+    });
+    assert.ok(id, "a catalog control with no lesson coverage must exist");
+    const lines = cli(["framework-gap", "all", id]).stdout.split(/\r?\n/);
+    const section = lines.findIndex((l) => l.startsWith(`### ${id} against each control:`));
+    assert.ok(section >= 0, `${id}: the CVE section must print`);
+    const at = lines.findIndex((l, i) => i > section && (l === `  - ${key}` || l.startsWith(`  - ${key} (`)));
+    assert.ok(at > section, `${id} ${key} must print in the CVE section`);
+    assert.ok(lines[at + 1].startsWith("    statement: "), "its statement prints");
+    assert.ok(!(lines[at + 2] || "").startsWith("    lesson:"), "no lesson line prints for a control the lesson does not cover");
+  });
+
+  test("the CLI prints each verdict word, and omits a missing statement and control name", () => {
+    const { makeSuiteHome, makeCli } = require("./_helpers/cli");
+    const cli = makeCli(makeSuiteHome("exceptd-cve-analysis-verdicts-"));
+    const hasGap = (v) => v && typeof v.gap === "string" && v.gap.trim() !== "";
+    // First lesson coverage record that satisfies `want`, on a non-draft catalog CVE.
+    const pick = (want) => {
+      for (const [id, l] of Object.entries(lessons)) {
+        const e = cveCatalog[id];
+        if (!id.startsWith("CVE-") || !e || e._auto_imported) continue;
+        for (const [k, v] of Object.entries((l && l.framework_coverage) || {})) if (want(k, v, e)) return { id, k, v };
+      }
+      return null;
+    };
+    const verdictLine = (v) => `    lesson: ${v.covered ? "covered" : "not covered"}, ${v.adequate ? "adequate" : "not adequate"}. ${v.gap}`;
+    const blockFor = (id, k) => {
+      const lines = cli(["framework-gap", "all", id]).stdout.split(/\r?\n/);
+      const section = lines.findIndex((l) => l.startsWith(`### ${id} against each control:`));
+      const at = lines.findIndex((l, i) => i > section && (l === `  - ${k}` || l.startsWith(`  - ${k} (`)));
+      assert.ok(section >= 0 && at > section, `${id} ${k} must print in the CVE section`);
+      return lines.slice(at, at + 3);
+    };
+
+    // A control only the lesson records, which the registry does not list: no
+    // control name and no statement, so its lesson line follows its name.
+    const bare = pick((k, v, e) => !controlGaps[k] && !(k in (e.framework_control_gaps || {})) && v.covered === false && hasGap(v));
+    assert.ok(bare, "a coverage-only, non-registry record with covered false must exist");
+    const [bareName, bareNext] = blockFor(bare.id, bare.k);
+    assert.equal(bareName, `  - ${bare.k}`);
+    assert.equal(bareNext, verdictLine(bare.v));
+
+    // An adequate verdict.
+    const ok = pick((k, v) => v.covered === true && v.adequate === true && hasGap(v));
+    assert.ok(ok, "a covered and adequate record must exist");
+    assert.ok(blockFor(ok.id, ok.k).includes(verdictLine(ok.v)), `${ok.id} ${ok.k}: "covered, adequate" must print`);
+  });
+});
+
+// ---------- gapReport()'s fourth parameter feeds cve_analysis only ----------
 
 /**
- * CHARACTERIZATION PINS — these lock behaviour that already holds. Nothing in
- * lib/framework-gap.js was repaired; the only change there was the docblock
- * that records what the fourth parameter is for. Both tests pass against the
- * unmodified function, so neither is regression coverage for a defect.
- *
- * What they lock: gapReport(frameworkIds, threatScenario, controlGaps,
- * cveCatalog, opts) never reads cveCatalog — the scenario resolves against
- * controlGaps alone, matching `misses`, `real_requirement` and `evidence_cves`.
- * The parameter is load-bearing anyway: it holds the fourth slot so `opts`
- * stays fifth for every caller, and it mirrors theaterCheck(), which DOES read
- * its catalog.
- *
- * Pinned in both directions so the parameter is neither quietly dropped (which
- * would bind each caller's `opts` to it and disable allFrameworks/lessons) nor
- * quietly turned into a real input without the callers being updated.
+ * gapReport(frameworkIds, threatScenario, controlGaps, cveCatalog, opts) resolves
+ * the scenario against controlGaps alone, matching `misses`, `real_requirement`
+ * and `evidence_cves`. cveCatalog supplies only `cve_analysis` and its summary
+ * count. Pinned in both directions: an empty catalog changes nothing else, and
+ * the real catalog does fill cve_analysis, so the parameter is neither ignored
+ * nor allowed to leak into the registry matching.
  */
 
-test('gapReport() ignores the cveCatalog argument entirely — the report is identical for {} and the real catalog', () => {
+test('gapReport() reads cveCatalog only for cve_analysis; the rest of the report is identical for {} and the real catalog', () => {
   const withCatalog = gapReport(['NIST SP 800-53 Rev 5'], 'CVE-2026-31431', controlGaps, cveCatalog);
   const withoutCatalog = gapReport(['NIST SP 800-53 Rev 5'], 'CVE-2026-31431', controlGaps, {});
-  assert.deepEqual(
-    withoutCatalog,
-    withCatalog,
-    'an empty cveCatalog must produce the same report — the parameter is a positional placeholder',
-  );
+  const strip = (r) => ({ ...r, cve_analysis: undefined, summary: { ...r.summary, cve_controls: undefined } });
+  assert.deepEqual(strip(withoutCatalog), strip(withCatalog),
+    'the catalog must not change which registry gaps, universal gaps or theater risks the report lists');
+  assert.equal(withoutCatalog.cve_analysis, null);
+  assert.equal(withoutCatalog.summary.cve_controls, 0);
+  assert.ok(withCatalog.cve_analysis && withCatalog.cve_analysis.controls.length > 0,
+    'with the real catalog the CVE record must reach the report');
+  assert.equal(withCatalog.summary.cve_controls, withCatalog.cve_analysis.controls.length);
   // Anti-coincidence: the scenario really does resolve to gaps, so the deepEqual
   // above is not two identical empty reports.
   assert.ok(
