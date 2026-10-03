@@ -61,6 +61,17 @@ function _capture(cmd, args, opts) {
   };
 }
 
+// For a read whose empty output would pass for an answer (a clean tree, no open
+// PR, no tag on origin): a command that fails throws instead of returning "".
+function _captureOk(cmd, args, opts) {
+  var rv = _capture(cmd, args, opts);
+  if (rv.status !== 0) {
+    throw new Error("release: `" + cmd + " " + (args || []).join(" ").slice(0, 160) + "` failed with status " +
+      rv.status + (rv.stderr ? "\n" + rv.stderr : ""));
+  }
+  return rv.stdout;
+}
+
 function _section(title) { console.log("\n=== " + title + " ==="); }
 function _ok(msg) { console.log("ok: " + msg); }
 
@@ -124,8 +135,8 @@ function _releaseSubject(version, section) {
   return subject;
 }
 
-function _gitClean() { return _capture("git", ["status", "--porcelain"]).stdout === ""; }
-function _gitBranch() { return _capture("git", ["rev-parse", "--abbrev-ref", "HEAD"]).stdout; }
+function _gitClean() { return _captureOk("git", ["status", "--porcelain"]) === ""; }
+function _gitBranch() { return _captureOk("git", ["rev-parse", "--abbrev-ref", "HEAD"]); }
 function _gitOnMain() { return _gitBranch() === "main"; }
 function _gitOnRelease() { return /^release-v\d+\.\d+\.\d+$/.test(_gitBranch()); }
 function _releaseBranchFor(version) { return "release-v" + version; }
@@ -147,19 +158,50 @@ function _verifyCommitSignature(label) {
 }
 
 function _openPrNumber(branch) {
-  return _capture("gh", ["pr", "list", "--head", branch, "--state", "open",
-    "--json", "number", "--jq", ".[0].number"]).stdout;
+  return _captureOk("gh", ["pr", "list", "--head", branch, "--state", "open",
+    "--json", "number", "--jq", ".[0].number"]);
+}
+
+var REVIEW_THREAD_PAGE_LIMIT = 50;
+
+// Walks every page of a PR's review threads. fetchPage(after) returns the
+// reviewThreads connection { nodes, pageInfo: { hasNextPage, endCursor } } for
+// the page after cursor `after` (null for the first). A connection without
+// nodes or pageInfo, or more pages than REVIEW_THREAD_PAGE_LIMIT, throws: a
+// partial read must not pass for "no unresolved threads".
+function _walkReviewThreads(fetchPage) {
+  var unresolved = [];
+  var after = null;
+  for (var page = 0; page < REVIEW_THREAD_PAGE_LIMIT; page++) {
+    var conn = fetchPage(after);
+    if (!conn || !Array.isArray(conn.nodes) || !conn.pageInfo || typeof conn.pageInfo.hasNextPage !== "boolean") {
+      throw new Error("release: review-thread page " + (page + 1) + " is missing nodes or pageInfo");
+    }
+    conn.nodes.forEach(function (t) { if (t && t.isResolved === false) unresolved.push(t); });
+    if (!conn.pageInfo.hasNextPage) return unresolved;
+    if (typeof conn.pageInfo.endCursor !== "string" || !conn.pageInfo.endCursor) {
+      throw new Error("release: review-thread page " + (page + 1) + " reports a next page but no endCursor");
+    }
+    after = conn.pageInfo.endCursor;
+  }
+  throw new Error("release: more than " + REVIEW_THREAD_PAGE_LIMIT + " pages of review threads; refusing to treat a partial read as complete");
 }
 
 // Conversation resolution is branch-protection-required, so an unresolved
-// thread is a hard merge block.
+// thread is a hard merge block. A failed or unparseable query throws.
 function _unresolvedThreads(prNum) {
-  var q = 'query { repository(owner:"blamejs",name:"exceptd-skills") { pullRequest(number:' +
-    prNum + ') { reviewThreads(first:50) { nodes { isResolved comments(first:1) ' +
-    '{ nodes { author{login} body } } } } } } }';
-  var rv = _capture("gh", ["api", "graphql", "-f", "query=" + q,
-    "--jq", ".data.repository.pullRequest.reviewThreads.nodes | map(select(.isResolved==false))"]);
-  try { return JSON.parse(rv.stdout || "[]"); } catch (_e) { return []; }
+  var q = 'query($after: String) { repository(owner:"blamejs",name:"exceptd-skills") { pullRequest(number:' +
+    prNum + ') { reviewThreads(first:100, after:$after) { pageInfo { hasNextPage endCursor } ' +
+    'nodes { isResolved comments(first:1) { nodes { author{login} body } } } } } } }';
+  return _walkReviewThreads(function (after) {
+    var args = ["api", "graphql", "-f", "query=" + q];
+    if (after) args.push("-f", "after=" + after);
+    args.push("--jq", ".data.repository.pullRequest.reviewThreads");
+    var out = _captureOk("gh", args);
+    try { return JSON.parse(out); } catch (e) {
+      throw new Error("release: unparseable review-thread response for PR #" + prNum + ": " + e.message);
+    }
+  });
 }
 
 // Open CodeQL alerts. Returns the alert array, or null when the query cannot run
@@ -216,7 +258,7 @@ function cmdRegen() {
     throw new Error("release: regen must run on a release-vX.Y.Z branch (on " + _gitBranch() + "). " +
       "On main the regeneration belongs to `prepare`.");
   }
-  var dirty = _capture("git", ["status", "--porcelain"]).stdout.split(/\r?\n/).filter(function (l) { return l.trim(); });
+  var dirty = _captureOk("git", ["status", "--porcelain"]).split(/\r?\n/).filter(function (l) { return l.trim(); });
   if (!dirty.length) console.log("working tree is clean — regenerating anyway (artifacts may be stale from an earlier commit)");
   else {
     console.log("regenerating against " + dirty.length + " uncommitted path(s):");
@@ -233,7 +275,7 @@ function cmdPrepare(opts) {
   // CHANGELOG.md-only dirty tree is allowed and anything else is refused.
   // `--with-content` widens that to a release which SHIPS uncommitted work, and
   // prints what it carries so an unintended file is visible rather than released.
-  var dirty = _capture("git", ["status", "--porcelain"]).stdout
+  var dirty = _captureOk("git", ["status", "--porcelain"])
     .split(/\r?\n/)
     .filter(function (l) { return l.trim() && !/\bCHANGELOG\.md$/.test(l); });
   if (dirty.length && !opts.withContent) {
@@ -443,8 +485,8 @@ function cmdMerge() {
   var prNum = _openPrNumber(branch);
   if (!prNum) throw new Error("release: no open PR for " + branch);
 
-  var state = JSON.parse(_capture("gh", ["pr", "view", prNum,
-    "--json", "mergeStateStatus,mergeable"]).stdout || "{}");
+  var state = JSON.parse(_captureOk("gh", ["pr", "view", prNum,
+    "--json", "mergeStateStatus,mergeable"]) || "{}");
   if (state.mergeStateStatus !== "CLEAN" || state.mergeable !== "MERGEABLE") {
     throw new Error("release: PR #" + prNum + " not mergeable (state=" +
       state.mergeStateStatus + " mergeable=" + state.mergeable + ")");
@@ -479,9 +521,9 @@ function cmdTag() {
   // slot, since the v* ruleset blocks tag rewrites.
   try { fs.rmSync(path.join(ROOT, ".git", "index.lock"), { force: true }); } catch (_e) { /* ignore */ }
   _run("git", ["fetch", "origin", "main"]);
-  var local = _capture("git", ["rev-parse", "HEAD"]).stdout;
-  var origin = _capture("git", ["rev-parse", "origin/main"]).stdout;
-  if (local !== origin) {
+  var local = _captureOk("git", ["rev-parse", "HEAD"]);
+  var origin = _captureOk("git", ["rev-parse", "origin/main"]);
+  if (!local || local !== origin) {
     throw new Error("release: GUARD failed — local HEAD (" + local.slice(0, 12) +
       ") != origin/main (" + origin.slice(0, 12) + "). Sync before tagging.");
   }
@@ -492,10 +534,10 @@ function cmdTag() {
     throw new Error("release: GUARD failed — version skew (package=" + next +
       " manifest=" + manifest + " changelog=" + changelog + ")");
   }
-  if (_capture("git", ["tag", "-l", tag]).stdout === tag) {
+  if (_captureOk("git", ["tag", "-l", tag]) === tag) {
     throw new Error("release: tag " + tag + " already exists locally");
   }
-  if (_capture("git", ["ls-remote", "--tags", "origin", tag]).stdout) {
+  if (_captureOk("git", ["ls-remote", "--tags", "origin", tag])) {
     throw new Error("release: tag " + tag + " already exists on origin");
   }
   _ok("GUARD passed (HEAD==origin/main, 3-version match, no existing tag)");
@@ -571,15 +613,16 @@ function cmdRelease() {
   _section("verify npm");
   // npm accepts a publish before the registry serves it ("Your package is being
   // processed and may take a few minutes"), so `npm view` can report the
-  // previous version for several minutes after release.yml succeeds. Poll for
-  // up to ten minutes before reading a mismatch as a failed publish.
+  // previous version for ten minutes or more after release.yml succeeds. Each
+  // read revalidates npm's cached packument (--prefer-online), and the phase
+  // polls for up to twenty minutes before reading a mismatch as a failed publish.
   var npmVersion = "";
-  for (var _n = 0; _n < 60; _n++) {
-    npmVersion = _capture("npm", ["view", PKG_NAME, "version"]).stdout;
+  for (var _n = 0; _n < 120; _n++) {
+    npmVersion = _capture("npm", ["view", PKG_NAME, "version", "--prefer-online"]).stdout;
     if (npmVersion === next) break;
-    if (_n < 59) {
+    if (_n < 119) {
       console.log("npm " + PKG_NAME + ": " + (npmVersion || "(unable to query)") +
-        ", waiting for " + next + " (" + (_n + 1) + "/60)");
+        ", waiting for " + next + " (" + (_n + 1) + "/120)");
       _spawn(process.execPath, ["-e", "setTimeout(function(){},10000)"], { stdio: "ignore" });
     }
   }
@@ -655,34 +698,41 @@ function cmdHelp() {
   console.log("Patch is the default. --minor is a deliberate, explicit choice.");
 }
 
-var sub = process.argv[2] || "help";
-var opts = {
-  minor: process.argv.slice(3).indexOf("--minor") !== -1,
-  withContent: process.argv.slice(3).indexOf("--with-content") !== -1,
-};
+function main(argv) {
+  var sub = argv[2] || "help";
+  var opts = {
+    minor: argv.slice(3).indexOf("--minor") !== -1,
+    withContent: argv.slice(3).indexOf("--with-content") !== -1,
+  };
 
-try {
-  switch (sub) {
-    case "prepare": cmdPrepare(opts); break;
-    case "regen":   cmdRegen();       break;
-    case "gates":   cmdGates();       break;
-    case "commit":  cmdCommit();      break;
-    case "push":    cmdPush();        break;
-    case "watch":   cmdWatch();       break;
-    case "merge":   cmdMerge();       break;
-    case "tag":     cmdTag();         break;
-    case "release": cmdRelease();     break;
-    case "all":     cmdAll(opts);     break;
-    case "status":  cmdStatus();      break;
-    case "help":
-    case "--help":
-    case "-h":      cmdHelp();        break;
-    default:
-      console.error("release: unknown subcommand '" + sub + "'");
-      cmdHelp();
-      process.exitCode = 1;
+  try {
+    switch (sub) {
+      case "prepare": cmdPrepare(opts); break;
+      case "regen":   cmdRegen();       break;
+      case "gates":   cmdGates();       break;
+      case "commit":  cmdCommit();      break;
+      case "push":    cmdPush();        break;
+      case "watch":   cmdWatch();       break;
+      case "merge":   cmdMerge();       break;
+      case "tag":     cmdTag();         break;
+      case "release": cmdRelease();     break;
+      case "all":     cmdAll(opts);     break;
+      case "status":  cmdStatus();      break;
+      case "help":
+      case "--help":
+      case "-h":      cmdHelp();        break;
+      default:
+        console.error("release: unknown subcommand '" + sub + "'");
+        cmdHelp();
+        process.exitCode = 1;
+    }
+  } catch (e) {
+    console.error("\nrelease: FAIL — " + (e.message || e));
+    process.exitCode = 1;
   }
-} catch (e) {
-  console.error("\nrelease: FAIL — " + (e.message || e));
-  process.exitCode = 1;
 }
+
+if (require.main === module) main(process.argv);
+
+// Exported for tests; the phases run only when the file is executed directly.
+module.exports = { _walkReviewThreads, REVIEW_THREAD_PAGE_LIMIT };

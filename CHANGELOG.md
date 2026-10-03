@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.21.20 — 2026-10-03
+
+`scripts/release.js watch` and `merge` now read every page of a pull request's review threads. Before, they read only the first 50, so an unresolved thread past the fiftieth was not seen, and a failed GitHub query was read as zero unresolved threads. Both phases now stop with the error instead.
+
+The release script also stops on a failed `git` or `gh` read where an empty answer would let the phase continue: the clean-tree checks in `prepare` and `regen`, the open-PR lookup, the merge-state read, and the tag GUARD's `rev-parse`, local tag and `ls-remote` checks.
+
+`scripts/release.js release` now waits up to twenty minutes for npm to serve the new version, and each read revalidates npm's cached package metadata (`npm view --prefer-online`). The registry can take more than ten minutes to serve a successful publish, and the phase reported a failed release when it did.
+
+Every CI, release, CodeQL, Scorecard and ATLAS-currency job now sets `timeout-minutes` (45 for the test and release-validation jobs, 15 to 30 for the others), so a hung job stops instead of running until GitHub's six-hour limit. The daily data refresh job, which runs about three hours, keeps the six-hour limit.
+
 ## 0.21.19 — 2026-10-03
 
 `attest list --since`, `reattest --since`, `--bundle-epoch` and `attest prune --all-older-than` now refuse a date that does not exist. Before, `2026-02-30` passed validation and was read as 2026-03-02, so `attest prune --all-older-than 2026-02-30` also removed attestations from 2026-03-01.

@@ -206,7 +206,8 @@ require("node:test").describe("prepare can carry a content-bearing release", () 
     // Without this, a release that ships an uncommitted change (a curation
     // batch, a fix folded in with the bump) cannot use this phase at all and
     // gets hand-run instead. That is how the phase's own steps get skipped.
-    assert.match(SRC, /withContent: process\.argv\.slice\(3\)\.indexOf\("--with-content"\) !== -1/);
+    assert.match(SRC, /withContent: argv\.slice\(3\)\.indexOf\("--with-content"\) !== -1/);
+    assert.match(SRC, /if \(require\.main === module\) main\(process\.argv\);/);
     assert.match(SRC, /if \(dirty\.length && !opts\.withContent\)/);
   });
 
@@ -331,7 +332,8 @@ require("node:test").describe("release separates a failed publish from a failed 
     // job succeeds. One read reports the previous version and fails a good release.
     const npm = SRC.slice(SRC.indexOf('_section("verify npm")'), SRC.indexOf('_section("fresh-tarball signature verify")'));
     assert.ok(npm.length > 0, "the npm section must exist");
-    assert.match(npm, /for \(var _n = 0; _n < 60; _n\+\+\)/, "the registry read must be retried for up to ten minutes");
+    assert.match(npm, /for \(var _n = 0; _n < 120; _n\+\+\)/, "the registry read must be retried for up to twenty minutes");
+    assert.match(npm, /\["view", PKG_NAME, "version", "--prefer-online"\]/, "each read must revalidate npm's cached packument");
     assert.match(npm, /if \(npmVersion === next\) break;/, "only the expected version ends the poll early");
     assert.match(npm, /setTimeout\(function\(\)\{\},10000\)/, "the retries must be spaced out, not a tight loop");
   });
@@ -408,5 +410,114 @@ require("node:test").describe("merge and push carry the CHANGELOG section", () =
     assert.match(push, /_run\("gh", \["pr", "edit", existing, "--title", title, "--body", section\]\);/);
     assert.ok(push.indexOf("var section = _changelogSection(next);") < push.indexOf("if (existing)"),
       "the section is read before the resume branch, so both paths use it");
+  });
+});
+
+require("node:test").describe("release orchestrator reads fail closed", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const { spawnSync } = require("node:child_process");
+  const SRC = fs.readFileSync(path.join(__dirname, "..", "scripts", "release.js"), "utf8");
+  const { _walkReviewThreads, REVIEW_THREAD_PAGE_LIMIT } = require("../scripts/release.js");
+
+  const thread = (resolved, login) => ({ isResolved: resolved, comments: { nodes: [{ author: { login }, body: "b" }] } });
+  const pages = (list) => (after) => {
+    const i = after === null ? 0 : Number(after.slice(1));
+    const p = list[i];
+    return { nodes: p, pageInfo: { hasNextPage: i < list.length - 1, endCursor: i < list.length - 1 ? `c${i + 1}` : null } };
+  };
+
+  test("requiring the script runs no phase", () => {
+    const r = spawnSync(process.execPath, ["-e", "require('./scripts/release.js'); console.log(process.exitCode === undefined ? 'quiet' : 'exit ' + process.exitCode)"],
+      { cwd: path.join(__dirname, ".."), encoding: "utf8" });
+    assert.equal(r.status, 0, r.stderr);
+    assert.equal(r.stdout.trim(), "quiet");
+  });
+
+  test("every page of review threads is read, so an unresolved thread past the first page is found", () => {
+    const got = _walkReviewThreads(pages([
+      [thread(true, "a"), thread(true, "b")],
+      [thread(true, "c")],
+      [thread(false, "late-bot"), thread(true, "d")],
+    ]));
+    assert.deepEqual(got.map((t) => t.comments.nodes[0].author.login), ["late-bot"]);
+    // Anti-coincidence: a single resolved page reports none.
+    assert.deepEqual(_walkReviewThreads(pages([[thread(true, "a")]])), []);
+  });
+
+  test("a page without nodes or pageInfo, or a next page without a cursor, throws", () => {
+    assert.throws(() => _walkReviewThreads(() => null), /missing nodes or pageInfo/);
+    assert.throws(() => _walkReviewThreads(() => ({ nodes: [] })), /missing nodes or pageInfo/);
+    assert.throws(() => _walkReviewThreads(() => ({ pageInfo: { hasNextPage: false } })), /missing nodes or pageInfo/);
+    assert.throws(() => _walkReviewThreads(() => ({ nodes: [], pageInfo: { hasNextPage: true, endCursor: "" } })), /no endCursor/);
+  });
+
+  test("a fetch failure propagates instead of reading as zero threads", () => {
+    assert.throws(() => _walkReviewThreads(() => { throw new Error("gh api graphql failed"); }), /gh api graphql failed/);
+  });
+
+  test("more pages than the limit throws rather than returning a partial read", () => {
+    let calls = 0;
+    const endless = () => { calls++; return { nodes: [thread(true, "x")], pageInfo: { hasNextPage: true, endCursor: `c${calls}` } }; };
+    assert.throws(() => _walkReviewThreads(endless), /refusing to treat a partial read as complete/);
+    assert.equal(calls, REVIEW_THREAD_PAGE_LIMIT);
+  });
+
+  test("the thread query selects pageInfo and passes the cursor, and a failure is not swallowed", () => {
+    const fn = SRC.slice(SRC.indexOf("function _unresolvedThreads("), SRC.indexOf("// Open CodeQL alerts."));
+    assert.match(fn, /pageInfo \{ hasNextPage endCursor \}/);
+    assert.match(fn, /reviewThreads\(first:100, after:\$after\)/);
+    assert.match(fn, /_captureOk\("gh", args\)/);
+    assert.doesNotMatch(fn, /return \[\];/);
+  });
+
+  test("the reads whose empty output would pass for an answer use _captureOk", () => {
+    assert.match(SRC, /function _gitClean\(\) \{ return _captureOk\("git", \["status", "--porcelain"\]\) === ""; \}/);
+    assert.match(SRC, /function _gitBranch\(\) \{ return _captureOk\("git", \["rev-parse", "--abbrev-ref", "HEAD"\]\); \}/);
+    assert.match(SRC, /return _captureOk\("gh", \["pr", "list", "--head", branch/);
+    const prepare = SRC.slice(SRC.indexOf("function cmdPrepare("), SRC.indexOf("var current = _readJsonVersion"));
+    assert.match(prepare, /var dirty = _captureOk\("git", \["status", "--porcelain"\]\)/);
+    const tag = SRC.slice(SRC.indexOf("function cmdTag()"), SRC.indexOf("function cmdRelease()"));
+    assert.match(tag, /var local = _captureOk\("git", \["rev-parse", "HEAD"\]\);/);
+    assert.match(tag, /var origin = _captureOk\("git", \["rev-parse", "origin\/main"\]\);/);
+    assert.match(tag, /if \(!local \|\| local !== origin\)/);
+    assert.match(tag, /_captureOk\("git", \["ls-remote", "--tags", "origin", tag\]\)/);
+    const helper = SRC.slice(SRC.indexOf("function _captureOk("), SRC.indexOf("function _section("));
+    assert.match(helper, /if \(rv\.status !== 0\) \{\s*throw new Error/);
+  });
+});
+
+require("node:test").describe("workflow jobs declare a timeout", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const DIR = path.join(__dirname, "..", ".github", "workflows");
+  // refresh.yml's refresh-data job runs about three hours and keeps GitHub's
+  // six-hour job limit.
+  const EXEMPT = new Set(["refresh.yml:refresh-data"]);
+
+  test("every job has timeout-minutes, apart from the documented exemption", () => {
+    const missing = [];
+    let jobs = 0;
+    for (const f of fs.readdirSync(DIR).filter((n) => n.endsWith(".yml"))) {
+      const lines = fs.readFileSync(path.join(DIR, f), "utf8").split(/\r?\n/);
+      const start = lines.findIndex((l) => l === "jobs:");
+      if (start < 0) continue;
+      let job = null;
+      let hasTimeout = false;
+      const close = () => { if (job && !hasTimeout && !EXEMPT.has(`${f}:${job}`)) missing.push(`${f}:${job}`); };
+      for (const l of lines.slice(start + 1)) {
+        const m = l.match(/^  ([A-Za-z0-9_-]+):\s*$/);
+        if (m) { close(); job = m[1]; hasTimeout = false; jobs++; continue; }
+        if (/^\S/.test(l)) break;
+        if (/^    timeout-minutes:\s*\d+\s*$/.test(l)) hasTimeout = true;
+      }
+      close();
+    }
+    assert.deepEqual(missing, []);
+    assert.ok(jobs >= 15, `the scan must see the real job list; saw ${jobs}`);
   });
 });
