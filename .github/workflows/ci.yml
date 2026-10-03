@@ -39,6 +39,7 @@ jobs:
   verify-signatures:
     name: Verify skill signatures (Ed25519)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -65,6 +66,8 @@ jobs:
   test:
     name: Tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    # The slowest runner (Windows) takes about 12 minutes.
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -92,6 +95,7 @@ jobs:
   data-integrity:
     name: Data integrity (catalog + manifest snapshot)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -149,6 +153,7 @@ jobs:
   diff-coverage:
     name: Diff coverage
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout (full history for diff base)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -173,6 +178,7 @@ jobs:
   validate-playbooks:
     name: Validate playbooks
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     continue-on-error: true
     steps:
       - name: Checkout
@@ -196,6 +202,7 @@ jobs:
   lint-skills:
     name: Lint skill files
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     outputs:
       outcome: ${{ steps.lint.outcome }}
       output:  ${{ steps.lint.outputs.output }}
@@ -235,6 +242,7 @@ jobs:
   secret-scan:
     name: Secret scan (gitleaks)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     # Explicit least-privilege at the job level. The workflow-level
     # `contents: read` is inherited for public repos, but a future visibility
     # flip to private would change the inherited scope of api.github.com calls
@@ -319,6 +327,7 @@ jobs:
     needs: [lint-skills]
     if: always()
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       pull-requests: write

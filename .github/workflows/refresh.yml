@@ -48,6 +48,8 @@ jobs:
   refresh-data:
     name: Refresh data (no write credentials)
     runs-on: ubuntu-latest
+    # A run takes about three hours, so this job keeps GitHub's six-hour limit
+    # instead of a timeout-minutes of its own.
     # No contents:write / pull-requests:write / issues:write here. The
     # downstream open-pr job carries those scopes only at PR-creation time.
     permissions:
@@ -391,6 +393,7 @@ jobs:
   open-pr:
     name: Open auto-PR + version-pin issue (write credentials scoped here)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: refresh-data
     # Only run when the upstream refresh produced applied diffs OR a
     # version-pin drift was detected. Skips entirely when there's
