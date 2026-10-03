@@ -72,3 +72,28 @@ test('refresh --network refuses a non-semver registry version before fetching', 
   }
 });
 })();
+
+// ---- routed from response-caps ----
+;(() => {
+// fetchBuffer stops reading a response past a 16 MiB cap; the request timeout
+// does not bound a response that keeps streaming.
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const { OVERSIZE, STOP_WITHIN, fakeGet, withFakeGet } = require('./_helpers/fake-https-get.js');
+const URL_X = 'https://raw.githubusercontent.com/blamejs/blamejs/0000000000000000000000000000000000000000/lib/x.js';
+
+test('validate-vendor-online fetchBuffer rejects a response past the cap and stops reading', async () => {
+  const { fetchBuffer } = require('../scripts/validate-vendor-online.js');
+  const stats = { sent: 0 };
+  await withFakeGet(fakeGet({ size: OVERSIZE }, stats), () =>
+    assert.rejects(fetchBuffer(URL_X, 5000), /response exceeds 16777216-byte cap/));
+  assert.ok(stats.sent <= STOP_WITHIN, `read ${stats.sent} bytes; reading must stop at the cap`);
+});
+
+test('validate-vendor-online fetchBuffer still returns a normal response', async () => {
+  const { fetchBuffer } = require('../scripts/validate-vendor-online.js');
+  const body = Buffer.from('module.exports = 1;\n');
+  const got = await withFakeGet(fakeGet({ body }, { sent: 0 }), () => fetchBuffer(URL_X, 5000));
+  assert.equal(got.toString('utf8'), 'module.exports = 1;\n');
+});
+})();

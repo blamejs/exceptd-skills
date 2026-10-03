@@ -910,6 +910,30 @@ describe('attest-require-signed-and-prune', () => {
       fs.rmSync(home, { recursive: true, force: true });
     }
   });
+
+  test('attest prune refuses a date the calendar does not have instead of rolling it forward', () => {
+    // Date.parse reads 2026-02-30 as 2026-03-02, which would move the prune cutoff.
+    const home = freshHome('exceptd-prune4-');
+    const cli = makeCli(home);
+    try {
+      for (const bad of ['2026-02-30', '2026-02-29', '2026-04-31T00:00:00Z', '2025-06-31 12:00']) {
+        const r = cli(['attest', 'prune', '--all-older-than', bad, '--dry-run', '--json'], { env: { EXCEPTD_HOME: home } });
+        assert.equal(r.status, 1, bad);
+        const body = tryJson(r.stderr);
+        assert.ok(body && body.ok === false, bad);
+        assert.match(body.error, /--all-older-than must be a parseable ISO-8601/, bad);
+      }
+      // Real calendar dates still pass validation, including a leap day and years
+      // 0 to 99, which Date.UTC would read as 1900 to 1999.
+      for (const good of ['2024-02-29', '2026-04-30T23:59:59Z', '0050-01-01', '0000-02-29']) {
+        const r = cli(['attest', 'prune', '--all-older-than', good, '--dry-run', '--json'], { env: { EXCEPTD_HOME: home } });
+        assert.equal(r.status, 0, `${good}: ${r.stderr.slice(0, 200)}`);
+        assert.ok(tryJson(r.stdout), good);
+      }
+    } finally {
+      fs.rmSync(home, { recursive: true, force: true });
+    }
+  });
 });
 
 // ===========================================================================

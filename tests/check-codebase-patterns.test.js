@@ -467,3 +467,157 @@ require("node:test").describe("hand-rolled-sql matcher gaps (round-2 hunt: F20 s
       "the real source roots must yield a substantial scan universe");
   });
 });
+
+require("node:test").describe("number-env-coerce and stream-chunk-string-decode detectors", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const os = require("node:os");
+  const path = require("node:path");
+  const p = require("../scripts/check-codebase-patterns.js");
+  const fixture = (name, src) => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "egates-"));
+    const f = path.join(dir, name);
+    fs.writeFileSync(f, src, "utf8");
+    return f;
+  };
+  const lines = (hits) => hits.map((h) => h.line);
+
+  test("number-env-coerce flags Number(process.env...) and nothing else", () => {
+    const f = fixture("env.js", [
+      "const cap = Number(process.env.CAP || Infinity);",       // 1 flagged
+      "const n = Number( process.env.N );",                     // 2 flagged
+      "const ok = parseInt(process.env.N, 10);",                // 3 not this class
+      "// Number(process.env.X) in a comment",                  // 4 comment only
+      "const s = 'Number(process.env.X)'.length; // text",      // 5 flagged: string text is code-shaped, marker it
+      "const m = Number(argv.max); const e = process.env.CAP;", // 6 two separate reads
+      "const cap2 = Number(process.env.CAP); // allow:number-env-coerce — validated below",
+    ].join("\n"));
+    assert.deepEqual(lines(p.detectNumberEnvCoerce([f])), [1, 2, 5]);
+  });
+
+  test("stream-chunk-string-decode flags a string-appending data handler with no setEncoding on that stream", () => {
+    const f = fixture("stream.js", [
+      "function a(r) {",                                                   // 1
+      "  let b = \"\";",                                                   // 2
+      "  r.on(\"data\", (c) => (b += c));",                                // 3 flagged
+      "}",                                                                 // 4
+      "function b(res) {",                                                 // 5
+      "  res.setEncoding(\"utf8\");",                                      // 6
+      "  let s = \"\";",                                                   // 7
+      "  res.on(\"data\", (c) => (s += c));",                              // 8 clear: same receiver set the encoding
+      "}",                                                                 // 9
+      "function c(res) {",                                                 // 10
+      "  const chunks = []; let total = 0;",                               // 11
+      "  res.on(\"data\", (c) => { total += c.length; chunks.push(c); });", // 12 clear: Buffers collected
+      "}",                                                                 // 13
+      "function d(x, y) {",                                                // 14
+      "  x.setEncoding(\"utf8\");",                                        // 15
+      "  let s = \"\";",                                                   // 16
+      "  y.on('data', function (d) { s += d; });",                         // 17 flagged: another stream set the encoding
+      "}",                                                                 // 18
+      "process.stdin.on(\"data\", (chunk) => {",                           // 19 flagged
+      "  buf += chunk.toString();",                                        // 20
+      "});",                                                               // 21
+      "process.stdout.on(\"data\", chunk => { out += chunk; }); // allow:stream-chunk-string-decode — fixture",
+    ].join("\n"));
+    assert.deepEqual(lines(p.detectStreamChunkStringDecode([f])), [3, 17, 19]);
+  });
+
+  test("a setEncoding call more than 60 lines above the handler does not clear it", () => {
+    const f = fixture("far.js", ["r.setEncoding(\"utf8\");"].concat(Array(61).fill("// filler"), ["r.on(\"data\", (c) => (b += c));"]).join("\n"));
+    assert.deepEqual(lines(p.detectStreamChunkStringDecode([f])), [63]);
+  });
+
+  test("setEncoding clears a handler only on the whole receiver, dotted or not", () => {
+    const f = fixture("recv.js", [
+      "res.setEncoding(\"utf8\");",                                                         // 1
+      "s.on(\"data\", (c) => (b += c));",                                                   // 2 flagged: res is not s
+      "a.r.setEncoding(\"utf8\");",                                                         // 3
+      "r.on(\"data\", (c) => (b += c));",                                                   // 4 flagged: a.r is not r
+      "process.stdin.setEncoding(\"utf8\");",                                               // 5
+      "process.stdin.on(\"data\", (chunk) => {",                                            // 6 clear: same dotted receiver
+      "  buf += chunk.toString();",                                                         // 7
+      "});",                                                                                // 8
+      "process.stdin.on(\"data\", chunk => { process.stdin._allText += chunk.toString(); });", // 9 clear: same dotted receiver
+      "q.on(\"data\", chunk => { q._allText += chunk.toString(); });",                      // 10 flagged: no setEncoding on q
+    ].join("\n"));
+    assert.deepEqual(lines(p.detectStreamChunkStringDecode([f])), [2, 4, 10]);
+  });
+
+  test("a setEncoding in an earlier top-level function does not clear a later handler, and a byteLength count is not an append", () => {
+    const f = fixture("scope.js", [
+      "function f1(res) {",                                                    // 1
+      "  res.setEncoding(\"utf8\");",                                          // 2
+      "  let s = \"\";",                                                       // 3
+      "  res.on(\"data\", (c) => (s += c));",                                  // 4 clear: same function
+      "}",                                                                     // 5
+      "function f2(res) {",                                                    // 6
+      "  let s = \"\";",                                                       // 7
+      "  res.on(\"data\", (c) => (s += c));",                                  // 8 flagged: f1 set the encoding
+      "}",                                                                     // 9
+      "function f3(res) {",                                                    // 10
+      "  const chunks = []; let total = 0;",                                   // 11
+      "  res.on(\"data\", (c) => { total += c.byteLength; chunks.push(c); });", // 12 clear: Buffers collected
+      "}",                                                                     // 13
+    ].join("\n"));
+    assert.deepEqual(lines(p.detectStreamChunkStringDecode([f])), [8]);
+  });
+
+  test("a block closed above the handler ends the setEncoding lookback, and a receiver on the line above counts", () => {
+    const f = fixture("nested.js", [
+      "module.exports = {",                       // 1
+      "  fetchA(res) {",                          // 2
+      "    res.setEncoding(\"utf8\");",           // 3
+      "    let s = \"\";",                        // 4
+      "    res.on(\"data\", (c) => (s += c));",   // 5 clear: same method
+      "  },",                                     // 6
+      "  fetchB(res) {",                          // 7
+      "    let s = \"\";",                        // 8
+      "    res.on(\"data\", (c) => (s += c));",   // 9 flagged: fetchA set the encoding
+      "  },",                                     // 10
+      "};",                                       // 11
+      "function outer() {",                       // 12
+      "  function a(res) {",                      // 13
+      "    res.setEncoding(\"utf8\");",           // 14
+      "    let s = \"\";",                        // 15
+      "    res.on(\"data\", (c) => (s += c));",   // 16 clear: same function
+      "  }",                                      // 17
+      "  function b(res) {",                      // 18
+      "    let s = \"\";",                        // 19
+      "    res.on(\"data\", (c) => (s += c));",   // 20 flagged: a set the encoding
+      "    if (x) {",                             // 21
+      "      res.setEncoding(\"utf8\");",         // 22
+      "    }",                                    // 23
+      "    res",                                  // 24
+      "      .on(\"data\", (c) => (s += c));",    // 25 clear: same function, receiver on line 24
+      "  }",                                      // 26
+      "}",                                        // 27
+    ].join("\n"));
+    assert.deepEqual(lines(p.detectStreamChunkStringDecode([f])), [9, 20]);
+  });
+
+  test("the shipped tree is clean on both", () => {
+    assert.deepEqual(p.detectNumberEnvCoerce(), []);
+    assert.deepEqual(p.detectStreamChunkStringDecode(), []);
+  });
+
+  test("NUMBER_ENV and DATA_HANDLER match the forms the detectors rely on", () => {
+    assert.ok(p.NUMBER_ENV.test("Number(process.env.CAP)"));
+    assert.ok(!p.NUMBER_ENV.test("parseInt(process.env.CAP, 10)"));
+    assert.ok(!p.NUMBER_ENV.global && !p.NUMBER_ENV.sticky, "a stateful regex would skip every other line");
+    const param = (s) => { const m = s.match(p.DATA_HANDLER); return m && (m[1] || m[2] || m[3]); };
+    assert.equal(param("r.on(\"data\", (c) => (b += c));"), "c");
+    assert.equal(param("r.on('data', chunk => { s += chunk; });"), "chunk");
+    assert.equal(param("r.on(\"data\", function (d) { s += d; });"), "d");
+    assert.equal(param("r.on(\"end\", (c) => {});"), null);
+  });
+
+  test("both classes accept allow markers and run as blocking classes", () => {
+    for (const id of ["number-env-coerce", "stream-chunk-string-decode"]) {
+      assert.equal(p.VALID_ALLOW_CLASSES[id], true, id);
+      const c = p.CLASSES.find((x) => x.id === id);
+      assert.ok(c && c.warnOnly === false, id);
+    }
+  });
+});

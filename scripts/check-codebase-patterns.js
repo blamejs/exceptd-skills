@@ -28,6 +28,8 @@ const VALID_ALLOW_CLASSES = Object.freeze({
   "unsorted-marked-array": true,
   "misaligned-marked-run": true,
   "hand-rolled-sql": true,
+  "number-env-coerce": true,
+  "stream-chunk-string-decode": true,
 });
 
 const EXCLUDE_DIRS = new Set([
@@ -441,6 +443,78 @@ function detectHandRolledSql(files) {
   return filterMarkers(hits, "hand-rolled-sql");
 }
 
+// Number("") is 0, Number("5x") is NaN and Number("Infinity") is Infinity, and
+// none of them throws, so an environment value read this way reaches a bound
+// like `added >= cap` as NaN and the bound never holds.
+const NUMBER_ENV = /\bNumber\s*\(\s*process\.env\b/;
+function detectNumberEnvCoerce(files) {
+  const hits = [];
+  for (const rel of (files || filesUnder(["bin/exceptd.js", "lib", "orchestrator", "scripts"]))) {
+    if (rel === "scripts/check-codebase-patterns.js") continue; // holds the pattern itself
+    const lines = readLines(rel);
+    for (let i = 0; i < lines.length; i++) {
+      if (NUMBER_ENV.test(stripLineComment(lines[i]))) hits.push({ file: rel, line: i + 1, content: lines[i].trim() });
+    }
+  }
+  return filterMarkers(hits, "number-env-coerce");
+}
+
+// A 'data' handler that appends each chunk to a string (`b += c`,
+// `buf += chunk.toString()`) decodes every chunk on its own, so a multibyte
+// character split between two chunks becomes U+FFFD replacement characters. A
+// setEncoding call on the same receiver, or a StringDecoder, clears it when it
+// appears within the 60 lines before the handler and after the last line above
+// it that closes a block: a `}` line indented less than the handler, or a bare
+// `}` at column 0. A receiver on the line above `.on(` counts as the receiver.
+const DATA_HANDLER = /\.on\(\s*["']data["']\s*,\s*(?:async\s+)?(?:\(\s*([A-Za-z_$][\w$]*)\s*\)|([A-Za-z_$][\w$]*)\s*=>|function\s*\(\s*([A-Za-z_$][\w$]*)\s*\))/;
+const RECEIVER_TAIL = /([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\s*$/;
+const BLOCK_CLOSE_LINE = /^\s*\}[\s)\](,;]*$/;
+const indentOf = (s) => s.length - s.trimStart().length;
+function appendsParamAsString(body, param) {
+  const re = /\+=\s*([A-Za-z_$][\w$]*)(\s*\.\s*(?:length|byteLength)\b)?/g;
+  let x;
+  while ((x = re.exec(body)) !== null) if (x[1] === param && !x[2]) return true;
+  return false;
+}
+// `recv.setEncoding(` where recv is the whole receiver, so `res.setEncoding(`
+// does not clear a handler on `s` and `a.r.setEncoding(` does not clear one on `r`.
+function callsSetEncoding(text, recv) {
+  const needle = recv + ".setEncoding(";
+  for (let at = text.indexOf(needle); at !== -1; at = text.indexOf(needle, at + 1)) {
+    if (at === 0 || !/[\w$.]/.test(text[at - 1])) return true;
+  }
+  return false;
+}
+function detectStreamChunkStringDecode(files) {
+  const hits = [];
+  for (const rel of (files || filesUnder(["bin/exceptd.js", "lib", "orchestrator", "scripts"]))) {
+    if (rel === "scripts/check-codebase-patterns.js") continue; // holds the pattern itself
+    const lines = readLines(rel);
+    for (let i = 0; i < lines.length; i++) {
+      const code = stripLineComment(lines[i]);
+      const m = code.match(DATA_HANDLER);
+      if (!m) continue;
+      const param = m[1] || m[2] || m[3];
+      const body = [code.slice(m.index + m[0].length)].concat(lines.slice(i + 1, i + 4).map(stripLineComment)).join("\n");
+      if (!appendsParamAsString(body, param)) continue;
+      let head = code.slice(0, m.index);
+      let recvLine = i;
+      if (!head.trim() && i > 0) { recvLine = i - 1; head = stripLineComment(lines[recvLine]); }
+      const recv = (head.match(RECEIVER_TAIL) || [])[1];
+      const own = indentOf(lines[recvLine]);
+      let from = Math.max(0, i - 60);
+      for (let j = i - 1; j >= from; j--) {
+        if (/^\}\s*$/.test(lines[j]) || (BLOCK_CLOSE_LINE.test(lines[j]) && indentOf(lines[j]) < own)) { from = j + 1; break; }
+      }
+      const before = lines.slice(from, i + 1).map(stripLineComment).join("\n");
+      if (/\bStringDecoder\b/.test(before)) continue;
+      if (recv && callsSetEncoding(before, recv)) continue;
+      hits.push({ file: rel, line: i + 1, content: lines[i].trim() });
+    }
+  }
+  return filterMarkers(hits, "stream-chunk-string-decode");
+}
+
 const CLASSES = [
   {
     id: "process-exit-after-stdout-write",
@@ -483,6 +557,18 @@ const CLASSES = [
     run: detectHandRolledSql,
     warnOnly: false,
     hint: "a SQL statement/clause assembled as a string in a file that imports a SQL driver is an injection sink — use bound parameters, or `// allow:hand-rolled-sql — <reason>` for a trusted static DDL string",
+  },
+  {
+    id: "number-env-coerce",
+    run: detectNumberEnvCoerce,
+    warnOnly: false,
+    hint: "Number(process.env.X) turns a typo into NaN or 0 without an error; parse with a strict pattern and refuse anything else (see capFromEnv in scripts/refresh-upstream-catalogs.js)",
+  },
+  {
+    id: "stream-chunk-string-decode",
+    run: detectStreamChunkStringDecode,
+    warnOnly: false,
+    hint: "a 'data' handler that appends chunks to a string splits multibyte characters across chunk boundaries; call <stream>.setEncoding(\"utf8\") first, or collect Buffers and decode once with Buffer.concat",
   },
 ];
 
@@ -529,6 +615,10 @@ module.exports = {
   detectUnsortedMarkedArray,
   detectMisalignedMarkedRun,
   detectHandRolledSql,
+  detectNumberEnvCoerce,
+  detectStreamChunkStringDecode,
+  NUMBER_ENV,
+  DATA_HANDLER,
   SQL_DRIVER_IMPORT,
   SQL_STMT_START,
   SQL_CLAUSE_FRAG,

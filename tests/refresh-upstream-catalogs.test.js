@@ -206,6 +206,31 @@ test("#44/#43 fetchUrl rejects a 5xx error body (does not resolve it as a succes
   }
 });
 
+test("fetchUrl keeps a multibyte character split across response chunks intact", async () => {
+  // The MITRE and RFC feeds carry curly quotes and other non-ASCII text;
+  // decoding chunks one at a time would write U+FFFD into the refreshed catalog.
+  const https = require("node:https");
+  const { Readable } = require("node:stream");
+  const { EventEmitter } = require("node:events");
+  const text = "{\"name\":\"Attacker’s “Tool” – café\"}";
+  const bytes = Buffer.from(text, "utf8");
+  const cut = bytes.indexOf(Buffer.from("’", "utf8")) + 1; // inside the 3-byte sequence
+  const orig = https.get;
+  https.get = (_url, _opts, cb) => {
+    const req = new EventEmitter();
+    const res = Readable.from([bytes.subarray(0, cut), bytes.subarray(cut)], { objectMode: false });
+    res.statusCode = 200;
+    res.headers = {};
+    setImmediate(() => cb(res));
+    return req;
+  };
+  try {
+    assert.equal(await MOD.fetchUrl("https://example.invalid/feed.json"), text);
+  } finally {
+    https.get = orig;
+  }
+});
+
 // ---------------------------------------------------------------------------
 // #43 — refreshRfc refuses to stamp/write on a zero-entry (error/empty) body.
 // ---------------------------------------------------------------------------
@@ -1229,11 +1254,11 @@ require("node:test").describe("refresh-upstream backfillAtlas single-tactic stri
 // imports the whole upstream index on a run the operator asked to bound —
 // silently, since nothing reports the omission.
 //
-// SCOPE: these tests cover the refreshers and runCli's dispatch only. The
-// per-type wrapper scripts (`npm run refresh-rfc-index` and friends) each parse
-// CAP themselves and are covered in their own suites — a wrapper dropping the
-// cap is invisible from here, because runCli is not the code path those
-// operator-facing commands run.
+// SCOPE: these tests cover the refreshers, runCli's dispatch and capFromEnv.
+// The per-type wrapper scripts (`npm run refresh-rfc-index` and friends) parse
+// CAP with capFromEnv but call their refresher directly, so a wrapper dropping
+// the cap is invisible from here; their behavior is covered in their own
+// suites, and the last test below runs each one with an invalid CAP.
 // ===========================================================================
 
 require("node:test").describe("refresh-upstream cap coverage across all five sources", () => {
@@ -1399,6 +1424,56 @@ ${[7001, 7002, 7003, 7004].map((n) => `<rfc-entry>
         `${fn}: the parameter match truncated mid-list at a nested brace`);
       assert.equal(/\b_deps\b/.test(m[1]), true,
         `${fn}: the match must span the full parameter list, _deps included`);
+    }
+  });
+
+  test("capFromEnv: unset means no cap, a non-negative integer is the cap, anything else is refused", () => {
+    assert.equal(MOD.capFromEnv(undefined), Infinity);
+    assert.equal(MOD.capFromEnv(""), Infinity);
+    assert.equal(MOD.capFromEnv("0"), 0);
+    assert.equal(MOD.capFromEnv("25"), 25);
+    assert.equal(MOD.capFromEnv(" 7 "), 7);
+    // Number("5x") is NaN and `added >= NaN` never stops the loop, so these must
+    // be refused rather than read as a cap.
+    for (const bad of ["5x", "-1", "1.5", " ", "Infinity", "NaN", "0x10", "1e3"]) {
+      assert.equal(MOD.capFromEnv(bad), null, JSON.stringify(bad));
+    }
+  });
+
+  test("runCli refuses an invalid CAP before any refresher runs", async () => {
+    const prev = { cap: process.env.CAP, code: process.exitCode };
+    const errs = [];
+    const origErr = console.error;
+    console.error = (...a) => errs.push(a.join(" "));
+    try {
+      process.env.CAP = "5x";
+      process.exitCode = undefined;
+      await MOD.runCli(["node", "refresh-upstream-catalogs.js", "--dry-run", "--source", "no-such-source"]);
+      assert.equal(process.exitCode, 2);
+      assert.equal(errs.length, 1, "only the CAP error prints; no source was dispatched");
+      assert.ok(errs[0].includes(MOD.CAP_ERROR), errs[0]);
+      assert.match(errs[0], /CAP must be a non-negative integer/);
+      assert.match(errs[0], /"5x"/);
+    } finally {
+      console.error = origErr;
+      if (prev.cap === undefined) delete process.env.CAP; else process.env.CAP = prev.cap;
+      process.exitCode = prev.code;
+    }
+  });
+
+  test("each per-type wrapper refuses an invalid CAP with exit 2 before refreshing", () => {
+    const { spawnSync } = require("node:child_process");
+    for (const w of ["refresh-mitre-atlas", "refresh-mitre-attack", "refresh-mitre-d3fend", "refresh-mitre-ics-attack", "refresh-rfc-index"]) {
+      const src = fs.readFileSync(path.join(__dirname, "..", "scripts", `${w}.js`), "utf8");
+      assert.doesNotMatch(src, /Number\(process\.env\.CAP/, `${w} must not coerce CAP with Number()`);
+      // A wrapper without the guard would start a refresh; the timeout and the
+      // air-gap setting keep that from reaching the network or hanging the suite.
+      const r = spawnSync(process.execPath, [path.join(__dirname, "..", "scripts", `${w}.js`), "--dry-run"], {
+        env: { ...process.env, CAP: "5x", EXCEPTD_AIR_GAP: "1" }, encoding: "utf8", timeout: 30000,
+      });
+      assert.equal(r.status, 2, `${w}: status ${r.status}, stderr ${String(r.stderr).slice(0, 300)}`);
+      assert.ok(r.stderr.includes(MOD.CAP_ERROR), `${w}: ${r.stderr.slice(0, 300)}`);
+      assert.match(r.stderr, /Got: "5x"/, w);
     }
   });
 });

@@ -288,6 +288,49 @@ test('#101 ai-run --no-stream shape matches run shape (phases nested)', () => {
   assert.ok('detect' in data.phases, 'phases.detect must be present');
   assert.ok('analyze' in data.phases, 'phases.analyze must be present');
 });
+
+test('ai-run streaming mode decodes a multibyte character split across stdin chunks', async () => {
+  // Decoding each chunk on its own turns the split character into two U+FFFD,
+  // which changes the evidence and so the evidence_hash.
+  const { spawn } = require('node:child_process');
+  const { CLI, makeSuiteHome } = require('./_helpers/cli');
+  const line = Buffer.from(JSON.stringify({ event: 'evidence', payload: {
+    artifacts: { 'env-files': { value: 'café ✓ naïve', captured: true } },
+    signal_overrides: { 'aws-secret-access-key': 'miss' },
+  } }) + '\n', 'utf8');
+  const cut = line.indexOf(Buffer.from('✓', 'utf8')) + 1; // inside the 3-byte sequence
+
+  const stream = (parts) => new Promise((resolve, reject) => {
+    const home = makeSuiteHome('exceptd-airun-utf8-');
+    const child = spawn(process.execPath, [CLI, 'ai-run', 'secrets'], {
+      env: { ...process.env, EXCEPTD_DEPRECATION_SHOWN: '1', EXCEPTD_UNSIGNED_WARNED: '1', EXCEPTD_RAW_JSON: '1',
+        EXCEPTD_HOME: home, EXCEPTD_LOCK_DIR: require('node:path').join(home, '_locks') },
+    });
+    let out = '';
+    child.stdout.setEncoding('utf8');
+    child.stdout.on('data', (c) => { out += c; });
+    const timer = setTimeout(() => { child.kill(); reject(new Error('ai-run did not finish')); }, 30000);
+    child.on('close', () => {
+      clearTimeout(timer);
+      const done = out.split('\n').map((l) => { try { return JSON.parse(l); } catch { return null; } })
+        .find((e) => e && e.event === 'done');
+      resolve(done);
+    });
+    (async () => {
+      for (const p of parts) {
+        child.stdin.write(p);
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      child.stdin.end();
+    })();
+  });
+
+  const whole = await stream([line]);
+  const split = await stream([line.subarray(0, cut), line.subarray(cut)]);
+  assert.ok(whole && typeof whole.evidence_hash === 'string' && whole.evidence_hash.length === 64, 'the single-write run must finish with an evidence_hash');
+  assert.ok(split && typeof split.evidence_hash === 'string', 'the split-write run must finish with an evidence_hash');
+  assert.equal(split.evidence_hash, whole.evidence_hash);
+});
 ;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
   for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
   __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });

@@ -8,7 +8,12 @@
  * `CAP=<n>` bounds how many NEW techniques one run may add, matching every
  * other per-type wrapper. Context backfill onto existing rows is never capped.
  */
-const { refreshIcsAttack } = require("./refresh-upstream-catalogs.js");
+const { refreshIcsAttack, capFromEnv, CAP_ERROR } = require("./refresh-upstream-catalogs.js");
 const dry = process.argv.includes("--dry-run");
-const cap = Number(process.env.CAP || Infinity);
-refreshIcsAttack({ dry, cap }).catch((e) => { console.error("[err]", e); process.exit(1); });
+const cap = capFromEnv(process.env.CAP);
+if (cap === null) {
+  console.error(`[err] ${CAP_ERROR} Got: ${JSON.stringify(process.env.CAP)}`);
+  process.exitCode = 2;
+} else {
+  refreshIcsAttack({ dry, cap }).catch((e) => { console.error("[err]", e); process.exit(1); });
+}

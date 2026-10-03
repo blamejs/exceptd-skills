@@ -56,6 +56,8 @@ function rawUrlForPin(sourceRepo, commit, upstreamPath) {
 }
 
 const MAX_REDIRECTS = 5;
+// The request timeout does not bound a response that keeps streaming.
+const RESPONSE_CAP_BYTES = 16 * 1024 * 1024;
 
 // Redirects re-enter fetchBuffer with a server-supplied Location, so the host is
 // checked on every hop, not just the initial URL: that is what stops a redirect
@@ -88,7 +90,15 @@ function fetchBuffer(url, timeoutMs, redirectsLeft = MAX_REDIRECTS) {
         return reject(new Error(`HTTP ${res.statusCode} for ${url}`));
       }
       const chunks = [];
-      res.on("data", (c) => chunks.push(c));
+      let total = 0;
+      res.on("data", (c) => {
+        total += c.length;
+        if (total > RESPONSE_CAP_BYTES) {
+          req.destroy(new Error(`response exceeds ${RESPONSE_CAP_BYTES}-byte cap fetching ${url}`));
+          return;
+        }
+        chunks.push(c);
+      });
       res.on("end", () => resolve(Buffer.concat(chunks)));
       res.on("error", reject);
     });

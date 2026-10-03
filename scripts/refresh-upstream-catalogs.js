@@ -41,6 +41,9 @@ function fetchUrl(url, depth = 0) {
         r.resume(); // drain so the socket is freed
         return reject(new Error("HTTP " + code + " for " + url));
       }
+      // The stream's decoder carries a multibyte character split across chunks;
+      // concatenating raw chunks as strings would write U+FFFD into the catalog.
+      r.setEncoding("utf8");
       let b = "";
       r.on("data", (c) => (b += c));
       r.on("end", () => resolve(b));
@@ -830,9 +833,27 @@ function parseArgs(argv) {
   return out;
 }
 
+/**
+ * The CAP environment variable: how many new entries one run may add. Unset or
+ * empty means no cap. Anything but a non-negative integer returns null, because
+ * Number("5x") is NaN and `added >= NaN` is always false, which removes the cap.
+ */
+function capFromEnv(raw) {
+  if (raw === undefined || raw === "") return Infinity;
+  const s = String(raw).trim();
+  return /^\d+$/.test(s) ? Number(s) : null;
+}
+
+const CAP_ERROR = "CAP must be a non-negative integer (the number of new entries one run may add); unset it for no cap.";
+
 async function runCli(argv = process.argv) {
   const { source, dry } = parseArgs(argv);
-  const cap = Number(process.env.CAP || Infinity);
+  const cap = capFromEnv(process.env.CAP);
+  if (cap === null) {
+    console.error(`[err] ${CAP_ERROR} Got: ${JSON.stringify(process.env.CAP)}`);
+    process.exitCode = 2;
+    return;
+  }
   const wanted = source
     ? source.split(",").map((s) => s.trim()).filter(Boolean)
     : Object.keys(SOURCES);
@@ -863,6 +884,8 @@ module.exports = {
   refreshD3fend,
   SOURCES,
   runCli,
+  capFromEnv,
+  CAP_ERROR,
   // Exported for tests: fail-closed fetch behaviour and the atomic write.
   fetchUrl,
   writeCatalog,
