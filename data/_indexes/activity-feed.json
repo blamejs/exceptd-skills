@@ -6,7 +6,7 @@
   },
   "events": [
     {
-      "date": "2026-09-29",
+      "date": "2026-10-02",
       "type": "catalog_update",
       "artifact": "data/cve-catalog.json",
       "path": "data/cve-catalog.json",
@@ -14,7 +14,7 @@
       "entry_count": 1759
     },
     {
-      "date": "2026-09-29",
+      "date": "2026-10-02",
       "type": "catalog_update",
       "artifact": "data/zeroday-lessons.json",
       "path": "data/zeroday-lessons.json",
