@@ -529,6 +529,16 @@ test("M2: framework-gap refuses an unknown framework", () => {
   assert.ok(Array.isArray(body.known_frameworks) && body.known_frameworks.length > 0, "must list known frameworks");
 });
 
+test("M2: framework-gap refuses a filter that only the registry's _meta block would match", () => {
+  for (const fw of ["meta", "met"]) {
+    const r = cli(["framework-gap", fw, "CVE-2025-53773", "--json"]);
+    assert.equal(r.status, 1, `${fw} must be refused`);
+    const body = tryJson(r.stdout) || tryJson(r.stderr);
+    assert.ok(body && body.ok === false, `${fw} must emit a structured refusal`);
+    assert.match(body.error, /unknown framework/);
+  }
+});
+
 test("M2: documented short forms (NIST-800-53, PCI-DSS-4.0) still resolve", () => {
   for (const fw of ["NIST-800-53", "nist-800-53", "PCI-DSS-4.0"]) {
     const r = cli(["framework-gap", fw, "prompt injection", "--json"]);
@@ -1026,7 +1036,7 @@ require("node:test").describe("a CVE's per-control statements and lesson verdict
     ]);
   });
 
-  test("a key the registry lacks matches a key-prefix filter and all, and not a display name that does not reduce to its prefix", () => {
+  test("a key the registry lacks matches a key-prefix filter, all, and the framework name of its nearest registry key", () => {
     const NIST = "NIST-800-53-SI-2";
     assert.ok(controlGaps[NIST] && controlGaps[NIST].framework, "the registry must carry NIST-800-53-SI-2");
     const KEY = "NIST-800-53-ZZ-99";
@@ -1036,13 +1046,91 @@ require("node:test").describe("a CVE's per-control statements and lesson verdict
     const keysFor = (fw, opts = {}) => gapReport([fw], "CVE-2099-0005", controlGaps, cat, { lessons: les, ...opts }).cve_analysis.controls.map((c) => c.control);
     assert.deepEqual(keysFor("nist-800-53"), [NIST, KEY].sort());
     assert.deepEqual(keysFor("all", { allFrameworks: true }), [NIST, KEY].sort());
-    // The display name reaches the registry key through its framework field only.
-    assert.deepEqual(keysFor(controlGaps[NIST].framework), [NIST]);
+    // The display name reaches the lesson-only key through the registry keys it
+    // shares NIST-800-53 with.
+    assert.deepEqual(keysFor(controlGaps[NIST].framework), [NIST, KEY].sort());
     // Case, spaces, hyphens and underscores are ignored; the filter must be a
     // prefix, so a fragment from the middle of the key does not match it.
     assert.deepEqual(keysFor("nist_800_53"), keysFor("nist-800-53"));
     assert.deepEqual(keysFor("NIST 800 53"), keysFor("nist-800-53"));
-    assert.ok(!keysFor("800-53").includes(KEY), "a filter that is not a prefix of the key does not select it");
+    // A fragment from the middle of the key that names no framework does not select it.
+    assert.ok(!keysFor("zz-99").includes(KEY), "a filter that is neither a key prefix nor a framework name does not select it");
+  });
+
+  test("a lesson-only key takes the framework of the registry keys sharing the most leading segments, at least two", () => {
+    const registry = {
+      "AA-BB-C1": { framework: "Framework One" },
+      "AA-BB-C2": { framework: "Framework Two" },
+      "AA-BB-C2-X": { framework: "Framework Five" },
+      "AA-ZZ": { framework: "Framework Three" },
+      "QQ-RR": { framework: "Framework Four" },
+      "AA-BB-NONAME": { control_name: "no framework" },
+      "DD-EE-1": { framework: "Doc D" },
+      // Contains "Doc D" only once case, spaces and hyphens are ignored, and not
+      // at its start.
+      "DD-EE-2": { framework: "Updated DOC-D (2024 edition)" },
+      "DD-EE-FF": { control_name: "no framework" },
+    };
+    const les = { "CVE-2099-0016": { framework_coverage: {
+      // Two segments shared with keys of three different frameworks: ambiguous.
+      "AA-BB-C9": { covered: true, adequate: false, gap: "two segments, several frameworks" },
+      // Three segments shared with AA-BB-C2 and AA-BB-C2-X.
+      "AA-BB-C2-Y": { covered: true, adequate: false, gap: "three segments shared" },
+      "AA-QQ": { covered: true, adequate: false, gap: "one segment shared" },
+      // Segments compare without case: three shared with AA-BB-C1.
+      "aa-bb-c1-lower": { covered: true, adequate: false, gap: "lower case" },
+      // A case variant of a registry key shares every segment with it.
+      "aa-bb-c1": { covered: true, adequate: false, gap: "case variant of AA-BB-C1" },
+      // Two segments shared with two names of one framework.
+      "DD-EE-9": { covered: true, adequate: false, gap: "two segments, one framework" },
+      // Three segments shared with the entry that has no framework name, which is
+      // skipped, so the match falls back to DD-EE-1 and DD-EE-2.
+      "DD-EE-FF-1": { covered: true, adequate: false, gap: "nearest named keys share two" },
+    } } };
+    // A catalog statement on a registry key, which matches only its own framework.
+    const cat = { "CVE-2099-0016": { framework_control_gaps: { "AA-BB-C2": "registry statement" } } };
+    const keysFor = (fw) => gapReport([fw], "CVE-2099-0016", registry, cat, { lessons: les }).cve_analysis.controls.map((c) => c.control);
+    assert.deepEqual(keysFor("Framework One"), ["aa-bb-c1", "aa-bb-c1-lower"]);
+    assert.deepEqual(keysFor("framework two"), ["AA-BB-C2", "AA-BB-C2-Y"]);
+    assert.deepEqual(keysFor("Framework Five"), ["AA-BB-C2-Y"]);
+    assert.deepEqual(keysFor("Doc D"), ["DD-EE-9", "DD-EE-FF-1"]);
+    assert.deepEqual(keysFor("Updated DOC-D (2024 edition)"), ["DD-EE-9", "DD-EE-FF-1"]);
+    // A single shared segment is not enough, and an unrelated framework selects nothing.
+    assert.deepEqual(keysFor("Framework Three"), []);
+    assert.deepEqual(keysFor("Framework Four"), []);
+  });
+
+  test("a two-segment stem shared by several documents attributes a key to none of them", () => {
+    // NIST-800 starts the registry keys of several NIST 800 documents, and
+    // ISO-IEC those of several ISO/IEC standards.
+    const les = { "CVE-2099-0018": { framework_coverage: {
+      "NIST-800-171-3.14.1": { covered: true, adequate: false, gap: "g" },
+      "ISO-IEC-27001-2022-A.8.8": { covered: true, adequate: false, gap: "g" },
+    } } };
+    const keysFor = (fw) => gapReport([fw], "CVE-2099-0018", controlGaps, { "CVE-2099-0018": {} }, { lessons: les }).cve_analysis.controls.map((c) => c.control);
+    assert.equal(controlGaps["NIST-800-171-3.14.1"], undefined);
+    assert.deepEqual(keysFor("nist-800-53"), []);
+    assert.deepEqual(keysFor(controlGaps["NIST-800-53-SI-2"].framework), []);
+    const iso42001 = Object.keys(controlGaps).find((k) => /^ISO-IEC-42001/.test(k));
+    assert.ok(iso42001, "the registry must carry an ISO-IEC-42001 key");
+    assert.deepEqual(keysFor(controlGaps[iso42001].framework), []);
+    // `all` still lists both.
+    assert.equal(gapReport(["all"], "CVE-2099-0018", controlGaps, { "CVE-2099-0018": {} }, { allFrameworks: true, lessons: les }).cve_analysis.controls.length, 2);
+  });
+
+  test("a full framework name and its short form select the same lesson-only ISO control", () => {
+    const KEY = "ISO-27001-2022-A.99.99";
+    assert.equal(controlGaps[KEY], undefined, "the fixture key must not exist in the registry");
+    const les = { "CVE-2099-0017": { framework_coverage: { [KEY]: { covered: true, adequate: false, gap: "g" } } } };
+    const keysFor = (fw) => gapReport([fw], "CVE-2099-0017", controlGaps, { "CVE-2099-0017": {} }, { lessons: les }).cve_analysis.controls.map((c) => c.control);
+    assert.deepEqual(keysFor("ISO/IEC 27001:2022"), [KEY]);
+    assert.deepEqual(keysFor("iso-27001-2022"), [KEY]);
+    // A filter contained in the nearest key's framework name, and no key prefix.
+    assert.deepEqual(keysFor("ISO/IEC 27001"), [KEY]);
+    // ISO/IEC 27017 shares only the ISO segment with it.
+    const other = Object.keys(controlGaps).find((k) => /^ISO-27017-/.test(k));
+    assert.ok(other, "the registry must carry an ISO-27017 key");
+    assert.deepEqual(keysFor(controlGaps[other].framework), []);
   });
 
   test("several filters select the union of what each selects alone", () => {

@@ -185,7 +185,7 @@ Examples:
   if (args[0].toLowerCase() !== 'all') {
     const normalize = (s) => String(s).toLowerCase().replace(/[\s_-]/g, '');
     const idNorm = normalize(args[0]);
-    const matchesFramework = Object.entries(controlGaps).some(([key, g]) => {
+    const matchesFramework = Object.entries(controlGaps).filter(([key]) => !key.startsWith('_')).some(([key, g]) => {
       const fws = Array.isArray(g.framework) ? g.framework : [g.framework];
       if (fws.some(f => f && normalize(f).includes(idNorm))) return true;
       if (normalize(key).startsWith(idNorm)) return true;
