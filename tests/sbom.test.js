@@ -591,12 +591,17 @@ require("node:test").describe("sbom playbook registry-cooldown guidance", () => 
     assert.match(v, /the default for the recorded version, and the exclusion list where that version supports one/);
     assert.match(v, /A value of 0 disables each setting/);
     assert.match(v, /A setting for a different package manager does not count, and a `before=` date counts only when it is in the past/);
-    assert.match(v, /An exclusion entry that matches a third-party dependency in the lockfile removes the cooldown for that dependency/);
+    assert.match(v, /An exclusion entry that matches a third-party package by name or pattern, for any version, removes the cooldown for that package/);
+    // A version-pinned exclusion admits only versions that are already published.
+    assert.match(v, /an entry pinned to specific versions \(pnpm 10\.19\.0 and later, and Yarn descriptors, accept these\) admits only those already-published versions and does not remove the cooldown for later releases/);
     assert.match(v, /When the artifact cannot establish the effective value[^.]*, the verdict is inconclusive/);
     // The reference facts, each with the version that introduced it.
     assert.match(v, /npm reads `min-release-age` \(days\) from npm 11\.10\.0 and `min-release-age-exclude` from npm 11\.17\.0, applies the exclusion to a `before=` cutoff as well, and does not read `minimumReleaseAge=` in \.npmrc/);
     assert.match(v, /pnpm reads `minimumReleaseAge` \(minutes\) and `minimumReleaseAgeExclude` from pnpm-workspace\.yaml from pnpm 10\.16\.0, and pnpm 11 defaults `minimumReleaseAge` to 1440/);
-    assert.match(v, /Yarn reads `npmMinimalAgeGate` and `npmPreapprovedPackages` from \.yarnrc\.yml from Yarn 4\.10, and Yarn 4\.12 defaults the gate to `1d`/);
+    assert.match(v, /Yarn reads `npmMinimalAgeGate` and `npmPreapprovedPackages` from \.yarnrc\.yml from Yarn 4\.10, where the gate is a number of minutes; Yarn 4\.12 reads it as a duration string and defaults it to `1d`/);
+    // Concrete values for each Yarn form, and the global npmrc among the sources read.
+    assert.match(indicator.description, /`npmMinimalAgeGate: 4320` \(Yarn 4\.10 and 4\.11, in minutes\) or `npmMinimalAgeGate: 3d` \(Yarn 4\.12 or later, a duration\)/);
+    assert.match(artifact.source, /the global npmrc \(the file `npm config get globalconfig` prints/);
     // The artifact collects what the rule needs.
     assert.match(artifact.source, /`npmPreapprovedPackages` in \.yarnrc\.yml/);
     assert.match(artifact.source, /Record the version of each package manager in use/);
