@@ -137,10 +137,12 @@ test("collect sbom inventories npm-shrinkwrap.json and checks it for integrity, 
       try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
     }
   };
-  // A shrinkwrap-only project is inventoried as npm and checked for integrity.
+  // A shrinkwrap-only project is inventoried as npm and checked for integrity. A clean
+  // lone shrinkwrap supports no miss, since npm 12 does not read it.
   const only = run({ "npm-shrinkwrap.json": noIntegrity });
   assert.match(only.artifacts["lockfile-inventory"].value, /npm:npm-shrinkwrap\.json/);
   assert.equal(only.signal_overrides["lockfile-no-integrity"], "hit");
+  assert.equal(run({ "npm-shrinkwrap.json": clean }).signal_overrides["lockfile-no-integrity"], undefined);
   const verdict = (files) => run(files).signal_overrides["lockfile-no-integrity"];
   const pm = (v) => ({ name: "app", version: "1.0.0", packageManager: `npm@${v}` });
   // Which file npm reads depends on the npm version that runs the install, which the

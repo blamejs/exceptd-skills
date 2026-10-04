@@ -212,19 +212,23 @@ test("library-author lockfile-missing-integrity covers non-npm lockfiles + stays
   // The playbook's lockfile artifact names npm-shrinkwrap.json alongside package-lock.json.
   assert.match(require("../data/playbooks/library-author.json").phases.look.artifacts.map((a) => a.source || "").join("\n"),
     /package-lock\.json, npm-shrinkwrap\.json, yarn\.lock/);
-  // Case C: npm-shrinkwrap.json is scanned like package-lock.json.
-  for (const [entry, expected] of [
-    [{ version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz" }, "hit"],
-    [{ version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz", integrity: "sha512-abc" }, "miss"],
+  // Case C: a lone npm-shrinkwrap.json is scanned but gives no verdict, since npm 12
+  // does not read it and the npm version the build runs is unknown; a lone
+  // package-lock.json, which every npm reads, decides the verdict.
+  for (const [file, entry, expected] of [
+    ["npm-shrinkwrap.json", { version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz" }, undefined],
+    ["npm-shrinkwrap.json", { version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz", integrity: "sha512-abc" }, undefined],
+    ["package-lock.json", { version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz" }, "hit"],
+    ["package-lock.json", { version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz", integrity: "sha512-abc" }, "miss"],
   ]) {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lib-lf-shrinkwrap-"));
     try {
-      fs.writeFileSync(path.join(tmp, "npm-shrinkwrap.json"), JSON.stringify({
+      fs.writeFileSync(path.join(tmp, file), JSON.stringify({
         lockfileVersion: 3, packages: { "": { name: "lib", version: "1.0.0" }, "node_modules/bar": entry },
       }));
       const r = libraryAuthorCollector.collect({ cwd: tmp });
       assert.equal(r.signal_overrides["lockfile-missing-integrity"], expected,
-        `npm-shrinkwrap.json ${expected === "hit" ? "without" : "with"} integrity must give ${expected}`);
+        `lone ${file} ${entry.integrity ? "with" : "without"} integrity must give ${expected}`);
     } finally {
       try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
     }
