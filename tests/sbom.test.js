@@ -163,8 +163,11 @@ test("collect sbom inventories npm-shrinkwrap.json and checks it for integrity, 
   assert.equal(mixed.signal_overrides["lockfile-no-integrity__fp_checks"]["1"], undefined);
   const oneHit = run({ "package.json": pm("11.6.0"), "npm-shrinkwrap.json": noIntegrity, "package-lock.json": clean });
   assert.equal(oneHit.signal_overrides["lockfile-no-integrity__fp_checks"]["1"], undefined);
-  // A single npm lockfile is the one npm reads, so check 1 is attested.
-  assert.equal(only.signal_overrides["lockfile-no-integrity__fp_checks"]["1"], true);
+  // A lone npm-shrinkwrap.json is ignored by npm 12, so whether the build reads it is
+  // unknown and check 1 stays unattested; a lone package-lock.json is read by every npm.
+  assert.equal(only.signal_overrides["lockfile-no-integrity__fp_checks"]["1"], undefined);
+  const lockOnly = run({ "package-lock.json": noIntegrity });
+  assert.equal(lockOnly.signal_overrides["lockfile-no-integrity__fp_checks"]["1"], true);
   // When both candidates hit, the finding holds whichever one the build consumes, so check 1 is attested.
   const both = run({ "npm-shrinkwrap.json": noIntegrity, "package-lock.json": noIntegrity });
   assert.equal(both.signal_overrides["lockfile-no-integrity__fp_checks"]["1"], true);
