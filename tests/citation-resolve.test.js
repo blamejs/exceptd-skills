@@ -156,15 +156,15 @@ test('resolveCve and the cve verb carry the KEV forensic-triage flag', async () 
   assert.equal(r.kev_forensic_triage, true);
   const flagged = cli(['cve', 'CVE-2030-0002', '--air-gap']);
   assert.equal(flagged.status, 0, flagged.stderr);
-  assert.match(flagged.stdout, /KEV forensic triage required \(BOD 26-04: capture volatile data before patching\)/);
+  assert.match(flagged.stdout, /KEV forensic triage flagged: BOD 26-04 requires it of federal civilian agencies \(capture volatile data before patching\)/);
   const plain = cli(['cve', 'CVE-2030-0001', '--air-gap']);
   assert.equal(plain.status, 0, plain.stderr);
   assert.doesNotMatch(plain.stdout, /forensic triage/, 'no marker for an entry without the field');
   // A recorded "No" is stated, so it reads differently from a missing value.
   const notRequired = cli(['cve', 'CVE-2030-0003', '--air-gap']);
   assert.equal(notRequired.status, 0, notRequired.stderr);
-  assert.match(notRequired.stdout, /KEV forensic triage not required/);
-  assert.doesNotMatch(notRequired.stdout, /forensic triage required \(BOD/);
+  assert.match(notRequired.stdout, /KEV forensic triage not flagged/);
+  assert.doesNotMatch(notRequired.stdout, /BOD 26-04 requires it/);
   const json = tryJson(cli(['cve', 'CVE-2030-0002', '--air-gap', '--json']).stdout);
   assert.equal(json && json.kev_forensic_triage, true);
 });

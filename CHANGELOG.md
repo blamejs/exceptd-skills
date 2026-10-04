@@ -2,7 +2,7 @@
 
 ## 0.21.22 — 2026-10-03
 
-Catalog entries now carry `cisa_kev_forensic_triage`, CISA's KEV `forensicTriage` value: `true` for "Yes", `false` for "No", and `null` for an entry that is not KEV-listed. A `true` value means BOD 26-04 requires federal civilian agencies to complete CISA's forensics triage as part of remediation, which starts with capturing volatile data before patching. The KEV refresh fills and reconciles it like the ransomware designation, new KEV drafts carry it, and `exceptd cve <id>` (and `--json`), citation resolution and the playbook runner's matched CVEs report it. 61 of the 1,603 KEV-listed entries are flagged.
+Catalog entries now carry `cisa_kev_forensic_triage`, CISA's KEV `forensicTriage` value: `true` for "Yes" and `false` for "No". The field is `null` or absent for an entry that is not KEV-listed. A `true` value means BOD 26-04 requires federal civilian agencies to complete CISA's forensics triage as part of remediation, which starts with capturing volatile data before patching. The KEV refresh fills and reconciles it like the ransomware designation, new KEV drafts carry it, and `exceptd cve <id>` (and `--json`), citation resolution and the playbook runner's matched CVEs report it. 61 of the 1,603 KEV-listed entries are flagged.
 
 The same refresh brings in seven ransomware designations CISA has added since those entries were curated (CVE-2016-4117, CVE-2022-37969, CVE-2022-41352, CVE-2025-14733, CVE-2026-20316, CVE-2026-59310, CVE-2026-63077), and the entry text that stated the old designation now states the current one.
 
