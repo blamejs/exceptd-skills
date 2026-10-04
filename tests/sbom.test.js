@@ -622,7 +622,8 @@ require("node:test").describe("sbom playbook registry-cooldown guidance", () => 
     assert.match(v, /A setting for a different package manager does not count, and a `before=` date counts only when it is in the past/);
     assert.match(v, /An exclusion entry that matches a third-party package by name or pattern, for any version, removes the cooldown for that package/);
     // A version-pinned exclusion admits only versions that are already published.
-    assert.match(v, /an entry pinned to specific versions \(pnpm 10\.19\.0 and later, and Yarn descriptors, accept these\) admits only those already-published versions and does not remove the cooldown for later releases/);
+    assert.match(v, /an entry pinned to specific versions \(pnpm 10\.19\.0 and later, and Yarn descriptors, accept these\) removes the cooldown only for those versions, so it is a hit when one of them was published within the cooldown window and does not remove the cooldown for later releases/);
+    assert.match(artifact.source, /for pnpm and Yarn also read the user-level and global configuration files and the environment variables each manager documents/);
     assert.match(v, /When the artifact cannot establish the effective value[^.]*, the verdict is inconclusive/);
     // The reference facts, each with the version that introduced it.
     assert.match(v, /npm reads `min-release-age` \(days\) from npm 11\.10\.0 and `min-release-age-exclude` from npm 11\.17\.0, applies the exclusion to a `before=` cutoff as well, and does not read `minimumReleaseAge=` in \.npmrc/);

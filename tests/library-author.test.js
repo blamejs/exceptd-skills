@@ -209,6 +209,9 @@ test("library-author lockfile-missing-integrity covers non-npm lockfiles + stays
       try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
     }
   }
+  // The playbook's lockfile artifact names npm-shrinkwrap.json alongside package-lock.json.
+  assert.match(require("../data/playbooks/library-author.json").phases.look.artifacts.map((a) => a.source || "").join("\n"),
+    /package-lock\.json, npm-shrinkwrap\.json, yarn\.lock/);
   // Case C: npm-shrinkwrap.json is scanned like package-lock.json.
   for (const [entry, expected] of [
     [{ version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz" }, "hit"],
@@ -222,6 +225,24 @@ test("library-author lockfile-missing-integrity covers non-npm lockfiles + stays
       const r = libraryAuthorCollector.collect({ cwd: tmp });
       assert.equal(r.signal_overrides["lockfile-missing-integrity"], expected,
         `npm-shrinkwrap.json ${expected === "hit" ? "without" : "with"} integrity must give ${expected}`);
+    } finally {
+      try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+    }
+  }
+  // Case D: with both npm lockfiles, npm installs from the shrinkwrap, so package-lock.json is not scanned.
+  const noIntegrity = { version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz" };
+  const clean = { version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz", integrity: "sha512-abc" };
+  for (const [shrink, lock, expected] of [[clean, noIntegrity, "miss"], [noIntegrity, clean, "hit"]]) {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lib-lf-both-"));
+    try {
+      const write = (name, entry) => fs.writeFileSync(path.join(tmp, name), JSON.stringify({
+        lockfileVersion: 3, packages: { "": { name: "lib", version: "1.0.0" }, "node_modules/bar": entry },
+      }));
+      write("npm-shrinkwrap.json", shrink);
+      write("package-lock.json", lock);
+      const r = libraryAuthorCollector.collect({ cwd: tmp });
+      assert.equal(r.signal_overrides["lockfile-missing-integrity"], expected,
+        `with both lockfiles the shrinkwrap decides: expected ${expected}`);
     } finally {
       try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
     }
