@@ -197,7 +197,7 @@ test('#11 lagScore counts framework-specific gaps for a key that is NOT a substr
 
 test('#11 lagScore resolves another display-name-only framework (NCSC_CAF)', () => {
   const r = fg.lagScore('NCSC_CAF', controlGaps, globalFrameworks);
-  assert.equal(r.breakdown.framework_specific_gaps, 7);
+  assert.equal(r.breakdown.framework_specific_gaps, 8);
 });
 
 test('#11 lagScore leaves substring-matching frameworks unchanged', () => {
@@ -788,7 +788,7 @@ test('#11 lagScore counts framework-specific gaps for a key that is NOT a substr
 
 test('#11 lagScore resolves another display-name-only framework (NCSC_CAF)', () => {
   const r = fg.lagScore('NCSC_CAF', controlGaps, globalFrameworks);
-  assert.equal(r.breakdown.framework_specific_gaps, 7);
+  assert.equal(r.breakdown.framework_specific_gaps, 8);
 });
 
 test('#11 lagScore leaves substring-matching frameworks unchanged', () => {
@@ -1437,4 +1437,44 @@ test('gapReport() keeps opts in the fifth position, so allFrameworks still reach
     all.summary.total_gaps > scoped.summary.total_gaps,
     `allFrameworks must widen the scope; got all=${all.summary.total_gaps} scoped=${scoped.summary.total_gaps} — equal counts would mean opts never arrived`,
   );
+});
+
+// ---------- registry framework names ----------
+
+test('each framework family names one canonical framework string', () => {
+  const exact = [
+    [/^NIST-800-53-/, 'NIST SP 800-53 Rev 5'],
+    [/^NIS2-/, 'EU NIS2 Directive (Directive (EU) 2022/2555)'],
+    [/^NIST-800-218-/, 'NIST SP 800-218 (Secure Software Development Framework v1.1)'],
+  ];
+  for (const [re, name] of exact) {
+    const off = Object.entries(controlGaps).filter(([k, g]) => re.test(k) && g.framework !== name).map(([k, g]) => `${k}: ${g.framework}`);
+    assert.deepEqual(off, [], name);
+  }
+  // UK CAF keys may add a version and DORA keys a sub-instrument after the canonical name.
+  for (const [re, prefix] of [[/^UK-CAF-/, 'UK NCSC Cyber Assessment Framework'], [/^DORA-/, 'EU DORA (Regulation 2022/2554)']]) {
+    const off = Object.entries(controlGaps).filter(([k, g]) => re.test(k) && !String(g.framework).startsWith(prefix)).map(([k, g]) => `${k}: ${g.framework}`);
+    assert.deepEqual(off, [], prefix);
+  }
+});
+
+test('a canonical full name passed to gapReport reaches every key in its family', () => {
+  const families = [
+    ['NIST SP 800-53 Rev 5', /^NIST-800-53-/],
+    ['UK NCSC Cyber Assessment Framework', /^UK-CAF-/],
+    ['EU NIS2 Directive (Directive (EU) 2022/2555)', /^NIS2-/],
+    ['EU DORA (Regulation 2022/2554)', /^DORA-/],
+    ['PCI DSS v4.0.1', /^PCI-DSS-4\.0(?:\.1)?-(?!6\.3\.3$)/],
+  ];
+  for (const [name, re] of families) {
+    const want = Object.keys(controlGaps).filter((k) => re.test(k)).sort();
+    const got = gapReport([name], '', controlGaps).frameworks[name].gaps.map((g) => g.id).filter((k) => re.test(k)).sort();
+    assert.ok(want.length > 0, `${name}: the family is not empty`);
+    assert.deepEqual(got, want, name);
+  }
+});
+
+test('lagScore for NCSC CAF counts every open UK CAF key', () => {
+  const open = Object.entries(controlGaps).filter(([k, g]) => /^UK-CAF-/.test(k) && g.status === 'open').length;
+  assert.equal(lagScore('NCSC_CAF', controlGaps, globalFrameworks).breakdown.framework_specific_gaps, open);
 });
