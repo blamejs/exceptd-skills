@@ -16,7 +16,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
-const { regexLiteralEnd, REGEX_CAN_START } = require("./check-test-count.js");
+const { regexLiteralEnd, afterControlFlowParen, REGEX_CAN_START } = require("./check-test-count.js");
 
 const ROOT = path.resolve(__dirname, "..");
 
@@ -561,7 +561,7 @@ function proseOf(line, state) {
     }
     if (ch === "/" && next === "/") { out += " " + line.slice(i + 2); break; }
     if (ch === "/" && next === "*") { state.inBlock = true; i++; continue; }
-    if (ch === "/" && REGEX_CAN_START.test(line.slice(Math.max(0, i - 40), i))) {
+    if (ch === "/" && (REGEX_CAN_START.test(line.slice(Math.max(0, i - 40), i)) || afterControlFlowParen(line.slice(0, i)))) {
       const end = regexLiteralEnd(line, i);
       if (end !== -1) { i = end; continue; }
     }

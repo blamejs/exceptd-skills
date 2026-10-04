@@ -190,6 +190,73 @@ test('a quote whose string runs off its line is read as code, so a regex after a
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
+test('a regex after an if, while or for head is code, so a backtick inside it does not open a template', () => {
+  const src = [
+    "if (ok) /`/.test(s); /* disabled:",
+    "test('disabled', () => {});",
+    "*/",
+    "test('kept', () => {});",
+    "for (const x of xs) /`(/.exec(x); // fine",
+    "it('kept too', () => {});",
+    "const half = (a + b) / 2; /* real comment */ test('kept after division', () => {});",
+  ].join('\n');
+  const { dir, p } = tmpFile('count-control-flow-backtick.test.js', src);
+  try {
+    assert.equal(countTests(p), 3);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('afterControlFlowParen recognizes the close of an if, while, for or with head and nothing else', () => {
+  const { afterControlFlowParen } = require(path.join(ROOT, 'scripts', 'check-test-count.js'));
+  assert.ok(afterControlFlowParen("if (ok) "));
+  assert.ok(afterControlFlowParen("while (f(a, (b))) "));
+  assert.ok(afterControlFlowParen("for (const x of xs)"));
+  assert.ok(!afterControlFlowParen("const half = (a + b) "));
+  assert.ok(!afterControlFlowParen("call(gif) "), "a word ending in if is not the keyword");
+  assert.ok(!afterControlFlowParen("x = y "));
+  assert.ok(!afterControlFlowParen("const v = obj.if(x) "), "a property named if is a call, not a control-flow head");
+  assert.ok(!afterControlFlowParen("a?.for(y) "));
+});
+
+test('a slash that begins a comment closes no regex, so a division misread as a regex start still lets the comment hide its tests', () => {
+  const { regexLiteralEnd } = require(path.join(ROOT, 'scripts', 'check-test-count.js'));
+  assert.equal(regexLiteralEnd("x / 2; /* c */", 2), -1);
+  assert.equal(regexLiteralEnd("const re = /a//* c */", 11), 13, "a regex closing slash followed by a comment's slash is kept");
+  const src = [
+    "const at = text.indexOf(\"if (\") / 2; /* disabled:",
+    "test('disabled', () => {});",
+    "*/",
+    "test('kept', () => {});",
+    "const re = /`//* disabled too:",
+    "it('disabled too', () => {});",
+    "*/",
+  ].join('\n');
+  const { dir, p } = tmpFile('count-paren-in-string.test.js', src);
+  try {
+    assert.equal(countTests(p), 1);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('a division after a keyword-named property is still division, so the block comment after it hides its tests', () => {
+  const { REGEX_CAN_START } = require(path.join(ROOT, 'scripts', 'check-test-count.js'));
+  assert.ok(!REGEX_CAN_START.test("const n = obj.of "));
+  assert.ok(!REGEX_CAN_START.test("x.return "));
+  assert.ok(REGEX_CAN_START.test("if (a) return "));
+  const src = [
+    "const value = obj.if(x) / 2; /* disabled:",
+    "test('disabled', () => {});",
+    "*/",
+    "const n = obj.of / 2; /* disabled too:",
+    "it('disabled too', () => {});",
+    "*/",
+    "test('kept', () => {});",
+  ].join('\n');
+  const { dir, p } = tmpFile('count-keyword-property.test.js', src);
+  try {
+    assert.equal(countTests(p), 1);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('an unclosed quote on the last line does not swallow the end of the file', () => {
   const { stripBlockComments } = require(path.join(ROOT, 'scripts', 'check-test-count.js'));
   assert.equal(stripBlockComments("if (a) /it's/; /* gone */ b"), "if (a) /it's/;  b");

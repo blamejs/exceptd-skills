@@ -40,10 +40,28 @@ function listTestFiles(dir) {
 
 // A `/` starts a regex literal, not a division, when the code before it ends in
 // an operator, an opening bracket, a separator or one of these keywords.
-const REGEX_CAN_START = /(?:^|[(,=:[!&|?{};+\-*%<>~^]|\b(?:return|typeof|instanceof|in|of|new|delete|void|throw|case|do|else|yield|await))\s*$/;
+// A keyword after `.` is a property name (`obj.in / 2` divides).
+const REGEX_CAN_START = /(?:^|[(,=:[!&|?{};+\-*%<>~^]|(?<![.\w$])(?:return|typeof|instanceof|in|of|new|delete|void|throw|case|do|else|yield|await))\s*$/;
+
+// True when `code` ends in the `)` that closes an if, while, for or with head,
+// after which a `/` starts a regex literal: `if (ok) /it's/.test(s)`.
+function afterControlFlowParen(code) {
+  const tail = code.replace(/\s+$/, '');
+  if (!tail.endsWith(')')) return false;
+  let depth = 0;
+  for (let k = tail.length - 1; k >= 0 && k >= tail.length - 2000; k--) {
+    if (tail[k] === ')') depth++;
+    else if (tail[k] === '(' && --depth === 0) return /(?<![.\w$])(?:if|while|for|with)\s*$/.test(tail.slice(0, k));
+  }
+  return false;
+}
 
 // Index of the slash that closes the regex literal opening at `start`, or -1
-// when the line holds no closing slash outside a character class.
+// when the line holds no closing slash outside a character class. A slash that
+// begins `/*` opens a comment and closes no regex, so a division that was read
+// as a regex start (`obj.if(x) / 2; /* ... */`) is left a division. A closing
+// slash followed by another slash is kept: `/a//* c */` is the regex /a/ and then
+// a comment.
 function regexLiteralEnd(text, start) {
   let inClass = false;
   for (let j = start + 1; j < text.length && text[j] !== '\n'; j++) {
@@ -51,7 +69,7 @@ function regexLiteralEnd(text, start) {
     if (c === '\\') { j++; continue; }
     if (c === '[') inClass = true;
     else if (c === ']') inClass = false;
-    else if (c === '/' && !inClass) return j;
+    else if (c === '/' && !inClass) return text[j + 1] === '*' ? -1 : j;
   }
   return -1;
 }
@@ -62,7 +80,9 @@ function regexLiteralEnd(text, start) {
 // `/it's/` and a later `" */"` do not drop or keep the wrong tests. A '- or
 // "-quoted string cannot run past its line, so a quote whose string reaches the
 // end of the line unclosed is read as code and the rest of the line is scanned
-// again from just after it.
+// again from just after it. The scanner does not parse JavaScript: a `/` after
+// `}`, after a `)` that closes no if, while, for or with head, or at the start of
+// a line is read as division.
 function stripBlockComments(source) {
   const text = source + '\n';
   let out = '';
@@ -98,7 +118,7 @@ function stripBlockComments(source) {
     }
     if (ch === '/' && next === '*') { mode = 'block'; i++; continue; }
     if (ch === '/' && next === '/') mode = 'line';
-    else if (ch === '/' && REGEX_CAN_START.test(out.slice(-40))) {
+    else if (ch === '/' && (REGEX_CAN_START.test(out.slice(-40)) || afterControlFlowParen(out.slice(-2000)))) {
       const end = regexLiteralEnd(text, i);
       if (end !== -1) { out += text.slice(i, end + 1); i = end; continue; }
     } else if ((ch === "'" || ch === '"') && i !== codeQuoteAt) { mode = ch; quoteAt = i; quoteOut = out.length; }
@@ -223,6 +243,6 @@ function main() {
   process.exitCode = 0;
 }
 
-module.exports = { countTests, listTestFiles, stripBlockComments, regexLiteralEnd, REGEX_CAN_START };
+module.exports = { countTests, listTestFiles, stripBlockComments, regexLiteralEnd, afterControlFlowParen, REGEX_CAN_START };
 
 if (require.main === module) main();
