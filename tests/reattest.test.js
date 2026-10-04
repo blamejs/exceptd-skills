@@ -14,7 +14,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { ROOT, makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+const { makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+const { signedInstall } = require('./_helpers/signed-install.js');
 
 test('reattest CLI subject file loaded', () => {
   assert.ok(true);
@@ -40,10 +41,8 @@ describe('attest-replay-and-discover-cwd (reattest slice)', () => {
 // ===========================================================================
 describe('attestation-signature-roundtrip (reattest slice)', () => {
   const SUITE_HOME = makeSuiteHome('exceptd-audit-vv-trust-reattest-');
-  const cli = makeCli(SUITE_HOME);
-
-  const PKG_PRIV_KEY = path.join(ROOT, '.keys', 'private.pem');
-  const HAS_PRIV_KEY = fs.existsSync(PKG_PRIV_KEY);
+  // The producer runs need a signed attestation, so this block uses the signed copy.
+  const cli = makeCli(SUITE_HOME, { cliPath: signedInstall().cli });
 
   function locateAttestationFiles(sid) {
     const candidates = [
@@ -67,7 +66,6 @@ describe('attestation-signature-roundtrip (reattest slice)', () => {
   }
 
   test('KK P1-2 — reattest --force-replay writes replay-<isoZ>.json under the session dir',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem' },
     () => {
       const sid = 'vv-trust-replay-' + Date.now();
       const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
@@ -119,7 +117,6 @@ describe('attestation-signature-roundtrip (reattest slice)', () => {
     });
 
   test('KK P1-3 — reattest refuses sidecar with algorithm:"HMAC-SHA256" (exit 6, algorithm-unsupported)',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem' },
     () => {
       const sid = 'vv-trust-algo-replay-' + Date.now();
       const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
@@ -146,10 +143,8 @@ describe('attestation-signature-roundtrip (reattest slice)', () => {
 // ===========================================================================
 describe('attestation-trust-boundary (reattest slice)', () => {
   const SUITE_HOME = makeSuiteHome('exceptd-audit-aa-trust-reattest-');
-  const cli = makeCli(SUITE_HOME);
-
-  const PKG_PRIV_KEY = path.join(ROOT, '.keys', 'private.pem');
-  const HAS_PRIV_KEY = fs.existsSync(PKG_PRIV_KEY);
+  // The producer runs need a signed attestation, so this block uses the signed copy.
+  const cli = makeCli(SUITE_HOME, { cliPath: signedInstall().cli });
 
   function locateAttestation(sid) {
     const candidates = [
@@ -168,7 +163,6 @@ describe('attestation-trust-boundary (reattest slice)', () => {
   }
 
   test('Fix 2(a) — reattest refuses a corrupt-JSON sidecar without --force-replay (exit 6)',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem to produce a signed attestation' },
     () => {
       const sid = 'aa-trust-corrupt-' + Date.now();
       const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
@@ -194,7 +188,6 @@ describe('attestation-trust-boundary (reattest slice)', () => {
     });
 
   test('Fix 2(a) — reattest --force-replay accepts a corrupt sidecar and persists sidecar_verify + force_replay',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem' },
     () => {
       const sid = 'aa-trust-corrupt-force-' + Date.now();
       const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
@@ -223,7 +216,6 @@ describe('attestation-trust-boundary (reattest slice)', () => {
     });
 
   test('Fix 3 — reattest --force-replay records sidecar_verify class for explicitly-unsigned + force_replay:true',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem' },
     () => {
       const sid = 'aa-trust-replay-explicit-' + Date.now();
       const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
@@ -385,13 +377,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 
-const { ROOT, makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+const { makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+const { signedInstall } = require('./_helpers/signed-install.js');
 
 const SUITE_HOME = makeSuiteHome('exceptd-audit-aa-');
-const cli = makeCli(SUITE_HOME);
-
-const PKG_PRIV_KEY = path.join(ROOT, '.keys', 'private.pem');
-const HAS_PRIV_KEY = fs.existsSync(PKG_PRIV_KEY);
+// The producer runs need a signed attestation, so this block uses the signed copy.
+const cli = makeCli(SUITE_HOME, { cliPath: signedInstall().cli });
 
 function locateAttestation(sid) {
   const candidates = [
@@ -410,7 +401,6 @@ function locateAttestation(sid) {
 // ---------------------------------------------------------------------------
 
 test('AA P1-1: reattest refuses an explicitly-unsigned attestation without --force-replay',
-  { skip: !HAS_PRIV_KEY && 'private key required to produce a signed attestation that we then convert to unsigned' },
   () => {
     // Produce a signed attestation, swap the .sig for the unsigned stub
     // (mimics either substitution OR a legitimately-unsigned attestation
@@ -436,7 +426,6 @@ test('AA P1-1: reattest refuses an explicitly-unsigned attestation without --for
   });
 
 test('AA P1-1: reattest --force-replay accepts explicitly-unsigned and records sidecar_verify_class + force_replay',
-  { skip: !HAS_PRIV_KEY && 'producer run requires private key to create signed attestation we then re-sidecar' },
   () => {
     const sid = 'aa-p11-force-' + Date.now();
     const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });

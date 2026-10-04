@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.21.24 — 2026-10-04
+
+The 33 tests that produce or tamper with a signed attestation now run on every checkout, including CI. They used to skip when `.keys/private.pem` was absent. They now run the CLI from a temporary copy of the package in which the skills and manifest are re-signed with a key pair generated for the test run, and `keys/EXPECTED_FINGERPRINT` in the copy is pinned to that key. The tests do not read or write the repository's own `keys/` or `.keys/`. `makeCli` in `tests/_helpers/cli.js` takes a `cliPath` option that selects the CLI to run.
+
 ## 0.21.23 — 2026-10-03
 
 The catalog adds five CVEs from CISA's Known Exploited Vulnerabilities catalog, none with public exploit code.
