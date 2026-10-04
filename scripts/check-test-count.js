@@ -38,11 +38,112 @@ function listTestFiles(dir) {
   return out;
 }
 
+// A `/` starts a regex literal, not a division, when the code before it ends in
+// an operator, an opening bracket, a separator or one of these keywords.
+// A keyword after `.` is a property name (`obj.in / 2` divides).
+// break, continue and debugger take no expression, so a `/` after one, or after
+// the label a break or continue names on the same line, starts a new statement
+// even without a semicolon.
+const REGEX_CAN_START = /(?:^|[(,=:[!&|?{};+\-*%<>~^]|(?<![.\w$])(?:return|typeof|instanceof|in|of|new|delete|void|throw|case|do|else|yield|await|debugger|(?:break|continue)(?:[ \t]+[A-Za-z_$][\w$]*)?))\s*$/;
+
+// True when `code` ends in the `)` that closes an if, while, for or with head,
+// after which a `/` starts a regex literal: `if (ok) /it's/.test(s)`.
+function afterControlFlowParen(code) {
+  const tail = code.replace(/\s+$/, '');
+  if (!tail.endsWith(')')) return false;
+  let depth = 0;
+  for (let k = tail.length - 1; k >= 0 && k >= tail.length - 2000; k--) {
+    if (tail[k] === ')') depth++;
+    else if (tail[k] === '(' && --depth === 0) return /(?<![.\w$])(?:if|while|for|with)\s*$/.test(tail.slice(0, k));
+  }
+  return false;
+}
+
+// Index of the slash that closes the regex literal opening at `start`, or -1
+// when the line holds no closing slash outside a character class. A slash that
+// begins `/*` opens a comment and closes no regex, so a division that was read
+// as a regex start (`obj.if(x) / 2; /* ... */`) is left a division. A closing
+// slash followed by another slash is kept: `/a//* c */` is the regex /a/ and then
+// a comment.
+function regexLiteralEnd(text, start) {
+  let inClass = false;
+  for (let j = start + 1; j < text.length && text[j] !== '\n'; j++) {
+    const c = text[j];
+    if (c === '\\') { j++; continue; }
+    if (c === '[') inClass = true;
+    else if (c === ']') inClass = false;
+    else if (c === '/' && !inClass) return text[j + 1] === '*' ? -1 : j;
+  }
+  return -1;
+}
+
+// Removes /* ... */ block comments and keeps their newlines. A `/*` inside a
+// line comment, a string literal or a regex literal does not open one, and a
+// quote inside a regex literal does not open a string, so `// lib/*.js`,
+// `/it's/` and a later `" */"` do not drop or keep the wrong tests. A '- or
+// "-quoted string cannot run past its line, so a quote whose string reaches the
+// end of the line unclosed is read as code and the rest of the line is scanned
+// again from just after it. The scanner does not parse JavaScript: a `/` after
+// `}`, after a `)` that closes no if, while, for or with head, or at the start of
+// a line that does not follow break, continue or debugger is read as division.
+function stripBlockComments(source) {
+  const text = source + '\n';
+  let out = '';
+  let mode = null; // null (code), 'line', 'block', or the open quote character
+  let quoteAt = -1;
+  let quoteOut = 0;
+  let codeQuoteAt = -1;
+  // One entry per open `${ ... }` interpolation: the brace depth inside it.
+  const interpolations = [];
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    const next = text[i + 1];
+    if (mode === 'block') {
+      if (ch === '*' && next === '/') { mode = null; i++; }
+      else if (ch === '\n') out += '\n';
+      continue;
+    }
+    if (mode === 'line') {
+      if (ch === '\n') mode = null;
+      out += ch;
+      continue;
+    }
+    if (mode) {
+      if (ch === '\n' && mode !== '`') {
+        out = out.slice(0, quoteOut) + text[quoteAt];
+        codeQuoteAt = quoteAt;
+        i = quoteAt;
+        mode = null;
+        continue;
+      }
+      out += ch;
+      if (ch === '\\' && next !== undefined) { out += next; i++; continue; }
+      if (mode === '`' && ch === '$' && next === '{') { out += next; i++; interpolations.push(0); mode = null; continue; }
+      if (ch === mode) mode = null;
+      continue;
+    }
+    if (interpolations.length) {
+      const top = interpolations.length - 1;
+      if (ch === '{') interpolations[top]++;
+      else if (ch === '}' && interpolations[top] === 0) { interpolations.pop(); mode = '`'; out += ch; continue; }
+      else if (ch === '}') interpolations[top]--;
+    }
+    if (ch === '/' && next === '*') { mode = 'block'; i++; continue; }
+    if (ch === '/' && next === '/') mode = 'line';
+    else if (ch === '/' && (REGEX_CAN_START.test(out.slice(-40)) || afterControlFlowParen(out.slice(-2000)))) {
+      const end = regexLiteralEnd(text, i);
+      if (end !== -1) { out += text.slice(i, end + 1); i = end; continue; }
+    } else if ((ch === "'" || ch === '"') && i !== codeQuoteAt) { mode = ch; quoteAt = i; quoteOut = out.length; }
+    else if (ch === '`') mode = ch;
+    out += ch;
+  }
+  return out.slice(0, -1);
+}
+
 function countTests(filePath) {
-  let text = fs.readFileSync(filePath, 'utf8');
   // Strip block comments first: commenting a test out is the usual way to
   // disable one, and counting it anyway defeats the gate.
-  text = text.replace(/\/\*[\s\S]*?\*\//g, '');
+  const text = stripBlockComments(fs.readFileSync(filePath, 'utf8'));
   let count = 0;
   for (const rawLine of text.split('\n')) {
     // Blank string and template bodies first, so a `test(` inside a string
@@ -154,6 +255,6 @@ function main() {
   process.exitCode = 0;
 }
 
-module.exports = { countTests, listTestFiles };
+module.exports = { countTests, listTestFiles, stripBlockComments, regexLiteralEnd, afterControlFlowParen, REGEX_CAN_START };
 
 if (require.main === module) main();

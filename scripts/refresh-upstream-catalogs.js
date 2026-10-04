@@ -886,7 +886,7 @@ module.exports = {
   runCli,
   capFromEnv,
   CAP_ERROR,
-  // Exported for tests: fail-closed fetch behaviour and the atomic write.
+  // Exported for tests: fail-closed fetch behavior and the atomic write.
   fetchUrl,
   writeCatalog,
   // Exported for tests: backfillAtlas must keep mirroring backfillAttack.

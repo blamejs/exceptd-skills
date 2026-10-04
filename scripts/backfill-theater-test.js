@@ -16,14 +16,14 @@ const TESTS = {
   // Universal / cross-framework AI gaps
   'ALL-AI-PIPELINE-INTEGRITY': {
     claim: "We monitor our AI providers for security and treat model updates like any other vendor change.",
-    test: "Pull the change-control register for the last 4 quarters; filter for entries where the affected asset is an externally hosted LLM, embedding model, or AI provider API. Count how many record (a) the model version pinned at the time, (b) a behavioural regression suite executed against the new version, and (c) the provider changelog reviewed with sign-off. Theater verdict if fewer than 90% of provider-side model updates produced an in-scope change-control entry, or if any sampled entry lacks a regression-suite artifact.",
-    evidence_required: ["change-control register CSV export filtered to AI/ML assets", "behavioural regression test results bundle keyed to provider model versions", "provider changelog review log with reviewer identity + timestamp"],
+    test: "Pull the change-control register for the last 4 quarters; filter for entries where the affected asset is an externally hosted LLM, embedding model, or AI provider API. Count how many record (a) the model version pinned at the time, (b) a behavioral regression suite executed against the new version, and (c) the provider changelog reviewed with sign-off. Theater verdict if fewer than 90% of provider-side model updates produced an in-scope change-control entry, or if any sampled entry lacks a regression-suite artifact.",
+    evidence_required: ["change-control register CSV export filtered to AI/ML assets", "behavioral regression test results bundle keyed to provider model versions", "provider changelog review log with reviewer identity + timestamp"],
     verdict_when_failed: PAPER
   },
   'ALL-MCP-TOOL-TRUST': {
     claim: "Developer tooling is governed; AI plugins are no different from any other dev dependency.",
-    test: "Scan every developer endpoint and CI runner for installed MCP server manifests (.claude/, .cursor/, .vscode/, ~/.codeium/, etc.). For each discovered MCP server, attempt to verify a publisher signature, locate it in an organisational allowlist, and trace its tool-grant prompt history. Theater verdict if any endpoint has an MCP server that is unsigned, absent from the allowlist, or has tool grants that bypassed user prompting.",
-    evidence_required: ["endpoint-scan output enumerating MCP server manifests with hashes", "organisational MCP allowlist (or evidence one does not exist)", "tool-grant audit log for one randomly selected developer over 30 days"],
+    test: "Scan every developer endpoint and CI runner for installed MCP server manifests (.claude/, .cursor/, .vscode/, ~/.codeium/, etc.). For each discovered MCP server, attempt to verify a publisher signature, locate it in an organizational allowlist, and trace its tool-grant prompt history. Theater verdict if any endpoint has an MCP server that is unsigned, absent from the allowlist, or has tool grants that bypassed user prompting.",
+    evidence_required: ["endpoint-scan output enumerating MCP server manifests with hashes", "organizational MCP allowlist (or evidence one does not exist)", "tool-grant audit log for one randomly selected developer over 30 days"],
     verdict_when_failed: PAPER
   },
   'ALL-PROMPT-INJECTION-ACCESS-CONTROL': {
@@ -42,8 +42,8 @@ const TESTS = {
   },
   'AU-Essential-8-Backup': {
     claim: "Daily backups with off-network retention satisfy Essential Eight Maturity Level 2 Strategy 8.",
-    test: "From the latest backup catalogue, confirm presence of fine-tuned model weights, RAG corpora, and AI tool configuration files (.claude/settings.json, MCP server registry). Restore one RAG corpus to an isolated environment; per-document-hash compare to current production. Theater verdict if AI artefacts are absent from the catalogue, or if any document hash diverges from production without a documented authoring event explaining the divergence.",
-    evidence_required: ["backup catalogue manifest", "test-restore log for one RAG corpus", "per-document hash diff between restored and production corpus"],
+    test: "From the latest backup catalog, confirm presence of fine-tuned model weights, RAG corpora, and AI tool configuration files (.claude/settings.json, MCP server registry). Restore one RAG corpus to an isolated environment; per-document-hash compare to current production. Theater verdict if AI artifacts are absent from the catalog, or if any document hash diverges from production without a documented authoring event explaining the divergence.",
+    evidence_required: ["backup catalog manifest", "test-restore log for one RAG corpus", "per-document hash diff between restored and production corpus"],
     verdict_when_failed: PAPER
   },
   'AU-Essential-8-MFA': {
@@ -70,14 +70,14 @@ const TESTS = {
   // CMMC / FedRAMP
   'CMMC-2.0-Level-2': {
     claim: "We are CMMC Level 2 attested across all 110 NIST 800-171 controls; CUI is protected end-to-end.",
-    test: "Walk the 3.4.1 (CM) asset inventory and check for AI assistants and MCP servers with CUI-adjacent access. Then inspect 3.13 system-and-communications protections to confirm AI-API egress is enumerated as a CUI exfiltration channel with monitoring. Theater verdict if AI assistants are absent from the asset inventory, or if AI-API egress at the CUI boundary has no monitoring rule, or if cross-walks to UK DEF STAN / AU DISP for joint programmes are missing.",
-    evidence_required: ["3.4.1 asset inventory export filtered to AI/ML and MCP entries", "egress monitoring rule export for AI-API destinations", "cross-walk document for joint programmes (if any)"],
+    test: "Walk the 3.4.1 (CM) asset inventory and check for AI assistants and MCP servers with CUI-adjacent access. Then inspect 3.13 system-and-communications protections to confirm AI-API egress is enumerated as a CUI exfiltration channel with monitoring. Theater verdict if AI assistants are absent from the asset inventory, or if AI-API egress at the CUI boundary has no monitoring rule, or if cross-walks to UK DEF STAN / AU DISP for joint programs are missing.",
+    evidence_required: ["3.4.1 asset inventory export filtered to AI/ML and MCP entries", "egress monitoring rule export for AI-API destinations", "cross-walk document for joint programs (if any)"],
     verdict_when_failed: PAPER
   },
   'FedRAMP-Rev5-Moderate': {
-    claim: "All cloud services in our boundary are FedRAMP Moderate authorised; AI services are covered.",
-    test: "Enumerate every AI/ML service consumed within the authorisation boundary. For each, locate either (a) a FedRAMP Moderate ATO letter, (b) a documented exception with risk acceptance signed by the AO, or (c) an equivalence path (StateRAMP, FedRAMP Tailored, etc.). Verify the SSP includes shared-responsibility language covering prompt data, output data, training opt-out, and retention. Theater verdict if any AI service is in use without one of (a)-(c), or if the SSP shared-responsibility matrix lacks AI-specific clauses.",
-    evidence_required: ["AI service inventory keyed to FedRAMP marketplace IDs", "AO-signed risk acceptance for non-authorised AI services", "SSP excerpts showing AI shared-responsibility language"],
+    claim: "All cloud services in our boundary are FedRAMP Moderate authorized; AI services are covered.",
+    test: "Enumerate every AI/ML service consumed within the authorization boundary. For each, locate either (a) a FedRAMP Moderate ATO letter, (b) a documented exception with risk acceptance signed by the AO, or (c) an equivalence path (StateRAMP, FedRAMP Tailored, etc.). Verify the SSP includes shared-responsibility language covering prompt data, output data, training opt-out, and retention. Theater verdict if any AI service is in use without one of (a)-(c), or if the SSP shared-responsibility matrix lacks AI-specific clauses.",
+    evidence_required: ["AI service inventory keyed to FedRAMP marketplace IDs", "AO-signed risk acceptance for non-authorized AI services", "SSP excerpts showing AI shared-responsibility language"],
     verdict_when_failed: PAPER
   },
 
@@ -128,13 +128,13 @@ const TESTS = {
   },
   'DORA-IA-CTPP-Oversight': {
     claim: "We track designated critical third-party providers (CTPPs) per DORA Art. 31-44.",
-    test: "Pull the CTPP designation list. Confirm whether frontier-AI providers and MCP/agent-runtime providers consumed by the entity appear or have a documented evaluation against designation criteria. Check Lead Overseer audit deliverables for AI-specific artefacts (model cards, system cards, eval results, training data manifests). Theater verdict if AI providers consumed at scale are absent without an evaluation record, or if Lead Overseer artefacts lack AI-specific content.",
+    test: "Pull the CTPP designation list. Confirm whether frontier-AI providers and MCP/agent-runtime providers consumed by the entity appear or have a documented evaluation against designation criteria. Check Lead Overseer audit deliverables for AI-specific artifacts (model cards, system cards, eval results, training data manifests). Theater verdict if AI providers consumed at scale are absent without an evaluation record, or if Lead Overseer artifacts lack AI-specific content.",
     evidence_required: ["CTPP designation list with evaluation rationale", "Lead Overseer engagement record with deliverable list", "AI-provider concentration analysis"],
     verdict_when_failed: PAPER
   },
   'DORA-Art-19-IdP-4h': {
     claim: "We can meet the DORA Art. 19 4-hour major-ICT-incident notification clock for IdP compromise.",
-    test: "Run a tabletop: at T0 a SIEM alert fires for IdP token-signing certificate rotation by an unrecognised principal. Stopwatch the elapsed time from T0 to a draft notification ready for the Competent Authority covering scope, root cause hypothesis, impacted services, and recovery posture. Theater verdict if elapsed time exceeds 4h, or if the playbook does not name the on-call who initiates the clock, or if the tabletop has not been run in the last 12 months.",
+    test: "Run a tabletop: at T0 a SIEM alert fires for IdP token-signing certificate rotation by an unrecognized principal. Stopwatch the elapsed time from T0 to a draft notification ready for the Competent Authority covering scope, root cause hypothesis, impacted services, and recovery posture. Theater verdict if elapsed time exceeds 4h, or if the playbook does not name the on-call who initiates the clock, or if the tabletop has not been run in the last 12 months.",
     evidence_required: ["tabletop execution log with stopwatch timestamps", "DORA notification draft produced under exercise", "on-call rota covering 24/7 IdP-incident response"],
     verdict_when_failed: PAPER
   },
@@ -172,8 +172,8 @@ const TESTS = {
   },
   'EU-AI-Act-GPAI-CoP': {
     claim: "We follow the GPAI Code of Practice as our presumed-compliance route for Art. 53/55.",
-    test: "Confirm signatory status. Pull the AI Office's published enforcement-deference position for code-conformant signatories. For each evidentiary commitment in the Code, locate the artefact (training-data summary, eval report, downstream-distributor list, energy report) and confirm it is current. Theater verdict if signatory but any required Code artefact is missing or older than the Code's refresh cadence.",
-    evidence_required: ["Code-of-Practice signatory confirmation", "evidentiary artefact bundle keyed to Code commitments", "AI Office enforcement-deference reference"],
+    test: "Confirm signatory status. Pull the AI Office's published enforcement-deference position for code-conformant signatories. For each evidentiary commitment in the Code, locate the artifact (training-data summary, eval report, downstream-distributor list, energy report) and confirm it is current. Theater verdict if signatory but any required Code artifact is missing or older than the Code's refresh cadence.",
+    evidence_required: ["Code-of-Practice signatory confirmation", "evidentiary artifact bundle keyed to Code commitments", "AI Office enforcement-deference reference"],
     verdict_when_failed: PAPER
   },
 
@@ -188,14 +188,14 @@ const TESTS = {
   // HIPAA
   'HIPAA-Security-Rule-164.312(a)(1)': {
     claim: "We meet HIPAA 164.312(a)(1) access controls; PHI is access-controlled with unique user IDs.",
-    test: "Inventory AI providers in use; for each consuming PHI, locate a BAA covering prompt retention + training opt-out + breach notification within HIPAA timelines. Inspect prompt-flow telemetry for PHI; confirm DLP minimisation runs pre-egress. Confirm AI agent sessions have controls separate from human user controls. Theater verdict if any AI provider consuming PHI lacks a BAA, if DLP is absent on prompt egress, or if AI agent sessions inherit human controls without separation.",
+    test: "Inventory AI providers in use; for each consuming PHI, locate a BAA covering prompt retention + training opt-out + breach notification within HIPAA timelines. Inspect prompt-flow telemetry for PHI; confirm DLP minimization runs pre-egress. Confirm AI agent sessions have controls separate from human user controls. Theater verdict if any AI provider consuming PHI lacks a BAA, if DLP is absent on prompt egress, or if AI agent sessions inherit human controls without separation.",
     evidence_required: ["AI-provider BAA bundle", "DLP rule export for prompt egress", "agent-session control configuration"],
     verdict_when_failed: PAPER
   },
   'HIPAA-Security-Rule-2026-NPRM-164.308': {
     claim: "Our administrative safeguards meet the HIPAA Security Rule including 2026 NPRM updates.",
-    test: "Walk the technology-asset register; confirm AI assistants and model-API providers are enumerated as asset categories. Pull the network map; confirm AI-API egress routes are marked with BAA and training-opt-out attestation. Confirm the tabletop catalogue contains at least one AI-specific PHI loss scenario exercised in the past 12 months. Theater verdict if AI assets are absent, network-map AI routes lack attestations, or the tabletop catalogue has no AI scenario.",
-    evidence_required: ["technology-asset register with AI categories", "network map with AI-API egress annotations", "tabletop exercise catalogue with execution dates"],
+    test: "Walk the technology-asset register; confirm AI assistants and model-API providers are enumerated as asset categories. Pull the network map; confirm AI-API egress routes are marked with BAA and training-opt-out attestation. Confirm the tabletop catalog contains at least one AI-specific PHI loss scenario exercised in the past 12 months. Theater verdict if AI assets are absent, network-map AI routes lack attestations, or the tabletop catalog has no AI scenario.",
+    evidence_required: ["technology-asset register with AI categories", "network map with AI-API egress annotations", "tabletop exercise catalog with execution dates"],
     verdict_when_failed: PAPER
   },
   'HIPAA-Security-Rule-2026-NPRM-164.310': {
@@ -211,7 +211,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
   'HIPAA-Security-Rule-2026-NPRM-164.314': {
-    claim: "Our BAAs satisfy HIPAA 164.314 organisational requirements including 2026 NPRM AI provisions.",
+    claim: "Our BAAs satisfy HIPAA 164.314 organizational requirements including 2026 NPRM AI provisions.",
     test: "Pull the AI-provider BAA portfolio. Confirm each contract covers (a) prompt retention policy with explicit duration, (b) training opt-out with attestation evidence, (c) breach-notification timeline aligned with HIPAA, (d) sub-processor disclosure. Theater verdict if any AI provider's BAA is silent on prompt retention, training opt-out, or sub-processors, or if 'training opt-out' is contractual without an evidence path.",
     evidence_required: ["AI-provider BAA portfolio with clause-by-clause checklist", "training-opt-out attestation evidence per provider", "sub-processor disclosure inventories"],
     verdict_when_failed: PAPER
@@ -228,7 +228,7 @@ const TESTS = {
   // IEC 62443 / NIST 800-82 / NERC CIP — OT / ICS
   'IEC-62443-3-3': {
     claim: "Our IACS architecture meets IEC 62443-3-3 system security requirements.",
-    test: "Inspect the zone-and-conduit diagram. Confirm AI operator assistants and AI-API egress paths from the corporate-to-OT boundary are enumerated as conduits with documented security levels. Sample 3 OT operator workstations; confirm any installed AI assistants are inventoried and that prompt-injection-class threats appear in the threat model. Theater verdict if AI conduits are absent from the zone diagram, or if AI assistants on OT operator workstations are not threat-modelled.",
+    test: "Inspect the zone-and-conduit diagram. Confirm AI operator assistants and AI-API egress paths from the corporate-to-OT boundary are enumerated as conduits with documented security levels. Sample 3 OT operator workstations; confirm any installed AI assistants are inventoried and that prompt-injection-class threats appear in the threat model. Theater verdict if AI conduits are absent from the zone diagram, or if AI assistants on OT operator workstations are not threat-modeled.",
     evidence_required: ["zone-and-conduit diagram with AI annotations", "OT operator workstation inventory", "threat-model document covering AI conduit threats"],
     verdict_when_failed: PAPER
   },
@@ -297,7 +297,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
   'NIS2-Art21-patch-management': {
-    claim: "Our patch-management posture meets NIS2 Art. 21(2)(e) for technical and organisational measures.",
+    claim: "Our patch-management posture meets NIS2 Art. 21(2)(e) for technical and organizational measures.",
     test: "Pull the patch SLA document. Confirm a CISA-KEV-anchored tier (4h to verified mitigation for KEV+PoC). Cross-reference past 12 months of KEV-listed CVEs in scope; measure compliance. Confirm live-patching capability for hosts that cannot reboot in window. Theater verdict if the SLA collapses to 'critical = 30 days' across the board, or if any KEV+PoC entry breached the documented tier.",
     evidence_required: ["patch SLA document", "KEV listing→mitigation telemetry", "live-patching agent inventory"],
     verdict_when_failed: PAPER
@@ -330,26 +330,26 @@ const TESTS = {
   },
   'NIST-800-53-AC-2': {
     claim: "Our account management satisfies NIST 800-53 AC-2 across all account types.",
-    test: "Inventory AI-agent service accounts. For each, confirm an authorization context defines (who initiated each invocation, what actions are in scope, what tools are authorised). Pull AC-2 audit log for one agent over 7 days; confirm prompt-level access decisions are reconstructable. Theater verdict if AI-agent accounts have no per-session authorisation context, or if AC-2 logs collapse to 'service account X did Y' without prompt-input chain.",
+    test: "Inventory AI-agent service accounts. For each, confirm an authorization context defines (who initiated each invocation, what actions are in scope, what tools are authorized). Pull AC-2 audit log for one agent over 7 days; confirm prompt-level access decisions are reconstructable. Theater verdict if AI-agent accounts have no per-session authorization context, or if AC-2 logs collapse to 'service account X did Y' without prompt-input chain.",
     evidence_required: ["AI-agent service account inventory", "authorization-context policy document", "7-day audit log sample with prompt input chain"],
     verdict_when_failed: PAPER
   },
   'NIST-800-53-CM-7': {
     claim: "We enforce least-functionality per NIST 800-53 CM-7 across all configuration items.",
-    test: "Sample 5 developer endpoints. Enumerate installed MCP servers + AI plugins; confirm each is on an organisational allowlist with documented business justification. Confirm tool-grant default is deny with explicit per-tool prompts. Theater verdict if any sampled endpoint runs an MCP server absent from the allowlist, or if any tool-grant defaults to allow without prompting.",
-    evidence_required: ["endpoint MCP/plugin inventory for sampled hosts", "organisational allowlist with justifications", "tool-grant default-policy export"],
+    test: "Sample 5 developer endpoints. Enumerate installed MCP servers + AI plugins; confirm each is on an organizational allowlist with documented business justification. Confirm tool-grant default is deny with explicit per-tool prompts. Theater verdict if any sampled endpoint runs an MCP server absent from the allowlist, or if any tool-grant defaults to allow without prompting.",
+    evidence_required: ["endpoint MCP/plugin inventory for sampled hosts", "organizational allowlist with justifications", "tool-grant default-policy export"],
     verdict_when_failed: PAPER
   },
   'NIST-800-53-SA-12': {
     claim: "Our supply chain protection practices meet NIST 800-53 SA-12.",
-    test: "Pull the supplier-protection program. Confirm AI providers are enumerated with the same diligence as software suppliers (security questionnaire, SOC 2 review, contractual breach-notification). Confirm model and MCP-server provenance attestation is collected at consumption. Theater verdict if AI providers are exempt from supplier diligence, or if model artefacts are consumed without provenance attestation.",
+    test: "Pull the supplier-protection program. Confirm AI providers are enumerated with the same diligence as software suppliers (security questionnaire, SOC 2 review, contractual breach-notification). Confirm model and MCP-server provenance attestation is collected at consumption. Theater verdict if AI providers are exempt from supplier diligence, or if model artifacts are consumed without provenance attestation.",
     evidence_required: ["supplier-protection program document", "AI-provider diligence record sample", "model-provenance attestations at consumption"],
     verdict_when_failed: PAPER
   },
   'NIST-800-53-SC-28': {
     claim: "Information at rest is protected per NIST 800-53 SC-28 with encryption.",
-    test: "Inventory AI-provider artefact storage (conversation history, embeddings, fine-tune sets, vector indices). Confirm encryption-at-rest with key management by an in-scope KMS. Spot-check 3 storage locations; confirm key access is logged. Theater verdict if any AI artefact storage is unencrypted, key management is provider-default with no in-scope KMS, or key access is unlogged.",
-    evidence_required: ["AI artefact storage inventory", "KMS key-policy export", "key access log sample"],
+    test: "Inventory AI-provider artifact storage (conversation history, embeddings, fine-tune sets, vector indices). Confirm encryption-at-rest with key management by an in-scope KMS. Spot-check 3 storage locations; confirm key access is logged. Theater verdict if any AI artifact storage is unencrypted, key management is provider-default with no in-scope KMS, or key access is unlogged.",
+    evidence_required: ["AI artifact storage inventory", "KMS key-policy export", "key access log sample"],
     verdict_when_failed: PAPER
   },
   'NIST-800-53-SC-7': {
@@ -366,13 +366,13 @@ const TESTS = {
   },
   'NIST-800-53-SI-10': {
     claim: "We validate information inputs per NIST 800-53 SI-10.",
-    test: "Inspect input-validation rules at AI prompt boundaries: system-prompt protection from third-party content, RAG-corpus content sanitisation, tool-output sanitisation before re-injection. Theater verdict if no input validation exists at any of those boundaries, or if SI-10 evidence cites only HTML/SQL escaping without prompt-injection treatment.",
-    evidence_required: ["input-validation policy at prompt boundaries", "RAG-corpus sanitisation rule export", "tool-output sanitisation logic"],
+    test: "Inspect input-validation rules at AI prompt boundaries: system-prompt protection from third-party content, RAG-corpus content sanitization, tool-output sanitization before re-injection. Theater verdict if no input validation exists at any of those boundaries, or if SI-10 evidence cites only HTML/SQL escaping without prompt-injection treatment.",
+    evidence_required: ["input-validation policy at prompt boundaries", "RAG-corpus sanitization rule export", "tool-output sanitization logic"],
     verdict_when_failed: PAPER
   },
   'NIST-800-53-SI-12': {
     claim: "Information handling and retention satisfies NIST 800-53 SI-12.",
-    test: "Pull the records-retention schedule. Confirm AI artefacts (prompts, outputs, embeddings, fine-tune sets) appear with explicit retention periods aligned to data-classification. Confirm provider-side retention is documented per AI provider with attestation. Theater verdict if AI artefacts are absent from the retention schedule, or if provider-side retention is undocumented.",
+    test: "Pull the records-retention schedule. Confirm AI artifacts (prompts, outputs, embeddings, fine-tune sets) appear with explicit retention periods aligned to data-classification. Confirm provider-side retention is documented per AI provider with attestation. Theater verdict if AI artifacts are absent from the retention schedule, or if provider-side retention is undocumented.",
     evidence_required: ["records-retention schedule with AI categories", "provider retention attestation per AI provider", "deletion verification log"],
     verdict_when_failed: PAPER
   },
@@ -404,7 +404,7 @@ const TESTS = {
   // OWASP family
   'OWASP-ASVS-v5.0-V14': {
     claim: "Our application meets OWASP ASVS v5.0 V14 configuration controls.",
-    test: "For any AI-mediated feature, confirm V14-equivalent controls cover prompt-isolation, output-sanitisation, and tool-grant defaults. Confirm SDK pinning and provider-version pinning where supported. Theater verdict if AI-feature configuration management is informal (no pinned versions, no documented prompt-isolation policy).",
+    test: "For any AI-mediated feature, confirm V14-equivalent controls cover prompt-isolation, output-sanitization, and tool-grant defaults. Confirm SDK pinning and provider-version pinning where supported. Theater verdict if AI-feature configuration management is informal (no pinned versions, no documented prompt-isolation policy).",
     evidence_required: ["AI-feature configuration policy", "SDK + provider version pinning manifest", "prompt-isolation design document"],
     verdict_when_failed: PAPER
   },
@@ -448,7 +448,7 @@ const TESTS = {
   },
   'PCI-DSS-4.0.1-6.4.3': {
     claim: "We meet PCI DSS 4.0.1 6.4.3 inventory of payment-page scripts.",
-    test: "Pull the payment-page script inventory. Confirm completeness against a fresh DOM snapshot of the live payment page. Confirm authorisation attestation per script (who approved, when, why). Confirm SRI hashes are pinned per script. Theater verdict if the inventory diverges from the live DOM, or if any script lacks attestation/SRI pinning.",
+    test: "Pull the payment-page script inventory. Confirm completeness against a fresh DOM snapshot of the live payment page. Confirm authorization attestation per script (who approved, when, why). Confirm SRI hashes are pinned per script. Theater verdict if the inventory diverges from the live DOM, or if any script lacks attestation/SRI pinning.",
     evidence_required: ["payment-page script inventory", "live DOM snapshot per page", "SRI configuration export"],
     verdict_when_failed: PAPER
   },
@@ -488,20 +488,20 @@ const TESTS = {
   // SLSA
   'SLSA-v1.0-Build-L3': {
     claim: "Our build pipeline is SLSA Build L3 with non-falsifiable provenance signed by a hardened build platform.",
-    test: "Pull the SLSA provenance attestation for the most-recent release. Confirm the build platform is hosted/hardened, the attestation is signed, and the materials cover the full source-of-truth. Then confirm AI-authorship attestation (per-block provenance for AI-generated code with reviewer identity) is present. Confirm any model artefacts shipped have a Model Track equivalent attestation. Theater verdict if attestations exist but AI-authored diffs lack reviewer attestation, or if model artefacts ship at SLSA L0/L1 equivalent without explicit model-track attestation.",
-    evidence_required: ["SLSA provenance attestation for latest release", "AI-authorship attestation policy and recent merge sample", "model-track attestation if model artefacts shipped"],
+    test: "Pull the SLSA provenance attestation for the most-recent release. Confirm the build platform is hosted/hardened, the attestation is signed, and the materials cover the full source-of-truth. Then confirm AI-authorship attestation (per-block provenance for AI-generated code with reviewer identity) is present. Confirm any model artifacts shipped have a Model Track equivalent attestation. Theater verdict if attestations exist but AI-authored diffs lack reviewer attestation, or if model artifacts ship at SLSA L0/L1 equivalent without explicit model-track attestation.",
+    evidence_required: ["SLSA provenance attestation for latest release", "AI-authorship attestation policy and recent merge sample", "model-track attestation if model artifacts shipped"],
     verdict_when_failed: PAPER
   },
 
   // SOC 2
   'SOC2-CC6-logical-access': {
     claim: "Our SOC 2 CC6 logical and physical access controls cover all in-scope systems.",
-    test: "Sample AI-agent invocation flows. Confirm authorisation-context evidence per invocation (scope, tools, data sensitivity). Confirm prompt logging captures sufficient detail for post-incident analysis (input chain, output, tool calls). Confirm anomaly detection alerts on AI-agent actions outside baseline. Theater verdict if AI-agent actions are not separately authorised, prompts are unlogged, or anomaly detection is absent.",
-    evidence_required: ["AI-agent authorisation-context policy", "prompt-logging configuration with retention", "anomaly-detection rule export"],
+    test: "Sample AI-agent invocation flows. Confirm authorization-context evidence per invocation (scope, tools, data sensitivity). Confirm prompt logging captures sufficient detail for post-incident analysis (input chain, output, tool calls). Confirm anomaly detection alerts on AI-agent actions outside baseline. Theater verdict if AI-agent actions are not separately authorized, prompts are unlogged, or anomaly detection is absent.",
+    evidence_required: ["AI-agent authorization-context policy", "prompt-logging configuration with retention", "anomaly-detection rule export"],
     verdict_when_failed: PAPER
   },
   'SOC2-CC7-anomaly-detection': {
-    claim: "Our SOC 2 CC7 system monitoring detects anomalous behaviour.",
+    claim: "Our SOC 2 CC7 system monitoring detects anomalous behavior.",
     test: "Inspect monitoring rules for AI-class anomalies (prompt injection patterns, RAG-corpus drift, agent action volume spikes, tool-call sequence deviations). Confirm at least one alert per class triggered in the past 90 days; confirm triage records exist. Theater verdict if AI-class anomaly rules are absent, or if no alerts triggered despite AI being in production for 90+ days.",
     evidence_required: ["AI-class anomaly rule export", "alert-triage records past 90 days", "telemetry volume report"],
     verdict_when_failed: PAPER
@@ -554,8 +554,8 @@ const TESTS = {
   },
   'UK-CAF-D1': {
     claim: "Our response and recovery planning satisfies UK CAF D1.",
-    test: "Pull the incident response plan. Confirm AI-incident scenarios (prompt-injection RCE, RAG-poisoning, agent-action-on-injected-intent, AI-API supply-chain compromise) are exercised in the past 12 months. Confirm the plan integrates with NIS2 24h notification timing. Theater verdict if AI scenarios are absent from the exercise catalogue, or if NIS2 timing is not integrated.",
-    evidence_required: ["incident response plan", "exercise catalogue with execution dates", "NIS2 timing integration document"],
+    test: "Pull the incident response plan. Confirm AI-incident scenarios (prompt-injection RCE, RAG-poisoning, agent-action-on-injected-intent, AI-API supply-chain compromise) are exercised in the past 12 months. Confirm the plan integrates with NIS2 24h notification timing. Theater verdict if AI scenarios are absent from the exercise catalog, or if NIS2 timing is not integrated.",
+    evidence_required: ["incident response plan", "exercise catalog with execution dates", "NIS2 timing integration document"],
     verdict_when_failed: PAPER
   },
   'UK-CAF-B5': {
@@ -588,7 +588,7 @@ const TESTS = {
   // FCC / Telecom
   'FCC-CPNI-4.1': {
     claim: "Our annual CPNI certification satisfies FCC CPNI obligations.",
-    test: "Confirm quarterly LI-gateway activation auditing (Salt-Typhoon/PRC threat model). Confirm gNB firmware hash attestation and signaling-anomaly baselines per PLMN-pair. Pull the most recent CPNI certification; confirm those operational artefacts are referenced. Theater verdict if certification is annual-only without LI-gateway/firmware-hash/signaling artefacts.",
+    test: "Confirm quarterly LI-gateway activation auditing (Salt-Typhoon/PRC threat model). Confirm gNB firmware hash attestation and signaling-anomaly baselines per PLMN-pair. Pull the most recent CPNI certification; confirm those operational artifacts are referenced. Theater verdict if certification is annual-only without LI-gateway/firmware-hash/signaling artifacts.",
     evidence_required: ["LI-gateway audit log", "gNB firmware hash telemetry", "signaling baseline document"],
     verdict_when_failed: PAPER
   },
@@ -649,7 +649,7 @@ const TESTS = {
     verdict_when_failed: PAPER
   },
   'FedRAMP-IL5-IAM-Federated': {
-    claim: "Our FedRAMP IL5 IAM posture covers federated identity for high-impact authorisations.",
+    claim: "Our FedRAMP IL5 IAM posture covers federated identity for high-impact authorizations.",
     test: "Confirm IdP control-plane controls (token-signing rotation alerting, claim-transformation change-control, management-API TTL/scope/source-IP) at IL5 evidence-quality. Confirm cross-account assume-role with subject-claim specificity > wildcard. Theater verdict if controls exist at SP-quality without IL5 evidence-rigor, or if any cross-account chain has wildcard subject claims.",
     evidence_required: ["IL5-quality IdP control evidence bundle", "cross-account assume-role policy export", "evidence retention per IL5 cadence"],
     verdict_when_failed: PAPER
@@ -674,8 +674,8 @@ const TESTS = {
   },
   'AWS-Security-Hub-Coverage-Gap': {
     claim: "Our cloud posture is monitored end-to-end by AWS Security Hub (or equivalent CSP-native posture tool).",
-    test: "Pull the past 90 days of Security Hub findings. Cross-reference against IR ticket-tracker. Theater verdict if more than 5 findings closed without remediation evidence (suppression rules only). Then run the project's `cloud-iam-incident` playbook detect-indicator inventory against CloudTrail; theater verdict if Security Hub did not surface indicators that the behavioural inventory does (posture-tool deployment ≠ behavioural coverage).",
-    evidence_required: ["Security Hub findings export 90 days", "IR ticket-tracker correlation", "cloud-iam-incident detect-indicator → CloudTrail behavioural-rule mapping"],
+    test: "Pull the past 90 days of Security Hub findings. Cross-reference against IR ticket-tracker. Theater verdict if more than 5 findings closed without remediation evidence (suppression rules only). Then run the project's `cloud-iam-incident` playbook detect-indicator inventory against CloudTrail; theater verdict if Security Hub did not surface indicators that the behavioral inventory does (posture-tool deployment ≠ behavioral coverage).",
+    evidence_required: ["Security Hub findings export 90 days", "IR ticket-tracker correlation", "cloud-iam-incident detect-indicator → CloudTrail behavioral-rule mapping"],
     verdict_when_failed: PAPER
   },
 
@@ -683,7 +683,7 @@ const TESTS = {
   'OFAC-SDN-Payment-Block': {
     claim: "Our incident response covers OFAC sanctions screening before any ransomware payment.",
     test: "Run a tabletop where the inject is a ransomware demand from an attribution-likely-sanctioned actor. Stopwatch the workflow: attribution-evidence package assembled → cross-jurisdiction lookup (OFAC SDN + EU 2014/833 + UK OFSI + AU DFAT + JP MOF) → counsel-signed attestation → pay/restore decision. Theater verdict if any cross-jurisdiction list is missing, counsel-signed attestation is unrehearsed, or the tabletop has not been exercised in the past 12 months.",
-    evidence_required: ["sanctions-screening sub-procedure document", "tabletop execution log with decision artefacts", "counsel-signed attestation template"],
+    evidence_required: ["sanctions-screening sub-procedure document", "tabletop execution log with decision artifacts", "counsel-signed attestation template"],
     verdict_when_failed: PAPER
   },
   'Insurance-Carrier-24h-Notification': {
@@ -706,8 +706,8 @@ const TESTS = {
   },
   'Decryptor-Availability-Pre-Decision': {
     claim: "Our ransomware response checks decryptor availability before any pay/restore decision.",
-    test: "Run a tabletop. Inject a ransomware family fingerprint (e.g. LockBit 3.0, BlackCat, Akira). Confirm IR playbook executes a curated decryptor catalogue lookup (No More Ransom + Emsisoft + Kaspersky NoMoreCry + Bitdefender + Avast + law-enforcement releases) and records the result with timestamp before the pay/restore decision. Confirm decryptor known-failure-mode review (e.g. ~35% partial-decryption rate per Coveware) is documented as decision input. Theater verdict if catalogue lookup is absent, failure-mode review is missing, or quarterly catalogue refresh is undocumented.",
-    evidence_required: ["IR playbook decryptor sub-procedure", "tabletop execution log", "quarterly catalogue refresh evidence"],
+    test: "Run a tabletop. Inject a ransomware family fingerprint (e.g. LockBit 3.0, BlackCat, Akira). Confirm IR playbook executes a curated decryptor catalog lookup (No More Ransom + Emsisoft + Kaspersky NoMoreCry + Bitdefender + Avast + law-enforcement releases) and records the result with timestamp before the pay/restore decision. Confirm decryptor known-failure-mode review (e.g. ~35% partial-decryption rate per Coveware) is documented as decision input. Theater verdict if catalog lookup is absent, failure-mode review is missing, or quarterly catalog refresh is undocumented.",
+    evidence_required: ["IR playbook decryptor sub-procedure", "tabletop execution log", "quarterly catalog refresh evidence"],
     verdict_when_failed: PAPER
   },
   'PHI-Exfil-Before-Encrypt-Breach-Class': {

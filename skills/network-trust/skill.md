@@ -54,7 +54,7 @@ Below the application, TLS authenticates a certificate against a CA bundle — n
 
 ## Framework Lag Declaration
 
-Organisational network controls equate TLS with peer authenticity and assume DNS and time are trustworthy. NIST 800-53 SC-8 (transmission integrity) is satisfied by TLS to a CA bundle and does not require DANE pinning, DNSSEC, or authenticated time. ISO 27001 A.8.21 (security of network services) is met with TLS + a CA bundle. NIS2 Art.21 names network security of essential services but not the DNS/time/transport trust-anchor posture that AiTM exploits. A clean "we use TLS and a validating resolver and NTP" audit is therefore NON-EVIDENCE for network-trust posture; it confirms encryption and a CA bundle, not end-to-end DNSSEC validation, peer pinning, or authenticated time.
+Organizational network controls equate TLS with peer authenticity and assume DNS and time are trustworthy. NIST 800-53 SC-8 (transmission integrity) is satisfied by TLS to a CA bundle and does not require DANE pinning, DNSSEC, or authenticated time. ISO 27001 A.8.21 (security of network services) is met with TLS + a CA bundle. NIS2 Art.21 names network security of essential services but not the DNS/time/transport trust-anchor posture that AiTM exploits. A clean "we use TLS and a validating resolver and NTP" audit is therefore NON-EVIDENCE for network-trust posture; it confirms encryption and a CA bundle, not end-to-end DNSSEC validation, peer pinning, or authenticated time.
 
 ## TTP Mapping
 
@@ -62,7 +62,7 @@ The network-trust failures map to MITRE ATT&CK: **T1557 (Adversary-in-the-Middle
 
 ## Exploit Availability Matrix
 
-These are posture gaps, so weaponisation is low-cost given an on-path or DNS-influencing position. DNS forgery and cache poisoning have commodity tooling; the DNSSEC validation surface's own DoS (KeyTrap / NSEC3) is catalogued with public analysis. DNS rebinding has public frameworks. A mis-issued or compromised-CA certificate is a recurring real-world event that DANE/mTLS pinning is designed to contain. Unauthenticated NTP is steerable by any on-path attacker. None require a novel exploit; the exploit is the absent validation. Real-world priority is driven by whether the unvalidated anchor sits on an internet-facing authentication, credential, or payment path, and by how many trust decisions ride on it.
+These are posture gaps, so weaponization is low-cost given an on-path or DNS-influencing position. DNS forgery and cache poisoning have commodity tooling; the DNSSEC validation surface's own DoS (KeyTrap / NSEC3) is cataloged with public analysis. DNS rebinding has public frameworks. A mis-issued or compromised-CA certificate is a recurring real-world event that DANE/mTLS pinning is designed to contain. Unauthenticated NTP is steerable by any on-path attacker. None require a novel exploit; the exploit is the absent validation. Real-world priority is driven by whether the unvalidated anchor sits on an internet-facing authentication, credential, or payment path, and by how many trust decisions ride on it.
 
 ## Analysis Procedure
 
@@ -70,7 +70,7 @@ These are posture gaps, so weaponisation is low-cost given an on-path or DNS-inf
 
 ## Output Format
 
-Report per trust anchor (DNS, peer certificate, time, message signature), marking each enforced / missing / inconclusive (visibility gap). For every missing check, state whether the path is internet-facing and which trust decisions (peer auth, name resolution, cert validity, TOTP) depend on it. Distinguish a genuinely-not-in-scope anchor (no DANE-capable peer, no authoritative zone, fixed pinned IP) from an unvalidated one. Provide the prioritised remediation (validate DNSSEC + guard rebinding, pin peer certificates via DANE/mTLS, authenticate time, require TSIG + verify message signatures, refresh the PSL) and the negative validation tests that prove each fix (forged DNS rejected, mis-issued cert rejected, time-shift cannot revive a cert) plus a functional test that legitimate traffic still flows.
+Report per trust anchor (DNS, peer certificate, time, message signature), marking each enforced / missing / inconclusive (visibility gap). For every missing check, state whether the path is internet-facing and which trust decisions (peer auth, name resolution, cert validity, TOTP) depend on it. Distinguish a genuinely-not-in-scope anchor (no DANE-capable peer, no authoritative zone, fixed pinned IP) from an unvalidated one. Provide the prioritized remediation (validate DNSSEC + guard rebinding, pin peer certificates via DANE/mTLS, authenticate time, require TSIG + verify message signatures, refresh the PSL) and the negative validation tests that prove each fix (forged DNS rejected, mis-issued cert rejected, time-shift cannot revive a cert) plus a functional test that legitimate traffic still flows.
 
 ## Compliance Theater Check
 
@@ -78,4 +78,4 @@ The recurring theater is "we use TLS everywhere, so the peer is authenticated," 
 
 ## Defensive Countermeasure Mapping
 
-Map findings to MITRE D3FEND: DNSSEC validation and DNS-rebinding guarding realise DNS Traffic Analysis and Resolution-Trust enforcement (countering T1071.004/T1557); DANE/TLSA and mTLS CA pinning realise Certificate Pinning and Public Key Infrastructure validation (countering T1557 mis-issuance); authenticated time (NTS) realises System Time Integrity (countering clock-shift cert/TOTP abuse); RFC 9421 message-signature verification realises Message Authentication (countering T1556). Pair DANE with DNSSEC (TLSA without DNSSEC is meaningless) and treat the clock as a security input. The residual risk after validation is compromise of the trust anchor itself (signing key, pinned CA, time authority), addressed by key-management and monitoring, accepted at the CISO level.
+Map findings to MITRE D3FEND: DNSSEC validation and DNS-rebinding guarding realize DNS Traffic Analysis and Resolution-Trust enforcement (countering T1071.004/T1557); DANE/TLSA and mTLS CA pinning realize Certificate Pinning and Public Key Infrastructure validation (countering T1557 mis-issuance); authenticated time (NTS) realizes System Time Integrity (countering clock-shift cert/TOTP abuse); RFC 9421 message-signature verification realizes Message Authentication (countering T1556). Pair DANE with DNSSEC (TLSA without DNSSEC is meaningless) and treat the clock as a security input. The residual risk after validation is compromise of the trust anchor itself (signing key, pinned CA, time authority), addressed by key-management and monitoring, accepted at the CISO level.

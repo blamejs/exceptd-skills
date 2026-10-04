@@ -432,7 +432,7 @@ function coversLibExport(corpus, libRel, ident) {
   return false;
 }
 
-// True when `ident` appears as a token inside the parenthesised body of a
+// True when `ident` appears as a token inside the parenthesized body of a
 // `test(`, `it(`, `describe(`, `assert(` or `assert.<member>(` call. The paren
 // walk is approximate by design.
 function mentionsIdentInTestContext(content, ident) {

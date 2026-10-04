@@ -251,7 +251,7 @@ without reading every entry.
 ## Evidence collection
 
 `exceptd collect <playbook>` walks the working directory, applies the playbook's
-catalogued patterns, stats permissions, and emits submission JSON in the shape
+cataloged patterns, stats permissions, and emits submission JSON in the shape
 `exceptd run --evidence -` accepts:
 
 ```bash
@@ -351,7 +351,7 @@ exceptd ai-run <playbook>             JSONL streaming variant of run. AI emits
 #   }}
 # observations[<key>] carries both artifact captures
 # ({ captured: true, value: "..." }) AND indicator overrides
-# ({ indicator: "<id>", result: "hit"|"miss" }) — the runner normalises
+# ({ indicator: "<id>", result: "hit"|"miss" }) — the runner normalizes
 # both branches from a single map. The alternative nested shape
 # ({ artifacts, signal_overrides, signals }) is also accepted, but do not
 # mix the two — if `signal_overrides` is present, `observations` and
@@ -710,8 +710,8 @@ All skills pull from `data/`. Cross-validated against canonical upstream sources
 To resolve a single citation rather than refresh the whole catalog, `exceptd cve <CVE-ID>` and `exceptd rfc <number>` return a status verdict for one id (catalog → resolved cache → one NVD / datatracker lookup, offline-capable). The lookup caches, so a fan-out of agents shares the answer instead of each independently re-researching the same citation.
 
 - `cve-catalog.json` — CVE metadata with RWEP scores, CISA KEV status, PoC availability, live-patch info
-- `atlas-ttps.json` — MITRE ATLAS v2026.09 TTPs with gap flags and exploitation examples. Each TTP now carries a `cve_refs[]` back-edge — operators reading an ATLAS entry see the catalogued CVEs that cite it without grepping `cve-catalog.json`. The same back-edge is populated on `attack-techniques.json`, and each playbook carries a `_meta.fed_by[]` reverse field naming the upstream playbooks that chain into it.
-- `attack-techniques.json` — MITRE ATT&CK enterprise and ICS techniques, each carrying the catalogued CVEs that cite it in `cve_refs[]`
+- `atlas-ttps.json` — MITRE ATLAS v2026.09 TTPs with gap flags and exploitation examples. Each TTP now carries a `cve_refs[]` back-edge — operators reading an ATLAS entry see the cataloged CVEs that cite it without grepping `cve-catalog.json`. The same back-edge is populated on `attack-techniques.json`, and each playbook carries a `_meta.fed_by[]` reverse field naming the upstream playbooks that chain into it.
+- `attack-techniques.json` — MITRE ATT&CK enterprise and ICS techniques, each carrying the cataloged CVEs that cite it in `cve_refs[]`
 - `framework-control-gaps.json` — Per-framework, per-control: what it was designed for vs. what it misses
 - `exploit-availability.json` — PoC locations, weaponization status, AI-assist factor
 - `global-frameworks.json` — All major global compliance frameworks (35 jurisdictions) with control inventories and lag scores

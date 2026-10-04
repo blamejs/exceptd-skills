@@ -739,7 +739,7 @@ function readJsonFile(filePath) {
   } else if (buf.length >= 2 && buf[0] === 0xFE && buf[1] === 0xFF) {
     // UTF-16BE: Node has no native decoder, so swap byte pairs to LE first, and an
     // odd-length payload is refused up front. Buffer.alloc, not allocUnsafe: an
-    // unexpected loop bound must not leak uninitialised heap into the string.
+    // unexpected loop bound must not leak uninitialized heap into the string.
     const payloadLength = buf.length - 2;
     if (payloadLength % 2 !== 0) {
       throw new Error(`failed to read ${filePath}: UTF-16BE payload must have an even byte count after BOM; got ${payloadLength} bytes — file may be truncated.`);
@@ -777,7 +777,7 @@ function readEvidence(evidenceFlag, opts = {}) {
   // The cap binds on BOTH branches: uncapped, piped multi-GB JSON OOMs the runner.
   const MAX_EVIDENCE_BYTES = 32 * 1024 * 1024;
   if (evidenceFlag === "-") {
-    // fs.readFileSync(0) honours no maxBuffer, so the cap is enforced per chunk.
+    // fs.readFileSync(0) honors no maxBuffer, so the cap is enforced per chunk.
     const chunks = [];
     let total = 0;
     const buf = Buffer.alloc(1024 * 1024);
@@ -873,7 +873,7 @@ function isCalendarDate(ymd) {
 
 /**
  * Pre-validates a --vex document: vexFilterFromDoc returns Set(0) for anything it
- * doesn't recognise, so a SARIF or CSAF file passed by mistake would filter
+ * doesn't recognize, so a SARIF or CSAF file passed by mistake would filter
  * nothing, silently. Returns { ok, detected, top_level_keys }.
  */
 function detectVexShape(doc) {
@@ -1136,21 +1136,21 @@ function dispatchPlaybook(cmd, argv) {
     }
     // The ASCII regex above misses Unicode Cc/Cf/Co/Cn — bidi, zero-width, format, private-use, unassigned.
     // allow:bidi-codepoint-literal — illustrative bidi-forgery example in the --operator reject-path doc comment
-    // "alice‮evilbob" renders as "alicebobevila" wherever bidi is honoured, so
-    // the attested name reads as Bob while the bytes say Alice. NFC-normalise first,
+    // "alice‮evilbob" renders as "alicebobevila" wherever bidi is honored, so
+    // the attested name reads as Bob while the bytes say Alice. NFC-normalize first,
     // or a decomposed sequence smuggles a combining mark past the codepoint check.
     let normalized;
     try { normalized = args.operator.normalize("NFC"); }
     catch (e) {
       return emitError(
-        `${cmd}: --operator failed Unicode NFC normalisation: ${e.message}`,
+        `${cmd}: --operator failed Unicode NFC normalization: ${e.message}`,
         { verb: cmd, provided_length: args.operator.length },
         pretty
       );
     }
     if (normalized.length === 0) {
       return emitError(
-        `${cmd}: --operator is empty after Unicode NFC normalisation. Pass a meaningful identifier or omit the flag.`,
+        `${cmd}: --operator is empty after Unicode NFC normalization. Pass a meaningful identifier or omit the flag.`,
         { verb: cmd },
         pretty
       );
@@ -1310,7 +1310,7 @@ function dispatchPlaybook(cmd, argv) {
     runOpts.bundleEpoch = new Date(epoch).toISOString();
   }
 
-  // --ack records acknowledgement of the jurisdiction obligations into the
+  // --ack records acknowledgment of the jurisdiction obligations into the
   // attestation, so tooling can tell explicit consent from implicit. Refused on
   // info-only verbs, which start no clock for consent to attach to.
   const ACK_RELEVANT_VERBS = new Set([
@@ -1532,7 +1532,7 @@ Flags:
   --publisher-namespace <url>
                           CSAF document.publisher.namespace (§3.1.7.4). The
                           publisher trust anchor — i.e. the operator's
-                          organisation, NOT the tooling vendor. Must be an
+                          organization, NOT the tooling vendor. Must be an
                           http://… or https://… URL, ≤256 chars.
   --bundle-deterministic  Emit byte-stable CSAF / OpenVEX / close envelope.
                           Freezes tracking + timestamp fields to a single
@@ -1750,7 +1750,7 @@ Flags:
                           set this only after operator review of the advisory.
   --publisher-namespace <url>
                           CSAF document.publisher.namespace (§3.1.7.4). The
-                          operator's organisation URL, NOT the tooling vendor.
+                          operator's organization URL, NOT the tooling vendor.
                           Must be an http://… or https://… URL, ≤256 chars.
   --bundle-deterministic  Emit byte-stable bundles for reproducible pipelines.
   --bundle-epoch <ISO>    Frozen epoch for --bundle-deterministic.
@@ -1777,7 +1777,7 @@ Stdin event grammar (one JSON object per line):
   }}
   observations[<key>] carries both artifact captures
   ({ captured: true, value: "..." }) AND indicator overrides
-  ({ indicator: "<id>", result: "hit"|"miss" }) — the runner normalises
+  ({ indicator: "<id>", result: "hit"|"miss" }) — the runner normalizes
   both branches from a single map. The alternative nested shape
   ({ artifacts, signal_overrides, signals }) is also accepted; do not mix
   the two — if signal_overrides is present, observations/verdict are
@@ -1802,7 +1802,7 @@ Emits phases: govern → direct → look → await_evidence → detect → analy
 Errors emit {"event":"error","reason":"..."} and exit non-zero.`,
     ask: `ask "<plain-English question>" — keyword routing to playbooks (v0.11.0).
 
-Tokenises the question (words > 3 chars), scores every playbook by overlap
+Tokenizes the question (words > 3 chars), scores every playbook by overlap
 against domain.name + domain.attack_class + the first sentence of
 phases.direct.threat_context, returns the top 5 matches with a confidence
 score.
@@ -1854,7 +1854,7 @@ Flags:
                           One of: draft | interim (default) | final.
   --publisher-namespace <url>
                           CSAF document.publisher.namespace (§3.1.7.4). The
-                          operator's organisation URL, NOT the tooling vendor.
+                          operator's organization URL, NOT the tooling vendor.
   --bundle-deterministic  Emit byte-stable bundles across per-playbook runs.
   --bundle-epoch <ISO>    Frozen epoch for --bundle-deterministic.
   --json                  Force single-line JSON (overrides any TTY heuristics).
@@ -1890,7 +1890,7 @@ for <playbook>, ready to pipe into \`run\`:
 
 Flags:
   --cwd <dir>             Scan <dir> instead of the current directory.
-  --attest-ownership      Attest that you own (or hold written authorisation
+  --attest-ownership      Attest that you own (or hold written authorization
                           for) the asset being scanned, satisfying an ownership
                           precondition (e.g. cicd-pipeline-compromise's
                           operator-owns-ci-fleet gate) so run does not block.
@@ -1957,7 +1957,7 @@ Flags (selected — see \`exceptd run --help\` for the full list):
                           set this only after operator review of the advisory.
   --publisher-namespace <url>
                           CSAF document.publisher.namespace (§3.1.7.4). The
-                          operator's organisation URL, NOT the tooling vendor.
+                          operator's organization URL, NOT the tooling vendor.
                           Must be an http://… or https://… URL, ≤256 chars.
   --bundle-deterministic  Emit byte-stable bundles across the multi-run set.
   --bundle-epoch <ISO>    Frozen epoch for --bundle-deterministic.`,
@@ -2774,7 +2774,7 @@ function cmdRun(runner, args, runOpts, pretty) {
   // produces several bundles under bundles_by_format.
   if (args.format) {
     // "csaf" is the shortcut for the runner's canonical "csaf-2.0" key. An
-    // unrecognised format is rejected after the run, so the run still completes.
+    // unrecognized format is rejected after the run, so the run still completes.
     const formats = (Array.isArray(args.format) ? args.format : [args.format])
       .map(f => f === "csaf" ? "csaf-2.0" : f);
     submission.signals = submission.signals || {};
@@ -2806,7 +2806,7 @@ function cmdRun(runner, args, runOpts, pretty) {
       return emitError(`run: failed to load --vex ${args.vex}: ${e.message}`, null, pretty);
     }
     // Shape-checked BEFORE vexFilterFromDoc, which returns Set(0) for anything it
-    // doesn't recognise — a mistaken SARIF or CSAF would filter nothing, silently.
+    // doesn't recognize — a mistaken SARIF or CSAF would filter nothing, silently.
     const shape = detectVexShape(vexDoc);
     if (!shape.ok) {
       return emitError(
@@ -4425,7 +4425,7 @@ function cmdReattest(runner, args, runOpts, pretty) {
   if (prior.submission && prior.submission.precondition_checks) {
     replayOpts.precondition_checks = prior.submission.precondition_checks;
   } else {
-    // Preconditions synthesised from the playbook, so a replay isn't blocked when
+    // Preconditions synthesized from the playbook, so a replay isn't blocked when
     // the operator never supplied them.
     try {
       // The playbook_id came off disk, where a corrupt prior could smuggle one.
@@ -6153,7 +6153,7 @@ function cmdDoctor(runner, args, runOpts, pretty) {
 
   // Collector-layer health gate: every playbook needs `lib/collectors/<id>.js` whose
   // `playbook_id` matches the filename and which exports `collect`. policy_skips is
-  // the catalogued set of judgement-shaped playbooks that have none by design.
+  // the cataloged set of judgement-shaped playbooks that have none by design.
   if (runCollectors) {
     try {
       const playbookDir = path.join(PKG_ROOT, "data", "playbooks");
@@ -7599,7 +7599,7 @@ function cmdCi(runner, args, runOpts, pretty) {
     }
   }
 
-  // The same --format shortcuts `run` honours.
+  // The same --format shortcuts `run` honors.
   let formatRaw = args.format;
   if (Array.isArray(formatRaw)) formatRaw = formatRaw[0];
   const fmt = formatRaw === "csaf-2.0" ? "csaf" : formatRaw;

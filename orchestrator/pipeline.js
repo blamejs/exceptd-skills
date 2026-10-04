@@ -229,7 +229,7 @@ function getStageInstructions(stageName, previousOutput) {
 
 function _currencyScore(daysSinceReview, _forwardWatchCount) {
   // Age of last_threat_review alone. A forward_watch entry signals ACTIVE
-  // maintenance, so the count must not penalise the score; the argument stays for
+  // maintenance, so the count must not penalize the score; the argument stays for
   // callers. The schedule has to cross the tiers the gate checks — 'stale' below
   // 70, 'critical_stale' below 50 — so a worst penalty of -30 would floor the
   // score at 70 and neither tier could fire. A non-finite delta maps to STALE.

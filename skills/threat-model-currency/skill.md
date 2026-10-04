@@ -247,17 +247,17 @@ No major risk-assessment or threat-intelligence framework defines a currency met
 |---|---|---|
 | NIST | SP 800-30 Rev. 1 (Guide for Conducting Risk Assessments) | Process-only. Requires identifying threats, vulnerabilities, likelihood, impact — defines no metric for the *currency* of the threat catalog used. A 2022 threat model can be SP 800-30-compliant in 2026. |
 | NIST | SP 800-39 / SP 800-37 (Risk Management Framework) | Mandates ongoing risk assessment but not threat-model refresh cycles tied to KEV/ATLAS updates. |
-| NIST | AI RMF MAP-2.1 | Requires categorising AI-system risks; does not require the categorisation be re-run when new ATLAS TTPs publish. |
+| NIST | AI RMF MAP-2.1 | Requires categorizing AI-system risks; does not require the categorization be re-run when new ATLAS TTPs publish. |
 | ISO | 27005:2022 (Information security risk management) | Same shape as SP 800-30 — process guidance with no currency requirement. |
 | ISO | 27001:2022 A.5.7 (Threat intelligence) | Requires collection and analysis of threat intelligence. Defines no recency requirement, no metric for "current", no test that distinguishes current threat intel from a 2022 PDF on a shelf. |
 | EU | NIS2 Art. 21(2)(a) (Risk analysis and information system security policies) | Mandates risk analysis as a measure; is silent on threat-model age or refresh trigger. National competent authorities have not (mid-2026) issued binding guidance on threat-model currency. |
 | EU | DORA Art. 6 (ICT risk management framework) | Requires identification of ICT risks "on an ongoing basis"; "ongoing" is undefined and unmetered. |
 | EU | EU AI Act Art. 9 (Risk Management System for high-risk AI) | Mandates "continuous iterative" risk management; provides no currency test, no mapping to ATLAS, no required refresh trigger. |
 | UK | NCSC CAF Principle A2 (Risk Management) | Principle-based, leaves currency to the assessor. No threat-class checklist, no minimum refresh cadence. |
-| AU | ISM-1238 and ISM-2039 | Require threat modelling in the software development life cycle, and a review that keeps the model current with the as-built software and the threat environment. Neither sets a review cadence, and neither applies to threat models outside software development. |
+| AU | ISM-1238 and ISM-2039 | Require threat modeling in the software development life cycle, and a review that keeps the model current with the as-built software and the threat environment. Neither sets a review cadence, and neither applies to threat models outside software development. |
 | Global | COSO ERM / ISO 31000 | Enterprise risk frameworks treat cyber as one risk category; no operational threat-currency requirement. |
 
-The recurring failure across all of the above: every framework treats threat modelling as a process to perform, not a knowledge artefact to keep fresh against external TTP catalogs. The 14-class checklist in this skill is the missing currency metric.
+The recurring failure across all of the above: every framework treats threat modeling as a process to perform, not a knowledge artifact to keep fresh against external TTP catalogs. The 14-class checklist in this skill is the missing currency metric.
 
 ---
 
@@ -309,7 +309,7 @@ Run `node lib/scoring.js` to recompute RWEP if `data/cve-catalog.json` has been 
 
 Apply this single test to any "yes, we have a threat model" claim:
 
-> "What was the publish or last-revision date of the version of the threat model that is currently authoritative inside your organisation? Now list every CISA KEV addition since that date that affects any technology in your stack (Linux kernel, AI coding assistants, MCP servers, identity providers, edge appliances). For each, point to the line in the threat model that addresses it, or the dated risk-acceptance memo. If the answer is 'we'll update it at next review' and the next review is more than 30 days out, the threat model is a compliance artefact, not an operational document. The control is documented; it is not operational."
+> "What was the publish or last-revision date of the version of the threat model that is currently authoritative inside your organization? Now list every CISA KEV addition since that date that affects any technology in your stack (Linux kernel, AI coding assistants, MCP servers, identity providers, edge appliances). For each, point to the line in the threat model that addresses it, or the dated risk-acceptance memo. If the answer is 'we'll update it at next review' and the next review is more than 30 days out, the threat model is a compliance artifact, not an operational document. The control is documented; it is not operational."
 
 A complementary test for AI surfaces:
 
@@ -416,7 +416,7 @@ Gap: [if different]
 
 ## Defensive Countermeasure Mapping
 
-A threat model is current only when each of the 14 threat classes above has a named defensive control. The mapping below converts each class to the D3FEND defensive technique that disrupts its offensive TTP. A currency assessment that scores a class as "addressed" without naming the corresponding D3FEND technique is under-specified — the threat model identifies the threat but does not commit to a defence.
+A threat model is current only when each of the 14 threat classes above has a named defensive control. The mapping below converts each class to the D3FEND defensive technique that disrupts its offensive TTP. A currency assessment that scores a class as "addressed" without naming the corresponding D3FEND technique is under-specified — the threat model identifies the threat but does not commit to a defense.
 
 | Class | Offensive TTP | D3FEND ID | Defensive technique | Defense-in-depth layer |
 |---|---|---|---|---|
@@ -438,7 +438,7 @@ A threat model is current only when each of the 14 threat classes above has a na
 | 13 — ATLAS coverage | All AML.T* | `D3-IOPR` + `D3-NTA` | Input/Output Profiling + Network Traffic Analysis | SDK + network — the two-layer minimum for AI TTP detection |
 | 14 — Post-quantum adversary | T1557 (harvest-now-decrypt-later) | `D3-MENCR` | Message Encryption (PQC-hybrid TLS) | Network — ML-KEM / X25519 hybrid key agreement for long-lived sensitive traffic |
 
-**Defense-in-depth posture:** the 14-class currency score (per the Scoring section above) is upgraded from "addressed" to "operationally addressed" only when each class names at least one deployed D3FEND technique from the table. A threat model that scores 28/28 on knowledge of threats but cites zero D3FEND techniques is paper-current — the document is updated, the defence is not.
+**Defense-in-depth posture:** the 14-class currency score (per the Scoring section above) is upgraded from "addressed" to "operationally addressed" only when each class names at least one deployed D3FEND technique from the table. A threat model that scores 28/28 on knowledge of threats but cites zero D3FEND techniques is paper-current — the document is updated, the defense is not.
 
 **Least-privilege scope:** the D3FEND techniques in this table are technique-level; their per-principal scoping is owned by the downstream skill cited in each class (e.g. `ai-attack-surface` owns `D3-IOPR` scoping for AI principals, `kernel-lpe-triage` owns `D3-KBPI` scoping for kernel-class assets). The threat-model currency assessment cites the technique by ID; the scoping document lives in the downstream skill.
 

@@ -7,7 +7,7 @@
  * one runs in its own temp copy against the real CLI.
  *
  * The Docker `e2e` target and release.yml run this script unchanged, so host and
- * container behaviour must not diverge. Node stdlib only, zero npm deps.
+ * container behavior must not diverge. Node stdlib only, zero npm deps.
  */
 
 const fs = require("fs");
@@ -123,7 +123,7 @@ function evaluateScenario(scenario, expect, res) {
 
   // Every scenario must bind one positive check: with neither an expect_exit nor
   // a json_path_* matcher, both gates below skip and the scenario passes for any
-  // behaviour at all. A negative guard like stderr_must_not_match binds nothing.
+  // behavior at all. A negative guard like stderr_must_not_match binds nothing.
   const hasExitAssertion = typeof scenario.expect_exit === "number";
   const hasJsonAssertion = !!(expect.json_path_equals || expect.json_path_present || expect.json_path_min || expect.json_path_match);
   if (!hasExitAssertion && !hasJsonAssertion) {

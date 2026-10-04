@@ -621,3 +621,90 @@ require("node:test").describe("number-env-coerce and stream-chunk-string-decode 
     }
   });
 });
+
+require("node:test").describe("british-spelling detector", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const os = require("node:os");
+  const path = require("node:path");
+  const p = require("../scripts/check-codebase-patterns.js");
+  const fixture = (name, src) => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "egates-"));
+    const f = path.join(dir, name);
+    fs.writeFileSync(f, src, "utf8");
+    return f;
+  };
+  const found = (hits) => hits.map((h) => `${h.line}:${h.why}`);
+
+  test("flags British spellings in line comments, block comments, strings and template text", () => {
+    const f = fixture("prose.js", [
+      "// the behaviour of the catalogue",                                  // 1 flagged
+      "/**",                                                                // 2
+      " * Returns the normalised value.",                                   // 3 flagged
+      " */",                                                                // 4
+      "throw new Error(\"--operator failed NFC normalisation\");",          // 5 flagged
+      "const help = `",                                                     // 6
+      "  --attest-ownership   Attest written authorisation for the scan",   // 7 flagged
+      "  operator's organisation URL`;",                                    // 8 flagged
+      "const m = 'organisational allowlist of AI artefacts';",              // 9 flagged
+      "const n = \"the logs were analysed\";",                              // 10 flagged
+      "// waits for an acknowledgement from the paediatric unit",           // 11 flagged
+    ].join("\n"));
+    assert.deepEqual(found(p.detectBritishSpelling([f])), [
+      "1:behaviour, catalogue", "3:normalised", "5:normalisation", "7:authorisation",
+      "8:organisation", "9:organisational, artefacts", "10:analysed",
+      "11:acknowledgement, paediatric",
+    ]);
+  });
+
+  test("leaves identifiers, kept terms, backticked references and American spellings alone", () => {
+    const f = fixture("code.js", [
+      "const { recognised, normalised } = resolve(x);",                     // 1 code
+      "if (!RECOGNISED_FACTOR_KEYS.has(k)) warn({ type: 'RwepFactorUnrecognised', code: 'RWEP_FACTOR_UNRECOGNISED' });", // 2 identifiers in strings
+      "const flag = args[\"include-judgement-shaped\"];",                   // 3 kept flag
+      "const note = \"12 judgement-shaped playbooks\";",                    // 4 kept term
+      "// returns `recognised: true` for a known value",                    // 5 backticked key
+      "const t = `${normalised} exploitation`;",                            // 6 interpolation is code
+      "// we promise the advertised behavior; otherwise the analyses fail", // 7 American
+      "const ok = \"exercising, revised, supervised, compromised\";",       // 8 American -ise
+      "// quotes \"catalogue\" as matched text  // allow:british-spelling — the pattern matches both spellings", // 9 marker
+    ].join("\n"));
+    assert.deepEqual(found(p.detectBritishSpelling([f])), []);
+  });
+
+  test("a quote inside a regex literal is code, including one whose string would run off the line", () => {
+    const f = fixture("quote.js", [
+      "const re = /it's/; const normalised = 1;",                           // 1 regex literal after `=`: code
+      "if (ok) /it's/.test(s) && normalised; // the behaviour",             // 2 after `)` the quote's string runs off the line, so it is code; the comment is prose
+      "const recognised = normalised;",                                     // 3 code
+      "const msg = 'the organisation'; const x = normalised;",              // 4 a closed string is prose, the code after it is not
+    ].join("\n"));
+    assert.deepEqual(found(p.detectBritishSpelling([f])), ["2:behaviour", "4:organisation"]);
+  });
+
+  test("proseOf keeps comment and string text and drops code, across lines", () => {
+    const state = { inSingle: false, inDouble: false, inTemplate: false, inBlock: false, templateExpr: [] };
+    assert.equal(p.proseOf("const recognised = 'behaviour'; // catalogue", state).replace(/\s+/g, " ").trim(), "behaviour catalogue");
+    assert.equal(p.proseOf("const t = `organisation ${normalised}", state).replace(/\s+/g, " ").trim(), "organisation");
+    assert.ok(state.inTemplate, "an unclosed template literal carries into the next line");
+    assert.equal(p.proseOf("authorisation`; const x = normalised;", state).replace(/\s+/g, " ").trim(), "authorisation");
+    assert.equal(state.inTemplate, false);
+  });
+
+  test("britishWordsIn returns the British words and skips identifiers, backticks and kept terms", () => {
+    assert.deepEqual(p.britishWordsIn("the behaviour of the catalogue, organisational artefacts"), ["behaviour", "catalogue", "organisational", "artefacts"]);
+    assert.deepEqual(p.britishWordsIn("RECOGNISED_FACTOR_KEYS RwepFactorUnrecognised `recognised: true` judgement-shaped"), []);
+    assert.deepEqual(p.britishWordsIn("we promise the advertised behavior; otherwise the analyses run"), []);
+  });
+
+  test("the shipped tree is clean", () => {
+    assert.deepEqual(p.detectBritishSpelling(), []);
+  });
+
+  test("the class accepts allow markers and runs as a warning", () => {
+    assert.equal(p.VALID_ALLOW_CLASSES["british-spelling"], true);
+    const c = p.CLASSES.find((x) => x.id === "british-spelling");
+    assert.ok(c && c.warnOnly === true);
+  });
+});

@@ -9,10 +9,12 @@
  * its only side effect is rewriting the repo's manifest.json when the cache has
  * drifted. So it is tested three ways, none of which mutates a tracked file:
  *
- *   1. The actual script, run as a read-only subprocess against the clean repo.
- *      The repo cache is in sync, so sync() is a genuine no-op — it must report
- *      "0 field(s) synced" and exit 0 without rewriting manifest.json. This
- *      exercises the real load → sync() → exit path end-to-end.
+ *   1. The actual script, run as a subprocess against a temporary copy of the
+ *      repository's manifest.json, skills/, lib/ and the script itself. The
+ *      cache is in sync, so sync() is a genuine no-op — it must report
+ *      "0 field(s) synced" and exit 0 without rewriting the copy's manifest.
+ *      A drifted repository fails here, and the repository's own manifest.json
+ *      is not written. This exercises the real load → sync() → exit path.
  *   2. The load-bearing source contract: the field partition the script keeps
  *      distinct — MIRROR (scalar, exact), MIRRORED_ARRAY (exact), and COVER
  *      (union, enrichment-preserving). A regression that moved a cross-ref
@@ -47,14 +49,24 @@ const MIRRORED_COVER = ["data_deps", "framework_gaps", "atlas_refs", "attack_ref
 // ---------------------------------------------------------------------------
 
 test("the real sync script is a no-op on the in-sync repo (reports 0 synced, exits 0)", () => {
-  const before = fs.readFileSync(MANIFEST, "utf8");
-  // execFileSync throws on a non-zero exit; a clean in-sync repo must exit 0.
-  const out = execFileSync(process.execPath, [SCRIPT], { encoding: "utf8" });
-  assert.match(out, /\[sync-manifest-metadata\] 0 field\(s\) synced from frontmatter/,
-    "an in-sync repo must report exactly 0 fields synced (the manifest cache already mirrors frontmatter)");
-  const after = fs.readFileSync(MANIFEST, "utf8");
-  assert.equal(after, before,
-    "a no-op sync must leave manifest.json byte-identical (it only writes when changed > 0)");
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "exceptd-sync-manifest-"));
+  try {
+    for (const rel of ["manifest.json", "skills", "lib", path.join("scripts", "sync-manifest-metadata.js")]) {
+      fs.cpSync(path.join(ROOT, rel), path.join(tmp, rel), { recursive: true });
+    }
+    const copy = path.join(tmp, "manifest.json");
+    const before = fs.readFileSync(copy, "utf8");
+    const repoBefore = fs.readFileSync(MANIFEST, "utf8");
+    // execFileSync throws on a non-zero exit; a clean in-sync repo must exit 0.
+    const out = execFileSync(process.execPath, [path.join(tmp, "scripts", "sync-manifest-metadata.js")], { encoding: "utf8" });
+    assert.match(out, /\[sync-manifest-metadata\] 0 field\(s\) synced from frontmatter/,
+      "an in-sync repo must report exactly 0 fields synced (the manifest cache already mirrors frontmatter); run `node scripts/sync-manifest-metadata.js`");
+    assert.equal(fs.readFileSync(copy, "utf8"), before,
+      "a no-op sync must leave manifest.json byte-identical (it only writes when changed > 0)");
+    assert.equal(fs.readFileSync(MANIFEST, "utf8"), repoBefore, "the repository's manifest.json is not written");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 });
 
 // ---------------------------------------------------------------------------

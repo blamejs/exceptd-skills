@@ -99,7 +99,7 @@ No major compliance framework requires technique-grained defensive mapping. Each
 | AU | ASD Essential 8 ML1–ML3 | Eight mitigation strategies (app control, patching, MFA, etc.) | Closest to technique-grain (Essential 8 has named strategies) but still control-level not technique-level. Application Control is roughly D3-EAL / D3-EHB but the maturity model does not distinguish path-based allowlist from cryptographic hash allowlist. |
 | AU | ISM | Detailed control catalog | Control-level. Does not require D3FEND mapping. |
 | AU | APRA CPS 234 | Information security capability for regulated entities | Capability-level. Defensive technique grain unspecified. |
-| Global | ISO 27001:2022 Annex A | 93 controls across organisational / people / physical / technological | Control-level. ISO 27001:2022 added A.5.7 (Threat Intelligence) and A.8.16 (Monitoring activities) but neither requires defensive technique mapping. |
+| Global | ISO 27001:2022 Annex A | 93 controls across organizational / people / physical / technological | Control-level. ISO 27001:2022 added A.5.7 (Threat Intelligence) and A.8.16 (Monitoring activities) but neither requires defensive technique mapping. |
 | Global | ISO 27002:2022 | Implementation guidance for Annex A | Guidance, not requirement. |
 | Industry | PCI DSS v4.0 | Twelve requirements for cardholder data environments | Control-level. The closest technique-grain language is in 5.x (malware protection) — does not require D3FEND mapping. |
 | Industry | SOC 2 TSC | Trust Services Criteria outcome categories | Outcome-level. Auditor discretion on implementation. |

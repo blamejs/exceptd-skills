@@ -508,7 +508,7 @@ This skill does not have a single exploited target — its "exploit surface" is 
 
 ## Defensive Countermeasure Mapping
 
-The drift attack against skill currency is structural, not technical — there is no in-flight exploit to detect. The D3FEND mapping below describes the layered defences that keep the update-loop itself non-bypassable. Source: `data/d3fend-catalog.json`.
+The drift attack against skill currency is structural, not technical — there is no in-flight exploit to detect. The D3FEND mapping below describes the layered defenses that keep the update-loop itself non-bypassable. Source: `data/d3fend-catalog.json`.
 
 | D3FEND Technique | Mapping | Defense-in-Depth Layer | Least-Privilege Scope | Zero-Trust Posture |
 |---|---|---|---|---|

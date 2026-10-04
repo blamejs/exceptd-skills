@@ -370,6 +370,19 @@ require("node:test").describe("regen re-derives artifacts on a release branch", 
     }
   });
 
+  test("the manifest's frontmatter fields are synced before sign-all signs the manifest", () => {
+    // A skill edit that changes forward_watch or description leaves the manifest
+    // copy stale; signing first and syncing later breaks the manifest signature.
+    const body = SRC.slice(SRC.indexOf("function _regenArtifacts()"), SRC.indexOf("function cmdRegen()"));
+    const sync = body.indexOf('"scripts/sync-manifest-metadata.js"');
+    assert.ok(sync > 0, "the shared body runs scripts/sync-manifest-metadata.js");
+    assert.ok(sync < body.indexOf('"sign-all"'), "the sync runs before sign-all");
+    // A synced cross-reference array changes the catalogs' reverse fields.
+    const reverse = body.indexOf('"refresh-reverse-refs"');
+    assert.ok(reverse > sync, "refresh-reverse-refs runs after the sync");
+    assert.ok(reverse < body.indexOf('"build-indexes"'), "refresh-reverse-refs runs before build-indexes");
+  });
+
   test("regen is dispatched and requires a release branch", () => {
     // Positively require release-vX.Y.Z, not merely "not main": this re-signs
     // the manifest and rewrites checked-in artifacts, so a run from a feature

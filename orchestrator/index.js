@@ -514,7 +514,7 @@ async function runReport(format) {
         },
       },
       // CSAF vulnerabilities[] is CVE-scoped by spec, so a signal detection
-      // without a catalogued CVE is preserved in exceptd_extension, not dropped.
+      // without a cataloged CVE is preserved in exceptd_extension, not dropped.
       vulnerabilities: scanResult.findings
         .filter(f => f.cve_id)
         .map(f => {
