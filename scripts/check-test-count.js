@@ -41,9 +41,10 @@ function listTestFiles(dir) {
 // A `/` starts a regex literal, not a division, when the code before it ends in
 // an operator, an opening bracket, a separator or one of these keywords.
 // A keyword after `.` is a property name (`obj.in / 2` divides).
-// break, continue and debugger take no expression, so a `/` after one starts a
-// new statement even without a semicolon.
-const REGEX_CAN_START = /(?:^|[(,=:[!&|?{};+\-*%<>~^]|(?<![.\w$])(?:return|typeof|instanceof|in|of|new|delete|void|throw|case|do|else|yield|await|break|continue|debugger))\s*$/;
+// break, continue and debugger take no expression, so a `/` after one, or after
+// the label a break or continue names on the same line, starts a new statement
+// even without a semicolon.
+const REGEX_CAN_START = /(?:^|[(,=:[!&|?{};+\-*%<>~^]|(?<![.\w$])(?:return|typeof|instanceof|in|of|new|delete|void|throw|case|do|else|yield|await|debugger|(?:break|continue)(?:[ \t]+[A-Za-z_$][\w$]*)?))\s*$/;
 
 // True when `code` ends in the `)` that closes an if, while, for or with head,
 // after which a `/` starts a regex literal: `if (ok) /it's/.test(s)`.
@@ -84,7 +85,7 @@ function regexLiteralEnd(text, start) {
 // end of the line unclosed is read as code and the rest of the line is scanned
 // again from just after it. The scanner does not parse JavaScript: a `/` after
 // `}`, after a `)` that closes no if, while, for or with head, or at the start of
-// a line is read as division.
+// a line that does not follow break, continue or debugger is read as division.
 function stripBlockComments(source) {
   const text = source + '\n';
   let out = '';

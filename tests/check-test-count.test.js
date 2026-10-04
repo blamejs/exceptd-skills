@@ -277,6 +277,9 @@ test('a regex after break, continue or debugger without a semicolon is code', ()
   assert.ok(REGEX_CAN_START.test("while (ok) { break\n"));
   assert.ok(REGEX_CAN_START.test("continue "));
   assert.ok(!REGEX_CAN_START.test("obj.break "), "a property named break is not the keyword");
+  assert.ok(REGEX_CAN_START.test("outer: while (ok) { break outer\n"), "a labeled break");
+  assert.ok(REGEX_CAN_START.test("continue outer "), "a labeled continue");
+  assert.ok(!REGEX_CAN_START.test("const n = breakpoint "), "a word starting with break is not the keyword");
   const src = [
     "while (ok) { break",
     "/`/.test(s); /* disabled:",
