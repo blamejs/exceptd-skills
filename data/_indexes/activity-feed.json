@@ -6,7 +6,7 @@
   },
   "events": [
     {
-      "date": "2026-10-03",
+      "date": "2026-10-04",
       "type": "catalog_update",
       "artifact": "data/cve-catalog.json",
       "path": "data/cve-catalog.json",

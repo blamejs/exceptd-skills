@@ -614,6 +614,13 @@ describe('analyze', () => {
       'every matched CVE entry must carry a non-empty correlated_via');
     assert.ok(an.matched_cves[0].correlated_via.some(v => v.startsWith('indicator_hit:')),
       'correlation reason must reference the indicator that fired');
+    // Each matched CVE carries the catalog's KEV forensic-triage flag, so a
+    // remediation reader sees that evidence capture comes before the patch.
+    const catalog = require('../data/cve-catalog.json');
+    for (const c of an.matched_cves) {
+      assert.ok('cisa_kev_forensic_triage' in c, `${c.cve_id} must carry cisa_kev_forensic_triage`);
+      assert.equal(c.cisa_kev_forensic_triage, catalog[c.cve_id].cisa_kev_forensic_triage ?? null, c.cve_id);
+    }
   });
 
   it('RWEP base is max of evidence-correlated cve rwep scores (Copy Fail = 90 when indicator fires)', () => {
