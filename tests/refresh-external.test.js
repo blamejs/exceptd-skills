@@ -2484,11 +2484,22 @@ require('node:test').describe('epss-triple-coherence', () => {
       'a NaN must not reach the catalog by way of the repair path');
   });
 
-  test('an entry with no EPSS at all is left alone', () => {
-    // Absent is not incoherent. Only entries that already carry EPSS are
-    // refreshed, which is the behaviour that predates this change.
-    assert.deepEqual(epssTripleDiffs('CVE-2099-0004', { last_verified: '2026-08-07' }, row, EPSS_DRIFT), [],
-      'a complete row must not introduce EPSS onto an entry that never had it');
+  test('an entry with no EPSS takes all three fields from a complete row', () => {
+    // The drift threshold has nothing to compare against on an empty entry, so
+    // without this the refresh never fills one.
+    const diffs = epssTripleDiffs('CVE-2099-0004', { last_verified: '2026-08-07' }, row, EPSS_DRIFT);
+    assert.deepEqual(diffs.map((d) => d.field).sort(), ['epss_date', 'epss_percentile', 'epss_score']);
+    assert.ok(diffs.every((d) => d.before === null && d.coherent === true));
+    assert.equal(diffs.find((d) => d.field === 'epss_score').after, row.score);
+    assert.equal(diffs.find((d) => d.field === 'epss_percentile').after, row.percentile);
+    assert.equal(diffs.find((d) => d.field === 'epss_date').after, row.date);
+  });
+
+  test('a partial or malformed row does not fill an entry that has no EPSS', () => {
+    const empty = { last_verified: '2026-08-07' };
+    assert.deepEqual(epssTripleDiffs('CVE-2099-0005', empty, { score: 0.5, percentile: null, date: '2026-08-13' }, EPSS_DRIFT), []);
+    assert.deepEqual(epssTripleDiffs('CVE-2099-0005', empty, { score: Number('x'), percentile: 0.5, date: '2026-08-13' }, EPSS_DRIFT), []);
+    assert.deepEqual(epssTripleDiffs('CVE-2099-0005', empty, { score: 0.5, percentile: 0.5, date: '' }, EPSS_DRIFT), []);
   });
 
   test('a partial fetched row cannot be used to repair a partial entry', () => {

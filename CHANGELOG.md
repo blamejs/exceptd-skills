@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.21.28 — 2026-10-04
+
+`exceptd refresh --source epss` now fills EPSS for an entry that has none when FIRST publishes a complete row for it. It used to refresh only entries that already carried a score, so 405 catalog entries had no EPSS score, percentile or date. They now carry the 2026-10-03 publication, as do 131 entries whose score had moved by more than 0.05. Their EPSS notes state the score and its date, where they used to say EPSS would be pulled in a later refresh. FIRST publishes no score for CVE-2026-0766 as of 2026-10-03, and its note says so.
+
 ## 0.21.27 — 2026-10-04
 
 The control-gap registry now spells each framework one way, so a full framework name passed to `exceptd framework-gap` reaches every control of that framework. `NIST SP 800-53 Rev 5` now reaches `NIST-800-53-IA-5-Federated` and `NIST-800-53-AC-2-Cross-Account`, and `UK NCSC Cyber Assessment Framework` reaches all eight UK CAF controls, where it reached five. The names `EU NIS2 Directive (Directive (EU) 2022/2555)`, `EU DORA (Regulation 2022/2554)`, `PCI DSS v4.0.1`, `NIST SP 800-218 (Secure Software Development Framework v1.1)`, `SLSA v1.0 (Supply-chain Levels for Software Artifacts)`, `SOC 2 (AICPA Trust Services Criteria)` and `OWASP Top 10:2021` likewise reach the controls that carried another spelling. The NCSC CAF lag score counts all eight open UK CAF controls, where it counted seven. Each control keeps its own version, and the DORA and SLSA sub-instrument names keep their suffixes. A name passed in one of the old spellings, such as `UK NCSC CAF` or `NIST 800-53 Rev.5`, no longer matches; the short ids `UK-CAF`, `NIS2`, `DORA` and `NIST-800-53` still match every control through its id.
