@@ -255,6 +255,24 @@ test("library-author lockfile-missing-integrity covers non-npm lockfiles + stays
       try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
     }
   }
+  // Case F: with both npm lockfiles present and one unreadable, a hit in the readable one
+  // is not definitive, since the unreadable one may be the file the build reads; a hit
+  // from another ecosystem's lockfile still stands.
+  for (const [extra, expected] of [[null, undefined], ["yarn.lock", "hit"]]) {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lib-lf-npm-bad-"));
+    try {
+      fs.writeFileSync(path.join(tmp, "npm-shrinkwrap.json"), "{ not json");
+      fs.writeFileSync(path.join(tmp, "package-lock.json"), JSON.stringify({
+        lockfileVersion: 3, packages: { "": { name: "lib", version: "1.0.0" }, "node_modules/bar": noIntegrity },
+      }));
+      if (extra) fs.writeFileSync(path.join(tmp, extra), "bar@2.0.0:\n  version \"2.0.0\"\n  resolved \"https://r/bar-2.0.0.tgz\"\n");
+      const r = libraryAuthorCollector.collect({ cwd: tmp });
+      assert.equal(r.signal_overrides["lockfile-missing-integrity"], expected,
+        `unreadable shrinkwrap with an unhashed package-lock${extra ? " and an unhashed " + extra : ""}: expected ${expected}`);
+    } finally {
+      try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+    }
+  }
   // Case E: a lockfile that cannot be scanned leaves the verdict undecided rather than a miss.
   {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lib-lf-bad-"));
