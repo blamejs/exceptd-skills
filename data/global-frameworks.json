@@ -226,22 +226,22 @@
         "full_name": "NCSC Cyber Assessment Framework",
         "authority": "NCSC",
         "source": "https://www.ncsc.gov.uk/collection/caf",
-        "effective_date": "2019-01-01",
-        "version": "3.2",
+        "effective_date": "2025-08-04",
+        "version": "4.0",
         "sector": "Critical national infrastructure",
         "patch_sla": null,
         "notification_sla": null,
         "critical_controls": [
           "A1 — Governance — board-level cyber risk ownership",
-          "B3 — Identity and Access Control",
+          "B2 — Identity and Access Control",
           "B5 — Resilient Networks and Systems",
           "B6 — Staff Awareness and Training",
           "C1 — Security Monitoring",
-          "D1 — Response and Recovery"
+          "D1 — Response and Recovery Planning"
         ],
         "framework_gaps": [
           "Patch SLA undefined — 'timely' interpretation only",
-          "AI systems: not addressed in CAF 3.2",
+          "AI systems: not addressed in CAF 4.0",
           "MCP/agent trust: not addressed",
           "PQC: NCSC recommends hybrid post-quantum but CAF does not require it"
         ],

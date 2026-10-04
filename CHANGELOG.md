@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.21.33 — 2026-10-04
+
+Framework references now name the current versions of the UK NCSC Cyber Assessment Framework (4.0, released 4 August 2025) and SLSA (1.2). The UK CAF entry lists B2 Identity and Access Control, where it named B3, and D1 Response and Recovery Planning. Its AI gap reads "not addressed in CAF 4.0"; the CAF 4.0 text does not mention AI. The SLSA Source Track Level 3 registry entry now describes Level 3's continuous technical controls on top of Level 2's retained history and source provenance; it used to require every revision to be signed, which no SLSA level does. Two skills described SLSA v1.1 as a draft that adds levels above Build L3 or a machine-learning profile. v1.1 is retired and added neither, so their forward-watch items now track the SLSA working draft. A container-runtime skill row cited CAF B2.b "technical configuration"; it now cites B4.b Secure Configuration.
+
+`manifest.json` now takes its `atlas_version_date` and `attack_version_date` from the pinned ATLAS and ATT&CK catalogs, so they follow every pin bump. They had fallen behind: ATLAS v2026.09 showed 2026-08-07 instead of its 2026-09-15 release, and ATT&CK v19.2 showed 2026-05-12 instead of 2026-08-05. exceptd.com reads these fields.
+
 ## 0.21.32 — 2026-10-04
 
 `node scripts/release.js commit` and `push` now stop when the working tree holds changes that no release commit carries, and list them. A resumed `commit` on a branch whose HEAD already had the release commit used to report success without committing those changes, and `push` then sent the branch without them. A resumed `commit` now also finds the release commit under follow-up commits on the branch, so it verifies the existing release instead of attempting a second one, and it checks the signature of every commit the push would send, the release commit first. It reads the branch's commits above `main`, or above `origin/main` in a clone that has no local `main`, and stops with the fetch command to run when neither exists.

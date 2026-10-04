@@ -846,7 +846,7 @@
       "cwe_count": 5,
       "d3fend_count": 3,
       "rfc_count": 1,
-      "last_threat_review": "2026-09-28",
+      "last_threat_review": "2026-10-04",
       "path": "skills/supply-chain-integrity/skill.md",
       "handoff_targets": []
     },
@@ -891,7 +891,7 @@
       "cwe_count": 0,
       "d3fend_count": 20,
       "rfc_count": 0,
-      "last_threat_review": "2026-06-10",
+      "last_threat_review": "2026-10-04",
       "path": "skills/defensive-countermeasure-mapping/skill.md",
       "handoff_targets": []
     },
@@ -1730,7 +1730,7 @@
       "cwe_count": 5,
       "d3fend_count": 6,
       "rfc_count": 2,
-      "last_threat_review": "2026-09-28",
+      "last_threat_review": "2026-10-04",
       "path": "skills/container-runtime-security/skill.md",
       "handoff_targets": [
         "ai-attack-surface",
@@ -1801,7 +1801,7 @@
       "cwe_count": 4,
       "d3fend_count": 3,
       "rfc_count": 1,
-      "last_threat_review": "2026-09-18",
+      "last_threat_review": "2026-10-04",
       "path": "skills/mlops-security/skill.md",
       "handoff_targets": [
         "ai-attack-surface",

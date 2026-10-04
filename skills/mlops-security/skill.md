@@ -58,10 +58,10 @@ forward_watch:
   - CycloneDX 1.7 ML-BOM enrichment — training-data lineage fields and model-card embedding stabilize; re-baseline ML-BOM coverage when published
   - SPDX 3.1 AI / Dataset profile maturation — dataset provenance schema firms up; re-audit training-data lineage attestations
   - OpenSSF model-signing emergence to v1.0 — Sigstore-based model-weight signing; track for production adoption and admission-control integration
-  - SLSA v1.1 ML profile (draft) — model-provenance extension for training-run attestation chains; track ID and section changes
+  - SLSA working draft (slsa.dev/spec/draft): v1.2 defines only the Build and Source Tracks, with no model-provenance or training-run track; re-baseline ML pipeline coverage if a later version adds one
   - EU AI Act high-risk technical-file implementing acts (2026-2027) — operational requirements for Article 10 / 13 / 15 documentation may pin ML-BOM or model-signing
   - MITRE ATLAS release 2026.06 (June 2026) added AML.T0113 (Steal Web Session Cookie), AML.T0091.001 (Use Alternate Authentication Material: Web Session Cookie) and AML.T0114 (AI Service Web Interface) to release 2026.05 and removed no technique ids. Earlier releases shipped the AML.T0010 sub-technique expansion and the agentic-AI techniques this forecast tracked ("Publish Poisoned AI Agent Tool", "Escape to Host"). Forward watch: subsequent monthly ATLAS releases, for updates to agentic-AI TTPs and MLOps-pipeline-specific techniques
-last_threat_review: "2026-09-18"
+last_threat_review: "2026-10-04"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief mlops-security` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
@@ -90,7 +90,7 @@ This skill is distinct from `rag-pipeline-security` (which is retrieval-side of 
 | Framework | Control | Why It Fails for MLOps in mid-2026 |
 |---|---|---|
 | NIST SP 800-218 SSDF | PS / PW / RV practices (verify integrity, configure software securely, respond to vulnerabilities) | SSDF v1.1 (2022) is software-development process language. It does not operationalize ML artifacts: training datasets, model weights, hyperparameter configurations, experiment-run metadata, and feature-store entries are not "software" in SSDF's scope. An organization can claim full SSDF conformance with no model-weight signing, no training-data lineage attestation, and no model-registry provenance. AI-generated code provenance is not addressed. See `data/framework-control-gaps.json` `NIST-800-218-SSDF` entry. |
-| SLSA v1.0 | Build L3 (hardened builder, isolated, signed provenance) | SLSA Build L3 applies to software-build pipelines. The ML-specific extension — model provenance, training-data lineage, training-run attestation — is on the SLSA v1.1 draft roadmap, not in v1.0. Even where SLSA L3 is achieved for the training-script repository, the model artifact emerging from the training run is not covered by a v1.0-conformant attestation. See `data/framework-control-gaps.json` `SLSA-v1.0-Build-L3`. |
+| SLSA v1.2 | Build L3 (hardened builder, isolated, signed provenance) | SLSA Build L3 applies to software-build pipelines. SLSA v1.2 defines only the Build and Source Tracks and has no model-provenance, training-data lineage or training-run attestation track. Even where SLSA L3 is achieved for the training-script repository, the model artifact emerging from the training run is not covered by a v1.2-conformant attestation. See `data/framework-control-gaps.json` `SLSA-v1.0-Build-L3`. |
 | ISO/IEC 42001:2023 | Clause 6.1.2 (AI risk assessment) | AI management-system standard. Clause 6.1.2 requires identification of AI risks but is process-focused — no technical floor for training-data integrity controls, model-weight signing, drift-detection cadence, or feedback-loop attestation. An organization can be 42001-certified with none of these in place. See `data/framework-control-gaps.json` `ISO-IEC-42001-2023-clause-6.1.2`. |
 | NIST AI RMF | MEASURE 2.5 (Continuous Monitoring) | Recommends operational monitoring but provides no specific technical requirements for MLOps. Drift detection cadence is unspecified; adversarial-input monitoring is unspecified; feedback-loop integrity is unspecified. See `data/framework-control-gaps.json` `NIST-AI-RMF-MEASURE-2.5`. |
 | OWASP LLM Top 10 (2025) | LLM08 (Vector and Embedding Weaknesses) | Retrieval-side concern. Does not cover training-pipeline integrity, model-registry RBAC, deployment-pipeline gating, or inference-serving runtime hardening. See `rag-pipeline-security` for retrieval coverage; this gap remains for the rest of the MLOps lifecycle. See `data/framework-control-gaps.json` `OWASP-LLM-Top-10-2025-LLM08`. |
@@ -235,7 +235,7 @@ The skill produces an MLOps Pipeline Security Assessment covering training-pipel
 **Assessment Date:** YYYY-MM-DD
 **Scope:** [MLOps stack(s): MLflow / Kubeflow / Vertex AI / SageMaker / Azure ML / Hugging Face / DIY]
 **Models in Scope:** [count, classification, deployment surfaces]
-**Frameworks in scope:** [NIST 800-218 SSDF | SLSA v1.0 | ISO/IEC 42001:2023 | NIST AI RMF | OWASP LLM Top 10 | EU AI Act | UK DSIT AI Cyber Code | AU AI Safety Standard | JP Society Principles | IL INCD AI | SG AI Verify | IN MeitY draft | NYDFS Part 500]
+**Frameworks in scope:** [NIST 800-218 SSDF | SLSA v1.2 | ISO/IEC 42001:2023 | NIST AI RMF | OWASP LLM Top 10 | EU AI Act | UK DSIT AI Cyber Code | AU AI Safety Standard | JP Society Principles | IL INCD AI | SG AI Verify | IN MeitY draft | NYDFS Part 500]
 
 ### MLOps Stack Inventory
 | Stage | Tooling | Hosted / Self-Managed | Auth Model | Notes |

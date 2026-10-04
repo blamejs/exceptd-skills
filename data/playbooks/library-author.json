@@ -1105,7 +1105,7 @@
           "framework": "nist-800-53",
           "claimed_control": "SR-4 — Provenance",
           "actual_gap": "Names provenance as a control; does not bind SLSA / in-toto / Sigstore as required attestation formats.",
-          "required_control": "SR-4 update binding SLSA v1.0 Level 3 (or higher), in-toto attestation chain, Sigstore transparency-log entry as required provenance evidence formats."
+          "required_control": "SR-4 update binding SLSA v1.2 Build Level 3, in-toto attestation chain, Sigstore transparency-log entry as required provenance evidence formats."
         },
         {
           "finding_id": "publisher-posture-gap",

@@ -49,7 +49,7 @@ framework_gaps:
 rfc_refs:
   - RFC-8032
 forward_watch:
-  - SLSA v1.1 (draft) — adds attestation chain requirements above L3 and a hardened-builder profile; track for re-baselining
+  - SLSA v1.2 added the Source Track (Level 1 version controlled through Level 4 two-party review); re-baseline source-repository controls against it, and track the next version in the SLSA working draft
   - CSAF 2.1 finalization — VEX status vocabulary expansion and machine-readable advisory pivoting
   - CycloneDX 1.7 — ML-BOM enrichment, model card embedding, training-data lineage fields
   - SPDX 3.1 — AI profile maturation, dataset provenance schema stabilization
@@ -67,7 +67,7 @@ d3fend_refs:
   - D3-CBAN
   - D3-EAL
   - D3-EHB
-last_threat_review: "2026-09-28"
+last_threat_review: "2026-10-04"
 ---
 
 # Supply-Chain Integrity Assessment
@@ -98,7 +98,7 @@ This project itself uses Ed25519 (RFC 8032) signing for skill integrity (`lib/si
 | Framework | Control | Why It Fails for mid-2026 Supply Chain |
 |---|---|---|
 | NIST SP 800-218 SSDF | PS, PW, RV practices ("verify integrity," "configure software securely," "respond to vulnerabilities") | SSDF v1.1 (2022) is process-only and does not pin a SLSA level, an attestation format, or a signing technology. An organization can claim full SSDF conformance with no SLSA provenance, no in-toto attestation, and no Sigstore signing in place. SSDF does not address AI-generated code provenance at all. |
-| SLSA v1.0 | Build L3 (hardened builder, isolated, signed provenance) | SLSA itself is the standard, not a gap — but the framework gap is that *no compliance regime mandates SLSA L3+ as a baseline*. SLSA is opt-in best practice; auditors do not require L3 evidence. The lag is in the regulatory layer, not in SLSA. |
+| SLSA v1.2 | Build L3 (hardened builder, isolated, signed provenance) | SLSA itself is the standard, not a gap — but the framework gap is that *no compliance regime mandates SLSA L3+ as a baseline*. SLSA is opt-in best practice; auditors do not require L3 evidence. The lag is in the regulatory layer, not in SLSA. |
 | CSAF 2.1 VEX | `vex` profile (`affected`, `not_affected`, `under_investigation`, `fixed` status with justification) | CSAF 2.0 VEX is published; CSAF 2.1 expands status vocabulary. No framework requires producers to publish VEX or consumers to consume it. Vulnerability scanners flood operators with non-applicable CVEs because the VEX-aware filtering layer is optional. |
 | CycloneDX 1.6 SBOM | `bom-1.6` schema with `cdx:ml`, `cdx:cryptography`, `cdx:vulnerability` extensions | CycloneDX 1.6 supports ML-BOM (model + dataset + hyperparameter inventory) and crypto-BOM. No framework requires ML-BOM or crypto-BOM specifically. EO 14028 and FDA premarket guidance require *an* SBOM, not a CycloneDX-1.6-with-ML-BOM SBOM. |
 | SPDX v3.0 SBOM | Core, Build, AI, Dataset profiles | SPDX 3.0 (2024) introduced the AI and Dataset profiles. Adoption is early; no compliance baseline requires the AI profile. The lag is between specification maturity and regulatory adoption. |

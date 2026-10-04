@@ -7,6 +7,34 @@
   "events": [
     {
       "date": "2026-10-04",
+      "type": "skill_review",
+      "artifact": "supply-chain-integrity",
+      "path": "skills/supply-chain-integrity/skill.md",
+      "note": "Supply-chain integrity for mid-2026 — SLSA L3+, in-toto attestations, Sigstore signing, SBOM (CycloneDX/SPDX), VEX via CSAF 2.0, AI-generated code provenance, model weights as supply-chain artifacts"
+    },
+    {
+      "date": "2026-10-04",
+      "type": "skill_review",
+      "artifact": "defensive-countermeasure-mapping",
+      "path": "skills/defensive-countermeasure-mapping/skill.md",
+      "note": "Map offensive findings (CVE / TTP / framework gap) to MITRE D3FEND defensive countermeasures with explicit defense-in-depth, least-privilege, and zero-trust layering"
+    },
+    {
+      "date": "2026-10-04",
+      "type": "skill_review",
+      "artifact": "container-runtime-security",
+      "path": "skills/container-runtime-security/skill.md",
+      "note": "Container + Kubernetes runtime security for mid-2026 — CIS K8s Benchmark, NSA/CISA Hardening, Pod Security Standards, Kyverno/Gatekeeper admission, Sigstore policy-controller, eBPF runtime detection (Falco/Tetragon), AI inference workload hardening"
+    },
+    {
+      "date": "2026-10-04",
+      "type": "skill_review",
+      "artifact": "mlops-security",
+      "path": "skills/mlops-security/skill.md",
+      "note": "MLOps pipeline security for mid-2026 — training data integrity, model registry signing, deployment pipeline provenance, inference serving hardening, drift detection, feedback loop integrity; covers MLflow / Kubeflow / Vertex AI / SageMaker / Azure ML / Hugging Face"
+    },
+    {
+      "date": "2026-10-04",
       "type": "catalog_update",
       "artifact": "data/cve-catalog.json",
       "path": "data/cve-catalog.json",
@@ -87,23 +115,9 @@
     {
       "date": "2026-09-28",
       "type": "skill_review",
-      "artifact": "supply-chain-integrity",
-      "path": "skills/supply-chain-integrity/skill.md",
-      "note": "Supply-chain integrity for mid-2026 — SLSA L3+, in-toto attestations, Sigstore signing, SBOM (CycloneDX/SPDX), VEX via CSAF 2.0, AI-generated code provenance, model weights as supply-chain artifacts"
-    },
-    {
-      "date": "2026-09-28",
-      "type": "skill_review",
       "artifact": "sector-federal-government",
       "path": "skills/sector-federal-government/skill.md",
       "note": "Federal government + defense contractor cybersecurity for mid-2026 — FedRAMP Rev5, CMMC 2.0, EO 14028, NIST 800-171/172 CUI, FISMA, M-22-09 federal Zero Trust, OMB M-24-04 AI risk, CISA BOD/ED; cross-jurisdiction NCSC UK, ENISA EUCC, AU PSPF, IL government cyber methodology"
-    },
-    {
-      "date": "2026-09-28",
-      "type": "skill_review",
-      "artifact": "container-runtime-security",
-      "path": "skills/container-runtime-security/skill.md",
-      "note": "Container + Kubernetes runtime security for mid-2026 — CIS K8s Benchmark, NSA/CISA Hardening, Pod Security Standards, Kyverno/Gatekeeper admission, Sigstore policy-controller, eBPF runtime detection (Falco/Tetragon), AI inference workload hardening"
     },
     {
       "date": "2026-09-28",
@@ -250,13 +264,6 @@
     {
       "date": "2026-09-18",
       "type": "skill_review",
-      "artifact": "mlops-security",
-      "path": "skills/mlops-security/skill.md",
-      "note": "MLOps pipeline security for mid-2026 — training data integrity, model registry signing, deployment pipeline provenance, inference serving hardening, drift detection, feedback loop integrity; covers MLflow / Kubeflow / Vertex AI / SageMaker / Azure ML / Hugging Face"
-    },
-    {
-      "date": "2026-09-18",
-      "type": "skill_review",
       "artifact": "incident-response-playbook",
       "path": "skills/incident-response-playbook/skill.md",
       "note": "Incident response playbook design for mid-2026 — NIST 800-61r3, ISO 27035, ATT&CK-driven detection, PICERL phases, AI-class incident handling (prompt injection breach, model exfiltration, AI-API C2), cross-jurisdiction breach notification timing"
@@ -319,13 +326,6 @@
       "path": "data/rfc-references.json",
       "schema_version": "1.0.0",
       "entry_count": 8889
-    },
-    {
-      "date": "2026-06-10",
-      "type": "skill_review",
-      "artifact": "defensive-countermeasure-mapping",
-      "path": "skills/defensive-countermeasure-mapping/skill.md",
-      "note": "Map offensive findings (CVE / TTP / framework gap) to MITRE D3FEND defensive countermeasures with explicit defense-in-depth, least-privilege, and zero-trust layering"
     },
     {
       "date": "2026-06-02",

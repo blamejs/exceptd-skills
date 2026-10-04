@@ -3,8 +3,8 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1771200,
-    "total_approx_tokens": 442805,
+    "total_chars": 1771343,
+    "total_approx_tokens": 442840,
     "skill_count": 51
   },
   "skills": {
@@ -1240,10 +1240,10 @@
     },
     "supply-chain-integrity": {
       "path": "skills/supply-chain-integrity/skill.md",
-      "bytes": 42412,
-      "chars": 42266,
+      "bytes": 42489,
+      "chars": 42345,
       "lines": 330,
-      "approx_tokens": 10567,
+      "approx_tokens": 10586,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2075,8 +2075,8 @@
     },
     "container-runtime-security": {
       "path": "skills/container-runtime-security/skill.md",
-      "bytes": 49667,
-      "chars": 49505,
+      "bytes": 49664,
+      "chars": 49502,
       "lines": 385,
       "approx_tokens": 12376,
       "approx_chars_per_token": 4,
@@ -2087,9 +2087,9 @@
           "approx_tokens": 1375
         },
         "framework-lag-declaration": {
-          "bytes": 6417,
-          "chars": 6403,
-          "approx_tokens": 1601
+          "bytes": 6414,
+          "chars": 6400,
+          "approx_tokens": 1600
         },
         "ttp-mapping": {
           "bytes": 4479,
@@ -2130,10 +2130,10 @@
     },
     "mlops-security": {
       "path": "skills/mlops-security/skill.md",
-      "bytes": 46770,
-      "chars": 46478,
+      "bytes": 46831,
+      "chars": 46545,
       "lines": 332,
-      "approx_tokens": 11620,
+      "approx_tokens": 11636,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2142,9 +2142,9 @@
           "approx_tokens": 1445
         },
         "framework-lag-declaration": {
-          "bytes": 5782,
-          "chars": 5764,
-          "approx_tokens": 1441
+          "bytes": 5771,
+          "chars": 5757,
+          "approx_tokens": 1439
         },
         "ttp-mapping": {
           "bytes": 4442,

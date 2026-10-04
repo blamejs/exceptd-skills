@@ -47,7 +47,7 @@ d3fend_refs:
   - D3-PSEP
   - D3-RPA
   - D3-SCP
-last_threat_review: "2026-06-10"
+last_threat_review: "2026-10-04"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief defensive-countermeasure-mapping` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
@@ -94,7 +94,7 @@ No major compliance framework requires technique-grained defensive mapping. Each
 | EU | DORA Art. 6–10 | ICT risk management for financial entities | Risk-management process. Defensive technique grain unspecified. |
 | EU | EU AI Act Art. 15 | "Appropriate level of accuracy, robustness and cybersecurity" for high-risk systems | Outcome standard. No technique mapping for AML or LLM attack surface. |
 | EU | EU CRA | Cybersecurity essential requirements for products with digital elements | Product-level requirements. Says nothing about how an operator should structure defensive coverage. |
-| UK | NCSC CAF v3.2 Objective B (Protecting against cyber attack) | Outcome-based principles (B1–B6) | Outcome-based by design. CAF does not prescribe defensive techniques. A B2 (identity and access control) achievement can be a SSO deployment with no D3-MFA / D3-CBAN technique verification. |
+| UK | NCSC CAF v4.0 Objective B (Protecting against cyber attack) | Outcome-based principles (B1–B6) | Outcome-based by design. CAF does not prescribe defensive techniques. A B2 (identity and access control) achievement can be a SSO deployment with no D3-MFA / D3-CBAN technique verification. |
 | UK | Cyber Essentials Plus | Five technical control categories | Coarse-grained checklist. No technique-level mapping. |
 | AU | ASD Essential 8 ML1–ML3 | Eight mitigation strategies (app control, patching, MFA, etc.) | Closest to technique-grain (Essential 8 has named strategies) but still control-level not technique-level. Application Control is roughly D3-EAL / D3-EHB but the maturity model does not distinguish path-based allowlist from cryptographic hash allowlist. |
 | AU | ISM | Detailed control catalog | Control-level. Does not require D3FEND mapping. |
