@@ -371,8 +371,15 @@ function cmdCommit() {
   }
 
   // A branch already carrying this release's commit, at HEAD or under follow-up
-  // commits, means verify, not re-commit.
-  var branchCommits = _captureOk("git", ["log", "main..HEAD", "--pretty=%H %s"]).split(/\r?\n/).filter(function (l) { return l.trim(); });
+  // commits, means verify, not re-commit. The branch's commits are those above
+  // main, or above origin/main in a clone that has no local main.
+  var base = ["main", "origin/main"].filter(function (r) { return _capture("git", ["rev-parse", "--verify", "--quiet", r]).status === 0; })[0];
+  if (!base) {
+    throw new Error("release: commit cannot read the branch's commits because neither main nor origin/main exists; " +
+      "run `git fetch origin main:refs/remotes/origin/main` and run commit again.");
+  }
+  var branchCommits = _captureOk("git", ["log", base + "..HEAD", "--pretty=%H %s"])
+    .split(/\r?\n/).filter(function (l) { return l.trim(); });
   if (branchCommits.some(function (l) { return l.slice(l.indexOf(" ") + 1).indexOf("v" + next + ":") === 0; })) {
     _ok("the branch already carries a v" + next + " commit (resume mode)");
     _refuseUncommitted("commit", next);

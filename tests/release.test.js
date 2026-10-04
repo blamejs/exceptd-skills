@@ -598,6 +598,37 @@ require("node:test").describe("resumed commit and push refuse uncommitted change
     });
   }
 
+  test("commit resumes in a clone that has origin/main but no local main", () => {
+    const r = stage();
+    try {
+      // Stand origin/main in for main, as a release-branch-only clone has it.
+      r.git("update-ref", "refs/remotes/origin/main", r.git("rev-parse", "main").stdout.trim());
+      r.git("branch", "-D", "main");
+      r.git("commit", "-q", "--allow-empty", "-m", "follow-up fix");
+      const out = r.run("commit");
+      assert.match(out.stdout, /the branch already carries a v9\.9\.9 commit \(resume mode\)/, out.stdout + out.stderr);
+      assert.match(out.stderr, new RegExp(`existing commit ${r.head} signature is not Good`));
+    } finally {
+      fs.rmSync(r.dir, { recursive: true, force: true });
+    }
+  });
+
+  test("commit refuses, without committing, when neither main nor origin/main exists", () => {
+    const r = stage();
+    try {
+      r.git("branch", "-D", "main");
+      r.git("commit", "-q", "--allow-empty", "-m", "follow-up fix");
+      const head = r.git("rev-parse", "HEAD").stdout.trim();
+      fs.writeFileSync(path.join(r.dir, "data.txt"), "e\n");
+      const out = r.run("commit");
+      assert.equal(out.status, 1, out.stdout + out.stderr);
+      assert.match(out.stderr, /neither main nor origin\/main exists; run `git fetch origin main:refs\/remotes\/origin\/main`/);
+      assert.equal(r.git("rev-parse", "HEAD").stdout.trim(), head, "no new commit");
+    } finally {
+      fs.rmSync(r.dir, { recursive: true, force: true });
+    }
+  });
+
   test("the refusal tells the operator to push after committing the changes", () => {
     const r = stage();
     try {
