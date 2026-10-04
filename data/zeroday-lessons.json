@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.1.0",
-    "last_updated": "2026-10-03",
+    "last_updated": "2026-10-04",
     "last_threat_review": "2026-05-17",
     "purpose": "Zero-day learning loop output. Each entry maps a CVE to: attack vector, defense chain analysis, framework coverage, new control requirements generated, and exposure scoring. v1.1.0 (2026-05-15): every entry now carries ai_discovered_zeroday boolean + ai_discovery_source enum + ai_discovery_date + ai_assist_factor ladder, per AGENTS.md Hard Rule #7.",
     "note": "Never delete entries. Closed gaps are marked status: closed. History is data.",
@@ -17,7 +17,7 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "entry_count": 1759
+    "entry_count": 1764
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -145893,6 +145893,437 @@
         "description": "A network-reachable appliance that suffers an actively exploited pre-authentication compromise is met with a pre-rehearsed runbook that captures forensic evidence, then rebuilds the device and rotates its stored credentials, rather than patching it in place.",
         "evidence": "Citrix article CTX694799 tells operators who suspect NetScaler compromise to snapshot the VPX instance, capture a packet-engine core dump, isolate and rebuild the appliance, and rotate stored secrets; for the actively exploited CVE-2026-88772 that forensic-and-rebuild path takes priority over patching a possibly already-compromised device.",
         "gap_closes": [
+          "UK-CAF-B4"
+        ]
+      }
+    ]
+  },
+  "CVE-2019-18187": {
+    "name": "Trend Micro OfficeScan Directory Traversal Vulnerability",
+    "lesson_date": "2026-10-03",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": null,
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An authenticated user of the OfficeScan administrative console uploads a crafted zip archive and, through a directory traversal, has it extracted into a specific server folder where its contents run as the OfficeScan web service account.",
+      "privileges_required": "A valid administrative-console credential. Trend Micro Japan states that the management server is normally not exposed outside the organization.",
+      "complexity": "Low once console access is held, and Trend Micro had observed attack attempts in the wild when it released the fix.",
+      "ai_factor": "No AI involvement. Credited to Trend Micro Research with no AI tooling claimed."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Applying the OfficeScan critical patch for the affected line (XG SP1 Critical Patch 5427, XG Critical Patch 1962, 11.0 SP1 Critical Patch 6638) and, until then, reviewing remote access to the server and restricting the management console to administrator workstations.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST-800-53-SI-2",
+        "adequacy": "The patch removes the flaw, but Trend Micro had already observed attack attempts when it shipped on 2019-10-28, so prevention before that date depended on general hardening of access to the management console, such as the review of remote access and perimeter security that the bulletin advises."
+      },
+      "detection": {
+        "what_would_have_worked": "Alerting when the OfficeScan web service account spawns a child process, or when new executable content appears under the server console directories after a console file operation.",
+        "was_this_required": false,
+        "framework_requiring_it": "ISO-27001-2022-A.8.8",
+        "adequacy": "These host signals are reliable but require endpoint monitoring of the OfficeScan server itself, which an anti-malware deployment review does not routinely cover."
+      },
+      "response": {
+        "what_would_have_worked": "Treating a compromised OfficeScan server as a privileged host: rebuilding it, rotating its credentials, and auditing for cleared logs, then migrating end-of-life lines to Apex One.",
+        "was_this_required": false,
+        "framework_requiring_it": "UK-CAF-B4",
+        "adequacy": "Rebuilding is the load-bearing step because the server runs with the privileges of a security-management host, and a patch alone does not evict an attacker who already executed code."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The remediation period starts at the 2019-10-28 release, by which date Trend Micro had already observed attack attempts, and Trend Micro no longer issues fixes for the end-of-life lines."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No window is tied to the exploitation that preceded the fix, and the interim measures the bulletin advises are general reviews of remote access and perimeter security."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The affected lines are unsupported, leaving only a temporary console-restriction mitigation, and 'promptly' is undefined against the pre-fix exploitation."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 48-hour windows (at every maturity level for an internet-accessible server under ISM-1876, at Maturity Level Three for an internal one under ISM-1692) run only from the release, and the now-unsupported lines fall under the removal requirement in ISM-1704."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No advisory existed to act on before the 2019-10-28 bulletin, which already reported attack attempts, and the end-of-life lines call for replacement rather than patching."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "A vulnerability on the CISA Known Exploited Vulnerabilities list is placed on an hours-scale mitigation clock, and a compensating control is applied when a vendor fix cannot be deployed inside that window.",
+        "evidence": "CISA added CVE-2019-18187 to KEV on 2021-11-03, two years after Trend Micro released the fixed builds (OfficeScan XG SP1 Critical Patch 5427, XG Critical Patch 1962, 11.0 SP1 Critical Patch 6638) on 2019-10-28 per bulletin KA-0010000, and after English OfficeScan XG had reached end of life on 2021-03-31 per KA-0011236. An hours-scale clock from the listing is therefore met by applying the fixed build where the line was still supported or by migrating to a current Apex One build, not by an interim measure.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8",
+          "AU-Essential-8-Patch"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-122",
+        "name": "EOL-ASSET-DECOMMISSION",
+        "description": "Software whose supplier has stopped issuing fixes is cut off from untrusted networks and given a removal date, and a compensating configuration stays enforced on it until that date.",
+        "evidence": "English OfficeScan XG and XG SP1 reached end of life on 2021-03-31 per Trend Micro KA-0011236, the Japanese Virus Buster Corporate Edition XG and XG SP1 builds on 2024-01-31 per KA-0004690, and free support for Virus Buster Corporate Edition 11.0 ended on 2019-11-27 per Trend Micro Japan support news 3592, so Trend Micro no longer issues fixes for any line affected by CVE-2019-18187 and the durable response is isolating and retiring them in favor of Apex One.",
+        "gap_closes": [
+          "UK-CAF-B4",
+          "AU-Essential-8-Patch",
+          "NIS2-Art21-patch-management"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-8467": {
+    "name": "Trend Micro Apex One and OfficeScan Remote Code Execution Vulnerability",
+    "lesson_date": "2026-10-03",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": null,
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An authenticated attacker uses a migration-tool component on the Apex One or OfficeScan management server to execute arbitrary code on the affected installation.",
+      "privileges_required": "An administrative-console account. Trend Micro scores the flaw CVSS 9.1, and JVNVU#91632701 gives that score's vector with high privileges required (CVSS:3.0/AV:N/AC:L/PR:H/UI:N/S:C/C:H/I:H/A:H), while NVD scores it 8.8 with low privileges required (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H). The vendor advises restricting server and console access to trusted networks.",
+      "complexity": "Low, and Trend Micro reported at least one active exploitation attempt in the wild.",
+      "ai_factor": "No AI involvement. Found during an internal Trend Micro Security Research review with no AI tooling claimed."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Applying the fixed critical patch (Apex One 2019 Critical Patch 2117, OfficeScan XG SP1 Critical Patch 5474, OfficeScan XG Critical Patch 1988; Apex One as a Service via the February 2020 maintenance release) and restricting server and console access to trusted networks.",
+        "was_this_required": true,
+        "framework_requiring_it": "AU-Essential-8-Patch",
+        "adequacy": "The patch removes the flaw, but Trend Micro observed exploitation around the 2020-03-16 release, so network restriction of the console was the available interim barrier."
+      },
+      "detection": {
+        "what_would_have_worked": "Alerting when the Apex One or OfficeScan server service account launches an unexpected child process after an authenticated console session.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Effective only where the management server itself is monitored as an endpoint."
+      },
+      "response": {
+        "what_would_have_worked": "Rebuilding the management server, rotating its credentials, and reviewing the endpoint fleet it manages for changes made after the suspected compromise.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Necessary because code execution on the server gives the attacker the server from which the endpoint fleet is managed, and patching alone does not remove a foothold."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The remediation period starts at the 2020-03-16 release, by which date Trend Micro had already observed an exploitation attempt."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Annex points 6.7.2 and 6.8.2 of Regulation 2024/2690 implement the trusted-network restriction, but an administrative-console account used from the administration network can still exploit the flaw."
+      },
+      "UK-CAF-B2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "B2 limits the flaw to holders of an administrative-console account, but the flaw gives any holder arbitrary code execution on the server, beyond what the account is authorized to do."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 48-hour windows (at every maturity level for an internet-accessible server under ISM-1876, at Maturity Level Three for an internal one under ISM-1692) run from the 2020-03-16 release while exploitation was already observed, and the OfficeScan XG lines are no longer supported, so ISM-1704 requires them to be removed."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No vulnerability information existed to act on before the 2020-03-16 bulletin, which already reported an exploitation attempt."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-036",
+        "name": "FLEET-CONTROL-PLANE-ADMIN-PRIVILEGE-TIER",
+        "description": "Administrators and management consoles of a platform that pushes software or configuration to an endpoint fleet are held in a separate privileged tier, reachable only from trusted networks and under stronger access controls than ordinary administration.",
+        "evidence": "The Apex One and OfficeScan management server pushes configuration and software to an endpoint fleet, and CVE-2020-8467 turns authenticated console access into code execution on that server. Trend Micro's own mitigation is to permit server and console access only from trusted networks, which is the distinct privileged tier this control requires.",
+        "gap_closes": [
+          "UK-CAF-B2",
+          "NIS2-Art21-network-security"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-055",
+        "name": "SECURITY-TOOL-INTEGRITY-VERIFICATION",
+        "description": "Endpoint protection products, including their management servers, are tracked as vulnerable assets and patched on deadlines no longer than those for other privileged systems, and their administrative interfaces are included in security testing.",
+        "evidence": "CVE-2020-8467 is remote code execution in Trend Micro's own Apex One and OfficeScan security product, reported by the vendor in bulletin KA-0010281 as exploited in the wild in March 2020, which shows the anti-malware product itself must sit inside vulnerability management and be tested as attack surface rather than trusted as a defense.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8",
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-8468": {
+    "name": "Trend Micro Multiple Products Content Validation Escape Vulnerability",
+    "lesson_date": "2026-10-03",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": null,
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An authenticated attacker uses a content-validation escape to bypass the integrity check applied when components are downloaded to Apex One, OfficeScan, and Worry-Free Business Security agents, and manipulates agent client components.",
+      "privileges_required": "Authenticated access to the management server. Trend Micro scores the flaw CVSS 8.0, and JVNVU#98100897 gives that score's vector with high privileges required and high attack complexity (CVSS:3.0/AV:N/AC:H/PR:H/UI:N/S:C/C:H/I:H/A:H), while NVD scores it 8.8 with low privileges required and low complexity (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H). In the Tonto Team intrusions in Trend Micro's VB2020 paper, a successful attack needed network access to the management server, an authentication bypass to that server and a vulnerability to execute code from it, and CVE-2019-9489 and CVE-2020-8468 were both required.",
+      "complexity": "High attack complexity per the Trend Micro and JVN vector and low per NVD, and Trend Micro reported active exploitation in the wild.",
+      "ai_factor": "No AI involvement. Found during an internal Trend Micro Security Research review with no AI tooling claimed."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Applying the fixed level for each product (Apex One 2019 Critical Patch 2117; OfficeScan XG SP1 Critical Patch 5474; OfficeScan XG Critical Patch 1988 on a server already at XG Patch 1 build 1556, after adding the Behavior Monitoring Approved List exceptions from Trend Micro KB 1119990 for agents on Windows 10 version 1803; Worry-Free Business Security 10.0 SP1 Patch 2190; 9.5 Critical Patch 1525 on a server already at 9.5 Patch 1506; 9.0 SP3 Critical Patch 4417), confirming that Apex One and OfficeScan agents report the agent build their critical patch delivers (Apex One agent build 2059, OfficeScan XG SP1 agent build 5498, OfficeScan XG agent build 1894), deploying the Apex One and OfficeScan XG SP1 patches to a limited number of agents first, since Trend Micro documents in KA-0010264 that such an agent can be returned to an earlier build only by rolling back the server and reinstalling the agent, keeping any server used as an update source at the same version and build, enabling the Apex Central or Control Manager module authenticity check (Control Manager 7.0 or later) before building manual-update modules, and restricting server and console access to trusted networks.",
+        "was_this_required": true,
+        "framework_requiring_it": "AU-Essential-8-Patch",
+        "adequacy": "The fix restores the integrity check, but exploitation was reported around the 2020-03-16 release, so the interim measure was limiting who could connect to the server."
+      },
+      "detection": {
+        "what_would_have_worked": "Comparing agent client components against the builds Trend Micro publishes, not only against the management server's copy, and alerting on component changes not tied to an administrator-initiated push.",
+        "was_this_required": false,
+        "framework_requiring_it": "UK-CAF-C1",
+        "adequacy": "Requires integrity monitoring of the agent component set against a reference held outside the management server."
+      },
+      "response": {
+        "what_would_have_worked": "Rotating management-server credentials, verifying the integrity of components distributed to agents against an independent source, and reimaging agents whose components were manipulated.",
+        "was_this_required": false,
+        "framework_requiring_it": "NIST-800-53-SR-11",
+        "adequacy": "Load-bearing because a manipulated agent component persists until the component set is verified and restored from an independent integrity source."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SR-11": {
+        "covered": true,
+        "adequate": false,
+        "gap": "SR-11 calls for a means to detect tampered components entering the system, and where that means is the agents' own integrity check on downloaded components, the flaw bypasses it."
+      },
+      "NIS2-Art21-supply-chain": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Article 21(3) has entities weigh the supplier's product quality when choosing measures, but sets no measure for a supplier flaw exploited before the supplier's fix."
+      },
+      "UK-CAF-C1": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Monitoring built on the agents' own reporting detects the later payloads and C2 rather than the component manipulation the flaw allows."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "An internet-facing management server falls under the 48-hour online-service window at every maturity level and the agents under the security-product windows, but every window runs from the vendor's release, and the Worry-Free Business Security fixes of 2020-03-16 came when exploitation in the wild had already been reported."
+      },
+      "ISO-27001-2022-A.8.9": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.9 leaves the source of the baseline open, and a baseline taken from the management server that delivers the components can match the manipulated ones."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-132",
+        "name": "INDEPENDENT-INTEGRITY-VERIFICATION-OF-SIGNED-VENDOR-INSTALLERS",
+        "description": "Each vendor-supplied component is checked against a reference the vendor publishes through a separate path, so that a component altered in the delivery channel is rejected even when the channel's own validation accepts it.",
+        "evidence": "CVE-2020-8468 is a content-validation escape that lets a tampered component pass the integrity check the Apex One, OfficeScan, and Worry-Free Business Security agents apply to downloads from the management server (Trend Micro bulletin KA-0010281, JVNVU#98100897), so each delivered component must be verified against an integrity source independent of that channel before an agent trusts it.",
+        "gap_closes": [
+          "NIST-800-53-SR-11",
+          "NIS2-Art21-supply-chain"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-078",
+        "name": "ENDPOINT-MGMT-DEPLOYMENT-CHANNEL-INTEGRITY",
+        "description": "Every file or component a management server sends to managed endpoints is logged and compared with the changes administrators approved, and a distribution with no matching approval raises an alert.",
+        "evidence": "In CVE-2020-8468 the server-to-agent component channel is the exploited surface (JVNVU#98100897: the integrity check at downloading components to agents may be bypassed), so that channel must be treated as a privileged control plane with its component pushes integrity-monitored and alerts raised on any that an administrator did not initiate.",
+        "gap_closes": [
+          "UK-CAF-C1"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-055",
+        "name": "SECURITY-TOOL-INTEGRITY-VERIFICATION",
+        "description": "Endpoint protection agents and the servers that update them are tracked as vulnerable assets on the same patch deadlines as other privileged systems, and their own integrity checks are tested by feeding them deliberately altered components.",
+        "evidence": "CVE-2020-8468 affects the agents of three Trend Micro security products (Apex One, OfficeScan, and Worry-Free Business Security), its fixes are installed on their management servers, and Trend Micro observed at least one active attempt of potential exploitation in the wild (KA-0010281). Trend Micro's VB2020 paper describes the flaw exploited through security-product services exposed to the internet, so these products must sit inside vulnerability management on the Essential Eight window for each asset class: the online-service window for a management server directly accessible over the internet, and the security-product windows for the agents and for management servers reachable only internally.",
+        "gap_closes": [
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-102489": {
+    "name": "Zammad GmbH Zammad Session Fixation Vulnerability",
+    "lesson_date": "2026-10-03",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": null,
+    "ai_assist_factor": "high",
+    "attack_vector": {
+      "description": "A session fixation weakness (CWE-384) lets an attacker fix or hijack a Zammad session; the CVSS 4.0 vector records passive user interaction, so a victim's session is involved. From a hijacked session the flaw leads to remote code execution as the zammad operating-system account. In the recorded intrusion it was chained with CVE-2026-102490 to escalate from that account to root.",
+      "privileges_required": "None for the session and code-execution step on an exploitable 6.3.0 through 6.5.4 instance; the attacker needs network reach to the Zammad web surface and a victim's session.",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered: DIVD's CVE record credits Merlon Security and DIVD researchers as finders, and Zammad states it received an earlier report in August 2026 from a party it does not name. DIVD attributes the in-the-wild exploitation to an agentic AI that operated the attack automatically and chained the two flaws at machine speed, so AI assistance applies to the weaponized operation, not the discovery."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Running a supported Zammad 7.x release, on which Zammad states the flaw is not exploitable (7.2.0 carries the hardened code), instead of an end-of-support 6.3.0 through 6.5.4 build, and keeping the Zammad web surface behind authenticated, restricted network access rather than exposed to the internet. Moving a 6.x instance to 7.x requires migrating a MySQL or MariaDB database to PostgreSQL first, and moving to 7.2.0 requires Elasticsearch 8.15 or newer where Elasticsearch is used, with a search index rebuild after the update; an instance that cannot complete these steps in time is taken offline, as DIVD advises, until it is upgraded.",
+        "was_this_required": true,
+        "framework_requiring_it": "AU-Essential-8-Patch",
+        "adequacy": "Running a supported 7.x release would have closed this leg of the chain: Zammad 7.0 was released on 4 March 2026, Zammad states 7.0 and later are not affected, and first access to DIVD's systems was on 21 September 2026. DIVD describes the two Zammad flaws as zero-days, while Zammad states it first received a report about this flaw in August 2026. Running 7.0.x does not close the chained privilege escalation CVE-2026-102490: 7.0.0 through 7.0.3 lie inside NVD's and DIVD's affected ranges for it. Whether 7.1.0 and later close it is disputed: DIVD's structured record treats those versions as unaffected and its case page gives the patch status as available, while DIVD's description places that flaw in all versions including the latest alpha, and Zammad has neither confirmed its scope nor published a fix for it."
+      },
+      "detection": {
+        "what_would_have_worked": "Inspecting Zammad and nginx logs for session cookies written into error output, using DIVD's log check script against the directories where the deployment writes them, or on Docker deployments against plain-text exports of the containers' logs, reviewing the host for unfamiliar processes and files as the script advises, and alerting when the zammad account starts an unexpected child process.",
+        "was_this_required": false,
+        "framework_requiring_it": "ISO-27001-2022-A.8.8",
+        "adequacy": "A hit from the script is one of DIVD's indicators of compromise, but a clean result does not rule out compromise: the script reads only the log files still on the host, an attacker who reaches root through the chained CVE-2026-102490 can alter or delete them, and the script itself tells the operator to investigate unfamiliar processes and files as well. The check also finds the indicators after the fact rather than blocking the hijack, and standard monitoring does not inspect application error logs for serialized cookies."
+      },
+      "response": {
+        "what_would_have_worked": "Before restarting or rebuilding the instance, preserving the Zammad and web-server logs (on Docker deployments, exporting each Zammad container's log to a plain-text file before any container is stopped, recreated or upgraded), and running the compromise check; then isolating the instance in a way that does not alert the attacker and rebuilding it on a clean host at 7.2.0, given confirmed code execution as the zammad account; and only then rotating every credential that account held (database, mail, integrations) and configuring the new values on the rebuilt instance alone.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 26-04 forensic triage (flagged in the KEV entry), for agencies bound by the directive",
+        "adequacy": "Forensic triage before remediation is what the KEV entry requires here; a service restart alone restores availability while leaving any stolen session or credential usable and destroying the evidence the triage depends on."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Zammad issues no security fixes for 6.5 and older, the only versions on which this flaw is exploitable, so the installation period never starts on those builds and correcting the flaw takes a major-version upgrade to 7.x."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A 6.3.0 through 6.5.4 instance falls in the no-patch case of Annex point 6.6.1 of Implementing Regulation (EU) 2024/2690, which does not name the additional measures, while the remedy Zammad and DIVD give is a major-version upgrade to 7.x or taking the instance offline."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The exploitable builds are end of support and Zammad publishes no compensating configuration, so the only temporary measure is upgrading to version 7 or taking the instance offline, and 'promptly' is undefined against an intrusion that chained this flaw to root in seconds."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": true
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The sources disagree on the exposed builds: an evaluation against NVD's configuration marks a 6.5.4 instance as unaffected and flags 7.0.0 through 7.1.3, while Zammad and DIVD place exploitation on 6.5 and older, and Zammad states that 7.0 and later are not affected."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "A vulnerability on the Known Exploited Vulnerabilities catalog starts a fixed mitigation clock measured in hours, and the response plan treats that clock as overriding the normal patch cadence.",
+        "evidence": "CVE-2026-102489 was added to the Known Exploited Vulnerabilities catalog on 2026-10-02 with a three-day due date and flagged for forensic triage, after DIVD reported it used in a live intrusion. Zammad's remedy is an upgrade to 7.x: its statement of 1 October 2026 says 7.0 and later are not affected, the hardened code ships in 7.2.0, and 6.5 and older receive no security fixes.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8",
+          "NIS2-Art21-patch-management",
+          "UK-CAF-B4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-072",
+        "name": "PRIMARY-SOURCE-INTAKE-VENDOR-BLOG-COVERAGE",
+        "description": "Vulnerability intake treats CERT case files, CVE records and researcher disclosures as primary sources, so that a flaw disclosed and scored by a party other than the vendor enters triage without waiting for a vendor advisory.",
+        "evidence": "DIVD published its advisory and the CVE record for CVE-2026-102489 on 29 September 2026, and CISA listed the flaw as exploited on 2 October 2026. Zammad's account of the flaw is a community statement of 1 October 2026 saying current versions are not affected, and Zammad's GitHub security advisory list carries no entry for it as of 3 October 2026, so an intake that reads only vendor advisories would hold no record of the flaw DIVD reported as exploited.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "NIS2-Art21-patch-management",
+          "NIST-800-53-SI-2"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-102490": {
+    "name": "Zammad GmbH Zammad Improper Privilege Management Vulnerability",
+    "lesson_date": "2026-10-03",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": null,
+    "ai_assist_factor": "high",
+    "attack_vector": {
+      "description": "An improper privilege management flaw (CWE-269) lets the local zammad user escalate privileges to root; in a Docker deployment no source says the escalation reaches beyond the Zammad container. In the recorded intrusion it was chained with CVE-2026-102489, which first gave code execution as the zammad account, so the two together carried an unauthenticated network attacker to root.",
+      "privileges_required": "Local code execution as the zammad service account, which the chained CVE-2026-102489 supplies on the 6.3.0 through 6.5.4 builds where that flaw is exploitable; NVD and DIVD describe the flaw as present in all versions including the latest alpha, on Linux and Docker.",
+      "complexity": "low",
+      "ai_factor": "Not AI-discovered: found by Merlon Security and DIVD researchers. DIVD attributes the in-the-wild exploitation to an agentic AI that chained this escalation onto the session-hijack flaw automatically and at machine speed, so AI assistance applies to the weaponized operation, not the discovery."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrading off the exploitable CVE-2026-102489 builds (6.3.0 through 6.5.4) to Zammad 7 to remove the network entry point used in the recorded chain, or taking the instance offline, as DIVD advises, and isolating any instance that must stay in service. Limiting which files and operations the zammad account can change or start with root privileges is a general hardening step that no source ties to this flaw.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST-800-53-AC-6",
+        "adequacy": "Zammad has published no fix for this escalation, DIVD's structured record and its description disagree on whether 7.1.0 and later are affected, and the mechanism has not been published, so the prevention that does not depend on that dispute is removing the chained network entry point and isolating or removing the instance; a least-privilege review of the zammad account has no known escalation path to close."
+      },
+      "detection": {
+        "what_would_have_worked": "Alerting when a process owned by root is started from the zammad account's context, and watching for root-owned files, cron entries or units that the zammad account can write.",
+        "was_this_required": false,
+        "framework_requiring_it": "ISO-27001-2022-A.8.9",
+        "adequacy": "These are general host heuristics; neither DIVD nor Zammad has published the mechanism or a signature for this flaw, so no flaw-specific detection has been published and the heuristics may miss a quiet escalation."
+      },
+      "response": {
+        "what_would_have_worked": "Before rebuilding or restarting, capturing host and Zammad logs and evidence of the escalation (on Docker deployments, exporting each Zammad container's log to a plain-text file and preserving the container and host state before any container is stopped, recreated or upgraded), then rebuilding the host and rotating credentials, because root was reached from the service account.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 26-04 forensic triage (flagged in the KEV entry), for agencies bound by the directive",
+        "adequacy": "Forensic triage before remediation is what the KEV entry requires here; reimaging first would restore service but destroy the evidence of a root-level compromise and leave credentials rotated too late."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-6": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Neither DIVD nor Zammad has published the escalation path from the zammad account to root, so a least-privilege review cannot target it and can only limit what that account can reach on the host or in the container."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Zammad has published no fix and the sources disagree on whether 7.1.0 and later are affected, so an operator cannot tell whether a 7.2.0 instance is in the patched case or the no-patch case of Annex point 6.6.1 of Implementing Regulation (EU) 2024/2690, which does not name the additional measures for the no-patch case."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Updating to 7.2.0 removes the network foothold that CVE-2026-102489 supplies but not the escalation from the zammad account to root where it is present, the 7.0.0 through 7.0.3 builds remain in the affected ranges, and the sources disagree on whether 7.1.0 and later carry the flaw."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 48-hour window under ISM-1876 applies to the 7.2.0 update, which mitigates only the remote chain, and the local escalation from the zammad account to root stays open until Zammad publishes a fix."
+      },
+      "ISO-27001-2022-A.8.9": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No mechanism or configuration setting has been published for this escalation, so a documented baseline cannot include a fix for it, and the available measures are to limit what the zammad account can reach and to isolate the instance."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-038",
+        "name": "MITIGATION-ACTIVE-PATCH-PENDING-VERDICT-CLASS",
+        "description": "Where no vendor fix exists, an instance that is isolated, taken offline or otherwise worked around is tracked as an open exposure with its residual risk, and only a deployed fix moves it to remediated status.",
+        "evidence": "Zammad has published no fix for CVE-2026-102490 and has not confirmed its affected versions, while the DIVD advisory DIVD-2026-00015 recommends upgrading to version 7, treats 7.1.0 and later as unaffected in its structured record and describes the flaw as present in all versions including the latest alpha. An instance that is upgraded to 7.x, isolated or taken offline while that conflict stands has no vendor-confirmed fix, and recording it as remediated would hide that the local-to-root escalation may still be present.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management",
+          "UK-CAF-B4",
+          "ISO-27001-2022-A.8.9",
+          "AU-Essential-8-Patch"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "Placement on the Known Exploited Vulnerabilities catalog triggers an hours-scale response obligation that takes precedence over the routine patch schedule, including when the only available action is a compensating mitigation.",
+        "evidence": "CVE-2026-102490 was added to the Known Exploited Vulnerabilities catalog on 2026-10-02 with a three-day due date and flagged for forensic triage, while Zammad had published no fix and had not confirmed the flaw's scope, so the catalog clock had to be met by acting on the DIVD CSIRT advisory DIVD-2026-00015, which recommends upgrading to version 7 or taking the instance offline, or on Zammad's instruction to update to 7.2.0, without a vendor-confirmed fix.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "NIS2-Art21-patch-management",
           "UK-CAF-B4"
         ]
       }

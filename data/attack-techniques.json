@@ -328,6 +328,7 @@
       "CVE-2020-2883",
       "CVE-2020-4428",
       "CVE-2020-8218",
+      "CVE-2020-8467",
       "CVE-2021-20022",
       "CVE-2021-20035",
       "CVE-2021-26084",
@@ -1084,6 +1085,7 @@
       "CVE-2025-62849",
       "CVE-2025-6558",
       "CVE-2026-0300",
+      "CVE-2026-102490",
       "CVE-2026-20122",
       "CVE-2026-20245",
       "CVE-2026-20316",
@@ -1199,6 +1201,7 @@
       "CVE-2019-1068",
       "CVE-2019-11001",
       "CVE-2019-1652",
+      "CVE-2019-18187",
       "CVE-2019-19006",
       "CVE-2019-19781",
       "CVE-2019-20500",
@@ -1214,6 +1217,8 @@
       "CVE-2020-2506",
       "CVE-2020-29574",
       "CVE-2020-5735",
+      "CVE-2020-8467",
+      "CVE-2020-8468",
       "CVE-2020-8816",
       "CVE-2020-9377",
       "CVE-2021-20016",
@@ -1913,6 +1918,7 @@
       "CVE-2019-16928",
       "CVE-2019-17558",
       "CVE-2019-17621",
+      "CVE-2019-18187",
       "CVE-2019-18935",
       "CVE-2019-19006",
       "CVE-2019-19781",
@@ -1996,6 +2002,8 @@
       "CVE-2020-8195",
       "CVE-2020-8196",
       "CVE-2020-8218",
+      "CVE-2020-8467",
+      "CVE-2020-8468",
       "CVE-2020-8515",
       "CVE-2020-8644",
       "CVE-2020-8655",
@@ -2521,6 +2529,7 @@
       "CVE-2026-0300",
       "CVE-2026-0766",
       "CVE-2026-0770",
+      "CVE-2026-102489",
       "CVE-2026-10520",
       "CVE-2026-12569",
       "CVE-2026-1281",
@@ -3011,6 +3020,7 @@
       "CVE-2020-6572",
       "CVE-2020-6819",
       "CVE-2020-6820",
+      "CVE-2020-8468",
       "CVE-2020-9715",
       "CVE-2020-9818",
       "CVE-2020-9819",
@@ -3828,6 +3838,7 @@
     "name": "Compromise Host Software Binary",
     "version": "v19",
     "cve_refs": [
+      "CVE-2020-8468",
       "CVE-2021-30713",
       "CVE-2021-44168",
       "CVE-2022-20703",
@@ -5182,7 +5193,8 @@
       "CVE-2024-9526",
       "CVE-2025-0133",
       "CVE-2025-34291",
-      "CVE-2025-68461"
+      "CVE-2025-68461",
+      "CVE-2026-102489"
     ],
     "description_full": "An adversary may steal web application or service session cookies and use them to gain access to web applications or Internet services as an authenticated user without needing credentials. Web applications and services often use session cookies as an authentication token after a user has authenticated to a website. Cookies are often valid for an extended period of time, even if the web application is not actively used. Cookies can be found on disk, in the process memory of the browser, and in network traffic to remote systems. Additionally, other applications on the targets machine might store sensitive authentication cookies in memory (e.g. apps which authenticate to cloud services). Session cookies can be used to bypasses some multi-factor authentication protocols.(Citation: Pass The Cookie) There are several examples of malware targeting cookies from web browsers on the local system.(Citation: Kaspersky TajMahal April 2019)(Citation: Unit 42 Mac Crypto Cookies January 2019) Adversaries may also steal cookies by injecting malicious JavaScript content into websites or relying on [User Execution](https://attack.mitre.org/techniques/T1204) by tricking victims into running malicious JavaScript in their browser.(Citation: Talos Roblox Scam 2023)(Citation: Krebs Discord Bookmarks 2023) There are also open source frameworks such as `Evilginx2` and `Muraena` that can gather session cookies through a malicious proxy (e.g., [Adversary-in-the-Middle](https://attack.mitre.org/techniques/T1557)) that can be set up by an adversary and used in phishing campaigns.(Citation: Github evilginx2)(Citation: GitHub Mauraena) After an adversary acquires a valid cookie, they can then perform a [Web Session Cookie](https://attack.mitre.org/techniques/T1550/004) technique to login to the corresponding web application.",
     "platforms": [
@@ -15521,6 +15533,7 @@
       "CVE-2019-0604",
       "CVE-2019-10068",
       "CVE-2019-11580",
+      "CVE-2019-18187",
       "CVE-2019-19781",
       "CVE-2019-2725",
       "CVE-2019-3398",
@@ -17141,7 +17154,8 @@
     "_auto_imported": true,
     "_intake_method": "mitre-attack-stix",
     "cve_refs": [
-      "CVE-2021-1879"
+      "CVE-2021-1879",
+      "CVE-2026-102489"
     ]
   },
   "T1552.002": {
