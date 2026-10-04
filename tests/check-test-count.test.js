@@ -257,6 +257,21 @@ test('a division after a keyword-named property is still division, so the block 
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
+test('a block comment inside a template interpolation hides its tests, and template text stays text', () => {
+  const src = [
+    "const s = `x ${foo /* disabled:",
+    "test('disabled', () => {});",
+    "*/ + bar({ a: 1 })} tail /* not a comment */ ${`inner ${baz}`}`;",
+    "test('kept', () => {});",
+  ].join('\n');
+  const { dir, p } = tmpFile('count-template-interpolation.test.js', src);
+  try {
+    assert.equal(countTests(p), 1);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  const { stripBlockComments } = require(path.join(ROOT, 'scripts', 'check-test-count.js'));
+  assert.equal(stripBlockComments("`a /* b */ ${c /* d */} e`"), "`a /* b */ ${c } e`");
+});
+
 test('an unclosed quote on the last line does not swallow the end of the file', () => {
   const { stripBlockComments } = require(path.join(ROOT, 'scripts', 'check-test-count.js'));
   assert.equal(stripBlockComments("if (a) /it's/; /* gone */ b"), "if (a) /it's/;  b");

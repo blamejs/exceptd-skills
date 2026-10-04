@@ -90,6 +90,8 @@ function stripBlockComments(source) {
   let quoteAt = -1;
   let quoteOut = 0;
   let codeQuoteAt = -1;
+  // One entry per open `${ ... }` interpolation: the brace depth inside it.
+  const interpolations = [];
   for (let i = 0; i < text.length; i++) {
     const ch = text[i];
     const next = text[i + 1];
@@ -113,8 +115,15 @@ function stripBlockComments(source) {
       }
       out += ch;
       if (ch === '\\' && next !== undefined) { out += next; i++; continue; }
+      if (mode === '`' && ch === '$' && next === '{') { out += next; i++; interpolations.push(0); mode = null; continue; }
       if (ch === mode) mode = null;
       continue;
+    }
+    if (interpolations.length) {
+      const top = interpolations.length - 1;
+      if (ch === '{') interpolations[top]++;
+      else if (ch === '}' && interpolations[top] === 0) { interpolations.pop(); mode = '`'; out += ch; continue; }
+      else if (ch === '}') interpolations[top]--;
     }
     if (ch === '/' && next === '*') { mode = 'block'; i++; continue; }
     if (ch === '/' && next === '/') mode = 'line';
