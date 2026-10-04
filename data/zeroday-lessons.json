@@ -146194,15 +146194,18 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Zammad issues no security fixes for 6.5 and older, the only versions on which this flaw is exploitable, so the installation period never starts on those builds and correcting the flaw takes a major-version upgrade to 7.x."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A 6.3.0 through 6.5.4 instance falls in the no-patch case of Annex point 6.6.1 of Implementing Regulation (EU) 2024/2690, which does not name the additional measures, while the remedy Zammad and DIVD give is a major-version upgrade to 7.x or taking the instance offline."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The exploitable builds are end of support and Zammad publishes no compensating configuration, so the only temporary measure is upgrading to version 7 or taking the instance offline, and 'promptly' is undefined against an intrusion that chained this flaw to root in seconds."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
@@ -146210,7 +146213,8 @@
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The sources disagree on the exposed builds: an evaluation against NVD's configuration marks a 6.5.4 instance as unaffected and flags 7.0.0 through 7.1.3, while Zammad and DIVD place exploitation on 6.5 and older, and Zammad states that 7.0 and later are not affected."
       }
     },
     "new_control_requirements": [
@@ -146275,23 +146279,28 @@
     "framework_coverage": {
       "NIST-800-53-AC-6": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Neither DIVD nor Zammad has published the escalation path from the zammad account to root, so a least-privilege review cannot target it and can only limit what that account can reach on the host or in the container."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Zammad has published no fix and the sources disagree on whether 7.1.0 and later are affected, so an operator cannot tell whether a 7.2.0 instance is in the patched case or the no-patch case of Annex point 6.6.1 of Implementing Regulation (EU) 2024/2690, which does not name the additional measures for the no-patch case."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Updating to 7.2.0 removes the network foothold that CVE-2026-102489 supplies but not the escalation from the zammad account to root where it is present, the 7.0.0 through 7.0.3 builds remain in the affected ranges, and the sources disagree on whether 7.1.0 and later carry the flaw."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The 48-hour window under ISM-1876 applies to the 7.2.0 update, which mitigates only the remote chain, and the local escalation from the zammad account to root stays open until Zammad publishes a fix."
       },
       "ISO-27001-2022-A.8.9": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "No mechanism or configuration setting has been published for this escalation, so a documented baseline cannot include a fix for it, and the available measures are to limit what the zammad account can reach and to isolate the instance."
       }
     },
     "new_control_requirements": [
