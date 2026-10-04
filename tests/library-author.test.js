@@ -229,10 +229,16 @@ test("library-author lockfile-missing-integrity covers non-npm lockfiles + stays
       try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
     }
   }
-  // Case D: with both npm lockfiles, npm installs from the shrinkwrap, so package-lock.json is not scanned.
+  // Case D: with both npm lockfiles, the npm version decides which one npm reads:
+  // npm 11 and earlier read the shrinkwrap, npm 12 reads only package-lock.json,
+  // and with no version named both are scanned.
   const noIntegrity = { version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz" };
   const clean = { version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz", integrity: "sha512-abc" };
-  for (const [shrink, lock, expected] of [[clean, noIntegrity, "miss"], [noIntegrity, clean, "hit"]]) {
+  for (const [npm, shrink, lock, expected] of [
+    ["11.6.0", clean, noIntegrity, "miss"], ["11.6.0", noIntegrity, clean, "hit"],
+    ["12.0.0", noIntegrity, clean, "miss"], ["12.0.0", clean, noIntegrity, "hit"],
+    [null, clean, noIntegrity, "hit"], [null, clean, clean, "miss"],
+  ]) {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lib-lf-both-"));
     try {
       const write = (name, entry) => fs.writeFileSync(path.join(tmp, name), JSON.stringify({
@@ -240,9 +246,25 @@ test("library-author lockfile-missing-integrity covers non-npm lockfiles + stays
       }));
       write("npm-shrinkwrap.json", shrink);
       write("package-lock.json", lock);
+      if (npm) fs.writeFileSync(path.join(tmp, "package.json"), JSON.stringify({ name: "lib", version: "1.0.0", packageManager: `npm@${npm}` }));
       const r = libraryAuthorCollector.collect({ cwd: tmp });
       assert.equal(r.signal_overrides["lockfile-missing-integrity"], expected,
-        `with both lockfiles the shrinkwrap decides: expected ${expected}`);
+        `npm ${npm || "(unknown)"} with both lockfiles: expected ${expected}`);
+    } finally {
+      try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+    }
+  }
+  // Case E: a lockfile that cannot be scanned leaves the verdict undecided rather than a miss.
+  {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lib-lf-bad-"));
+    try {
+      fs.writeFileSync(path.join(tmp, "npm-shrinkwrap.json"), "{ not json");
+      fs.writeFileSync(path.join(tmp, "package-lock.json"), JSON.stringify({
+        lockfileVersion: 3, packages: { "": { name: "lib", version: "1.0.0" }, "node_modules/bar": clean },
+      }));
+      const r = libraryAuthorCollector.collect({ cwd: tmp });
+      assert.equal(r.signal_overrides["lockfile-missing-integrity"], undefined);
+      assert.ok(r.collector_errors.some((e) => e.kind === "lockfile_scan_failed"));
     } finally {
       try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
     }

@@ -141,9 +141,43 @@ test("collect sbom inventories npm-shrinkwrap.json and checks it for integrity, 
   const only = run({ "npm-shrinkwrap.json": noIntegrity });
   assert.match(only.artifacts["lockfile-inventory"].value, /npm:npm-shrinkwrap\.json/);
   assert.equal(only.signal_overrides["lockfile-no-integrity"], "hit");
-  // With both files, npm installs from the shrinkwrap, so its entries decide the verdict.
-  assert.equal(run({ "npm-shrinkwrap.json": clean, "package-lock.json": noIntegrity }).signal_overrides["lockfile-no-integrity"], "miss");
-  assert.equal(run({ "npm-shrinkwrap.json": noIntegrity, "package-lock.json": clean }).signal_overrides["lockfile-no-integrity"], "hit");
+  const verdict = (files) => run(files).signal_overrides["lockfile-no-integrity"];
+  const pm = (v) => ({ name: "app", version: "1.0.0", packageManager: `npm@${v}` });
+  // npm 11 and earlier install from the shrinkwrap, so its entries decide the verdict.
+  assert.equal(verdict({ "package.json": pm("11.6.0"), "npm-shrinkwrap.json": clean, "package-lock.json": noIntegrity }), "miss");
+  assert.equal(verdict({ "package.json": pm("11.6.0"), "npm-shrinkwrap.json": noIntegrity, "package-lock.json": clean }), "hit");
+  // npm 12 does not read the shrinkwrap, so package-lock.json decides.
+  assert.equal(verdict({ "package.json": pm("12.0.0"), "npm-shrinkwrap.json": noIntegrity, "package-lock.json": clean }), "miss");
+  assert.equal(verdict({ "package.json": pm("12.0.0"), "npm-shrinkwrap.json": clean, "package-lock.json": noIntegrity }), "hit");
+  // With no npm version named, both files are checked and either one can hit.
+  assert.equal(verdict({ "npm-shrinkwrap.json": clean, "package-lock.json": noIntegrity }), "hit");
+  assert.equal(verdict({ "npm-shrinkwrap.json": clean, "package-lock.json": clean }), "miss");
+  // A remote unhashed tarball in one file keeps its evidence when the other file has only
+  // unhashed local references: false-positive check 0 (a remote tarball) stays attested.
+  const localOnly = { lockfileVersion: 3, packages: { "": { name: "app", version: "1.0.0" }, "node_modules/loc": { version: "1.0.0", resolved: "file:../loc" } } };
+  const mixed = run({ "npm-shrinkwrap.json": noIntegrity, "package-lock.json": localOnly });
+  assert.equal(mixed.signal_overrides["lockfile-no-integrity"], "hit");
+  assert.equal(mixed.signal_overrides["lockfile-no-integrity__fp_checks"]["0"], true);
+  // With two candidates and no npm version, which one the build consumes is unknown,
+  // so false-positive check 1 stays unattested; with the version named it is attested.
+  assert.equal(mixed.signal_overrides["lockfile-no-integrity__fp_checks"]["1"], undefined);
+  const known = run({ "package.json": pm("11.6.0"), "npm-shrinkwrap.json": noIntegrity, "package-lock.json": clean });
+  assert.equal(known.signal_overrides["lockfile-no-integrity__fp_checks"]["1"], true);
+  // When both candidates hit, the finding holds whichever one the build consumes, so check 1 is attested.
+  const both = run({ "npm-shrinkwrap.json": noIntegrity, "package-lock.json": noIntegrity });
+  assert.equal(both.signal_overrides["lockfile-no-integrity__fp_checks"]["1"], true);
+  // An unparseable candidate cannot support a miss: the verdict stays undecided.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-sbom-shrinkwrap-bad-"));
+  try {
+    fs.writeFileSync(path.join(tmp, "npm-shrinkwrap.json"), "{ not json");
+    fs.writeFileSync(path.join(tmp, "package-lock.json"), JSON.stringify(clean));
+    const r = cli(["collect", "sbom", "--cwd", tmp, "--json"]);
+    const body = tryJson(r.stdout);
+    assert.equal(body.signal_overrides["lockfile-no-integrity"], undefined);
+    assert.ok(body.collector_errors.some((e) => e.kind === "lockfile_parse_failed" && /npm-shrinkwrap\.json/.test(e.reason)));
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
 });
 
 test("sbom collector recognises pyproject.toml as a Python dependency manifest", () => {
@@ -623,7 +657,11 @@ require("node:test").describe("sbom playbook registry-cooldown guidance", () => 
     assert.match(v, /An exclusion entry that matches a third-party package by name or pattern, for any version, removes the cooldown for that package/);
     // A version-pinned exclusion admits only versions that are already published.
     assert.match(v, /an entry pinned to specific versions \(pnpm 10\.19\.0 and later, and Yarn descriptors, accept these\) removes the cooldown only for those versions, so it is a hit when one of them was published within the cooldown window and does not remove the cooldown for later releases/);
-    assert.match(artifact.source, /for pnpm and Yarn also read the user-level and global configuration files and the environment variables each manager documents/);
+    assert.match(artifact.source, /\.yarnrc\.yml for `npmMinimalAgeGate` \(Yarn 4\.10 and later; Yarn 4\.12 and later default it to `1d`\) and any `npmScopes/);
+    assert.match(artifact.source, /For pnpm and Yarn, also read the user-level and global configuration files and the environment variables each manager documents/);
+    // Yarn's per-scope gate replaces the global one for that scope, including 0.
+    assert.match(artifact.source, /any `npmScopes\.<scope>\.npmMinimalAgeGate`/);
+    assert.match(v, /A Yarn `npmScopes\.<scope>\.npmMinimalAgeGate` value replaces the global gate for packages in that scope, so a scope set to 0 has no cooldown for its third-party packages/);
     assert.match(v, /When the artifact cannot establish the effective value[^.]*, the verdict is inconclusive/);
     // The reference facts, each with the version that introduced it.
     assert.match(v, /npm reads `min-release-age` \(days\) from npm 11\.10\.0 and `min-release-age-exclude` from npm 11\.17\.0, applies the exclusion to a `before=` cutoff as well, and does not read `minimumReleaseAge=` in \.npmrc/);
