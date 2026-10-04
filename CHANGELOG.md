@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.21.23 — 2026-10-03
+
+The catalog adds five CVEs from CISA's Known Exploited Vulnerabilities catalog, none with public exploit code.
+
+CVE-2026-102489 and CVE-2026-102490 are a Zammad chain that CISA added on 2026-10-02 and flags for forensic triage. CVE-2026-102489 is a session flaw in Zammad 6.3.0 through 6.5.4 that leads to remote code execution as the zammad user, and CVE-2026-102490 lets that local user escalate to root. Zammad 6.5 and older are end of support, so the entries point to Zammad 7.2.0, give the 7.x upgrade prerequisites (a PostgreSQL migration from MySQL or MariaDB, and Elasticsearch 8.15 or newer), and put DIVD's log check and evidence capture before any restart, rebuild or credential rotation. Zammad has published no fix for CVE-2026-102490, and DIVD's records disagree on whether 7.1.0 and later are affected; the entries state both positions.
+
+CVE-2019-18187, CVE-2020-8467 and CVE-2020-8468 are Trend Micro flaws CISA added on 2021-11-03: a directory traversal in the OfficeScan 11.0 and XG server, a remote code execution in the Apex One and OfficeScan XG migration tool, and a content validation escape that lets an attacker manipulate Apex One, OfficeScan XG and Worry-Free Business Security agent components. The entries give the server and agent fixed builds separately where they differ, with each patch's prerequisites.
+
+The catalog holds 1,764 CVEs.
+
 ## 0.21.22 — 2026-10-03
 
 Catalog entries now carry `cisa_kev_forensic_triage`, CISA's KEV `forensicTriage` value: `true` for "Yes" and `false` for "No". The field is `null` or absent for an entry that is not KEV-listed. A `true` value means BOD 26-04 requires federal civilian agencies to complete CISA's forensics triage as part of remediation, which starts with capturing volatile data before patching. The KEV refresh fills and reconciles it like the ransomware designation, new KEV drafts carry it, and `exceptd cve <id>` (and `--json`), citation resolution and the playbook runner's matched CVEs report it. 61 of the 1,603 KEV-listed entries are flagged.
