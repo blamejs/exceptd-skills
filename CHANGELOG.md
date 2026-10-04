@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.21.26 — 2026-10-04
+
+`exceptd framework-gap` now prints a coverage gap for every control a lesson marks inadequate. 320 controls in 62 lessons carried no gap text, so `coverage_gap` printed null for each of them. Each now carries one sentence on why the control falls short for that CVE, drawn from the entry's framework control statement. A test fails any inadequate control that has no gap text.
+
 ## 0.21.25 — 2026-10-04
 
 Error messages, warnings, help text, comments, skills and the README and AGENTS.md now use American spelling. The two `--operator` errors read "Unicode NFC normalization", the `--publisher-namespace` help reads "organization" and the `--attest-ownership` help reads "authorization". The RWEP scoring warnings read "recognized" and "unrecognized", and the library-author collector reports workflows "recognized as publish-related". The skills' output templates use the American forms, for example "RWEP-Prioritized CVE Exposure". Text that quotes or names a source keeps the source's spelling: GDPR and NIS2 quotations, the EU AI Act's "biometric categorisation system", the UK Online Safety Act's "categorised services", the titles of UK and Japanese publications and laws, and the names of organizations such as the Canadian Centre for Cyber Security. Result keys, flags, codes and skill triggers keep their spelling: `recognised` and `normalised` in the active-exploitation result, `--include-judgement-shaped`, the `RWEP_AE_UNRECOGNISED` and `RWEP_FACTOR_UNRECOGNISED` codes, and the `noisy neighbour` trigger.
