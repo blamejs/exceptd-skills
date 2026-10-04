@@ -144,7 +144,7 @@ function _refuseUncommitted(phase, next) {
   if (dirty.length === 0) return;
   throw new Error("release: " + phase + " found " + dirty.length + " uncommitted change(s) that no v" + next +
     " commit carries:\n  " + dirty.slice(0, 20).join("\n  ") +
-    "\nCommit them as a follow-up commit on the release branch, or discard them, then run push.");
+    "\nCommit them as a follow-up commit on the release branch, or discard them, then run commit again, which verifies every branch commit's signature, and then push.");
 }
 function _gitBranch() { return _captureOk("git", ["rev-parse", "--abbrev-ref", "HEAD"]); }
 function _gitOnMain() { return _gitBranch() === "main"; }

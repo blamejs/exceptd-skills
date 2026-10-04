@@ -629,12 +629,12 @@ require("node:test").describe("resumed commit and push refuse uncommitted change
     }
   });
 
-  test("the refusal tells the operator to push after committing the changes", () => {
+  test("the refusal sends the operator back through commit, which verifies signatures, before push", () => {
     const r = stage();
     try {
       fs.writeFileSync(path.join(r.dir, "data.txt"), "c\n");
       const out = r.run("commit");
-      assert.match(out.stderr, /Commit them as a follow-up commit on the release branch, or discard them, then run push\./);
+      assert.match(out.stderr, /Commit them as a follow-up commit on the release branch, or discard them, then run commit again, which verifies every branch commit's signature, and then push\./);
     } finally {
       fs.rmSync(r.dir, { recursive: true, force: true });
     }
