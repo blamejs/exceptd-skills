@@ -61,10 +61,13 @@ function makeSuiteHome(prefix = 'exceptd-test-') {
  *
  * Defaults to a 30 second timeout. Returns the raw spawnSync result so callers
  * keep access to status / stdout / stderr / signal.
+ *
+ * `cliPath` selects another bin/exceptd.js, such as the signed copy from
+ * tests/_helpers/signed-install.js; it defaults to the repository's own.
  */
-function makeCli(suiteHome) {
+function makeCli(suiteHome, { cliPath = CLI } = {}) {
   return function cli(args, opts = {}) {
-    return spawnSync(process.execPath, [CLI, ...args], {
+    return spawnSync(process.execPath, [cliPath, ...args], {
       encoding: 'utf8',
       input: opts.input,
       env: {

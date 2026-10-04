@@ -984,17 +984,15 @@ test.describe('cmd-run-multi-lock-contention', () => {
   const fs = require('node:fs');
   const path = require('node:path');
 
-  const { ROOT, makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+  const { makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
   const { withFileSnapshot } = require('./_helpers/snapshot-restore');
+  const { signedInstall } = require('./_helpers/signed-install.js');
 
   const SUITE_HOME = makeSuiteHome('exceptd-lock-contention-');
-  const cli = makeCli(SUITE_HOME);
-
-  const PKG_PRIV_KEY = path.join(ROOT, '.keys', 'private.pem');
-  const HAS_PRIV_KEY = fs.existsSync(PKG_PRIV_KEY);
+  // The producer run signs attestations, so it runs through the signed copy.
+  const cli = makeCli(SUITE_HOME, { cliPath: signedInstall().cli });
 
   test('run --all under live-PID lock contention exits 8 (LOCK_CONTENTION)',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem' },
     () => {
       const sid = 'lock-contention-' + Date.now();
       const sessionDir = path.join(SUITE_HOME, 'attestations', sid);

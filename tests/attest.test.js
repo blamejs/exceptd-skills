@@ -17,6 +17,9 @@ const os = require('node:os');
 const { spawnSync } = require('node:child_process');
 
 const { ROOT, CLI, makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+// signedInstall().cli is a copy of bin/exceptd.js that signs attestations with
+// an ephemeral key; tests that tamper with a signed attestation run through it.
+const { signedInstall } = require('./_helpers/signed-install.js');
 const { withFileSnapshot } = require('./_helpers/snapshot-restore');
 const { EXIT_CODES } = require(path.join(ROOT, 'lib', 'exit-codes.js'));
 
@@ -94,8 +97,7 @@ describe('attest-diff-against-empty', () => {
 // ===========================================================================
 describe('attest-diff-asymmetric-catalog-stub', () => {
   const SUITE_HOME = makeSuiteHome('exceptd-attest-diff-asym-');
-  const cli = makeCli(SUITE_HOME);
-  const HAS_PRIV_KEY = fs.existsSync(path.join(ROOT, '.keys', 'private.pem'));
+  const cli = makeCli(SUITE_HOME, { cliPath: signedInstall().cli });
 
   function lastJson(s) {
     return tryJson((s || '').split('\n').filter((l) => l.trim().startsWith('{')).pop() || '') || {};
@@ -109,7 +111,6 @@ describe('attest-diff-asymmetric-catalog-stub', () => {
   }
 
   test('real-submission-vs-empty diffs only the genuinely-differing keys (no catalog-stub phantoms)',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem to produce a signed attestation' },
     () => {
       const a = 'asym-a-' + Date.now();
       const b = 'asym-b-' + Date.now();
@@ -145,7 +146,6 @@ describe('attest-diff-asymmetric-catalog-stub', () => {
     });
 
   test('identical (indicator,value) evidence under different observation keys diffs as unchanged (stable-id re-key)',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem to produce a signed attestation' },
     () => {
       // The artifact diff is re-keyed by the stable indicator id, not the
       // operator-chosen observation key. Two attestations whose security content
@@ -166,7 +166,6 @@ describe('attest-diff-asymmetric-catalog-stub', () => {
     });
 
   test('empty-vs-empty still uses the catalog stub uniformly (all-unchanged baseline preserved)',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem to produce a signed attestation' },
     () => {
       const a = 'asym-e-a-' + Date.now();
       const b = 'asym-e-b-' + Date.now();
@@ -192,7 +191,6 @@ describe('attest-diff-asymmetric-catalog-stub', () => {
     });
 
   test('real-vs-real artifact diff is a clean passthrough (no catalog ids injected)',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem to produce a signed attestation' },
     () => {
       const a = 'asym-r-a-' + Date.now();
       const b = 'asym-r-b-' + Date.now();
@@ -212,8 +210,7 @@ describe('attest-diff-asymmetric-catalog-stub', () => {
 // ===========================================================================
 describe('attest-diff-bside-sidecar', () => {
   const SUITE_HOME = makeSuiteHome('exceptd-attest-diff-bside-');
-  const cli = makeCli(SUITE_HOME);
-  const HAS_PRIV_KEY = fs.existsSync(path.join(ROOT, '.keys', 'private.pem'));
+  const cli = makeCli(SUITE_HOME, { cliPath: signedInstall().cli });
 
   function locate(sid) {
     const cands = [
@@ -240,7 +237,6 @@ describe('attest-diff-bside-sidecar', () => {
   }
 
   test('attest diff --against verifies the B-side sidecar and refuses a tampered comparison (exit 6)',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem to produce a signed attestation' },
     () => {
       const a = 'adiff-a-' + Date.now();
       const b = 'adiff-b-' + Date.now();
@@ -280,8 +276,7 @@ describe('attest-diff-bside-sidecar', () => {
 // ===========================================================================
 describe('attest-diff-multiplaybook-tamper', () => {
   const SUITE_HOME = makeSuiteHome('exceptd-attest-diff-multipb-');
-  const cli = makeCli(SUITE_HOME);
-  const HAS_PRIV_KEY = fs.existsSync(path.join(ROOT, '.keys', 'private.pem'));
+  const cli = makeCli(SUITE_HOME, { cliPath: signedInstall().cli });
 
   const TAMPERED = EXIT_CODES.TAMPERED; // 6
 
@@ -326,7 +321,6 @@ describe('attest-diff-multiplaybook-tamper', () => {
   }
 
   test('attest diff --against verifies a run-all A-side by its real file and refuses tamper (exit 6)',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem to produce a signed attestation' },
     () => {
       const a = 'multipb-a-' + Date.now();
       const b = 'multipb-b-' + Date.now();
@@ -359,7 +353,6 @@ describe('attest-diff-multiplaybook-tamper', () => {
     });
 
   test('attest diff (no --against) verifies a run-all A-side by its real file and refuses tamper (exit 6)',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem to produce a signed attestation' },
     () => {
       const prior = 'multipb-prior-' + Date.now();
       makeMultiPlaybookSession(prior, 'mcp');
@@ -392,8 +385,7 @@ describe('attest-diff-multiplaybook-tamper', () => {
 // ===========================================================================
 describe('attest-diff-noagainst-prior-tamper', () => {
   const SUITE_HOME = makeSuiteHome('exceptd-attest-diff-noagainst-');
-  const cli = makeCli(SUITE_HOME);
-  const HAS_PRIV_KEY = fs.existsSync(path.join(ROOT, '.keys', 'private.pem'));
+  const cli = makeCli(SUITE_HOME, { cliPath: signedInstall().cli });
 
   const TAMPERED = EXIT_CODES.TAMPERED; // 6
 
@@ -422,7 +414,6 @@ describe('attest-diff-noagainst-prior-tamper', () => {
   }
 
   test('attest diff (no --against) verifies the auto-selected prior and refuses a tampered prior (exit 6)',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem to produce a signed attestation' },
     () => {
       const prior = 'noagainst-prior-' + Date.now();
       const priorAtt = makeSession(prior, 'crypto');
@@ -460,7 +451,6 @@ describe('attest-diff-noagainst-prior-tamper', () => {
     });
 
   test('attest diff refuses a prior whose .sig was stripped — sidecar deletion is tamper (exit 6)',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem to produce a signed attestation' },
     () => {
       const prior = 'noagainst-stripped-prior-' + Date.now();
       const priorAtt = makeSession(prior, 'crypto');
@@ -939,10 +929,7 @@ describe('attest-require-signed-and-prune', () => {
 // ===========================================================================
 describe('attest-verify-replay-isolation', () => {
   const SUITE_HOME = makeSuiteHome('exceptd-attest-verify-replay-');
-  const cli = makeCli(SUITE_HOME);
-
-  const PKG_PRIV_KEY = path.join(ROOT, '.keys', 'private.pem');
-  const HAS_PRIV_KEY = fs.existsSync(PKG_PRIV_KEY);
+  const cli = makeCli(SUITE_HOME, { cliPath: signedInstall().cli });
 
   function locateSessionDir(sid) {
     const a = path.join(SUITE_HOME, 'attestations', sid);
@@ -969,7 +956,6 @@ describe('attest-verify-replay-isolation', () => {
   }
 
   test('case 1: clean session (1 attestation, 0 replays) — exit 0, no replay_tamper',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem' },
     () => {
       const sid = 'replay-iso-clean-' + Date.now();
       const r1 = cli(['run', 'library-author', '--evidence', '-', '--session-id', sid], {
@@ -989,7 +975,6 @@ describe('attest-verify-replay-isolation', () => {
     });
 
   test('case 2: 1 attestation + N pre-staged replay records — partitioned cleanly',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem' },
     () => {
       const sid = 'replay-iso-staged-' + Date.now();
       const r1 = cli(['run', 'library-author', '--evidence', '-', '--session-id', sid], {
@@ -1019,7 +1004,6 @@ describe('attest-verify-replay-isolation', () => {
     });
 
   test('case 3: tampered replay record alone → exit 0 + replay_tamper:true + warnings',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem' },
     () => {
       const sid = 'replay-iso-tampered-replay-' + Date.now();
       const r1 = cli(['run', 'library-author', '--evidence', '-', '--session-id', sid], {
@@ -1045,7 +1029,6 @@ describe('attest-verify-replay-isolation', () => {
     });
 
   test('case 4: tampered attestation → exit 6 (TAMPERED) regardless of replay state',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem' },
     () => {
       const sid = 'replay-iso-tampered-att-' + Date.now();
       const r1 = cli(['run', 'library-author', '--evidence', '-', '--session-id', sid], {
@@ -1110,10 +1093,7 @@ describe('attestation-durability (attest verify slice)', () => {
 // ===========================================================================
 describe('attestation-signature-roundtrip (attest verify slice)', () => {
   const SUITE_HOME = makeSuiteHome('exceptd-audit-vv-trust-attest-');
-  const cli = makeCli(SUITE_HOME);
-
-  const PKG_PRIV_KEY = path.join(ROOT, '.keys', 'private.pem');
-  const HAS_PRIV_KEY = fs.existsSync(PKG_PRIV_KEY);
+  const cli = makeCli(SUITE_HOME, { cliPath: signedInstall().cli });
 
   function locateAttestationFiles(sid) {
     const candidates = [
@@ -1137,7 +1117,6 @@ describe('attestation-signature-roundtrip (attest verify slice)', () => {
   }
 
   test('KK P1-1 — sidecar shape no longer carries signed_at / signs_path / signs_sha256',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem' },
     () => {
       const sid = 'vv-trust-shape-' + Date.now();
       const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
@@ -1163,7 +1142,6 @@ describe('attestation-signature-roundtrip (attest verify slice)', () => {
     });
 
   test('KK P1-1 — rewriting a legacy signed_at on a legacy sidecar is a verify no-op (forwards-compat)',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem' },
     () => {
       const sid = 'vv-trust-legacy-signed-at-' + Date.now();
       const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
@@ -1190,7 +1168,6 @@ describe('attestation-signature-roundtrip (attest verify slice)', () => {
     });
 
   test('KK P1-1 — rewriting attestation.captured_at INVALIDATES the signature (exit 6)',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem' },
     () => {
       const sid = 'vv-trust-captured-at-' + Date.now();
       const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
@@ -1215,7 +1192,6 @@ describe('attestation-signature-roundtrip (attest verify slice)', () => {
     });
 
   test('KK P1-2 — attest verify surfaces both the original attestation AND the replay in results',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem' },
     () => {
       const sid = 'vv-trust-replay-listed-' + Date.now();
       const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
@@ -1255,7 +1231,6 @@ describe('attestation-signature-roundtrip (attest verify slice)', () => {
     });
 
   test('KK P1-3 — attest verify refuses sidecar with algorithm:"RSA-PSS" (exit 6, algorithm-unsupported)',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem' },
     () => {
       const sid = 'vv-trust-algo-rsa-' + Date.now();
       const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
@@ -1284,7 +1259,6 @@ describe('attestation-signature-roundtrip (attest verify slice)', () => {
     });
 
   test('KK P1-3 — attest verify refuses sidecar with algorithm:null (exit 6, algorithm-unsupported)',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem' },
     () => {
       const sid = 'vv-trust-algo-null-' + Date.now();
       const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
@@ -1312,10 +1286,7 @@ describe('attestation-signature-roundtrip (attest verify slice)', () => {
 // ===========================================================================
 describe('attestation-trust-boundary (attest verify slice)', () => {
   const SUITE_HOME = makeSuiteHome('exceptd-audit-aa-trust-attest-');
-  const cli = makeCli(SUITE_HOME);
-
-  const PKG_PRIV_KEY = path.join(ROOT, '.keys', 'private.pem');
-  const HAS_PRIV_KEY = fs.existsSync(PKG_PRIV_KEY);
+  const cli = makeCli(SUITE_HOME, { cliPath: signedInstall().cli });
 
   function locateAttestation(sid) {
     const candidates = [
@@ -1334,7 +1305,6 @@ describe('attestation-trust-boundary (attest verify slice)', () => {
   }
 
   test('Fix 2(b) — attest verify exits 6 with structured body on corrupt sidecar (not generic exit 1)',
-    { skip: !HAS_PRIV_KEY && 'producer run requires .keys/private.pem' },
     () => {
       const sid = 'aa-trust-verify-corrupt-' + Date.now();
       const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
@@ -1365,7 +1335,6 @@ describe('attestation-trust-boundary (attest verify slice)', () => {
     });
 
   test('Fix 3 — attest verify exits 6 when an unsigned sidecar is substituted on a host WITH .keys/private.pem',
-    { skip: !HAS_PRIV_KEY && 'substitution detection requires .keys/private.pem on the verifying host (see R-F1 skip pattern)' },
     () => {
       const sid = 'aa-trust-subst-' + Date.now();
       const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
@@ -1521,11 +1490,13 @@ describe('cli-coverage', () => {
 describe('cli-exit-codes', () => {
   const SUITE_HOME = makeSuiteHome('exceptd-audit-r-attest-');
   const cli = makeCli(SUITE_HOME);
+  // R-F1 tampers with a signed attestation, so it runs through the signed copy.
+  const signedCli = makeCli(SUITE_HOME, { cliPath: signedInstall().cli });
 
-  test('R-F1: attest verify on a tampered attestation exits 6 with ok:false', { skip: !fs.existsSync(path.join(ROOT, '.keys', 'private.pem')) && 'private key absent — signed-tamper path cannot be exercised without .keys/private.pem' }, () => {
+  test('R-F1: attest verify on a tampered attestation exits 6 with ok:false', () => {
     const sid = 'rf1-tamper-' + Date.now();
     const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
-    const r1 = cli(['run', 'library-author', '--evidence', '-', '--session-id', sid], { input: sub });
+    const r1 = signedCli(['run', 'library-author', '--evidence', '-', '--session-id', sid], { input: sub });
     assert.equal(r1.status, 0, 'pre-tamper run must succeed; stderr=' + r1.stderr.slice(0, 400));
 
     const candidates = [
@@ -1538,7 +1509,7 @@ describe('cli-exit-codes', () => {
     assert.ok(files.length >= 1, 'at least one attestation .json must exist; found: ' + JSON.stringify(files));
     const target = path.join(attRoot, files[0]);
 
-    const rOk = cli(['attest', 'verify', sid, '--json']);
+    const rOk = signedCli(['attest', 'verify', sid, '--json']);
     const okBody = tryJson(rOk.stdout) || tryJson(rOk.stderr) || {};
     assert.ok(okBody.results && okBody.results.length >= 1, 'pre-tamper verify must emit results');
 
@@ -1547,7 +1518,7 @@ describe('cli-exit-codes', () => {
     assert.notEqual(tampered, orig, 'tamper transform must alter bytes');
     fs.writeFileSync(target, tampered, 'utf8');
 
-    const r = cli(['attest', 'verify', sid, '--json']);
+    const r = signedCli(['attest', 'verify', sid, '--json']);
     assert.equal(r.status, 6,
       `attest verify on a tampered attestation must exit 6 (TAMPERED). Got status=${r.status}. stdout=${r.stdout.slice(0,400)} stderr=${r.stderr.slice(0,400)}`);
     const body = tryJson(r.stdout) || tryJson(r.stderr) || {};
@@ -2323,12 +2294,12 @@ const path = require('node:path');
 const os = require('node:os');
 
 const { ROOT, makeSuiteHome, makeCli, tryJson } = require('./_helpers/cli');
+const { signedInstall } = require('./_helpers/signed-install.js');
 
 const SUITE_HOME = makeSuiteHome('exceptd-audit-aa-');
-const cli = makeCli(SUITE_HOME);
-
-const PKG_PRIV_KEY = path.join(ROOT, '.keys', 'private.pem');
-const HAS_PRIV_KEY = fs.existsSync(PKG_PRIV_KEY);
+// Every CLI test in this block tampers with a signed attestation; the
+// library-level and source-level tests read the repository's own files.
+const cli = makeCli(SUITE_HOME, { cliPath: signedInstall().cli });
 
 function locateAttestation(sid) {
   const candidates = [
@@ -2347,7 +2318,6 @@ function locateAttestation(sid) {
 // ---------------------------------------------------------------------------
 
 test('AA P1-1: attest verify exits 6 when an unsigned sidecar is substituted on a host WITH a private key',
-  { skip: !HAS_PRIV_KEY && 'private key absent — substitution path requires .keys/private.pem on the verifying host' },
   () => {
     // Produce a real (signed) attestation, then substitute the .sig with the
     // unsigned stub. Pre-fix: `attest verify` reported signed:false and
@@ -2411,7 +2381,6 @@ test('AA P1-1: a legitimately-unsigned attestation on a host WITHOUT a private k
 // ---------------------------------------------------------------------------
 
 test('AA P1-2: attest verify exits 6 (not 1) when the .sig sidecar is corrupt JSON',
-  { skip: !HAS_PRIV_KEY && 'producer run requires private key' },
   () => {
     // Pre-fix: JSON.parse threw into the outer dispatcher catch → exit 1
     // (generic). Post-fix: wrapped parse returns a tamper-class result and
@@ -2439,7 +2408,6 @@ test('AA P1-2: attest verify exits 6 (not 1) when the .sig sidecar is corrupt JS
   });
 
 test('AA P1-2: reattest exits 6 when the .sig sidecar is corrupt JSON',
-  { skip: !HAS_PRIV_KEY && 'producer run requires private key' },
   () => {
     const sid = 'aa-p12-corrupt-reattest-' + Date.now();
     const sub = JSON.stringify({ observations: {}, verdict: { classification: 'not_detected' } });
