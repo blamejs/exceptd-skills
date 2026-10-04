@@ -136,6 +136,16 @@ function _releaseSubject(version, section) {
 }
 
 function _gitClean() { return _captureOk("git", ["status", "--porcelain"]) === ""; }
+
+// Throws when the tree holds changes no commit carries, since push sends only
+// committed work and the resumed commit phase creates no new commit.
+function _refuseUncommitted(phase, next) {
+  var dirty = _captureOk("git", ["status", "--porcelain"]).split(/\r?\n/).filter(function (l) { return l.trim(); });
+  if (dirty.length === 0) return;
+  throw new Error("release: " + phase + " found " + dirty.length + " uncommitted change(s) that no v" + next +
+    " commit carries:\n  " + dirty.slice(0, 20).join("\n  ") +
+    "\nCommit them as a follow-up commit on the release branch, or discard them, then run commit again, which verifies every branch commit's signature, and then push.");
+}
 function _gitBranch() { return _captureOk("git", ["rev-parse", "--abbrev-ref", "HEAD"]); }
 function _gitOnMain() { return _gitBranch() === "main"; }
 function _gitOnRelease() { return /^release-v\d+\.\d+\.\d+$/.test(_gitBranch()); }
@@ -143,16 +153,17 @@ function _releaseBranchFor(version) { return "release-v" + version; }
 
 // `git verify-commit` is the boolean GitHub's required_signatures ruleset checks;
 // main is under that ruleset, so fail here rather than at push.
-function _verifyCommitSignature(label) {
-  var verify = _capture("git", ["verify-commit", "HEAD"]);
+function _verifyCommitSignature(label, rev) {
+  rev = rev || "HEAD";
+  var verify = _capture("git", ["verify-commit", rev]);
   if (verify.status !== 0) {
-    var hint = "release: " + label + " commit signature is not Good — check SSH " +
+    var hint = "release: " + label + " commit " + rev + " signature is not Good — check SSH " +
       "signing setup (commit.gpgsign=true + gpg.format=ssh + the public key " +
       "registered as a GitHub signing key).";
     if (verify.stderr) hint += "\n" + verify.stderr;
     throw new Error(hint);
   }
-  var sig = _capture("git", ["log", "-1", "--pretty=%h %G? %GS"]);
+  var sig = _capture("git", ["log", "-1", "--pretty=%h %G? %GS", rev]);
   console.log("signature: " + (sig.stdout || "(empty — verify-commit reports Good)"));
   _ok(label + " commit signature verified");
 }
@@ -359,11 +370,22 @@ function cmdCommit() {
     throw new Error("release: commit must run on main or " + branch + " (on " + current + ")");
   }
 
-  // HEAD already carrying this release's commit means verify, not re-commit.
-  var headSubject = _capture("git", ["log", "-1", "--pretty=%s"]).stdout;
-  if (headSubject.indexOf("v" + next + ":") === 0) {
-    _ok("HEAD already carries a v" + next + " commit (resume mode)");
-    _verifyCommitSignature("existing");
+  // A branch already carrying this release's commit, at HEAD or under follow-up
+  // commits, means verify, not re-commit. The branch's commits are those above
+  // main, or above origin/main in a clone that has no local main.
+  var base = ["main", "origin/main"].filter(function (r) { return _capture("git", ["rev-parse", "--verify", "--quiet", r]).status === 0; })[0];
+  if (!base) {
+    throw new Error("release: commit cannot read the branch's commits because neither main nor origin/main exists; " +
+      "run `git fetch origin main:refs/remotes/origin/main` and run commit again.");
+  }
+  var branchCommits = _captureOk("git", ["log", base + "..HEAD", "--pretty=%H %s"])
+    .split(/\r?\n/).filter(function (l) { return l.trim(); });
+  if (branchCommits.some(function (l) { return l.slice(l.indexOf(" ") + 1).indexOf("v" + next + ":") === 0; })) {
+    _ok("the branch already carries a v" + next + " commit (resume mode)");
+    _refuseUncommitted("commit", next);
+    // Every commit the push would send is verified, oldest first, so the release
+    // commit is checked before any follow-up commit on top of it.
+    branchCommits.slice().reverse().forEach(function (l) { _verifyCommitSignature("existing", l.slice(0, l.indexOf(" "))); });
     console.log("\nnext: node scripts/release.js push");
     return;
   }
@@ -387,6 +409,7 @@ function cmdPush() {
   if (!_gitOnRelease()) throw new Error("release: push must run on a release-vX.Y.Z branch");
   var next = _readJsonVersion("package.json");
   var branch = _releaseBranchFor(next);
+  _refuseUncommitted("push", next);
 
   _run("git", ["push", "-u", "origin", branch]);
   _ok("pushed " + branch);
