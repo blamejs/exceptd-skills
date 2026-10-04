@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.21.29 — 2026-10-04
+
+244 catalog entries carried a CVSS score estimated when they were imported, mostly from the CVE's title in CISA's Known Exploited Vulnerabilities catalog, and 197 of them did not match NVD. Those 197 now carry NVD's score and vector: 181 had a different score, often 9.8 where NVD records 8.8 with user interaction required, or a network attack vector where NVD records a local one, and 16 had the right score with a different vector. The CVSS note on all 244 entries now names the NVD record and who scored it (NVD, CISA-ADP or the CNA), where it used to call the score an estimate. The 328 lesson and framework-gap texts that quoted an estimated score now state NVD's score and the matching severity. The CVE-2026-3055 Essential Eight and CVE-2024-42009 NIS2 gap statements argued from the estimated score; they now state the gap that remains at NVD's score: patching does not invalidate session material an attacker already read, and does not address mail the script already took.
+
 ## 0.21.28 — 2026-10-04
 
 `exceptd refresh --source epss` now fills EPSS for an entry that has none when FIRST publishes a complete row for it. It used to refresh only entries that already carried a score, so 405 catalog entries had no EPSS score, percentile or date. They now carry the 2026-10-03 publication, as do 131 entries whose score had moved by more than 0.05. Their EPSS notes state the score and its date, where they used to say EPSS would be pulled in a later refresh. FIRST publishes no score for CVE-2026-0766 as of 2026-10-03, and its note says so.
