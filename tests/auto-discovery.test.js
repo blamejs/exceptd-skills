@@ -69,6 +69,9 @@ test('buildKevDraftEntry produces a complete schema entry from minimal KEV input
   assert.equal(entry.cisa_kev, true);
   assert.equal(entry.cisa_kev_date, '2026-05-12');
   assert.equal(entry.cisa_kev_due_date, '2026-06-02');
+  assert.equal(entry.cisa_kev_forensic_triage, null, 'a KEV record without forensicTriage leaves the field null');
+  assert.equal(buildKevDraftEntry({ ...kev, forensicTriage: 'Yes' }, null, null).cisa_kev_forensic_triage, true,
+    'a draft carries the KEV record\'s forensicTriage');
   assert.equal(entry.active_exploitation, 'suspected');
   assert.ok(entry.affected.includes('Acme'));
   assert.ok(typeof entry.rwep_score === 'number');

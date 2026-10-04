@@ -787,6 +787,71 @@ test_describe('refresh-curated-kev-protection', () => {
     }
   });
 
+  test('forensicTriage is filled from the feed in both directions, and absence proposes nothing', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'kev-prot-'));
+    try {
+      const flagged = 'CVE-2025-39964';
+      const plain = 'CVE-2019-11510';
+      const silent = 'CVE-2023-4863';
+      writeKevCache(tmp, { feedSize: 800, includeCves: [
+        { cveID: flagged, dateAdded: '2026-09-02', dueDate: '2026-09-23', knownRansomwareCampaignUse: 'Unknown', forensicTriage: 'Yes' },
+        { cveID: plain, dateAdded: '2019-11-03', dueDate: '2022-01-24', knownRansomwareCampaignUse: 'Unknown', forensicTriage: 'No' },
+        { cveID: silent, dateAdded: '2023-09-13', dueDate: '2023-10-04', knownRansomwareCampaignUse: 'Unknown' },
+      ] });
+      const base = { cisa_kev: true, known_ransomware_use: false, rwep_factors: { cisa_kev: 25 }, rwep_score: 70 };
+      const catalog = {
+        [flagged]: { ...base, cisa_kev_date: '2026-09-02', cisa_kev_due_date: '2026-09-23' },
+        [plain]: { ...base, cisa_kev_date: '2019-11-03', cisa_kev_due_date: '2022-01-24' },
+        [silent]: { ...base, cisa_kev_date: '2023-09-13', cisa_kev_due_date: '2023-10-04', cisa_kev_forensic_triage: true },
+        _meta: {},
+      };
+      const ctx = makeCtx(tmp, catalog);
+
+      const { diffs } = kevDiffFromCache(ctx);
+      const triage = diffs.filter((d) => d.field === 'cisa_kev_forensic_triage');
+      assert.deepEqual(triage.map((d) => [d.id, d.before, d.after, !!d.review_only]).sort(),
+        [[flagged, null, true, false], [plain, null, false, false]].sort());
+
+      await ALL_SOURCES.kev.applyDiff(ctx, diffs);
+      const after = JSON.parse(fs.readFileSync(ctx.cvePath, 'utf8'));
+      assert.equal(after[flagged].cisa_kev_forensic_triage, true);
+      assert.equal(after[plain].cisa_kev_forensic_triage, false);
+      assert.equal(after[silent].cisa_kev_forensic_triage, true, 'a feed record without the field leaves the stored value');
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  test('a forensicTriage removal is held for review against a truncated feed, and a de-listing clears it', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'kev-prot-'));
+    try {
+      const cve = 'CVE-2024-1709';
+      writeKevCache(tmp, { feedSize: 50, includeCves: [
+        { cveID: cve, dateAdded: '2024-02-22', dueDate: '2024-02-29', knownRansomwareCampaignUse: 'Known', forensicTriage: 'No' },
+      ] });
+      const catalog = { [cve]: {
+        cisa_kev: true, cisa_kev_date: '2024-02-22', cisa_kev_due_date: '2024-02-29',
+        known_ransomware_use: true, cisa_kev_forensic_triage: true, rwep_factors: { cisa_kev: 25 }, rwep_score: 70,
+      }, _meta: {} };
+      const ctx = makeCtx(tmp, catalog);
+      const { diffs } = kevDiffFromCache(ctx);
+      const r = diffs.find((d) => d.id === cve && d.field === 'cisa_kev_forensic_triage');
+      assert.ok(r, 'the removal is still surfaced');
+      assert.equal(r.review_only, true, 'a removal against a truncated feed is held for review');
+      await ALL_SOURCES.kev.applyDiff(ctx, diffs);
+      assert.equal(JSON.parse(fs.readFileSync(ctx.cvePath, 'utf8'))[cve].cisa_kev_forensic_triage, true);
+
+      // A confirmed de-listing clears the flag to null with the other KEV fields.
+      await ALL_SOURCES.kev.applyDiff(ctx, [{ id: cve, field: 'cisa_kev', before: true, after: false }]);
+      const delisted = JSON.parse(fs.readFileSync(ctx.cvePath, 'utf8'))[cve];
+      assert.equal(delisted.cisa_kev, false);
+      assert.equal(delisted.cisa_kev_forensic_triage, null);
+      assert.equal(delisted.known_ransomware_use, null);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
   test('--drift-only keeps the reconciliation and drops the discovery adds', async () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'kev-prot-'));
     try {

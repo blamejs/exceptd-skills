@@ -43,6 +43,14 @@ const CVE_FIXTURE_DATA = {
     active_exploitation: 'confirmed',
     status: 'published',
   },
+  'CVE-2030-0002': {
+    cvss_score: 7.8,
+    cisa_kev: true,
+    cisa_kev_forensic_triage: true,
+    name: 'FixtureTriageVuln',
+    active_exploitation: 'confirmed',
+    status: 'published',
+  },
 };
 const RFC_FIXTURE_DATA = {
   'RFC-9404': {
@@ -132,6 +140,20 @@ test('resolveCve: catalog hit returns published + catalog provenance', async () 
   assert.equal(r.kev, true);
   assert.equal(typeof r.product, 'string');
   assert.equal(r.product, 'FixtureVuln');
+  assert.equal(r.kev_forensic_triage, null, 'an entry without the field reports null');
+});
+
+test('resolveCve and the cve verb carry the KEV forensic-triage flag', async () => {
+  const r = await resolveCve('CVE-2030-0002');
+  assert.equal(r.kev_forensic_triage, true);
+  const flagged = cli(['cve', 'CVE-2030-0002', '--air-gap']);
+  assert.equal(flagged.status, 0, flagged.stderr);
+  assert.match(flagged.stdout, /KEV forensic triage required \(BOD 26-04: capture volatile data before patching\)/);
+  const plain = cli(['cve', 'CVE-2030-0001', '--air-gap']);
+  assert.equal(plain.status, 0, plain.stderr);
+  assert.doesNotMatch(plain.stdout, /forensic triage/, 'no marker for an entry that is not flagged');
+  const json = tryJson(cli(['cve', 'CVE-2030-0002', '--air-gap', '--json']).stdout);
+  assert.equal(json && json.kev_forensic_triage, true);
 });
 
 test('resolveCve: non-canonical tail is fabricated, decided on format (no network)', async () => {
