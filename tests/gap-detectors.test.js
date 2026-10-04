@@ -594,7 +594,8 @@ test("DETECTOR_CLASSES: canonical class list matches runAllDetectors output (cod
     "schema-evolution",
     "operator-action-sla",
     "unused-orphan",
-    "pipeline-wording"
+    "pipeline-wording",
+    "import-stub"
   ]);
   const declared = new Set(D.DETECTOR_CLASSES);
   assert.deepEqual(declared, expectedClasses,
@@ -895,6 +896,59 @@ test("pipelineWordingFindings: includeDrafts checks objects marked _auto_importe
   assert.deepEqual(D.pipelineWordingFindings(loaded), [], "the shipped-catalog audit skips drafts");
   const f = D.pipelineWordingFindings(loaded, { includeDrafts: true });
   assert.deepEqual(f.map((x) => `${x.id} ${x.field}`), ["CVE-2026-0003 new_control_requirements[0].evidence"]);
+});
+
+// ---------- import-stub ----------
+
+test("hasImportStubWording matches the KEV import draft's placeholders and not prose about a bulk import feature", () => {
+  for (const s of [
+    "Bulk-imported KEV entry — no AI involvement documented.",
+    "Bulk-imported from CISA KEV catalog version 2026.05.15. KEV listing date 2025-10-30.",
+    "P1 — KEV-listed confirmed exploitation. Bulk-imported via the KEV intake.",
+    "moderate Bulk-imported — exploitation complexity not extracted from KEV record.",
+    "No live-patch tool was recorded for this entry at bulk-import time. Vendor patch typically requires a restart.",
+    "Treat as moderate-by-default; refine when researcher writeup published.",
+    "EPSS score will be populated in a future refresh.",
+  ]) assert.equal(D.hasImportStubWording(s), true, s);
+  for (const s of [
+    "The CSV bulk import endpoint deserializes attacker-supplied rows.",
+    "A bulk-imported user list bypasses the password policy.",
+    "Bulk-import jobs run with the service account's privileges.",
+    "Complexity is moderate by default configuration.",
+    "",
+  ]) assert.equal(D.hasImportStubWording(s), false, s);
+  assert.equal(D.hasImportStubWording(null), false);
+});
+
+test("IMPORT_STUB_WORDING: every pattern matches its own import construction", () => {
+  assert.ok(Array.isArray(D.IMPORT_STUB_WORDING) && D.IMPORT_STUB_WORDING.length === 4);
+  const samples = [
+    "Bulk-imported from CISA KEV catalog version 2026.05.15.",
+    "No live-patch tool was recorded at bulk-import time.",
+    "Treat as moderate-by-default.",
+    "EPSS will be populated in a future refresh.",
+  ];
+  D.IMPORT_STUB_WORDING.forEach((re, i) => {
+    assert.ok(re instanceof RegExp, `pattern ${i} is a RegExp`);
+    assert.ok(re.test(samples[i]), `pattern ${i} matches: ${samples[i]}`);
+  });
+});
+
+test("importStubFindings: one finding per text, drafts only with includeDrafts", () => {
+  const loaded = {
+    "cve-catalog": { _meta: {},
+      "CVE-2026-0001": { complexity_notes: "Treat as moderate-by-default.", rwep_notes: "RWEP 57: CISA KEV 25." },
+      "CVE-2026-0002": { _auto_imported: true, live_patch_notes: "No tool recorded at bulk-import time." } },
+    "zeroday-lessons": { _meta: {},
+      "CVE-2026-0001": { new_control_requirements: [{ evidence: "Recorded at bulk-import time." }, { evidence: "Cisco states the fix." }] } },
+  };
+  const f = D.importStubFindings(loaded);
+  assert.deepEqual(f.map((x) => `${x.catalog} ${x.id} ${x.field}`).sort(), [
+    "cve-catalog CVE-2026-0001 complexity_notes",
+    "zeroday-lessons CVE-2026-0001 new_control_requirements[0].evidence",
+  ]);
+  assert.ok(f.every((x) => x.class === "import-stub"));
+  assert.deepEqual(D.importStubFindings(loaded, { includeDrafts: true }).map((x) => x.id).sort(), ["CVE-2026-0001", "CVE-2026-0001", "CVE-2026-0002"]);
 });
 
 // ---------- placeholder + daysSince helpers ----------
@@ -1252,17 +1306,20 @@ test("shipped catalogs: extended-detector budgets (no silent regression on v0.13
     "schema-evolution": 0,
     "operator-action-sla": 0,     // no entries currently exceed the SLA window
     "unused-orphan": 1400,        // bulk-imported CWE / RFC orphans by design
-    "pipeline-wording": 0         // lesson and catalog texts citing the curation input; none remain
+    "pipeline-wording": 0,        // lesson and catalog texts citing the curation input; none remain
+    "import-stub": 1370           // KEV import-draft placeholder text left in curated entries
   };
+  // Classes whose budget is the current count, so curating findings away
+  // lowers the budget in the same release.
+  const SHRINK_ONLY = new Set(["import-stub"]);
   const regressions = [];
   for (const [cls, count] of Object.entries(byClass)) {
     const allowed = BUDGET[cls] || 0;
     if (count > allowed) regressions.push(`${cls}: budget=${allowed} actual=${count}`);
   }
-  // Also alert if any class has ZERO budget but is missing from BUDGET
-  // (catches a future addition that forgot to set a budget).
-  for (const cls of Object.keys(BUDGET)) {
-    if (!(cls in byClass)) continue;
+  for (const cls of SHRINK_ONLY) {
+    const count = byClass[cls] || 0;
+    if (count < BUDGET[cls]) regressions.push(`${cls}: budget=${BUDGET[cls]} actual=${count}; lower the budget to ${count} here and in scripts/check-catalog-gap-budget.js`);
   }
   assert.deepEqual(regressions, [],
     "extended-detector class regression(s):\n  " + regressions.join("\n  ") +

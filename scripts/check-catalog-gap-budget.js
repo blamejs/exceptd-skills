@@ -4,10 +4,10 @@
  * Predeploy gate: runs the gap detectors and asserts no class exceeds its
  * budget. Exit 0 within budget, 1 regressed, 2 internal error.
  *
- * The budget is duplicated in tests/shipped-catalog-integrity.test.js so a
- * regression shows in both the test output and the gate-summary table, and so
- * the gate still reports when the suite is skipped or failing elsewhere. Both
- * copies move together.
+ * The budget is duplicated in the shipped-catalog-integrity block of
+ * tests/gap-detectors.test.js so a regression shows in both the test output
+ * and the gate-summary table, and so the gate still reports when the suite is
+ * skipped or failing elsewhere. Both copies move together.
  */
 
 const path = require("path");
@@ -37,8 +37,7 @@ function loadAll() {
   };
 }
 
-// Per-class regression budgets, mirrored in
-// tests/shipped-catalog-integrity.test.js.
+// Per-class regression budgets, mirrored in tests/gap-detectors.test.js.
 const BUDGET = {
   // Six KEV-listed entries whose vendors published no advisory at all. Each
   // absence is control-tested rather than assumed: the Nagios XI changelog
@@ -66,7 +65,12 @@ const BUDGET = {
   // its source. refresh --curate-batch refuses a new one that cites a catalog
   // field and warns on the rest. No shipped text carries this wording, and the
   // budget holds it at 0.
-  "pipeline-wording": 0
+  "pipeline-wording": 0,
+  // Curated entries promoted from KEV import drafts that still carry the
+  // draft's placeholder text in some fields. refresh --curate-batch refuses a
+  // new one. The test mirror also fails when the count falls below the
+  // budget, so the release that curates those fields lowers it.
+  "import-stub": 1370
 };
 
 function main() {
@@ -115,7 +119,7 @@ function main() {
     }
     console.error("Add an explicit budget entry in both:");
     console.error("  scripts/check-catalog-gap-budget.js");
-    console.error("  tests/shipped-catalog-integrity.test.js");
+    console.error("  tests/gap-detectors.test.js");
     process.exitCode = 1; return;
   }
   if (missingBudget.length > 0) {
@@ -130,7 +134,7 @@ function main() {
     }
     console.error("\nClose the gap in this PR (preferred) or update BUDGET in both:");
     console.error("  scripts/check-catalog-gap-budget.js");
-    console.error("  tests/shipped-catalog-integrity.test.js");
+    console.error("  tests/gap-detectors.test.js");
     process.exitCode = 1; return;
   }
   console.log("[check-catalog-gap-budget] all classes within budget; every class is budgeted.");
