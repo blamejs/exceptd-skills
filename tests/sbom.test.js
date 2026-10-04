@@ -123,6 +123,29 @@ test("collect sbom does not flip lockfile-no-integrity when every entry carries 
   }
 });
 
+test("collect sbom inventories npm-shrinkwrap.json and checks it for integrity, preferring it over package-lock.json", () => {
+  const noIntegrity = { lockfileVersion: 3, packages: { "": { name: "app", version: "1.0.0" }, "node_modules/bar": { version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz" } } };
+  const clean = { lockfileVersion: 3, packages: { "": { name: "app", version: "1.0.0" }, "node_modules/foo": { version: "1.0.0", resolved: "https://r/foo.tgz", integrity: "sha512-abc" } } };
+  const run = (files) => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-sbom-shrinkwrap-"));
+    try {
+      for (const [name, body] of Object.entries(files)) fs.writeFileSync(path.join(tmp, name), JSON.stringify(body));
+      const r = cli(["collect", "sbom", "--cwd", tmp, "--json"]);
+      assert.equal(r.status, 0, r.stderr);
+      return tryJson(r.stdout);
+    } finally {
+      try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+    }
+  };
+  // A shrinkwrap-only project is inventoried as npm and checked for integrity.
+  const only = run({ "npm-shrinkwrap.json": noIntegrity });
+  assert.match(only.artifacts["lockfile-inventory"].value, /npm:npm-shrinkwrap\.json/);
+  assert.equal(only.signal_overrides["lockfile-no-integrity"], "hit");
+  // With both files, npm installs from the shrinkwrap, so its entries decide the verdict.
+  assert.equal(run({ "npm-shrinkwrap.json": clean, "package-lock.json": noIntegrity }).signal_overrides["lockfile-no-integrity"], "miss");
+  assert.equal(run({ "npm-shrinkwrap.json": noIntegrity, "package-lock.json": clean }).signal_overrides["lockfile-no-integrity"], "hit");
+});
+
 test("sbom collector recognises pyproject.toml as a Python dependency manifest", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sbom-pyproject-"));
   try {
@@ -585,8 +608,14 @@ require("node:test").describe("sbom playbook registry-cooldown guidance", () => 
   test("npm-registry-no-cooldown asks for each manager's effective cooldown as that manager resolves it", () => {
     assert.ok(indicator, "the indicator exists");
     const v = indicator.value;
+    // Only lockfiles the build installs from count, and the test is presence, not length.
+    assert.match(v, /Count a manager only for a lockfile the build installs from[\s\S]*?, not one under test fixtures, examples, archives or vendored directories/);
+    assert.match(v, /The indicator tests whether any cooldown is in effect, not its length/);
+    assert.match(v, /a `yarn add` or `yarn up` step that passes `--no-time-gate` bypasses Yarn's gate for that step/);
+    assert.match(artifact.source, /any `yarn add` or `yarn up` step that passes `--no-time-gate`/);
+    assert.match(pb.phases.look.artifacts.find((a) => a.id === "repo-lockfiles").source, /package-lock\.json, npm-shrinkwrap\.json, yarn\.lock/);
     // The rule: effective value per manager, resolved with precedence, versioned default and exclusions.
-    assert.match(v, /has no effective registry cooldown, as that manager resolves its own configuration/);
+    assert.match(v, /Determine the effective cooldown the way that manager resolves its own configuration/);
     assert.match(v, /for npm: command line, environment, project \.npmrc, user ~\/\.npmrc, global npmrc/);
     assert.match(v, /the default for the recorded version, and the exclusion list where that version supports one/);
     assert.match(v, /A value of 0 disables each setting/);

@@ -209,6 +209,23 @@ test("library-author lockfile-missing-integrity covers non-npm lockfiles + stays
       try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
     }
   }
+  // Case C: npm-shrinkwrap.json is scanned like package-lock.json.
+  for (const [entry, expected] of [
+    [{ version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz" }, "hit"],
+    [{ version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz", integrity: "sha512-abc" }, "miss"],
+  ]) {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lib-lf-shrinkwrap-"));
+    try {
+      fs.writeFileSync(path.join(tmp, "npm-shrinkwrap.json"), JSON.stringify({
+        lockfileVersion: 3, packages: { "": { name: "lib", version: "1.0.0" }, "node_modules/bar": entry },
+      }));
+      const r = libraryAuthorCollector.collect({ cwd: tmp });
+      assert.equal(r.signal_overrides["lockfile-missing-integrity"], expected,
+        `npm-shrinkwrap.json ${expected === "hit" ? "without" : "with"} integrity must give ${expected}`);
+    } finally {
+      try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+    }
+  }
 });
 
 test("library-author package-json-provenance-missing checks workflow --provenance fallback", () => {
