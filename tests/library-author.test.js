@@ -229,15 +229,16 @@ test("library-author lockfile-missing-integrity covers non-npm lockfiles + stays
       try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
     }
   }
-  // Case D: with both npm lockfiles, the npm version decides which one npm reads:
-  // npm 11 and earlier read the shrinkwrap, npm 12 reads only package-lock.json,
-  // and with no version named both are scanned.
+  // Case D: with both npm lockfiles, which one npm reads depends on the npm version
+  // that runs the install, which the repository does not establish. Agreeing files
+  // decide the verdict; disagreeing files leave it undecided, with or without a
+  // packageManager field.
   const noIntegrity = { version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz" };
   const clean = { version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz", integrity: "sha512-abc" };
   for (const [npm, shrink, lock, expected] of [
-    ["11.6.0", clean, noIntegrity, "miss"], ["11.6.0", noIntegrity, clean, "hit"],
-    ["12.0.0", noIntegrity, clean, "miss"], ["12.0.0", clean, noIntegrity, "hit"],
-    [null, clean, noIntegrity, "hit"], [null, clean, clean, "miss"],
+    [null, clean, clean, "miss"], [null, noIntegrity, noIntegrity, "hit"],
+    [null, clean, noIntegrity, undefined], [null, noIntegrity, clean, undefined],
+    ["11.6.0", clean, noIntegrity, undefined], ["12.0.0", noIntegrity, clean, undefined],
   ]) {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lib-lf-both-"));
     try {

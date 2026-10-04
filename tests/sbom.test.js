@@ -143,26 +143,28 @@ test("collect sbom inventories npm-shrinkwrap.json and checks it for integrity, 
   assert.equal(only.signal_overrides["lockfile-no-integrity"], "hit");
   const verdict = (files) => run(files).signal_overrides["lockfile-no-integrity"];
   const pm = (v) => ({ name: "app", version: "1.0.0", packageManager: `npm@${v}` });
-  // npm 11 and earlier install from the shrinkwrap, so its entries decide the verdict.
-  assert.equal(verdict({ "package.json": pm("11.6.0"), "npm-shrinkwrap.json": clean, "package-lock.json": noIntegrity }), "miss");
-  assert.equal(verdict({ "package.json": pm("11.6.0"), "npm-shrinkwrap.json": noIntegrity, "package-lock.json": clean }), "hit");
-  // npm 12 does not read the shrinkwrap, so package-lock.json decides.
-  assert.equal(verdict({ "package.json": pm("12.0.0"), "npm-shrinkwrap.json": noIntegrity, "package-lock.json": clean }), "miss");
-  assert.equal(verdict({ "package.json": pm("12.0.0"), "npm-shrinkwrap.json": clean, "package-lock.json": noIntegrity }), "hit");
-  // With no npm version named, both files are checked and either one can hit.
+  // Which file npm reads depends on the npm version that runs the install, which the
+  // repository does not establish (packageManager does not select npm without Corepack's
+  // npm shim), so both root files are checked and either one can hit.
   assert.equal(verdict({ "npm-shrinkwrap.json": clean, "package-lock.json": noIntegrity }), "hit");
+  assert.equal(verdict({ "npm-shrinkwrap.json": noIntegrity, "package-lock.json": clean }), "hit");
   assert.equal(verdict({ "npm-shrinkwrap.json": clean, "package-lock.json": clean }), "miss");
+  // A packageManager field does not change that.
+  assert.equal(verdict({ "package.json": pm("12.0.0"), "npm-shrinkwrap.json": noIntegrity, "package-lock.json": clean }), "hit");
+  assert.equal(verdict({ "package.json": pm("11.6.0"), "npm-shrinkwrap.json": clean, "package-lock.json": noIntegrity }), "hit");
   // A remote unhashed tarball in one file keeps its evidence when the other file has only
   // unhashed local references: false-positive check 0 (a remote tarball) stays attested.
   const localOnly = { lockfileVersion: 3, packages: { "": { name: "app", version: "1.0.0" }, "node_modules/loc": { version: "1.0.0", resolved: "file:../loc" } } };
   const mixed = run({ "npm-shrinkwrap.json": noIntegrity, "package-lock.json": localOnly });
   assert.equal(mixed.signal_overrides["lockfile-no-integrity"], "hit");
   assert.equal(mixed.signal_overrides["lockfile-no-integrity__fp_checks"]["0"], true);
-  // With two candidates and no npm version, which one the build consumes is unknown,
-  // so false-positive check 1 stays unattested; with the version named it is attested.
+  // With two candidates, which one the build consumes is unknown, so false-positive
+  // check 1 stays unattested unless both have an unhashed remote tarball.
   assert.equal(mixed.signal_overrides["lockfile-no-integrity__fp_checks"]["1"], undefined);
-  const known = run({ "package.json": pm("11.6.0"), "npm-shrinkwrap.json": noIntegrity, "package-lock.json": clean });
-  assert.equal(known.signal_overrides["lockfile-no-integrity__fp_checks"]["1"], true);
+  const oneHit = run({ "package.json": pm("11.6.0"), "npm-shrinkwrap.json": noIntegrity, "package-lock.json": clean });
+  assert.equal(oneHit.signal_overrides["lockfile-no-integrity__fp_checks"]["1"], undefined);
+  // A single npm lockfile is the one npm reads, so check 1 is attested.
+  assert.equal(only.signal_overrides["lockfile-no-integrity__fp_checks"]["1"], true);
   // When both candidates hit, the finding holds whichever one the build consumes, so check 1 is attested.
   const both = run({ "npm-shrinkwrap.json": noIntegrity, "package-lock.json": noIntegrity });
   assert.equal(both.signal_overrides["lockfile-no-integrity__fp_checks"]["1"], true);
