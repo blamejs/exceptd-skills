@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * Rebuilds the denormalised reverse-reference fields in the data catalogs from the
+ * Rebuilds the denormalized reverse-reference fields in the data catalogs from the
  * forward direction, which is the source of truth: a skill's atlas_refs / cwe_refs
  * / d3fend_refs / rfc_refs, and a CVE's forward refs. Every other field is
  * preserved and a second run changes nothing. `playbooks_referencing` is out of

@@ -119,6 +119,49 @@ test('#22 a test( mentioned inside a string is NOT counted', () => {
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
+test('stripBlockComments removes real block comments, keeps their newlines, and leaves globs in comments and strings', () => {
+  const { stripBlockComments } = require(path.join(ROOT, 'scripts', 'check-test-count.js'));
+  assert.equal(stripBlockComments("a /* x */ b"), "a  b");
+  assert.equal(stripBlockComments("a\n/* one\ntwo */\nb"), "a\n\n\nb");
+  assert.equal(stripBlockComments("// lib/*.js\nconst s = \" */\";"), "// lib/*.js\nconst s = \" */\";");
+  assert.equal(stripBlockComments("const g = 'repo:acme/*:*';"), "const g = 'repo:acme/*:*';");
+});
+
+test('a /* inside a line comment or a string does not open a block comment', () => {
+  const src = [
+    "// scans lib/*.js and skills/*.md",
+    "test('a', () => {});",
+    "test('reads data/*.json', () => {});",
+    "const sub = \"repo:acme/*:*\";",
+    "const glob = `/usr/bin/*`;",
+    "it('b', () => {});",
+    "const lines = [\"/**\", \" */\"];",
+    "test('c', () => {});",
+    "const q = 'it\\'s /* not a comment';",
+    "test('d', () => {});",
+  ].join('\n');
+  const { dir, p } = tmpFile('count-phantom-comment.test.js', src);
+  try {
+    assert.equal(countTests(p), 5);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('a real block comment after a line-comment glob still hides the test inside it', () => {
+  const src = [
+    "// scans lib/*.js",
+    "test('kept', () => {});",
+    "/* test('disabled', () => {}); */",
+    "/*",
+    "it('disabled too', () => {});",
+    "*/",
+    "it('kept too', () => {});",
+  ].join('\n');
+  const { dir, p } = tmpFile('count-real-comment.test.js', src);
+  try {
+    assert.equal(countTests(p), 2);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
 // --------------------------------------------------------------------------
 // check-test-count CLI: structured-JSON envelope on the live test set.
 // --------------------------------------------------------------------------

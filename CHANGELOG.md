@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.21.25 — 2026-10-04
+
+Error messages, warnings, help text, comments, skills and the README and AGENTS.md now use American spelling. The two `--operator` errors read "Unicode NFC normalization", the `--publisher-namespace` help reads "organization" and the `--attest-ownership` help reads "authorization". The RWEP scoring warnings read "recognized" and "unrecognized", and the library-author collector reports workflows "recognized as publish-related". The skills' output templates use the American forms, for example "RWEP-Prioritized CVE Exposure". Text that quotes or names a source keeps the source's spelling: GDPR and NIS2 quotations, the EU AI Act's "biometric categorisation system", the UK Online Safety Act's "categorised services", the titles of UK and Japanese publications and laws, and the names of organizations such as the Canadian Centre for Cyber Security. Result keys, flags, codes and skill triggers keep their spelling: `recognised` and `normalised` in the active-exploitation result, `--include-judgement-shaped`, the `RWEP_AE_UNRECOGNISED` and `RWEP_FACTOR_UNRECOGNISED` codes, and the `noisy neighbour` trigger.
+
+The codebase-pattern gate adds a warning class, `british-spelling`. It reports British spellings in comments and string literals under `bin/`, `lib/`, `orchestrator/` and `scripts/`, and skips any word with a capital after its first letter, text inside backticks in a comment, and the term `judgement-shaped`. A line marked `// allow:british-spelling — <reason>` is skipped.
+
+The test-count gate no longer treats a `/*` inside a line comment or a string as the start of a block comment. A comment such as `// scans lib/*.js` followed later by a string containing `*/` made it skip every test in between. It undercounted 36 tests, and the baseline now records the full count.
+
+`scripts/release.js prepare` and `regen` now run `scripts/sync-manifest-metadata.js` before `sign-all`, so a skill edit that changes `forward_watch` or `description` reaches `manifest.json` before the manifest is signed. The manifest-sync test runs the sync script against a temporary copy of the manifest, skills and `lib/`. A stale manifest fails the test, and the test does not rewrite the repository's `manifest.json`.
+
 ## 0.21.24 — 2026-10-04
 
 The 33 tests that produce or tamper with a signed attestation now run on every checkout, including CI. They used to skip when `.keys/private.pem` was absent. They now run the CLI from a temporary copy of the package in which the skills and manifest are re-signed with a key pair generated for the test run, and `keys/EXPECTED_FINGERPRINT` in the copy is pinned to that key. The tests do not read or write the repository's own `keys/` or `.keys/`. `makeCli` in `tests/_helpers/cli.js` takes a `cliPath` option that selects the CLI to run.

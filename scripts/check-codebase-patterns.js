@@ -30,6 +30,7 @@ const VALID_ALLOW_CLASSES = Object.freeze({
   "hand-rolled-sql": true,
   "number-env-coerce": true,
   "stream-chunk-string-decode": true,
+  "british-spelling": true,
 });
 
 const EXCLUDE_DIRS = new Set([
@@ -213,7 +214,7 @@ function inRanges(ranges, lineNo) {
 const FUNCTION_START = /(^|[^.\w])function\b|=>\s*\{?\s*$|^\s*(async\s+)?(?!(?:if|for|while|switch|catch|do|else|with|finally|return)\b)[A-Za-z_$][\w$]*\s*\([^)]*\)\s*\{/;
 
 // Scope, stated so it is not mistaken for full coverage of the class: the
-// backward scan recognises a result-channel write only where it is written
+// backward scan recognizes a result-channel write only where it is written
 // LITERALLY — `process.stdout.write(` or `console.log(`. A write reached
 // INDIRECTLY, through a helper called from the exiting function (`printHelp()`,
 // `renderSummary()`), is invisible to it, so an exit-after-write of that shape
@@ -515,6 +516,99 @@ function detectStreamChunkStringDecode(files) {
   return filterMarkers(hits, "stream-chunk-string-decode");
 }
 
+// The comment and string-literal text on a line, with code left out so an
+// identifier, object key or constant keeps its spelling. `state` is a
+// newBraceState() threaded line to line: block comments and template literals
+// span lines, and a quoted string closes at the end of its line.
+function proseOf(line, state) {
+  let out = "";
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    const next = line[i + 1];
+    if (state.inBlock) {
+      if (ch === "*" && next === "/") { state.inBlock = false; i++; out += " "; continue; }
+      out += ch;
+      continue;
+    }
+    if (state.inSingle || state.inDouble) {
+      if (ch === "\\") { i++; out += " "; continue; }
+      if (ch === (state.inSingle ? "'" : '"')) { state.inSingle = false; state.inDouble = false; out += " "; continue; }
+      out += ch;
+      continue;
+    }
+    if (state.inTemplate) {
+      if (ch === "\\") { i++; out += " "; continue; }
+      if (ch === "`") { state.inTemplate = false; out += " "; continue; }
+      if (ch === "$" && next === "{") { state.templateExpr.push(0); state.inTemplate = false; i++; out += " "; continue; }
+      out += ch;
+      continue;
+    }
+    if (ch === "/" && next === "/") { out += " " + line.slice(i + 2); break; }
+    if (ch === "/" && next === "*") { state.inBlock = true; i++; continue; }
+    if (ch === "'") { state.inSingle = true; continue; }
+    if (ch === '"') { state.inDouble = true; continue; }
+    if (ch === "`") { state.inTemplate = true; continue; }
+    if (state.templateExpr.length) {
+      const top = state.templateExpr.length - 1;
+      if (ch === "{") state.templateExpr[top]++;
+      else if (ch === "}" && state.templateExpr[top] === 0) { state.templateExpr.pop(); state.inTemplate = true; }
+      else if (ch === "}") state.templateExpr[top]--;
+    }
+  }
+  state.inSingle = false;
+  state.inDouble = false;
+  return out;
+}
+
+// British spellings in comments and user-visible strings. A word with a capital
+// after its first letter (camelCase, PascalCase, ALL_CAPS) is an identifier and
+// is skipped, as is text inside backticks in a comment and the repository term
+// "judgement-shaped", which comes from the --include-judgement-shaped flag.
+const BRITISH_TERM = new RegExp("^(?:behaviour(?:s|al|ally)?|colour(?:s|ed|ing|ful)?|licence(?:s|d)?" +
+  "|cancell(?:ed|ing)|modell(?:ed|ing)|labell(?:ed|ing)|catalogue(?:s|d)?|cataloguing|defence(?:s)?" +
+  "|favour(?:s|ed|ing|able|ite|ites)?|honour(?:s|ed|ing|able)?|analogue(?:s)?|programme(?:s|d)?" +
+  "|centre(?:s|d)?|metre(?:s)?|litre(?:s)?|fibre(?:s)?|flavour(?:s|ed|ing)?|neighbour(?:s|ing|hood)?" +
+  "|ageing|travell(?:ed|ing|er|ers)|tunnell(?:ed|ing)|offence(?:s)?|pretence(?:s)?|judgement(?:s)?" +
+  "|fulfil(?:s|ment|ments)?|enrol(?:s|ment|ments)?|whilst|amongst|artefact(?:s)?|acknowledgement(?:s)?" +
+  "|paediatric(?:s|ian|ians)?" +
+  "|(?:ana|cata|para)lys(?:e|ed|ing))$");
+// -ise words that are American spellings too, with their inflections.
+const AMERICAN_ISE = new Set();
+for (const w of ("advertise advise anise apprise arise appraise braise bruise cerise chastise chemise " +
+  "circumcise comprise compromise concise cruise demise despise devise disenfranchise disfranchise disguise " +
+  "enfranchise enterprise excise exercise expertise franchise guise improvise incise merchandise misadvise " +
+  "mortise noise paradise poise porpoise praise precise premise promise raise remise reprise revise rise " +
+  "seise supervise surmise surprise televise tortoise treatise turquoise valise sunrise moonrise uprise " +
+  "fundraise malaise liaise").split(" ")) {
+  const stem = w.replace(/e$/, "");
+  for (const f of [w, w + "s", stem + "ed", stem + "es", stem + "ing", stem + "er", stem + "ers",
+    stem + "ation", stem + "ations", stem + "ational", stem + "able", stem + "ability"]) AMERICAN_ISE.add(f);
+}
+const BRITISH_ISE = /^[a-z]{3,}is(?:e|es|ed|er|ers|ing|ation|ations|ational|ationally|able|ability)$/;
+function britishWordsIn(text) {
+  const words = [];
+  const prose = text.replace(/`[^`]*`/g, " ").replace(/\b(?:include-)?judgement-shaped\b/gi, " ");
+  for (const w of prose.match(/[A-Za-z]+/g) || []) {
+    if (/^.+[A-Z]/.test(w)) continue;
+    const lw = w.toLowerCase();
+    if (BRITISH_TERM.test(lw) || (BRITISH_ISE.test(lw) && !AMERICAN_ISE.has(lw) && !/wise$/.test(lw))) words.push(w);
+  }
+  return words;
+}
+function detectBritishSpelling(files) {
+  const hits = [];
+  for (const rel of (files || filesUnder(["bin/exceptd.js", "lib", "orchestrator", "scripts"]))) {
+    if (rel === "scripts/check-codebase-patterns.js") continue; // holds the word lists
+    const lines = readLines(rel);
+    const state = newBraceState();
+    for (let i = 0; i < lines.length; i++) {
+      const words = britishWordsIn(proseOf(lines[i], state));
+      if (words.length) hits.push({ file: rel, line: i + 1, content: lines[i].trim(), why: words.join(", ") });
+    }
+  }
+  return filterMarkers(hits, "british-spelling");
+}
+
 const CLASSES = [
   {
     id: "process-exit-after-stdout-write",
@@ -570,6 +664,12 @@ const CLASSES = [
     warnOnly: false,
     hint: "a 'data' handler that appends chunks to a string splits multibyte characters across chunk boundaries; call <stream>.setEncoding(\"utf8\") first, or collect Buffers and decode once with Buffer.concat",
   },
+  {
+    id: "british-spelling",
+    run: detectBritishSpelling,
+    warnOnly: true,
+    hint: "comments and user-visible strings use American spelling (behavior, catalog, recognize, organization); an identifier, flag or quoted source text keeps its spelling, marked `// allow:british-spelling — <reason>`",
+  },
 ];
 
 function main() {
@@ -617,6 +717,9 @@ module.exports = {
   detectHandRolledSql,
   detectNumberEnvCoerce,
   detectStreamChunkStringDecode,
+  detectBritishSpelling,
+  britishWordsIn,
+  proseOf,
   NUMBER_ENV,
   DATA_HANDLER,
   SQL_DRIVER_IMPORT,

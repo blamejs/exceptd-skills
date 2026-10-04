@@ -127,7 +127,7 @@ Operator asks: "is this host vulnerable to Copy Fail?" AI invokes `node lib/play
 2. **direct** emits threat_context anchored on real 2026 kernel CVEs and rwep_threshold bands 90 (live-patch) / 70 (urgent) / 30 (scheduled).
 3. **look** directs the AI to capture `uname -r` and `/etc/os-release`; AI uses Bash to read both and submits `artifacts: { kernel_version: { value: "5.15.0-101-generic", captured: true }, os_release: { value: "Ubuntu 22.04.4 LTS", captured: true } }`.
 4. **detect** evaluates the `kver-in-affected-range` indicator; AI confirms 5.15.0 falls in the affected range and submits `signal_overrides: { 'kver-in-affected-range': 'hit' }` after running its false-positive checks; the playbook classifies the host as "detected".
-5. **analyze** matches three catalogued CVEs (including CVE-2026-31431, KEV-listed, RWEP 90), computes `blast_radius_score=3`, runs the theater check and returns `verdict=theater` (paper SI-2 compliance does not address sub-hour live-patch reality).
+5. **analyze** matches three cataloged CVEs (including CVE-2026-31431, KEV-listed, RWEP 90), computes `blast_radius_score=3`, runs the theater check and returns `verdict=theater` (paper SI-2 compliance does not address sub-hour live-patch reality).
 6. **validate** selects remediation path `live-patch-deploy` (priority 1) over `kernel-upgrade` (priority 2), returns validation_tests and a residual_risk_statement.
 7. **close** emits a signed CSAF-2.0 evidence_package, draft NIS2 (24h from operator-confirmed detection time) and DORA (4h from same anchor) notification text, and a learning_loop lesson queued for `data/zeroday-lessons.json`.
 
@@ -423,7 +423,7 @@ For now, collectors are optional — every playbook still works through the AI-e
 
 A new playbook **should not** ship a collector when:
 
-- The detect phase requires operator judgement (`framework`, `ransomware`, jurisdiction-specific incident playbooks where the inputs are interview-shaped).
+- The detect phase requires operator judgment (`framework`, `ransomware`, jurisdiction-specific incident playbooks where the inputs are interview-shaped).
 - Evidence collection requires credentials the tool shouldn't ask for (cloud API keys, identity-provider admin tokens). Those stay AI-driven for now.
 
 When in doubt, ship the playbook without a collector and open the gap as a follow-up.

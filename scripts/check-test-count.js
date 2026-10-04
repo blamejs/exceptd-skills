@@ -38,11 +38,43 @@ function listTestFiles(dir) {
   return out;
 }
 
+// Removes /* ... */ block comments and keeps their newlines. A `/*` inside a
+// line comment or a string literal does not open one, so `// lib/*.js` and a
+// later `" */"` do not drop every test between them.
+function stripBlockComments(text) {
+  let out = '';
+  let mode = null; // null (code), 'line', 'block', or the open quote character
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    const next = text[i + 1];
+    if (mode === 'block') {
+      if (ch === '*' && next === '/') { mode = null; i++; }
+      else if (ch === '\n') out += '\n';
+      continue;
+    }
+    if (mode === 'line') {
+      if (ch === '\n') mode = null;
+      out += ch;
+      continue;
+    }
+    if (mode) {
+      out += ch;
+      if (ch === '\\' && next !== undefined) { out += next; i++; continue; }
+      if (ch === mode || (ch === '\n' && mode !== '`')) mode = null;
+      continue;
+    }
+    if (ch === '/' && next === '*') { mode = 'block'; i++; continue; }
+    if (ch === '/' && next === '/') mode = 'line';
+    else if (ch === "'" || ch === '"' || ch === '`') mode = ch;
+    out += ch;
+  }
+  return out;
+}
+
 function countTests(filePath) {
-  let text = fs.readFileSync(filePath, 'utf8');
   // Strip block comments first: commenting a test out is the usual way to
   // disable one, and counting it anyway defeats the gate.
-  text = text.replace(/\/\*[\s\S]*?\*\//g, '');
+  const text = stripBlockComments(fs.readFileSync(filePath, 'utf8'));
   let count = 0;
   for (const rawLine of text.split('\n')) {
     // Blank string and template bodies first, so a `test(` inside a string
@@ -154,6 +186,6 @@ function main() {
   process.exitCode = 0;
 }
 
-module.exports = { countTests, listTestFiles };
+module.exports = { countTests, listTestFiles, stripBlockComments };
 
 if (require.main === module) main();

@@ -239,8 +239,10 @@ function _openCodeqlAlerts(prNum) {
 // Shared by `prepare` and `regen` so the two cannot drift.
 function _regenArtifacts() {
   _section("regen artifacts");
-  // sign-all first, since it rewrites the manifest; refresh-sbom LAST, since it
-  // hashes the shipped tree (README included) and any later edit strands the hashes.
+  // The manifest's copy of each skill's frontmatter fields is synced before
+  // sign-all, which signs the manifest; refresh-sbom LAST, since it hashes the
+  // shipped tree (README included) and any later edit strands the hashes.
+  _run("node", ["scripts/sync-manifest-metadata.js"]);
   _run("node", ["lib/sign.js", "sign-all"]);
   _run("npm", ["run", "build-indexes"]);
   _run("npm", ["run", "refresh-snapshot"]);

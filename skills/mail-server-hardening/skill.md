@@ -57,7 +57,7 @@ A mail server that terminates inbound SMTP, IMAP, POP3, JMAP, or ManageSieve exp
 
 ## Framework Lag Declaration
 
-Organisational mail controls center on sender authentication and transport encryption: SPF, DKIM, DMARC, and a TLS certificate. None prescribe the server-side protocol hardening this skill audits. NIST 800-53 SI-2 expects flaw remediation via a patch cadence, but the smuggling and STARTTLS-injection fixes are configuration (strict end-of-data handling, receive-buffer drain) the patch process never surfaces. NIS2 Art.21 names network security of essential services but assumes SPF/DKIM/DMARC and TLS suffice — they are bypassed at the protocol layer. A clean DMARC + TLS audit is therefore NON-EVIDENCE for inbound protocol hardening; the two address different boundaries.
+Organizational mail controls center on sender authentication and transport encryption: SPF, DKIM, DMARC, and a TLS certificate. None prescribe the server-side protocol hardening this skill audits. NIST 800-53 SI-2 expects flaw remediation via a patch cadence, but the smuggling and STARTTLS-injection fixes are configuration (strict end-of-data handling, receive-buffer drain) the patch process never surfaces. NIS2 Art.21 names network security of essential services but assumes SPF/DKIM/DMARC and TLS suffice — they are bypassed at the protocol layer. A clean DMARC + TLS audit is therefore NON-EVIDENCE for inbound protocol hardening; the two address different boundaries.
 
 ## TTP Mapping
 
@@ -65,7 +65,7 @@ The inbound mail-protocol failures map to MITRE ATT&CK: **T1190 (Exploit Public-
 
 ## Exploit Availability Matrix
 
-These are protocol-posture gaps, so weaponisation is low-cost and reusable. SMTP smuggling has public tooling (SEC Consult, December 2023) and the CVE-2023-51764/51765/51766 entries are catalogued. STARTTLS injection has public test tooling from the 2021 "NO STARTTLS" research (CVE-2021-38371, CVE-2021-33515). Open-relay testing requires only an unauthenticated MAIL FROM + RCPT TO probe. Command-literal injection and mailbox-DAV traversal require only a crafted protocol line. None need a novel exploit; the exploit is the absence of the check. Real-world priority is driven by internet-reachability of the listener and whether the gap yields spoofing/relay (reputation + phishing delivery) or mailbox-data exposure.
+These are protocol-posture gaps, so weaponization is low-cost and reusable. SMTP smuggling has public tooling (SEC Consult, December 2023) and the CVE-2023-51764/51765/51766 entries are cataloged. STARTTLS injection has public test tooling from the 2021 "NO STARTTLS" research (CVE-2021-38371, CVE-2021-33515). Open-relay testing requires only an unauthenticated MAIL FROM + RCPT TO probe. Command-literal injection and mailbox-DAV traversal require only a crafted protocol line. None need a novel exploit; the exploit is the absence of the check. Real-world priority is driven by internet-reachability of the listener and whether the gap yields spoofing/relay (reputation + phishing delivery) or mailbox-data exposure.
 
 ## Analysis Procedure
 
@@ -73,7 +73,7 @@ These are protocol-posture gaps, so weaponisation is low-cost and reusable. SMTP
 
 ## Output Format
 
-Report per listener and protocol, marking each hardening check enforced / missing / inconclusive (visibility gap). For every missing check, state the port, whether it is internet-facing, and whether the gap yields spoofing/relay or mailbox-data exposure. Distinguish a live-listener finding from a documented test fixture or an upstream-proxy-enforced control. Provide the prioritised remediation (enforce standard end-of-data, drain the STARTTLS buffer and gate AUTH on TLS, harden the command parsers, restrict relay and cap Sieve redirect, harden mailbox-DAV and add rate limits) and the negative validation tests that prove each fix (smuggling rejected, relay rejected, STARTTLS injection rejected) plus the functional test that legitimate mail still flows.
+Report per listener and protocol, marking each hardening check enforced / missing / inconclusive (visibility gap). For every missing check, state the port, whether it is internet-facing, and whether the gap yields spoofing/relay or mailbox-data exposure. Distinguish a live-listener finding from a documented test fixture or an upstream-proxy-enforced control. Provide the prioritized remediation (enforce standard end-of-data, drain the STARTTLS buffer and gate AUTH on TLS, harden the command parsers, restrict relay and cap Sieve redirect, harden mailbox-DAV and add rate limits) and the negative validation tests that prove each fix (smuggling rejected, relay rejected, STARTTLS injection rejected) plus the functional test that legitimate mail still flows.
 
 ## Compliance Theater Check
 
@@ -81,4 +81,4 @@ The recurring theater is "we have SPF/DKIM/DMARC and TLS, so our mail server is 
 
 ## Defensive Countermeasure Mapping
 
-Map findings to MITRE D3FEND: strict end-of-data enforcement and command-parser hardening realise Message Authentication and Inbound Traffic Filtering (countering T1071.003/T1190); STARTTLS receive-buffer draining and AUTH-after-TLS gating realise Transport Session Integrity (countering T1557/T1040); relay authorization realises Outbound Traffic Filtering (countering open-relay reputation abuse); Sieve redirect caps realise Email Filtering (countering T1114 exfiltration). Pair the protocol hardening with auth rate limiting and greylisting (countering T1110). The residual risk after hardening is a compromised authenticated account acting within its own authorization, which protocol hardening does not address — accept it at the CISO level with identity-control compensation.
+Map findings to MITRE D3FEND: strict end-of-data enforcement and command-parser hardening realize Message Authentication and Inbound Traffic Filtering (countering T1071.003/T1190); STARTTLS receive-buffer draining and AUTH-after-TLS gating realize Transport Session Integrity (countering T1557/T1040); relay authorization realizes Outbound Traffic Filtering (countering open-relay reputation abuse); Sieve redirect caps realize Email Filtering (countering T1114 exfiltration). Pair the protocol hardening with auth rate limiting and greylisting (countering T1110). The residual risk after hardening is a compromised authenticated account acting within its own authorization, which protocol hardening does not address — accept it at the CISO level with identity-control compensation.
