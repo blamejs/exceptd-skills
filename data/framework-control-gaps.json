@@ -4830,7 +4830,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "NIS2-Art21-incident-handling": {
-    "framework": "EU NIS2 Directive (2022/2555)",
+    "framework": "EU NIS2 Directive (Directive (EU) 2022/2555)",
     "control_id": "Art. 21(2)(b)",
     "control_name": "Incident handling",
     "designed_for": "Essential and important entities operating in critical sectors across the EU; sets minimum cybersecurity risk-management measures including incident handling, business continuity, and supply chain security",
@@ -4973,7 +4973,7 @@
     }
   },
   "NIS2-Art21-patch-management": {
-    "framework": "EU NIS2 Directive",
+    "framework": "EU NIS2 Directive (Directive (EU) 2022/2555)",
     "control_id": "Article 21(2)(e)",
     "control_name": "Vulnerability handling and disclosure",
     "designed_for": "General vulnerability management and disclosure processes for essential and important entities",
@@ -8729,7 +8729,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "OWASP-Top-10-2021-A06": {
-    "framework": "OWASP Top 10 (2021)",
+    "framework": "OWASP Top 10:2021",
     "control_id": "A06:2021",
     "control_name": "Vulnerable and Outdated Components",
     "designed_for": "A06:2021 calls out applications that use components (libraries, frameworks, runtimes) with known vulnerabilities or out-of-date versions. The standard remediation guidance is to upgrade the vulnerable component to a fixed release through the normal patch-management process — vendor patch, dependency bump, redeploy.",
@@ -8819,7 +8819,7 @@
     }
   },
   "PCI-DSS-4.0.1-6.4.3": {
-    "framework": "PCI DSS 4.0.1 (effective 2025-03-31 — supersedes 4.0)",
+    "framework": "PCI DSS v4.0.1",
     "control_id": "6.4.3",
     "control_name": "Payment-page scripts are managed: script inventory + integrity check + authorisation",
     "designed_for": "All payment-page scripts (including those served from third-parties) loaded in the consumer browser must be authorised, integrity-monitored, and inventoried. 4.0.1 retained the 4.0 requirement but tightened the script-management language and made the requirement non-best-practice (mandatory for v4.0.1 compliance from 2025-03-31). Cross-walks to OWASP ASVS V14 client-side controls, EU PSD2 SCA-RTS Art. 18 client-side fraud monitoring, UK FCA SCA-RTS.",
@@ -8855,7 +8855,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "PCI-DSS-4.0.1-11.6.1": {
-    "framework": "PCI DSS 4.0.1 (effective 2025-03-31)",
+    "framework": "PCI DSS v4.0.1",
     "control_id": "11.6.1",
     "control_name": "Change-and-tamper-detection mechanism on payment pages",
     "designed_for": "Mandatory runtime DOM-integrity monitoring on payment pages: alert on unauthorised modifications to HTTP headers / payment-page content; tamper-detection alerts at least weekly (or based on risk analysis). Cross-walks to OWASP ASVS V14, EU PSD2 SCA-RTS Art. 18.",
@@ -8891,7 +8891,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "PCI-DSS-4.0.1-12.3.3": {
-    "framework": "PCI DSS 4.0.1 (effective 2025-03-31)",
+    "framework": "PCI DSS v4.0.1",
     "control_id": "12.3.3",
     "control_name": "Cryptographic cipher suites and protocols inventory + annual review",
     "designed_for": "Every cipher suite and cryptographic protocol in use must be documented, inventoried with version, and reviewed at least once every 12 months. 4.0.1 retained 4.0 requirement and clarified that the inventory must cover all CDE-touching systems. Cross-walks to NIST SP 800-52r2, NIST SP 800-131A, EU ENISA cryptographic guidelines, UK NCSC cryptographic guidance, ISO/IEC 18033, NIST PQC migration roadmap (FIPS 203/204/205).",
@@ -8924,7 +8924,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "PCI-DSS-4.0.1-12.10.7": {
-    "framework": "PCI DSS 4.0.1 (effective 2025-03-31)",
+    "framework": "PCI DSS v4.0.1",
     "control_id": "12.10.7",
     "control_name": "Incident response procedure for confirmed PAN exposure: escalation, regulator + brand notification, customer notification",
     "designed_for": "Defined incident-response procedure when PAN (Primary Account Number) is confirmed exposed, including escalation paths, regulator and card-brand notification, and customer-notification language. 4.0.1 retained 4.0 and tightened the escalation-procedure documentation. Cross-walks to EU PSD2 incident reporting, NIS2 Art. 23, UK FCA SUP 15.3, AU APRA CPS 234, NIST SP 800-61r3.",
@@ -9945,7 +9945,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "NIS2-Annex-I-Telecom": {
-    "framework": "NIS2",
+    "framework": "EU NIS2 Directive (Directive (EU) 2022/2555)",
     "control_id": "Annex-I-Telecommunications",
     "control_name": "NIS2 Annex I — telecommunications essential entities",
     "designed_for": "NIS2 Directive (EU) 2022/2555 Annex I classifies telecom providers as essential entities, mandating risk management measures + 24h incident notification + supply-chain due diligence.",
@@ -9983,7 +9983,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "DORA-Art-21-Telecom-ICT": {
-    "framework": "DORA",
+    "framework": "EU DORA (Regulation 2022/2554)",
     "control_id": "Art-21-Telecom-ICT",
     "control_name": "DORA Art. 21 — ICT third-party risk (telecom-adjacent application)",
     "designed_for": "DORA Reg. (EU) 2022/2554 Art. 21 ICT third-party risk management; applies to financial entities consuming telecom-provided ICT services.",
@@ -10015,7 +10015,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-B5": {
-    "framework": "UK-CAF",
+    "framework": "UK NCSC Cyber Assessment Framework",
     "control_id": "Principle-B5",
     "control_name": "Resilient networks and systems",
     "designed_for": "NCSC Cyber Assessment Framework Principle B5 — outcome-tested network resilience for essential service operators (incl. telecom under TSA 2021).",
@@ -10206,7 +10206,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "NIST-800-53-IA-5-Federated": {
-    "framework": "NIST 800-53 Rev.5",
+    "framework": "NIST SP 800-53 Rev 5",
     "control_id": "IA-5 (federated)",
     "control_name": "Authenticator Management — federated-trust extension",
     "designed_for": "IA-5 governs authenticator issuance, distribution, storage, revocation, and replacement at the system layer.",
@@ -10310,7 +10310,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-B2-IdP-Tenant": {
-    "framework": "UK NCSC CAF",
+    "framework": "UK NCSC Cyber Assessment Framework",
     "control_id": "B2.b",
     "control_name": "Identity and Access Control — IdP-tenant control-plane extension",
     "designed_for": "NCSC CAF Principle B2 (Identity and Access Control), outcome B2.b — effectively managing identity and access for the essential function.",
@@ -10375,7 +10375,7 @@
     "forward_looking_reason": "No CVE in the catalog anchors this gap yet; it records the control class without binding it to a single incident."
   },
   "NIS2-Art-21-Federated-Identity": {
-    "framework": "EU NIS2 Directive",
+    "framework": "EU NIS2 Directive (Directive (EU) 2022/2555)",
     "control_id": "Art.21(2)(j)",
     "control_name": "Cryptography + Access Control — federated-identity extension",
     "designed_for": "Art.21(2)(j) names cryptography and access-control measures (including MFA) as required risk-management measures for essential and important entities.",
@@ -10410,7 +10410,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "DORA-Art-19-IdP-4h": {
-    "framework": "EU DORA",
+    "framework": "EU DORA (Regulation 2022/2554)",
     "control_id": "Art.19 (4h IdP)",
     "control_name": "Major-ICT-related-incident notification — IdP-specific 4-hour clock",
     "designed_for": "DORA Art.19 — initial notification within 4 hours of classification of a major ICT-related incident, intermediate report within 72 hours, final report within one month.",
@@ -10546,7 +10546,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "NIST-800-53-AC-2-Cross-Account": {
-    "framework": "NIST 800-53 Rev 5",
+    "framework": "NIST SP 800-53 Rev 5",
     "control_id": "AC-2",
     "control_name": "Account Management",
     "designed_for": "Establish, activate, modify, review, disable, and remove information-system accounts",
@@ -10616,7 +10616,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "SOC2-CC6-Access-Key-Leak-Public-Repo": {
-    "framework": "AICPA SOC 2 Trust Services Criteria",
+    "framework": "SOC 2 (AICPA Trust Services Criteria)",
     "control_id": "CC6.1",
     "control_name": "Logical Access Controls",
     "designed_for": "Restrict logical access to data and system resources via authentication and authorization mechanisms",
@@ -10686,7 +10686,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-B2-Cloud-IAM": {
-    "framework": "UK NCSC CAF (Cyber Assessment Framework) v3.x",
+    "framework": "UK NCSC Cyber Assessment Framework v3.x",
     "control_id": "B2",
     "control_name": "Identity and Access Control",
     "designed_for": "NCSC CAF outcome that access to networks and information systems supporting the essential function is appropriately controlled",
@@ -10951,7 +10951,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "NIS2-Art21-vulnerability-management": {
-    "framework": "EU NIS2 Directive (2022/2555)",
+    "framework": "EU NIS2 Directive (Directive (EU) 2022/2555)",
     "control_id": "Art. 21(2)(c)",
     "control_name": "Vulnerability handling",
     "designed_for": "Vulnerability handling and disclosure for essential and important entities — generic risk-management framing aligned with the directive's all-hazards posture and incident-handling tempo.",
@@ -12033,7 +12033,7 @@
     }
   },
   "NIS2-Art21-identity-management": {
-    "framework": "EU NIS2 Directive (2022/2555)",
+    "framework": "EU NIS2 Directive (Directive (EU) 2022/2555)",
     "control_id": "Art. 21(2)(d)",
     "control_name": "Identity and access management",
     "designed_for": "Identity-management measures for essential and important entities — access policies, MFA, privileged-access management, joiner-mover-leaver flows. Targets ID-management posture at the application boundary.",
@@ -12331,7 +12331,7 @@
     }
   },
   "UK-CAF-B4": {
-    "framework": "UK NCSC Cyber Assessment Framework (CAF)",
+    "framework": "UK NCSC Cyber Assessment Framework",
     "control_id": "B4",
     "control_name": "System security",
     "designed_for": "Principle B4 — networks and information systems supporting essential functions are protected against attack. Covers secure configuration, secure architecture, and the management of vulnerabilities in deployed systems.",
@@ -14789,7 +14789,7 @@
     }
   },
   "PCI-DSS-4.0-5.1": {
-    "framework": "PCI DSS 4.0.1",
+    "framework": "PCI DSS v4.0.1",
     "control_id": "5.1",
     "control_name": "Processes and mechanisms for protecting all systems and networks from malicious software",
     "designed_for": "Section 5.1 of PCI DSS 4.0.1 — defining processes and mechanisms for protecting systems and networks from malicious software. Underpins the anti-malware requirements in 5.2 and 5.3. Anchored on the assumption that the deployed anti-malware tooling is itself a trusted component of the cardholder-data-environment defence-in-depth posture.",
@@ -16003,7 +16003,7 @@
     }
   },
   "DORA-Art10": {
-    "framework": "EU DORA (Regulation (EU) 2022/2554)",
+    "framework": "EU DORA (Regulation 2022/2554)",
     "control_id": "Art-10",
     "control_name": "Detection of anomalous activities and ICT-related incidents",
     "designed_for": "Article 10 — financial entities must have mechanisms to promptly detect anomalous activities, including network performance issues and ICT-related incidents, and identify potential single points of failure. Anchored on detection coverage across the ICT estate.",
@@ -16062,7 +16062,7 @@
     }
   },
   "NIST-800-218-SSDF-PO.4.2": {
-    "framework": "NIST SP 800-218 (SSDF v1.1)",
+    "framework": "NIST SP 800-218 (Secure Software Development Framework v1.1)",
     "control_id": "PO.4.2",
     "control_name": "Implement supporting toolchains for secure software development",
     "designed_for": "PO.4.2 — implementing tools and toolchain configurations that automate technical SSDF practices and support secure software development across the SDLC. Anchored on developer-tool selection, configuration, and integration.",
@@ -16092,7 +16092,7 @@
     }
   },
   "SLSA-3": {
-    "framework": "SLSA v1.0",
+    "framework": "SLSA v1.0 (Supply-chain Levels for Software Artifacts)",
     "control_id": "Build L3",
     "control_name": "SLSA Build Level 3",
     "designed_for": "SLSA Build L3 — hosted build platform with hardened workers producing non-forgeable provenance. Provenance is signed, points to immutable source, and the build is isolated. Anchored on the threat model that a compromised builder cannot tamper with provenance after the fact.",
@@ -16441,7 +16441,7 @@
     }
   },
   "NIST-800-218-SSDF-PW.7.1": {
-    "framework": "NIST SP 800-218 (SSDF v1.1)",
+    "framework": "NIST SP 800-218 (Secure Software Development Framework v1.1)",
     "control_id": "PW.7.1",
     "control_name": "Determine whether software meets security requirements through code review",
     "designed_for": "PW.7.1 — determining whether software meets security requirements through code review, including peer review, static analysis, and other inspection methods. Anchored on human and tool-assisted review across the SDLC.",
@@ -16620,7 +16620,7 @@
     }
   },
   "NIS2-Art21-vulnerability-handling": {
-    "framework": "EU NIS2 Directive",
+    "framework": "EU NIS2 Directive (Directive (EU) 2022/2555)",
     "control_id": "Art.21",
     "control_name": "Cybersecurity risk-management measures (vulnerability handling and disclosure)",
     "designed_for": "NIS2 vulnerability handling assumes forward-only vulnerability flow — disclose, patch, notify per the directive's timelines.",
