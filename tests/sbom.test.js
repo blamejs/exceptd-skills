@@ -666,7 +666,10 @@ require("node:test").describe("sbom playbook registry-cooldown guidance", () => 
     assert.match(artifact.source, /For pnpm and Yarn, also read the user-level and global configuration files and the environment variables each manager documents/);
     // Yarn's per-scope gate replaces the global one for that scope, including 0.
     assert.match(artifact.source, /any `npmScopes\.<scope>\.npmMinimalAgeGate`/);
-    assert.match(v, /A Yarn `npmScopes\.<scope>\.npmMinimalAgeGate` value replaces the global gate for packages in that scope, so a scope set to 0 has no cooldown for its third-party packages/);
+    assert.match(v, /On Yarn 4\.17 and later, a `npmScopes\.<scope>\.npmMinimalAgeGate` value replaces the global gate for packages in that scope, so a scope set to 0 has no cooldown for its third-party packages; earlier Yarn releases do not read the scoped value/);
+    // packageManager alone does not establish the version the build runs.
+    assert.match(artifact.source, /a `packageManager` field in package\.json does not establish it on its own/);
+    assert.doesNotMatch(artifact.source, /\(the `packageManager` field in package\.json, the version/);
     assert.match(v, /When the artifact cannot establish the effective value[^.]*, the verdict is inconclusive/);
     // The reference facts, each with the version that introduced it.
     assert.match(v, /npm reads `min-release-age` \(days\) from npm 11\.10\.0 and `min-release-age-exclude` from npm 11\.17\.0, applies the exclusion to a `before=` cutoff as well, and does not read `minimumReleaseAge=` in \.npmrc/);
@@ -677,7 +680,7 @@ require("node:test").describe("sbom playbook registry-cooldown guidance", () => 
     assert.match(artifact.source, /the global npmrc \(the file `npm config get globalconfig` prints/);
     // The artifact collects what the rule needs.
     assert.match(artifact.source, /`npmPreapprovedPackages` in \.yarnrc\.yml/);
-    assert.match(artifact.source, /Record the version of each package manager in use/);
+    assert.match(artifact.source, /Record the version of each package manager the build runs/);
     assert.match(artifact.source, /any cooldown setting the CI workflow passes on the command line or in the environment/);
   });
 
