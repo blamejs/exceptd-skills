@@ -386,3 +386,36 @@ require("node:test").describe("controls stay bound to the CVE they were curated 
     assert.ok(boundRatio > 0.95, `only ${(boundRatio * 100).toFixed(1)}% of gap_closes are bound to their CVE`);
   });
 });
+
+require("node:test").describe("framework_coverage gap text", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const { spawnSync } = require("node:child_process");
+  const ROOT = path.join(__dirname, "..");
+  const LESSONS = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "zeroday-lessons.json"), "utf8"));
+
+  test("every control a lesson marks inadequate carries gap text", () => {
+    const missing = [];
+    for (const [cve, lesson] of Object.entries(LESSONS)) {
+      if (cve.startsWith("_") || !lesson || !lesson.framework_coverage || typeof lesson.framework_coverage !== "object") continue;
+      for (const [key, cov] of Object.entries(lesson.framework_coverage)) {
+        if (cov && cov.adequate === false && !(typeof cov.gap === "string" && cov.gap.trim())) missing.push(`${cve} ${key}`);
+      }
+    }
+    assert.deepEqual(missing, [], "add a one-sentence gap to each inadequate framework_coverage control:\n  " + missing.join("\n  "));
+  });
+
+  test("framework-gap prints the gap text as coverage_gap for each inadequate control", () => {
+    const r = spawnSync(process.execPath, [path.join(ROOT, "bin", "exceptd.js"), "framework-gap", "all", "CVE-2019-19781", "--json"], { encoding: "utf8" });
+    assert.equal(r.status, 0, r.stderr);
+    const controls = JSON.parse(r.stdout).cve_analysis.controls;
+    const inadequate = controls.filter((c) => c.adequate === false);
+    assert.ok(inadequate.length >= 5, `expected the CVE-2019-19781 lesson's inadequate controls, got ${inadequate.length}`);
+    for (const c of inadequate) {
+      assert.equal(typeof c.coverage_gap, "string", `${c.control} coverage_gap`);
+      assert.equal(c.coverage_gap, LESSONS["CVE-2019-19781"].framework_coverage[c.control].gap, `${c.control} prints the lesson's gap text`);
+    }
+  });
+});

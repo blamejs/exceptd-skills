@@ -133563,27 +133563,33 @@
     "framework_coverage": {
       "NIST-800-53-IA-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An unauthenticated request to the SAML service-provider path forges a Gateway or AAA session, so the NetScaler authentication that IA-2 relies on is bypassed and the flow carries no user credential to evaluate."
       },
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Where the appliance is tracked as network infrastructure rather than an internet-facing application, the flaw-remediation program may not move it to 14.1-73.32 or 13.1-63.21 inside the three-day KEV due date CISA set on 2026-09-09."
       },
       "NIS2-Art21-network-security": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The perimeter gateway that Article 21 network-security measures rely on fails open to an unauthenticated SAML request, so any obligation resting on it to separate untrusted from trusted traffic is void until the fixed build is installed."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "CVE-2026-19490 has no vendor workaround and the fix restarts the appliance, so a maintenance-window deferral leaves the SAML bypass reachable on an internet-facing NetScaler with no interim compensating control to claim under B4."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The ISM-1877 window opens at Citrix's 2026-08-19 bulletin and covers no earlier exposure, and the strategy measures the installed build without asking whether a session minted through the bypass before the upgrade is still valid."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Where the register records the appliance only as generic network gear, without the NetScaler build or its SAML-action configuration, it cannot evaluate the 14.1-73.32 and 13.1-63.21 boundary or the Gateway or AAA precondition."
       }
     },
     "new_control_requirements": [
@@ -133657,19 +133663,23 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Client software updated by users rather than through managed deployment can lag Workspace app 1904 or Receiver 4.9 CU6 (4.9.6001) for years, as the gap between the 2019 fix and the 2021-11-03 KEV listing shows."
       },
       "NIST-800-53-CM-7": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Without a hardened default that denies drive mapping to untrusted servers, the client honors a malicious server's request to read and write local drives until client local-drive access is disabled through Client Selective Trust."
       },
       "NIS2-Art21-vulnerability-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A routine endpoint-patch cycle for Workspace app and Receiver does not meet the hours-to-mitigation tempo that the KEV listing and its known-ransomware flag set for the client upgrade."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The fix is a client application version (Workspace app 1904 or Receiver 4.9.6001) tracked separately from the operating-system patch level, so an OS-focused B4 assessment can miss a vulnerable Citrix client."
       },
       "AU-Essential-8-App-Hardening": {
         "covered": false,
@@ -133678,7 +133688,8 @@
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Where Workspace app and Receiver are not inventoried with a build per endpoint, the register cannot evaluate the 1904 and 4.9.6001 boundary across the fleet."
       }
     },
     "new_control_requirements": [
@@ -133744,27 +133755,33 @@
     "framework_coverage": {
       "NIST-800-53-AC-6": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A ScreenConnect session can transfer and run files on the Host without authorization or Host confirmation, so the session principal reaches file execution that the AC-6 privilege model never granted it."
       },
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Moving ScreenConnect clients to 26.6.5 requires on-premises instances to reach 25.4 first, and a routine RMM-patch cycle rarely meets the three-day KEV due date of 2026-09-14 that CISA set when it added the flaw on 2026-09-11."
       },
       "NIS2-Art21-vulnerability-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A vulnerability-handling process that puts an RMM client update in its moderate queue is too slow for CVE-2026-84869, which is KEV-listed, is actively exploited according to the Huntress worm reports, and needs mitigation within hours."
       },
       "UK-CAF-C1": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Without C1 detections for a remote-management client spawning wscript.exe and PowerShell and for server audit-log RunFiles executed from Process: Guest, the worm-like spread of CVE-2026-84869 across ScreenConnect sessions goes unseen."
       },
       "AU-Essential-8-App-Hardening": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Essential Eight user-application hardening does not enumerate remote-management tools, so deselecting the TransferFiles (TransferFilesInSession) role permission, the interim mitigation for CVE-2026-84869, earns a hardened ScreenConnect deployment no maturity credit."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An on-premises ScreenConnect instance below 26.6.5 that is missing from the register, or whose license blocks the 26.6.5 upgrade, cannot be evaluated against the fix boundary."
       }
     },
     "new_control_requirements": [
@@ -133839,23 +133856,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Consumer and small-office routers are rarely enrolled in any flaw-remediation program, so the DIR-825/R1 firmware 3.0.2 that D-Link shipped on 2020-11-20 is not installed on the device even after the 2021-11-03 KEV listing."
       },
       "NIS2-Art21-network-security": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An unauthenticated buffer overflow in the DIR-825/R1 web interface gives pre-authentication code execution on the device meant to enforce the perimeter, so the edge router cannot be treated as a maintained boundary device."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A small-office router such as the DIR-825/R1 is seldom tracked in an asset register or updated, so the firmware 3.0.2 boundary is neither known nor enforced and the web-interface overflow stays reachable."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The fixed firmware 3.0.2 is published on D-Link's Russia download page rather than the regional support site an operator would check, so a patch program that tracks that regional site reports no update available for a DIR-825/R1 whose release-based window opened on 2020-11-20."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A DIR-825/R1 absent from the inventory, or recorded without its model and firmware version, cannot be measured against the 3.0.2 fix that closes the web-interface overflow."
       }
     },
     "new_control_requirements": [
@@ -133921,23 +133943,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The KEV due date of 2022-05-03 fell more than a year after F5 shipped the fix on 2020-06-30, and CISA judged unpatched units likely already compromised, so the upgrade closes the flaw without addressing an intrusion that predates it."
       },
       "NIS2-Art21-network-security": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The remote code execution needs only HTTP reach to the Traffic Management User Interface, so account controls behind it do not protect an instance whose TMUI or self-IP is exposed to an untrusted network."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The fix is a full software upgrade that reboots the device, so on an appliance carrying production traffic the exposure persists until a maintenance window is scheduled."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The 48-hour window measures only the installed build, so an appliance patched inside it still needs the compromise assessment CISA's AA20-206A describes, which no maturity level asks for."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Where the inventory records the device only as an appliance without its BIG-IP build, the register cannot evaluate the 15.1.0.4-class boundary against the vulnerability feed."
       }
     },
     "new_control_requirements": [
@@ -134003,23 +134030,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The fix to 12.1.5.3, 13.1.3.6, 14.1.4, 15.1.2.1, 16.0.1.1, 7.0.0.2 or 7.1.0.3 is a full software upgrade that reboots the device, so on an appliance carrying production traffic the flaw stays open until a maintenance window allows the reboot."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The pre-auth remote command execution reached KEV with a due date only two weeks out, so a quarterly or monthly appliance-patch rhythm leaves the management REST interface exploitable for the entire interval."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The SSRF forges a valid auth token with no credentials, so B4 evidence based on account policy does not detect that the interface's authentication is bypassed at the step it is meant to enforce."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "F5 names a different fixed build on each BIG-IP 12.1, 13.1, 14.1, 15.1 and 16.0 branch and on BIG-IQ 7.0 and 7.1, so a program recording one fixed version marks the fleet compliant while devices on other branches stay exploitable."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Where a device is recorded only as an appliance without its exact BIG-IP or BIG-IQ build, the register cannot evaluate the 16.0.1.1-class boundary or the separate BIG-IQ boundaries against the feed."
       }
     },
     "new_control_requirements": [
@@ -134087,23 +134119,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The fix requires migrating the identity server to ForgeRock AM 7.0, which removes the /ccversion endpoints, so where that upgrade is deferred for compatibility the KEV window stays open on the 6.x line."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The effective remediation is a major-version migration to 7.0 or a configuration workaround that removes the Jato endpoints on 6.x, so a program that tracks only a patch version misses the units that need the workaround."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A single unauthenticated /ccversion request executes code as the service user, so an attacker gains a foothold on the access-management server that B4 treats as a protected control point and that brokers authentication for downstream applications."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The maturity model's critical-flaw timeframe assumes a one-click application patch, and the fix here is a major-version migration of an identity server, so a deployment left on a vulnerable 6.x build is not readily scored against it."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The flaw spans proprietary ForgeRock AM and the OpenIdentityPlatform OpenAM fork, so an inventory that records only 'OpenAM' without the fork and version cannot resolve the 7.0 boundary."
       }
     },
     "new_control_requirements": [
@@ -134168,23 +134205,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The effective fix is enabling server-identity-check with a CA certificate or LDAPS, so a program that tracks only the firmware version misses a device on current firmware that still carries the insecure default LDAP configuration."
       },
       "NIS2-Art21-network-security": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "With the default FortiOS LDAP configuration, an attacker on the local subnet can impersonate the directory server and read the bind credentials, so measures that trust the local segment do not protect traffic to the authentication service."
       },
       "UK-CAF-B2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Without server-identity verification the FortiGate authenticates to a rogue LDAP server and sends that server its directory credentials, and a B2 review of account policy does not surface that transport weakness."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A device on a current firmware build that keeps the insecure LDAP default still carries the exposure, because the weakness is remediated by a configuration change that the patch metric does not score."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A register that marks the flaw resolved at the firmware upgrade cannot confirm closure, because the vulnerable configuration persists wherever the LDAP server-identity-check is not enabled."
       }
     },
     "new_control_requirements": [
@@ -134406,27 +134448,33 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The first fix Cisco released was incomplete, so a program that closed the finding on that release left the router on a build Cisco lists as affected (1.4.2.15 through 1.4.2.20) instead of 1.4.2.22, the complete fix announced on 2019-04-04."
       },
       "NIST-800-53-SC-7": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The device returns its full configuration to any unauthenticated request, so boundary rules at the WAN edge are the only check on who reads it, and on firmware 1.4.2 through 1.4.2.15 the web server also listens on WAN TCP 8007."
       },
       "NIS2-Art21-network-security": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "On an affected RV320 or RV325, /cgi-bin/config.exp and /cgi-bin/export_debug_msg.exp answer without any credential, so no access-control policy for the router's web interface is enforced on those paths."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Disabling Remote Management, the only mitigation Cisco names, leaves the web interface on the LAN and, on 1.4.2 through 1.4.2.15, on WAN TCP 8007, so a B4.d record of 'temporary mitigation applied' can leave the configuration export reachable."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A router patched within 48 hours of the first, incomplete fix met ISM-1877 yet stayed vulnerable for about two months until 1.4.2.22, and 'patched within 48 hours' evidence without the build number does not show which fix was installed."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Where the CMDB records an RV320 or RV325 as a generic small-business router without its 1.4.2.x build, the register cannot evaluate the 1.4.2.22 boundary and does not show the leaked-configuration exposure."
       }
     },
     "new_control_requirements": [
@@ -134510,23 +134558,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-10": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "DNN deserializes the attacker-controlled DNNPersonalization cookie into whatever .NET object type the cookie's XML names, so untrusted input selects and instantiates server-side objects with no validation of the type."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A handling process that closes the item at DNN or Evoq 9.1.1 leaves the DNNPersonalization deserialization sink reachable by the public exploit, which chains the later cookie-encryption flaws on versions through 9.3.0-RC, until the site reaches 9.3.1."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Because the default DNN configuration processes the DNNPersonalization cookie on the custom 404 path, a B4 system-security posture built on defaults leaves an unauthenticated request a route to remote code execution on the web server."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A patch level recorded anywhere from 9.1.1 to 9.3.0-RC fixes this CVE but leaves the KEV-listed, ransomware-associated cookie-deserialization sink reachable, because only DNN Platform 9.3.1 (Evoq 9.3.0) closes the chain the public module exploits."
       },
       "ISO-27001-2022-A.8.28": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Secure coding failed in DNN's DeSerializeHashtable routine, which builds a serializer from a caller-supplied type name and deserializes attacker XML, the insecure-deserialization pattern that A.8.28 review is meant to catch."
       }
     },
     "new_control_requirements": [
@@ -134589,23 +134642,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The 9.2.2 release intended to fix CVE-2018-15811 did not fully correct the weak parameter protection, so an operator who recorded 9.2.2 as patched carried a false remediation state while the flaw stayed exploitable."
       },
       "NIS2-Art21-vulnerability-handling": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The 9.2.2 fix for CVE-2018-15811 was incomplete, so a handling process that closes the item when that numbered release lands leaves 9.2.2 hosts exposed instead of reopening the item."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The cookie protection remains cryptographically weak on 9.2.2, so a system the operator believes is hardened still accepts a forged DNNPersonalization value."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A fleet updated to 9.2.2 inside the release-based window is recorded as patched but remains exposed, because only DNN Platform 9.3.1 (Evoq 9.3.0) closes the DNNPersonalization protection weakness."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A register that treats the 9.2.2 update as resolving the encryption-strength issue misstates the exposure, because that build carries the incomplete fix and the remediation is DNN Platform 9.3.1 (Evoq 9.3.0)."
       }
     },
     "new_control_requirements": [
@@ -134678,23 +134736,28 @@
     "framework_coverage": {
       "NIST-800-53-IA-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "On a FortiGate with this configuration, a user who enters a valid LDAP password with the username in a different letter case gets VPN or administrator access without the FortiToken second factor, so the configured multi-factor requirement is not enforced for those logins."
       },
       "NIS2-Art21-identity-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The case-sensitivity failover to a secondary LDAP group authenticates the user without the second factor, so two-factor authentication recorded as configured does not hold at the perimeter."
       },
       "UK-CAF-B2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A login with the username in a different letter case skips the local account's two-factor requirement and authenticates against an LDAP group, so a B2 assessment records as present an identity control that the login bypasses."
       },
       "AU-Essential-8-MFA": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A maturity assessment that checks whether multi-factor authentication is enabled does not detect that a login with a case-altered username skips the second factor entirely."
       },
       "ISO-27001-2022-A.8.9": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The fixed builds (6.0.10, 6.2.4, 6.4.1 or later) only add a username-case-sensitivity setting that is enabled by default, so a version-only baseline records the device as remediated while the bypass stays open until an administrator disables it on every local account."
       }
     },
     "new_control_requirements": [
@@ -134755,23 +134818,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "PivotC2 command and control uses an outbound TLS session the appliance itself initiates, which bypasses inbound rules, and perimeter devices commonly lack egress telemetry, so SI-4 monitoring does not see the beacon."
       },
       "NIS2-Art21-network-security": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An unauthenticated overflow in the CAPWAP daemon turns the firewall that Article 21 treats as the enforcement boundary into the entry point, and no compensating control attests that the management daemon is unreachable from untrusted networks."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Crafted UDP traffic on the CAPWAP control port reaches code execution before any authentication, so a B4 assessment cannot rely on the perimeter device to protect itself once the port is reachable."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "ISM-1877 and ISM-1694 measure whether the firmware was applied and do not require a compromise assessment or rotation of the administrative, VPN, LDAP and pre-shared-key secrets on a FortiGate whose configuration must be assumed exfiltrated after PivotC2 infection."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Where the firewall is tracked as network infrastructure rather than a versioned FortiOS or FortiSwitchManager instance, the register cannot evaluate the 7.x fixed-build boundaries or the V7.4.9 fix for Fortinet NGFW on a Siemens RUGGEDCOM APE1808."
       }
     },
     "new_control_requirements": [
@@ -134842,15 +134910,18 @@
     "framework_coverage": {
       "NIST-800-53-SI-10": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The application passes an uploaded file to a metadata parser chosen by extension without validating its real type and content, so a DjVu payload disguised as an image reaches the vulnerable parser and executes a command."
       },
       "NIS2-Art21-vulnerability-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The command executes in ExifTool (CVE-2021-22204), a third-party parser bundled inside GitLab and reached through Workhorse, which an application-level inventory does not list, so vulnerability handling keyed to that inventory misses the component."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The instance passes an unauthenticated upload to a parser that runs an attacker-controlled command as the service account, so network reach to the service is enough for full compromise."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
@@ -134859,7 +134930,8 @@
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "GitLab confirmed exploitation of public-facing self-managed instances on 2021-11-04, almost seven months after the 2021-04-14 fix, so a register that did not track each instance against the 13.8.8, 13.9.6 and 13.10.3 boundaries left instances exposed for that whole period."
       }
     },
     "new_control_requirements": [
@@ -134930,27 +135002,33 @@
     "framework_coverage": {
       "NIST-800-53-AC-3": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Authentication is checked only after the request has opened and read the file, so an unauthenticated caller reaches an arbitrary read through the commits or files API before any access decision is made."
       },
       "NIST-800-53-SI-10": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The paths in the file.path and metadata.path parameters are opened without canonicalization or confinement to an allowed directory, so a traversal or absolute path reads any file the git user can access."
       },
       "NIS2-Art21-vulnerability-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The fix spans three release series (19.1.8, 19.2.6 and 19.3.2) and CISA listed the flaw as exploited one day after the 2026-09-10 release, so an organization tracking only one supported branch can miss the build for the branch it runs."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The route rewrite meant to confine uploads is bypassed with a trailing slash or percent-encoded segment, so a B4 assessment's assumption that the internet-facing API authenticates before acting does not hold for the perimeter route."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The read runs as the git user and can disclose the secret key base and stored credentials, so patching alone does not protect any secret an unauthenticated caller could already have read until that secret is rotated."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A register that records only a coarse product name cannot tell whether the 19.1.8, 19.2.6 or 19.3.2 boundary applies to the running branch, so exposure cannot be measured against the fixed builds."
       }
     },
     "new_control_requirements": [
@@ -135013,15 +135091,18 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A routine desktop-software period left the site-isolation sandbox escape open after Google shipped 86.0.4240.198 on 2020-11-11 with exploits reported in the wild, and an SI-2 check counting installed builds does not confirm each browser relaunched onto it."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Browser builds often wait behind enterprise update rings, so a security-channel release fixing an actively exploited sandbox escape can sit undeployed while users browse untrusted pages."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A compromised renderer can use the use-after-free to escape site isolation into the browser process, so the browser sandbox that B4 treats as a containment boundary does not hold until the update is installed."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
@@ -135030,7 +135111,8 @@
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An inventory that records only that a browser is present cannot compare each endpoint's exact Chrome build with 86.0.4240.198, so it cannot identify the endpoints still carrying the vulnerable version."
       }
     },
     "new_control_requirements": [
@@ -136959,23 +137041,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "SI-2 contains no rule that a vendor bulletin withholding technical detail should raise a fix's priority, so a program reading MikroTik's 3 September 2026 bulletin alone would have ranked the upgrade routine while CERT Polska was already recording successful attacks."
       },
       "NIS2-Art21-vulnerability-handling": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An entity that keyed priority to MikroTik's wording that most configurations are not at risk kept running behind exploitation CERT Polska dates to at least 2 September, although it had the fixed builds on 3 September and the full description on 5 September."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "B4 does not require an operator to re-check management services opened by hand and left open, so a router with manually opened SSH can pass a B4 configuration review while presenting the vulnerable login helper to any internet caller."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Because CERT Polska records successful attacks from at least 2 September, the 48-hour ISM-1877 window opening at the 3 September release covers none of the exposure that had already occurred, and the fix is a full RouterOS build whose install reboots the router."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A register that records RouterOS as patched without the branch and build cannot separate a router already on 7.23.4 from one still on the 7.24 branch below 7.24.2, because each branch has its own fixed build."
       }
     },
     "new_control_requirements": [
@@ -137048,23 +137135,28 @@
     "framework_coverage": {
       "NIST-800-53-SC-7": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The SSRF makes the internet-facing WorkPlace interface itself send an unauthenticated request to the loopback CouchDB service, so the internal request starts on the boundary device where no boundary rule can see it."
       },
       "NIS2-Art21-network-security": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An unauthenticated absolute-form request to the edge remote-access gateway reaches an internal service on loopback, so network-security measures cannot rely on the edge device isolating its internal management components from external callers."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The WorkPlace interface that carries the SSRF must stay internet-reachable for remote users, and B4 does not name a compensating posture for an appliance whose only fix reboots it and drops connected sessions."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The ISM-1877 window opens at the 1 September 2026 hotfix release, and SonicWall confirms both flaws were exploited in the wild before that disclosure, so no maturity level covers the earlier exposure."
       },
       "ISO-27001-2022-A.8.22": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The internet-facing WorkPlace listener proxies an unauthenticated request to a CouchDB service bound to 127.0.0.1 on port 5984 on the same appliance, so no VLAN, subnet or firewall zone separates the listener from that service."
       }
     },
     "new_control_requirements": [
@@ -137127,23 +137219,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-10": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The SNMP trap script handles a caller-supplied parameter unsafely in a shell command that runs as root, and that concatenation sits well inside the boundary, in a helper script that SI-10's boundary validation does not reach."
       },
       "NIS2-Art21-network-security": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The command injection, which on its own needs an authenticated administrator, is reachable by an unauthenticated network caller when chained behind the SSRF, so network-security measures cannot treat the administrative surface as internal-only."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The published chain reaches the same command through the local ctrl-service, proxied by the WorkPlace service on TCP 443, and never connects to the TCP 8443 console, so restricting console logins under B4 leaves that path untouched."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A program ranking by the flaw's own post-authentication CVSS 7.8 rating can hold it behind the CVSS 10.0 SSRF although the chain reaches root only through this sink, and the ISM-1877 window opens at the 1 September 2026 release, after exploitation SonicWall reports."
       },
       "ISO-27001-2022-A.8.28": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The unsafe GNU sed expression sits in SonicWall's SNMP trap script inside an appliance image the operator cannot read, build or lint, and A.8.28 names no supplier requirement that would reach it."
       }
     },
     "new_control_requirements": [
@@ -138421,35 +138518,43 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "No corrected build existed for the first 33 days after the 17 December 2019 disclosure, so SI-2 could be met only with the CTX267679 mitigation, and a closed finding needed a CTX269180 verification result to show the traversal was blocked."
       },
       "NIST-800-53-SC-7": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The vulnerable Citrix ADC or Gateway is itself the perimeter boundary, so a pre-authentication traversal to code execution runs inside the trust boundary that SC-7 boundary protection is meant to enforce."
       },
       "NIS2-Art21-network-security": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The flaw needs no credential and reaches code execution on the ADC or Gateway, where most organizations enforce remote-access control, so the attacker controls the attested network-security measure after exploitation."
       },
       "NIS2-Art21-incident-handling": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Article 21(2)(b) does not say what restores an exploited edge appliance, so an incident process that closes the case once the CTX267027 build is installed leaves NOTROBIN cron persistence and files under /netscaler/portal/templates in place."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "On 12.1 build 50.28 responder policies did not process matching packets until a refreshed build or the CTX267679 management-interface steps were applied, so a B4.d assessment accepting 'mitigation applied' without a CTX269180 verification result could rate the appliance mitigated while the traversal still worked."
       },
       "UK-CAF-C1": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Detection that reads /var/log/httpaccess.log and /var/log/httperror.log only on the appliance depends on a host the attacker's code runs on, and because most exploitation used SSL, network sensors see the requests only where TLS is decrypted."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The ISM-1877 48-hour window for applying Citrix's CTX267679 mitigation closed on 19 December 2019, before any fixed build existed, but SVR actors had already used the flaw as a zero-day, so a site that met the window still needed a compromise assessment for the period before 17 December."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An ADC recorded only as 'Citrix' or 'load balancer', or a WANOP appliance not recorded as containing Citrix ADC, cannot be checked against the fixed builds for its line, such as 13.0.47.24 or 10.2.6b, so its exposure cannot be evaluated."
       }
     },
     "new_control_requirements": [
@@ -138524,27 +138629,33 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A remediation inventory built from the NVD text omits the Citrix ADC FIPS appliances that CTX276688 lists, and the bulletin named no fixed FIPS build from its 2020-07-07 publication until it added 12.1-55.179 on 2020-08-17."
       },
       "NIST-800-53-AC-3": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A /pcidss/report request seeds an nsroot management session with no valid login, so the appliance does not enforce AC-3 access decisions on its management endpoints for that request."
       },
       "NIS2-Art21-network-security": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "On an affected build a POST to /pcidss/report issues an nsroot session to a caller that never logged in, so the management-interface access-control policy goes unenforced and only network placement of the NetScaler IP (NSIP) limits who can seed one."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The public checks for CVE-2020-8193 send their requests to the NSIP, so a B4.d test run from the internet or a user network that cannot reach it reports the appliance clean while any management-network host can still seed an nsroot session."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Restricting the management interface, the only CTX276688 mitigation for sites that cannot upgrade and for Citrix ADC FIPS appliances until 2020-08-17, lets an assessment close the ISM-1877 finding while the unauthenticated bypass stays open to every host on the permitted management networks."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The FIPS fix 12.1-55.179 and the standard 12.1 fix 12.1-57.18 share a version prefix, so a register that records 'Citrix ADC 12.1-55.x' without the FIPS flag cannot tell whether the appliance is fixed."
       }
     },
     "new_control_requirements": [
@@ -138607,23 +138718,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "NVD lists Citrix Gateway Plug-in for Linux before 1.0.0.137 for CVE-2020-8195 while CTX276688 maps the plug-in only to CVE-2020-8199, so an SI-2 program driven by NVD CPE data opens Linux endpoint tickets the appliance upgrade does not close."
       },
       "NIS2-Art21-network-security": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "NCC Group RIFT reported that the chain containing this flaw could extract valid VPN sessions, so on an affected build anyone who reaches the management interface can read out the session protection the Article 21(2) measure relies on."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Classing the flaw as not externally exposed because it needs an NSIP login holds only on a build that fixes CVE-2020-8193, whose unauthenticated bypass supplies that login, and that is the same CTX276688 build that fixes this flaw."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Citrix ADC FIPS had no fixed build in the bulletin until 2020-08-17, so FIPS owners could meet ISM-1877 only with the management-interface restriction, which does not stop the authenticated NSIP user Citrix lists as the attacker."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Any authenticated NSIP user with low privileges can exploit the flaw, so a register that scores exposure only by whether the NSIP is internet-reachable misses the read-only and service accounts that can use it."
       }
     },
     "new_control_requirements": [
@@ -138686,23 +138802,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A tracker that compares only the numeric part of WANOP versions reads 11.0.3b, the release that fixed CVE-2019-19781, as equal to 11.0.3d, so an appliance upgraded for CVE-2019-19781 can be recorded as remediated while still below the fixed release."
       },
       "NIS2-Art21-network-security": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A low-privileged NSIP user can read information beyond that user's role on an affected build, so the access control policy documented for NSIP roles is not what the appliance enforces."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The configuration in Citrix's secure deployment guide narrows who reaches the NSIP but does not change what an authenticated NSIP account can retrieve, so a B4.b assessment that accepts it leaves the flaw available to every NSIP account holder."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Where the bulletin's interim advice puts the management interface behind a restriction, a scanner running Tenable's Nessus plugins 138212 and 140192 sits outside it and returns nothing about the build, so a clean scan does not show the ISM-1877 window was met."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "NCC Group RIFT and the Metasploit module both say it is unclear whether the exploited file read is CVE-2020-8195 or CVE-2020-8196, so a register that records exploitation per CVE cannot attach the reported attacks to CVE-2020-8196 alone."
       }
     },
     "new_control_requirements": [
@@ -138765,27 +138886,33 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A remediation period set from the CVSS 7.5 information-disclosure rating does not shorten after Exploit-DB 47561 appeared on 2019-10-30 or after CISA added the CVE to KEV on 2021-11-03."
       },
       "NIST-800-53-SC-7": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "NetScaler Gateway authentication applies only to clients outside the trusted network, and CTX251988 states that clients inside it can still run the XXE, so an SC-7 implementation that controls only the internet edge leaves StoreFront open to any internal host."
       },
       "NIS2-Art21-vulnerability-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Article 21 sets no timeframe and no exploitation trigger, so an entity ranking StoreFront by its CVSS 7.5 score can place the upgrade behind code-execution flaws despite a public exploit since 2019-10-30 and the ransomware campaigns CISA records."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An assessor can class StoreFront behind NetScaler Gateway as not externally exposed and accept the Gateway as a temporary mitigation, although CTX251988 states that clients inside the trusted network can still run the XXE without authentication."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A StoreFront reached only through NetScaler Gateway or from inside the trusted network falls under the one-month window and fortnightly scanning that first appear at Maturity Level Two, although clients within the trusted network can run the XXE without authenticating."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "StoreFront has three fix boundaries on three release lines (1903, 3.12.4000 on 7.15 LTSR and 3.0.8000 on 7.6 LTSR), so an exposure record without the release line and build cannot tell a fixed server from a vulnerable one."
       }
     },
     "new_control_requirements": [
@@ -138850,23 +138977,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "D-Link declared the DNS-320 Revision Ax End of Service Life with no patch, so the only remediation SI-2 can drive is removing the device."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "No fixed firmware exists for the DNS-320 Revision Ax, so an essential entity that keeps the device running cannot close the flaw through patching and has only retirement as the control."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An unauthenticated request to system_mgr.cgi reaches OS command execution, and on an end-of-life NAS no firmware update exists to restore the integrity of that management interface."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The requirement to replace unsupported operating systems carries no deadline, and the 48-hour and two-week windows run from a vendor release while D-Link ships no fixed firmware, so neither window ever begins for the DNS-320 Revision Ax."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "No vendor fix exists to schedule for a DNS-320 in the asset register, so vulnerability management can only record the device as an item requiring isolation and replacement."
       }
     },
     "new_control_requirements": [
@@ -138940,23 +139072,28 @@
     "framework_coverage": {
       "NIST-800-53-AC-6": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A security-sensitive directory holding an executable the Docker user runs is writable by low-privilege accounts, so an unprivileged user can promote their own code to the privileges of whoever next authenticates with Docker."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Vulnerability handling is complete only once every workstation runs Docker Desktop 2.1.0.1 or later, and an environment that treats the tool as a developer convenience instead of tracked software may never drive that upgrade."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The integrity of the Docker credential-helper path depends on directory permissions that the affected build sets too permissively, so a low-privilege file write crosses a privilege boundary."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "At Maturity Level One Docker Desktop falls outside the patching requirement, and a Level Two or Three organization has a month from the 2019-08-08 release of 2.1.0.1 while the writable version-bin directory stays exploitable below that build."
       },
       "ISO-27001-2022-A.8.9": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The affected build leaves %PROGRAMDATA%\\DockerDesktop\\version-bin\\ writable by non-administrative users, so its configuration does not hold the restrictive permissions the secure state depends on."
       }
     },
     "new_control_requirements": [
@@ -139019,23 +139156,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-10": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "DNN protects the DNNPersonalization input parameters with a weak algorithm, so an authenticated attacker who defeats that protection can supply a forged cookie that the server then deserializes."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The vendor's 9.2.2 fix was incomplete (CVE-2018-18325), so a handling process that closes the item at 9.2.2 stops tracking a flaw that remains open until DNN Platform 9.3.1 (Evoq 9.3.0)."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The cookie protection meant to keep the DNNPersonalization value tamper-resistant is cryptographically weak, so the boundary that protection was supposed to provide does not hold."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A fleet patched to 9.2.2 inside the window is still exposed, because the vendor's 9.2.2 build was an incomplete fix and only DNN Platform 9.3.1 (Evoq 9.3.0) closes the flaw."
       },
       "ISO-27001-2022-A.8.24": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "DNN protects the DNNPersonalization parameters with an algorithm of inadequate strength, so the cryptographic protection on those parameters does not meet the assurance A.8.24 requires."
       }
     },
     "new_control_requirements": [
@@ -139640,27 +139782,33 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Each SI-2 period starts at release, so a fleet meeting every period stayed exposed to the exploit TAG caught until 91.0.4472.101 shipped on June 9, and periods shorter than 30 days on Fedora 34 or 39 days on Fedora 33 could not be met."
       },
       "NIS2-Art21-vulnerability-handling": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Article 21(2)(e) names no trigger for faster handling, so an entity that escalates only on a government listing would have handled this flaw at the ordinary pace for the 147 days between Google's June 9, 2021 report of in-the-wild exploitation and CISA's KEV listing."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "B4.d patching was not possible before Chrome 91.0.4472.101 on June 9, 2021 or Edge 91.0.864.48 on June 11, so on a system that still browses and reads email B4.a separation was the CAF outcome that could limit exposure during the exploitation TAG observed."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Every Essential Eight window starts at release, so neither the 48-hour ISM-1692 window nor the two-week ISM-1691 window covers the exploitation TAG observed against Chrome 91.0.4472.77 before the fix."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Edge uses its own build numbers, so a register that compares an Edge installation with Google's 91.0.4472.101 misjudges it, because Edge 91.0.864.48 sorts below that number although it carries the fix."
       },
       "NIST-800-53-SI-4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Monitoring that treats ordinary web browsing as benign flags neither the visit to an attacker domain nor the fingerprinting exchange, and the nine domains were published only in TAG's July 14, 2021 post, five weeks after the fix."
       }
     },
     "new_control_requirements": [
@@ -139730,23 +139878,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Chrome applies a downloaded update when the browser is closed and reopened, so an SI-2 measure based on installed version can count a host as updated to 91.0.4472.164 while its open browser still runs the vulnerable V8."
       },
       "NIS2-Art21-vulnerability-handling": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Google said only that it was aware of reports of an in-the-wild exploit and no root-cause analysis, exploit or indicator has been published, so a procedure that ranks flaws by available technical detail places this exploited V8 flaw below better-documented ones."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Microsoft shipped Edge 91.0.864.71 on July 19, 2021, four days after Chrome 91.0.4472.164, so a B4.d record marking the flaw mitigated from Google's advisory date overstates Edge coverage unless the Edge build is tracked separately."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A Level One or Two organization could keep the exploited build until July 29 on Chrome and August 2 on Edge, and no window covers exploitation before the July 15, 2021 release."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The public record holds only a one-line description, Google's exploit statement and the fixed builds, so exposure evaluation is limited to version comparison against 91.0.4472.164 and 91.0.864.71 and cannot check whether a host that ran an older build was attacked."
       }
     },
     "new_control_requirements": [
@@ -139808,23 +139961,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "GitHub Security Lab's September 27 analysis links a working exploit for the V8 build in Chrome 93.0.4577.63, so a host left below 93.0.4577.82 under an SI-2 period longer than 14 days faced a public exploit as well as the original in-the-wild use."
       },
       "NIS2-Art21-vulnerability-handling": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Article 21(2)(e) gives no rule for flaws disclosed together, so a procedure that rates CVE-2021-30632 and its likely chain partner CVE-2021-30633 separately scores both below the full browser compromise they give together."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Microsoft fixed CVE-2021-30632 in Edge 93.0.961.47 and its likely chain partner CVE-2021-30633 only in 93.0.961.52, so a B4.d record that closes this flaw on Edge at 93.0.961.47 leaves the sandbox escape open for five more days."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Each window is measured from the vendor's release, so neither the Edge nor the Chrome window covers the five days between the anonymous September 8 report and Chrome 93.0.4577.82 on September 13, 2021."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An evaluation that records this flaw as closed at Google's September 13 release misses Edge hosts, whose numbers cannot be compared with Chrome 93.0.4577.82 and which need 93.0.961.52 for the likely chain partner CVE-2021-30633, and Fedora hosts waiting weeks for chromium-94.0.4606.61."
       }
     },
     "new_control_requirements": [
@@ -139896,23 +140054,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Debian fixed bullseye only in chromium 97.0.4692.71-0.1~deb11u1 (DSA-5046-1), so an SI-2 clock started by Google's September 30, 2021 Chrome 94.0.4606.71 release cannot be met on Debian hosts that take chromium from the distribution."
       },
       "NIS2-Art21-vulnerability-handling": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Article 21(2)(e) sets no timeframe or trigger, so an entity that escalates only on a government listing would have started on 2021-11-03, 34 days after Google's in-the-wild statement and 15 days after the exploit became public."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The Debian security tracker marks chromium in Debian 10 (buster) end-of-life and unfixed for this exploited V8 flaw, which has a public exploit, so B4.d cannot be met by patching a buster host that runs the distribution's chromium."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Google moved the Extended Stable channel for Windows and Mac to 94.0.4606.71 on the September 30, 2021 fix date, so an organization on Extended Stable received no extra time under either window, and no window covers exploitation before release."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An evaluation made at Google's September 30 release, when only the in-the-wild statement was public, understates the risk to hosts below 94.0.4606.71 once GitHub Security Lab's October 19, 2021 analysis linked a working exploit."
       }
     },
     "new_control_requirements": [
@@ -140346,23 +140509,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-10": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The /pa endpoint concatenates the PhoneIP value from an XML body into a PostgreSQL query with no validation, so an unauthenticated request becomes an arbitrary SQL statement running as the database superuser."
       },
       "NIS2-Art21-network-security": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Switchvox's /pa notification endpoint answers unauthenticated requests as a product feature, so network-security measures cannot rely on a trust boundary in front of an internet-facing appliance whose exposed function is the injection sink."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "For a Switchvox deployment that needs /pa answerable from outside the handset network, B4 names no compensating posture, which leaves the 8.4.0.2 upgrade as the only action between its 14 July release and the 30 August exploitation."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Both windows ran from Sangoma's 14 July 2026 release of 8.4.0.2 and had closed before Horizon3 recorded the first valid exploitation attempt on 30 August, and nothing in the control reopens a window once a working exploit appears."
       },
       "ISO-27001-2022-A.8.28": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A.8.28 gives the buyer no acquisition-side test, so an organization can hold a clean secure-coding attestation while the tel_notify query sink sits in Sangoma's phone-application handler, which ships obfuscated."
       }
     },
     "new_control_requirements": [
@@ -140425,27 +140593,33 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An SI-2 program with one timeframe per severity class treats an internet-facing SMTP listener like an internal package of the same CVSS score, and SI-2 does not require a shorter timeframe once exploit code appears, as it did on 2018-05-02."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The fixed and unfixed Debian and Ubuntu exim4 packages both carry upstream versions below 4.90.1, and Article 21 does not require recording the distribution revision, so an entity can report its Exim estate as handled while part of it runs the pre-fix package."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Because an internet-facing Exim listener gets no extended-mitigation allowance, B4.d rests on the undefined word 'promptly' and gives an assessor no threshold at which taking months to patch after the 2018-02-10 release counts as a failure."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An Exim instance reachable only internally is an other application with no patch timeframe at Maturity Level One, although Exploit-DB published working code on 2018-05-02 for a flaw whose fix existed from 2018-02-10."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Where Exim is bundled in a Linux distribution or mail appliance and the register records only the host, neither the upstream 4.90.1 boundary nor the Debian and Ubuntu exim4 levels can be evaluated, and A.8.8 sets no timescale forcing the question."
       },
       "UK-CAF-D1": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A mail-service plan written around outage and restoration does not name the case of a mail host that was the entry point, where the fixed package restores the code but does not remove what an attacker left or rotate the host's credentials."
       }
     },
     "new_control_requirements": [
@@ -140705,27 +140879,33 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "TAG observed the chain on an up-to-date Samsung phone running the latest Chrome, so a device that met every SI-2 period stayed exploitable until it installed Chrome for Android 95.0.4638.74, released on November 2, 2021."
       },
       "NIS2-Art21-vulnerability-handling": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The directive gives no rule for a fix that depends on another party's release, and a phone receives the CVE-2021-1048 kernel fix only when its manufacturer ships security patch level 2021-11-06, on a schedule the entity does not control."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A B4.d tracker had no entry for the sandbox escape while every Samsung kernel was vulnerable, because CVE-2021-1048 was fixed upstream in September 2020 without being flagged as a security issue and appeared in an Android bulletin only in November 2021."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "ASD states the Essential Eight was not designed for enterprise mobility, and no browser window could have prevented a chain TAG observed on an up-to-date Samsung phone running the latest Chrome."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Evaluating exposure needs a separate boundary for each supplier: a register that compares an Edge installation with Google's 95.0.4638.69 desktop build misjudges it because Edge numbers its own builds, and Debian buster, whose chromium package Debian marks end-of-life, has no fix."
       },
       "NIST-800-53-SI-4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Traffic from a phone browsing over a mobile network to shorten[.]fi and redirecting[.]page does not pass the organization's network sensors, so SI-4 monitoring built on those sensors cannot observe the exploit delivery."
       }
     },
     "new_control_requirements": [
@@ -141510,23 +141690,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The SI-2 clock cannot start before a release exists, and SI-2 states no interim action for a Vigor management interface left reachable on cgi-bin/mainfunction.cgi between the exploitation 360Netlab observed from 2019-12-04 and the 1.5.1 firmware of 2020-02-06."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Article 21(2)(e) sets no timeframe for a flaw under exploitation and applies to information an entity can obtain, so from 2019-12-04 until the 2020-02-10 DrayTek advisory a Vigor2960, Vigor3900 or Vigor300B owner had no vendor information to handle."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "B4.b validation checks stored configuration on a regular schedule tied to no event, and the dropbear listeners on TCP 22335 and TCP 32459, the runtime iptables PPTP_CTRL ACCEPT rules and the /var/session.json sessions are running state it does not cover."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Every Essential Eight window runs from the 1.5.1 firmware release of 2020-02-06, so the Vigor routers were exploited for about two months from 2019-12-04 with no maturity-level window running."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "360Netlab lists five VigorSwitch models through firmware 2.3.2 that DrayTek's advisory omits, and no source gives a fixed VigorSwitch build, so evaluating those switches against the vendor's own information stays incomplete."
       }
     },
     "new_control_requirements": [
@@ -141808,23 +141993,28 @@
     "framework_coverage": {
       "NIST-800-53-IA-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An attacker can log in with passwords read from sslvpn_websession after the firmware upgrade until they are reset, and on 5.4.13, 5.6.8, 5.6.14 or 6.0.5 the FortiToken prompt is skipped for a local user set to remote authentication when the username case changes."
       },
       "NIS2-Art21-network-security": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Vulnerability handling closed at the firmware upgrade leaves the leaked passwords valid, and on the 5.4, 5.6 and pre-6.0.10 builds Fortinet names as fixed, the point (j) FortiToken prompt is skipped for a local user set to remote authentication when the username case changes."
       },
       "UK-CAF-B2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A B2 assessment that checks password policy and account management still passes on a system whose SSL VPN passwords an unauthenticated attacker has already read in cleartext."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Both the 48-hour patch limb and the replacement limb for unsupported operating systems measure only the device's firmware state, so a FortiGate compliant on both can still be accessed with SSL VPN credentials read from sslvpn_websession before the patch and not yet reset."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A vulnerability record closed when the FortiOS build is current misses the password reset Fortinet requires for every credential in use while the device ran an affected build, so the leaked passwords stay valid."
       }
     },
     "new_control_requirements": [
@@ -141983,15 +142173,18 @@
     "framework_coverage": {
       "NIST-800-53-AC-6": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An AC-6 review that enumerates human administrator roles and group membership does not open the sudoers entry granting the apache account passwordless sudo to /usr/bin/nmap, which executes arbitrary Lua and gives that account an unconditional path to root."
       },
       "NIS2-Art21-vulnerability-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "No EyesOfNetwork release removes the sudoers grant and the vendor's RPM distribution host no longer resolves, so a release-driven procedure records a KEV-listed flaw with no installable fix while the /etc/sudoers edit that removes the escalation sits outside that workflow."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An operator whose defined baseline is the vendor's EyesOfNetwork image conforms to B4.b while running a sudoers file that grants the apache account passwordless nmap, and the service-account indicator sets out no enumeration of what each account's sudo grants can execute."
       },
       "AU-Essential-8-App-Hardening": {
         "covered": false,
@@ -142000,7 +142193,8 @@
       },
       "ISO-27001-2022-A.8.9": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The setup script writes the apache NOPASSWD grant for /usr/bin/nmap at install time, so drift monitoring and review treat the vulnerability as the documented baseline, and A.8.9 sets no requirement to test what privileged baseline entries can execute."
       }
     },
     "new_control_requirements": [
@@ -142063,23 +142257,28 @@
     "framework_coverage": {
       "NIST-800-53-SC-7": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The N-central console is designed to be reached by administrators over the internet and the static-code-injection sink runs before any authentication decision, so SC-7 boundary protection can only limit who opens a TCP connection."
       },
       "NIS2-Art21-supply-chain": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Through a compromised on-premises N-central server an attacker can run scripts, push tools and open remote sessions across every managed customer endpoint, so supply-chain measures that treat the server as one asset in the provider's register miss the cascade."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Nothing in B4 starts a clock against CISA's 2026-09-11 due date, and the address allowlist or VPN that Huntress and Arctic Wolf recommend leaves the pre-authentication sink live to every administrator network allowed through."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Every window opens at the vendor's release of Hotfix 4 (2026.3.1.14), and Arctic Wolf reports exploitation before public disclosure, so a server on Hotfix 3 (2026.3.1.13) was current against every published flaw and still open to this one."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Builds 2026.3.1.13 and 2026.3.1.14 differ by one digit and are both called a 2026.3 hotfix, so a register that closes the item on 'N-central hotfix applied' records a still-vulnerable server as remediated."
       }
     },
     "new_control_requirements": [
@@ -142461,31 +142660,38 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "SI-2 does not tie the remediation period to exploit publication, so a schedule keyed to Red Hat's Moderate rating or to NVD's missing score set no critical deadline although exploit code had been public since 2025-09-22."
       },
       "NIST-800-53-CM-7": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A least-functionality baseline written as permitted packages, ports and daemons does not list loadable kernel protocol modules, so hosts where no application uses kernel TLS keep the kernel TLS module loadable and the baseline does not show whether it is loaded."
       },
       "NIST-800-53-SC-8": {
         "covered": false,
-        "adequate": false
+        "adequate": false,
+        "gap": "SC-8 evidence records protocol versions and cipher suites but not whether the kernel performs the decryption, so a system that meets SC-8 with TLS 1.2 or TLS 1.3 over kernel TLS relies on the vulnerable receive path without that appearing in the evidence."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Article 21(2)(e) does not say how an entity handles a kernel flaw inside an embedded product before the manufacturer names a fix, and Siemens named firmware V5.0 for the SIMATIC CN 4100 only on 2026-05-12, more than seven months after exploit code became public."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A B4 review of installed packages, listening ports and kernel version does not show whether a host has kernel TLS receive enabled or the tls module loaded, and a port review misses hosts that use kernel TLS only for outbound connections."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Every window runs from the vendor's release, so the week between exploit code going public on 2025-09-22 and Red Hat's 2025-09-29 fix fell outside them, and the Essential Eight does not require a compromise assessment of a host that ran the exploitable kernel."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A register that compares the running kernel with NVD's 6.0 lower bound marks every RHEL 9 host out of scope, although Red Hat fixed the flaw in RHEL 9's 5.14.0-based kernels, and no version comparison shows whether a host uses kernel TLS."
       }
     },
     "new_control_requirements": [
@@ -142680,23 +142886,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-10": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A request the VCO interface accepts as well-formed is routed to privileged internal functionality, so an SI-10 program that validates length and character class does not test whether an accepted request can drive a privileged action on the VCO host."
       },
       "NIS2-Art21-network-security": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "With no fixed release for the 6.1.x or 7.0.x trains and no measure named in Annex point 6.6.1, the one measure Arista publishes, restricting the web interface to trusted administrative networks, leaves the flaw reachable from those networks."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Because B4.d accepts a mitigation, an operator of a 6.1.x or 7.0.x VCO can meet it by restricting the web interface to trusted administrative networks while the flaw stays reachable from every host on those networks."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "For the 6.1.x and 7.0.x trains the only vendor mitigation that can be applied inside the 48-hour ISM-1876 window from the 2026-09-22 advisory, restricting the web interface to trusted administrative networks, leaves the flaw reachable from those networks."
       },
       "ISO-27001-2022-A.8.9": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A baseline can record certificate-based authentication from the VeloCloud Edge to the VCO and a network-reachable VCO web interface as approved without flagging their combination, which exposes the flaw, until Arista's advisory names it."
       }
     },
     "new_control_requirements": [
@@ -142927,23 +143138,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The flaw was exploited as a zero-day in May 2020, before the August 11, 2020 update existed, and the jscript.dll workaround SI-2 programs had adopted for earlier JScript bugs does not protect jscript9.dll."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Microsoft published no advisory before the August 11, 2020 fix although the flaw was exploited from May 2020, so an entity had no information on which to take additional measures, and the jscript.dll restriction kept from earlier JScript bugs does not cover jscript9.dll."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "B4 does not distinguish this jscript9.dll flaw from earlier jscript.dll ones, so an operator relying on the jscript.dll access-restriction workaround as its compensating control was not protected."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Every window ran from the August 11, 2020 release, so the May 2020 zero-day period was open at every maturity level, and no reversible workaround existed for the jscript9.dll engine to cover that period."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A register that carried the jscript.dll restriction from earlier JScript bugs as the Internet Explorer measure recorded protection this flaw never had, because the flaw is in jscript9.dll, the default engine since Internet Explorer 9."
       }
     },
     "new_control_requirements": [
@@ -143006,23 +143222,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Microsoft changed the exploited flag to Yes on March 12, 2021 without a new update, so an SI-2 period set from the March 9 release-day Important rating keeps a timeline chosen before exploitation was known, and the revision starts no new period."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Annex point 6.6.1 does not define the reasonable time that decides this CVE or tie it to Microsoft's March 12, 2021 change of exploited status, which came after the March 9 patch was available and with no workaround published."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "With no technical detail or workaround from Microsoft, any mitigation besides the March 9, 2021 update, such as disabling Internet Explorer 11, falls to the operator, and 'promptly' is undefined against the March 12, 2021 exploited-flag change."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Microsoft rated the flaw Important and reported exploitation on March 12, 2021, three days after the March 9 release that starts the window, so a Maturity Level Three organization scheduling by the release-day rating had already missed the ISM-1692 48-hour window."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "With no CWE and no public detail, an A.8.8 program can classify the flaw only by Microsoft's exploited-in-the-wild flag, and treating it as an ordinary browser update understates a flaw already used against targets."
       }
     },
     "new_control_requirements": [
@@ -143085,15 +143306,18 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Each listed Internet Explorer, Office and viewer product has its own January 2019 update, so an SI-2 program that tracks remediation per product can close the CVE for one product while another on the same host stays unpatched."
       },
       "NIS2-Art21-vulnerability-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Microsoft did not rate the flaw exploited at release, and Article 21(2)(e) gives operators no trigger to re-prioritize it after the March 13, 2019 public proof of concept or CISA's later known-exploited listing."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The flaw needs a user to edit a crafted file, so it is not externally exposed and B4.d at Partially achieved accepts an extended temporary mitigation for it, although a public exploit appeared two months after release and CISA later listed it as exploited."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
@@ -143101,7 +143325,8 @@
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A register that records the CVE as closed once one product's January 2019 update is installed cannot confirm that Internet Explorer, the Office releases and the Word and Excel Viewers on the same host each received their own fix."
       }
     },
     "new_control_requirements": [
@@ -143169,23 +143394,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "SI-2's patched-or-not model does not capture a host that took the October 2017 Outlook update and then re-enabled folder home pages with the EnableRoamingFolderHomepages registry value."
       },
       "NIS2-Art21-vulnerability-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A home page URL already written to a mailbox folder's PR_FOLDER_WEBVIEWINFO property survives patching and loads again on unpatched or re-enabled clients, and neither Article 21(2)(e) nor Annex point 6.6.1 requires an entity to find and clear it."
       },
       "UK-CAF-B2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Without multi-factor authentication on Outlook and Exchange access and detection of the password spraying FireEye documents, the valid-credential precondition stays met, and B2's account focus does not cover mailbox-resident home page persistence that outlives a credential reset."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The window measures only deployment of updates 4011196, 4011178 and 4011162, so patch metrics record a host that re-enables folder home pages by registry afterward as compliant although RULER made a working exploit public."
       },
       "ISO-27001-2022-A.8.16": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Monitoring that watches only email content and authentication events, without baselining Outlook's process tree or MAPI property changes on mailbox folders, lets home page persistence and its code execution run without an alert."
       }
     },
     "new_control_requirements": [
@@ -143441,23 +143671,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The flaw was exploited as a zero-day before the June 8, 2021 fix, so no SI-2 window was running, and once the fix shipped SI-2's cycle-based cadence was still slower than the incident-speed response an exploited, KEV-listed local escalation needs."
       },
       "NIS2-Art21-vulnerability-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Article 21(2)(e) gives no accelerated clock once a Windows elevation of privilege is confirmed exploited and chained with a document-reader remote code execution, and point 6.6.1's reasonable time began only with the June 8, 2021 update, after exploitation had started."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "At Partially achieved B4.d accepts a temporary mitigation for this local escalation for an extended period, but Microsoft published no workaround or mitigation, so the June 8, 2021 update was the only measure that closed it."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Exploitation preceded the June 8, 2021 update, so no window ran during the earliest attacks, and below Maturity Level Three a workstation operating system still has one month under ISM-1695 once the fix exists."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Microsoft's June 8, 2021 release was the first public information and already marked the flaw exploited, and its Important rating places the escalation in a slower tier for an organization that sets timescales by vendor severity."
       }
     },
     "new_control_requirements": [
@@ -143512,23 +143747,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The flaw was exploited before the June 8, 2021 update existed, so no SI-2 window covered the earliest exposure, and SI-2 does not tie its clock to the paired Adobe fix that closes the delivery path."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Microsoft disclosed and fixed the flaw on June 8, 2021 after it had already been exploited, so an in-scope entity had no earlier notice on which to take the point 6.6.1(d) additional measures."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The Partially achieved allowance lets the not-externally-exposed Windows escalation sit under a temporary mitigation, but Microsoft published none for CVE-2021-31201, so it stays exploitable from any code-execution foothold until the June 8, 2021 update is installed and the host restarted."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Every ISM-1877 and ISM-1696 48-hour window started only when the June 8, 2021 update shipped, after exploitation had already occurred, so meeting them could not have prevented the earliest compromise."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Microsoft rated CVE-2021-31201 Important while marking it Exploited:Yes and linking it to the Adobe Reader flaw CVE-2021-28550, so timescales set from each vendor's rating in isolation place this exploited escalation in a slower tier."
       }
     },
     "new_control_requirements": [
@@ -143583,23 +143823,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The flaw was exploited as a zero-day before the December 19, 2018 out-of-band fix existed, so no advisory-anchored SI-2 timeframe covers the pre-patch period, and SI-2 specifies no off-schedule patch trigger for an out-of-band release."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The only additional measure Microsoft published, restricting access to jscript.dll, came in the same advisory as the December 19, 2018 update, so during the zero-day exploitation an entity had neither a patch nor a vendor-named measure to apply under point 6.6.1."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "B4 does not define 'promptly' against an out-of-band release that followed exploitation, and the jscript.dll restriction Microsoft published in the same December 19, 2018 advisory gave no protection earlier than the fix."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "All Essential Eight windows run from the December 19, 2018 out-of-band release, so meeting them would not have covered the earlier zero-day use the Threat Analysis Group observed when no fix or workaround existed."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Microsoft's updated Wsusscn2.cab offline scan file would not be available until the January 2019 security release, so a register driven by offline scans would not show the December 19, 2018 update as missing while the flaw was exploited."
       }
     },
     "new_control_requirements": [
@@ -143660,23 +143905,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The flaw was exploited as a zero-day before the November 12, 2019 fix, and an SI-2 program that closed CVE-2019-1367 without watching for variants in the same primitive had no window covering it until its own advisory."
       },
       "NIS2-Art21-vulnerability-handling": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Microsoft's November 12, 2019 record does not mention CVE-2019-1367, although Project Zero reports the update completed that flaw's incomplete fix, so an entity working from vendor advisories had no vendor signal to re-check a closed CVE-2019-1367 remediation."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Microsoft's CVE-2019-1367 advisory says to revert the jscript.dll restriction, which blocks this flaw's engine, before installing that update, so an operator that followed the instructions met B4 for CVE-2019-1367 while this flaw stayed reachable until November 12, 2019."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Every window runs from the November 12, 2019 release, and an organization that met the CVE-2019-1367 window by reverting the jscript.dll restriction before installing the CVE-2019-1367 update, as Microsoft instructed, stayed exposed to this flaw until November 12, 2019."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A.8.8 treats each CVE as an independent item, so a register that closed CVE-2019-1367 had no signal to expect and prioritize this variant in the same JScript garbage-collector primitive until its own advisory appeared."
       }
     },
     "new_control_requirements": [
@@ -144001,23 +144251,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The flaw was exploited as a zero-day before the April 13, 2021 cumulative update, so for the pre-patch period SI-2 had no update to deploy and offered no coverage for the window in which SYSTEM was reached."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Kaspersky reports in-the-wild use before the April 13, 2021 cumulative update, the only vendor remediation, so a reasonable-time patch policy had no fix to apply and Annex point 6.6.1 names no concrete interim measure for the pre-patch window."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "No vendor configuration mitigation exists for the win32kbase.sys and dwmcore.dll escalation short of the April 13, 2021 cumulative update, so B4 rests entirely on patching, and 'promptly' is not calibrated to a zero-day exploited before the fix existed."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Microsoft marked the flaw Exploitation Detected at the April 13, 2021 release, which starts every window, but Kaspersky reports zero-day exploitation before the update existed, so no ISM-1877, ISM-1695 or ISM-1696 window covered the period of compromise."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Microsoft rated the flaw Important while marking it Exploitation Detected, so an A.8.8 timescale keyed to vendor severity assigns a lower priority, and no timescale can start before the April 13, 2021 fix although the exploit was in use by February 2021."
       }
     },
     "new_control_requirements": [
@@ -144083,23 +144338,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Microsoft marked the flaw exploited at the May 14, 2019 release, so an SI-2 program on a routine monthly cadence leaves the Windows Error Reporting junction and DACL-write path to SYSTEM open on every multi-user host until the update is installed."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Article 21(2)(e) sets no timeframe and Annex point 6.6.1 requires only a reasonable time, so an operator treating an Important-rated local escalation as routine can leave the WER DACL-write reachable on shared hosts while it is exploited."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "No vendor configuration mitigation exists to stand up as an interim measure, so the B4 outcome depends entirely on prompt patching, and 'promptly' is not calibrated to a flaw Microsoft recorded as exploited on the day it was disclosed."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "At Maturity Levels One and Two a workstation or non-internet-facing server keeps the one-month ISM-1695 window for an escalation Microsoft marked exploited at the May 14, 2019 release."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Microsoft rated the flaw Important yet marked it publicly disclosed and exploited at the May 14, 2019 release, so a program keying its timescale to vendor severity would assign a lower-priority window to an escalation already being exploited."
       }
     },
     "new_control_requirements": [
@@ -144169,11 +144429,13 @@
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The directive sets no deadline and no re-evaluation trigger, so a host left without the September 10, 2019 CLFS driver fix when CISA listed the flaw in November 2021 is not brought back into scope by the obligation."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "With no vendor configuration mitigation for the clfs.sys escalation and exploitation confirmed only by the 2021 KEV listing, B4 gives no signal to re-check a host deferred as low-priority in 2019 and left unpatched."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
@@ -144181,7 +144443,8 @@
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Microsoft rated the CLFS flaw Important and marked it not exploited after retracting its release-day active-attack flag on September 11, 2019, so an A.8.8 program keyed to vendor severity and exploit status assigns a low-priority window that CISA's November 2021 KEV listing contradicts."
       }
     },
     "new_control_requirements": [
@@ -144424,23 +144687,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "SI-2's installation clock starts at release, so it does not cover the roughly four weeks between the March 8, 2020 report from a threat-actor website and the April 3, 2020 Firefox 74.0.1 and ESR 68.6.1 release."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The directive sets no hours-scale window for an actively exploited client-side use-after-free, so a race-condition zero-day in Firefox and Thunderbird can stay within a reasonable-time reading while it is used against the entity."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "B4.d does not define 'promptly', so it does not tell an operator whether a routine update cycle after the April 3 and April 9, 2020 fixes is fast enough for a browser and mail-client flaw already used in targeted attacks."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The windows start only at the April 3, 2020 Firefox and April 9, 2020 Thunderbird releases, so the roughly four weeks after the March 8, 2020 report from a threat-actor site fell outside all of them at every maturity level."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An evaluation that takes its timescale from NVD's 8.1 high-attack-complexity score places the flaw below the critical tier, although Mozilla rated it critical and reported targeted attacks and Project Zero records it as the renderer stage of a chain with CVE-2020-6820."
       }
     },
     "new_control_requirements": [
@@ -144504,23 +144772,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "SI-2's installation period starts at the April 3, 2020 release of Firefox 74.0.1 and ESR 68.6.1, so it does not cover the earlier in-the-wild use of the chain with CVE-2020-6819 that Project Zero records."
       },
       "NIS2-Art21-vulnerability-handling": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Thunderbird 68.7.0 did not ship until April 9, 2020, so from April 3 to April 9 the flaw was public with no Thunderbird patch, a period in which point 6.6.1 required additional measures that it does not name."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "B4.d gives no rule for classifying a sandbox escape one step behind an internet-reachable flaw, so an operator can class this one as not externally exposed although in the documented chain a web page reached it through CVE-2020-6819."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Below Maturity Level Three, ISM-1691 allows the exploited chain with CVE-2020-6819 to stay open for two weeks after the April 3, 2020 release, although Mozilla rated the sandbox escape critical and reported targeted attacks."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Mozilla's advisory describes only a ReadableStream race use-after-free and does not say the freed CacheStreamControlParent object is in the parent (browser) process, so an advisory-based evaluation treats the sandbox escape for CVE-2020-6819 as a second web-content flaw."
       }
     },
     "new_control_requirements": [
@@ -144582,23 +144855,28 @@
     "framework_coverage": {
       "NIST-800-53-AC-6": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "On Nagios XI before 5.6.6 a passwordless sudo entry runs getprofile.sh as root, and the script executes a plugin the unprivileged nagios account can rewrite, so a low-privilege plugin operator gains root regardless of the organization's account grants."
       },
       "NIS2-Art21-network-security": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Before 5.6.6 the passwordless getprofile.sh sudo entry turns a Nagios XI right to manage monitoring plugins into root on the server, and neither point (i) nor point (e) requires an entity to check how a product's application roles map to operating-system privileges."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "On an internal Nagios XI server the Partially achieved allowance can accept restricting plugin-modification rights in the web interface for an extended period in place of the 5.6.6 upgrade, although the nagios account can still replace the plugin getprofile.sh runs as root."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Maturity Level One sets no patch timeframe for a Nagios XI instance reachable only internally, so an organization at that level can leave a server with a public root exploit unpatched and still meet the patching requirement."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An evaluation that discounts a flaw needing low privileges can set a longer timescale for the 5.6.6 upgrade, although the reporter's exploit repository, created on August 21, 2019, gives root to any account allowed to manage plugins."
       }
     },
     "new_control_requirements": [
@@ -144661,27 +144939,33 @@
     "framework_coverage": {
       "NIST-800-53-AC-3": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The double-encoded traversal to console.portal reaches an administrative handler behind the console's authentication filter without an authorization decision, so the AC-3 enforcement point is never invoked for the request that takes over the server."
       },
       "NIS2-Art21-vulnerability-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Oracle's 2020-10-20 fix was bypassed until the 2020-11-01 Security Alert and public exploitation began on 2020-10-29, so an operator meeting the point 6.6.1 reasonable time from the first patch could still have been taken over."
       },
       "UK-CAF-B2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Because an unauthenticated request that traverses to console.portal exercises administrative function without any account, a B2 assessment of user accounts and privileges finds nothing to examine while anyone who can route to port 7001 can take over the server."
       },
       "ISO-27001-2022-A.5.15": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The console's own request routing accepts a traversal that bypasses its authentication layer, so one defect in the vendor's URI matching defeats the role model without triggering any A.5.15 policy evidence."
       },
       "AU-ISM-1546": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "ISM-1546 is met by configuring authentication in front of the console and does not cover a flaw in the vendor's own handling, so a deployment compliant on paper still accepts the unauthenticated request to console.portal that compromises the server."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Applying the 2020-10-20 Critical Patch Update inside its 48-hour ISM-1876 window still left the console exposed, because the fix was bypassed until the 2020-11-01 Security Alert for CVE-2020-14750, whose own window is the one that closes the flaw."
       }
     },
     "new_control_requirements": [
@@ -144735,23 +145019,28 @@
     "framework_coverage": {
       "NIST-800-53-CM-7": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The WebLogic administration console is enabled and network-reachable by default and contains the command gadget, so a CM-7 baseline that leaves it listening on port 7001 keeps the function that runs operating system commands."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Point 6.6.1 does not define a reasonable time although only nine days separated the 2020-10-20 patch from the 2020-10-29 exploitation report, and an entity that applied the October update stayed exposed until the 2020-11-01 Security Alert for CVE-2020-14750."
       },
       "UK-CAF-C1": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The correlated console.portal access-log entry and the WebLogic console log error naming com.tangosol.coherence.mvel2.sh.ShellSession appear only after the single request has run the command, so C1 limits how long a takeover goes unnoticed and does not prevent it."
       },
       "ISO-27001-2022-A.8.21": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The administration console uses ordinary HTTP and is frequently placed where any internal or internet source can reach it, so the documented segmentation and secure-protocol controls do not confine the console command path."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "For an internet-facing console, the two-week ISM-1690 window ran from the 2020-10-20 release to about 2020-11-03, but public exploitation began on 2020-10-29 inside it and the paired traversal stayed open until the 2020-11-01 Security Alert for CVE-2020-14750."
       }
     },
     "new_control_requirements": [
@@ -144804,23 +145093,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The SI-2(c) clock starts at an update's release, so while the October 2020 fix was publicly bypassed and the 2020-11-01 Security Alert had not shipped, no period ran and the recorded October update no longer closed the traversal."
       },
       "NIS2-Art21-network-security": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Article 21(2)(i) and 21(2)(j) govern the entity's own access decisions and do not reach a vendor defect whose crafted traversal skips the console's authentication, so an entity meeting them still has an internet-facing WebLogic console open to unauthenticated takeover."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An operator who applied the October 2020 Critical Patch Update would record the console vulnerability as mitigated, yet the fix was bypassed until the 2020-11-01 Security Alert, so a B4.d self-assessment could read as met while the traversal stayed open."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The appropriate timescale restarts when the October 2020 update is bypassed and the Security Alert patch ships, and A.8.8 does not distinguish a remediated instance from one still running the defeated October fix."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An estate that applied only the October 2020 update had no fix for the bypass, so no ISM-1876 window started before the 2020-11-01 Security Alert, although exploit code had already been published on various sites."
       }
     },
     "new_control_requirements": [
@@ -144883,27 +145177,33 @@
     "framework_coverage": {
       "NIST-800-53-AC-3": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "PlaySMS runs the submitted username through its template engine on the login route before authentication succeeds, so code executes before any AC-3 authorization decision governs the request."
       },
       "NIS2-Art21-vulnerability-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Point 6.6.1 does not define a reasonable time or tie it to published exploitation steps, so an entity could meet it with a patch cycle longer than the six days between PlaySMS 1.4.3 on 2020-02-05 and NCC Group's 2020-02-11 unauthenticated reproduction."
       },
       "UK-CAF-B2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The vulnerable code runs from the pre-authentication login field, so a B2 review of accounts and privileges finds nothing that governs an unauthenticated request reaching code execution."
       },
       "ISO-27001-2022-A.5.15": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The PlaySMS login route evaluates a template expression from an unauthenticated caller, so one input-handling defect defeats the identity and role model before any A.5.15 policy control is reached."
       },
       "AU-ISM-1546": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "PlaySMS processes the username through its template engine before authentication, so a request that never authenticates reaches code execution, and a configuration record showing authentication is present does not cover that path."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "At Maturity Level One an internal-only PlaySMS instance has no patch timeframe, so the unauthenticated code-execution flaw can stay open there although 1.4.3 shipped on 2020-02-05."
       }
     },
     "new_control_requirements": [
@@ -144957,23 +145257,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Correction under SI-2 depends on identifying the flaw first, and the agency's scanner could not identify Telerik UI installed through a continuous integration and continuous delivery pipeline, so the server still ran version 2013.2.717 when actors exploited it from August 2021."
       },
       "NIS2-Art21-incident-handling": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The 24-hour and 72-hour Article 23(4) clocks start from awareness, and the actors' malware removed the DLLs they had masqueraded as PNG files after use, so an operator could become aware of the compromise well after the intrusion."
       },
       "UK-CAF-D1": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "D1 does not require the response plan to default to rebuild over in-place patching, although a server whose IIS worker loaded an attacker's mixed-mode assembly and had DLLs planted in C:\\Windows\\Temp\\ needs evidence capture, host rebuild and credential rotation."
       },
       "ISO-27001-2022-A.8.16": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A.8.16 does not name the IIS POST to Telerik.Web.UI.WebResource.axd with type=rau, which reads as ordinary application traffic, or the EventID 1309 InvalidCastException, and those events remained the record of the compromise after the malware deleted the dropped DLLs."
       },
       "AU-ISM-1808": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A scanner meeting ISM-1808 held the correct plugin for this flaw and still reported the host clean, because the Telerik software was installed in a file path the scanner did not examine."
       }
     },
     "new_control_requirements": [
@@ -145420,23 +145725,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "UNC2447 exploited the flaw before 10.2.0.5-29sv shipped on February 3, 2021, and SI-2, which measures its period from an update's release, does not cover applying the interim measures SonicWall published from January 22."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The additional-measures clause governed the period from SonicWall's January 22 notice to the February 3, 2021 fix, but Annex point 6.6.1 does not name the measures, and SonicWall's guidance ranged from access restrictions and MFA to the WAF and shutting the appliance down."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The built-in WAF and the 10.2.0.5-29sv firmware stop further reads and MFA limits password reuse, but none of them changes passwords read before it was applied, and B4.d does not name the password reset SonicWall directs after patching."
       },
       "AU-Essential-8-Patch": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "No ISM patch control requires an assessment of whether the appliance was exploited before the mitigations were applied, and SonicWall stated that it was not aware of any forensic data a user could view to determine whether a device had been attacked."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "SonicWall's measures arrived over the 12 days from its January 22, 2021 notice to the 10.2.0.5-29sv firmware on February 3, and A.8.8 sets no time by which an organization must apply each one to an appliance that UNC2447 was exploiting before the fix."
       }
     },
     "new_control_requirements": [
@@ -145497,23 +145807,28 @@
     "framework_coverage": {
       "NIST-800-53-SI-2": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "SI-2's period runs from the 9.1R11.4 release on 2021-05-03, so it sets no requirement for the zero-day exploitation before disclosure, and it does not require importing the 2021-04-20 Workaround-2104.xml because that file is a configuration change."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "CVE-2021-22893 was exploited before Pulse Secure published any fix or mitigation, and point 6.6.1 neither names the additional measures nor sets a date by which the 2021-04-20 Workaround-2104.xml had to be imported before 9.1R11.4 shipped on 2021-05-03."
       },
       "UK-CAF-C1": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "Because C1 does not name device logging defaults, an operator can assess C1.a against the gateway's default logs, which do not record unauthenticated web requests, although CERT/CC notes exploitation evidence may be present only if the Unauthenticated Requests logging option is enabled."
       },
       "AU-ISM-1546": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The license-server handling endpoints of Pulse Connect Secure are present whether or not the role is configured, so the use-after-free gives an unauthenticated request root code execution on a gateway whose authentication configuration satisfies ISM-1546."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "No vulnerability information existed for A.8.8 to act on until Pulse Secure published SA44784 on 2021-04-20, after exploitation began, and because the actor persisted across upgrades, installing 9.1R11.4 alone does not clear a compromised device."
       }
     },
     "new_control_requirements": [
@@ -145757,23 +146072,28 @@
     "framework_coverage": {
       "NIST-800-53-SC-39": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An SC-39 assessment of separation between operating-system processes does not test the kgsl_mem_entry the Qualcomm GPU driver shares unlocked across processes, where a state error and a mapping race trigger CVE-2021-1905."
       },
       "NIS2-Art21-patch-management": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A handset receives the fix only when its maker ships the 2021-05-05 security patch level, and Annex point 6.6.1 does not name gating access on that level as an additional measure while no patch is available."
       },
       "UK-CAF-B4": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "An organization assessed at Partially achieved can keep this local flaw under an extended temporary mitigation such as restricting untrusted app installation, which does not stop a chain starting with a remote exploit, despite indications of limited, targeted exploitation."
       },
       "AU-ISM-0298": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "The May 2021 Android Security Bulletin lists this GPU driver fix only under the 2021-05-05 level, so an ISM-0298 confirmation that the May update applied passes a device reporting 2021-05-01 that still carries CVE-2021-1905."
       },
       "ISO-27001-2022-A.8.8": {
         "covered": true,
-        "adequate": false
+        "adequate": false,
+        "gap": "A.8.8 sets no timescale for its measures, so each organization decides how long handsets may stay exposed to a flaw with indications of limited, targeted exploitation, whose fix installs only after the maker ships the 2021-05-05 security patch level."
       }
     },
     "new_control_requirements": [
