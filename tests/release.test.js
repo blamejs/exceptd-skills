@@ -534,3 +534,67 @@ require("node:test").describe("workflow jobs declare a timeout", () => {
     assert.ok(jobs >= 15, `the scan must see the real job list; saw ${jobs}`);
   });
 });
+
+require("node:test").describe("resumed commit and push refuse uncommitted changes", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const os = require("node:os");
+  const path = require("node:path");
+  const { spawnSync } = require("node:child_process");
+
+  // A throwaway repo on release-v9.9.9 whose HEAD already carries the release
+  // commit, with a copy of release.js so the script's ROOT is this repo.
+  function stage() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "exceptd-release-resume-"));
+    const git = (...a) => spawnSync("git", a, { cwd: dir, encoding: "utf8" });
+    git("init", "-q", "-b", "main");
+    git("config", "user.email", "t@example.com");
+    git("config", "user.name", "t");
+    git("config", "commit.gpgsign", "false");
+    fs.mkdirSync(path.join(dir, "scripts"));
+    fs.copyFileSync(path.join(__dirname, "..", "scripts", "release.js"), path.join(dir, "scripts", "release.js"));
+    fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ version: "9.9.9" }) + "\n");
+    fs.writeFileSync(path.join(dir, "data.txt"), "a\n");
+    git("add", "-A");
+    git("commit", "-q", "-m", "base");
+    git("checkout", "-q", "-b", "release-v9.9.9");
+    fs.writeFileSync(path.join(dir, "data.txt"), "b\n");
+    git("commit", "-q", "-am", "v9.9.9: release");
+    const head = git("rev-parse", "HEAD").stdout.trim();
+    const run = (phase) => spawnSync(process.execPath, [path.join(dir, "scripts", "release.js"), phase], { cwd: dir, encoding: "utf8" });
+    return { dir, git, head, run };
+  }
+
+  for (const phase of ["commit", "push"]) {
+    test(`${phase} with uncommitted changes exits 1, names them and leaves HEAD alone`, () => {
+      const r = stage();
+      try {
+        fs.writeFileSync(path.join(r.dir, "data.txt"), "c\n");
+        fs.writeFileSync(path.join(r.dir, "new.txt"), "n\n");
+        const out = r.run(phase);
+        assert.equal(out.status, 1, out.stdout + out.stderr);
+        assert.match(out.stderr, new RegExp(`release: ${phase} found 2 uncommitted change\\(s\\) that no v9\\.9\\.9 commit carries`));
+        assert.match(out.stderr, /data\.txt/);
+        assert.match(out.stderr, /new\.txt/);
+        assert.equal(r.git("rev-parse", "HEAD").stdout.trim(), r.head);
+      } finally {
+        fs.rmSync(r.dir, { recursive: true, force: true });
+      }
+    });
+
+    test(`${phase} with a clean tree gets past the uncommitted-change check`, () => {
+      const r = stage();
+      try {
+        const out = r.run(phase);
+        // The throwaway commit is unsigned and the repo has no remote, so the
+        // phase still fails, but at the next step rather than at this check.
+        assert.equal(out.status, 1, out.stdout + out.stderr);
+        assert.doesNotMatch(out.stderr, /uncommitted change/);
+        assert.match(out.stderr, phase === "commit" ? /signature is not Good/ : /release: FAIL/);
+      } finally {
+        fs.rmSync(r.dir, { recursive: true, force: true });
+      }
+    });
+  }
+});

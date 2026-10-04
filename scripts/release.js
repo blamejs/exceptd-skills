@@ -136,6 +136,16 @@ function _releaseSubject(version, section) {
 }
 
 function _gitClean() { return _captureOk("git", ["status", "--porcelain"]) === ""; }
+
+// Throws when the tree holds changes no commit carries, since push sends only
+// committed work and the resumed commit phase creates no new commit.
+function _refuseUncommitted(phase, next) {
+  var dirty = _captureOk("git", ["status", "--porcelain"]).split(/\r?\n/).filter(function (l) { return l.trim(); });
+  if (dirty.length === 0) return;
+  throw new Error("release: " + phase + " found " + dirty.length + " uncommitted change(s) that no v" + next +
+    " commit carries:\n  " + dirty.slice(0, 20).join("\n  ") +
+    "\nCommit them as a follow-up commit on the release branch, or discard them, then run " + phase + " again.");
+}
 function _gitBranch() { return _captureOk("git", ["rev-parse", "--abbrev-ref", "HEAD"]); }
 function _gitOnMain() { return _gitBranch() === "main"; }
 function _gitOnRelease() { return /^release-v\d+\.\d+\.\d+$/.test(_gitBranch()); }
@@ -363,6 +373,7 @@ function cmdCommit() {
   var headSubject = _capture("git", ["log", "-1", "--pretty=%s"]).stdout;
   if (headSubject.indexOf("v" + next + ":") === 0) {
     _ok("HEAD already carries a v" + next + " commit (resume mode)");
+    _refuseUncommitted("commit", next);
     _verifyCommitSignature("existing");
     console.log("\nnext: node scripts/release.js push");
     return;
@@ -387,6 +398,7 @@ function cmdPush() {
   if (!_gitOnRelease()) throw new Error("release: push must run on a release-vX.Y.Z branch");
   var next = _readJsonVersion("package.json");
   var branch = _releaseBranchFor(next);
+  _refuseUncommitted("push", next);
 
   _run("git", ["push", "-u", "origin", branch]);
   _ok("pushed " + branch);

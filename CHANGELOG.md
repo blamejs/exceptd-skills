@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.21.32 — 2026-10-04
+
+`node scripts/release.js commit` and `push` now stop when the working tree holds changes that no release commit carries, and list them. A resumed `commit` on a branch whose HEAD already had the release commit used to report success without committing those changes, and `push` then sent the branch without them.
+
 ## 0.21.31 — 2026-10-04
 
 The catalog-gap audit has a new class, `import-stub`: a curated catalog or lesson text that still carries the KEV import draft's placeholder ("Bulk-imported from CISA KEV", "at bulk-import time", "Treat as moderate-by-default", "in a future refresh"). `exceptd refresh --curate-batch` refuses a batch that submits one. The audit counts 1,370 such texts on the 239 entries promoted from import drafts, and its budget falls as those fields are curated: the budget test fails when the count is above the budget and also when it is below, so the release that curates them lowers the budget with them.
