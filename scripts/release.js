@@ -144,7 +144,7 @@ function _refuseUncommitted(phase, next) {
   if (dirty.length === 0) return;
   throw new Error("release: " + phase + " found " + dirty.length + " uncommitted change(s) that no v" + next +
     " commit carries:\n  " + dirty.slice(0, 20).join("\n  ") +
-    "\nCommit them as a follow-up commit on the release branch, or discard them, then run " + phase + " again.");
+    "\nCommit them as a follow-up commit on the release branch, or discard them, then run push.");
 }
 function _gitBranch() { return _captureOk("git", ["rev-parse", "--abbrev-ref", "HEAD"]); }
 function _gitOnMain() { return _gitBranch() === "main"; }
@@ -369,10 +369,11 @@ function cmdCommit() {
     throw new Error("release: commit must run on main or " + branch + " (on " + current + ")");
   }
 
-  // HEAD already carrying this release's commit means verify, not re-commit.
-  var headSubject = _capture("git", ["log", "-1", "--pretty=%s"]).stdout;
-  if (headSubject.indexOf("v" + next + ":") === 0) {
-    _ok("HEAD already carries a v" + next + " commit (resume mode)");
+  // A branch already carrying this release's commit, at HEAD or under follow-up
+  // commits, means verify, not re-commit.
+  var subjects = _captureOk("git", ["log", "main..HEAD", "--pretty=%s"]).split(/\r?\n/);
+  if (subjects.some(function (s) { return s.indexOf("v" + next + ":") === 0; })) {
+    _ok("the branch already carries a v" + next + " commit (resume mode)");
     _refuseUncommitted("commit", next);
     _verifyCommitSignature("existing");
     console.log("\nnext: node scripts/release.js push");

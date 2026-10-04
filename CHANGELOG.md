@@ -2,7 +2,7 @@
 
 ## 0.21.32 — 2026-10-04
 
-`node scripts/release.js commit` and `push` now stop when the working tree holds changes that no release commit carries, and list them. A resumed `commit` on a branch whose HEAD already had the release commit used to report success without committing those changes, and `push` then sent the branch without them.
+`node scripts/release.js commit` and `push` now stop when the working tree holds changes that no release commit carries, and list them. A resumed `commit` on a branch whose HEAD already had the release commit used to report success without committing those changes, and `push` then sent the branch without them. A resumed `commit` now also finds the release commit under follow-up commits on the branch, so it verifies the existing release instead of attempting a second one.
 
 ## 0.21.31 — 2026-10-04
 

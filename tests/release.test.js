@@ -597,4 +597,32 @@ require("node:test").describe("resumed commit and push refuse uncommitted change
       }
     });
   }
+
+  test("the refusal tells the operator to push after committing the changes", () => {
+    const r = stage();
+    try {
+      fs.writeFileSync(path.join(r.dir, "data.txt"), "c\n");
+      const out = r.run("commit");
+      assert.match(out.stderr, /Commit them as a follow-up commit on the release branch, or discard them, then run push\./);
+    } finally {
+      fs.rmSync(r.dir, { recursive: true, force: true });
+    }
+  });
+
+  test("commit resumes when the release commit sits under a follow-up commit", () => {
+    const r = stage();
+    try {
+      fs.writeFileSync(path.join(r.dir, "data.txt"), "d\n");
+      r.git("commit", "-q", "-am", "follow-up fix");
+      const head = r.git("rev-parse", "HEAD").stdout.trim();
+      const out = r.run("commit");
+      // Resume mode verifies the signature rather than making a second release
+      // commit; the throwaway commits are unsigned, so verification fails.
+      assert.match(out.stdout, /the branch already carries a v9\.9\.9 commit \(resume mode\)/);
+      assert.match(out.stderr, /signature is not Good/);
+      assert.equal(r.git("rev-parse", "HEAD").stdout.trim(), head, "no new commit");
+    } finally {
+      fs.rmSync(r.dir, { recursive: true, force: true });
+    }
+  });
 });
