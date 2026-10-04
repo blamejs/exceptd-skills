@@ -520,11 +520,25 @@ function detectStreamChunkStringDecode(files) {
 // The comment and string-literal text on a line, with code left out so an
 // identifier, object key or constant keeps its spelling. `state` is a
 // newBraceState() threaded line to line: block comments and template literals
-// span lines, a quoted string closes at the end of its line, and a regex
-// literal is code, so a quote inside one does not open a string.
+// span lines, and a regex literal is code, so a quote inside one does not open
+// a string. A '- or "-quoted string cannot run past its line, so a quote whose
+// string reaches the end of the line unclosed is read as code and the rest of
+// the line is scanned again from just after it.
 function proseOf(line, state) {
   let out = "";
-  for (let i = 0; i < line.length; i++) {
+  let quoteAt = -1;
+  let quoteOut = 0;
+  let codeQuoteAt = -1;
+  for (let i = 0; i <= line.length; i++) {
+    if (i === line.length) {
+      if (!(state.inSingle || state.inDouble)) break;
+      state.inSingle = false;
+      state.inDouble = false;
+      out = out.slice(0, quoteOut);
+      codeQuoteAt = quoteAt;
+      i = quoteAt;
+      continue;
+    }
     const ch = line[i];
     const next = line[i + 1];
     if (state.inBlock) {
@@ -551,8 +565,12 @@ function proseOf(line, state) {
       const end = regexLiteralEnd(line, i);
       if (end !== -1) { i = end; continue; }
     }
-    if (ch === "'") { state.inSingle = true; continue; }
-    if (ch === '"') { state.inDouble = true; continue; }
+    if ((ch === "'" || ch === '"') && i !== codeQuoteAt) {
+      if (ch === "'") state.inSingle = true; else state.inDouble = true;
+      quoteAt = i;
+      quoteOut = out.length;
+      continue;
+    }
     if (ch === "`") { state.inTemplate = true; continue; }
     if (state.templateExpr.length) {
       const top = state.templateExpr.length - 1;
@@ -561,8 +579,6 @@ function proseOf(line, state) {
       else if (ch === "}") state.templateExpr[top]--;
     }
   }
-  state.inSingle = false;
-  state.inDouble = false;
   return out;
 }
 

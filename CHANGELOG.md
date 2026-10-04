@@ -6,9 +6,9 @@ Error messages, warnings, help text, comments, skills and the README and AGENTS.
 
 The codebase-pattern gate adds a warning class, `british-spelling`. It reports British spellings in comments and string literals under `bin/`, `lib/`, `orchestrator/` and `scripts/`, and skips any word with a capital after its first letter, text inside backticks in a comment, and the term `judgement-shaped`. A line marked `// allow:british-spelling — <reason>` is skipped.
 
-The test-count gate no longer treats a `/*` inside a line comment, a string or a regex literal as the start of a block comment, and a quote inside a regex literal such as `/it's/` no longer opens a string. A comment such as `// scans lib/*.js` followed later by a string containing `*/` made it skip every test in between. It undercounted 36 tests, and the baseline now records the full count.
+The test-count gate no longer treats a `/*` inside a line comment, a string or a regex literal as the start of a block comment, and a quote inside a regex literal such as `/it's/` no longer opens a string. A quote whose string reaches the end of its line unclosed is read as code, so a regex after `if (...)` or another construct the scanner misreads cannot hide a block comment either. A comment such as `// scans lib/*.js` followed later by a string containing `*/` made it skip every test in between. It undercounted 36 tests, and the baseline now records the full count.
 
-`scripts/release.js prepare` and `regen` now run `scripts/sync-manifest-metadata.js` before `sign-all`, so a skill edit that changes `forward_watch` or `description` reaches `manifest.json` before the manifest is signed. The manifest-sync test runs the sync script against a temporary copy of the manifest, skills and `lib/`. A stale manifest fails the test, and the test does not rewrite the repository's `manifest.json`.
+`scripts/release.js prepare` and `regen` now run `scripts/sync-manifest-metadata.js` and then `refresh-reverse-refs` before `sign-all`, so a skill edit that changes `forward_watch` or `description` reaches `manifest.json` before the manifest is signed. The manifest-sync test runs the sync script against a temporary copy of the manifest, skills and `lib/`. A stale manifest fails the test, and the test does not rewrite the repository's `manifest.json`.
 
 ## 0.21.24 — 2026-10-04
 

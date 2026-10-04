@@ -59,10 +59,17 @@ function regexLiteralEnd(text, start) {
 // Removes /* ... */ block comments and keeps their newlines. A `/*` inside a
 // line comment, a string literal or a regex literal does not open one, and a
 // quote inside a regex literal does not open a string, so `// lib/*.js`,
-// `/it's/` and a later `" */"` do not drop or keep the wrong tests.
-function stripBlockComments(text) {
+// `/it's/` and a later `" */"` do not drop or keep the wrong tests. A '- or
+// "-quoted string cannot run past its line, so a quote whose string reaches the
+// end of the line unclosed is read as code and the rest of the line is scanned
+// again from just after it.
+function stripBlockComments(source) {
+  const text = source + '\n';
   let out = '';
   let mode = null; // null (code), 'line', 'block', or the open quote character
+  let quoteAt = -1;
+  let quoteOut = 0;
+  let codeQuoteAt = -1;
   for (let i = 0; i < text.length; i++) {
     const ch = text[i];
     const next = text[i + 1];
@@ -77,9 +84,16 @@ function stripBlockComments(text) {
       continue;
     }
     if (mode) {
+      if (ch === '\n' && mode !== '`') {
+        out = out.slice(0, quoteOut) + text[quoteAt];
+        codeQuoteAt = quoteAt;
+        i = quoteAt;
+        mode = null;
+        continue;
+      }
       out += ch;
       if (ch === '\\' && next !== undefined) { out += next; i++; continue; }
-      if (ch === mode || (ch === '\n' && mode !== '`')) mode = null;
+      if (ch === mode) mode = null;
       continue;
     }
     if (ch === '/' && next === '*') { mode = 'block'; i++; continue; }
@@ -87,10 +101,11 @@ function stripBlockComments(text) {
     else if (ch === '/' && REGEX_CAN_START.test(out.slice(-40))) {
       const end = regexLiteralEnd(text, i);
       if (end !== -1) { out += text.slice(i, end + 1); i = end; continue; }
-    } else if (ch === "'" || ch === '"' || ch === '`') mode = ch;
+    } else if ((ch === "'" || ch === '"') && i !== codeQuoteAt) { mode = ch; quoteAt = i; quoteOut = out.length; }
+    else if (ch === '`') mode = ch;
     out += ch;
   }
-  return out;
+  return out.slice(0, -1);
 }
 
 function countTests(filePath) {

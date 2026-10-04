@@ -174,6 +174,28 @@ test('a quote inside a regex literal does not open a string, so a block comment 
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
+test('a quote whose string runs off its line is read as code, so a regex after a control-flow paren cannot hide a block comment', () => {
+  const src = [
+    "if (ok) /it's/.test(s); /* disabled:",
+    "test('disabled', () => {});",
+    "*/",
+    "test('kept', () => {});",
+    "while (x) /don't/.exec(y) /* also disabled",
+    "it('disabled too', () => {});",
+    "*/ it('kept too', () => {});",
+  ].join('\n');
+  const { dir, p } = tmpFile('count-control-flow-regex.test.js', src);
+  try {
+    assert.equal(countTests(p), 2);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('an unclosed quote on the last line does not swallow the end of the file', () => {
+  const { stripBlockComments } = require(path.join(ROOT, 'scripts', 'check-test-count.js'));
+  assert.equal(stripBlockComments("if (a) /it's/; /* gone */ b"), "if (a) /it's/;  b");
+  assert.equal(stripBlockComments("x = 'ok';\n"), "x = 'ok';\n");
+});
+
 test('a real block comment after a line-comment glob still hides the test inside it', () => {
   const src = [
     "// scans lib/*.js",
