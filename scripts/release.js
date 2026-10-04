@@ -153,16 +153,17 @@ function _releaseBranchFor(version) { return "release-v" + version; }
 
 // `git verify-commit` is the boolean GitHub's required_signatures ruleset checks;
 // main is under that ruleset, so fail here rather than at push.
-function _verifyCommitSignature(label) {
-  var verify = _capture("git", ["verify-commit", "HEAD"]);
+function _verifyCommitSignature(label, rev) {
+  rev = rev || "HEAD";
+  var verify = _capture("git", ["verify-commit", rev]);
   if (verify.status !== 0) {
-    var hint = "release: " + label + " commit signature is not Good — check SSH " +
+    var hint = "release: " + label + " commit " + rev + " signature is not Good — check SSH " +
       "signing setup (commit.gpgsign=true + gpg.format=ssh + the public key " +
       "registered as a GitHub signing key).";
     if (verify.stderr) hint += "\n" + verify.stderr;
     throw new Error(hint);
   }
-  var sig = _capture("git", ["log", "-1", "--pretty=%h %G? %GS"]);
+  var sig = _capture("git", ["log", "-1", "--pretty=%h %G? %GS", rev]);
   console.log("signature: " + (sig.stdout || "(empty — verify-commit reports Good)"));
   _ok(label + " commit signature verified");
 }
@@ -371,11 +372,13 @@ function cmdCommit() {
 
   // A branch already carrying this release's commit, at HEAD or under follow-up
   // commits, means verify, not re-commit.
-  var subjects = _captureOk("git", ["log", "main..HEAD", "--pretty=%s"]).split(/\r?\n/);
-  if (subjects.some(function (s) { return s.indexOf("v" + next + ":") === 0; })) {
+  var branchCommits = _captureOk("git", ["log", "main..HEAD", "--pretty=%H %s"]).split(/\r?\n/).filter(function (l) { return l.trim(); });
+  if (branchCommits.some(function (l) { return l.slice(l.indexOf(" ") + 1).indexOf("v" + next + ":") === 0; })) {
     _ok("the branch already carries a v" + next + " commit (resume mode)");
     _refuseUncommitted("commit", next);
-    _verifyCommitSignature("existing");
+    // Every commit the push would send is verified, oldest first, so the release
+    // commit is checked before any follow-up commit on top of it.
+    branchCommits.slice().reverse().forEach(function (l) { _verifyCommitSignature("existing", l.slice(0, l.indexOf(" "))); });
     console.log("\nnext: node scripts/release.js push");
     return;
   }

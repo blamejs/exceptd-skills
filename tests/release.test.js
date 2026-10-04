@@ -619,7 +619,8 @@ require("node:test").describe("resumed commit and push refuse uncommitted change
       // Resume mode verifies the signature rather than making a second release
       // commit; the throwaway commits are unsigned, so verification fails.
       assert.match(out.stdout, /the branch already carries a v9\.9\.9 commit \(resume mode\)/);
-      assert.match(out.stderr, /signature is not Good/);
+      // The release commit itself is verified, not only HEAD.
+      assert.match(out.stderr, new RegExp(`existing commit ${r.head} signature is not Good`));
       assert.equal(r.git("rev-parse", "HEAD").stdout.trim(), head, "no new commit");
     } finally {
       fs.rmSync(r.dir, { recursive: true, force: true });
