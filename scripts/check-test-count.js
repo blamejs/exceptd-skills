@@ -38,9 +38,28 @@ function listTestFiles(dir) {
   return out;
 }
 
+// A `/` starts a regex literal, not a division, when the code before it ends in
+// an operator, an opening bracket, a separator or one of these keywords.
+const REGEX_CAN_START = /(?:^|[(,=:[!&|?{};+\-*%<>~^]|\b(?:return|typeof|instanceof|in|of|new|delete|void|throw|case|do|else|yield|await))\s*$/;
+
+// Index of the slash that closes the regex literal opening at `start`, or -1
+// when the line holds no closing slash outside a character class.
+function regexLiteralEnd(text, start) {
+  let inClass = false;
+  for (let j = start + 1; j < text.length && text[j] !== '\n'; j++) {
+    const c = text[j];
+    if (c === '\\') { j++; continue; }
+    if (c === '[') inClass = true;
+    else if (c === ']') inClass = false;
+    else if (c === '/' && !inClass) return j;
+  }
+  return -1;
+}
+
 // Removes /* ... */ block comments and keeps their newlines. A `/*` inside a
-// line comment or a string literal does not open one, so `// lib/*.js` and a
-// later `" */"` do not drop every test between them.
+// line comment, a string literal or a regex literal does not open one, and a
+// quote inside a regex literal does not open a string, so `// lib/*.js`,
+// `/it's/` and a later `" */"` do not drop or keep the wrong tests.
 function stripBlockComments(text) {
   let out = '';
   let mode = null; // null (code), 'line', 'block', or the open quote character
@@ -65,7 +84,10 @@ function stripBlockComments(text) {
     }
     if (ch === '/' && next === '*') { mode = 'block'; i++; continue; }
     if (ch === '/' && next === '/') mode = 'line';
-    else if (ch === "'" || ch === '"' || ch === '`') mode = ch;
+    else if (ch === '/' && REGEX_CAN_START.test(out.slice(-40))) {
+      const end = regexLiteralEnd(text, i);
+      if (end !== -1) { out += text.slice(i, end + 1); i = end; continue; }
+    } else if (ch === "'" || ch === '"' || ch === '`') mode = ch;
     out += ch;
   }
   return out;
@@ -186,6 +208,6 @@ function main() {
   process.exitCode = 0;
 }
 
-module.exports = { countTests, listTestFiles, stripBlockComments };
+module.exports = { countTests, listTestFiles, stripBlockComments, regexLiteralEnd, REGEX_CAN_START };
 
 if (require.main === module) main();

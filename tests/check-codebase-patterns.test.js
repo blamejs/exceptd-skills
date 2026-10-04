@@ -673,12 +673,13 @@ require("node:test").describe("british-spelling detector", () => {
     assert.deepEqual(found(p.detectBritishSpelling([f])), []);
   });
 
-  test("a quoted string closes at the end of its line, so a stray quote does not carry into the next line", () => {
+  test("a quote inside a regex literal is code, and a stray quote closes at the end of its line", () => {
     const f = fixture("quote.js", [
-      "const re = /it's/; const normalised = 1;",                           // 1 the regex quote opens a string that ends here
-      "const recognised = normalised;",                                     // 2 code
+      "const re = /it's/; const normalised = 1;",                           // 1 regex literal after `=`: code
+      "if (ok) /it's/.test(s) && normalised;",                              // 2 after `)` the slash reads as division, so the quote opens a string to the end of the line
+      "const recognised = normalised;",                                     // 3 code again
     ].join("\n"));
-    assert.deepEqual(found(p.detectBritishSpelling([f])), ["1:normalised"]);
+    assert.deepEqual(found(p.detectBritishSpelling([f])), ["2:normalised"]);
   });
 
   test("proseOf keeps comment and string text and drops code, across lines", () => {

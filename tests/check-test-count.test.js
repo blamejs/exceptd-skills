@@ -146,6 +146,34 @@ test('a /* inside a line comment or a string does not open a block comment', () 
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
+test('regexLiteralEnd and REGEX_CAN_START find a regex literal and tell it from division', () => {
+  const { regexLiteralEnd, REGEX_CAN_START } = require(path.join(ROOT, 'scripts', 'check-test-count.js'));
+  const line = "const re = /a[/]b\\/c/g; x";
+  assert.equal(regexLiteralEnd(line, line.indexOf('/')), line.indexOf('/g'));
+  assert.equal(regexLiteralEnd("const re = /unterminated", 11), -1);
+  assert.ok(REGEX_CAN_START.test("const re = "));
+  assert.ok(REGEX_CAN_START.test("return "));
+  assert.ok(!REGEX_CAN_START.test("const half = total "));
+  assert.ok(!REGEX_CAN_START.test("join "), "a word ending in 'in' is not the in keyword");
+});
+
+test('a quote inside a regex literal does not open a string, so a block comment on that line still hides its tests', () => {
+  const src = [
+    "const re = /it's/; /* disabled:",
+    "test('disabled', () => {});",
+    "*/",
+    "test('kept', () => {});",
+    "const half = total / 2; // it's fine",
+    "test('kept after division', () => {});",
+    "const ratio = a / b / c; const q = \"/* not a comment */\";",
+    "it('kept too', () => {});",
+  ].join('\n');
+  const { dir, p } = tmpFile('count-regex-quote.test.js', src);
+  try {
+    assert.equal(countTests(p), 3);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('a real block comment after a line-comment glob still hides the test inside it', () => {
   const src = [
     "// scans lib/*.js",

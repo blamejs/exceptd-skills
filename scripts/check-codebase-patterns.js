@@ -16,6 +16,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const { regexLiteralEnd, REGEX_CAN_START } = require("./check-test-count.js");
 
 const ROOT = path.resolve(__dirname, "..");
 
@@ -519,7 +520,8 @@ function detectStreamChunkStringDecode(files) {
 // The comment and string-literal text on a line, with code left out so an
 // identifier, object key or constant keeps its spelling. `state` is a
 // newBraceState() threaded line to line: block comments and template literals
-// span lines, and a quoted string closes at the end of its line.
+// span lines, a quoted string closes at the end of its line, and a regex
+// literal is code, so a quote inside one does not open a string.
 function proseOf(line, state) {
   let out = "";
   for (let i = 0; i < line.length; i++) {
@@ -545,6 +547,10 @@ function proseOf(line, state) {
     }
     if (ch === "/" && next === "/") { out += " " + line.slice(i + 2); break; }
     if (ch === "/" && next === "*") { state.inBlock = true; i++; continue; }
+    if (ch === "/" && REGEX_CAN_START.test(line.slice(Math.max(0, i - 40), i))) {
+      const end = regexLiteralEnd(line, i);
+      if (end !== -1) { i = end; continue; }
+    }
     if (ch === "'") { state.inSingle = true; continue; }
     if (ch === '"') { state.inDouble = true; continue; }
     if (ch === "`") { state.inTemplate = true; continue; }
