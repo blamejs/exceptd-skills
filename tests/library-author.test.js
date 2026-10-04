@@ -209,6 +209,89 @@ test("library-author lockfile-missing-integrity covers non-npm lockfiles + stays
       try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
     }
   }
+  // The playbook's lockfile artifact names npm-shrinkwrap.json alongside package-lock.json.
+  assert.match(require("../data/playbooks/library-author.json").phases.look.artifacts.map((a) => a.source || "").join("\n"),
+    /package-lock\.json, npm-shrinkwrap\.json, yarn\.lock/);
+  // Case C: a lone npm-shrinkwrap.json is scanned but gives no verdict, since npm 12
+  // does not read it and the npm version the build runs is unknown; a lone
+  // package-lock.json, which every npm reads, decides the verdict.
+  for (const [file, entry, expected] of [
+    ["npm-shrinkwrap.json", { version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz" }, undefined],
+    ["npm-shrinkwrap.json", { version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz", integrity: "sha512-abc" }, undefined],
+    ["package-lock.json", { version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz" }, "hit"],
+    ["package-lock.json", { version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz", integrity: "sha512-abc" }, "miss"],
+  ]) {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lib-lf-shrinkwrap-"));
+    try {
+      fs.writeFileSync(path.join(tmp, file), JSON.stringify({
+        lockfileVersion: 3, packages: { "": { name: "lib", version: "1.0.0" }, "node_modules/bar": entry },
+      }));
+      const r = libraryAuthorCollector.collect({ cwd: tmp });
+      assert.equal(r.signal_overrides["lockfile-missing-integrity"], expected,
+        `lone ${file} ${entry.integrity ? "with" : "without"} integrity must give ${expected}`);
+    } finally {
+      try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+    }
+  }
+  // Case D: with both npm lockfiles, which one npm reads depends on the npm version
+  // that runs the install, which the repository does not establish. Agreeing files
+  // decide the verdict; disagreeing files leave it undecided, with or without a
+  // packageManager field.
+  const noIntegrity = { version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz" };
+  const clean = { version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz", integrity: "sha512-abc" };
+  for (const [npm, shrink, lock, expected] of [
+    [null, clean, clean, "miss"], [null, noIntegrity, noIntegrity, "hit"],
+    [null, clean, noIntegrity, undefined], [null, noIntegrity, clean, undefined],
+    ["11.6.0", clean, noIntegrity, undefined], ["12.0.0", noIntegrity, clean, undefined],
+  ]) {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lib-lf-both-"));
+    try {
+      const write = (name, entry) => fs.writeFileSync(path.join(tmp, name), JSON.stringify({
+        lockfileVersion: 3, packages: { "": { name: "lib", version: "1.0.0" }, "node_modules/bar": entry },
+      }));
+      write("npm-shrinkwrap.json", shrink);
+      write("package-lock.json", lock);
+      if (npm) fs.writeFileSync(path.join(tmp, "package.json"), JSON.stringify({ name: "lib", version: "1.0.0", packageManager: `npm@${npm}` }));
+      const r = libraryAuthorCollector.collect({ cwd: tmp });
+      assert.equal(r.signal_overrides["lockfile-missing-integrity"], expected,
+        `npm ${npm || "(unknown)"} with both lockfiles: expected ${expected}`);
+    } finally {
+      try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+    }
+  }
+  // Case F: with both npm lockfiles present and one unreadable, a hit in the readable one
+  // is not definitive, since the unreadable one may be the file the build reads; a hit
+  // from another ecosystem's lockfile still stands.
+  for (const [extra, expected] of [[null, undefined], ["yarn.lock", "hit"]]) {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lib-lf-npm-bad-"));
+    try {
+      fs.writeFileSync(path.join(tmp, "npm-shrinkwrap.json"), "{ not json");
+      fs.writeFileSync(path.join(tmp, "package-lock.json"), JSON.stringify({
+        lockfileVersion: 3, packages: { "": { name: "lib", version: "1.0.0" }, "node_modules/bar": noIntegrity },
+      }));
+      if (extra) fs.writeFileSync(path.join(tmp, extra), "bar@2.0.0:\n  version \"2.0.0\"\n  resolved \"https://r/bar-2.0.0.tgz\"\n");
+      const r = libraryAuthorCollector.collect({ cwd: tmp });
+      assert.equal(r.signal_overrides["lockfile-missing-integrity"], expected,
+        `unreadable shrinkwrap with an unhashed package-lock${extra ? " and an unhashed " + extra : ""}: expected ${expected}`);
+    } finally {
+      try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+    }
+  }
+  // Case E: a lockfile that cannot be scanned leaves the verdict undecided rather than a miss.
+  {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lib-lf-bad-"));
+    try {
+      fs.writeFileSync(path.join(tmp, "npm-shrinkwrap.json"), "{ not json");
+      fs.writeFileSync(path.join(tmp, "package-lock.json"), JSON.stringify({
+        lockfileVersion: 3, packages: { "": { name: "lib", version: "1.0.0" }, "node_modules/bar": clean },
+      }));
+      const r = libraryAuthorCollector.collect({ cwd: tmp });
+      assert.equal(r.signal_overrides["lockfile-missing-integrity"], undefined);
+      assert.ok(r.collector_errors.some((e) => e.kind === "lockfile_scan_failed"));
+    } finally {
+      try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+    }
+  }
 });
 
 test("library-author package-json-provenance-missing checks workflow --provenance fallback", () => {

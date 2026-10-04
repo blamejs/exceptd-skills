@@ -545,7 +545,7 @@
         {
           "id": "lockfiles",
           "type": "config_file",
-          "source": "Recursive walk for: package-lock.json, yarn.lock, pnpm-lock.yaml, Pipfile.lock, poetry.lock, requirements*.txt with hashes, Cargo.lock, go.sum, Gemfile.lock, composer.lock, gradle.lockfile",
+          "source": "Recursive walk for: package-lock.json, npm-shrinkwrap.json, yarn.lock, pnpm-lock.yaml, Pipfile.lock, poetry.lock, requirements*.txt with hashes, Cargo.lock, go.sum, Gemfile.lock, composer.lock, gradle.lockfile",
           "description": "Lockfiles for the publisher's OWN build — pinning depth + integrity hashes. Determines whether the release pipeline is reproducible.",
           "required": false
         },

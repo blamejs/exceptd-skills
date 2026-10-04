@@ -123,6 +123,70 @@ test("collect sbom does not flip lockfile-no-integrity when every entry carries 
   }
 });
 
+test("collect sbom inventories npm-shrinkwrap.json and checks it for integrity, preferring it over package-lock.json", () => {
+  const noIntegrity = { lockfileVersion: 3, packages: { "": { name: "app", version: "1.0.0" }, "node_modules/bar": { version: "2.0.0", resolved: "https://r/bar-2.0.0.tgz" } } };
+  const clean = { lockfileVersion: 3, packages: { "": { name: "app", version: "1.0.0" }, "node_modules/foo": { version: "1.0.0", resolved: "https://r/foo.tgz", integrity: "sha512-abc" } } };
+  const run = (files) => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-sbom-shrinkwrap-"));
+    try {
+      for (const [name, body] of Object.entries(files)) fs.writeFileSync(path.join(tmp, name), JSON.stringify(body));
+      const r = cli(["collect", "sbom", "--cwd", tmp, "--json"]);
+      assert.equal(r.status, 0, r.stderr);
+      return tryJson(r.stdout);
+    } finally {
+      try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+    }
+  };
+  // A shrinkwrap-only project is inventoried as npm and checked for integrity. A clean
+  // lone shrinkwrap supports no miss, since npm 12 does not read it.
+  const only = run({ "npm-shrinkwrap.json": noIntegrity });
+  assert.match(only.artifacts["lockfile-inventory"].value, /npm:npm-shrinkwrap\.json/);
+  assert.equal(only.signal_overrides["lockfile-no-integrity"], "hit");
+  assert.equal(run({ "npm-shrinkwrap.json": clean }).signal_overrides["lockfile-no-integrity"], undefined);
+  const verdict = (files) => run(files).signal_overrides["lockfile-no-integrity"];
+  const pm = (v) => ({ name: "app", version: "1.0.0", packageManager: `npm@${v}` });
+  // Which file npm reads depends on the npm version that runs the install, which the
+  // repository does not establish (packageManager does not select npm without Corepack's
+  // npm shim), so both root files are checked and either one can hit.
+  assert.equal(verdict({ "npm-shrinkwrap.json": clean, "package-lock.json": noIntegrity }), "hit");
+  assert.equal(verdict({ "npm-shrinkwrap.json": noIntegrity, "package-lock.json": clean }), "hit");
+  assert.equal(verdict({ "npm-shrinkwrap.json": clean, "package-lock.json": clean }), "miss");
+  // A packageManager field does not change that.
+  assert.equal(verdict({ "package.json": pm("12.0.0"), "npm-shrinkwrap.json": noIntegrity, "package-lock.json": clean }), "hit");
+  assert.equal(verdict({ "package.json": pm("11.6.0"), "npm-shrinkwrap.json": clean, "package-lock.json": noIntegrity }), "hit");
+  // A remote unhashed tarball in one file keeps its evidence when the other file has only
+  // unhashed local references: false-positive check 0 (a remote tarball) stays attested.
+  const localOnly = { lockfileVersion: 3, packages: { "": { name: "app", version: "1.0.0" }, "node_modules/loc": { version: "1.0.0", resolved: "file:../loc" } } };
+  const mixed = run({ "npm-shrinkwrap.json": noIntegrity, "package-lock.json": localOnly });
+  assert.equal(mixed.signal_overrides["lockfile-no-integrity"], "hit");
+  assert.equal(mixed.signal_overrides["lockfile-no-integrity__fp_checks"]["0"], true);
+  // With two candidates, which one the build consumes is unknown, so false-positive
+  // check 1 stays unattested unless both have an unhashed remote tarball.
+  assert.equal(mixed.signal_overrides["lockfile-no-integrity__fp_checks"]["1"], undefined);
+  const oneHit = run({ "package.json": pm("11.6.0"), "npm-shrinkwrap.json": noIntegrity, "package-lock.json": clean });
+  assert.equal(oneHit.signal_overrides["lockfile-no-integrity__fp_checks"]["1"], undefined);
+  // A lone npm-shrinkwrap.json is ignored by npm 12, so whether the build reads it is
+  // unknown and check 1 stays unattested; a lone package-lock.json is read by every npm.
+  assert.equal(only.signal_overrides["lockfile-no-integrity__fp_checks"]["1"], undefined);
+  const lockOnly = run({ "package-lock.json": noIntegrity });
+  assert.equal(lockOnly.signal_overrides["lockfile-no-integrity__fp_checks"]["1"], true);
+  // When both candidates hit, the finding holds whichever one the build consumes, so check 1 is attested.
+  const both = run({ "npm-shrinkwrap.json": noIntegrity, "package-lock.json": noIntegrity });
+  assert.equal(both.signal_overrides["lockfile-no-integrity__fp_checks"]["1"], true);
+  // An unparseable candidate cannot support a miss: the verdict stays undecided.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "collect-sbom-shrinkwrap-bad-"));
+  try {
+    fs.writeFileSync(path.join(tmp, "npm-shrinkwrap.json"), "{ not json");
+    fs.writeFileSync(path.join(tmp, "package-lock.json"), JSON.stringify(clean));
+    const r = cli(["collect", "sbom", "--cwd", tmp, "--json"]);
+    const body = tryJson(r.stdout);
+    assert.equal(body.signal_overrides["lockfile-no-integrity"], undefined);
+    assert.ok(body.collector_errors.some((e) => e.kind === "lockfile_parse_failed" && /npm-shrinkwrap\.json/.test(e.reason)));
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+  }
+});
+
 test("sbom collector recognises pyproject.toml as a Python dependency manifest", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sbom-pyproject-"));
   try {
@@ -572,4 +636,61 @@ test("sbom: a document that opens and stats but cannot be read reports read_fail
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
+});
+
+// ---- routed from sbom-registry-cooldown ----
+require("node:test").describe("sbom playbook registry-cooldown guidance", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const pb = require("../data/playbooks/sbom.json");
+  const indicator = pb.phases.detect.indicators.find((i) => i.id === "npm-registry-no-cooldown");
+  const artifact = pb.phases.look.artifacts.find((a) => a.id === "npmrc-cooldown-policy");
+
+  test("npm-registry-no-cooldown asks for each manager's effective cooldown as that manager resolves it", () => {
+    assert.ok(indicator, "the indicator exists");
+    const v = indicator.value;
+    // Only lockfiles the build installs from count, and the test is presence, not length.
+    assert.match(v, /Count a manager only for a lockfile the build installs from[\s\S]*?, not one under test fixtures, examples, archives or vendored directories/);
+    assert.match(v, /The indicator tests whether any cooldown is in effect, not its length/);
+    assert.match(v, /a `yarn add` or `yarn up` step that passes `--no-time-gate` bypasses Yarn's gate for that step/);
+    assert.match(artifact.source, /any `yarn add` or `yarn up` step that passes `--no-time-gate`/);
+    assert.match(pb.phases.look.artifacts.find((a) => a.id === "repo-lockfiles").source, /package-lock\.json, npm-shrinkwrap\.json, yarn\.lock/);
+    // The rule: effective value per manager, resolved with precedence, versioned default and exclusions.
+    assert.match(v, /Determine the effective cooldown the way that manager resolves its own configuration/);
+    assert.match(v, /for npm: command line, environment, project \.npmrc, user ~\/\.npmrc, global npmrc/);
+    assert.match(v, /the default for the recorded version, and the exclusion list where that version supports one/);
+    assert.match(v, /A value of 0 disables each setting/);
+    assert.match(v, /A setting for a different package manager does not count, and a `before=` date counts only when it is in the past/);
+    assert.match(v, /An exclusion entry that matches a third-party package by name or pattern, for any version, removes the cooldown for that package/);
+    // A version-pinned exclusion admits only versions that are already published.
+    assert.match(v, /an entry pinned to specific versions \(pnpm 10\.19\.0 and later, and Yarn descriptors, accept these\) removes the cooldown only for those versions, so it is a hit when one of them was published within the cooldown window and does not remove the cooldown for later releases/);
+    assert.match(artifact.source, /\.yarnrc\.yml for `npmMinimalAgeGate` \(Yarn 4\.10 and later; Yarn 4\.12 and later default it to `1d`\) and any `npmScopes/);
+    assert.match(artifact.source, /For pnpm and Yarn, also read the user-level and global configuration files and the environment variables each manager documents/);
+    // Yarn's per-scope gate replaces the global one for that scope, including 0.
+    assert.match(artifact.source, /any `npmScopes\.<scope>\.npmMinimalAgeGate`/);
+    assert.match(v, /On Yarn 4\.17 and later, a `npmScopes\.<scope>\.npmMinimalAgeGate` value replaces the global gate for packages in that scope, so a scope set to 0 has no cooldown for its third-party packages; earlier Yarn releases do not read the scoped value/);
+    // packageManager alone does not establish the version the build runs.
+    assert.match(artifact.source, /a `packageManager` field in package\.json does not establish it on its own/);
+    assert.doesNotMatch(artifact.source, /\(the `packageManager` field in package\.json, the version/);
+    assert.match(v, /When the artifact cannot establish the effective value[^.]*, the verdict is inconclusive/);
+    // The reference facts, each with the version that introduced it.
+    assert.match(v, /npm reads `min-release-age` \(days\) from npm 11\.10\.0 and `min-release-age-exclude` from npm 11\.17\.0, applies the exclusion to a `before=` cutoff as well, and does not read `minimumReleaseAge=` in \.npmrc/);
+    assert.match(v, /pnpm reads `minimumReleaseAge` \(minutes\) and `minimumReleaseAgeExclude` from pnpm-workspace\.yaml from pnpm 10\.16\.0, and pnpm 11 defaults `minimumReleaseAge` to 1440/);
+    assert.match(v, /Yarn reads `npmMinimalAgeGate` and `npmPreapprovedPackages` from \.yarnrc\.yml from Yarn 4\.10, where the gate is a number of minutes; Yarn 4\.12 reads it as a duration string and defaults it to `1d`/);
+    // Concrete values for each Yarn form, and the global npmrc among the sources read.
+    assert.match(indicator.description, /`npmMinimalAgeGate: 4320` \(Yarn 4\.10 and 4\.11, in minutes\) or `npmMinimalAgeGate: 3d` \(Yarn 4\.12 or later, a duration\)/);
+    assert.match(artifact.source, /the global npmrc \(the file `npm config get globalconfig` prints/);
+    // The artifact collects what the rule needs.
+    assert.match(artifact.source, /`npmPreapprovedPackages` in \.yarnrc\.yml/);
+    assert.match(artifact.source, /Record the version of each package manager the build runs/);
+    assert.match(artifact.source, /any cooldown setting the CI workflow passes on the command line or in the environment/);
+  });
+
+  test("the cooldown guidance names no setting that npm ignores", () => {
+    for (const [where, text] of [["indicator.value", indicator.value], ["indicator.description", indicator.description], ["artifact.source", artifact.source]]) {
+      assert.doesNotMatch(text, /`before=72h` \(npm|minimumReleaseAge=4320/, where);
+    }
+    assert.match(indicator.description, /`min-release-age=3` in \.npmrc \(npm 11\.10\.0 or later/);
+    assert.match(artifact.source, /npm does not read `minimumReleaseAge=` in \.npmrc/);
+  });
 });
