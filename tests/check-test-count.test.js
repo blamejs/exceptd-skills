@@ -272,6 +272,24 @@ test('a block comment inside a template interpolation hides its tests, and templ
   assert.equal(stripBlockComments("`a /* b */ ${c /* d */} e`"), "`a /* b */ ${c } e`");
 });
 
+test('a regex after break, continue or debugger without a semicolon is code', () => {
+  const { REGEX_CAN_START } = require(path.join(ROOT, 'scripts', 'check-test-count.js'));
+  assert.ok(REGEX_CAN_START.test("while (ok) { break\n"));
+  assert.ok(REGEX_CAN_START.test("continue "));
+  assert.ok(!REGEX_CAN_START.test("obj.break "), "a property named break is not the keyword");
+  const src = [
+    "while (ok) { break",
+    "/`/.test(s); /* disabled:",
+    "test('disabled', () => {});",
+    "*/ }",
+    "test('kept', () => {});",
+  ].join('\n');
+  const { dir, p } = tmpFile('count-asi-break.test.js', src);
+  try {
+    assert.equal(countTests(p), 1);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('an unclosed quote on the last line does not swallow the end of the file', () => {
   const { stripBlockComments } = require(path.join(ROOT, 'scripts', 'check-test-count.js'));
   assert.equal(stripBlockComments("if (a) /it's/; /* gone */ b"), "if (a) /it's/;  b");

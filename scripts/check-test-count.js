@@ -41,7 +41,9 @@ function listTestFiles(dir) {
 // A `/` starts a regex literal, not a division, when the code before it ends in
 // an operator, an opening bracket, a separator or one of these keywords.
 // A keyword after `.` is a property name (`obj.in / 2` divides).
-const REGEX_CAN_START = /(?:^|[(,=:[!&|?{};+\-*%<>~^]|(?<![.\w$])(?:return|typeof|instanceof|in|of|new|delete|void|throw|case|do|else|yield|await))\s*$/;
+// break, continue and debugger take no expression, so a `/` after one starts a
+// new statement even without a semicolon.
+const REGEX_CAN_START = /(?:^|[(,=:[!&|?{};+\-*%<>~^]|(?<![.\w$])(?:return|typeof|instanceof|in|of|new|delete|void|throw|case|do|else|yield|await|break|continue|debugger))\s*$/;
 
 // True when `code` ends in the `)` that closes an if, while, for or with head,
 // after which a `/` starts a regex literal: `if (ok) /it's/.test(s)`.
