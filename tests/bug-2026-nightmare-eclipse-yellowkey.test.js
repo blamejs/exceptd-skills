@@ -11,4 +11,5 @@ test("BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY is present and well-formed in the cat
   assert.ok(e, "BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY must exist in data/cve-catalog.json");
   assert.ok(e.rwep_factors && typeof e.rwep_factors === "object", "carries rwep_factors");
   assert.equal(typeof e.rwep_score, "number", "carries a numeric rwep_score");
+  assert.deepEqual(e.aliases, ["CVE-2026-45585"], "lists Microsoft's CVE as an alias");
 });
