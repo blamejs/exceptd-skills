@@ -5811,7 +5811,8 @@ describe('CSAF product_tree — package name, never the range operator', () => {
         assert.equal(leaf.name, s.affected.split('==')[1].trim(), s.affected);
       } else {
         assert.equal(leaf.category, 'product_version_range', s.affected);
-        assert.match(leaf.name, /^(?:<=|>=|!=|<|>|=)[^\s|]+(?:\|(?:<=|>=|!=|<|>|=)[^\s|]+)*$/, `vls range: ${leaf.name}`);
+        // Each version starts with a non-operator character, so matching stays linear.
+        assert.match(leaf.name, /^(?:<=|>=|!=|<|>|=)[^\s|<>=!][^\s|]*(?:\|(?:<=|>=|!=|<|>|=)[^\s|<>=!][^\s|]*)*$/, `vls range: ${leaf.name}`);
       }
       // Leaf product.name is package/package@<version-range>, never operator-named.
       assert.ok(!/\/(<|<=|>|>=|==|=)@/.test(p.branches[0].product.name),
