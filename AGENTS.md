@@ -215,7 +215,7 @@ Right: "CVSS 7.8 / RWEP 100 — CISA KEV listed, PoC is 732 bytes with no race c
 
 **DR-3: Control existence drift**
 Wrong: "Implement patch management per SI-2."
-Right: "SI-2 requires timely patching. For Copy Fail class LPEs (deterministic, no race condition, public PoC), 'timely' must be operationalized as: live kernel patch within 4 hours, or document compensating controls (seccomp profile + namespace isolation + network isolation) with RWEP justification."
+Right: "SI-2 requires timely patching. For Copy Fail class LPEs (deterministic, no race condition, public PoC), 'timely' must be operationalized as: a live kernel patch within 4 hours where the host's kernel has one, or the fixed kernel and a reboot within that window; where neither is possible, document compensating controls (seccomp profile + namespace isolation, with untrusted users and workloads kept off the host) with RWEP justification."
 
 **DR-4: US-only framework drift**
 Wrong: citing only NIST 800-53 and SOC 2 for a multi-jurisdictional org.

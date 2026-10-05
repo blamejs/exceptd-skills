@@ -99,7 +99,7 @@ It outputs Tier 1 (MVP), Tier 2 (Practical), Tier 3 (Overkill) for that domain �
    # Ubuntu 22.04: linux-image-5.15.0-<patch-revision> (check latest USN)
    ```
 
-2. **Deploy live kernel patches on exposed systems** (same day)
+2. **Deploy live kernel patches on exposed systems whose kernel has one** (same day). A host with no live patch for its kernel (for Copy Fail, OpenShift RHCOS and Ubuntu 25.10 nodes, among others) goes to the fixed kernel and a reboot instead, and until it reboots, keep untrusted users and workloads off it.
    ```bash
    # RHEL: 
    kpatch install [patch-name]
@@ -121,7 +121,7 @@ It outputs Tier 1 (MVP), Tier 2 (Practical), Tier 3 (Overkill) for that domain �
 
 4. **Schedule reboots** for full kernel update at next maintenance window. Document the date.
 
-**Tier 1 is done when:** Every production host is either live-patched, fully patched, or network-isolated with a reboot date scheduled and documented.
+**Tier 1 is done when:** Every production host is either live-patched with the CVE-specific patch confirmed loaded, fully patched and rebooted, or kept free of untrusted users and workloads until a scheduled and documented reboot. Network isolation alone does not stop a local privilege escalation.
 
 **Cost:** Hours of engineer time. No new tooling required.
 
@@ -452,9 +452,9 @@ Each tier diverges from at least one widely-cited framework control because the 
 
 | Tier | Framework / Control | Framework prescription | Tier prescription | Why the framework is insufficient |
 |---|---|---|---|---|
-| MVP | NIST 800-53 SI-2 (Flaw remediation) | "Within organizationally defined time periods" — interpreted across industry as 30 days for critical | Live kernel patch within 4 hours for KEV-listed deterministic LPE (Copy Fail class) | 30 days is an exploitation window, not a security window, for CVE-2026-31431 (RWEP 100, deterministic 732-byte PoC) |
+| MVP | NIST 800-53 SI-2 (Flaw remediation) | "Within organizationally defined time periods" — interpreted across industry as 30 days for critical | Within 4 hours for KEV-listed deterministic LPE (Copy Fail class): a live patch where the host's kernel has one, otherwise the fixed kernel and a reboot, with untrusted users and workloads kept off the host until then | 30 days is an exploitation window, not a security window, for CVE-2026-31431 (RWEP 100, deterministic 732-byte PoC) |
 | MVP | ISO 27001:2022 A.8.8 (Technical vulnerability management) | "Appropriate timescales" — undefined | Same as above — RWEP-indexed, not calendar-indexed | "Appropriate" leaves the operationally critical SLA undefined precisely where definition matters |
-| MVP | PCI DSS 4.0 6.3.3 | Critical patches within 1 month | Same divergence — RWEP >= 70 must be live-patched within hours | 1 month is multiple AI-accelerated exploit cycles |
+| MVP | PCI DSS 4.0 6.3.3 | Critical patches within 1 month | Same divergence — RWEP >= 70 must be live-patched or rebooted into the fixed kernel within hours | 1 month is multiple AI-accelerated exploit cycles |
 | MVP | EU NIS2 Art. 21(2)(f) (vulnerability handling) | "Policies/procedures to assess vulnerability handling measures" | Concrete RWEP-anchored SLA published as policy | "Procedures to assess" is meta-control, not a control |
 | MVP | UK Cyber Essentials | High-risk patches within 14 days | Same divergence — 14 days insufficient for KEV-class deterministic LPE | Better than NIST but still loses to AI-accelerated weaponization |
 | MVP | AU ASD ISM-1877 and ISM-1696 / Essential 8 | 48h patch when a working exploit exists (internet-facing systems at every maturity level, workstations at ML3) | Aligned at the framework level; tier adds live-patch capability requirement | Closest national framework alignment globally; still no live-patch mandate |
