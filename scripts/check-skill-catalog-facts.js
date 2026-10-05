@@ -155,13 +155,16 @@ function patchForm(cell) {
  * pending)"), or when a later Yes follows it ("No (Ubuntu); Yes (RHEL
  * kpatch)"). After a leading No, the negations no, not, none and never restate
  * it ("No (the fix is an IDE upgrade, not a runtime patch)") and do not count as
- * qualifying words.
+ * qualifying words, unless the cell says the answer is not known or not checked
+ * ("No (none known)", "No (not verified)"), which leaves it uncompared.
  */
+const UNCERTAIN = /\b(?:known|verified|confirmed|documented|determined|tested|checked|assessed|evaluated|investigated|sure|certain|clear|unclear|unverified|unconfirmed)\b/i;
 function plainAnswer(cell) {
   const m = /^(yes|no)(?=\s*(?:$|[,;.:(—–]|-\s))/i.exec(cell);
   if (!m) return null;
   const isNo = m[1].toLowerCase() === "no";
   const rest = cell.slice(m[0].length);
+  if (isNo && UNCERTAIN.test(rest)) return null;
   const qualifiers = isNo ? rest.replace(/\b(?:not|no|none|never)\b/gi, " ") : rest;
   if (QUALIFYING.test(qualifiers) || /\byes\b/i.test(rest)) return null;
   return !isNo;

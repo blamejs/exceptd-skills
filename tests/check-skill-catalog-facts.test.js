@@ -438,12 +438,14 @@ test("a live-patch No followed by another negation is compared; a qualifier or a
     "| CVE-2099-0001 | No (live patches cover some distributions' kernels only; no live-patch credit) |",
     "| CVE-2099-0001 | No (none yet; kpatch pending) |",
     "| CVE-2099-0001 | No (not on Ubuntu); Yes (RHEL kpatch) |",
+    "| CVE-2099-0001 | No (none known) |",
+    "| CVE-2099-0001 | No (not verified) |",
     "| CVE-2099-0002 | Yes (not on Ubuntu) |",
     "| CVE-2099-0002 | Yes (kpatch) |",
   ])), [
     '3 CVE-2099-0001: live patch "No (the fix is an IDE upgrade, not a run", catalog live_patch_available true',
     '7 CVE-2099-0001: live patch "No (live patches cover some distribution", catalog live_patch_available true',
-    '23 CVE-2099-0002: live patch "Yes (kpatch)", catalog live_patch_available false',
+    '31 CVE-2099-0002: live patch "Yes (kpatch)", catalog live_patch_available false',
   ]);
 });
 
