@@ -241,11 +241,11 @@
         ],
         "framework_gaps": [
           "Patch SLA undefined — 'timely' interpretation only",
-          "AI systems: not addressed in CAF 4.0",
+          "AI systems: CAF 4.0 covers automated decision-making under B4 (restricting its actions, replicable decisions, auditable machine-learning models), but no contributing outcome names prompt injection, agent tool trust or other LLM-specific attack surfaces",
           "MCP/agent trust: not addressed",
           "PQC: NCSC recommends hybrid post-quantum but CAF does not require it"
         ],
-        "ai_coverage": "AI systems in CNI recommended to apply CAF; no AI-specific objectives",
+        "ai_coverage": "CAF 4.0 adds automated decision-making outcomes to B4.a and B4.b, and its B4 guidance asks that machine-learning models be auditable so malicious changes can be detected; there is no AI-specific objective",
         "pqc_coverage": "NCSC has published PQC migration guidance but it is not CAF-required",
         "theater_risk": "medium — outcome-based framework reduces checkbox risk but lacks AI specificity"
       }

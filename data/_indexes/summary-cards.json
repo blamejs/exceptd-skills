@@ -734,7 +734,7 @@
       "cwe_count": 6,
       "d3fend_count": 3,
       "rfc_count": 0,
-      "last_threat_review": "2026-09-18",
+      "last_threat_review": "2026-10-04",
       "path": "skills/fuzz-testing-strategy/skill.md",
       "handoff_targets": []
     },
@@ -1466,7 +1466,7 @@
       "cwe_count": 4,
       "d3fend_count": 5,
       "rfc_count": 0,
-      "last_threat_review": "2026-09-18",
+      "last_threat_review": "2026-10-04",
       "path": "skills/sector-energy/skill.md",
       "handoff_targets": [
         "ai-attack-surface",
@@ -2170,7 +2170,7 @@
       "cwe_count": 6,
       "d3fend_count": 4,
       "rfc_count": 4,
-      "last_threat_review": "2026-09-28",
+      "last_threat_review": "2026-10-04",
       "path": "skills/idp-incident-response/skill.md",
       "handoff_targets": [
         "ai-attack-surface",

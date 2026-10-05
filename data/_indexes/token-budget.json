@@ -3,8 +3,8 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1771343,
-    "total_approx_tokens": 442840,
+    "total_chars": 1771509,
+    "total_approx_tokens": 442882,
     "skill_count": 51
   },
   "skills": {
@@ -1140,10 +1140,10 @@
     },
     "fuzz-testing-strategy": {
       "path": "skills/fuzz-testing-strategy/skill.md",
-      "bytes": 31312,
-      "chars": 31169,
+      "bytes": 31475,
+      "chars": 31332,
       "lines": 316,
-      "approx_tokens": 7792,
+      "approx_tokens": 7833,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1152,9 +1152,9 @@
           "approx_tokens": 725
         },
         "framework-lag-declaration": {
-          "bytes": 5320,
-          "chars": 5305,
-          "approx_tokens": 1326
+          "bytes": 5483,
+          "chars": 5468,
+          "approx_tokens": 1367
         },
         "ttp-mapping": {
           "bytes": 2066,
@@ -2460,10 +2460,10 @@
     },
     "idp-incident-response": {
       "path": "skills/idp-incident-response/skill.md",
-      "bytes": 46107,
-      "chars": 45981,
+      "bytes": 46110,
+      "chars": 45984,
       "lines": 350,
-      "approx_tokens": 11495,
+      "approx_tokens": 11496,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2472,9 +2472,9 @@
           "approx_tokens": 1454
         },
         "framework-lag-declaration": {
-          "bytes": 6697,
-          "chars": 6695,
-          "approx_tokens": 1674
+          "bytes": 6700,
+          "chars": 6698,
+          "approx_tokens": 1675
         },
         "ttp-mapping": {
           "bytes": 4079,

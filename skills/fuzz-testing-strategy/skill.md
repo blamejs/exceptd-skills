@@ -44,7 +44,7 @@ d3fend_refs:
   - D3-EAL
   - D3-IOPR
   - D3-PSEP
-last_threat_review: "2026-09-18"
+last_threat_review: "2026-10-04"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief fuzz-testing-strategy` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
@@ -79,7 +79,7 @@ By mid-2026 the asymmetry between offensive and defensive fuzzing has flipped. T
 | ISO 27001:2022 | A.8.29 (Security testing in development and acceptance) | "Security testing processes shall be defined" — method-agnostic | The standard is deliberately method-agnostic. An org can document "we run a SAST scanner quarterly" and pass A.8.29 audit. No fuzz, no coverage measurement, no AI-augmented testing required. |
 | EU NIS2 Directive | Art. 21(2)(e) — "policies and procedures to assess the effectiveness of cybersecurity risk-management measures" | Essential and important entities must test the effectiveness of their risk-management measures | "Test the effectiveness" is undefined at the technique level. National implementations (e.g., Germany BSI, Italy ACN) do not operationalize fuzz as a required measure. An entity can pass Art. 21 audit with scanner-only testing. |
 | EU Cyber Resilience Act (CRA) | Annex I §1(2)(b), §2 | Products with digital elements must "deliver security updates" and be "designed, developed, produced to ensure an appropriate level of cybersecurity" | The CRA's "appropriate level" language has no technique floor. Annex I requires vulnerability testing but does not mandate fuzz. Conformance assessment under the harmonized standards (in draft as of mid-2026) is unlikely to mandate continuous fuzz before publication. |
-| UK NCSC CAF (Cyber Assessment Framework) v3.2 | Principle B4 (System Security), Objective B4.b (Secure Configuration) | OES / RDP entities must "secure their networked systems and data" | CAF B4 is outcome-focused. No technique-level fuzz requirement. CAF Indicators of Good Practice (IGPs) mention "rigorous testing" without operationalizing fuzz. |
+| UK NCSC CAF (Cyber Assessment Framework) v4.0 | Principle B4 (System Security), Objective B4.b (Secure Configuration); A4.b (Secure Software Development and Support) | OES / RDP entities must "secure their networked systems and data" | CAF B4 is outcome-focused. No technique-level fuzz requirement. A4.b, added in v4.0, expects a testing regime that "uses a range of different approaches (e.g. static and dynamic analysis, unit and integration testing and point in time assessments)" but does not name fuzzing. |
 | Australia ASD Essential 8 | Application Control (ML1–ML3), Patch Applications (ML1–ML3) | Pre-execution control of binaries; rapid patching of known vulns | Essential 8 is post-disclosure. No pre-disclosure-via-fuzz requirement. The ASD ISM control 1235 (development) is method-agnostic, identical failure mode to ISO A.8.29. |
 | EU AI Act | Art. 15 (Accuracy, robustness and cybersecurity for high-risk AI) | High-risk AI systems must "achieve an appropriate level of accuracy, robustness and cybersecurity" and be "resilient against attempts by unauthorised third parties to alter their use, outputs or performance" | Robustness is operationalized in the draft harmonized standards as "adversarial robustness testing" — but does not mandate continuous prompt-fuzz, does not name PromptBench / garak / equivalent, and provides no coverage metric. An obligor can ship an LLM-fronted product with zero adversarial-input fuzz and claim Art. 15 conformance via point-in-time red-team evidence. |
 

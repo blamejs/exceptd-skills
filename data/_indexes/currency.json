@@ -177,8 +177,8 @@
     },
     {
       "skill": "fuzz-testing-strategy",
-      "last_threat_review": "2026-09-18",
-      "days_since_review": -126,
+      "last_threat_review": "2026-10-04",
+      "days_since_review": -142,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 4,
@@ -204,8 +204,8 @@
     },
     {
       "skill": "idp-incident-response",
-      "last_threat_review": "2026-09-28",
-      "days_since_review": -136,
+      "last_threat_review": "2026-10-04",
+      "days_since_review": -142,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 11,
@@ -348,8 +348,8 @@
     },
     {
       "skill": "sector-energy",
-      "last_threat_review": "2026-09-18",
-      "days_since_review": -126,
+      "last_threat_review": "2026-10-04",
+      "days_since_review": -142,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 8,

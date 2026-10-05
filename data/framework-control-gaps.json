@@ -9291,7 +9291,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-A1": {
-    "framework": "UK NCSC Cyber Assessment Framework v3.2",
+    "framework": "UK NCSC Cyber Assessment Framework v4.0",
     "control_id": "Objective A — Principle A1",
     "control_name": "Governance",
     "designed_for": "Operators of essential services and critical national infrastructure; sets a board-level governance expectation for cyber risk management",
@@ -9330,7 +9330,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-B2": {
-    "framework": "UK NCSC Cyber Assessment Framework v3.2",
+    "framework": "UK NCSC Cyber Assessment Framework v4.0",
     "control_id": "Objective B — Principle B2",
     "control_name": "Identity and access control",
     "designed_for": "Restricting access to systems and data to authorised users, devices, and systems",
@@ -9611,7 +9611,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-C1": {
-    "framework": "UK NCSC Cyber Assessment Framework v3.2",
+    "framework": "UK NCSC Cyber Assessment Framework v4.0",
     "control_id": "Objective C — Principle C1",
     "control_name": "Security monitoring",
     "designed_for": "Detecting and analysing events that may indicate a cybersecurity incident on the operator's essential function",
@@ -9753,7 +9753,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-D1": {
-    "framework": "UK NCSC Cyber Assessment Framework v3.2",
+    "framework": "UK NCSC Cyber Assessment Framework v4.0",
     "control_id": "Objective D — Principle D1",
     "control_name": "Response and recovery planning",
     "designed_for": "Maintaining the ability to respond and recover from cybersecurity incidents affecting the operator's essential function",
@@ -10015,7 +10015,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-B5": {
-    "framework": "UK NCSC Cyber Assessment Framework",
+    "framework": "UK NCSC Cyber Assessment Framework v4.0",
     "control_id": "Principle-B5",
     "control_name": "Resilient networks and systems",
     "designed_for": "NCSC Cyber Assessment Framework Principle B5 — outcome-tested network resilience for essential service operators (incl. telecom under TSA 2021).",
@@ -10310,16 +10310,16 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-B2-IdP-Tenant": {
-    "framework": "UK NCSC Cyber Assessment Framework",
-    "control_id": "B2.b",
+    "framework": "UK NCSC Cyber Assessment Framework v4.0",
+    "control_id": "B2.d",
     "control_name": "Identity and Access Control — IdP-tenant control-plane extension",
-    "designed_for": "NCSC CAF Principle B2 (Identity and Access Control), outcome B2.b — effectively managing identity and access for the essential function.",
+    "designed_for": "NCSC CAF Principle B2 (Identity and Access Control), outcome B2.d (Identity and Access Management): you closely manage and maintain identity and access control for users, devices and systems accessing the network and information systems that support the essential function.",
     "misses": [
-      "B2.b is outcome-based against the IdP tenant's published authentication outcomes",
+      "B2.d is outcome-based against the IdP tenant's published authentication outcomes",
       "The IdP-tenant control plane (who modified the tenant configuration itself) is outside the outcome's typical evidence surface",
-      "A compromised tenant continues to produce compliant B2.b outcomes until the attacker abandons stealth"
+      "A compromised tenant continues to produce compliant B2.d outcomes until the attacker abandons stealth"
     ],
-    "real_requirement": "Extend B2.b outcome assessment to the IdP-tenant control plane: federated-trust integrity, consent-grant inventory, privileged-role-assignment audit, management-API-token inventory, break-glass authentication alerting.",
+    "real_requirement": "Extend B2.d outcome assessment to the IdP-tenant control plane: federated-trust integrity, consent-grant inventory, privileged-role-assignment audit, management-API-token inventory, break-glass authentication alerting.",
     "status": "open",
     "opened_date": "2026-05-15",
     "evidence_cves": [],
@@ -10686,7 +10686,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-B2-Cloud-IAM": {
-    "framework": "UK NCSC Cyber Assessment Framework v3.x",
+    "framework": "UK NCSC Cyber Assessment Framework v4.0",
     "control_id": "B2",
     "control_name": "Identity and Access Control",
     "designed_for": "NCSC CAF outcome that access to networks and information systems supporting the essential function is appropriately controlled",
@@ -12331,7 +12331,7 @@
     }
   },
   "UK-CAF-B4": {
-    "framework": "UK NCSC Cyber Assessment Framework",
+    "framework": "UK NCSC Cyber Assessment Framework v4.0",
     "control_id": "B4",
     "control_name": "System security",
     "designed_for": "Principle B4 — networks and information systems supporting essential functions are protected against attack. Covers secure configuration, secure architecture, and the management of vulnerabilities in deployed systems.",
