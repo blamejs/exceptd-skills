@@ -355,6 +355,45 @@ test('resolveCatalogKey returns the own key, the alias owner, or null', () => {
   assert.equal(resolveCatalogKey(null, 'CVE-2099-0001'), null);
 });
 
+// --- authoring validators -------------------------------------------------------
+
+test('the skill linter accepts a body citation of an aliased CVE and rejects an unknown one', () => {
+  const lint = require('../lib/lint-skills');
+  const src = fs.readFileSync(path.join(ROOT, 'skills', 'decompression-dos', 'skill.md'), 'utf8');
+  return withCache((dir) => {
+    const file = path.join(dir, 'skill.md');
+    fs.writeFileSync(file, `${src}\nSee CVE-2026-45585 and CVE-2099-0404.\n`);
+    const r = lint.lintSkill({ name: 'decompression-dos', path: path.relative(ROOT, file) }, lint.loadContext());
+    const cites = (id) => r.errors.some((e) => e.includes(`"${id}"`));
+    assert.equal(cites('CVE-2026-45585'), false, 'an aliased CVE resolves to its entry');
+    assert.equal(cites('CVE-2099-0404'), true, 'an unknown CVE is still an error');
+  });
+});
+
+test('the playbook validator resolves an aliased CVE in cve_refs', () => {
+  const vp = require('../lib/validate-playbooks');
+  const ctx = vp.loadContext();
+  assert.ok(ctx.cveKeys.has('CVE-2026-45585'), 'aliases are in the CVE key set');
+  assert.ok(ctx.cveKeys.has('BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY'), 'catalog keys still are');
+  assert.ok(!ctx.cveKeys.has('CVE-2099-0404'));
+});
+
+test('the GHSA source proposes no new entry for an aliased CVE', async () => {
+  const ghsaFix = path.join(ROOT, 'tests', 'fixtures', 'ghsa-cve-2026-45321.json');
+  const saved = process.env.EXCEPTD_GHSA_FIXTURE;
+  process.env.EXCEPTD_GHSA_FIXTURE = ghsaFix;
+  try {
+    const plain = await ALL_SOURCES.ghsa.fetchDiff({ cveCatalog: {} });
+    const advertised = plain.diffs.map((d) => d.id);
+    assert.ok(advertised.length > 0, 'the fixture yields at least one new-entry diff');
+    const target = advertised[0];
+    const aliased = await ALL_SOURCES.ghsa.fetchDiff({ cveCatalog: { 'BUG-2099-X': { aliases: [target] } } });
+    assert.ok(!aliased.diffs.some((d) => d.id === target), `${target} is cataloged as an alias, so no draft is proposed`);
+  } finally {
+    if (saved === undefined) delete process.env.EXCEPTD_GHSA_FIXTURE; else process.env.EXCEPTD_GHSA_FIXTURE = saved;
+  }
+});
+
 // --- validate-cves --------------------------------------------------------------
 
 test('validate-cves --offline lists an aliased CVE with * and names its entry', () => {
