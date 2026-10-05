@@ -266,7 +266,8 @@ CVE-2026-43284/43500 response are already mitigated for Fragnesia.
 1. Compensating controls (reduce blast radius, do not eliminate exposure):
    - Seccomp profile restricting `userfaultfd`, `TIOCCONS`, and page-cache-adjacent syscalls
    - User namespace restrictions (`sysctl -w kernel.unprivileged_userns_clone=0` where supported)
-   - Network-level isolation of affected hosts
+   - Untrusted users and workloads kept off the host until it reboots into the fixed kernel
+   - Network-level isolation of affected hosts, which limits what an attacker reaches after gaining root but does not stop a local user or workload from exploiting the flaw
    - Enhanced monitoring: eBPF/auditd rules for exploitation patterns (see detection section)
 2. Document as open risk with compensating controls and reboot timeline
 3. CISA KEV listing requires documented remediation or mitigation with timeline
@@ -381,7 +382,7 @@ Maps the kernel LPE findings above to MITRE D3FEND techniques with explicit defe
 | **D3-SCP** (System Call Filtering) | Per-container / per-workload seccomp profile blocks the syscalls Copy Fail abuses (`userfaultfd`, `process_vm_writev`, `pwritev2`) without requiring kernel patch. For container-escape variants (T1611 — Copy Fail in a privileged container), this is the only viable runtime mitigation between KEV-listing and the next reboot window. | Layer 2 (Isolate — runtime syscall gate). | Per-container — runtime profile is the principal scope. | Define a default-deny seccomp baseline; the host kernel patch is necessary but seccomp is the per-workload extension that survives an unpatched kernel during the live-patch deployment window. |
 | **D3-PA** (Process Analysis) | Detects post-exploit anomalies — root shell spawned by previously-unprivileged process, suid-binary creation, capability escalation — that follow a Copy Fail-class write. The auditd and Falco / Tetragon rules in the Detection Rules section above are the D3-PA enforcement layer. | Layer 5 (Detect). | Per-host — SOC / EDR ingest the audit stream. | Continuously evaluate process lineage; alert on uid transitions, capability gains, or suid mounts that don't appear in the baseline. |
 
-**Defense-in-depth posture:** the live-patch is the closure; the five D3FEND techniques above are the layers that must remain active *during* the live-patch deployment window. A SOC claiming "we have EDR" is at one D3FEND layer (D3-PA) for a six-layer-deep finding — the harden / isolate / detect stack collapses to a detect-only posture, and a kernel-write primitive that succeeds before EDR fires is unrecoverable. In ephemeral / serverless contexts, D3-PSEP / D3-EAL / D3-SCP / D3-PHRA are configured at image build time; the host-kernel layer remains the CSP's responsibility for managed runtimes, with the consumer responsible for the guest-OS posture on IaaS workloads.
+**Defense-in-depth posture:** the closure is a live patch where the host's kernel has one, or the fixed kernel after a reboot; the five D3FEND techniques above are the layers that must remain active *during* the live-patch deployment or reboot window. A SOC claiming "we have EDR" is at one D3FEND layer (D3-PA) for a six-layer-deep finding — the harden / isolate / detect stack collapses to a detect-only posture, and a kernel-write primitive that succeeds before EDR fires is unrecoverable. In ephemeral / serverless contexts, D3-PSEP / D3-EAL / D3-SCP / D3-PHRA are configured at image build time; the host-kernel layer remains the CSP's responsibility for managed runtimes, with the consumer responsible for the guest-OS posture on IaaS workloads.
 
 ---
 

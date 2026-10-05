@@ -73,7 +73,7 @@ The defensive side has not caught up. Most SOCs maintain an ATT&CK heatmap (cove
 
 Concrete examples from this project's catalogs:
 
-- **Copy Fail (CVE-2026-31431).** Offensive: T1068 + AML.T0017. Defensive map produced by this skill: D3-EAL (Harden), D3-EHB (Harden), D3-SCP (Isolate), D3-PHRA (Isolate), D3-PA (Detect), plus the live-patch path under `kernel-lpe-triage`. A SOC claiming "we have EDR" is at one D3FEND layer for a five-layer-deep finding.
+- **Copy Fail (CVE-2026-31431).** Offensive: T1068 + AML.T0017. Defensive map produced by this skill: D3-EAL (Harden), D3-EHB (Harden), D3-SCP (Isolate), D3-PHRA (Isolate), D3-PA (Detect), plus the live-patch or fixed-kernel reboot path under `kernel-lpe-triage`. A SOC claiming "we have EDR" is at one D3FEND layer for a five-layer-deep finding.
 - **Windsurf MCP RCE (CVE-2026-30615).** Offensive: AML.T0010 + AML.T0096 + T1195.001. Defensive map: D3-EHB (binary hash pinning, primary), D3-EAL (executable allowlist on the MCP runtime), D3-NTA (network traffic analysis on egress from the dev workstation), D3-CSPP (payload profiling on MCP JSON-RPC calls), D3-IOPR (I/O profiling of tool invocations). Five D3FEND IDs spanning Harden / Isolate / Detect — the depth most "we trust our IDE plugins" defenses lack.
 - **SesameOp AI-as-C2 campaign.** Offensive: AML.T0096 + T1071 + T1102. Defensive map: D3-NTA + D3-CSPP on Azure OpenAI egress, D3-DA (Domain Analysis) for the C2 domain set, D3-NTPM (Network Traffic Policy Mapping) to model legitimate-versus-anomalous LLM API usage, D3-RPA (Remote Process Analysis) on the calling host. The Detect tactic dominates here because Harden does not apply to a covert channel riding legitimate API traffic — which is itself a finding worth surfacing.
 
