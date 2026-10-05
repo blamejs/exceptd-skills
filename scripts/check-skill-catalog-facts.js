@@ -156,9 +156,11 @@ function patchForm(cell) {
  * kpatch)"). After a leading No, the negations no, not, none and never restate
  * it ("No (the fix is an IDE upgrade, not a runtime patch)") and do not count as
  * qualifying words, unless the cell says the answer is not known or not checked
- * ("No (none known)", "No (not verified)"), which leaves it uncompared.
+ * ("No (none known)", "No (not verified)", "No (unconfirmed)"), which leaves it
+ * uncompared. A certainty word on its own ("No (confirmed absent on every
+ * affected build)") does not.
  */
-const UNCERTAIN = /\b(?:known|verified|confirmed|documented|determined|tested|checked|assessed|evaluated|investigated|sure|certain|clear|unclear|unverified|unconfirmed)\b/i;
+const UNCERTAIN = /\b(?:not|none|no|never|nothing)\s+(?:(?:yet|been|fully|publicly|independently)\s+){0,2}(?:known|verified|confirmed|documented|determined|tested|checked|assessed|evaluated|investigated|reported|sure|certain|clear)\b|\b(?:unknown|unclear|unverified|unconfirmed|uncertain|untested|unassessed)\b/i;
 function plainAnswer(cell) {
   const m = /^(yes|no)(?=\s*(?:$|[,;.:(—–]|-\s))/i.exec(cell);
   if (!m) return null;
