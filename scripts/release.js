@@ -264,6 +264,7 @@ function _botFindings(prNum) {
   }
   var comments = ndjson("issue-comment", ["api", "repos/:owner/:repo/issues/" + prNum + "/comments", "--paginate",
     "--jq", ".[] | {id, login: .user.login, body, created_at, html_url}"]);
+  // The REST issue-reactions response carries created_at on each reaction.
   var reactions = ndjson("reaction", ["api", "repos/:owner/:repo/issues/" + prNum + "/reactions", "--paginate",
     "--jq", ".[] | {login: .user.login, content, created_at}"]);
   var ack = String(process.env.RELEASE_ACK_BOT_COMMENTS || "").split(",").map(function (s) { return s.trim(); }).filter(Boolean);
