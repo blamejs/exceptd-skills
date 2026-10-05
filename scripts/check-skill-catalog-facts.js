@@ -37,8 +37,17 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const { cveLookupTargets } = require("../lib/catalog-ids.js");
 
 const ROOT = path.resolve(__dirname, "..");
+
+// The catalog as the checker reads it: each CVE id an entry lists in aliases[]
+// also names that entry, so a skill line citing the alias is compared with it.
+function withAliases(catalog) {
+  const view = Object.assign(Object.create(null), catalog);
+  for (const t of cveLookupTargets(catalog)) if (t.alias && !(t.cveId in view)) view[t.cveId] = catalog[t.key];
+  return view;
+}
 const CVE = /CVE-\d{4}-\d{4,}/g;
 const DATE = /\d{4}-\d{2}-\d{2}/;
 
@@ -368,7 +377,8 @@ function compareFactorRow(cells, rawHeader, e, say) {
   return true;
 }
 
-function checkSkill(file, catalog) {
+function checkSkill(file, rawCatalog) {
+  const catalog = withAliases(rawCatalog);
   const seen = new Set();
   const failures = [];
   // Each failure carries the order in which it was found, so failures held back
