@@ -3,8 +3,8 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1773468,
-    "total_approx_tokens": 443371,
+    "total_chars": 1773647,
+    "total_approx_tokens": 443415,
     "skill_count": 51
   },
   "skills": {
@@ -520,10 +520,10 @@
     },
     "policy-exception-gen": {
       "path": "skills/policy-exception-gen/skill.md",
-      "bytes": 37134,
-      "chars": 37022,
+      "bytes": 37311,
+      "chars": 37201,
       "lines": 479,
-      "approx_tokens": 9256,
+      "approx_tokens": 9300,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -547,14 +547,14 @@
           "approx_tokens": 487
         },
         "exploit-availability-matrix": {
-          "bytes": 2114,
-          "chars": 2100,
-          "approx_tokens": 525
+          "bytes": 2182,
+          "chars": 2170,
+          "approx_tokens": 543
         },
         "exception-template-library": {
-          "bytes": 13218,
-          "chars": 13194,
-          "approx_tokens": 3299
+          "bytes": 13327,
+          "chars": 13303,
+          "approx_tokens": 3326
         },
         "analysis-procedure": {
           "bytes": 1545,

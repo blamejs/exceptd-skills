@@ -211,7 +211,7 @@ Right: "SOC 2 CC6.1 defines logical access controls for on-prem/cloud IAM. It do
 
 **DR-2: CVSS-as-risk drift**
 Wrong: "CVSS 7.8 High — remediate within 30 days."
-Right: "CVSS 7.8 / RWEP 100 — CISA KEV listed, PoC is 732 bytes with no race condition, AI-discovered, blast radius spans all Linux >= 4.14. 30-day window is inapplicable. Live kernel patch within 4 hours or isolate at network layer immediately."
+Right: "CVSS 7.8 / RWEP 100 — CISA KEV listed, PoC is 732 bytes with no race condition, AI-discovered, blast radius spans all Linux >= 4.14. 30-day window is inapplicable. Within 4 hours, load the vendor live patch where the host's kernel has one, or upgrade to the fixed kernel and reboot; until a host is fixed, keep untrusted users and workloads off it, since network isolation does not stop a local privilege escalation."
 
 **DR-3: Control existence drift**
 Wrong: "Implement patch management per SI-2."

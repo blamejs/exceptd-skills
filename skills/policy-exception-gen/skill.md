@@ -109,7 +109,7 @@ For each residual TTP an exception leaves in scope, the compensating control bun
 
 | Residual TTP | Evidence CVE / class | CVSS | RWEP tier | KEV | Public PoC | AI-accelerated | Live-patchable | Implication for compensating bundle |
 |---|---|---|---|---|---|---|---|---|
-| T1068 (Privilege Escalation — Copy Fail class) | CVE-2026-31431 | 7.8 | 100 | Yes (2026-05-01) | Yes (732 bytes, deterministic) | Yes | No (some distributions' kernels only; no live-patch credit) | Live patch within 4 hours OR network isolation — anything weaker is non-defensible |
+| T1068 (Privilege Escalation — Copy Fail class) | CVE-2026-31431 | 7.8 | 100 | Yes (2026-05-01) | Yes (732 bytes, deterministic) | Yes | No (some distributions' kernels only; no live-patch credit) | Live patch within 4 hours where the kernel has one, OR the fixed kernel and a reboot; network isolation alone does not stop a local privilege escalation |
 | T1190 (Exploit Public-Facing Application — IPsec subsystem) | CVE-2026-43284 (Dirty Frag) | 8.8 | 53 | No | Yes (chain component) | Yes (AI-assisted discovery) | Limited (kpatch RHEL-only) | eBPF kernel-text integrity monitoring + maintenance-window reboot SLA |
 | AML.T0051 (LLM Prompt Injection — emergent on model upgrade) | CVE-2025-53773 (Copilot YOLO-mode RCE) | 7.8 (AV:L) | 30 | No | Yes | Yes | Yes (SaaS push / IDE update) | Behavioral regression suite + system-prompt hardening + tool allowlist |
 | AML.T0010 (ML Supply Chain Compromise — MCP) | CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 (AV:L) | 35 | No | Yes | No | Yes (IDE update) | MCP server allowlist + signed-manifest enforcement + per-server auth |
@@ -334,7 +334,7 @@ This is not a reason to leave systems unpatched — it is a reason to require li
 3. Network isolation: if live patch is not available for the specific CVE, network-level isolation of affected systems.
 4. Maintenance window scheduled: specific date/time documented. Patch + reboot completed at that window closes the exception.
 
-**For CISA KEV class (Copy Fail CVE-2026-31431):** This exception is only valid if live patch has been deployed. If live patch is not available and the system cannot be rebooted: isolate at the network layer until the reboot window, and escalate to risk committee as an open CISA KEV with no adequate compensating control.
+**For CISA KEV class (Copy Fail CVE-2026-31431):** This exception is only valid if live patch has been deployed. If no live patch is available for the host's kernel and the system cannot be rebooted, keep untrusted users and workloads off the host until the reboot window (network isolation alone does not stop a local privilege escalation), and escalate to risk committee as an open CISA KEV with no adequate compensating control.
 
 **Exception language:**
 ```
