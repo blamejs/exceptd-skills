@@ -1877,7 +1877,7 @@
         "adequacy": "Detection only; race is running by the time auditd fires. Mitigates post-exploitation cleanup, not exfil itself."
       },
       "response": {
-        "what_would_have_worked": "Rotate SSH host keys + /etc/shadow on hosts with observed pidfd_getfd anomalies in disclosure window. Patch + reboot (kernel point releases 7.0.8 / 6.18.31 / 6.12.89 / 6.6.139 / 6.1.173 / 5.15.207 / 5.10.256). KernelCare livepatch when released.",
+        "what_would_have_worked": "Rotate SSH host keys + /etc/shadow on hosts with observed pidfd_getfd anomalies in disclosure window. Patch + reboot (kernel point releases 7.0.8 / 6.18.31 / 6.12.89 / 6.6.139 / 6.1.173 / 5.15.207 / 5.10.256). A host that cannot reboot can apply a live patch: KernelCare published its EL9 livepatch to the main feed on 2026-05-18, and Red Hat issued kpatch-patch updates from 2026-06-04 (RHSA-2026:23470 for RHEL 8.10, RHSA-2026:23468 for RHEL 9.6 EUS).",
         "was_this_required": false,
         "framework_requiring_it": null,
         "adequacy": "Host-key rotation is non-trivial in fleet ops — SSH known_hosts trust graph fragments. Most operators patch + accept residual window between disclosure and reboot scheduling."
