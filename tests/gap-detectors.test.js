@@ -1307,7 +1307,7 @@ test("shipped catalogs: extended-detector budgets (no silent regression on v0.13
     "operator-action-sla": 0,     // no entries currently exceed the SLA window
     "unused-orphan": 1400,        // bulk-imported CWE / RFC orphans by design
     "pipeline-wording": 0,        // lesson and catalog texts citing the curation input; none remain
-    "import-stub": 1370           // KEV import-draft placeholder text left in curated entries
+    "import-stub": 0              // KEV import-draft placeholder text left in curated entries; none remain
   };
   // Classes whose budget is the current count, so curating findings away
   // lowers the budget in the same release.
