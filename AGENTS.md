@@ -127,8 +127,8 @@ Operator asks: "is this host vulnerable to Copy Fail?" AI invokes `node lib/play
 2. **direct** emits threat_context anchored on real 2026 kernel CVEs and rwep_threshold bands 90 (live-patch) / 70 (urgent) / 30 (scheduled).
 3. **look** directs the AI to capture `uname -r` and `/etc/os-release`; AI uses Bash to read both and submits `artifacts: { kernel_version: { value: "5.15.0-101-generic", captured: true }, os_release: { value: "Ubuntu 22.04.4 LTS", captured: true } }`.
 4. **detect** evaluates the `kver-in-affected-range` indicator; AI confirms 5.15.0 falls in the affected range and submits `signal_overrides: { 'kver-in-affected-range': 'hit' }` after running its false-positive checks; the playbook classifies the host as "detected".
-5. **analyze** matches three cataloged CVEs (including CVE-2026-31431, KEV-listed, RWEP 90), computes `blast_radius_score=3`, runs the theater check and returns `verdict=theater` (paper SI-2 compliance does not address sub-hour live-patch reality).
-6. **validate** selects remediation path `live-patch-deploy` (priority 1) over `kernel-upgrade` (priority 2), returns validation_tests and a residual_risk_statement.
+5. **analyze** matches three cataloged CVEs (including CVE-2026-31431, KEV-listed, RWEP 100), computes `blast_radius_score=3`, runs the theater check and returns `verdict=theater` (paper SI-2 compliance does not address sub-hour live-patch reality).
+6. **validate** selects remediation path `scheduled-kernel-upgrade` (priority 2). `live-patch-deploy` (priority 1) requires its preconditions, and the operator has not confirmed `livepatch_available_for_cve` and `host_supports_livepatch` for this host; with both submitted as true, validate selects `live-patch-deploy`. It returns validation_tests and a residual_risk_statement.
 7. **close** emits a signed CSAF-2.0 evidence_package, draft NIS2 (24h from operator-confirmed detection time) and DORA (4h from same anchor) notification text, and a learning_loop lesson queued for `data/zeroday-lessons.json`.
 
 AI shows the operator both notification drafts and asks whether to persist the evidence_package — does not auto-send either.
@@ -211,11 +211,11 @@ Right: "SOC 2 CC6.1 defines logical access controls for on-prem/cloud IAM. It do
 
 **DR-2: CVSS-as-risk drift**
 Wrong: "CVSS 7.8 High — remediate within 30 days."
-Right: "CVSS 7.8 / RWEP 90 — CISA KEV listed, PoC is 732 bytes with no race condition, AI-discovered, blast radius spans all Linux >= 4.14. 30-day window is inapplicable. Live kernel patch within 4 hours or isolate at network layer immediately."
+Right: "CVSS 7.8 / RWEP 100 — CISA KEV listed, PoC is 732 bytes with no race condition, AI-discovered, blast radius spans all Linux >= 4.14. 30-day window is inapplicable. Within 4 hours, load the vendor live patch where the host's kernel has one, or upgrade to the fixed kernel and reboot; until a host is fixed, keep untrusted users and workloads off it, since network isolation does not stop a local privilege escalation."
 
 **DR-3: Control existence drift**
 Wrong: "Implement patch management per SI-2."
-Right: "SI-2 requires timely patching. For Copy Fail class LPEs (deterministic, no race condition, public PoC), 'timely' must be operationalized as: live kernel patch within 4 hours, or document compensating controls (seccomp profile + namespace isolation + network isolation) with RWEP justification."
+Right: "SI-2 requires timely patching. For Copy Fail class LPEs (deterministic, no race condition, public PoC), 'timely' must be operationalized as: a live kernel patch within 4 hours where the host's kernel has one, or the fixed kernel and a reboot within that window; where neither is possible, document compensating controls (seccomp profile + namespace isolation, with untrusted users and workloads kept off the host) with RWEP justification."
 
 **DR-4: US-only framework drift**
 Wrong: citing only NIST 800-53 and SOC 2 for a multi-jurisdictional org.

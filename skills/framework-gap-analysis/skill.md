@@ -79,7 +79,7 @@ This skill maps framework controls to attacker TTPs on demand rather than static
 |---|---|---|
 | NIST 800-53 SI-2 vs. deterministic LPE | T1068 (Exploitation for Privilege Escalation), T1548.001 | Patch SLA permits active exploitation window |
 | NIST 800-53 SC-8/SC-28 vs. Dirty Frag | T1190 (Exploit Public-Facing Application) via IPsec subsystem | Cryptographic control is the attack surface |
-| NIST 800-53 SI-2 vs. Fragnesia (Dirty Frag sequel) | T1068 (Exploitation for Privilege Escalation) via XFRM ESP-in-TCP skb coalesce | Patch SLA assumes patches close bug families; the Dirty Frag patch introduced this sibling bug |
+| NIST 800-53 SI-2 vs. Fragnesia (Dirty Frag sequel) | T1068 (Exploitation for Privilege Escalation) via XFRM ESP-in-TCP skb coalesce | Patch SLA assumes patches close bug families; the Dirty Frag fix made this older sibling bug exploitable |
 | NIST 800-53 AC-2 vs. prompt injection | AML.T0051 (LLM Prompt Injection), AML.T0054 | Authorized identity executes attacker intent |
 | NIST 800-53 SI-3 vs. AI-generated malware | AML.T0016 (adversary Obtain Capabilities, payload generation), AML.T0018 | Signature-based detection has zero coverage |
 | ISO 27001 A.8.8 vs. CISA KEV class | T1068, T1203 | "Appropriate timescales" undefined for AI-accelerated weaponization |
@@ -96,9 +96,9 @@ This skill consumes the matrix produced upstream by the exploit-scoring skill. T
 
 | CVE | CVSS | RWEP | KEV | Public PoC | AI-accelerated | Live-patchable | Active exploitation |
 |---|---|---|---|---|---|---|---|
-| CVE-2026-31431 (Copy Fail) | 7.8 | 90 | Yes (2026-05-01) | Yes (732 bytes, deterministic) | Yes (AI-discovered) | Yes (kpatch/livepatch) | Confirmed |
+| CVE-2026-31431 (Copy Fail) | 7.8 | 100 | Yes (2026-05-01) | Yes (732 bytes, deterministic) | Yes (AI-discovered) | No (live patches cover some distributions' kernels only; the entry takes zero live-patch credit) | Confirmed |
 | CVE-2026-43284 (Dirty Frag) | 8.8 | 53 | No | Yes (chain component) | Yes (AI-assisted discovery) | Limited (kpatch RHEL-only) | Suspected |
-| CVE-2026-46300 (Fragnesia) | 7.8 | 35 (60 if KEV-listed) | No (candidate) | Yes (one-liner vs /usr/bin/su) | Yes (AI-assisted discovery) | Yes (kpatch / canonical-livepatch / KernelCare) | None observed |
+| CVE-2026-46300 (Fragnesia) | 7.8 | 50 (75 if KEV-listed) | No | Yes (one-liner vs /usr/bin/su) | Yes (AI-assisted discovery) | No (live patches cover some distributions' kernels only; the entry takes zero live-patch credit) | None observed |
 | CVE-2025-53773 (Copilot YOLO-mode RCE) | 7.8 | 30 | No | Yes (demonstrated) | Yes (AI tooling enables) | Yes (SaaS push / IDE update) | Suspected |
 | CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 | 35 | No | Yes | No | Yes (IDE update) | Suspected |
 
@@ -132,7 +132,7 @@ The following gaps are documented with evidence. When a control from this list i
 
 **Fails for:**
 - CVE-2026-43284/CVE-2026-43500 (Dirty Frag): The exploit runs through the IPsec implementation. A system using IPsec to satisfy SC-8 compliance cannot claim IPsec as a compensating control for Dirty Frag — the control is the attack surface.
-- CVE-2026-46300 (Fragnesia): Same class as Dirty Frag — page-cache corruption via XFRM ESP-in-TCP skb coalescing. Introduced by the Dirty Frag patch. SC-8 IPsec-based compliance is invalidated identically; operators who removed the Dirty Frag `blacklist esp4 / esp6 / rxrpc` mitigation when that patch landed re-opened the IPsec attack surface for Fragnesia.
+- CVE-2026-46300 (Fragnesia): Same class as Dirty Frag — page-cache corruption via XFRM ESP-in-TCP skb coalescing. The coalescing defect dates from Linux 3.9 and became exploitable after the Dirty Frag fix for CVE-2026-43284. SC-8 IPsec-based compliance is invalidated identically; operators who removed the Dirty Frag `blacklist esp4 / esp6 / rxrpc` mitigation when that patch landed re-opened the IPsec attack surface for Fragnesia.
 
 **What a real control requires:** Cryptographic controls for SC-8/SC-28 compliance must include integrity assurance for the cryptographic subsystem itself, not just assurance that the subsystem is configured. Kernel subsystem integrity monitoring (eBPF-based, read-only kernel text verification) as a compensating layer. When a CVE patch lands in a cryptographic subsystem, retain the pre-patch compensating controls until the patched code has soaked — the Fragnesia precedent demonstrates the sibling-bug risk.
 
@@ -377,7 +377,7 @@ Specific high-confidence theater signals (each triggers a mandatory Framework La
 | Org claims AC-2 / CC6 as adequate for AI-agent access control | CVE-2025-53773 demonstrates AML.T0051 routing around the identity model entirely |
 | Org claims A.5.19 / SA-12 vendor management as adequate for MCP servers | CVE-2026-30615 demonstrates AML.T0010 supply-chain RCE via attacker-controlled HTML processed by the MCP client (local-vector, not network) |
 | Org claims IPsec-based SC-8 segmentation as adequate without a kernel-patch status check | CVE-2026-43284 makes the IPsec implementation the attack surface |
-| Org removed the esp4 / esp6 / rxrpc module-blacklist mitigation once Dirty Frag was patched | CVE-2026-46300 (Fragnesia) is in the same primitive class, was introduced by the Dirty Frag patch, and is mitigated by the same blacklist |
+| Org removed the esp4 / esp6 / rxrpc module-blacklist mitigation once Dirty Frag was patched | CVE-2026-46300 (Fragnesia) is in the same primitive class, became exploitable after the Dirty Frag fix, and is mitigated by the same blacklist |
 
 When this check fires, hand off to the compliance-theater skill for the theater-pattern detection test and to policy-exception-gen if the org needs to grant a defensible exception with concrete compensating controls.
 
@@ -389,7 +389,7 @@ Every Framework Lag Declaration this skill produces names the missing control. T
 
 | Offensive TTP | Framework gap exemplar | D3FEND ID | Defensive technique | Defense-in-depth layer |
 |---|---|---|---|---|
-| T1068 (Exploitation for Privilege Escalation) — Copy Fail / Fragnesia | SI-2 / A.8.8 / PCI 6.3.3 30-day patch SLA | `D3-KBPI` | Kernel-Based Process Isolation | Kernel — compensating control while live-patch propagates; reduces blast radius when LPE primitive is reachable |
+| T1068 (Exploitation for Privilege Escalation) — Copy Fail / Fragnesia | SI-2 / A.8.8 / PCI 6.3.3 30-day patch SLA | `D3-KBPI` | Kernel-Based Process Isolation | Kernel — compensating control until a fixed kernel or, where one exists, a live patch is deployed; reduces blast radius when LPE primitive is reachable |
 | T1068 | SI-2 / A.8.8 patch SLA | `D3-SCA` | System Call Analysis | Endpoint — detects the deterministic LPE primitive at syscall layer before patch lands |
 | AML.T0051 (LLM Prompt Injection) — CVE-2025-53773 class | AC-2 / CC6 account-management as access control for AI agents | `D3-IOPR` | Input/Output Profiling Resource | SDK / application — content-aware inspection of prompt+completion at the model boundary |
 | AML.T0051 | AC-2 / CC6 | `D3-CSPP` | Client-server Payload Profiling | LLM gateway — gateway-layer inspection when SDK-side `D3-IOPR` is not deployable |

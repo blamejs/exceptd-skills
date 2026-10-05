@@ -623,15 +623,17 @@ describe('analyze', () => {
     }
   });
 
-  it('RWEP base is max of evidence-correlated cve rwep scores (Copy Fail = 90 when indicator fires)', () => {
+  it('RWEP base is max of evidence-correlated cve rwep scores (Copy Fail = 100 when indicator fires)', () => {
     // With the fix, RWEP base reflects the evidence-correlated maximum, not
     // the catalog-baseline maximum. Fire the indicator that ties the kernel
-    // CVEs into matched_cves so the base resolves to Copy Fail's 90.
+    // CVEs into matched_cves so the base resolves to Copy Fail's 100.
     const detRes = runner.detect('kernel', 'all-catalogued-kernel-cves', {
       signal_overrides: { 'kver-in-affected-range': 'hit' }
     });
     const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', detRes);
-    assert.equal(an.rwep.base, 90);
+    const catalog = require('../data/cve-catalog.json');
+    assert.equal(an.rwep.base, catalog['CVE-2026-31431'].rwep_score);
+    assert.equal(an.rwep.base, 100);
   });
 
   it('RWEP base is 0 when no evidence correlates (no inflated catalog-ceiling)', () => {
@@ -775,17 +777,36 @@ describe('validate', () => {
     });
     assert.equal(v.selected_remediation.id, 'live-patch-deploy');
     assert.equal(v.selected_remediation.priority, 1);
+    assert.doesNotMatch(v.selected_remediation.description, /No reboot required/);
   });
 
-  it('falls back to priority-1 path when no preconditions satisfied', () => {
+  it('a confirmed live patch outranks a satisfied upgrade on a fired kver-in-affected-range', () => {
+    const d = runner.detect('kernel', 'all-catalogued-kernel-cves', { signal_overrides: { 'kver-in-affected-range': 'hit' } });
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', d);
+    const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {
+      livepatch_available_for_cve: true, host_supports_livepatch: true,
+      vendor_patch_available: true, reboot_window_within_72h: true,
+    });
+    assert.equal(v.selected_remediation.id, 'live-patch-deploy');
+  });
+
+  it('with no preconditions submitted, a hit on kver-in-affected-range proposes the kernel upgrade, not a live patch', () => {
+    const d = runner.detect('kernel', 'all-catalogued-kernel-cves', { signal_overrides: { 'kver-in-affected-range': 'hit' } });
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', d);
+    const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {});
+    assert.equal(v.selected_remediation.id, 'scheduled-kernel-upgrade');
+  });
+
+  it('with no preconditions satisfied, the highest-priority path that may be a fallback is proposed', () => {
     const detRes = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
     const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', detRes);
     const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {});
-    // Even with no preconditions satisfied, runner proposes the priority-1 path
-    // (caller surfaces the unverified state to the operator).
+    // A remediation is always proposed (the caller surfaces the unverified
+    // state). live-patch-deploy requires its preconditions, so the fallback is
+    // the next path by priority.
     assert.ok(v.selected_remediation, 'a remediation is always proposed');
-    assert.equal(v.selected_remediation.priority, 1);
-    // remediation_options_considered marks the path as not satisfied
+    assert.equal(v.selected_remediation.id, 'scheduled-kernel-upgrade');
+    assert.equal(v.selected_remediation.priority, 2);
     const livePatch = v.remediation_options_considered.find(c => c.id === 'live-patch-deploy');
     assert.equal(livePatch.all_satisfied, false);
   });
@@ -1225,6 +1246,33 @@ describe('close', () => {
     }
   });
 
+  it('a path that requires its preconditions is never proposed while they are unsatisfied, even as the only path', () => {
+    const dir = tmpDir('requires-preconditions');
+    try {
+      writePlaybook(dir, 'gated', synthPlaybook({
+        phases: {
+          validate: {
+            remediation_paths: [
+              { id: 'rp-gated', priority: 1, description: 'only with a confirmed live patch', preconditions: ['livepatch_available_for_cve == true'], requires_preconditions: true }
+            ]
+          }
+        }
+      }));
+      const local = freshRunner(dir);
+      const an = local.analyze('gated', 'default', local.detect('gated', 'default', {}));
+      const blocked = local.validate('gated', 'default', an, {});
+      assert.equal(blocked.selected_remediation, null);
+      assert.equal(blocked.remediation_options_considered[0].all_satisfied, false);
+      const open = local.validate('gated', 'default', an, { livepatch_available_for_cve: true });
+      assert.equal(open.selected_remediation.id, 'rp-gated');
+      // close() runs with nothing selected.
+      assert.doesNotThrow(() => local.close('gated', 'default', an, blocked, {}, { session_id: 'abcdef0123456789' }));
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+      freshRunner(REAL_PLAYBOOK_DIR);
+    }
+  });
+
   it('feeds_into chain returns downstream playbooks for satisfied conditions', () => {
     const { an, v } = detected();
     // blast_radius_score=3 won't trigger sbom (needs >=4). Use 5.
@@ -1493,9 +1541,9 @@ describe('edge cases', () => {
 
   it('playbook with empty rwep_inputs → adjusted RWEP == base RWEP', () => {
     // Fire an indicator that correlates to CVE-2026-31431 via shared
-    // attack_ref T1068 so base RWEP resolves to the catalog's 90. Post-fix
-    // RWEP base reflects evidence-correlated matches, not catalog-baseline,
-    // so the indicator hit is needed to surface base=90.
+    // attack_ref T1068 so base RWEP resolves to the catalog's 100. RWEP base
+    // reflects evidence-correlated matches, not catalog-baseline, so the
+    // indicator hit is needed to surface base=100.
     writePlaybook(dir, 'p', synthPlaybook({
       domain: { cve_refs: ['CVE-2026-31431'] },
       phases: {
@@ -1508,8 +1556,8 @@ describe('edge cases', () => {
     const runner = freshRunner(dir);
     const detRes = runner.detect('p', 'default', { signal_overrides: { kev: 'hit' } });
     const an = runner.analyze('p', 'default', detRes);
-    assert.equal(an.rwep.base, 90);
-    assert.equal(an.rwep.adjusted, 90);
+    assert.equal(an.rwep.base, 100);
+    assert.equal(an.rwep.adjusted, 100);
     assert.equal(an.rwep.breakdown.length, 0);
   });
 
@@ -4788,6 +4836,11 @@ function emitBundlesWith(opts = {}) {
     patch_available: false, blast_radius_score: 3,
     ...(opts.vex_fixed ? { vex_fixed: opts.vex_fixed } : {}),
   });
+  // No catalogued kernel CVE takes a live-patch credit, so one matched CVE is
+  // marked live-patchable here: the bundles must still report it affected unless
+  // the operator's VEX marks it fixed.
+  const livePatchable = an.matched_cves.find((c) => c.cve_id === 'CVE-2026-31431') || an.matched_cves[0];
+  if (livePatchable) livePatchable.live_patch_available = true;
   const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {});
   const c = runner.close('kernel', 'all-catalogued-kernel-cves', an, v, {
     _bundle_formats: ['csaf-2.0', 'sarif-2.1.0', 'openvex-0.2.0']
@@ -4798,8 +4851,8 @@ function emitBundlesWith(opts = {}) {
 describe('audit W P1-A — fixed status gated on vex_status, not live_patch_available', () => {
   it('CSAF: live-patchable CVE without operator VEX disposition stays known_affected', () => {
     const { bundles, analyze } = emitBundlesWith();
-    // The kernel playbook surfaces Copy Fail (live_patch_available=true) but
-    // no operator-supplied VEX disposition is present in this run.
+    // emitBundlesWith marks one matched kernel CVE live-patchable, and no
+    // operator-supplied VEX disposition is present in this run.
     const livePatchableMatched = analyze.matched_cves.filter(c => c.live_patch_available === true);
     assert.ok(livePatchableMatched.length >= 1, 'fixture: at least one matched CVE must be live-patchable');
     for (const matched of livePatchableMatched) {
@@ -5866,6 +5919,86 @@ describe('CSAF product_tree — package name, never the range operator', () => {
     const linux = branches.find(v => v.name === 'linux-kernel');
     assert.ok(linux, 'linux-kernel vendor branch present');
     assert.equal(linux.branches[0].name, 'linux-kernel');
+  });
+});
+
+describe('live-patch notes reach the remediation text of an entry without live-patch credit', () => {
+  // The OpenVEX bundle, requested by its `openvex` alias and keyed by its full format id.
+  const vexOf = (bundles) => bundles[Object.keys(bundles).find((k) => k.startsWith('openvex'))];
+
+  it('matched_cves carries the notes, and the CSAF and OpenVEX remediation text appends them', () => {
+    const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'cve-catalog.json'), 'utf8'));
+    const copyFail = catalog['CVE-2026-31431'];
+    assert.equal(copyFail.live_patch_available, false);
+    assert.match(copyFail.live_patch_notes, /kpatch/);
+    const d = runner.detect('kernel', 'all-catalogued-kernel-cves', { signal_overrides: { 'kver-in-affected-range': 'hit' } });
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', d);
+    const matched = an.matched_cves.find((c) => c.cve_id === 'CVE-2026-31431');
+    assert.ok(matched, 'Copy Fail correlates on kver-in-affected-range');
+    assert.equal(matched.live_patch_notes, copyFail.live_patch_notes);
+    const out = runner.close('kernel', 'all-catalogued-kernel-cves', an,
+      { regression_next_run: null, selected_remediation: { id: 'rem-1', description: 'Upgrade the kernel.' } },
+      { _bundle_formats: ['csaf-2.0', 'openvex'] }, { session_id: 'abcdef0123456789' });
+    const bundles = out.evidence_package.bundles_by_format;
+    const suffix = ` Live-patch notes: ${copyFail.live_patch_notes.trim()}`;
+    const vuln = bundles['csaf-2.0'].vulnerabilities.find((v) => v.cve === 'CVE-2026-31431');
+    assert.equal(vuln.remediations[0].details, `Upgrade the kernel.${suffix}`);
+    const stmt = vexOf(bundles).statements.find((s) => s.vulnerability.name === 'CVE-2026-31431');
+    assert.ok(stmt.action_statement.endsWith(suffix), stmt.action_statement);
+  });
+
+  it('an entry with live-patch credit or without notes gets no notes sentence', () => {
+    const pb = runner.loadPlaybook('sbom');
+    const analyzeResult = {
+      matched_cves: [
+        { cve_id: 'CVE-2026-9998', rwep: 50, cisa_kev: false, active_exploitation: 'none', cvss_score: null, cvss_vector: null, affected_versions: [], live_patch_available: true, live_patch_notes: 'kpatch covers every affected kernel.' },
+        { cve_id: 'CVE-2026-9997', rwep: 50, cisa_kev: false, active_exploitation: 'none', cvss_score: null, cvss_vector: null, affected_versions: [], live_patch_available: false, live_patch_notes: null },
+      ],
+      rwep: { adjusted: 50 }, blast_radius_score: 2, framework_gap_mapping: [],
+      _detect_indicators: [], _detect_classification: 'detected',
+      compliance_theater_check: { verdict: 'present' },
+    };
+    const out = runner.close('sbom', pb.directives[0].id, analyzeResult, { regression_next_run: null, selected_remediation: null },
+      { _bundle_formats: ['csaf-2.0', 'openvex'] }, { session_id: 'abcdef0123456789' });
+    const bundles = out.evidence_package.bundles_by_format;
+    for (const v of bundles['csaf-2.0'].vulnerabilities) assert.doesNotMatch(v.remediations[0].details, /Live-patch notes/, v.cve);
+    const vex = vexOf(bundles);
+    assert.ok(vex && vex.statements.length >= 2, 'the OpenVEX bundle holds a statement per matched CVE');
+    for (const s of vex.statements) assert.doesNotMatch(String(s.action_statement || ''), /Live-patch notes/, s.vulnerability.name);
+    // With no selected remediation, the bundles say no path is eligible rather
+    // than pointing at a selected path.
+    const noPath = /^No remediation path is eligible in this run/;
+    const csafNoCredit = bundles['csaf-2.0'].vulnerabilities.find((v) => v.cve === 'CVE-2026-9997');
+    assert.match(csafNoCredit.remediations[0].details, noPath);
+    assert.doesNotMatch(csafNoCredit.remediations[0].details, /See selected remediation path/);
+    const vexNoCredit = vex.statements.find((s) => s.vulnerability.name === 'CVE-2026-9997');
+    assert.match(vexNoCredit.action_statement, noPath);
+  });
+
+  it('when declared paths exist and none is eligible, the bundles recommend no live patch even for an entry with live-patch credit', () => {
+    const pb = runner.loadPlaybook('sbom');
+    const analyzeResult = {
+      matched_cves: [
+        { cve_id: 'CVE-2026-9996', rwep: 50, cisa_kev: false, active_exploitation: 'none', cvss_score: null, cvss_vector: null, affected_versions: [], live_patch_available: true, live_patch_notes: null },
+      ],
+      rwep: { adjusted: 50 }, blast_radius_score: 2, framework_gap_mapping: [],
+      _detect_indicators: [], _detect_classification: 'detected',
+      compliance_theater_check: { verdict: 'present' },
+    };
+    const validateResult = {
+      regression_next_run: null, selected_remediation: null,
+      remediation_options_considered: [{ id: 'live-patch-deploy', priority: 1, all_satisfied: false, addresses_fired_signal: true, preconditions: [] }],
+    };
+    const out = runner.close('sbom', pb.directives[0].id, analyzeResult, validateResult,
+      { _bundle_formats: ['csaf-2.0', 'openvex'] }, { session_id: 'abcdef0123456789' });
+    const bundles = out.evidence_package.bundles_by_format;
+    const noPath = /^No remediation path is eligible in this run/;
+    const csaf = bundles['csaf-2.0'].vulnerabilities.find((v) => v.cve === 'CVE-2026-9996');
+    assert.match(csaf.remediations[0].details, noPath);
+    assert.doesNotMatch(csaf.remediations[0].details, /Vendor publishes a live-patch/);
+    const vex = vexOf(bundles).statements.find((s) => s.vulnerability.name === 'CVE-2026-9996');
+    assert.match(vex.action_statement, noPath);
+    assert.doesNotMatch(vex.action_statement, /Vendor publishes a live-patch/);
   });
 });
 

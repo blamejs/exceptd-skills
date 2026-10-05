@@ -173,9 +173,9 @@ The stored `rwep_factors` must sum to the stored `rwep_score`; the catalog
 validator fails the entry when they disagree. `lib/scoring.js` holds the weights,
 and its key names are the ones the catalog must use.
 
-Example: CVE-2026-31431 (Copy Fail) — CVSS 7.8 / **RWEP 90**
+Example: CVE-2026-31431 (Copy Fail) — CVSS 7.8 / **RWEP 100**
 - CVSS 7.8 suggests "high, patch within 30 days"
-- RWEP 90 means: deterministic root in < 1 second, CISA KEV, 732-byte public PoC, AI-discovered, blast radius = all Linux >= 4.14 — 30 days is exploitation acceptance
+- RWEP 100 means: deterministic root in < 1 second, CISA KEV, 732-byte public PoC, AI-discovered, blast radius = all Linux >= 4.14 — 30 days is exploitation acceptance
 
 The RWEP scoring engine is at `lib/scoring.js`.
 
@@ -263,7 +263,7 @@ The `researcher` **skill** (front-door dispatcher) and `threat-researcher` **age
 | RWEP 90+ | Priority 1: live-patch or isolate same-day |
 | Seven-phase | govern → direct → look → detect → analyze → validate → close |
 | CSAF-2.0 | Common Security Advisory Framework — Phase-7 output bundle format |
-| Copy Fail | CVE-2026-31431 — RWEP 90, CISA KEV, 732-byte deterministic root |
+| Copy Fail | CVE-2026-31431 — RWEP 100, CISA KEV, 732-byte deterministic root |
 | Dirty Frag | CVE-2026-43284/43500 — IPsec subsystem LPE chain |
 | SesameOp | AI API as covert C2 channel (ATLAS AML.T0096) |
 | PROMPTFLUX | Malware querying LLMs for real-time AV evasion code |

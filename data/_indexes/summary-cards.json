@@ -6,7 +6,7 @@
   "skills": {
     "kernel-lpe-triage": {
       "description": "Assess Linux kernel LPE exposure — Copy Fail, Dirty Frag, Fragnesia, live-patch vs. reboot remediation paths, framework gap declarations",
-      "threat_context_excerpt": "An AI system discovered this vulnerability in approximately one hour. It is a page-cache copy-on-write (CoW) primitive in the Linux kernel affecting all major distributions since kernel 4.14 (2017). Every major Linux distribution is affected: RHEL 7–9, Ubuntu 18.04–24.04, Debian 9–12, CentOS, Fedora, Amazon Linux 2/2023, SUSE 12/15, Alpine, and derivatives.",
+      "threat_context_excerpt": "An AI system discovered this vulnerability in approximately one hour. It is a page-cache copy-on-write (CoW) primitive in the Linux kernel affecting all major distributions since kernel 4.14 (2017). Every major Linux distribution is affected: RHEL 7 to 10, OpenShift RHCOS, Ubuntu 18.04 to 24.04 and 25.10, Debian 9 to 13, CentOS, Fedora, Amazon Linux 2 and 2023, SUSE 12 and 15, Alpine, and derivatives.",
       "produces": "The triage produces a structured Kernel LPE Exposure Assessment per host or fleet snapshot. The shape below is consumed downstream by `exploit-scoring` (which converts the per-CVE exposure into RWEP bands), by `incident-response-playbook` (which uses the affected-host count to scope IR), and by `compliance-theater` (which compares the deployed-mitigation field against the org's claimed SI-2 / A.8.8 patch SLA). Operators surfacing the output to auditors should preserve the CISA KEV due-date field verbatim — federal due dates are the authoritative regulatory clock, not internal SLAs.\n\nProduce th ...",
       "key_xrefs": {
         "cwe_refs": [

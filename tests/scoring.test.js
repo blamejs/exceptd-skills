@@ -48,7 +48,7 @@ test('RWEP_WEIGHTS matches the documented formula', () => {
 // ---------- score(cveId, catalog) ----------
 
 test('score() returns stored rwep_score for known CVE', () => {
-  assert.equal(score('CVE-2026-31431', catalog), 90);
+  assert.equal(score('CVE-2026-31431', catalog), 100);
 });
 
 test('score() throws on unknown CVE', () => {
@@ -57,7 +57,7 @@ test('score() throws on unknown CVE', () => {
 
 // ---------- scoreCustom() formula correctness ----------
 
-test('scoreCustom() reproduces Copy Fail (CVE-2026-31431) at 90', () => {
+test('scoreCustom() scores the Copy Fail (CVE-2026-31431) factors with a live patch at 90', () => {
   const s = scoreCustom({
     cisa_kev: true,
     poc_available: true,
@@ -70,6 +70,22 @@ test('scoreCustom() reproduces Copy Fail (CVE-2026-31431) at 90', () => {
   });
   // 25 + 20 + 15 + 20 + 30 - 15 - 10 + 5 = 90
   assert.equal(s, 90);
+});
+
+test('scoreCustom() reproduces the catalog score of Copy Fail (CVE-2026-31431), which takes no live-patch credit, at 100', () => {
+  const s = scoreCustom({
+    cisa_kev: true,
+    poc_available: true,
+    ai_discovered: true,
+    active_exploitation: 'confirmed',
+    blast_radius: 30,
+    patch_available: true,
+    live_patch_available: false,
+    reboot_required: true
+  });
+  // 25 + 20 + 15 + 20 + 30 - 15 + 5 = 100
+  assert.equal(s, 100);
+  assert.equal(s, catalog['CVE-2026-31431'].rwep_score);
 });
 
 test('scoreCustom() reproduces Copilot prompt-injection (CVE-2025-53773) at 30 — below CVSS-equivalent of 78', () => {
@@ -218,11 +234,9 @@ test('compare() flags Copy Fail as RWEP-significantly-higher-than-CVSS-equivalen
   const r = compare('CVE-2026-31431', catalog);
   assert.equal(r.cve_id, 'CVE-2026-31431');
   assert.equal(r.cvss, 7.8);
-  assert.equal(r.rwep, 90);
-  // cvssEquivalent = 78; delta = 90 - 78 = 12 → above the new ±10 band → "significantly higher".
-  // The old ±20 band swallowed this divergence (the operator-facing point is that the
-  // CVSS-calibrated SLA is insufficient); narrowing the band surfaces the gap explicitly.
-  assert.equal(r.delta, 12);
+  assert.equal(r.rwep, 100);
+  // cvssEquivalent = 78; delta = 100 - 78 = 22 → above the ±10 band → "significantly higher".
+  assert.equal(r.delta, 22);
   assert.match(r.explanation, /significantly higher/);
   assert.equal(r.rwep_actual_sla.hours, 4);
 });
@@ -1005,11 +1019,18 @@ test('scoreCustom honors the reboot alias identically — the property scoring.v
 // ==========================================================================
 
 test('compare() explanation includes the reboot driver even when live_patch_available is true, and factors sum to the delta', () => {
-  // CVE-2026-31431 (Copy Fail): rwep 90, cvss 7.8 (equiv 78), delta 12, and the
-  // entry has reboot_required(via patch_required_reboot) AND
-  // live_patch_available:true. Pre-fix the reboot driver was suppressed, so the
-  // enumerated factors summed to 80 (90 - 10 reboot) while the delta was 12.
-  const r = compare('CVE-2026-31431', catalog);
+  // Fixture: CVE-2026-31431 (Copy Fail) scored with a live-patch credit, rwep 90,
+  // cvss 7.8 (equiv 78), delta 12, with reboot_required (via
+  // patch_required_reboot) AND live_patch_available:true. The catalog entry
+  // itself takes no live-patch credit, so the fixture carries those values.
+  const base = catalog['CVE-2026-31431'];
+  const fixture = {
+    'CVE-2026-31431': {
+      ...base, live_patch_available: true, patch_required_reboot: true, rwep_score: 90,
+      rwep_factors: { ...base.rwep_factors, live_patch_available: -10 },
+    },
+  };
+  const r = compare('CVE-2026-31431', fixture);
   assert.equal(r.delta, 12);
   assert.match(r.explanation, /significantly higher/);
   // The reboot driver MUST be present in the enumerated factors.
@@ -1019,7 +1040,7 @@ test('compare() explanation includes the reboot driver even when live_patch_avai
   // Parse every "(+N)" / "(-N)" magnitude out of the explanation and confirm
   // their signed sum equals the stored delta. This is the load-bearing
   // invariant: the enumerated drivers must account for the whole divergence.
-  const e = catalog['CVE-2026-31431'];
+  const e = fixture['CVE-2026-31431'];
   assert.equal(e.live_patch_available, true, 'fixture must have live_patch_available:true');
   assert.equal(e.patch_required_reboot, true, 'fixture must require a reboot');
   // Match each "(+N" / "(-N" magnitude. The AI driver renders as

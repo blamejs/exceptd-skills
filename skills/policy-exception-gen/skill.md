@@ -97,7 +97,7 @@ A granted exception does not remove the threat — it shifts the burden onto com
 | Exception 1 — Ephemeral Infrastructure Asset Inventory | T1525 (Implant Internal Image), T1610 (Deploy Container), T1611 (Escape to Host), T1078.004 (Valid Cloud Accounts) | Image scanning in CI, IaC drift detection, cloud-asset-inventory API alerts on resources not in IaC registry |
 | Exception 2 — AI Pipeline Change Management | AML.T0020 (Training Data Poisoning), AML.T0018 (Manipulate AI Model), AML.T0051 (LLM Prompt Injection — emergent behavior on model upgrade), AML.T0054 (LLM Jailbreak) | Behavioral regression test suite, model version pinning, model fingerprinting on canonical prompts, provider changelog review |
 | Exception 3 — Zero Trust Architecture Network Segmentation | T1021 (Remote Services), T1570 (Lateral Tool Transfer), T1078 (Valid Accounts), T1199 (Trusted Relationship) | Workload identity (SPIFFE/SPIRE), per-request mTLS, device-posture verification, east-west behavioral analytics |
-| Exception 4 — Critical Systems No-Reboot Kernel Patching | T1068 (Exploitation for Privilege Escalation — Copy Fail class), T1548.001 (Setuid and Setgid), T1611 (Escape to Host) | Live kernel patch deployed and verified (`kpatch list` / `canonical-livepatch status`), eBPF/auditd exploitation-pattern rules, network-layer isolation if no live patch available, scheduled reboot window |
+| Exception 4 — Critical Systems No-Reboot Kernel Patching | T1068 (Exploitation for Privilege Escalation — Copy Fail class), T1548.001 (Setuid and Setgid), T1611 (Escape to Host) | Live kernel patch deployed and verified (`kpatch list` / `canonical-livepatch status`), eBPF/auditd exploitation-pattern rules, untrusted users and workloads kept off the host until the reboot if no live patch is available (network isolation alone does not stop a local privilege escalation), scheduled reboot window |
 
 The TTP source-of-truth is `data/atlas-ttps.json` (MITRE ATLAS v2026.09, September 2026) supplemented by ATT&CK Enterprise. No orphaned controls: no exception in this skill is granted without an enumerated residual-TTP set; an exception with no listed residual is theater.
 
@@ -109,7 +109,7 @@ For each residual TTP an exception leaves in scope, the compensating control bun
 
 | Residual TTP | Evidence CVE / class | CVSS | RWEP tier | KEV | Public PoC | AI-accelerated | Live-patchable | Implication for compensating bundle |
 |---|---|---|---|---|---|---|---|---|
-| T1068 (Privilege Escalation — Copy Fail class) | CVE-2026-31431 | 7.8 | 90 | Yes (2026-05-01) | Yes (732 bytes, deterministic) | Yes | Yes (kpatch/livepatch) | Live patch within 4 hours OR network isolation — anything weaker is non-defensible |
+| T1068 (Privilege Escalation — Copy Fail class) | CVE-2026-31431 | 7.8 | 100 | Yes (2026-05-01) | Yes (732 bytes, deterministic) | Yes | No (some distributions' kernels only; no live-patch credit) | Live patch within 4 hours where the kernel has one, OR the fixed kernel and a reboot; network isolation alone does not stop a local privilege escalation |
 | T1190 (Exploit Public-Facing Application — IPsec subsystem) | CVE-2026-43284 (Dirty Frag) | 8.8 | 53 | No | Yes (chain component) | Yes (AI-assisted discovery) | Limited (kpatch RHEL-only) | eBPF kernel-text integrity monitoring + maintenance-window reboot SLA |
 | AML.T0051 (LLM Prompt Injection — emergent on model upgrade) | CVE-2025-53773 (Copilot YOLO-mode RCE) | 7.8 (AV:L) | 30 | No | Yes | Yes | Yes (SaaS push / IDE update) | Behavioral regression suite + system-prompt hardening + tool allowlist |
 | AML.T0010 (ML Supply Chain Compromise — MCP) | CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 (AV:L) | 35 | No | Yes | No | Yes (IDE update) | MCP server allowlist + signed-manifest enforcement + per-server auth |
@@ -331,10 +331,10 @@ This is not a reason to leave systems unpatched — it is a reason to require li
 **Compensating controls (for the period between live patch and reboot):**
 1. Live kernel patch deployed: kpatch / livepatch / kGraft deployed and verified applied. (`kpatch list` / `canonical-livepatch status`)
 2. Enhanced monitoring: eBPF/auditd exploitation detection rules active for the vulnerability class.
-3. Network isolation: if live patch is not available for the specific CVE, network-level isolation of affected systems.
+3. Local-execution restriction: if no live patch is available for the specific CVE and the host's kernel, keep untrusted users and workloads off the affected systems until the reboot. Network-level isolation alone does not stop a local privilege escalation.
 4. Maintenance window scheduled: specific date/time documented. Patch + reboot completed at that window closes the exception.
 
-**For CISA KEV class (Copy Fail CVE-2026-31431):** This exception is only valid if live patch has been deployed. If live patch is not available and the system cannot be rebooted: isolate at the network layer until the reboot window, and escalate to risk committee as an open CISA KEV with no adequate compensating control.
+**For CISA KEV class (Copy Fail CVE-2026-31431):** This exception is only valid if live patch has been deployed. If no live patch is available for the host's kernel and the system cannot be rebooted, keep untrusted users and workloads off the host until the reboot window (network isolation alone does not stop a local privilege escalation), and escalate to risk committee as an open CISA KEV with no adequate compensating control.
 
 **Exception language:**
 ```
@@ -466,7 +466,7 @@ Every defensible exception names the residual TTPs in scope and the compensating
 | Zero Trust Architecture Segmentation | T1021 / T1570 | `D3-NTA` | Network Traffic Analysis (east-west behavioral analytics) | Network — detect lateral movement that policy alone cannot prevent |
 | Zero Trust Architecture Segmentation | T1078 (Valid Accounts) | `D3-CBAN` | Certificate-based Authentication (mTLS workload certificates) | Identity — workload identities are certificate-bound, not perimeter-bound |
 | No-Reboot Kernel Patching (SI-2 / A.8.8) | T1068 (Exploitation for Privilege Escalation) | `D3-SCA` | System Call Analysis (eBPF / auditd rules for the exploitation primitive) | Kernel — detect the LPE primitive while live-patch is in flight |
-| No-Reboot Kernel Patching | T1068 | `D3-KBPI` | Kernel-Based Process Isolation | Kernel — reduce blast radius until the live patch deploys |
+| No-Reboot Kernel Patching | T1068 | `D3-KBPI` | Kernel-Based Process Isolation | Kernel — reduce blast radius until the live patch deploys or the host reboots into the fixed kernel |
 | No-Reboot Kernel Patching | T1068 (post-exploit persistence) | `D3-PA` | Process Analysis (anomalous-uid / capability-set detection) | Endpoint — catch successful LPE before it persists |
 
 **Defense-in-depth posture:** an exception that names a single D3FEND technique is insufficient — the residual TTP set is multi-stage, and the compensating-control bundle must cover the chain. The Output Format's "Compensating Controls" field must enumerate at least two D3FEND techniques per residual TTP, drawn from different defense-in-depth layers (network + endpoint, build + admission, SDK + gateway). An exception with only one layer cited is theater for the multi-stage attack chain.

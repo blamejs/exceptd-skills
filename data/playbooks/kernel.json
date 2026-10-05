@@ -225,7 +225,7 @@
       ]
     },
     "direct": {
-      "threat_context": "Kernel LPE landscape Q1-Q2 2026: CVE-2026-31431 'Copy Fail' (AI-discovered in ~1h, deterministic page-cache CoW primitive, no race condition, 732-byte PoC, KEV-listed 2026-03-15, confirmed in-the-wild) is the load-bearing exploit driving the current Linux LPE wave. CVE-2026-43284 + CVE-2026-43500 are sibling LPEs in catalog. Live-patch ecosystem (kpatch, kgraft, livepatch) covers Copy Fail on RHEL 9.4+ / Ubuntu 22.04 HWE / Debian 12 — vendors shipped live patches within 48h of KEV listing. Operators that adopted live-patch are not affected even on technically-vulnerable kernel versions; operators relying solely on reboot-required patches retain exposure for the duration of their reboot window.",
+      "threat_context": "Kernel LPE landscape Q1-Q2 2026: CVE-2026-31431 'Copy Fail' (AI-discovered in ~1h, deterministic page-cache CoW primitive, no race condition, 732-byte PoC, KEV-listed 2026-05-01, confirmed in-the-wild) is the load-bearing exploit driving the current Linux LPE wave. CVE-2026-43284 + CVE-2026-43500 are sibling LPEs in catalog. Live patches for Copy Fail reach some kernels only: Red Hat kpatch on RHEL 8 and 9, Canonical Livepatch on Ubuntu 18.04 to 24.04, SUSE live patches on SLE 12 SP5 and SLE 15 SP4 to SP7, Amazon Linux kernel-livepatch, and KernelCare on Debian 11 to 13 and RHEL 10. Ubuntu 25.10 and OpenShift RHCOS nodes have no documented live patch. A host on a covered kernel is protected only once the CVE-specific live patch is loaded, which `kpatch list`, `canonical-livepatch status` or the vendor's equivalent shows; every other host stays exposed until it reboots into a fixed kernel.",
       "rwep_threshold": {
         "escalate": 90,
         "monitor": 70,
@@ -583,12 +583,13 @@
       "remediation_paths": [
         {
           "id": "live-patch-deploy",
-          "description": "Deploy vendor live-patch (kpatch / kgraft / canonical livepatch) covering the matched CVE. No reboot required.",
+          "description": "Where the matched CVE's live-patch notes list a live patch for this host's kernel, deploy it (kpatch / kgraft / canonical livepatch) and confirm it is loaded with `kpatch list`, `canonical-livepatch status` or the vendor's equivalent. The live patch defers the reboot; the host still needs the fixed kernel package at its next reboot.",
           "preconditions": [
             "livepatch_available_for_cve == true",
             "host_supports_livepatch == true"
           ],
           "priority": 1,
+          "requires_preconditions": true,
           "for_signals": ["kver-in-affected-range"],
           "compensating_controls": [],
           "estimated_time_hours": 1

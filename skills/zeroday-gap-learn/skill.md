@@ -93,14 +93,14 @@ Status of the learning-loop entry for each CVE currently in `data/cve-catalog.js
 
 | CVE | KEV | PoC | AI-Discovered / AI-Enabled | RWEP | Lesson-Entry Status in `zeroday-lessons.json` |
 |---|---|---|---|---|---|
-| CVE-2026-31431 (Copy Fail) | Yes | Yes (732-byte) | Yes (AI-discovered ~1h) | 90 | Complete — pre-run lesson encoded below; new control requirements CISA-KEV-RESPONSE-SLA, LIVE-PATCH-CAPABILITY, KERNEL-EXPLOITATION-DETECTION generated |
+| CVE-2026-31431 (Copy Fail) | Yes | Yes (732-byte) | Yes (AI-discovered ~1h) | 100 | Complete — pre-run lesson encoded below; new control requirements CISA-KEV-RESPONSE-SLA, LIVE-PATCH-CAPABILITY, KERNEL-EXPLOITATION-DETECTION generated |
 | CVE-2026-43284 (Dirty Frag — ESP/IPsec) | No | Yes (chain) | Yes (AI-assisted discovery) | 53 | Complete — pre-run lesson encoded; new control requirements CRYPTO-SUBSYSTEM-INTEGRITY, PRE-PATCH-DISCLOSURE-RESPONSE generated |
 | CVE-2026-43500 (Dirty Frag — RxRPC) | No | Yes (chain) | Yes (AI-assisted discovery) | 47 | Complete — covered jointly with CVE-2026-43284 (chain partner) |
 | CVE-2025-53773 (Copilot YOLO-mode RCE) | No | Yes (demonstrated) | Yes (AI tooling enables) | 30 | Complete — pre-run lesson encoded; new control requirements AI-TOOL-ACTION-AUTHORIZATION, AI-TOOL-INPUT-SANITIZATION, PROMPT-INJECTION-MONITORING generated |
 | CVE-2026-30615 (Windsurf MCP local-vector RCE) | No | Yes | No (supply-chain) | 35 | Complete — pre-run lesson encoded; new control requirements MCP-SERVER-SIGNING, MCP-TOOL-ALLOWLIST, MCP-SUPPLY-CHAIN-AUDIT generated |
 | CVE-2026-45321 (Mini Shai-Hulud TanStack npm worm) | Yes (2026-05-27) | Yes (worm in-wild) | No (engineering-grade chain) | 70 | Pre-run exemplar lesson encoded below (chained CI/CD primitives — Pwn Request + pnpm-store poisoning + OIDC theft); new control requirements PR-WORKFLOW-PRIVILEGE-CAP, ACTIONS-CACHE-INTEGRITY, OIDC-PUBLISH-AUDIT generated |
 | MAL-2026-3083 (Elementary-Data PyPI worm — forged release via GitHub Actions script-injection) | No (OSSF Malicious Packages dataset; CISA KEV catalogs vendor CVEs only) | Yes (orphan commit + exfil domain confirmed in-wild during 8h window) | No (manual chain) | n/a | Pre-run exemplar lesson encoded below; control requirements GHACTIONS-EVENT-INTERPOLATION-BAN, INSTALL-HOOK-AUDIT, OSSF-MALPACKAGES-INGEST generated |
-| CVE-2026-46300 (Fragnesia — Dirty Frag sequel) | No (candidate within days) | Yes (one-liner vs /usr/bin/su) | Yes (AI-assisted discovery with Zellic's agentic auditing tool) | 35 | Complete — pre-run lesson encoded below; control requirements PAGE-CACHE-INTEGRITY-VERIFICATION, BUG-FAMILY-MITIGATION-PERSISTENCE, SCANNER-PAPER-COMPLIANCE-TEST generated. Pattern: a patch for one bug class introduced a sibling bug in the same primitive class. |
+| CVE-2026-46300 (Fragnesia — Dirty Frag sequel) | No | Yes (one-liner vs /usr/bin/su) | Yes (AI-assisted discovery with Zellic's agentic auditing tool) | 50 | Complete — pre-run lesson encoded below; control requirements PAGE-CACHE-INTEGRITY-VERIFICATION, BUG-FAMILY-MITIGATION-PERSISTENCE, SCANNER-PAPER-COMPLIANCE-TEST generated. Pattern: a patch for one bug made an older bug in the same primitive class exploitable. |
 
 Every new entry added to `data/cve-catalog.json` must produce a corresponding entry here and in `data/zeroday-lessons.json` before the catalog change ships. Any CVE in the catalog without a complete lesson entry is a pre-ship-checklist failure.
 
@@ -153,7 +153,7 @@ Output: Lesson entry for data/zeroday-lessons.json
 **What control should have prevented this:**
 - Prevention: No local code execution → no LPE opportunity. But local code execution is baseline in any multi-user system or container environment. Prevention at this layer is not realistic.
 - Mitigation before patch: seccomp profile blocking `userfaultfd`, user namespace restrictions, kernel hardening. These reduce attack surface but do not eliminate it.
-- Patch: Apply kernel update. Live patching (kpatch/livepatch/kGraft) enables patching without service interruption.
+- Patch: Apply kernel update. Live patching (Red Hat kpatch, Canonical Livepatch, SUSE live patches, Amazon Linux kernel-livepatch, KernelCare) enables patching without service interruption, but live patches cover some distributions' kernels only. Ubuntu 25.10 and OpenShift RHCOS nodes have no documented live patch and must reboot into a fixed kernel, and the catalog entry takes no live-patch credit.
 
 **What control should have detected this:**
 - Detection: auditd/eBPF monitoring for exploitation patterns — privilege escalation from unprivileged context, unusual /proc/self/mem writes, userfaultfd usage outside known applications.
@@ -179,7 +179,7 @@ Output: Lesson entry for data/zeroday-lessons.json
 3. **KERNEL-EXPLOITATION-DETECTION**: Deploy auditd or eBPF-based monitoring rules for kernel privilege escalation indicators. Alert within 60 seconds of pattern detection.
 
 **Exposure scoring:**
-- RWEP: 90 (current, with patch+live-patch available)
+- RWEP: 100 (current, with a patch available; live patches cover some distributions' kernels only, so the entry takes no live-patch credit)
 - Organizations compliant with standard patch management controls but still exposed: estimated 80%+ during the first week after KEV listing (based on industry patch deployment lag data)
 - Coverage failure: standard controls allow full exploitation window while displaying "compliant" status
 
@@ -202,7 +202,7 @@ Output: Lesson entry for data/zeroday-lessons.json
 
 ### Lesson: CVE-2026-46300 (Fragnesia — Dirty Frag Sequel)
 
-**Attack vector:** Page-cache corruption via XFRM ESP-in-TCP skb coalescing. `skb_try_coalesce()` drops the `SKBFL_SHARED_FRAG` marker when coalescing paged fragments between socket buffers, so the kernel loses track of externally-backed fragments (page-cache pages spliced from a file). An unprivileged local user deterministically overwrites read-only file data in the kernel page cache without modifying the on-disk file. Public PoC targets `/usr/bin/su` for a one-line root shell. Disclosed 2026-05-13 by William Bowling (V12 security team). Same primitive class as Dirty Frag (CVE-2026-43284 / CVE-2026-43500) — Fragnesia is the sibling bug introduced by the patch for the original Dirty Frag.
+**Attack vector:** Page-cache corruption via XFRM ESP-in-TCP skb coalescing. `skb_try_coalesce()` drops the `SKBFL_SHARED_FRAG` marker when coalescing paged fragments between socket buffers, so the kernel loses track of externally-backed fragments (page-cache pages spliced from a file). An unprivileged local user deterministically overwrites read-only file data in the kernel page cache without modifying the on-disk file. Public PoC targets `/usr/bin/su` for a one-line root shell. Disclosed 2026-05-13 by William Bowling (V12 security team). Same primitive class as Dirty Frag (CVE-2026-43284 / CVE-2026-43500). The coalescing code Fragnesia abuses dates from Linux 3.9, and it became exploitable after the Dirty Frag fix for CVE-2026-43284 (commit f4c50a4034e6, 2026-05-05).
 
 **What control should have prevented this:**
 - Module-unload mitigation: blacklist `esp4` / `esp6` / `rxrpc` in `/etc/modprobe.d/`. Identical to the Dirty Frag mitigation set — operators who retained that blacklist after patching Dirty Frag are already mitigated for Fragnesia at zero additional operational cost.
@@ -231,10 +231,10 @@ Output: Lesson entry for data/zeroday-lessons.json
 
 2. **BUG-FAMILY-MITIGATION-PERSISTENCE**: When a CVE patch lands, retain the pre-patch compensating controls (module blacklists, sysctl restrictions) until the patched code has soaked for a stated review period. Patches for one bug in a primitive class can introduce sibling bugs in the same class — the Dirty Frag → Fragnesia chain is the canonical example.
 
-3. **SCANNER-PAPER-COMPLIANCE-TEST**: A vulnerability scanner that reports "patched" based on kernel package version alone is paper compliance. The operational test: does the scan account for the module-unload mitigation surface, AND does it verify the kernel is on a build that includes the specific Fragnesia patch (not just any version newer than the Dirty Frag patch that introduced Fragnesia)?
+3. **SCANNER-PAPER-COMPLIANCE-TEST**: A vulnerability scanner that reports "patched" based on kernel package version alone is paper compliance. The operational test: does the scan account for the module-unload mitigation surface, AND does it verify the kernel is on a build that includes the specific Fragnesia patch (not just any version newer than the Dirty Frag fix, which made Fragnesia exploitable)?
 
 **Exposure scoring:**
-- RWEP: 35 today. A CISA KEV listing adds 25 (60), and confirmed active exploitation adds 20 more (80).
+- RWEP: 50 today. A CISA KEV listing adds 25 (75), and confirmed active exploitation adds 20 more (95).
 - Audit-passing orgs still exposed: ~75%. Operators who retained the Dirty Frag module blacklist are already mitigated. Operators who relied on kernel-package-version alone with vanilla SI-2 / A.8.8 SLAs are exposed during the patch window.
 - Coverage failure: on-disk file-integrity tools (AIDE, Tripwire) report clean while the page-cache copy of /usr/bin/su is corrupted.
 

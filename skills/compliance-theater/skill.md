@@ -102,16 +102,16 @@ The theater patterns most acutely under attack today are those backed by high-RW
 
 | Theater pattern | Evidence CVE | CVSS | RWEP tier | KEV | Public PoC | AI-accelerated | Live-patchable | Active exploitation |
 |---|---|---|---|---|---|---|---|---|
-| Patch Management Theater | CVE-2026-31431 (Copy Fail) | 7.8 | 90 | Yes (2026-05-01) | Yes (732 bytes, deterministic) | Yes (AI-discovered) | Yes (kpatch/livepatch) | Confirmed |
+| Patch Management Theater | CVE-2026-31431 (Copy Fail) | 7.8 | 100 | Yes (2026-05-01) | Yes (732 bytes, deterministic) | Yes (AI-discovered) | No (live patches cover some distributions' kernels only; no live-patch credit) | Confirmed |
 | Vendor Management Theater (AI APIs / MCP) | CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 | 35 | No | Yes | No | Yes (IDE update) | Suspected |
 | Access Control Theater (AI agents) | CVE-2025-53773 (Copilot YOLO-mode RCE) | 7.8 | 30 | No | Yes (demonstrated) | Yes (AI tooling enables) | Yes (SaaS push / IDE update) | Suspected |
 | Network Segmentation Theater (IPsec) | CVE-2026-43284 (Dirty Frag) | 8.8 | 53 | No | Yes (chain component) | Yes (AI-assisted discovery) | Limited (kpatch RHEL-only) | Suspected |
-| Patch Management Theater (Bug-Family Sequel) | CVE-2026-46300 (Fragnesia) | 7.8 | 35 (60 if KEV-listed) | No (candidate) | Yes (one-liner vs /usr/bin/su) | Yes (AI-assisted discovery) | Yes (kpatch / canonical-livepatch / KernelCare) | None observed |
+| Patch Management Theater (Bug-Family Sequel) | CVE-2026-46300 (Fragnesia) | 7.8 | 50 (75 if KEV-listed) | No | Yes (one-liner vs /usr/bin/su) | Yes (AI-assisted discovery) | No (live patches cover some distributions' kernels only; no live-patch credit) | None observed |
 | Incident Response Theater (AI pipeline) | SesameOp campaign + AML.T0096 | N/A | High | N/A | ATLAS-documented | Yes | N/A | Confirmed campaign |
 | Change Management Theater (AI models) | Continuous provider updates | N/A | Medium | N/A | N/A | N/A | N/A | Ongoing (uncontrolled) |
 | Security Awareness Theater (AI phishing) | AI-generated phishing baseline (82.6%) | N/A | High | N/A | Operational | Yes | N/A | Confirmed (industry-wide) |
 
-Rows with a high RWEP and a public PoC or confirmed exploitation, led by Copy Fail at RWEP 90, are the most dangerous theater patterns to leave un-remediated. Pull authoritative scoring from `data/exploit-availability.json` and `data/cve-catalog.json` before producing the output.
+Rows with a high RWEP and a public PoC or confirmed exploitation, led by Copy Fail at RWEP 100, are the most dangerous theater patterns to leave un-remediated. Pull authoritative scoring from `data/exploit-availability.json` and `data/cve-catalog.json` before producing the output.
 
 ---
 
@@ -139,9 +139,9 @@ Rows with a high RWEP and a public PoC or confirmed exploitation, led by Copy Fa
    If > 90 days: THEATER FLAG (likely accumulating unpatched kernel CVEs behind the "compliant" SLA)
 ```
 
-**What a real control looks like:** Tiered SLA: CISA KEV = 4 hours to live-patch or isolate; public PoC = 24 hours; Critical (no public PoC) = 72 hours; High = 7 days. Live patching capability deployed and verified quarterly.
+**What a real control looks like:** Tiered SLA: CISA KEV = 4 hours to patch, live-patch or isolate the vulnerable service, and for a kernel local privilege escalation, to load a live patch or reboot into the fixed kernel, with untrusted users and workloads kept off the host until then; public PoC = 24 hours; Critical (no public PoC) = 72 hours; High = 7 days. Live patching capability deployed and verified quarterly.
 
-**Bug-family sequel sub-pattern (Fragnesia, CVE-2026-46300):** when a CVE patch lands, retain the pre-patch compensating controls (module blacklists, sysctl restrictions) until the patched code has soaked. The Dirty Frag patch introduced Fragnesia — a sibling page-cache-corruption bug in the same primitive class. The module-unload mitigation (`blacklist esp4 / esp6 / rxrpc`) covers both. A patch-management program that removed the Dirty Frag blacklist when the patch landed re-exposed the host to Fragnesia. Theater signal: a vulnerability scanner that reports "patched for CVE-2026-43284" while the kernel still lacks the CVE-2026-46300 patch and the module blacklist has been removed.
+**Bug-family sequel sub-pattern (Fragnesia, CVE-2026-46300):** when a CVE patch lands, retain the pre-patch compensating controls (module blacklists, sysctl restrictions) until the patched code has soaked. The Dirty Frag fix for CVE-2026-43284 made Fragnesia, an older page-cache-corruption defect in the same primitive class, exploitable. The module-unload mitigation (`blacklist esp4 / esp6 / rxrpc`) covers both. A patch-management program that removed the Dirty Frag blacklist when the patch landed re-exposed the host to Fragnesia. Theater signal: a vulnerability scanner that reports "patched for CVE-2026-43284" while the kernel still lacks the CVE-2026-46300 patch and the module blacklist has been removed.
 
 ---
 

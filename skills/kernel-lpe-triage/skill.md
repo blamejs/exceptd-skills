@@ -62,9 +62,9 @@ last_threat_review: "2026-09-28"
 ### Copy Fail — CVE-2026-31431
 
 **Classification:** Local Privilege Escalation | CISA KEV | AI-Discovered  
-**CVSS:** 7.8 (High) | **RWEP:** 90/100
+**CVSS:** 7.8 (High) | **RWEP:** 100/100
 
-An AI system discovered this vulnerability in approximately one hour. It is a page-cache copy-on-write (CoW) primitive in the Linux kernel affecting all major distributions since kernel 4.14 (2017). Every major Linux distribution is affected: RHEL 7–9, Ubuntu 18.04–24.04, Debian 9–12, CentOS, Fedora, Amazon Linux 2/2023, SUSE 12/15, Alpine, and derivatives.
+An AI system discovered this vulnerability in approximately one hour. It is a page-cache copy-on-write (CoW) primitive in the Linux kernel affecting all major distributions since kernel 4.14 (2017). Every major Linux distribution is affected: RHEL 7 to 10, OpenShift RHCOS, Ubuntu 18.04 to 24.04 and 25.10, Debian 9 to 13, CentOS, Fedora, Amazon Linux 2 and 2023, SUSE 12 and 15, Alpine, and derivatives.
 
 Key characteristics that make this exceptional:
 - **Deterministic exploitation** — no race condition, no heap spray, no timing sensitivity
@@ -105,19 +105,19 @@ The IPsec dimension is critical: organizations with network segmentation control
 ### Fragnesia — CVE-2026-46300
 
 **Classification:** Local Privilege Escalation | Dirty Frag family sequel | AI-Assisted Discovery  
-**CVSS:** 7.8 (High) | **RWEP:** 35/100 (60 on a CISA KEV listing)
+**CVSS:** 7.8 (High) | **RWEP:** 50/100 (75 on a CISA KEV listing)
 
-Disclosed 2026-05-13 by William Bowling (V12 security team). The Hacker News and Help Net Security attribute the discovery to William Bowling of Zellic working with Zellic's AI-agentic software auditing tool. Same primitive class as Dirty Frag — Fragnesia is the sibling bug introduced by the patch for CVE-2026-43284 / CVE-2026-43500. The defect is in `skb_try_coalesce()`: when transferring paged fragments between socket buffers, the kernel fails to propagate the `SKBFL_SHARED_FRAG` marker, losing track of externally-backed fragments (page-cache pages spliced from a file). An unprivileged local user can deterministically overwrite read-only file data in the kernel page cache without modifying the on-disk file. Public PoC targets `/usr/bin/su` for a one-line root shell.
+Disclosed 2026-05-13 by William Bowling (V12 security team). The Hacker News and Help Net Security attribute the discovery to William Bowling of Zellic working with Zellic's AI-agentic software auditing tool. Fragnesia is in the same primitive class as Dirty Frag. The coalescing code it abuses dates from Linux 3.9 (commit cef401de7be8), and Hyunwoo Kim's analysis on oss-security says the flaw became exploitable after the Dirty Frag fix for CVE-2026-43284 (commit f4c50a4034e6, 2026-05-05), which made ESP input rely on the shared-fragment marker that `skb_try_coalesce()` drops. The defect is in `skb_try_coalesce()`: when transferring paged fragments between socket buffers, the kernel fails to propagate the `SKBFL_SHARED_FRAG` marker, losing track of externally-backed fragments (page-cache pages spliced from a file). An unprivileged local user can deterministically overwrite read-only file data in the kernel page cache without modifying the on-disk file. Public PoC targets `/usr/bin/su` for a one-line root shell.
 
 Key characteristics:
 - **Deterministic exploitation** — no race condition, no kernel-version fingerprinting beyond the affected version range.
 - **Public PoC** — one-liner against `/usr/bin/su` from the V12 disclosure.
 - **Page-cache corruption without on-disk write** — file-integrity tools that hash on-disk bytes (AIDE, Tripwire, IMA in measure-only mode) cannot detect the corruption.
 - **Module-unload mitigation is identical to Dirty Frag** — blacklist `esp4`, `esp6`, `rxrpc` in `/etc/modprobe.d/`. Any host already mitigated for Dirty Frag by module blacklist is already mitigated for Fragnesia, with no further action required.
-- **Live-patch is non-reboot** — AlmaLinux + CloudLinux kernels in testing as of 2026-05-13; Canonical Livepatch + kpatch follow standard cadence.
-- **Not CISA KEV-listed as of the 2026-09-27 KEV catalog**, and no active exploitation has been observed in the wild. RWEP is 35; a KEV listing takes it to 60, and confirmed active exploitation to 80.
+- **Live patches cover some kernels only** — Red Hat kpatch, SUSE kernel-livepatch, Amazon kernel-livepatch and KernelCare livepatches cover RHEL 8, 9 and 10, SLE 12 SP5, 15 SP4 to SP7 and 16.0, Amazon Linux 2 and 2023, AlmaLinux 8 to 10, Debian 11 to 13 and Ubuntu 22.04 and 24.04. Ubuntu 26.04 LTS, Ubuntu 25.10, the Ubuntu 24.04 AWS and 22.04 HWE Noble AWS kernels, Debian forky and sid, and mainline kernels built from source have no documented live patch. The entry takes no live-patch credit.
+- **Not CISA KEV-listed as of the 2026-09-27 KEV catalog**, and no active exploitation has been observed in the wild. RWEP is 50; a KEV listing takes it to 75, and confirmed active exploitation to 95.
 
-**Lesson for operators:** when a CVE patch lands, retain the pre-patch compensating controls (module blacklists, sysctl restrictions) until the patched code has soaked. Fragnesia is the canonical case — the Dirty Frag patch introduced Fragnesia, and the same `modprobe -r esp4 esp6 rxrpc` mitigation covers both.
+**Lesson for operators:** when a CVE patch lands, retain the pre-patch compensating controls (module blacklists, sysctl restrictions) until the patched code has soaked. Fragnesia is the canonical case: the Dirty Frag fix made an older defect exploitable, and the same `modprobe -r esp4 esp6 rxrpc` mitigation covers both.
 
 **Detection signature (page-cache-aware):**
 ```
@@ -167,10 +167,10 @@ Note: ATLAS refs are intentionally empty in frontmatter — these are Linux kern
 
 | CVE | CVSS | RWEP | CISA KEV | PoC Public | AI-Discovered | Active Exploitation | Patch Available | Live Patch | Reboot Required |
 |---|---|---|---|---|---|---|---|---|---|
-| CVE-2026-31431 (Copy Fail) | 7.8 | 90 | Yes (2026-05-01, due 2026-05-15) | Yes — 732-byte script | Yes | Confirmed | Yes | Yes (kpatch/livepatch/kGraft) | Yes |
+| CVE-2026-31431 (Copy Fail) | 7.8 | 100 | Yes (2026-05-01, due 2026-05-15) | Yes — 732-byte script | Yes | Confirmed | Yes | No (live patches cover some distributions' kernels only) | Yes |
 | CVE-2026-43284 (Dirty Frag ESP) | 8.8 | 53 | No | Yes | Yes (AI-assisted) | Suspected | Yes | No (kpatch RHEL-only) | Yes |
 | CVE-2026-43500 (Dirty Frag RxRPC) | 7.6 | 47 | No | Yes (chain component) | Yes (AI-assisted) | Suspected | Yes | No | Yes |
-| CVE-2026-46300 (Fragnesia) | 7.8 | 35 | No (likely candidate) | Yes — one-liner vs /usr/bin/su | Yes (AI-assisted) | None observed | Yes (testing on Alma/CloudLinux) | Yes (kpatch / canonical-livepatch / KernelCare) | No (module-unload mitigation is non-reboot) |
+| CVE-2026-46300 (Fragnesia) | 7.8 | 50 | No | Yes — one-liner vs /usr/bin/su | Yes (AI-assisted) | None observed | Yes | No (live patches cover some distributions' kernels only) | Yes (the kernel update needs a reboot; module unload is a non-reboot mitigation) |
 
 ---
 
@@ -230,7 +230,7 @@ Additional exposure: any IPsec-based network control becomes unreliable
 
 **Fragnesia (CVE-2026-46300):**
 ```
-Exposed if: kernel >= 5.10 AND kernel < [Fragnesia-patched version for distribution]
+Exposed if: kernel >= 3.9 AND kernel < [Fragnesia-patched version for distribution]
             AND any of esp4 / esp6 / rxrpc loaded
 Check: uname -r; lsmod | grep -E '^(esp4|esp6|rxrpc)\b'
 Mitigation (no reboot): blacklist the unused modules in /etc/modprobe.d/fragnesia.conf
@@ -266,7 +266,8 @@ CVE-2026-43284/43500 response are already mitigated for Fragnesia.
 1. Compensating controls (reduce blast radius, do not eliminate exposure):
    - Seccomp profile restricting `userfaultfd`, `TIOCCONS`, and page-cache-adjacent syscalls
    - User namespace restrictions (`sysctl -w kernel.unprivileged_userns_clone=0` where supported)
-   - Network-level isolation of affected hosts
+   - Untrusted users and workloads kept off the host until it reboots into the fixed kernel
+   - Network-level isolation of affected hosts, which limits what an attacker reaches after gaining root but does not stop a local user or workload from exploiting the flaw
    - Enhanced monitoring: eBPF/auditd rules for exploitation patterns (see detection section)
 2. Document as open risk with compensating controls and reboot timeline
 3. CISA KEV listing requires documented remediation or mitigation with timeline
@@ -337,10 +338,10 @@ Produce this structure:
 [Date of CISA KEV listing vs. date of remediation — theater flag if > 72h without live patch capability]
 
 ### RWEP Scores
-CVE-2026-31431: CVSS 7.8 / RWEP 90 — immediate action required (4h)
+CVE-2026-31431: CVSS 7.8 / RWEP 100 — immediate action required (4h)
 CVE-2026-43284: CVSS 8.8 / RWEP 53 — remediate within 7 days; disable RxRPC/IPsec chain if not required
 CVE-2026-43500: CVSS 7.6 / RWEP 47 — remediate within 7 days; consider disabling RxRPC module
-CVE-2026-46300: CVSS 7.8 / RWEP 35 — patch within standard cycle; module unload (esp4/esp6/rxrpc) is the immediate non-reboot mitigation. Same mitigation set as Dirty Frag — already-blacklisted hosts are already covered. Reassess on a CISA KEV listing, which adds 25 points.
+CVE-2026-46300: CVSS 7.8 / RWEP 50 — patch within 7 days; module unload (esp4/esp6/rxrpc) is the immediate non-reboot mitigation. Same mitigation set as Dirty Frag — already-blacklisted hosts are already covered. Reassess on a CISA KEV listing, which adds 25 points.
 ```
 
 ---
@@ -381,7 +382,7 @@ Maps the kernel LPE findings above to MITRE D3FEND techniques with explicit defe
 | **D3-SCP** (System Call Filtering) | Per-container / per-workload seccomp profile blocks the syscalls Copy Fail abuses (`userfaultfd`, `process_vm_writev`, `pwritev2`) without requiring kernel patch. For container-escape variants (T1611 — Copy Fail in a privileged container), this is the only viable runtime mitigation between KEV-listing and the next reboot window. | Layer 2 (Isolate — runtime syscall gate). | Per-container — runtime profile is the principal scope. | Define a default-deny seccomp baseline; the host kernel patch is necessary but seccomp is the per-workload extension that survives an unpatched kernel during the live-patch deployment window. |
 | **D3-PA** (Process Analysis) | Detects post-exploit anomalies — root shell spawned by previously-unprivileged process, suid-binary creation, capability escalation — that follow a Copy Fail-class write. The auditd and Falco / Tetragon rules in the Detection Rules section above are the D3-PA enforcement layer. | Layer 5 (Detect). | Per-host — SOC / EDR ingest the audit stream. | Continuously evaluate process lineage; alert on uid transitions, capability gains, or suid mounts that don't appear in the baseline. |
 
-**Defense-in-depth posture:** the live-patch is the closure; the five D3FEND techniques above are the layers that must remain active *during* the live-patch deployment window. A SOC claiming "we have EDR" is at one D3FEND layer (D3-PA) for a six-layer-deep finding — the harden / isolate / detect stack collapses to a detect-only posture, and a kernel-write primitive that succeeds before EDR fires is unrecoverable. In ephemeral / serverless contexts, D3-PSEP / D3-EAL / D3-SCP / D3-PHRA are configured at image build time; the host-kernel layer remains the CSP's responsibility for managed runtimes, with the consumer responsible for the guest-OS posture on IaaS workloads.
+**Defense-in-depth posture:** the closure is a live patch where the host's kernel has one, or the fixed kernel after a reboot; the five D3FEND techniques above are the layers that must remain active *during* the live-patch deployment or reboot window. A SOC claiming "we have EDR" is at one D3FEND layer (D3-PA) for a six-layer-deep finding — the harden / isolate / detect stack collapses to a detect-only posture, and a kernel-write primitive that succeeds before EDR fires is unrecoverable. In ephemeral / serverless contexts, D3-PSEP / D3-EAL / D3-SCP / D3-PHRA are configured at image build time; the host-kernel layer remains the CSP's responsibility for managed runtimes, with the consumer responsible for the guest-OS posture on IaaS workloads.
 
 ---
 
