@@ -100,7 +100,7 @@ Status of the learning-loop entry for each CVE currently in `data/cve-catalog.js
 | CVE-2026-30615 (Windsurf MCP local-vector RCE) | No | Yes | No (supply-chain) | 35 | Complete — pre-run lesson encoded; new control requirements MCP-SERVER-SIGNING, MCP-TOOL-ALLOWLIST, MCP-SUPPLY-CHAIN-AUDIT generated |
 | CVE-2026-45321 (Mini Shai-Hulud TanStack npm worm) | Yes (2026-05-27) | Yes (worm in-wild) | No (engineering-grade chain) | 70 | Pre-run exemplar lesson encoded below (chained CI/CD primitives — Pwn Request + pnpm-store poisoning + OIDC theft); new control requirements PR-WORKFLOW-PRIVILEGE-CAP, ACTIONS-CACHE-INTEGRITY, OIDC-PUBLISH-AUDIT generated |
 | MAL-2026-3083 (Elementary-Data PyPI worm — forged release via GitHub Actions script-injection) | No (OSSF Malicious Packages dataset; CISA KEV catalogs vendor CVEs only) | Yes (orphan commit + exfil domain confirmed in-wild during 8h window) | No (manual chain) | n/a | Pre-run exemplar lesson encoded below; control requirements GHACTIONS-EVENT-INTERPOLATION-BAN, INSTALL-HOOK-AUDIT, OSSF-MALPACKAGES-INGEST generated |
-| CVE-2026-46300 (Fragnesia — Dirty Frag sequel) | No | Yes (one-liner vs /usr/bin/su) | Yes (AI-assisted discovery with Zellic's agentic auditing tool) | 45 | Complete — pre-run lesson encoded below; control requirements PAGE-CACHE-INTEGRITY-VERIFICATION, BUG-FAMILY-MITIGATION-PERSISTENCE, SCANNER-PAPER-COMPLIANCE-TEST generated. Pattern: a patch for one bug class introduced a sibling bug in the same primitive class. |
+| CVE-2026-46300 (Fragnesia — Dirty Frag sequel) | No | Yes (one-liner vs /usr/bin/su) | Yes (AI-assisted discovery with Zellic's agentic auditing tool) | 50 | Complete — pre-run lesson encoded below; control requirements PAGE-CACHE-INTEGRITY-VERIFICATION, BUG-FAMILY-MITIGATION-PERSISTENCE, SCANNER-PAPER-COMPLIANCE-TEST generated. Pattern: a patch for one bug class introduced a sibling bug in the same primitive class. |
 
 Every new entry added to `data/cve-catalog.json` must produce a corresponding entry here and in `data/zeroday-lessons.json` before the catalog change ships. Any CVE in the catalog without a complete lesson entry is a pre-ship-checklist failure.
 
@@ -234,7 +234,7 @@ Output: Lesson entry for data/zeroday-lessons.json
 3. **SCANNER-PAPER-COMPLIANCE-TEST**: A vulnerability scanner that reports "patched" based on kernel package version alone is paper compliance. The operational test: does the scan account for the module-unload mitigation surface, AND does it verify the kernel is on a build that includes the specific Fragnesia patch (not just any version newer than the Dirty Frag patch that introduced Fragnesia)?
 
 **Exposure scoring:**
-- RWEP: 45 today. A CISA KEV listing adds 25 (70), and confirmed active exploitation adds 20 more (90).
+- RWEP: 50 today. A CISA KEV listing adds 25 (75), and confirmed active exploitation adds 20 more (95).
 - Audit-passing orgs still exposed: ~75%. Operators who retained the Dirty Frag module blacklist are already mitigated. Operators who relied on kernel-package-version alone with vanilla SI-2 / A.8.8 SLAs are exposed during the patch window.
 - Coverage failure: on-disk file-integrity tools (AIDE, Tripwire) report clean while the page-cache copy of /usr/bin/su is corrupted.
 

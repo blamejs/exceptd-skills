@@ -105,7 +105,7 @@ The IPsec dimension is critical: organizations with network segmentation control
 ### Fragnesia — CVE-2026-46300
 
 **Classification:** Local Privilege Escalation | Dirty Frag family sequel | AI-Assisted Discovery  
-**CVSS:** 7.8 (High) | **RWEP:** 45/100 (70 on a CISA KEV listing)
+**CVSS:** 7.8 (High) | **RWEP:** 50/100 (75 on a CISA KEV listing)
 
 Disclosed 2026-05-13 by William Bowling (V12 security team). The Hacker News and Help Net Security attribute the discovery to William Bowling of Zellic working with Zellic's AI-agentic software auditing tool. Same primitive class as Dirty Frag — Fragnesia is the sibling bug introduced by the patch for CVE-2026-43284 / CVE-2026-43500. The defect is in `skb_try_coalesce()`: when transferring paged fragments between socket buffers, the kernel fails to propagate the `SKBFL_SHARED_FRAG` marker, losing track of externally-backed fragments (page-cache pages spliced from a file). An unprivileged local user can deterministically overwrite read-only file data in the kernel page cache without modifying the on-disk file. Public PoC targets `/usr/bin/su` for a one-line root shell.
 
@@ -115,7 +115,7 @@ Key characteristics:
 - **Page-cache corruption without on-disk write** — file-integrity tools that hash on-disk bytes (AIDE, Tripwire, IMA in measure-only mode) cannot detect the corruption.
 - **Module-unload mitigation is identical to Dirty Frag** — blacklist `esp4`, `esp6`, `rxrpc` in `/etc/modprobe.d/`. Any host already mitigated for Dirty Frag by module blacklist is already mitigated for Fragnesia, with no further action required.
 - **Live patches cover some kernels only** — Red Hat kpatch, SUSE kernel-livepatch, Amazon kernel-livepatch and KernelCare livepatches cover RHEL 8, 9 and 10, SLE 12 SP5, 15 SP4 to SP7 and 16.0, Amazon Linux 2 and 2023, AlmaLinux 8 to 10, Debian 11 to 13 and Ubuntu 22.04 and 24.04. Ubuntu 26.04 LTS, Ubuntu 25.10, the Ubuntu 24.04 AWS and 22.04 HWE Noble AWS kernels, Debian forky and sid, and mainline kernels built from source have no documented live patch. The entry takes no live-patch credit.
-- **Not CISA KEV-listed as of the 2026-09-27 KEV catalog**, and no active exploitation has been observed in the wild. RWEP is 45; a KEV listing takes it to 70, and confirmed active exploitation to 90.
+- **Not CISA KEV-listed as of the 2026-09-27 KEV catalog**, and no active exploitation has been observed in the wild. RWEP is 50; a KEV listing takes it to 75, and confirmed active exploitation to 95.
 
 **Lesson for operators:** when a CVE patch lands, retain the pre-patch compensating controls (module blacklists, sysctl restrictions) until the patched code has soaked. Fragnesia is the canonical case — the Dirty Frag patch introduced Fragnesia, and the same `modprobe -r esp4 esp6 rxrpc` mitigation covers both.
 
@@ -170,7 +170,7 @@ Note: ATLAS refs are intentionally empty in frontmatter — these are Linux kern
 | CVE-2026-31431 (Copy Fail) | 7.8 | 100 | Yes (2026-05-01, due 2026-05-15) | Yes — 732-byte script | Yes | Confirmed | Yes | No (live patches cover some distributions' kernels only) | Yes |
 | CVE-2026-43284 (Dirty Frag ESP) | 8.8 | 53 | No | Yes | Yes (AI-assisted) | Suspected | Yes | No (kpatch RHEL-only) | Yes |
 | CVE-2026-43500 (Dirty Frag RxRPC) | 7.6 | 47 | No | Yes (chain component) | Yes (AI-assisted) | Suspected | Yes | No | Yes |
-| CVE-2026-46300 (Fragnesia) | 7.8 | 45 | No | Yes — one-liner vs /usr/bin/su | Yes (AI-assisted) | None observed | Yes | No (live patches cover some distributions' kernels only) | No (module-unload mitigation is non-reboot) |
+| CVE-2026-46300 (Fragnesia) | 7.8 | 50 | No | Yes — one-liner vs /usr/bin/su | Yes (AI-assisted) | None observed | Yes | No (live patches cover some distributions' kernels only) | Yes (the kernel update needs a reboot; module unload is a non-reboot mitigation) |
 
 ---
 
@@ -340,7 +340,7 @@ Produce this structure:
 CVE-2026-31431: CVSS 7.8 / RWEP 100 — immediate action required (4h)
 CVE-2026-43284: CVSS 8.8 / RWEP 53 — remediate within 7 days; disable RxRPC/IPsec chain if not required
 CVE-2026-43500: CVSS 7.6 / RWEP 47 — remediate within 7 days; consider disabling RxRPC module
-CVE-2026-46300: CVSS 7.8 / RWEP 45 — patch within 7 days; module unload (esp4/esp6/rxrpc) is the immediate non-reboot mitigation. Same mitigation set as Dirty Frag — already-blacklisted hosts are already covered. Reassess on a CISA KEV listing, which adds 25 points.
+CVE-2026-46300: CVSS 7.8 / RWEP 50 — patch within 7 days; module unload (esp4/esp6/rxrpc) is the immediate non-reboot mitigation. Same mitigation set as Dirty Frag — already-blacklisted hosts are already covered. Reassess on a CISA KEV listing, which adds 25 points.
 ```
 
 ---
