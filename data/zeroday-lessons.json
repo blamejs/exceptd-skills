@@ -7053,7 +7053,7 @@
     ],
     "compliance_exposure_score": {
       "percent_audit_passing_orgs_still_exposed": 90,
-      "basis": "Affected component not yet publicly disclosed; presumed broad Windows fleet exposure pending Microsoft advisory.",
+      "basis": "Microsoft's record for CVE-2026-45586 (2026-06-09) lists Windows 10 1607 through Windows 11 26H1 and Windows Server 2012 through Windows Server 2025 as affected, and each listed release is exposed until it installs the June 2026 security update.",
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
