@@ -222,6 +222,55 @@ test('discoverNewKev does not draft a KEV CVE that an entry lists in aliases[]',
   });
 });
 
+// --- advisory seeding and draft adds ------------------------------------------
+
+test('aliasOwner names the entry that lists a CVE in aliases[], and null otherwise', () => {
+  const { aliasOwner } = require('../lib/catalog-ids');
+  const cat = catalogWithAlias();
+  assert.equal(aliasOwner(cat, 'CVE-2099-0002'), 'BUG-2099-ALIASED');
+  assert.equal(aliasOwner(cat, 'CVE-2099-0001'), null, 'an own key is not an alias');
+  assert.equal(aliasOwner(cat, 'CVE-2099-0404'), null);
+});
+
+test('refresh --advisory refuses to add an entry for a CVE an entry lists as an alias', () => {
+  const fix = path.join(ROOT, 'tests', 'fixtures', 'ghsa-cve-2026-45321.json');
+  return withCache((dir) => {
+    const tmpCatalog = path.join(dir, 'cve-catalog.json');
+    // The GHSA fixture answers for CVE-9999-99999, so an entry lists that id as an alias.
+    const cat = { ...catalogWithAlias(), 'BUG-2099-ALIASED': { ...catalogWithAlias()['BUG-2099-ALIASED'], aliases: ['CVE-9999-99999'] } };
+    fs.writeFileSync(tmpCatalog, JSON.stringify(cat, null, 2) + '\n');
+    const before = fs.readFileSync(tmpCatalog, 'utf8');
+    for (const extra of [[], ['--apply']]) {
+      const r = spawnSync(process.execPath, [path.join(ROOT, 'lib', 'refresh-external.js'), '--advisory', 'CVE-9999-99999', ...extra, '--catalog', tmpCatalog, '--json'], {
+        encoding: 'utf8', env: { ...process.env, EXCEPTD_GHSA_FIXTURE: fix, EXCEPTD_DEPRECATION_SHOWN: '1', EXCEPTD_UNSIGNED_WARNED: '1' },
+      });
+      assert.equal(r.status, 4, `--advisory ${extra.join(' ') || '(dry run)'} exits 4 for an aliased CVE: ${r.stdout}${r.stderr}`);
+      const body = JSON.parse(r.stdout);
+      assert.equal(body.ok, false);
+      assert.equal(body.alias_of, 'BUG-2099-ALIASED');
+    }
+    assert.equal(fs.readFileSync(tmpCatalog, 'utf8'), before, 'the catalog is unchanged');
+  });
+});
+
+test('the KEV, GHSA and OSV sources do not add an entry for an aliased CVE', async () => {
+  for (const src of ['kev', 'ghsa', 'osv']) {
+    await withCache(async (dir) => {
+      const cvePath = path.join(dir, 'cve-catalog.json');
+      fs.writeFileSync(cvePath, JSON.stringify(catalogWithAlias(), null, 2) + '\n');
+      const ctx = { cveCatalog: catalogWithAlias(), cvePath };
+      const entry = { name: 'draft', _auto_imported: true };
+      const diffs = src === 'kev'
+        ? [{ op: 'add', id: 'CVE-2099-0002', entry }, { op: 'add', id: 'CVE-2099-0003', entry }]
+        : [{ id: 'CVE-2099-0002', field: '_new_entry', after: entry }, { id: 'CVE-2099-0003', field: '_new_entry', after: entry }];
+      await ALL_SOURCES[src].applyDiff(ctx, diffs);
+      const after = JSON.parse(fs.readFileSync(cvePath, 'utf8'));
+      assert.equal(after['CVE-2099-0002'], undefined, `${src} adds no entry for the aliased CVE`);
+      assert.ok(after['CVE-2099-0003'], `${src} still adds an entry for an untracked CVE`);
+    });
+  }
+});
+
 // --- validate-cves --------------------------------------------------------------
 
 test('validate-cves --offline lists an aliased CVE with * and names its entry', () => {
