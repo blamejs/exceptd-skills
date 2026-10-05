@@ -102,16 +102,16 @@ The theater patterns most acutely under attack today are those backed by high-RW
 
 | Theater pattern | Evidence CVE | CVSS | RWEP tier | KEV | Public PoC | AI-accelerated | Live-patchable | Active exploitation |
 |---|---|---|---|---|---|---|---|---|
-| Patch Management Theater | CVE-2026-31431 (Copy Fail) | 7.8 | 90 | Yes (2026-05-01) | Yes (732 bytes, deterministic) | Yes (AI-discovered) | Yes (kpatch/livepatch) | Confirmed |
+| Patch Management Theater | CVE-2026-31431 (Copy Fail) | 7.8 | 100 | Yes (2026-05-01) | Yes (732 bytes, deterministic) | Yes (AI-discovered) | No (live patches cover some distributions' kernels only; no live-patch credit) | Confirmed |
 | Vendor Management Theater (AI APIs / MCP) | CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 | 35 | No | Yes | No | Yes (IDE update) | Suspected |
 | Access Control Theater (AI agents) | CVE-2025-53773 (Copilot YOLO-mode RCE) | 7.8 | 30 | No | Yes (demonstrated) | Yes (AI tooling enables) | Yes (SaaS push / IDE update) | Suspected |
 | Network Segmentation Theater (IPsec) | CVE-2026-43284 (Dirty Frag) | 8.8 | 53 | No | Yes (chain component) | Yes (AI-assisted discovery) | Limited (kpatch RHEL-only) | Suspected |
-| Patch Management Theater (Bug-Family Sequel) | CVE-2026-46300 (Fragnesia) | 7.8 | 35 (60 if KEV-listed) | No (candidate) | Yes (one-liner vs /usr/bin/su) | Yes (AI-assisted discovery) | Yes (kpatch / canonical-livepatch / KernelCare) | None observed |
+| Patch Management Theater (Bug-Family Sequel) | CVE-2026-46300 (Fragnesia) | 7.8 | 45 (70 if KEV-listed) | No | Yes (one-liner vs /usr/bin/su) | Yes (AI-assisted discovery) | No (live patches cover some distributions' kernels only; no live-patch credit) | None observed |
 | Incident Response Theater (AI pipeline) | SesameOp campaign + AML.T0096 | N/A | High | N/A | ATLAS-documented | Yes | N/A | Confirmed campaign |
 | Change Management Theater (AI models) | Continuous provider updates | N/A | Medium | N/A | N/A | N/A | N/A | Ongoing (uncontrolled) |
 | Security Awareness Theater (AI phishing) | AI-generated phishing baseline (82.6%) | N/A | High | N/A | Operational | Yes | N/A | Confirmed (industry-wide) |
 
-Rows with a high RWEP and a public PoC or confirmed exploitation, led by Copy Fail at RWEP 90, are the most dangerous theater patterns to leave un-remediated. Pull authoritative scoring from `data/exploit-availability.json` and `data/cve-catalog.json` before producing the output.
+Rows with a high RWEP and a public PoC or confirmed exploitation, led by Copy Fail at RWEP 100, are the most dangerous theater patterns to leave un-remediated. Pull authoritative scoring from `data/exploit-availability.json` and `data/cve-catalog.json` before producing the output.
 
 ---
 

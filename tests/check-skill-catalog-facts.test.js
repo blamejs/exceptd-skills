@@ -426,6 +426,27 @@ test("Active Exploitation, Patch and Live Patch columns are compared with the ca
   ]);
 });
 
+test("a live-patch No followed by another negation is compared; a qualifier or a later Yes still leaves it uncompared", () => {
+  const cat = {
+    ...CATALOG,
+    "CVE-2099-0001": { ...CATALOG["CVE-2099-0001"], live_patch_available: true },
+    "CVE-2099-0002": { ...CATALOG["CVE-2099-0002"], live_patch_available: false },
+  };
+  const run = (lines) => withSkill(lines.join("\n") + "\n", (file) => checkSkill(file, cat).failures.map((f) => f.replace(/^.*skill\.md:/, "")));
+  assert.deepEqual(run(apart("| CVE | Live Patch |", [
+    "| CVE-2099-0001 | No (the fix is an IDE upgrade, not a runtime patch) |",
+    "| CVE-2099-0001 | No (live patches cover some distributions' kernels only; no live-patch credit) |",
+    "| CVE-2099-0001 | No (none yet; kpatch pending) |",
+    "| CVE-2099-0001 | No (not on Ubuntu); Yes (RHEL kpatch) |",
+    "| CVE-2099-0002 | Yes (not on Ubuntu) |",
+    "| CVE-2099-0002 | Yes (kpatch) |",
+  ])), [
+    '3 CVE-2099-0001: live patch "No (the fix is an IDE upgrade, not a run", catalog live_patch_available true',
+    '7 CVE-2099-0001: live patch "No (live patches cover some distribution", catalog live_patch_available true',
+    '23 CVE-2099-0002: live patch "Yes (kpatch)", catalog live_patch_available false',
+  ]);
+});
+
 test("a section that has the same row CVE on several rows leaves its exploitation, patch and live-patch cells uncompared", () => {
   const cat = { ...CATALOG, "CVE-2099-0001": { ...CATALOG["CVE-2099-0001"], patch_available: true, live_patch_available: true } };
   const run = (lines) => withSkill(lines.join("\n") + "\n", (file) => checkSkill(file, cat).failures.map((f) => f.replace(/^.*skill\.md:/, "")));
@@ -881,10 +902,16 @@ test("each alternative of the closed patch, exploitation and live-patch wordings
     "if", "unless", "except", "but", "although", "however", "withdrawn", "revoked", "reverted", "pulled", "superseded"];
   for (const word of QUALIFYING_WORDS) want(`Vendor patch + hardening ${word}`, "not compared");
   assert.deepEqual(wrong, []);
-  // The same qualifying words after a live-patch Yes or No leave it not compared.
+  // The same qualifying words after a live-patch Yes or No leave it not compared,
+  // except that no, not, none and never after a No restate it and leave it read.
+  const NEGATIONS = ["not", "no", "none", "never"];
   for (const live of [true, false]) {
-    const rows = apart("| CVE | Live Patch |", QUALIFYING_WORDS.flatMap((w) => [`| CVE-2099-0001 | Yes (kpatch ${w}) |`, `| CVE-2099-0001 | No (kpatch ${w}) |`]));
+    const rows = apart("| CVE | Live Patch |", QUALIFYING_WORDS.flatMap((w) => [`| CVE-2099-0001 | Yes (kpatch ${w}) |`].concat(NEGATIONS.includes(w) ? [] : [`| CVE-2099-0001 | No (kpatch ${w}) |`])));
     assert.deepEqual(withSkill(rows.join("\n") + "\n", (file) => checkSkill(file, { ...CATALOG, "CVE-2099-0001": { ...CATALOG["CVE-2099-0001"], live_patch_available: live } }).failures), [], String(live));
+  }
+  for (const w of NEGATIONS) {
+    const rows = apart("| CVE | Live Patch |", [`| CVE-2099-0001 | No (kpatch ${w}) |`]);
+    assert.equal(withSkill(rows.join("\n") + "\n", (file) => checkSkill(file, { ...CATALOG, "CVE-2099-0001": { ...CATALOG["CVE-2099-0001"], live_patch_available: true } }).failures).length, 1, w);
   }
   // Every none and not-confirmed wording is read.
   const states = ["suspected", "unknown", "none", "theoretical", "confirmed"];

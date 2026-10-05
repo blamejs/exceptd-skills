@@ -96,9 +96,9 @@ This skill consumes the matrix produced upstream by the exploit-scoring skill. T
 
 | CVE | CVSS | RWEP | KEV | Public PoC | AI-accelerated | Live-patchable | Active exploitation |
 |---|---|---|---|---|---|---|---|
-| CVE-2026-31431 (Copy Fail) | 7.8 | 90 | Yes (2026-05-01) | Yes (732 bytes, deterministic) | Yes (AI-discovered) | Yes (kpatch/livepatch) | Confirmed |
+| CVE-2026-31431 (Copy Fail) | 7.8 | 100 | Yes (2026-05-01) | Yes (732 bytes, deterministic) | Yes (AI-discovered) | No (live patches cover some distributions' kernels only; the entry takes zero live-patch credit) | Confirmed |
 | CVE-2026-43284 (Dirty Frag) | 8.8 | 53 | No | Yes (chain component) | Yes (AI-assisted discovery) | Limited (kpatch RHEL-only) | Suspected |
-| CVE-2026-46300 (Fragnesia) | 7.8 | 35 (60 if KEV-listed) | No (candidate) | Yes (one-liner vs /usr/bin/su) | Yes (AI-assisted discovery) | Yes (kpatch / canonical-livepatch / KernelCare) | None observed |
+| CVE-2026-46300 (Fragnesia) | 7.8 | 45 (70 if KEV-listed) | No | Yes (one-liner vs /usr/bin/su) | Yes (AI-assisted discovery) | No (live patches cover some distributions' kernels only; the entry takes zero live-patch credit) | None observed |
 | CVE-2025-53773 (Copilot YOLO-mode RCE) | 7.8 | 30 | No | Yes (demonstrated) | Yes (AI tooling enables) | Yes (SaaS push / IDE update) | Suspected |
 | CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 | 35 | No | Yes | No | Yes (IDE update) | Suspected |
 
@@ -389,7 +389,7 @@ Every Framework Lag Declaration this skill produces names the missing control. T
 
 | Offensive TTP | Framework gap exemplar | D3FEND ID | Defensive technique | Defense-in-depth layer |
 |---|---|---|---|---|
-| T1068 (Exploitation for Privilege Escalation) — Copy Fail / Fragnesia | SI-2 / A.8.8 / PCI 6.3.3 30-day patch SLA | `D3-KBPI` | Kernel-Based Process Isolation | Kernel — compensating control while live-patch propagates; reduces blast radius when LPE primitive is reachable |
+| T1068 (Exploitation for Privilege Escalation) — Copy Fail / Fragnesia | SI-2 / A.8.8 / PCI 6.3.3 30-day patch SLA | `D3-KBPI` | Kernel-Based Process Isolation | Kernel — compensating control until a fixed kernel or, where one exists, a live patch is deployed; reduces blast radius when LPE primitive is reachable |
 | T1068 | SI-2 / A.8.8 patch SLA | `D3-SCA` | System Call Analysis | Endpoint — detects the deterministic LPE primitive at syscall layer before patch lands |
 | AML.T0051 (LLM Prompt Injection) — CVE-2025-53773 class | AC-2 / CC6 account-management as access control for AI agents | `D3-IOPR` | Input/Output Profiling Resource | SDK / application — content-aware inspection of prompt+completion at the model boundary |
 | AML.T0051 | AC-2 / CC6 | `D3-CSPP` | Client-server Payload Profiling | LLM gateway — gateway-layer inspection when SDK-side `D3-IOPR` is not deployable |

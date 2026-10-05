@@ -623,15 +623,17 @@ describe('analyze', () => {
     }
   });
 
-  it('RWEP base is max of evidence-correlated cve rwep scores (Copy Fail = 90 when indicator fires)', () => {
+  it('RWEP base is max of evidence-correlated cve rwep scores (Copy Fail = 100 when indicator fires)', () => {
     // With the fix, RWEP base reflects the evidence-correlated maximum, not
     // the catalog-baseline maximum. Fire the indicator that ties the kernel
-    // CVEs into matched_cves so the base resolves to Copy Fail's 90.
+    // CVEs into matched_cves so the base resolves to Copy Fail's 100.
     const detRes = runner.detect('kernel', 'all-catalogued-kernel-cves', {
       signal_overrides: { 'kver-in-affected-range': 'hit' }
     });
     const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', detRes);
-    assert.equal(an.rwep.base, 90);
+    const catalog = require('../data/cve-catalog.json');
+    assert.equal(an.rwep.base, catalog['CVE-2026-31431'].rwep_score);
+    assert.equal(an.rwep.base, 100);
   });
 
   it('RWEP base is 0 when no evidence correlates (no inflated catalog-ceiling)', () => {
@@ -1493,9 +1495,9 @@ describe('edge cases', () => {
 
   it('playbook with empty rwep_inputs → adjusted RWEP == base RWEP', () => {
     // Fire an indicator that correlates to CVE-2026-31431 via shared
-    // attack_ref T1068 so base RWEP resolves to the catalog's 90. Post-fix
-    // RWEP base reflects evidence-correlated matches, not catalog-baseline,
-    // so the indicator hit is needed to surface base=90.
+    // attack_ref T1068 so base RWEP resolves to the catalog's 100. RWEP base
+    // reflects evidence-correlated matches, not catalog-baseline, so the
+    // indicator hit is needed to surface base=100.
     writePlaybook(dir, 'p', synthPlaybook({
       domain: { cve_refs: ['CVE-2026-31431'] },
       phases: {
@@ -1508,8 +1510,8 @@ describe('edge cases', () => {
     const runner = freshRunner(dir);
     const detRes = runner.detect('p', 'default', { signal_overrides: { kev: 'hit' } });
     const an = runner.analyze('p', 'default', detRes);
-    assert.equal(an.rwep.base, 90);
-    assert.equal(an.rwep.adjusted, 90);
+    assert.equal(an.rwep.base, 100);
+    assert.equal(an.rwep.adjusted, 100);
     assert.equal(an.rwep.breakdown.length, 0);
   });
 
@@ -4788,6 +4790,11 @@ function emitBundlesWith(opts = {}) {
     patch_available: false, blast_radius_score: 3,
     ...(opts.vex_fixed ? { vex_fixed: opts.vex_fixed } : {}),
   });
+  // No catalogued kernel CVE takes a live-patch credit, so one matched CVE is
+  // marked live-patchable here: the bundles must still report it affected unless
+  // the operator's VEX marks it fixed.
+  const livePatchable = an.matched_cves.find((c) => c.cve_id === 'CVE-2026-31431') || an.matched_cves[0];
+  if (livePatchable) livePatchable.live_patch_available = true;
   const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {});
   const c = runner.close('kernel', 'all-catalogued-kernel-cves', an, v, {
     _bundle_formats: ['csaf-2.0', 'sarif-2.1.0', 'openvex-0.2.0']
@@ -4798,8 +4805,8 @@ function emitBundlesWith(opts = {}) {
 describe('audit W P1-A — fixed status gated on vex_status, not live_patch_available', () => {
   it('CSAF: live-patchable CVE without operator VEX disposition stays known_affected', () => {
     const { bundles, analyze } = emitBundlesWith();
-    // The kernel playbook surfaces Copy Fail (live_patch_available=true) but
-    // no operator-supplied VEX disposition is present in this run.
+    // emitBundlesWith marks one matched kernel CVE live-patchable, and no
+    // operator-supplied VEX disposition is present in this run.
     const livePatchableMatched = analyze.matched_cves.filter(c => c.live_patch_available === true);
     assert.ok(livePatchableMatched.length >= 1, 'fixture: at least one matched CVE must be live-patchable');
     for (const matched of livePatchableMatched) {

@@ -153,14 +153,18 @@ function patchForm(cell) {
  * RHEL-only"), or null when another word or a hyphen follows it ("No-reboot
  * hotpatch", "No reboot"), when a qualifying word comes after it ("Yes (kpatch
  * pending)"), or when a later Yes follows it ("No (Ubuntu); Yes (RHEL
- * kpatch)").
+ * kpatch)"). After a leading No, the negations no, not, none and never restate
+ * it ("No (the fix is an IDE upgrade, not a runtime patch)") and do not count as
+ * qualifying words.
  */
 function plainAnswer(cell) {
   const m = /^(yes|no)(?=\s*(?:$|[,;.:(—–]|-\s))/i.exec(cell);
   if (!m) return null;
+  const isNo = m[1].toLowerCase() === "no";
   const rest = cell.slice(m[0].length);
-  if (QUALIFYING.test(rest) || /\byes\b/i.test(rest)) return null;
-  return m[1].toLowerCase() === "yes";
+  const qualifiers = isNo ? rest.replace(/\b(?:not|no|none|never)\b/gi, " ") : rest;
+  if (QUALIFYING.test(qualifiers) || /\byes\b/i.test(rest)) return null;
+  return !isNo;
 }
 
 /**
