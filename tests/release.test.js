@@ -658,3 +658,72 @@ require("node:test").describe("resumed commit and push refuse uncommitted change
     }
   });
 });
+
+require("node:test").describe("review-bot findings posted as PR comments", () => {
+  const test = require("node:test");
+  const assert = require("node:assert/strict");
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const SRC = fs.readFileSync(path.join(__dirname, "..", "scripts", "release.js"), "utf8");
+  const { _blockingBotFindings, CODEX_BOT_LOGIN } = require("../scripts/release.js");
+
+  const finding = (id, at, title, badge = "P1") => ({
+    id, login: CODEX_BOT_LOGIN, created_at: at, html_url: `https://example.invalid/c${id}`,
+    body: `### 💡 Codex Review\n\nhttps://github.com/o/r/blob/abc/data/x.json#L1\n**<sub><sub>![${badge} Badge](https://img.shields.io/badge/${badge}-orange?style=flat)</sub></sub>  ${title}**\n\nDetails.`,
+  });
+  const clean = (id, at) => ({ id, login: CODEX_BOT_LOGIN, created_at: at, body: "Codex Review: Didn't find any major issues. :rocket:" });
+  const summary = (id, at) => ({ id, login: CODEX_BOT_LOGIN, created_at: at, body: "<!-- codex-pull-request-review-summary -->\n## Codex Review Summary" });
+  const thumbs = (at, login = CODEX_BOT_LOGIN) => ({ login, content: "+1", created_at: at });
+
+  test("a finding comment with no later clean review blocks, with its badge and title", () => {
+    const got = _blockingBotFindings([summary(1, "2026-10-05T07:00:00Z"), finding(2, "2026-10-05T07:33:47Z", "Clear the reboot factor when no patch exists")], [], []);
+    assert.equal(got.length, 1);
+    assert.equal(got[0].id, 2);
+    assert.deepEqual(got[0].titles, ["P1 Clear the reboot factor when no patch exists"]);
+    assert.equal(got[0].url, "https://example.invalid/c2");
+  });
+
+  test("a later clean comment or a later bot 👍 on the PR clears it", () => {
+    const f = finding(2, "2026-10-05T07:33:47Z", "t");
+    assert.deepEqual(_blockingBotFindings([f, clean(3, "2026-10-05T08:00:00Z")], [], []), []);
+    assert.deepEqual(_blockingBotFindings([f], [thumbs("2026-10-05T08:00:00Z")], []), []);
+  });
+
+  test("a clean signal from before the finding, or from someone else, does not clear it", () => {
+    const f = finding(2, "2026-10-05T07:33:47Z", "t");
+    assert.equal(_blockingBotFindings([clean(1, "2026-10-05T07:00:00Z"), f], [thumbs("2026-10-05T07:10:00Z")], []).length, 1);
+    assert.equal(_blockingBotFindings([f], [thumbs("2026-10-05T08:00:00Z", "dotCooCoo")], []).length, 1);
+    const human = { ...clean(3, "2026-10-05T08:00:00Z"), login: "dotCooCoo" };
+    assert.equal(_blockingBotFindings([f, human], [], []).length, 1);
+  });
+
+  test("an acknowledged comment id does not block; others still do", () => {
+    const a = finding(2, "2026-10-05T07:00:00Z", "first", "P2");
+    const b = finding(5, "2026-10-05T07:30:00Z", "second", "P0");
+    const got = _blockingBotFindings([a, b], [], ["2"]);
+    assert.deepEqual(got.map((x) => x.id), [5]);
+    assert.deepEqual(got[0].titles, ["P0 second"]);
+  });
+
+  test("a finding comment whose date cannot be read blocks", () => {
+    assert.equal(_blockingBotFindings([finding(2, "not a date", "t")], [thumbs("2026-10-05T08:00:00Z")], []).length, 1);
+  });
+
+  test("comments without a badge, and badge text from other authors, never block", () => {
+    const human = { ...finding(2, "2026-10-05T07:00:00Z", "t"), login: "someone" };
+    assert.deepEqual(_blockingBotFindings([summary(1, "2026-10-05T07:00:00Z"), human, clean(3, "2026-10-05T06:00:00Z")], [], []), []);
+    assert.deepEqual(_blockingBotFindings([], [], []), []);
+  });
+
+  test("watch and merge both gate on the comment check, and the read throws on a bad response", () => {
+    const watch = SRC.slice(SRC.indexOf("function cmdWatch"), SRC.indexOf("function cmdMerge"));
+    const merge = SRC.slice(SRC.indexOf("function cmdMerge"), SRC.indexOf("function cmdTag"));
+    assert.match(watch, /_botFindings\(prNum\)[\s\S]*process\.exit\(3\)/);
+    assert.match(merge, /_botFindings\(prNum\)[\s\S]*throw new Error\("release: refusing to merge/);
+    const reader = SRC.slice(SRC.indexOf("function _botFindings"), SRC.indexOf("function _printBotFindings"));
+    assert.match(reader, /_captureOk\("gh"/, "a failed gh call throws rather than returning empty");
+    assert.match(reader, /throw new Error\("release: unparseable/);
+    assert.match(reader, /issues\/" \+ prNum \+ "\/comments", "--paginate"/);
+    assert.match(reader, /issues\/" \+ prNum \+ "\/reactions", "--paginate"/);
+  });
+});

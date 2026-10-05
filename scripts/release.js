@@ -215,6 +215,71 @@ function _unresolvedThreads(prNum) {
   });
 }
 
+// The codex review bot posts a finding it cannot anchor to a diff line as a
+// top-level PR comment rather than a review thread, so the thread check never
+// sees it. A clean review shows up as a "Didn't find any major issues" comment or
+// a 👍 reaction on the PR.
+var CODEX_BOT_LOGIN = "chatgpt-codex-connector[bot]";
+var BOT_FINDING_RE = /!\[P[0-3] Badge\]/;
+var BOT_CLEAN_RE = /Didn't find any major issues/;
+
+// Bot finding comments with no later clean signal from the bot. comments and
+// reactions are arrays of { id, login, body, created_at } and
+// { login, content, created_at }; ackIds holds comment ids a maintainer has
+// acknowledged as fixed. Each blocking entry carries its finding titles.
+function _blockingBotFindings(comments, reactions, ackIds) {
+  var acked = new Set((ackIds || []).map(String));
+  var cleanTimes = [];
+  (comments || []).forEach(function (c) {
+    if (c && c.login === CODEX_BOT_LOGIN && BOT_CLEAN_RE.test(c.body || "")) cleanTimes.push(Date.parse(c.created_at));
+  });
+  (reactions || []).forEach(function (r) {
+    if (r && r.login === CODEX_BOT_LOGIN && r.content === "+1") cleanTimes.push(Date.parse(r.created_at));
+  });
+  return (comments || []).filter(function (c) {
+    if (!c || c.login !== CODEX_BOT_LOGIN || !BOT_FINDING_RE.test(c.body || "")) return false;
+    if (acked.has(String(c.id))) return false;
+    var at = Date.parse(c.created_at);
+    if (!Number.isFinite(at)) return true;
+    return !cleanTimes.some(function (t) { return Number.isFinite(t) && t > at; });
+  }).map(function (c) {
+    var titles = [];
+    var re = /!\[(P[0-3]) Badge\]\([^)]*\)(?:<\/sub>)*\s*(.*?)\*\*/g;
+    var m;
+    while ((m = re.exec(c.body)) !== null) titles.push(m[1] + " " + m[2].trim());
+    return { id: c.id, url: c.html_url || null, created_at: c.created_at, titles: titles };
+  });
+}
+
+// Reads every issue comment and every PR reaction; a failed or unparseable read
+// throws, so an API error cannot pass as "no findings".
+function _botFindings(prNum) {
+  function ndjson(label, args) {
+    var out = _captureOk("gh", args);
+    return String(out || "").split("\n").filter(Boolean).map(function (line) {
+      try { return JSON.parse(line); } catch (e) {
+        throw new Error("release: unparseable " + label + " response for PR #" + prNum + ": " + e.message);
+      }
+    });
+  }
+  var comments = ndjson("issue-comment", ["api", "repos/:owner/:repo/issues/" + prNum + "/comments", "--paginate",
+    "--jq", ".[] | {id, login: .user.login, body, created_at, html_url}"]);
+  var reactions = ndjson("reaction", ["api", "repos/:owner/:repo/issues/" + prNum + "/reactions", "--paginate",
+    "--jq", ".[] | {login: .user.login, content, created_at}"]);
+  var ack = String(process.env.RELEASE_ACK_BOT_COMMENTS || "").split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+  return _blockingBotFindings(comments, reactions, ack);
+}
+
+function _printBotFindings(findings) {
+  console.log("\nreview-bot findings posted as PR comments, with no clean bot review after them (" + findings.length + "):");
+  findings.forEach(function (f) {
+    console.log("  - comment " + f.id + " (" + f.created_at + ")" + (f.url ? "  " + f.url : ""));
+    f.titles.forEach(function (t) { console.log("      " + t); });
+  });
+  console.log("\nFix in code, push, reply on the PR, comment \"@codex review\", then re-run: node scripts/release.js watch");
+  console.log("If the bot cannot re-review, list the comment ids you have fixed in RELEASE_ACK_BOT_COMMENTS (comma-separated).");
+}
+
 // Open CodeQL alerts. Returns the alert array, or null when the query cannot run
 // at all, so a transient API failure fails OPEN rather than blocking a release.
 // The union of two refs is required: refs/pull/<N>/merge misses an alert already
@@ -502,6 +567,13 @@ function cmdWatch() {
     process.exit(3); // allow:process-exit-after-stdout-write — maintainer-run release orchestrator; the guidance line above is human-read on a TTY, not a piped result channel
   }
   _ok("zero unresolved review threads");
+
+  var botFindings = _botFindings(prNum);
+  if (botFindings.length > 0) {
+    _printBotFindings(botFindings);
+    process.exit(3); // allow:process-exit-after-stdout-write — maintainer-run release orchestrator; the guidance line above is human-read on a TTY, not a piped result channel
+  }
+  _ok("zero open review-bot findings in PR comments");
   console.log("\nnext: node scripts/release.js merge");
 }
 
@@ -523,6 +595,12 @@ function cmdMerge() {
   if (unresolved.length > 0) {
     throw new Error("release: refusing to merge PR #" + prNum + " — " +
       unresolved.length + " unresolved review thread(s); run watch again");
+  }
+  var botFindings = _botFindings(prNum);
+  if (botFindings.length > 0) {
+    _printBotFindings(botFindings);
+    throw new Error("release: refusing to merge PR #" + prNum + " — " +
+      botFindings.length + " review-bot finding comment(s) with no clean review after them; run watch again");
   }
   // The squash commit takes its subject and body from the CHANGELOG section, not
   // from the branch's commit messages.
@@ -762,4 +840,4 @@ function main(argv) {
 if (require.main === module) main(process.argv);
 
 // Exported for tests; the phases run only when the file is executed directly.
-module.exports = { _walkReviewThreads, REVIEW_THREAD_PAGE_LIMIT };
+module.exports = { _walkReviewThreads, REVIEW_THREAD_PAGE_LIMIT, _blockingBotFindings, CODEX_BOT_LOGIN };
