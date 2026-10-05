@@ -219,11 +219,16 @@ test("gate 14: verify-shipped-tarball.js fires when a skill body is tampered pos
     writeFile(tmp, "package.json", JSON.stringify(pkg, null, 2));
 
     // verify-shipped-tarball.js requires lib/refresh-network.js (for
-    // parseTar) AND lib/verify.js (only for path existence; actual
-    // verify logic is inlined). Copy both into tempdir/lib/.
+    // parseTar), which requires lib/fs-atomic.js, AND lib/verify.js (only
+    // for path existence; actual verify logic is inlined). Copy all three
+    // into tempdir/lib/.
     copyFile(
       path.join(ROOT, "lib", "refresh-network.js"),
       path.join(tmp, "lib", "refresh-network.js")
+    );
+    copyFile(
+      path.join(ROOT, "lib", "fs-atomic.js"),
+      path.join(tmp, "lib", "fs-atomic.js")
     );
     copyFile(
       path.join(ROOT, "lib", "verify.js"),

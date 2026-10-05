@@ -12,6 +12,7 @@ const PKG_ROOT = path.resolve(__dirname, "..");
 // `doctor --exit-codes` dumps EXIT_CODES, so help text and runtime share one source.
 const { EXIT_CODES, listExitCodes, safeExit } = require(path.join(PKG_ROOT, "lib", "exit-codes.js"));
 const { validateIdComponent } = require(path.join(PKG_ROOT, "lib", "id-validation.js"));
+const { renameWithRetry } = require(path.join(PKG_ROOT, "lib", "fs-atomic.js"));
 const { suggestFlag, flagsFor, VERB_FLAG_ALLOWLIST } = require(path.join(PKG_ROOT, "lib", "flag-suggest.js"));
 const codepointClass = require(path.join(PKG_ROOT, "vendor", "blamejs", "codepoint-class.js"));
 
@@ -3761,10 +3762,10 @@ function persistAttestation(args) {
             // No hard-link support (EPERM/EXDEV/ENOSYS): existsSync plus atomic
             // rename, a narrow TOCTOU window on those filesystems only.
             if (fs.existsSync(filePath)) { const e = new Error("EEXIST"); e.code = "EEXIST"; throw e; }
-            fs.renameSync(jsonTmp, filePath);
+            renameWithRetry(jsonTmp, filePath);
           }
           try {
-            fs.renameSync(sigTmp, sigPath);
+            renameWithRetry(sigTmp, sigPath);
           } catch (sigErr) {
             // The body landed, the sidecar did not. Left in place it holds the slot
             // forever — every retry collides with EEXIST and verification reports
@@ -3775,8 +3776,8 @@ function persistAttestation(args) {
           try { fs.unlinkSync(jsonTmp); } catch { /* hard-link path leaves a second name */ }
         } else {
           // Force-overwrite under the persist lock; both tmps are already fsync'd.
-          fs.renameSync(jsonTmp, filePath);
-          fs.renameSync(sigTmp, sigPath);
+          renameWithRetry(jsonTmp, filePath);
+          renameWithRetry(sigTmp, sigPath);
         }
       } catch (placeErr) {
         // Any placement failure, EEXIST included, leaves no orphan tmp at the slot.

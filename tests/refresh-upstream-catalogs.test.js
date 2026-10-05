@@ -348,7 +348,7 @@ test("#45 writeCatalog is atomic (temp+rename) — no truncated file is left", (
     path.join(__dirname, "..", "scripts", "refresh-upstream-catalogs.js"), "utf8");
   assert.match(src, /\.tmp-\$\{process\.pid\}/,
     "writeCatalog must write to a temp sibling");
-  assert.match(src, /fs\.renameSync\(\s*tmp\s*,\s*abs\s*\)/,
+  assert.match(src, /renameWithRetry\(\s*tmp\s*,\s*abs\s*\)/,
     "writeCatalog must rename the temp file into place (atomic)");
 
   // Behavioral: a rename never leaves a partial reader-visible file.
@@ -1183,7 +1183,7 @@ test("#45 writeCatalog is atomic (temp+rename) — no truncated file is left", (
     path.join(__dirname, "..", "scripts", "refresh-upstream-catalogs.js"), "utf8");
   assert.match(src, /\.tmp-\$\{process\.pid\}/,
     "writeCatalog must write to a temp sibling");
-  assert.match(src, /fs\.renameSync\(\s*tmp\s*,\s*abs\s*\)/,
+  assert.match(src, /renameWithRetry\(\s*tmp\s*,\s*abs\s*\)/,
     "writeCatalog must rename the temp file into place (atomic)");
 
   // Behavioral: a rename never leaves a partial reader-visible file.
