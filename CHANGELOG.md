@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.21.38 — 2026-10-05
+
+Three ATT&CK technique names in the catalog now match ATT&CK 19.2: T1195.001 is "Supply Chain Compromise: Compromise Software Dependencies and Development Tools", T1195.002 is "Supply Chain Compromise: Compromise Software Supply Chain", and T1059.013 is "Command and Scripting Interpreter: Container CLI/API". T1059.013 was labeled "Cloud API", which is the name of T1059.009. T1574.012 (COR_PROFILER) now lists the Stealth and Execution tactics ATT&CK 19.2 assigns to it, in place of Persistence, Privilege Escalation and Defense Evasion, and its description no longer names the GreenPlasma entry, which maps to T1574 and T1068. The `mlops-security` and `self-update-integrity` skills use the corrected names.
+
+A new predeploy gate, `scripts/check-attack-catalog-currency.js`, compares the ATT&CK catalog with the Enterprise, ICS and Mobile STIX bundles of the release in `_meta.attack_version`, downloaded from that release's tag of `mitre-attack/attack-stix-data` and cached under `.cache/upstream/attack/`. It fails when a catalog id is absent, revoked or deprecated upstream, when a name or `stix_id` differs from upstream, or when an entry lists a tactic upstream does not assign. A sub-technique name may be written as MITRE stores it or as "Parent: Child", and a trailing qualifier such as "(ICS)" is accepted. The gate exits 2 when it cannot reach the release and has no cached copy.
+
+`node scripts/check-test-count.js --update-baseline` no longer lowers the baseline when the suite has fewer tests than it records. It raises the baseline to a higher count and keeps it otherwise, so a release that loses one test, which the one-test tolerance allows, does not reset the floor to the lower count. To lower the baseline on purpose, add `--allow-decrease`.
+
 ## 0.21.37 — 2026-10-05
 
 Five catalog entries recorded that no fix was available, although the vendor has released one. Each now records the fix, which takes 15 points off its RWEP score: Dify 1.3.0 and 0.15.6 fix CVE-2024-12776 (RWEP 44 to 29), Dify 1.4.2 fixes CVE-2025-1796 (44 to 29), Dify 1.13.0 fixes CVE-2025-56520 (30 to 15), ClearML SDK 1.14.2 fixes CVE-2024-24591 (38 to 23), and H2O-3 3.46.0.1 fixes CVE-2023-6016 (48 to 33). The affected versions, update paths and live-patch notes of those entries name the fixed release, and the lesson and framework-gap texts that said no fix exists now name it.

@@ -56,7 +56,7 @@ Organizational supply-chain controls focus on the publisher: signing, SBOM gener
 
 ## TTP Mapping
 
-The consumer-side update failures map to MITRE ATT&CK: **T1195.002 (Supply Chain Compromise: Software Supply Chain)** for an update applied without signature verification, against an in-band key, over an unauthenticated channel, or as an unverified browser module / artifact; and **T1574 (Hijack Execution Flow)** for an apply step that swaps the new code into the execution path without gating on the verifier. The weakness classes are CWE-494 (Download of Code Without Integrity Check), CWE-829 (Inclusion of Functionality from an Untrusted Control Sphere), CWE-353 (Missing Support for Integrity Check — e.g. absent SRI), and CWE-347 (Improper Verification of Cryptographic Signature — in-band or unpinned key).
+The consumer-side update failures map to MITRE ATT&CK: **T1195.002 (Supply Chain Compromise: Compromise Software Supply Chain)** for an update applied without signature verification, against an in-band key, over an unauthenticated channel, or as an unverified browser module / artifact; and **T1574 (Hijack Execution Flow)** for an apply step that swaps the new code into the execution path without gating on the verifier. The weakness classes are CWE-494 (Download of Code Without Integrity Check), CWE-829 (Inclusion of Functionality from an Untrusted Control Sphere), CWE-353 (Missing Support for Integrity Check — e.g. absent SRI), and CWE-347 (Improper Verification of Cryptographic Signature — in-band or unpinned key).
 
 ## Exploit Availability Matrix
 

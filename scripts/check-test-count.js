@@ -14,6 +14,10 @@
  *
  * exit 0 at or above baseline minus tolerance, 1 when it drops further, 2 when
  * the baseline file is missing or malformed.
+ *
+ * `--update-baseline` records the observed count when it is at or above the
+ * baseline. A lower count leaves the baseline as it is unless `--allow-decrease`
+ * is also given.
  */
 
 const fs = require('fs');
@@ -210,6 +214,10 @@ function main() {
   const observed = files.reduce((n, f) => n + countTests(f), 0);
 
   if (wantUpdate) {
+    if (observed < baseline && !process.argv.includes('--allow-decrease')) {
+      console.error(`[check-test-count] baseline kept at ${baseline}: the observed count ${observed} is lower. To lower the baseline, run: node scripts/check-test-count.js --update-baseline --allow-decrease`);
+      process.exit(0);
+    }
     fs.writeFileSync(BASELINE_PATH, JSON.stringify({
       ...baselineFile,
       baseline: observed,
@@ -244,7 +252,7 @@ function main() {
   if (status === 'shrunk_beyond_tolerance') {
     console.error(`[check-test-count] FAIL - test count dropped from ${baseline} to ${observed} (delta ${delta}, tolerance -${tolerance}).`);
     console.error('[check-test-count] Either a test file was accidentally removed, a test()/it() invocation was deleted, OR the baseline is stale.');
-    console.error('[check-test-count] If the drop is intentional, run: node scripts/check-test-count.js --update-baseline');
+    console.error('[check-test-count] If the drop is intentional, run: node scripts/check-test-count.js --update-baseline --allow-decrease');
     // `process.exitCode`, not `process.exit()`: the buffered stdout write must drain.
     process.exitCode = 1;
     return;

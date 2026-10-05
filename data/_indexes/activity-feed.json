@@ -57,6 +57,14 @@
     {
       "date": "2026-10-04",
       "type": "catalog_update",
+      "artifact": "data/attack-techniques.json",
+      "path": "data/attack-techniques.json",
+      "schema_version": "1.0.0",
+      "entry_count": 794
+    },
+    {
+      "date": "2026-10-04",
+      "type": "catalog_update",
       "artifact": "data/cve-catalog.json",
       "path": "data/cve-catalog.json",
       "schema_version": "1.0.0",
@@ -295,14 +303,6 @@
       "artifact": "researcher",
       "path": "skills/researcher/skill.md",
       "note": "Triage entry-point for raw threat intel — researches an input across all exceptd data catalogs, RWEP-scores it, and routes the operator to the right specialized skill(s)"
-    },
-    {
-      "date": "2026-08-19",
-      "type": "catalog_update",
-      "artifact": "data/attack-techniques.json",
-      "path": "data/attack-techniques.json",
-      "schema_version": "1.0.0",
-      "entry_count": 794
     },
     {
       "date": "2026-08-19",

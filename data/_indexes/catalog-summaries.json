@@ -31,7 +31,7 @@
       "path": "data/attack-techniques.json",
       "purpose": null,
       "schema_version": "1.0.0",
-      "last_updated": "2026-08-19",
+      "last_updated": "2026-10-04",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
