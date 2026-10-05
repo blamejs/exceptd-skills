@@ -8328,7 +8328,7 @@
       "description": "improper input validation leading to code execution (CWE-20/CWE-94) reachable by an authenticated network attacker with an ordinary account against the message broker. CISA KEV-listed 2026-04-16 with confirmed in-the-wild exploitation.",
       "privileges_required": "low (an authenticated attacker with an ordinary account and network reach to the affected service)",
       "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
-      "ai_factor": "No AI involvement documented in discovery or weaponization."
+      "ai_factor": "AI-assisted discovery: the Apache ActiveMQ advisory credits Naveen Sunkavally of Horizon3.ai, whose write-up says Claude found the issue on a first pass at the source code. No AI involvement is documented in weaponization."
     },
     "defense_chain": {
       "prevention": {
@@ -15073,7 +15073,7 @@
       "description": "OS command injection (CWE-78) giving an unauthenticated attacker command execution on the remote-support/PRA appliance. CISA KEV-listed 2026-02-13 with confirmed in-the-wild exploitation.",
       "privileges_required": "none (unauthenticated network reach to the affected service)",
       "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
-      "ai_factor": "No AI involvement documented in discovery or weaponization."
+      "ai_factor": "AI-assisted discovery: BeyondTrust's advisory BT26-02 credits Harsh Jaiswal and the Hacktron AI team and states that Hacktron AI identified the flaw through AI-enabled variant analysis. No AI involvement is documented in weaponization."
     },
     "defense_chain": {
       "prevention": {
@@ -18605,7 +18605,7 @@
       "description": "an XML external entity (XXE) flaw (CWE-611) in OSGeo GeoServer, letting an unauthenticated attacker read server files and coerce server-side requests. CISA KEV-listed 2025-12-11 with confirmed in-the-wild exploitation.",
       "privileges_required": "none (the flaw is reachable by an unauthenticated attacker on the application's public interface)",
       "complexity": "low — KEV-listed, actively exploited; treat as weaponized",
-      "ai_factor": "No AI involvement documented in discovery or weaponization."
+      "ai_factor": "AI-assisted discovery: the GeoServer advisory GHSA-fjf5-xgmq-5525 states that the flaw was detected using XBOW, an autonomous vulnerability-finding system, and that a security researcher reviewed and validated the finding before submission. No AI involvement is documented in weaponization."
     },
     "defense_chain": {
       "prevention": {
