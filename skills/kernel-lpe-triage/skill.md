@@ -64,7 +64,7 @@ last_threat_review: "2026-09-28"
 **Classification:** Local Privilege Escalation | CISA KEV | AI-Discovered  
 **CVSS:** 7.8 (High) | **RWEP:** 100/100
 
-An AI system discovered this vulnerability in approximately one hour. It is a page-cache copy-on-write (CoW) primitive in the Linux kernel affecting all major distributions since kernel 4.14 (2017). Every major Linux distribution is affected: RHEL 7–9, Ubuntu 18.04–24.04, Debian 9–12, CentOS, Fedora, Amazon Linux 2/2023, SUSE 12/15, Alpine, and derivatives.
+An AI system discovered this vulnerability in approximately one hour. It is a page-cache copy-on-write (CoW) primitive in the Linux kernel affecting all major distributions since kernel 4.14 (2017). Every major Linux distribution is affected: RHEL 7 to 10, OpenShift RHCOS, Ubuntu 18.04 to 24.04 and 25.10, Debian 9 to 13, CentOS, Fedora, Amazon Linux 2 and 2023, SUSE 12 and 15, Alpine, and derivatives.
 
 Key characteristics that make this exceptional:
 - **Deterministic exploitation** — no race condition, no heap spray, no timing sensitivity
