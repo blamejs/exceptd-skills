@@ -5965,6 +5965,14 @@ describe('live-patch notes reach the remediation text of an entry without live-p
     const vex = vexOf(bundles);
     assert.ok(vex && vex.statements.length >= 2, 'the OpenVEX bundle holds a statement per matched CVE');
     for (const s of vex.statements) assert.doesNotMatch(String(s.action_statement || ''), /Live-patch notes/, s.vulnerability.name);
+    // With no selected remediation, the bundles say no path is eligible rather
+    // than pointing at a selected path.
+    const noPath = /^No remediation path is eligible in this run/;
+    const csafNoCredit = bundles['csaf-2.0'].vulnerabilities.find((v) => v.cve === 'CVE-2026-9997');
+    assert.match(csafNoCredit.remediations[0].details, noPath);
+    assert.doesNotMatch(csafNoCredit.remediations[0].details, /See selected remediation path/);
+    const vexNoCredit = vex.statements.find((s) => s.vulnerability.name === 'CVE-2026-9997');
+    assert.match(vexNoCredit.action_statement, noPath);
   });
 });
 
