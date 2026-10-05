@@ -5876,6 +5876,52 @@ describe('CSAF product_tree — package name, never the range operator', () => {
   });
 });
 
+describe('live-patch notes reach the remediation text of an entry without live-patch credit', () => {
+  // The OpenVEX bundle, requested by its `openvex` alias and keyed by its full format id.
+  const vexOf = (bundles) => bundles[Object.keys(bundles).find((k) => k.startsWith('openvex'))];
+
+  it('matched_cves carries the notes, and the CSAF and OpenVEX remediation text appends them', () => {
+    const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'cve-catalog.json'), 'utf8'));
+    const copyFail = catalog['CVE-2026-31431'];
+    assert.equal(copyFail.live_patch_available, false);
+    assert.match(copyFail.live_patch_notes, /kpatch/);
+    const d = runner.detect('kernel', 'all-catalogued-kernel-cves', { signal_overrides: { 'kver-in-affected-range': 'hit' } });
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', d);
+    const matched = an.matched_cves.find((c) => c.cve_id === 'CVE-2026-31431');
+    assert.ok(matched, 'Copy Fail correlates on kver-in-affected-range');
+    assert.equal(matched.live_patch_notes, copyFail.live_patch_notes);
+    const out = runner.close('kernel', 'all-catalogued-kernel-cves', an,
+      { regression_next_run: null, selected_remediation: { id: 'rem-1', description: 'Upgrade the kernel.' } },
+      { _bundle_formats: ['csaf-2.0', 'openvex'] }, { session_id: 'abcdef0123456789' });
+    const bundles = out.evidence_package.bundles_by_format;
+    const suffix = ` Live-patch notes: ${copyFail.live_patch_notes.trim()}`;
+    const vuln = bundles['csaf-2.0'].vulnerabilities.find((v) => v.cve === 'CVE-2026-31431');
+    assert.equal(vuln.remediations[0].details, `Upgrade the kernel.${suffix}`);
+    const stmt = vexOf(bundles).statements.find((s) => s.vulnerability.name === 'CVE-2026-31431');
+    assert.ok(stmt.action_statement.endsWith(suffix), stmt.action_statement);
+  });
+
+  it('an entry with live-patch credit or without notes gets no notes sentence', () => {
+    const pb = runner.loadPlaybook('sbom');
+    const analyzeResult = {
+      matched_cves: [
+        { cve_id: 'CVE-2026-9998', rwep: 50, cisa_kev: false, active_exploitation: 'none', cvss_score: null, cvss_vector: null, affected_versions: [], live_patch_available: true, live_patch_notes: 'kpatch covers every affected kernel.' },
+        { cve_id: 'CVE-2026-9997', rwep: 50, cisa_kev: false, active_exploitation: 'none', cvss_score: null, cvss_vector: null, affected_versions: [], live_patch_available: false, live_patch_notes: null },
+      ],
+      rwep: { adjusted: 50 }, blast_radius_score: 2, framework_gap_mapping: [],
+      _detect_indicators: [], _detect_classification: 'detected',
+      compliance_theater_check: { verdict: 'present' },
+    };
+    const out = runner.close('sbom', pb.directives[0].id, analyzeResult, { regression_next_run: null, selected_remediation: null },
+      { _bundle_formats: ['csaf-2.0', 'openvex'] }, { session_id: 'abcdef0123456789' });
+    const bundles = out.evidence_package.bundles_by_format;
+    for (const v of bundles['csaf-2.0'].vulnerabilities) assert.doesNotMatch(v.remediations[0].details, /Live-patch notes/, v.cve);
+    const vex = vexOf(bundles);
+    assert.ok(vex && vex.statements.length >= 2, 'the OpenVEX bundle holds a statement per matched CVE');
+    for (const s of vex.statements) assert.doesNotMatch(String(s.action_statement || ''), /Live-patch notes/, s.vulnerability.name);
+  });
+});
+
 describe('SARIF rule helpUri — authority routing, not a hardcoded NVD link', () => {
   function sarifRulesFor(matched) {
     const pb = runner.loadPlaybook('sbom');
