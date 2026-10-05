@@ -12,9 +12,7 @@ Five entries whose live-patch notes said that no fix had been published "as of t
 
 The UnDefend entry (BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND) now names Microsoft Defender Antimalware Platform 4.18.26040.7 as the first fixed version and KB4052623 as the update channel, and cites Huntress's own report of the in-the-wild exploitation, which the entry had attributed to ProArch. A new `aliases_note` records that the disclosing researcher stated on 2026-05-23 that UnDefend is CVE-2026-45498; Microsoft's advisory does not name UnDefend, so CVE-2026-45498 keeps its own entry. The affected versions on CVE-2026-45498 now read ">= 4.0.0.0, < 4.18.26040.7", the range in Microsoft's CVE record, in place of a range that began at 4.18.26030.3011, which MSRC lists as the last affected version.
 
-The affected-version lists of the entries above hold only version ranges, such as "Dify < 1.13.0" and "H2O-3 >= 3.36.0.1, <= 3.44.0.3", so the CSAF product tree in the evidence package lists each affected product. The explanation of each range is in the entry's affected text.
-
-The CSAF product tree now keeps a multi-word product name apart from its version range. Previously, for a string such as "Firefox ESR < 91.6.1", the product name took the operator and the evidence package recorded the first fixed version, 91.6.1, as the affected version. The leaf for "Firefox ESR < 91.6.1" now names the product ESR with the version "< 91.6.1", and 526 affected-version strings across the catalog now produce a range instead of the fixed version.
+The affected-version lists of the entries above hold only version ranges, such as "Dify < 1.13.0" and "H2O-3 >= 3.36.0.1, <= 3.44.0.3", so the CSAF product tree in the evidence package lists each affected product with its range. A product whose name has more than one word uses the `vendor/product@range` form, such as "Microsoft/Defender-Antimalware-Platform@>= 4.0.0.0, < 4.18.26040.7" and "ClearML/clearml@>= 0.17.0", so that the range, not the first fixed release, becomes the affected version. The explanation of each range is in the entry's affected text.
 
 ## 0.21.36 — 2026-10-05
 
