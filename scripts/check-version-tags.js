@@ -41,6 +41,9 @@ const COMMENT_EXEMPT = new Set([
   "tests/version-bump-cadence.test.js",
   // The detector's own boundary cases appear literally as the inputs under test.
   "tests/check-version-tags.test.js",
+  // Per-CVE tests that pin a third-party product's 0.x release numbers (Dify, ClearML).
+  "tests/cve-2024-12776.test.js",
+  "tests/cve-2024-24590.test.js",
 ]);
 
 // The ignored subset of `relPaths`, or null when git cannot answer. "No path

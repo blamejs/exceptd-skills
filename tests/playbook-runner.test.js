@@ -5812,6 +5812,29 @@ describe('CSAF product_tree — package name, never the range operator', () => {
     }
   });
 
+  it('keeps a multi-word product name apart from its range, so the fixed build is not the affected version', () => {
+    const cases = [
+      { s: 'Microsoft Defender Antimalware Platform >= 4.0.0.0, < 4.18.26040.7', vendor: 'Microsoft', product: 'Defender Antimalware Platform', version: '>= 4.0.0.0, < 4.18.26040.7' },
+      { s: 'Microsoft Defender Antimalware Platform < 4.18.26040.7', vendor: 'Microsoft', product: 'Defender Antimalware Platform', version: '< 4.18.26040.7' },
+      { s: 'ClearML (pip) >= 1.4.0, < 1.14.2', vendor: 'ClearML', product: 'ClearML (pip)', version: '>= 1.4.0, < 1.14.2' },
+      { s: 'Vanna (pip) <= 2.0.2', vendor: 'Vanna', product: 'Vanna (pip)', version: '<= 2.0.2' },
+      { s: 'Firefox ESR < 91.6.1', vendor: 'Firefox', product: 'ESR', version: '< 91.6.1' },
+      // Unchanged shapes: a single-word package before the operator, and no operator at all.
+      { s: 'Dify < 1.13.0', vendor: 'Dify', product: 'Dify', version: '< 1.13.0' },
+      { s: 'H2O-3 >= 3.36.0.1, <= 3.44.0.3', vendor: 'H2O-3', product: 'H2O-3', version: '>= 3.36.0.1, <= 3.44.0.3' },
+      { s: 'Apache Struts 2.5.33', vendor: 'Apache', product: 'Struts', version: '2.5.33' },
+    ];
+    for (const c of cases) {
+      const errs = [];
+      const { branches } = runner._buildCsafBranches([{ cve_id: 'CVE-2026-1000', affected_versions: [c.s] }], { _runErrors: errs });
+      assert.deepEqual(errs, [], c.s);
+      assert.equal(branches.length, 1, c.s);
+      assert.equal(branches[0].name, c.vendor, `vendor for "${c.s}"`);
+      assert.equal(branches[0].branches[0].name, c.product, `product for "${c.s}"`);
+      assert.equal(branches[0].branches[0].branches[0].name, c.version, `version for "${c.s}"`);
+    }
+  });
+
   it('end-to-end close() emits a CSAF product_tree free of operator-named products', () => {
     const pb = runner.loadPlaybook('sbom');
     const directiveId = pb.directives[0].id;
