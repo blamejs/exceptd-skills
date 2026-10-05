@@ -5974,6 +5974,32 @@ describe('live-patch notes reach the remediation text of an entry without live-p
     const vexNoCredit = vex.statements.find((s) => s.vulnerability.name === 'CVE-2026-9997');
     assert.match(vexNoCredit.action_statement, noPath);
   });
+
+  it('when declared paths exist and none is eligible, the bundles recommend no live patch even for an entry with live-patch credit', () => {
+    const pb = runner.loadPlaybook('sbom');
+    const analyzeResult = {
+      matched_cves: [
+        { cve_id: 'CVE-2026-9996', rwep: 50, cisa_kev: false, active_exploitation: 'none', cvss_score: null, cvss_vector: null, affected_versions: [], live_patch_available: true, live_patch_notes: null },
+      ],
+      rwep: { adjusted: 50 }, blast_radius_score: 2, framework_gap_mapping: [],
+      _detect_indicators: [], _detect_classification: 'detected',
+      compliance_theater_check: { verdict: 'present' },
+    };
+    const validateResult = {
+      regression_next_run: null, selected_remediation: null,
+      remediation_options_considered: [{ id: 'live-patch-deploy', priority: 1, all_satisfied: false, addresses_fired_signal: true, preconditions: [] }],
+    };
+    const out = runner.close('sbom', pb.directives[0].id, analyzeResult, validateResult,
+      { _bundle_formats: ['csaf-2.0', 'openvex'] }, { session_id: 'abcdef0123456789' });
+    const bundles = out.evidence_package.bundles_by_format;
+    const noPath = /^No remediation path is eligible in this run/;
+    const csaf = bundles['csaf-2.0'].vulnerabilities.find((v) => v.cve === 'CVE-2026-9996');
+    assert.match(csaf.remediations[0].details, noPath);
+    assert.doesNotMatch(csaf.remediations[0].details, /Vendor publishes a live-patch/);
+    const vex = vexOf(bundles).statements.find((s) => s.vulnerability.name === 'CVE-2026-9996');
+    assert.match(vex.action_statement, noPath);
+    assert.doesNotMatch(vex.action_statement, /Vendor publishes a live-patch/);
+  });
 });
 
 describe('SARIF rule helpUri — authority routing, not a hardcoded NVD link', () => {
