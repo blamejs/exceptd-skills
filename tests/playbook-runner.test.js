@@ -5802,13 +5802,40 @@ describe('CSAF product_tree — package name, never the range operator', () => {
     for (const s of shapes) {
       const p = byPkg.get(s.pkg);
       assert.ok(p, `product_name "${s.pkg}" present in product_tree`);
-      // The operator is carried into the version qualifier, not lost and not
-      // promoted to the product name.
-      const versionName = p.branches[0].name;
-      assert.match(versionName, new RegExp(`^(<|<=|>|>=|==|=)\\s`), `version qualifier keeps the operator: ${versionName}`);
+      // The operator is carried into the version branch, not lost and not promoted
+      // to the product name. CSAF 2.0 allows a range only in a product_version_range,
+      // named in vls form; a single `==` clause is that exact product_version.
+      const leaf = p.branches[0];
+      if (/==/.test(s.affected)) {
+        assert.equal(leaf.category, 'product_version', s.affected);
+        assert.equal(leaf.name, s.affected.split('==')[1].trim(), s.affected);
+      } else {
+        assert.equal(leaf.category, 'product_version_range', s.affected);
+        assert.match(leaf.name, /^(?:<=|>=|!=|<|>|=)[^\s|]+(?:\|(?:<=|>=|!=|<|>|=)[^\s|]+)*$/, `vls range: ${leaf.name}`);
+      }
       // Leaf product.name is package/package@<version-range>, never operator-named.
       assert.ok(!/\/(<|<=|>|>=|==|=)@/.test(p.branches[0].product.name),
         `leaf product name embeds an operator: ${p.branches[0].product.name}`);
+    }
+  });
+
+  it('writes comparison-clause versions as vls product_version_range branches', () => {
+    const cases = [
+      { affected: 'h2o-3 >= 3.36.0.1, <= 3.44.0.3', category: 'product_version_range', name: '>=3.36.0.1|<=3.44.0.3' },
+      { affected: 'kernel-a >= 5.3 < 6.18.29', category: 'product_version_range', name: '>=5.3|<6.18.29' },
+      { affected: 'kernel-b = 5.3-rc7', category: 'product_version', name: '5.3-rc7' },
+      { affected: 'firefox-a < 67.0.3 (fixed in 67.0.3)', category: 'product_version', name: '< 67.0.3 (fixed in 67.0.3)' },
+      { affected: 'webkit-a < 2.36.5 and WPE WebKit < 2.36.5', category: 'product_version', name: '< 2.36.5 and WPE WebKit < 2.36.5' },
+    ];
+    const cves = cases.map((c, i) => ({ cve_id: `CVE-2026-200${i}`, affected_versions: [c.affected] }));
+    const { branches } = runner._buildCsafBranches(cves, { _runErrors: [] });
+    const leaves = new Map();
+    for (const v of branches) for (const p of v.branches) leaves.set(p.name, p.branches[0]);
+    for (const c of cases) {
+      const leaf = leaves.get(c.affected.split(' ')[0]);
+      assert.ok(leaf, c.affected);
+      assert.equal(leaf.category, c.category, c.affected);
+      assert.equal(leaf.name, c.name, c.affected);
     }
   });
 
