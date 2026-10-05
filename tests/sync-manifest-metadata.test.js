@@ -31,7 +31,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { execFileSync } = require("node:child_process");
+const { execFileSync, spawnSync } = require("node:child_process");
 
 const ROOT = path.resolve(__dirname, "..");
 const SCRIPT = path.join(ROOT, "scripts", "sync-manifest-metadata.js");
@@ -44,6 +44,18 @@ const MIRRORED_SCALAR = ["description", "last_threat_review"];
 const MIRRORED_ARRAY = ["forward_watch"];
 const MIRRORED_COVER = ["data_deps", "framework_gaps", "atlas_refs", "attack_refs", "rfc_refs", "cwe_refs", "d3fend_refs"];
 
+// What the script reads: the manifest, the skills' frontmatter (through lib/),
+// the two pinned catalogs and the script itself.
+const COPY = ["manifest.json", "skills", "lib", path.join("data", "atlas-ttps.json"),
+  path.join("data", "attack-techniques.json"), path.join("scripts", "sync-manifest-metadata.js")];
+
+function stageCopy() {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "exceptd-sync-manifest-"));
+  for (const rel of COPY) fs.cpSync(path.join(ROOT, rel), path.join(tmp, rel), { recursive: true });
+  return tmp;
+}
+const runCopy = (tmp) => spawnSync(process.execPath, [path.join(tmp, "scripts", "sync-manifest-metadata.js")], { encoding: "utf8" });
+
 // ---------------------------------------------------------------------------
 // 1. Real script, read-only subprocess against the clean repo: a no-op.
 // ---------------------------------------------------------------------------
@@ -51,7 +63,7 @@ const MIRRORED_COVER = ["data_deps", "framework_gaps", "atlas_refs", "attack_ref
 test("the real sync script is a no-op on the in-sync repo (reports 0 synced, exits 0)", () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "exceptd-sync-manifest-"));
   try {
-    for (const rel of ["manifest.json", "skills", "lib", path.join("scripts", "sync-manifest-metadata.js")]) {
+    for (const rel of COPY) {
       fs.cpSync(path.join(ROOT, rel), path.join(tmp, rel), { recursive: true });
     }
     const copy = path.join(tmp, "manifest.json");
@@ -64,6 +76,48 @@ test("the real sync script is a no-op on the in-sync repo (reports 0 synced, exi
     assert.equal(fs.readFileSync(copy, "utf8"), before,
       "a no-op sync must leave manifest.json byte-identical (it only writes when changed > 0)");
     assert.equal(fs.readFileSync(MANIFEST, "utf8"), repoBefore, "the repository's manifest.json is not written");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("the package-level pins follow the catalogs' _meta and leave the corpus review date alone", () => {
+  const tmp = stageCopy();
+  try {
+    const mf = path.join(tmp, "manifest.json");
+    const m = JSON.parse(fs.readFileSync(mf, "utf8"));
+    Object.assign(m, { atlas_version: "2000.01", atlas_version_date: "2000-01-01", attack_version: "1.0",
+      attack_version_date: "2000-01-02", threat_review_date: "2000-01-03" });
+    fs.writeFileSync(mf, JSON.stringify(m, null, 2) + "\n");
+    const r = runCopy(tmp);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    const after = JSON.parse(fs.readFileSync(mf, "utf8"));
+    const atlas = JSON.parse(fs.readFileSync(path.join(tmp, "data", "atlas-ttps.json"), "utf8"))._meta;
+    const attack = JSON.parse(fs.readFileSync(path.join(tmp, "data", "attack-techniques.json"), "utf8"))._meta;
+    assert.equal(after.atlas_version, atlas.atlas_version);
+    assert.equal(after.atlas_version_date, atlas.atlas_release_date);
+    assert.equal(after.attack_version, attack.attack_version);
+    assert.equal(after.attack_version_date, attack.attack_version_date);
+    // The corpus-wide review date is set by a full review, not by the sync.
+    assert.equal(after.threat_review_date, "2000-01-03");
+    assert.match(r.stdout, /\[sync-manifest-metadata\] [1-9]\d* field\(s\) synced/);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("a pinned catalog without its _meta version field fails the sync and writes nothing", () => {
+  const tmp = stageCopy();
+  try {
+    const af = path.join(tmp, "data", "atlas-ttps.json");
+    const atlas = JSON.parse(fs.readFileSync(af, "utf8"));
+    delete atlas._meta.atlas_release_date;
+    fs.writeFileSync(af, JSON.stringify(atlas));
+    const before = fs.readFileSync(path.join(tmp, "manifest.json"), "utf8");
+    const r = runCopy(tmp);
+    assert.equal(r.status, 1, r.stdout + r.stderr);
+    assert.match(r.stderr, /data\/atlas-ttps\.json: _meta\.atlas_release_date is missing/);
+    assert.equal(fs.readFileSync(path.join(tmp, "manifest.json"), "utf8"), before);
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }

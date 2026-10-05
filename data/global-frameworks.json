@@ -226,26 +226,26 @@
         "full_name": "NCSC Cyber Assessment Framework",
         "authority": "NCSC",
         "source": "https://www.ncsc.gov.uk/collection/caf",
-        "effective_date": "2019-01-01",
-        "version": "3.2",
+        "effective_date": "2025-08-04",
+        "version": "4.0",
         "sector": "Critical national infrastructure",
         "patch_sla": null,
         "notification_sla": null,
         "critical_controls": [
           "A1 — Governance — board-level cyber risk ownership",
-          "B3 — Identity and Access Control",
+          "B2 — Identity and Access Control",
           "B5 — Resilient Networks and Systems",
           "B6 — Staff Awareness and Training",
           "C1 — Security Monitoring",
-          "D1 — Response and Recovery"
+          "D1 — Response and Recovery Planning"
         ],
         "framework_gaps": [
           "Patch SLA undefined — 'timely' interpretation only",
-          "AI systems: not addressed in CAF 3.2",
+          "AI systems: CAF 4.0 covers automated decision-making under B4 (restricting its actions, replicable decisions, auditable machine-learning models), but no contributing outcome names prompt injection, agent tool trust or other LLM-specific attack surfaces",
           "MCP/agent trust: not addressed",
           "PQC: NCSC recommends hybrid post-quantum but CAF does not require it"
         ],
-        "ai_coverage": "AI systems in CNI recommended to apply CAF; no AI-specific objectives",
+        "ai_coverage": "CAF 4.0 adds automated decision-making outcomes to B4.a and B4.b, and its B4 guidance asks that machine-learning models be auditable so malicious changes can be detected; there is no AI-specific objective",
         "pqc_coverage": "NCSC has published PQC migration guidance but it is not CAF-required",
         "theater_risk": "medium — outcome-based framework reduces checkbox risk but lacks AI specificity"
       }

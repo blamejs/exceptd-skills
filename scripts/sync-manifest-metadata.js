@@ -12,8 +12,15 @@
  * sync by UNION; replacing them drops the curated refs build-indexes and
  * refresh-reverse-refs read.
  *
- * Exit codes: 0 = wrote (or already in sync), 1 = a skill file was missing or
- * its frontmatter failed to parse.
+ * The package-level pins mirror the catalogs that carry them: `atlas_version`
+ * and `atlas_version_date` from data/atlas-ttps.json `_meta` (`atlas_version`,
+ * `atlas_release_date`), and `attack_version` and `attack_version_date` from
+ * data/attack-techniques.json `_meta`. `threat_review_date` is the corpus-wide
+ * review date and is not derived: every skill's review must fall within the
+ * window before it, so it moves only when the whole corpus is reviewed.
+ *
+ * Exit codes: 0 = wrote (or already in sync), 1 = a skill file was missing, its
+ * frontmatter failed to parse, or a pinned catalog lacked its version fields.
  */
 
 const fs = require("fs");
@@ -78,6 +85,35 @@ function sync() {
       }
     }
   }
+  // Package-level pins: [manifest key, catalog file, _meta key].
+  const PINS = [
+    ["atlas_version", "atlas-ttps.json", "atlas_version"],
+    ["atlas_version_date", "atlas-ttps.json", "atlas_release_date"],
+    ["attack_version", "attack-techniques.json", "attack_version"],
+    ["attack_version_date", "attack-techniques.json", "attack_version_date"],
+  ];
+  const metas = {};
+  for (const [key, file, metaKey] of PINS) {
+    if (!(file in metas)) {
+      try {
+        metas[file] = JSON.parse(fs.readFileSync(path.join(ROOT, "data", file), "utf8"))._meta || {};
+      } catch (e) {
+        metas[file] = null;
+        errors.push(`data/${file}: unreadable — ${e.message}`);
+      }
+    }
+    const meta = metas[file];
+    if (!meta) continue;
+    const want = meta[metaKey];
+    if (typeof want !== "string" || !want) {
+      errors.push(`data/${file}: _meta.${metaKey} is missing`);
+      continue;
+    }
+    if (manifest[key] !== want) {
+      manifest[key] = want;
+      changed++;
+    }
+  }
   if (errors.length) {
     for (const e of errors) process.stderr.write(`[sync-manifest-metadata] ${e}\n`);
     process.exitCode = 1;
@@ -86,7 +122,7 @@ function sync() {
   if (changed > 0) {
     fs.writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + "\n");
   }
-  process.stdout.write(`[sync-manifest-metadata] ${changed} field(s) synced from frontmatter\n`);
+  process.stdout.write(`[sync-manifest-metadata] ${changed} field(s) synced from frontmatter and the pinned catalogs\n`);
 }
 
 sync();

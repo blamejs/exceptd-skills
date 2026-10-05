@@ -9033,14 +9033,14 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "SLSA-v1.0-Build-L3": {
-    "framework": "SLSA v1.0 (Supply-chain Levels for Software Artifacts) — Build Track",
+    "framework": "SLSA v1.2 (Supply-chain Levels for Software Artifacts) — Build Track",
     "control_id": "Build L3",
     "control_name": "Hardened build platform with non-falsifiable provenance",
     "designed_for": "Build-platform-attested provenance for software artifacts: hosted, hardened, non-forgeable provenance signed by the build platform. Referenced under US EO 14028, cross-walked by EU CRA Annex I (essential cybersecurity requirements) and Cyber Resilience Act SBOM obligations, UK NCSC supply chain guidance, AU ISM supply chain, ISO/IEC 5230 (OpenChain), and in-toto attestations.",
     "misses": [
       "AI-generated artifacts — code emitted by Copilot/Cursor/Codex/Claude Code is committed under the human developer's identity; the build platform attests the commit but not the AI origin of the diff",
       "Model weights provenance — model artifacts (weights, tokenizers, adapter LoRAs) are software but have no SLSA L3-equivalent build attestation; HuggingFace + Civitai distribution is closer to SLSA L0/L1",
-      "Training data manifests have no provenance attestation track in SLSA v1.0",
+      "Training data manifests have no provenance attestation track in SLSA v1.2, which defines only the Build and Source Tracks",
       "No cross-walk to EU CRA Annex I requirement for SBOMs covering AI components, UK NCSC AI supply chain, AU ISM AI annex"
     ],
     "real_requirement": "SLSA must add: (1) AI-authorship attestation layer (per-block provenance for AI-generated code with reviewer identity), (2) a Model Track parallel to the Build Track with L0–L3 maturity for model weight provenance (build environment, training data manifest, fine-tune lineage, signature), (3) explicit SBOM/AI-BOM linkage to satisfy EU CRA, UK NCSC, AU ISM AI annex requirements.",
@@ -9077,13 +9077,13 @@
     }
   },
   "SLSA-v1.0-Source-L3": {
-    "framework": "SLSA v1.0 (Supply-chain Levels for Software Artifacts)",
+    "framework": "SLSA v1.2 (Supply-chain Levels for Software Artifacts)",
     "control_id": "Source Track L3",
-    "control_name": "Source track level 3 — verified history and retained provenance",
-    "designed_for": "SLSA v1.0 source-track level 3 — source-control system retains verified version history (every revision is signed by an authenticated, identified actor) AND retains source-track provenance for a defined period. Anchored on the assumption that source-side integrity (signed commits + retained history) is achievable for projects whose source repositories are governed by the consuming organization or by a co-operative upstream.",
+    "control_name": "Source Track Level 3: continuous technical controls",
+    "designed_for": "SLSA v1.2 Source Track Level 3: the source control system enforces the organization's technical controls on named references, on top of Level 2's continuous, immutable and retained branch history and the source provenance attestations it issues. Level 2 says activities on the source control system SHOULD be attributed to authenticated identities and requires the system to document how actors are identified; neither level requires each revision to be signed. Anchored on the assumption that source-side integrity (signed commits + retained history) is achievable for projects whose source repositories are governed by the consuming organization or by a co-operative upstream.",
     "misses": [
       "Open-source packages distributed via npm / PyPI / RubyGems / crates.io with NO source-track provenance attestation are outside SLSA Source L3 coverage — the consuming organization has no source-track signal to verify against, and SLSA does not provide an alternative for the no-provenance-attestation case",
-      "Maintainer-account-compromise (Shai-Hulud worm class, MAL-2026-TANSTACK-MINI) can produce Source L3-compliant artifacts when the malicious commits are signed by the compromised legitimate maintainer's authenticated identity — Source L3 attests authenticity, not benignness",
+      "Maintainer-account-compromise (Shai-Hulud worm class, MAL-2026-TANSTACK-MINI) can produce Source L3-compliant artifacts when the malicious commits are attributed to the compromised legitimate maintainer's authenticated identity — Source L3 attests authenticity, not benignness",
       "Freshness-of-published-version is not a Source L3 concern — a worm pivoting through a compromised maintainer can publish 84 malicious versions within hours, and Source L3 has no cooldown-period concept that would let the consumer wait out the active exposure window",
       "Source L3 has no consumer-side workflow for the no-provenance-attestation case beyond 'do not consume' — operators who must consume packages without source-track provenance are left without a graduated control set"
     ],
@@ -9291,7 +9291,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-A1": {
-    "framework": "UK NCSC Cyber Assessment Framework v3.2",
+    "framework": "UK NCSC Cyber Assessment Framework v4.0",
     "control_id": "Objective A — Principle A1",
     "control_name": "Governance",
     "designed_for": "Operators of essential services and critical national infrastructure; sets a board-level governance expectation for cyber risk management",
@@ -9330,7 +9330,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-B2": {
-    "framework": "UK NCSC Cyber Assessment Framework v3.2",
+    "framework": "UK NCSC Cyber Assessment Framework v4.0",
     "control_id": "Objective B — Principle B2",
     "control_name": "Identity and access control",
     "designed_for": "Restricting access to systems and data to authorised users, devices, and systems",
@@ -9611,7 +9611,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-C1": {
-    "framework": "UK NCSC Cyber Assessment Framework v3.2",
+    "framework": "UK NCSC Cyber Assessment Framework v4.0",
     "control_id": "Objective C — Principle C1",
     "control_name": "Security monitoring",
     "designed_for": "Detecting and analysing events that may indicate a cybersecurity incident on the operator's essential function",
@@ -9753,7 +9753,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-D1": {
-    "framework": "UK NCSC Cyber Assessment Framework v3.2",
+    "framework": "UK NCSC Cyber Assessment Framework v4.0",
     "control_id": "Objective D — Principle D1",
     "control_name": "Response and recovery planning",
     "designed_for": "Maintaining the ability to respond and recover from cybersecurity incidents affecting the operator's essential function",
@@ -10015,7 +10015,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-B5": {
-    "framework": "UK NCSC Cyber Assessment Framework",
+    "framework": "UK NCSC Cyber Assessment Framework v4.0",
     "control_id": "Principle-B5",
     "control_name": "Resilient networks and systems",
     "designed_for": "NCSC Cyber Assessment Framework Principle B5 — outcome-tested network resilience for essential service operators (incl. telecom under TSA 2021).",
@@ -10310,16 +10310,16 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-B2-IdP-Tenant": {
-    "framework": "UK NCSC Cyber Assessment Framework",
-    "control_id": "B2.b",
+    "framework": "UK NCSC Cyber Assessment Framework v4.0",
+    "control_id": "B2.d",
     "control_name": "Identity and Access Control — IdP-tenant control-plane extension",
-    "designed_for": "NCSC CAF Principle B2 (Identity and Access Control), outcome B2.b — effectively managing identity and access for the essential function.",
+    "designed_for": "NCSC CAF Principle B2 (Identity and Access Control), outcome B2.d (Identity and Access Management): you closely manage and maintain identity and access control for users, devices and systems accessing the network and information systems that support the essential function.",
     "misses": [
-      "B2.b is outcome-based against the IdP tenant's published authentication outcomes",
+      "B2.d is outcome-based against the IdP tenant's published authentication outcomes",
       "The IdP-tenant control plane (who modified the tenant configuration itself) is outside the outcome's typical evidence surface",
-      "A compromised tenant continues to produce compliant B2.b outcomes until the attacker abandons stealth"
+      "A compromised tenant continues to produce compliant B2.d outcomes until the attacker abandons stealth"
     ],
-    "real_requirement": "Extend B2.b outcome assessment to the IdP-tenant control plane: federated-trust integrity, consent-grant inventory, privileged-role-assignment audit, management-API-token inventory, break-glass authentication alerting.",
+    "real_requirement": "Extend B2.d outcome assessment to the IdP-tenant control plane: federated-trust integrity, consent-grant inventory, privileged-role-assignment audit, management-API-token inventory, break-glass authentication alerting.",
     "status": "open",
     "opened_date": "2026-05-15",
     "evidence_cves": [],
@@ -10686,7 +10686,7 @@
     "forward_looking_reason": "forward-looking gap with no CVE anchor in the catalog yet — operator notes the control class without binding to a single incident"
   },
   "UK-CAF-B2-Cloud-IAM": {
-    "framework": "UK NCSC Cyber Assessment Framework v3.x",
+    "framework": "UK NCSC Cyber Assessment Framework v4.0",
     "control_id": "B2",
     "control_name": "Identity and Access Control",
     "designed_for": "NCSC CAF outcome that access to networks and information systems supporting the essential function is appropriately controlled",
@@ -12331,7 +12331,7 @@
     }
   },
   "UK-CAF-B4": {
-    "framework": "UK NCSC Cyber Assessment Framework",
+    "framework": "UK NCSC Cyber Assessment Framework v4.0",
     "control_id": "B4",
     "control_name": "System security",
     "designed_for": "Principle B4 — networks and information systems supporting essential functions are protected against attack. Covers secure configuration, secure architecture, and the management of vulnerabilities in deployed systems.",
@@ -16092,7 +16092,7 @@
     }
   },
   "SLSA-3": {
-    "framework": "SLSA v1.0 (Supply-chain Levels for Software Artifacts)",
+    "framework": "SLSA v1.2 (Supply-chain Levels for Software Artifacts)",
     "control_id": "Build L3",
     "control_name": "SLSA Build Level 3",
     "designed_for": "SLSA Build L3 — hosted build platform with hardened workers producing non-forgeable provenance. Provenance is signed, points to immutable source, and the build is isolated. Anchored on the threat model that a compromised builder cannot tamper with provenance after the fact.",
