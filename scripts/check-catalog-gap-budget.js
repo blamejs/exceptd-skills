@@ -68,9 +68,8 @@ const BUDGET = {
   "pipeline-wording": 0,
   // Curated entries promoted from KEV import drafts that still carry the
   // draft's placeholder text in some fields. refresh --curate-batch refuses a
-  // new one. The test mirror also fails when the count falls below the
-  // budget, so the release that curates those fields lowers it.
-  "import-stub": 1370
+  // new one. No shipped text carries this wording, and the budget holds it at 0.
+  "import-stub": 0
 };
 
 function main() {
