@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.21.36 — 2026-10-05
+
+`node scripts/release.js watch` and `merge` now stop when the codex review bot has posted a finding as a top-level pull request comment. The bot posts a finding it cannot attach to a line of the diff as a PR comment with a P0 to P3 badge instead of a review thread, and the thread check did not read those comments, so `watch` reported the PR as clean while a P1 was open. A finding comment now blocks until the bot posts a later "Didn't find any major issues" comment or reacts to the PR with 👍. `watch` lists each blocking comment with its badge, title and link. When the bot cannot re-review, set `RELEASE_ACK_BOT_COMMENTS` to the comma-separated ids of the comments you have fixed. A failed or unreadable comment or reaction lookup stops the phase.
+
 ## 0.21.35 — 2026-10-04
 
 The 239 catalog entries promoted from CISA KEV import drafts kept the draft's placeholder values for discovery, exploit complexity, reboot and live patch. Each now carries values taken from the vendor advisory, the CVE record and the finder's own write-up, and the notes on each field name the source. 176 entries credit an outside researcher and 38 the vendor's own research team; the other 22 keep `unknown`, and their note says that no source names who first found or reported the flaw. Three were found with AI tooling, and they now record AI discovery, which adds 15 points to their RWEP score: CVE-2025-58360 in GeoServer (found with XBOW), CVE-2026-34197 in Apache ActiveMQ (found at Horizon3.ai with an AI model) and CVE-2026-1731 in BeyondTrust Remote Support (Hacktron AI). Exploit complexity, which the draft set to moderate on every entry, is now low on 220 and high on 19.
