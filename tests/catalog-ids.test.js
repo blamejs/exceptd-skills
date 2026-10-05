@@ -363,7 +363,9 @@ test('the skill linter accepts a body citation of an aliased CVE and rejects an 
   return withCache((dir) => {
     const file = path.join(dir, 'skill.md');
     fs.writeFileSync(file, `${src}\nSee CVE-2026-45585 and CVE-2099-0404.\n`);
-    const r = lint.lintSkill({ name: 'decompression-dos', path: path.relative(ROOT, file) }, lint.loadContext());
+    // An absolute path: a temp dir can sit on another drive, where a relative path cannot reach it.
+    const r = lint.lintSkill({ name: 'decompression-dos', path: file }, lint.loadContext());
+    assert.ok(!r.errors.some((e) => /skill file not found/.test(e)), `the linter read the file: ${r.errors.join('; ')}`);
     const cites = (id) => r.errors.some((e) => e.includes(`"${id}"`));
     assert.equal(cites('CVE-2026-45585'), false, 'an aliased CVE resolves to its entry');
     assert.equal(cites('CVE-2099-0404'), true, 'an unknown CVE is still an error');
@@ -392,6 +394,29 @@ test('the GHSA source proposes no new entry for an aliased CVE', async () => {
   } finally {
     if (saved === undefined) delete process.env.EXCEPTD_GHSA_FIXTURE; else process.env.EXCEPTD_GHSA_FIXTURE = saved;
   }
+});
+
+test('a GHSA field-dropped diff for an aliased CVE is reported on the owning entry, held for review', async () => {
+  const src = JSON.parse(fs.readFileSync(path.join(ROOT, 'tests', 'fixtures', 'ghsa-cve-2026-45321.json'), 'utf8'));
+  const advisories = (Array.isArray(src) ? src : [src]).map((a) => { const c = { ...a }; delete c.cvss; return c; });
+  const saved = process.env.EXCEPTD_GHSA_FIXTURE;
+  await withCache(async (dir) => {
+    const fix = path.join(dir, 'ghsa.json');
+    fs.writeFileSync(fix, JSON.stringify(Array.isArray(src) ? advisories : advisories[0]));
+    process.env.EXCEPTD_GHSA_FIXTURE = fix;
+    try {
+      const cveCatalog = { 'BUG-2099-X': { aliases: ['CVE-2026-45321'], cvss_score: 9.6 } };
+      const r = await ALL_SOURCES.ghsa.fetchDiff({ cveCatalog });
+      const d = r.diffs.find((x) => x.variant === 'field_dropped' && x.field === 'cvss_score');
+      assert.ok(d, 'the dropped CVSS score is reported');
+      assert.equal(d.id, 'BUG-2099-X');
+      assert.equal(d.before, 9.6);
+      assert.equal(d.review_only, true);
+      assert.equal(d.via_alias, 'CVE-2026-45321');
+    } finally {
+      if (saved === undefined) delete process.env.EXCEPTD_GHSA_FIXTURE; else process.env.EXCEPTD_GHSA_FIXTURE = saved;
+    }
+  });
 });
 
 // --- validate-cves --------------------------------------------------------------
