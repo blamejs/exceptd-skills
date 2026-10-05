@@ -521,6 +521,7 @@
                     "examples": [["live_patch_available == true"], ["reboot_window_within_4h == true"], ["compensating_control_deployed == true"]]
                   },
                   "priority": { "type": "integer", "minimum": 1, "description": "Lower number is preferred. 1 is the recommended path when its preconditions hold." },
+                  "requires_preconditions": { "type": "boolean", "description": "Optional. When true, selected_remediation picks this path only when all of its preconditions are satisfied, never as a fallback for a fired indicator or as the default path." },
                   "for_signals": {
                     "type": "array",
                     "items": { "type": "string" },

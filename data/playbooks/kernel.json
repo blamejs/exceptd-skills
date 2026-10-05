@@ -583,12 +583,13 @@
       "remediation_paths": [
         {
           "id": "live-patch-deploy",
-          "description": "Deploy vendor live-patch (kpatch / kgraft / canonical livepatch) covering the matched CVE. No reboot required.",
+          "description": "Where the matched CVE's live-patch notes list a live patch for this host's kernel, deploy it (kpatch / kgraft / canonical livepatch) and confirm it is loaded with `kpatch list`, `canonical-livepatch status` or the vendor's equivalent. The live patch defers the reboot; the host still needs the fixed kernel package at its next reboot.",
           "preconditions": [
             "livepatch_available_for_cve == true",
             "host_supports_livepatch == true"
           ],
           "priority": 1,
+          "requires_preconditions": true,
           "for_signals": ["kver-in-affected-range"],
           "compensating_controls": [],
           "estimated_time_hours": 1

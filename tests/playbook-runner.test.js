@@ -777,17 +777,36 @@ describe('validate', () => {
     });
     assert.equal(v.selected_remediation.id, 'live-patch-deploy');
     assert.equal(v.selected_remediation.priority, 1);
+    assert.doesNotMatch(v.selected_remediation.description, /No reboot required/);
   });
 
-  it('falls back to priority-1 path when no preconditions satisfied', () => {
+  it('a confirmed live patch outranks a satisfied upgrade on a fired kver-in-affected-range', () => {
+    const d = runner.detect('kernel', 'all-catalogued-kernel-cves', { signal_overrides: { 'kver-in-affected-range': 'hit' } });
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', d);
+    const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {
+      livepatch_available_for_cve: true, host_supports_livepatch: true,
+      vendor_patch_available: true, reboot_window_within_72h: true,
+    });
+    assert.equal(v.selected_remediation.id, 'live-patch-deploy');
+  });
+
+  it('with no preconditions submitted, a hit on kver-in-affected-range proposes the kernel upgrade, not a live patch', () => {
+    const d = runner.detect('kernel', 'all-catalogued-kernel-cves', { signal_overrides: { 'kver-in-affected-range': 'hit' } });
+    const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', d);
+    const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {});
+    assert.equal(v.selected_remediation.id, 'scheduled-kernel-upgrade');
+  });
+
+  it('with no preconditions satisfied, the highest-priority path that may be a fallback is proposed', () => {
     const detRes = runner.detect('kernel', 'all-catalogued-kernel-cves', {});
     const an = runner.analyze('kernel', 'all-catalogued-kernel-cves', detRes);
     const v = runner.validate('kernel', 'all-catalogued-kernel-cves', an, {});
-    // Even with no preconditions satisfied, runner proposes the priority-1 path
-    // (caller surfaces the unverified state to the operator).
+    // A remediation is always proposed (the caller surfaces the unverified
+    // state). live-patch-deploy requires its preconditions, so the fallback is
+    // the next path by priority.
     assert.ok(v.selected_remediation, 'a remediation is always proposed');
-    assert.equal(v.selected_remediation.priority, 1);
-    // remediation_options_considered marks the path as not satisfied
+    assert.equal(v.selected_remediation.id, 'scheduled-kernel-upgrade');
+    assert.equal(v.selected_remediation.priority, 2);
     const livePatch = v.remediation_options_considered.find(c => c.id === 'live-patch-deploy');
     assert.equal(livePatch.all_satisfied, false);
   });
@@ -1221,6 +1240,33 @@ describe('close', () => {
       assert.equal(vOne.remediation_options_considered[0].id, 'rp-only');
       // The result carries no `remediation_paths` key for a consumer to read.
       assert.equal('remediation_paths' in vOne, false);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+      freshRunner(REAL_PLAYBOOK_DIR);
+    }
+  });
+
+  it('a path that requires its preconditions is never proposed while they are unsatisfied, even as the only path', () => {
+    const dir = tmpDir('requires-preconditions');
+    try {
+      writePlaybook(dir, 'gated', synthPlaybook({
+        phases: {
+          validate: {
+            remediation_paths: [
+              { id: 'rp-gated', priority: 1, description: 'only with a confirmed live patch', preconditions: ['livepatch_available_for_cve == true'], requires_preconditions: true }
+            ]
+          }
+        }
+      }));
+      const local = freshRunner(dir);
+      const an = local.analyze('gated', 'default', local.detect('gated', 'default', {}));
+      const blocked = local.validate('gated', 'default', an, {});
+      assert.equal(blocked.selected_remediation, null);
+      assert.equal(blocked.remediation_options_considered[0].all_satisfied, false);
+      const open = local.validate('gated', 'default', an, { livepatch_available_for_cve: true });
+      assert.equal(open.selected_remediation.id, 'rp-gated');
+      // close() runs with nothing selected.
+      assert.doesNotThrow(() => local.close('gated', 'default', an, blocked, {}, { session_id: 'abcdef0123456789' }));
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
       freshRunner(REAL_PLAYBOOK_DIR);

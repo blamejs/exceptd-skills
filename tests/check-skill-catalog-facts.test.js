@@ -441,6 +441,7 @@ test("a live-patch No followed by another negation is compared; a qualifier or a
     "| CVE-2099-0001 | No (none known) |",
     "| CVE-2099-0001 | No (not verified) |",
     "| CVE-2099-0001 | No (not yet confirmed) |",
+    "| CVE-2099-0001 | No (not currently known; not presently verified) |",
     "| CVE-2099-0001 | No (unverified) |",
     "| CVE-2099-0001 | No (confirmed absent on every affected build) |",
     "| CVE-2099-0001 | No (documented only for Ubuntu, so coverage is partial) |",
@@ -449,9 +450,9 @@ test("a live-patch No followed by another negation is compared; a qualifier or a
   ])), [
     '3 CVE-2099-0001: live patch "No (the fix is an IDE upgrade, not a run", catalog live_patch_available true',
     '7 CVE-2099-0001: live patch "No (live patches cover some distribution", catalog live_patch_available true',
-    '35 CVE-2099-0001: live patch "No (confirmed absent on every affected b", catalog live_patch_available true',
-    '39 CVE-2099-0001: live patch "No (documented only for Ubuntu, so cover", catalog live_patch_available true',
-    '47 CVE-2099-0002: live patch "Yes (kpatch)", catalog live_patch_available false',
+    '39 CVE-2099-0001: live patch "No (confirmed absent on every affected b", catalog live_patch_available true',
+    '43 CVE-2099-0001: live patch "No (documented only for Ubuntu, so cover", catalog live_patch_available true',
+    '51 CVE-2099-0002: live patch "Yes (kpatch)", catalog live_patch_available false',
   ]);
 });
 
