@@ -10,6 +10,7 @@
 const fs = require("fs");
 const https = require("https");
 const path = require("path");
+const { renameWithRetry } = require("../lib/fs-atomic.js");
 
 const ROOT = path.join(__dirname, "..");
 const TODAY = new Date().toISOString().slice(0, 10);
@@ -61,7 +62,7 @@ function writeCatalog(rel, obj) {
   const abs = path.join(ROOT, "data", rel);
   const tmp = `${abs}.tmp-${process.pid}`;
   fs.writeFileSync(tmp, JSON.stringify(obj, null, 2) + "\n");
-  fs.renameSync(tmp, abs);
+  renameWithRetry(tmp, abs);
 }
 
 function getTag(blk, tag) {

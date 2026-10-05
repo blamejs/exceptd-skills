@@ -10,6 +10,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const lint = require("../lib/lint-skills.js");
+const { renameWithRetry } = require("../lib/fs-atomic.js");
 
 const ROOT = path.join(__dirname, "..");
 const ABS = (p) => path.join(ROOT, p);
@@ -27,19 +28,12 @@ function writeJson(name, obj) {
   // The random suffix keeps a --parallel fan-out sharing one pid off this path.
   const tmp = `${abs}.tmp-${process.pid}.${crypto.randomBytes(4).toString("hex")}`;
   fs.writeFileSync(tmp, JSON.stringify(obj, null, 2) + "\n", "utf8");
-  // On Windows a sync client or indexer holding the target open makes the rename
-  // transiently EPERM/EACCES/EBUSY, so it is retried with backoff.
-  let lastErr;
-  for (let attempt = 0; attempt < 10; attempt++) {
-    try { fs.renameSync(tmp, abs); return; }
-    catch (e) {
-      lastErr = e;
-      if (e.code !== "EPERM" && e.code !== "EACCES" && e.code !== "EBUSY") break;
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20 * (attempt + 1));
-    }
+  try {
+    renameWithRetry(tmp, abs);
+  } catch (e) {
+    try { fs.unlinkSync(tmp); } catch { /* best effort */ }
+    throw e;
   }
-  try { fs.unlinkSync(tmp); } catch { /* best effort */ }
-  throw lastErr;
 }
 
 function readJson(p) {

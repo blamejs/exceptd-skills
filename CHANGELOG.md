@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.21.40 — 2026-10-05
+
+On Windows, the CLI's atomic writes and file moves now retry a rename that fails with EPERM, EACCES or EBUSY while another process holds the file open, as `npm run build-indexes` already did. The retry covers the catalog writes of `exceptd refresh --apply` and `refresh --advisory --apply`, CVE curation, the prefetch cache, the citation cache, attestation files, the `refresh --network` swap of the installed catalog and `scripts/refresh-upstream-catalogs.js`. A rename that still fails after ten attempts, about one second in all, reports its error as before, and any other rename error is reported at once.
+
 ## 0.21.39 — 2026-10-05
 
 Twelve Linux kernel entries recorded a live patch and took 10 points off their RWEP score, although the live patches for those flaws reach only some of the affected kernels. Each entry now records no live patch. Its live-patch notes name the kernels that have one and at least one affected population that does not, such as Android, RHEL 5, Ubuntu releases outside Canonical Livepatch, SUSE Liberty Linux 9 or kernels built from source, and the distribution trackers and advisories behind the notes are added to the entry's sources. RWEP rises by 10 on each: CVE-2026-31431 (Copy Fail) from 90 to 100, CVE-2026-53362 from 87 to 97, which moves it into the Immediate band, CVE-2016-5195 (Dirty COW) from 74 to 84, CVE-2022-0492 and CVE-2025-38352 from 73 to 83, CVE-2024-1086 and CVE-2021-3493 from 69 to 79, CVE-2025-39682, CVE-2017-1000253 and CVE-2022-0847 (Dirty Pipe) from 67 to 77, and CVE-2022-0185 from 65 to 75, each of which moves from the High band to Urgent. CVE-2026-46300 (Fragnesia) also now records that its kernel update needs a reboot, which adds 5 points, so it moves from 35 to 50 and from the Standard band to Elevated.

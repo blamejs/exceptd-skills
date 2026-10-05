@@ -129,7 +129,7 @@ test("extra: build-indexes writeJson temp filename includes a crypto.randomBytes
   // The tmp name must still be a temp sibling that gets renamed into place.
   assert.match(BUILD_INDEXES_SRC, /\$\{abs\}\.tmp-\$\{process\.pid\}\.\$\{crypto\.randomBytes\(4\)\.toString\("hex"\)\}/,
     "writeJson temp name combines pid + random hex");
-  assert.match(BUILD_INDEXES_SRC, /fs\.renameSync\(\s*tmp\s*,\s*abs\s*\)/,
+  assert.match(BUILD_INDEXES_SRC, /renameWithRetry\(\s*tmp\s*,\s*abs\s*\)/,
     "writeJson must atomically rename the temp file into place");
 });
 ;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
