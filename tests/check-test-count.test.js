@@ -451,6 +451,33 @@ test('check-test-count.js: missing baseline with --update-baseline exits 0 and w
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('check-test-count.js: --update-baseline keeps a higher baseline unless --allow-decrease is given', () => {
+  const dir = makeIsolatedCheckTestCount();
+  const baselinePath = path.join(dir, 'tests', '.test-count-baseline.json');
+  const script = path.join(dir, 'scripts', 'check-test-count.js');
+  const writeBaseline = (n) => fs.writeFileSync(baselinePath, JSON.stringify({ baseline: n, tolerance: 1 }) + '\n', 'utf8');
+  const readBaseline = () => JSON.parse(fs.readFileSync(baselinePath, 'utf8')).baseline;
+  try {
+    // The fixture declares 2 tests; a baseline of 3 is a drop within the tolerance.
+    writeBaseline(3);
+    let r = spawnSync(process.execPath, [script, '--update-baseline'], { encoding: 'utf8', cwd: dir });
+    assert.equal(r.status, 0, r.stderr);
+    assert.equal(readBaseline(), 3, 'a lower count must not lower the baseline');
+    assert.match(r.stderr, /baseline kept at 3/);
+
+    r = spawnSync(process.execPath, [script, '--update-baseline', '--allow-decrease'], { encoding: 'utf8', cwd: dir });
+    assert.equal(r.status, 0, r.stderr);
+    assert.equal(readBaseline(), 2, '--allow-decrease records the lower count');
+
+    writeBaseline(1);
+    r = spawnSync(process.execPath, [script, '--update-baseline'], { encoding: 'utf8', cwd: dir });
+    assert.equal(r.status, 0, r.stderr);
+    assert.equal(readBaseline(), 2, 'a higher count raises the baseline');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
 ;{ const __postEnv = Object.assign({}, process.env); try { process.chdir(__preCwd); } catch (e) {}
   for (const k of Object.keys(process.env)) if (!(k in __preEnv)) delete process.env[k]; Object.assign(process.env, __preEnv);
   __t.before(() => { for (const k of Object.keys(__postEnv)) if (__postEnv[k] !== __preEnv[k]) process.env[k] = __postEnv[k]; });

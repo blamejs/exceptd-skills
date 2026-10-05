@@ -394,9 +394,9 @@ function cmdPrepare(opts) {
   _regenArtifacts();
 
   _section("test-count baseline");
-  // Check BEFORE refreshing: `--update-baseline` writes whatever it observes, so
-  // refreshing first rebaselines a shrunken suite downward and the shrinkage gate
-  // in `gates` then compares the new count against itself.
+  // Check BEFORE refreshing, so a drop beyond the tolerance stops the release.
+  // `--update-baseline` raises the baseline to a higher count and keeps it when
+  // the count is lower, so a drop within the tolerance does not lower the floor.
   _run("node", ["scripts/check-test-count.js"]);
   _run("node", ["scripts/check-test-count.js", "--update-baseline"]);
 

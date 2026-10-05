@@ -3,8 +3,8 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1771509,
-    "total_approx_tokens": 442882,
+    "total_chars": 1771531,
+    "total_approx_tokens": 442888,
     "skill_count": 51
   },
   "skills": {
@@ -2130,10 +2130,10 @@
     },
     "mlops-security": {
       "path": "skills/mlops-security/skill.md",
-      "bytes": 46831,
-      "chars": 46545,
+      "bytes": 46842,
+      "chars": 46556,
       "lines": 332,
-      "approx_tokens": 11636,
+      "approx_tokens": 11639,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2147,9 +2147,9 @@
           "approx_tokens": 1439
         },
         "ttp-mapping": {
-          "bytes": 4442,
-          "chars": 4418,
-          "approx_tokens": 1105
+          "bytes": 4453,
+          "chars": 4429,
+          "approx_tokens": 1107
         },
         "exploit-availability-matrix": {
           "bytes": 5555,
@@ -2715,10 +2715,10 @@
     },
     "self-update-integrity": {
       "path": "skills/self-update-integrity/skill.md",
-      "bytes": 7619,
-      "chars": 7605,
+      "bytes": 7630,
+      "chars": 7616,
       "lines": 80,
-      "approx_tokens": 1901,
+      "approx_tokens": 1904,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2732,9 +2732,9 @@
           "approx_tokens": 209
         },
         "ttp-mapping": {
-          "bytes": 736,
-          "chars": 732,
-          "approx_tokens": 183
+          "bytes": 747,
+          "chars": 743,
+          "approx_tokens": 186
         },
         "exploit-availability-matrix": {
           "bytes": 716,

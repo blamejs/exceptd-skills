@@ -210,6 +210,15 @@ const GATES = [
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
   {
+    // Compares data/attack-techniques.json to the Enterprise and ICS STIX
+    // bundles of the ATT&CK release it pins: ids, names, STIX ids and tactics.
+    // It downloads the bundles on a cold cache, once per pin.
+    name: "ATT&CK catalog currency (catalog vs. the release it pins)",
+    command: process.execPath,
+    args: [path.join(ROOT, "scripts", "check-attack-catalog-currency.js")],
+    ciJobName: "Data integrity (catalog + manifest snapshot)",
+  },
+  {
     // Every ISM-NNNN citation must name a control in the pinned ism-oscal
     // release, and every AU-ISM-NNNN registry key must describe that control.
     // Fetches the release catalog on a cold cache; a tag is immutable.

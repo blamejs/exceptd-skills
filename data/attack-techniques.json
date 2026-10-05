@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "last_updated": "2026-08-19",
+    "last_updated": "2026-10-04",
     "last_threat_review": "2026-08-08",
     "attack_version": "19.2",
     "attack_version_date": "2026-08-05",
@@ -2715,7 +2715,7 @@
     ]
   },
   "T1195.001": {
-    "name": "Supply Chain Compromise: Software Dependencies and Development Tools",
+    "name": "Supply Chain Compromise: Compromise Software Dependencies and Development Tools",
     "version": "v19",
     "cve_refs": [
       "CVE-2019-15107",
@@ -2740,14 +2740,14 @@
     "reference_url": "https://attack.mitre.org/techniques/T1195/001",
     "stix_id": "attack-pattern--191cc6af-1bb2-4344-ab5f-28e496638720",
     "is_subtechnique": true,
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-10-04",
     "description": "Adversaries may manipulate software dependencies and development tools prior to receipt by a final consumer for the purpose of data or system compromise.",
     "tactic": [
       "Initial Access"
     ]
   },
   "T1195.002": {
-    "name": "Supply Chain Compromise: Software Supply Chain",
+    "name": "Supply Chain Compromise: Compromise Software Supply Chain",
     "version": "v19",
     "cve_refs": [
       "CVE-2018-1000861",
@@ -2799,7 +2799,7 @@
     "reference_url": "https://attack.mitre.org/techniques/T1195/002",
     "stix_id": "attack-pattern--bd369cd9-abb8-41ce-b5bb-fff23ee86c00",
     "is_subtechnique": true,
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-10-04",
     "description": "Adversaries may manipulate application software prior to receipt by a final consumer for the purpose of data or system compromise.",
     "tactic": [
       "Initial Access"
@@ -4483,7 +4483,7 @@
     "description": "Adversaries may constrain execution or actions based on the presence of a mutex associated with malware."
   },
   "T1059.013": {
-    "name": "Command and Scripting Interpreter: Cloud API",
+    "name": "Command and Scripting Interpreter: Container CLI/API",
     "version": "v19",
     "tactic": "Execution",
     "added_in": "v18",
@@ -4498,7 +4498,7 @@
     "reference_url": "https://attack.mitre.org/techniques/T1059/013",
     "stix_id": "attack-pattern--c283d88f-8c23-4318-9da5-3d50cecad756",
     "is_subtechnique": true,
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-10-04",
     "description": "Adversaries may abuse built-in CLI tools or API calls to execute malicious commands in containerized environments."
   },
   "T1556.007": {
@@ -8694,12 +8694,12 @@
     "id": "T1574.012",
     "name": "Hijack Execution Flow: COR_PROFILER",
     "tactic": [
-      "Persistence",
-      "Privilege Escalation",
-      "Defense Evasion"
+      "Stealth",
+      "Execution"
     ],
-    "description": "Adversaries may leverage the COR_PROFILER environment variable to hijack the execution flow of programs that load the .NET CLR. Used as a near-fit for the CTFMON-trust-abuse class (GreenPlasma) where a SYSTEM-context process is tricked into executing attacker-controlled bytes via implicit trust.",
-    "last_verified": "2026-05-19",
+    "description": "Adversaries may leverage the COR_PROFILER environment variable to hijack the execution flow of programs that load the .NET CLR.",
+    "version": "v19",
+    "last_verified": "2026-10-04",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-orphan-fill",
     "cve_refs": [],
