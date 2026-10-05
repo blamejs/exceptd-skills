@@ -419,6 +419,33 @@ test('a GHSA field-dropped diff for an aliased CVE is reported on the owning ent
   });
 });
 
+test('refresh --curate on an aliased CVE curates the entry that lists it', async () => {
+  const curation = require('../lib/cve-curation');
+  await withCache(async (dir) => {
+    const catalogPath = path.join(dir, 'cve-catalog.json');
+    fs.writeFileSync(catalogPath, JSON.stringify({ _meta: {}, 'BUG-2099-X': { name: 'x', aliases: ['CVE-2099-0002'], _auto_imported: true, _draft: true } }));
+    const q = await curation.curate('CVE-2099-0002', { catalogPath });
+    assert.equal(q.ok, true, JSON.stringify(q));
+    assert.equal(q.cve_id, 'BUG-2099-X', 'the questionnaire is for the owning entry');
+    await curation.curate('CVE-2099-0002', { catalogPath, apply: true, answers: {} });
+    const after = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
+    assert.equal(after['CVE-2099-0002'], undefined, 'no entry is added under the alias');
+    assert.ok(after['BUG-2099-X'].last_updated, 'the apply updated the owning entry');
+  });
+});
+
+test('globalFrameworkContext and theaterTestsFor resolve an aliased CVE id', () => {
+  const xref = require('../lib/cross-ref-api');
+  const viaKey = xref.globalFrameworkContext({ cveIds: ['BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA'] });
+  const viaAlias = xref.globalFrameworkContext({ cveIds: ['CVE-2026-45586'] });
+  assert.ok(Object.keys(viaKey).length > 0);
+  assert.deepEqual(viaAlias, viaKey);
+  assert.deepEqual(
+    xref.theaterTestsFor({ cveIds: ['CVE-2026-45586'] }),
+    xref.theaterTestsFor({ cveIds: ['BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA'] }),
+  );
+});
+
 // --- validate-cves --------------------------------------------------------------
 
 test('validate-cves reports drift on an alias row for review and fails only on own-key drift', () => {
