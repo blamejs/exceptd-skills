@@ -271,6 +271,90 @@ test('the KEV, GHSA and OSV sources do not add an entry for an aliased CVE', asy
   }
 });
 
+// --- analysis lookups by an aliased CVE id ----------------------------------------
+
+test('byCve resolves an aliased CVE id to its entry, lesson and framework gaps', () => {
+  const xref = require('../lib/cross-ref-api');
+  const viaKey = xref.byCve('BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA');
+  const viaAlias = xref.byCve('CVE-2026-45586');
+  assert.equal(viaAlias.found, true);
+  assert.equal(viaAlias.cve_id, 'CVE-2026-45586');
+  assert.equal(viaAlias.catalog_key, 'BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA');
+  assert.deepEqual(viaAlias.zeroday_lessons, ['BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA']);
+  assert.deepEqual(viaAlias.framework_gaps, viaKey.framework_gaps);
+  assert.equal(viaKey.catalog_key, undefined, 'a lookup by key carries no catalog_key');
+});
+
+test('framework-gap with an aliased CVE id reports the entry\'s controls and lesson', () => {
+  const run = (id) => JSON.parse(spawnSync(process.execPath, [path.join(ROOT, 'bin', 'exceptd.js'), 'framework-gap', 'all', id, '--json'], {
+    encoding: 'utf8', cwd: ROOT, env: { ...process.env, EXCEPTD_DEPRECATION_SHOWN: '1' },
+  }).stdout);
+  const viaAlias = run('CVE-2026-45585');
+  const viaKey = run('BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY');
+  assert.ok(viaAlias.cve_analysis, 'cve_analysis is not null');
+  assert.equal(viaAlias.cve_analysis.cve_id, 'BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY');
+  assert.deepEqual(viaAlias.cve_analysis.controls, viaKey.cve_analysis.controls);
+  assert.deepEqual(viaAlias.new_control_requirements, viaKey.new_control_requirements);
+  assert.ok(viaAlias.new_control_requirements.length > 0, 'the lesson\'s new controls are reported');
+});
+
+test('scoring.score and compare resolve an aliased CVE id', () => {
+  const scoring = require('../lib/scoring');
+  const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'cve-catalog.json'), 'utf8'));
+  assert.equal(scoring.score('CVE-2026-45585', catalog), catalog['BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY'].rwep_score);
+  assert.ok(scoring.compare('CVE-2026-45585', catalog));
+  assert.throws(() => scoring.score('CVE-2099-0404', catalog), /not in catalog/);
+});
+
+test('an advisory feed item naming an aliased CVE raises no new-CVE diff', async () => {
+  const SA = require('../lib/source-advisories');
+  const fixtures = {};
+  for (const f of SA.FEEDS) {
+    fixtures[f.name] = f.kind === 'csaf-index' ? 'rhsa-2026_0001.json\n'
+      : f.kind === 'gitlab-activity' ? '<feed xmlns="http://www.w3.org/2005/Atom"></feed>'
+      : '<rss><channel></channel></rss>';
+  }
+  fixtures.qualys = '<rss><channel>'
+    + '<item><title>CVE-2099-0002 disclosed</title><link>https://q/1</link><pubDate>2026-05-14</pubDate><description></description></item>'
+    + '<item><title>CVE-2099-0003 disclosed</title><link>https://q/2</link><pubDate>2026-05-14</pubDate><description></description></item>'
+    + '</channel></rss>';
+  const r = await SA.ADVISORIES_SOURCE.fetchDiff({ fixtures: { advisories: fixtures }, cveCatalog: catalogWithAlias() });
+  const ids = r.diffs.map((d) => d.id);
+  assert.ok(!ids.includes('CVE-2099-0002'), 'the aliased CVE is in the catalog');
+  assert.ok(ids.includes('CVE-2099-0003'), 'an untracked CVE still raises a diff');
+});
+
+test('a VEX statement that names only an alias is reported on the entry and not applied', () => {
+  const runner = require('../lib/playbook-runner');
+  const det = { indicators: [{ id: 'compromised-install-on-host', verdict: 'hit' }], classification: 'detected' };
+  const entryOf = (a) => (a.matched_cves || []).find((c) => c.cve_id === 'MAL-2026-SHAI-HULUD-OSS');
+  const base = runner.analyze('supply-chain-recovery', 'full-recovery-sequence', det);
+  assert.ok(entryOf(base), 'the fired indicator matches the entry');
+  assert.equal(entryOf(base).vex_alias_unapplied, undefined);
+  // CVE-2026-44484 covers one package of the Shai-Hulud family, so a statement on it
+  // does not remove or clear the family finding.
+  const dropped = runner.analyze('supply-chain-recovery', 'full-recovery-sequence', det, { vex_filter: ['CVE-2026-44484'] });
+  assert.ok(entryOf(dropped), 'not_affected on an alias keeps the entry');
+  assert.deepEqual(entryOf(dropped).vex_alias_unapplied, [{ id: 'CVE-2026-44484', disposition: 'not_affected' }]);
+  const fixed = runner.analyze('supply-chain-recovery', 'full-recovery-sequence', det, { vex_fixed: ['CVE-2026-44484'] });
+  assert.equal(entryOf(fixed).vex_status, undefined, 'fixed on an alias does not mark the entry fixed');
+  assert.deepEqual(entryOf(fixed).vex_alias_unapplied, [{ id: 'CVE-2026-44484', disposition: 'fixed' }]);
+  // A statement that names the entry's own key still applies.
+  const byKey = runner.analyze('supply-chain-recovery', 'full-recovery-sequence', det, { vex_filter: ['MAL-2026-SHAI-HULUD-OSS'] });
+  assert.equal(entryOf(byKey), undefined, 'not_affected on the entry key drops it');
+});
+
+test('resolveCatalogKey returns the own key, the alias owner, or null', () => {
+  const { resolveCatalogKey } = require('../lib/catalog-ids');
+  const cat = catalogWithAlias();
+  assert.equal(resolveCatalogKey(cat, 'CVE-2099-0001'), 'CVE-2099-0001');
+  assert.equal(resolveCatalogKey(cat, 'CVE-2099-0002'), 'BUG-2099-ALIASED');
+  assert.equal(resolveCatalogKey(cat, 'MAL-2099-NO-ALIAS'), 'MAL-2099-NO-ALIAS');
+  assert.equal(resolveCatalogKey(cat, 'CVE-2099-0404'), null);
+  assert.equal(resolveCatalogKey(cat, '_meta'), null, '_meta is not an entry');
+  assert.equal(resolveCatalogKey(null, 'CVE-2099-0001'), null);
+});
+
 // --- validate-cves --------------------------------------------------------------
 
 test('validate-cves --offline lists an aliased CVE with * and names its entry', () => {
