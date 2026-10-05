@@ -866,7 +866,10 @@ async function runValidateCves(rawArgs = []) {
   }
   if (cacheDir) cacheDir = path.resolve(cacheDir);
 
-  const catalogPath = path.join(__dirname, '..', 'data', 'cve-catalog.json');
+  // EXCEPTD_CVE_CATALOG redirects the catalog, as it does for refresh and citation lookup.
+  const catalogPath = process.env.EXCEPTD_CVE_CATALOG
+    ? path.resolve(process.env.EXCEPTD_CVE_CATALOG)
+    : path.join(__dirname, '..', 'data', 'cve-catalog.json');
   let catalog;
   try {
     catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
@@ -977,13 +980,17 @@ async function runValidateCves(rawArgs = []) {
 
   const byId = new Map(report.results.map(r => [r.cve_id, r]));
   let driftFound = 0;
+  let aliasDrift = 0;
   let unreachable = 0;
 
   for (const t of targets) {
     const e = catalog[t.key];
     const r = byId.get(t.cveId);
-    const status = r?.status || 'unknown';
+    // An alias can cover only part of its entry, so its drift is listed for
+    // review and does not fail the run.
+    const status = r?.status === 'drift' && t.alias ? 'drift-review' : (r?.status || 'unknown');
     if (status === 'drift') driftFound++;
+    if (status === 'drift-review') aliasDrift++;
     if (status === 'unreachable') unreachable++;
 
     const nvdScore = r?.fetched?.cvss_score ?? null;
@@ -1041,6 +1048,9 @@ async function runValidateCves(rawArgs = []) {
   console.log(`\nSummary: match=${report.by_status.match || 0}  drift=${report.by_status.drift || 0}  unreachable=${report.by_status.unreachable || 0}  missing=${report.by_status.missing || 0}  (total=${report.total})`);
   if (unreachable > 0) {
     console.log(`Note: ${unreachable} CVE(s) unreachable — airgapped or upstream down. Re-run when network is available.`);
+  }
+  if (aliasDrift > 0) {
+    console.log(`Note: ${aliasDrift} alias row(s) (drift-review) differ from the entry that lists them. An alias can cover only part of its entry, so review these by hand; they do not fail the run.`);
   }
   if (driftFound > 0) {
     console.log(`\n[validate-cves] DRIFT DETECTED on ${driftFound} CVE(s). Update data/cve-catalog.json and bump source_verified.`);

@@ -421,6 +421,50 @@ test('a GHSA field-dropped diff for an aliased CVE is reported on the owning ent
 
 // --- validate-cves --------------------------------------------------------------
 
+test('validate-cves reports drift on an alias row for review and fails only on own-key drift', () => {
+  return withCache((dir) => {
+    const cat = catalogWithAlias();
+    const cvePath = path.join(dir, 'cve-catalog.json');
+    const cache = path.join(dir, 'cache');
+    let writeIndexedRef = null;
+    const nvd = (id, score) => writeIndexedRef('nvd', id, { vulnerabilities: [{ cve: { id, metrics: {
+      cvssMetricV31: [{ type: 'Primary', cvssData: { version: '3.1', baseScore: score, vectorString: VECTOR } }],
+    } } }] });
+    const epss = (id) => writeIndexedRef('epss', id, { status: 'OK', data: [{ cve: id, epss: '0.1', percentile: '0.5', date: '2026-01-01' }] });
+    // validate-cves reads a cache file only when _index.json records its sha256;
+    // otherwise it validates that id live, which a test must not do.
+    const crypto = require('node:crypto');
+    const writeIndexed = (sub, name, obj) => {
+      writeJson(cache, sub, name, obj);
+      const idxPath = path.join(cache, '_index.json');
+      let idx;
+      try { idx = JSON.parse(fs.readFileSync(idxPath, 'utf8')); } catch { idx = { entries: {} }; }
+      idx.entries[`${sub}/${name}`] = { sha256: crypto.createHash('sha256').update(JSON.stringify(obj)).digest('hex'), fetched_at: new Date().toISOString(), url: 'test' };
+      fs.writeFileSync(idxPath, JSON.stringify(idx));
+    };
+    const run = () => spawnSync(process.execPath, [path.join(ROOT, 'bin', 'exceptd.js'), 'validate-cves', '--from-cache', cache], {
+      encoding: 'utf8', cwd: ROOT, env: { ...process.env, EXCEPTD_CVE_CATALOG: cvePath, EXCEPTD_DEPRECATION_SHOWN: '1' },
+    });
+    writeIndexedRef = writeIndexed;
+    writeIndexed('kev', 'known_exploited_vulnerabilities', { vulnerabilities: [{ cveID: 'CVE-2098-0001', dateAdded: '2026-01-01' }] });
+    epss('CVE-2099-0001');
+    epss('CVE-2099-0002');
+    // The alias's CVSS differs from its entry's; the own key matches.
+    fs.writeFileSync(cvePath, JSON.stringify(cat, null, 2) + '\n');
+    nvd('CVE-2099-0001', 5.0);
+    nvd('CVE-2099-0002', 9.8);
+    let r = run();
+    assert.equal(r.status, 0, `alias drift alone does not fail the run: ${r.stdout}${r.stderr}`);
+    assert.match(r.stdout, /^CVE-2099-0002\* .*drift-review$/m);
+    assert.match(r.stdout, /1 alias row\(s\) \(drift-review\)/);
+    // Drift on the own key still fails.
+    nvd('CVE-2099-0001', 9.1);
+    r = run();
+    assert.equal(r.status, 1, 'own-key drift fails the run');
+    assert.match(r.stdout, /DRIFT DETECTED on 1 CVE/);
+  });
+});
+
 test('validate-cves --offline lists an aliased CVE with * and names its entry', () => {
   const r = spawnSync(process.execPath, [path.join(ROOT, 'bin', 'exceptd.js'), 'validate-cves', '--offline'], {
     encoding: 'utf8', cwd: ROOT, env: { ...process.env, EXCEPTD_DEPRECATION_SHOWN: '1' },
