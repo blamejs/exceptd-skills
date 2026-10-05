@@ -1280,3 +1280,14 @@ test("helpers: column kinds and Yes/No cells", () => {
   assert.equal(yesNo("No (candidate)"), false);
   assert.equal(yesNo("Partial"), null);
 });
+
+test("a row citing a CVE an entry lists in aliases[] is compared with that entry", () => {
+  const cat = { ...CATALOG, "BUG-2099-ALIASED": { ...CATALOG["CVE-2099-0002"], aliases: ["CVE-2099-0404"] } };
+  const run = (row) => withSkill(["| CVE | CVSS | RWEP |", "|---|---|---|", row].join("\n") + "\n", (file) => checkSkill(file, cat));
+  const wrong = run("| CVE-2099-0404 | 9.9 | 99 |");
+  assert.equal(wrong.compared, 1, "the aliased row is compared");
+  assert.ok(wrong.failures.some((f) => /CVE-2099-0404/.test(f) && /9\.9|CVSS/.test(f)), wrong.failures.join("; "));
+  const right = run("| CVE-2099-0404 | 9.8 | 80 |");
+  assert.equal(right.compared, 1);
+  assert.deepEqual(right.failures, []);
+});

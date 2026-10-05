@@ -232,6 +232,8 @@ function copyFile(srcAbs, dstAbs) {
 // would yield empty stdout and a confusing content-assertion failure).
 function copyExitCodes(tmp) {
   copyFile(path.join(ROOT, "lib", "exit-codes.js"), path.join(tmp, "lib", "exit-codes.js"));
+  // lint-skills.js also requires lib/catalog-ids.js to resolve CVE aliases.
+  copyFile(path.join(ROOT, "lib", "catalog-ids.js"), path.join(tmp, "lib", "catalog-ids.js"));
 }
 
 // Generate an Ed25519 keypair in PEM form, matching lib/verify.js conventions.

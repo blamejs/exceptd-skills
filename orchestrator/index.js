@@ -16,6 +16,7 @@ const { currencyCheck, initPipeline } = require('./pipeline');
 const { bus, EVENT_TYPES } = require('./event-bus');
 const { start: startScheduler, stop: stopScheduler, runCurrencyNow } = require('./scheduler');
 const { EXIT_CODES, safeExit } = require('../lib/exit-codes');
+const { cveLookupTargets } = require('../lib/catalog-ids');
 const { withRetry } = require('../vendor/blamejs/retry.js');
 
 const cmd = process.argv[2];
@@ -826,6 +827,14 @@ function rejectUnknownFlags(verb, rawArgs, knownFlags) {
   return true;
 }
 
+// Names the entry behind each `*` row of the validate-cves table.
+function printAliasKey(targets) {
+  const aliased = targets.filter((t) => t.alias);
+  if (!aliased.length) return;
+  console.log('\n* tracked through an entry\'s aliases[]:');
+  for (const t of aliased) console.log(`  ${t.cveId} -> ${t.key}`);
+}
+
 async function runValidateCves(rawArgs = []) {
   const fs = require('fs');
   const path = require('path');
@@ -857,7 +866,10 @@ async function runValidateCves(rawArgs = []) {
   }
   if (cacheDir) cacheDir = path.resolve(cacheDir);
 
-  const catalogPath = path.join(__dirname, '..', 'data', 'cve-catalog.json');
+  // EXCEPTD_CVE_CATALOG redirects the catalog, as it does for refresh and citation lookup.
+  const catalogPath = process.env.EXCEPTD_CVE_CATALOG
+    ? path.resolve(process.env.EXCEPTD_CVE_CATALOG)
+    : path.join(__dirname, '..', 'data', 'cve-catalog.json');
   let catalog;
   try {
     catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
@@ -874,18 +886,23 @@ async function runValidateCves(rawArgs = []) {
     else if (rawArgs[i].startsWith('--since=')) sinceDate = rawArgs[i].slice('--since='.length);
   }
 
-  let cveIds = Object.keys(catalog).filter(k => /^CVE-\d{4}-\d{4,7}$/.test(k));
+  // One row per tracked CVE id. An id an entry lists in aliases[] is checked against
+  // that entry and marked with `*` in the table.
+  const allTargets = cveLookupTargets(catalog);
+  const trackedKeys = new Set(allTargets.map((t) => t.key));
+  let targets = allTargets;
   if (sinceDate) {
     const since = sinceDate.length === 10 ? `${sinceDate}T00:00:00Z` : sinceDate;
-    const before = cveIds.length;
-    cveIds = cveIds.filter(id => {
-      const e = catalog[id];
+    const before = targets.length;
+    targets = targets.filter((t) => {
+      const e = catalog[t.key];
       const stamp = e.last_updated || e.cisa_kev_date || e.first_seen;
       if (!stamp) return false;
       return stamp >= since;
     });
-    console.log(`[validate-cves] --since ${sinceDate} filtered ${before} → ${cveIds.length} CVE(s).`);
+    console.log(`[validate-cves] --since ${sinceDate} filtered ${before} → ${targets.length} CVE(s).`);
   }
+  const rowLabel = (t) => (t.alias ? `${t.cveId}*` : t.cveId);
 
   console.log(`\nCVE Validation — ${new Date().toISOString()}`);
   const modeStr = offline
@@ -894,11 +911,11 @@ async function runValidateCves(rawArgs = []) {
   // CVE-* IDs validated against NVD, not the whole catalog: MAL-* entries live in
   // the same file but carry no CVE ID by design.
   const allKeys = Object.keys(catalog).filter((k) => !k.startsWith('_'));
-  const nonCveCount = allKeys.length - cveIds.length;
+  const nonCveCount = allKeys.filter((k) => !trackedKeys.has(k)).length;
   const totalNote = nonCveCount > 0
     ? ` (catalog has ${nonCveCount} additional non-CVE entries excluded from NVD validation; see \`exceptd doctor\` for the combined catalog total)`
     : '';
-  console.log(`${cveIds.length} CVE IDs queued for NVD validation${totalNote}. Mode: ${modeStr}${sinceDate ? ` · since=${sinceDate}` : ''}`);
+  console.log(`${targets.length} CVE IDs queued for NVD validation${totalNote}. Mode: ${modeStr}${sinceDate ? ` · since=${sinceDate}` : ''}`);
   console.log(`Fail-on-drift: ${noFail ? 'disabled' : 'enabled'}\n`);
 
   const header = 'CVE                | Local RWEP | Local CVSS | NVD CVSS         | KEV Local | KEV NVD | EPSS Local      | EPSS Live       | EPSS Drift | Status';
@@ -919,10 +936,10 @@ async function runValidateCves(rawArgs = []) {
   }
 
   if (offline) {
-    for (const id of cveIds) {
-      const e = catalog[id];
+    for (const t of targets) {
+      const e = catalog[t.key];
       console.log(
-        fmt(id, 18) + ' | ' +
+        fmt(rowLabel(t), 18) + ' | ' +
         fmt(e.rwep_score, 10) + ' | ' +
         fmt(e.cvss_score, 10) + ' | ' +
         fmt('(offline)', 16) + ' | ' +
@@ -934,7 +951,8 @@ async function runValidateCves(rawArgs = []) {
         'local-only'
       );
     }
-    console.log(`\n[validate-cves] offline mode — no network calls made. ${cveIds.length} entries listed from local catalog.`);
+    printAliasKey(targets);
+    console.log(`\n[validate-cves] offline mode — no network calls made. ${targets.length} entries listed from local catalog.`);
     safeExit(EXIT_CODES.SUCCESS);
     return;
   }
@@ -947,7 +965,7 @@ async function runValidateCves(rawArgs = []) {
   } catch (e) {
     if (e.code === 'MODULE_NOT_FOUND') {
       console.warn('[validate-cves] validator module unavailable (MODULE_NOT_FOUND); falling back to offline mode.');
-      console.log(`\n[validate-cves] offline mode (forced by missing validators) — ${cveIds.length} entries listed from local catalog.`);
+      console.log(`\n[validate-cves] offline mode (forced by missing validators) — ${targets.length} entries listed from local catalog.`);
       safeExit(EXIT_CODES.SUCCESS);
       return;
     }
@@ -962,13 +980,17 @@ async function runValidateCves(rawArgs = []) {
 
   const byId = new Map(report.results.map(r => [r.cve_id, r]));
   let driftFound = 0;
+  let aliasDrift = 0;
   let unreachable = 0;
 
-  for (const id of cveIds) {
-    const e = catalog[id];
-    const r = byId.get(id);
-    const status = r?.status || 'unknown';
+  for (const t of targets) {
+    const e = catalog[t.key];
+    const r = byId.get(t.cveId);
+    // An alias can cover only part of its entry, so its drift is listed for
+    // review and does not fail the run.
+    const status = r?.status === 'drift' && t.alias ? 'drift-review' : (r?.status || 'unknown');
     if (status === 'drift') driftFound++;
+    if (status === 'drift-review') aliasDrift++;
     if (status === 'unreachable') unreachable++;
 
     const nvdScore = r?.fetched?.cvss_score ?? null;
@@ -1003,7 +1025,7 @@ async function runValidateCves(rawArgs = []) {
     }
 
     console.log(
-      fmt(id, 18) + ' | ' +
+      fmt(rowLabel(t), 18) + ' | ' +
       fmt(e.rwep_score, 10) + ' | ' +
       fmt(e.cvss_score, 10) + ' | ' +
       fmt(nvdScore === null ? '-' : `${nvdScore}${cvssMismatch ? ' DRIFT' : ''}`, 16) + ' | ' +
@@ -1021,10 +1043,14 @@ async function runValidateCves(rawArgs = []) {
       }
     }
   }
+  printAliasKey(targets);
 
   console.log(`\nSummary: match=${report.by_status.match || 0}  drift=${report.by_status.drift || 0}  unreachable=${report.by_status.unreachable || 0}  missing=${report.by_status.missing || 0}  (total=${report.total})`);
   if (unreachable > 0) {
     console.log(`Note: ${unreachable} CVE(s) unreachable — airgapped or upstream down. Re-run when network is available.`);
+  }
+  if (aliasDrift > 0) {
+    console.log(`Note: ${aliasDrift} alias row(s) (drift-review) differ from the entry that lists them. An alias can cover only part of its entry, so review these by hand; they do not fail the run.`);
   }
   if (driftFound > 0) {
     console.log(`\n[validate-cves] DRIFT DETECTED on ${driftFound} CVE(s). Update data/cve-catalog.json and bump source_verified.`);
@@ -1581,14 +1607,17 @@ async function validateAllCvesPreferCache(catalog, cacheDir) {
     }
   }
 
-  const ids = Object.keys(catalog).filter((k) => /^CVE-\d{4}-\d{4,7}$/.test(k));
+  // Each tracked CVE id is checked against the entry that holds it (catalog_key).
+  const targets = cveLookupTargets(catalog);
+  const ids = targets.map((t) => t.cveId);
   const results = [];
   const by_status = { match: 0, drift: 0, unreachable: 0, missing: 0 };
   let cacheHits = 0;
   let liveFallbacks = 0;
 
-  for (const id of ids) {
-    const local = catalog[id];
+  for (const t of targets) {
+    const id = t.cveId;
+    const local = catalog[t.key];
     const nvdPayload = readCached('nvd', id);
     const epssPayload = readCached('epss', id);
 
@@ -1596,10 +1625,11 @@ async function validateAllCvesPreferCache(catalog, cacheDir) {
       liveFallbacks++;
       try {
         const r = await validateCve(id, local);
+        r.catalog_key = t.key;
         results.push(r);
         by_status[r.status] = (by_status[r.status] || 0) + 1;
       } catch (err) {
-        results.push({ cve_id: id, status: 'unreachable', discrepancies: [], fetched: { sources: { nvd: null, kev: null, epss: null } }, local, error: err.message });
+        results.push({ cve_id: id, catalog_key: t.key, status: 'unreachable', discrepancies: [], fetched: { sources: { nvd: null, kev: null, epss: null } }, local, error: err.message });
         by_status.unreachable++;
       }
       continue;
@@ -1667,7 +1697,7 @@ async function validateAllCvesPreferCache(catalog, cacheDir) {
     }
 
     const status = discrepancies.length === 0 ? 'match' : 'drift';
-    results.push({ cve_id: id, status, discrepancies, fetched, local });
+    results.push({ cve_id: id, catalog_key: t.key, status, discrepancies, fetched, local });
     by_status[status] = (by_status[status] || 0) + 1;
   }
 

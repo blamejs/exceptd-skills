@@ -723,6 +723,11 @@ function stageMirror(tmp) {
     path.join(ROOT, "lib", "exit-codes.js"),
     path.join(tmp, "lib", "exit-codes.js"),
   );
+  // It also requires lib/catalog-ids.js to resolve CVE aliases.
+  fs.copyFileSync(
+    path.join(ROOT, "lib", "catalog-ids.js"),
+    path.join(tmp, "lib", "catalog-ids.js"),
+  );
   fs.copyFileSync(
     path.join(ROOT, "lib", "schemas", "playbook.schema.json"),
     path.join(tmp, "lib", "schemas", "playbook.schema.json"),
@@ -844,6 +849,7 @@ test("#20 CLI: a literal-null playbook file FAILs with the type error and does n
   try {
     copyInto(tmp, path.join("lib", "validate-playbooks.js"));
     copyInto(tmp, path.join("lib", "exit-codes.js"));
+    copyInto(tmp, path.join("lib", "catalog-ids.js"));
     copyInto(tmp, path.join("lib", "schemas", "playbook.schema.json"));
     copyInto(tmp, "manifest.json");
     for (const f of ["atlas-ttps.json", "cve-catalog.json", "cwe-catalog.json", "d3fend-catalog.json", "attack-techniques.json"]) {
