@@ -230,7 +230,7 @@ Additional exposure: any IPsec-based network control becomes unreliable
 
 **Fragnesia (CVE-2026-46300):**
 ```
-Exposed if: kernel >= 5.10 AND kernel < [Fragnesia-patched version for distribution]
+Exposed if: kernel >= 3.9 AND kernel < [Fragnesia-patched version for distribution]
             AND any of esp4 / esp6 / rxrpc loaded
 Check: uname -r; lsmod | grep -E '^(esp4|esp6|rxrpc)\b'
 Mitigation (no reboot): blacklist the unused modules in /etc/modprobe.d/fragnesia.conf

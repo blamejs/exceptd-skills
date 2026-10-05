@@ -3,15 +3,15 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1773471,
-    "total_approx_tokens": 443372,
+    "total_chars": 1773468,
+    "total_approx_tokens": 443371,
     "skill_count": 51
   },
   "skills": {
     "kernel-lpe-triage": {
       "path": "skills/kernel-lpe-triage/skill.md",
-      "bytes": 31679,
-      "chars": 31508,
+      "bytes": 31678,
+      "chars": 31507,
       "lines": 397,
       "approx_tokens": 7877,
       "approx_chars_per_token": 4,
@@ -42,8 +42,8 @@
           "approx_tokens": 516
         },
         "analysis-procedure": {
-          "bytes": 5300,
-          "chars": 5296,
+          "bytes": 5299,
+          "chars": 5295,
           "approx_tokens": 1324
         },
         "output-format": {
@@ -300,10 +300,10 @@
     },
     "exploit-scoring": {
       "path": "skills/exploit-scoring/skill.md",
-      "bytes": 30392,
-      "chars": 30210,
+      "bytes": 30390,
+      "chars": 30208,
       "lines": 393,
-      "approx_tokens": 7553,
+      "approx_tokens": 7552,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -327,8 +327,8 @@
           "approx_tokens": 298
         },
         "exploit-availability-matrix": {
-          "bytes": 1777,
-          "chars": 1773,
+          "bytes": 1776,
+          "chars": 1772,
           "approx_tokens": 443
         },
         "rwep-formula": {
@@ -337,8 +337,8 @@
           "approx_tokens": 714
         },
         "pre-calculated-rwep-scores": {
-          "bytes": 5782,
-          "chars": 5743,
+          "bytes": 5781,
+          "chars": 5742,
           "approx_tokens": 1436
         },
         "rwep-vs-cvss-delta-analysis": {
