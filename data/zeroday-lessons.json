@@ -732,7 +732,7 @@
       "description": "Page-cache corruption via XFRM ESP-in-TCP skb coalescing in the Linux kernel. skb_try_coalesce() drops the SKBFL_SHARED_FRAG marker when coalescing paged fragments, so the kernel loses track of externally-backed fragments (page-cache pages spliced from a file). Unprivileged local user can overwrite read-only file data in the kernel page cache without touching the on-disk file. Public PoC targets /usr/bin/su for a deterministic root shell.",
       "privileges_required": "unprivileged local user or container process",
       "complexity": "deterministic, no race condition",
-      "ai_factor": "Human-discovered by William Bowling (V12 security team). Not AI-discovered, but lives in the same primitive class as the AI-discoverable Dirty Frag family — the upstream patch for Dirty Frag introduced this sibling bug."
+      "ai_factor": "Human-discovered by William Bowling (V12 security team). Not AI-discovered, but lives in the same primitive class as the AI-discoverable Dirty Frag family. The coalescing defect dates from Linux 3.9 and became exploitable after the upstream Dirty Frag fix for CVE-2026-43284."
     },
     "defense_chain": {
       "prevention": {
@@ -804,8 +804,8 @@
       {
         "id": "NEW-CTRL-017",
         "name": "BUG-FAMILY-MITIGATION-PERSISTENCE",
-        "description": "When a CVE patch lands, retain the pre-patch compensating controls (module blacklists, sysctl restrictions) until the patched code has soaked for a stated review period. Patches for one bug in a primitive class can introduce sibling bugs in the same class; the original compensating control may still apply to the sibling.",
-        "evidence": "CVE-2026-46300 (Fragnesia) — introduced by the patch for CVE-2026-43284 / CVE-2026-43500 (Dirty Frag). The esp4 / esp6 / rxrpc blacklist used for Dirty Frag mitigation is identically effective against Fragnesia.",
+        "description": "When a CVE patch lands, retain the pre-patch compensating controls (module blacklists, sysctl restrictions) until the patched code has soaked for a stated review period. Patches for one bug in a primitive class can introduce sibling bugs in the same class or make older ones exploitable; the original compensating control may still apply to the sibling.",
+        "evidence": "CVE-2026-46300 (Fragnesia): the coalescing defect dates from Linux 3.9, and Hyunwoo Kim's analysis on oss-security says it became exploitable after the Dirty Frag fix for CVE-2026-43284 (commit f4c50a4034e6, 2026-05-05). The esp4 / esp6 / rxrpc blacklist used for Dirty Frag mitigation is identically effective against Fragnesia.",
         "gap_closes": [
           "NIST-800-53-SI-2",
           "NIS2-Art21-2c"
@@ -814,7 +814,7 @@
       {
         "id": "NEW-CTRL-018",
         "name": "SCANNER-PAPER-COMPLIANCE-TEST",
-        "description": "A vulnerability scanner that reports 'patched' based on kernel package version alone is paper compliance. The operational test: does the scan account for the module-unload mitigation surface, AND does it verify the kernel is on a build that includes the specific Fragnesia patch (not just any version newer than the Dirty Frag patch that introduced Fragnesia)?",
+        "description": "A vulnerability scanner that reports 'patched' based on kernel package version alone is paper compliance. The operational test: does the scan account for the module-unload mitigation surface, AND does it verify the kernel is on a build that includes the specific Fragnesia patch (not just any version newer than the Dirty Frag fix, which made Fragnesia exploitable)?",
         "evidence": "CVE-2026-46300 — kernels patched for Dirty Frag but predating the Fragnesia patch report 'patched for CVE-2026-43284' while still exposed to CVE-2026-46300.",
         "gap_closes": [
           "ISO-27001-2022-A.8.8"
@@ -75815,7 +75815,7 @@
       {
         "id": "NEW-CTRL-018",
         "name": "SCANNER-PAPER-COMPLIANCE-TEST",
-        "description": "A vulnerability scanner that reports 'patched' based on kernel package version alone is paper compliance. The operational test: does the scan account for the module-unload mitigation surface, AND does it verify the kernel is on a build that includes the specific Fragnesia patch (not just any version newer than the Dirty Frag patch that introduced Fragnesia)?",
+        "description": "A vulnerability scanner that reports 'patched' based on kernel package version alone is paper compliance. The operational test: does the scan account for the module-unload mitigation surface, AND does it verify the kernel is on a build that includes the specific Fragnesia patch (not just any version newer than the Dirty Frag fix, which made Fragnesia exploitable)?",
         "evidence": "CVE-2018-6530’s first fix was not a fix: D-Link’s 2018-02-28 firmware left the same soap.cgi handler reachable through an && substring (CVE-2018-20114), and CISA’s KEV required action names that later build as what properly patches this entry — so any scanner or attestation that reports remediated because the firmware is newer than the February 2018 release is reporting paper compliance on three models that never received a complete fix at all.",
         "gap_closes": [
           "NIST-800-53-SI-2"
@@ -75918,7 +75918,7 @@
       {
         "id": "NEW-CTRL-018",
         "name": "SCANNER-PAPER-COMPLIANCE-TEST",
-        "description": "A vulnerability scanner that reports 'patched' based on kernel package version alone is paper compliance. The operational test: does the scan account for the module-unload mitigation surface, AND does it verify the kernel is on a build that includes the specific Fragnesia patch (not just any version newer than the Dirty Frag patch that introduced Fragnesia)?",
+        "description": "A vulnerability scanner that reports 'patched' based on kernel package version alone is paper compliance. The operational test: does the scan account for the module-unload mitigation surface, AND does it verify the kernel is on a build that includes the specific Fragnesia patch (not just any version newer than the Dirty Frag fix, which made Fragnesia exploitable)?",
         "evidence": "CVE-2018-2628’s April 2018 Critical Patch Update was a class blacklist inside resolveProxyClass (sun.rmi.server.UnicastRef, java.rmi.registry.Registry) rather than a fix to the deserialization path, and bypasses using java.rmi.activation.Activator and weblogic.jms.common.StreamMessageImpl were public within days, so for three months an attestation showing cpuapr2018 installed was evidence of a still-exploitable internet-reachable listener — the check must be that the build carries the July fix, not merely a CPU newer than April.",
         "gap_closes": [
           "NIST-800-53-SI-2",
@@ -77089,7 +77089,7 @@
       {
         "id": "NEW-CTRL-018",
         "name": "SCANNER-PAPER-COMPLIANCE-TEST",
-        "description": "A vulnerability scanner that reports 'patched' based on kernel package version alone is paper compliance. The operational test: does the scan account for the module-unload mitigation surface, AND does it verify the kernel is on a build that includes the specific Fragnesia patch (not just any version newer than the Dirty Frag patch that introduced Fragnesia)?",
+        "description": "A vulnerability scanner that reports 'patched' based on kernel package version alone is paper compliance. The operational test: does the scan account for the module-unload mitigation surface, AND does it verify the kernel is on a build that includes the specific Fragnesia patch (not just any version newer than the Dirty Frag fix, which made Fragnesia exploitable)?",
         "evidence": "CVE-2020-36193's advisory names Archive_Tar 1.4.12 as the fix, but 1.4.12 rejected legitimate relative symlinks (pear/Archive_Tar issue #35) and was widely rolled back to restore module and theme installs — so a version-string check records the host as remediated at 1.4.12 and stays green after the revert to 1.4.11, while only 1.4.13 is both fixed and functional.",
         "gap_closes": [
           "AU-Essential-8-Patch"
@@ -77346,7 +77346,7 @@
       {
         "id": "NEW-CTRL-018",
         "name": "SCANNER-PAPER-COMPLIANCE-TEST",
-        "description": "A vulnerability scanner that reports 'patched' based on kernel package version alone is paper compliance. The operational test: does the scan account for the module-unload mitigation surface, AND does it verify the kernel is on a build that includes the specific Fragnesia patch (not just any version newer than the Dirty Frag patch that introduced Fragnesia)?",
+        "description": "A vulnerability scanner that reports 'patched' based on kernel package version alone is paper compliance. The operational test: does the scan account for the module-unload mitigation surface, AND does it verify the kernel is on a build that includes the specific Fragnesia patch (not just any version newer than the Dirty Frag fix, which made Fragnesia exploitable)?",
         "evidence": "CVE-2022-22536's desynchronisation occurs between the ICM and whatever intermediary fronts it, so patching only the reverse proxy, load balancer or WAF closes nothing and a landscape-level 'kernel patched' attestation hides every ICM and Web Dispatcher instance the rollout missed. Onapsis shipped a dedicated ICMAD scanner precisely because the kernel level recorded for the landscape is not evidence that each host actually took Note 3123396.",
         "gap_closes": [
           "AU-Essential-8-Patch"
@@ -77428,7 +77428,7 @@
       {
         "id": "NEW-CTRL-018",
         "name": "SCANNER-PAPER-COMPLIANCE-TEST",
-        "description": "A vulnerability scanner that reports 'patched' based on kernel package version alone is paper compliance. The operational test: does the scan account for the module-unload mitigation surface, AND does it verify the kernel is on a build that includes the specific Fragnesia patch (not just any version newer than the Dirty Frag patch that introduced Fragnesia)?",
+        "description": "A vulnerability scanner that reports 'patched' based on kernel package version alone is paper compliance. The operational test: does the scan account for the module-unload mitigation surface, AND does it verify the kernel is on a build that includes the specific Fragnesia patch (not just any version newer than the Dirty Frag fix, which made Fragnesia exploitable)?",
         "evidence": "CVE-2022-32894's iOS 15.6.1 update mitigated the escape method rather than the root cause: Jamf Threat Labs found the Display Co-Processor to AP-kernel path stayed reachable on iPhone 12 and later until Apple closed ColdInvite (CVE-2023-27930) in iOS 16.5. An MDM build-number verdict therefore reported the fleet patched for nine months while the same primitive remained exploitable.",
         "gap_closes": [
           "NIS2-Art21-patch-management"
@@ -77685,7 +77685,7 @@
       {
         "id": "NEW-CTRL-018",
         "name": "SCANNER-PAPER-COMPLIANCE-TEST",
-        "description": "A vulnerability scanner that reports 'patched' based on kernel package version alone is paper compliance. The operational test: does the scan account for the module-unload mitigation surface, AND does it verify the kernel is on a build that includes the specific Fragnesia patch (not just any version newer than the Dirty Frag patch that introduced Fragnesia)?",
+        "description": "A vulnerability scanner that reports 'patched' based on kernel package version alone is paper compliance. The operational test: does the scan account for the module-unload mitigation surface, AND does it verify the kernel is on a build that includes the specific Fragnesia patch (not just any version newer than the Dirty Frag fix, which made Fragnesia exploitable)?",
         "evidence": "CVE-2022-26923's 2022-05-10 update leaves StrongCertificateBindingEnforcement at 1 (Compatibility), which logs KDC events 39/41 and permits the forged binding anyway, and devices without an explicit registry setting only reached Full Enforcement on 2025-02-11. A patch-level check therefore reported the domain remediated for nearly three years while an ordinary user could still take it over, so the operational test has to verify the enforcement value and the ms-DS-MachineAccountQuota setting, not the KB build.",
         "gap_closes": [
           "UK-CAF-B2"

@@ -3,23 +3,23 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1775193,
-    "total_approx_tokens": 443802,
+    "total_chars": 1776234,
+    "total_approx_tokens": 444064,
     "skill_count": 51
   },
   "skills": {
     "kernel-lpe-triage": {
       "path": "skills/kernel-lpe-triage/skill.md",
-      "bytes": 32011,
-      "chars": 31846,
+      "bytes": 32263,
+      "chars": 32102,
       "lines": 398,
-      "approx_tokens": 7962,
+      "approx_tokens": 8026,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
-          "bytes": 6235,
-          "chars": 6193,
-          "approx_tokens": 1548
+          "bytes": 6487,
+          "chars": 6449,
+          "approx_tokens": 1612
         },
         "framework-lag-declaration": {
           "bytes": 2519,
@@ -175,10 +175,10 @@
     },
     "framework-gap-analysis": {
       "path": "skills/framework-gap-analysis/skill.md",
-      "bytes": 32927,
-      "chars": 32825,
+      "bytes": 33017,
+      "chars": 32915,
       "lines": 410,
-      "approx_tokens": 8206,
+      "approx_tokens": 8229,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -197,9 +197,9 @@
           "approx_tokens": 837
         },
         "ttp-mapping": {
-          "bytes": 2163,
-          "chars": 2161,
-          "approx_tokens": 540
+          "bytes": 2173,
+          "chars": 2171,
+          "approx_tokens": 543
         },
         "exploit-availability-matrix": {
           "bytes": 1701,
@@ -207,9 +207,9 @@
           "approx_tokens": 425
         },
         "built-in-gap-catalog": {
-          "bytes": 10679,
-          "chars": 10647,
-          "approx_tokens": 2662
+          "bytes": 10754,
+          "chars": 10722,
+          "approx_tokens": 2681
         },
         "analysis-procedure": {
           "bytes": 1718,
@@ -227,9 +227,9 @@
           "approx_tokens": 484
         },
         "compliance-theater-check": {
-          "bytes": 2467,
-          "chars": 2467,
-          "approx_tokens": 617
+          "bytes": 2472,
+          "chars": 2472,
+          "approx_tokens": 618
         },
         "defensive-countermeasure-mapping": {
           "bytes": 4581,
@@ -240,10 +240,10 @@
     },
     "compliance-theater": {
       "path": "skills/compliance-theater/skill.md",
-      "bytes": 38695,
-      "chars": 38609,
+      "bytes": 38912,
+      "chars": 38828,
       "lines": 409,
-      "approx_tokens": 9652,
+      "approx_tokens": 9707,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -272,9 +272,9 @@
           "approx_tokens": 534
         },
         "theater-pattern-library": {
-          "bytes": 12737,
-          "chars": 12719,
-          "approx_tokens": 3180
+          "bytes": 12954,
+          "chars": 12938,
+          "approx_tokens": 3235
         },
         "analysis-procedure": {
           "bytes": 943,
@@ -300,10 +300,10 @@
     },
     "exploit-scoring": {
       "path": "skills/exploit-scoring/skill.md",
-      "bytes": 30517,
-      "chars": 30335,
+      "bytes": 30544,
+      "chars": 30364,
       "lines": 393,
-      "approx_tokens": 7584,
+      "approx_tokens": 7591,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -337,9 +337,9 @@
           "approx_tokens": 714
         },
         "pre-calculated-rwep-scores": {
-          "bytes": 5781,
-          "chars": 5742,
-          "approx_tokens": 1436
+          "bytes": 5808,
+          "chars": 5771,
+          "approx_tokens": 1443
         },
         "rwep-vs-cvss-delta-analysis": {
           "bytes": 1511,
@@ -520,10 +520,10 @@
     },
     "policy-exception-gen": {
       "path": "skills/policy-exception-gen/skill.md",
-      "bytes": 37311,
-      "chars": 37201,
+      "bytes": 37604,
+      "chars": 37494,
       "lines": 479,
-      "approx_tokens": 9300,
+      "approx_tokens": 9374,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -542,9 +542,9 @@
           "approx_tokens": 1397
         },
         "ttp-mapping": {
-          "bytes": 1962,
-          "chars": 1948,
-          "approx_tokens": 487
+          "bytes": 2075,
+          "chars": 2061,
+          "approx_tokens": 515
         },
         "exploit-availability-matrix": {
           "bytes": 2182,
@@ -552,9 +552,9 @@
           "approx_tokens": 543
         },
         "exception-template-library": {
-          "bytes": 13327,
-          "chars": 13303,
-          "approx_tokens": 3326
+          "bytes": 13465,
+          "chars": 13441,
+          "approx_tokens": 3360
         },
         "analysis-procedure": {
           "bytes": 1545,
@@ -572,18 +572,18 @@
           "approx_tokens": 795
         },
         "defensive-countermeasure-mapping": {
-          "bytes": 5008,
-          "chars": 4978,
-          "approx_tokens": 1245
+          "bytes": 5050,
+          "chars": 5020,
+          "approx_tokens": 1255
         }
       }
     },
     "threat-model-currency": {
       "path": "skills/threat-model-currency/skill.md",
-      "bytes": 33737,
-      "chars": 33559,
+      "bytes": 33801,
+      "chars": 33627,
       "lines": 448,
-      "approx_tokens": 8390,
+      "approx_tokens": 8407,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -597,9 +597,9 @@
           "approx_tokens": 135
         },
         "the-14-threat-class-checklist": {
-          "bytes": 11130,
-          "chars": 11116,
-          "approx_tokens": 2779
+          "bytes": 11197,
+          "chars": 11187,
+          "approx_tokens": 2797
         },
         "threat-context": {
           "bytes": 1831,
@@ -617,9 +617,9 @@
           "approx_tokens": 747
         },
         "exploit-availability-matrix": {
-          "bytes": 2758,
-          "chars": 2742,
-          "approx_tokens": 686
+          "bytes": 2755,
+          "chars": 2739,
+          "approx_tokens": 685
         },
         "compliance-theater-check": {
           "bytes": 1568,
@@ -720,10 +720,10 @@
     },
     "zeroday-gap-learn": {
       "path": "skills/zeroday-gap-learn/skill.md",
-      "bytes": 43377,
-      "chars": 43185,
+      "bytes": 43461,
+      "chars": 43271,
       "lines": 477,
-      "approx_tokens": 10796,
+      "approx_tokens": 10818,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -747,9 +747,9 @@
           "approx_tokens": 294
         },
         "exploit-availability-matrix": {
-          "bytes": 2832,
-          "chars": 2810,
-          "approx_tokens": 703
+          "bytes": 2831,
+          "chars": 2809,
+          "approx_tokens": 702
         },
         "the-learning-loop": {
           "bytes": 1417,
@@ -757,9 +757,9 @@
           "approx_tokens": 343
         },
         "pre-run-lessons-encoded-from-documented-zero-days": {
-          "bytes": 21382,
-          "chars": 21338,
-          "approx_tokens": 5335
+          "bytes": 21467,
+          "chars": 21425,
+          "approx_tokens": 5356
         },
         "analysis-procedure": {
           "bytes": 2124,

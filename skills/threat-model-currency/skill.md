@@ -71,12 +71,12 @@ This skill produces a currency score and a specific update roadmap. Currency is 
 
 ### Class 3: IPsec Subsystem Exploitation (Network Control Bypass)
 
-**2026 reality:** Dirty Frag (CVE-2026-43284/43500) exploits the IPsec implementation itself. Fragnesia (CVE-2026-46300, disclosed 2026-05-13) is the sibling page-cache-corruption bug introduced by the Dirty Frag patch — same primitive class, same XFRM ESP-in-TCP code path, same `blacklist esp4 / esp6 / rxrpc` mitigation. Network segmentation controls that rely on IPsec cannot be claimed as compensating controls for unpatched systems. Threat intel decays in days, not quarters: Dirty Frag and Fragnesia landed two weeks apart in the same primitive class.
+**2026 reality:** Dirty Frag (CVE-2026-43284/43500) exploits the IPsec implementation itself. Fragnesia (CVE-2026-46300, disclosed 2026-05-13) is a sibling page-cache-corruption bug that became exploitable after the Dirty Frag fix for CVE-2026-43284. It is in the same primitive class and reaches the same ESP input path, and the same `blacklist esp4 / esp6 / rxrpc` mitigation covers it. Network segmentation controls that rely on IPsec cannot be claimed as compensating controls for unpatched systems. Threat intel decays in days, not quarters: Dirty Frag and Fragnesia landed two weeks apart in the same primitive class.
 
 **Currency check questions:**
 - Does the threat model include exploitation of cryptographic subsystems as a bypass for network isolation controls?
 - Are IPsec-dependent network controls flagged for review when kernel CVEs affecting IPsec are published?
-- Does the threat model treat a CVE patch as opening a soak window during which the pre-patch compensating controls remain active? (Fragnesia precedent — Dirty Frag patch introduced a sibling bug in the same primitive class.)
+- Does the threat model treat a CVE patch as opening a soak window during which the pre-patch compensating controls remain active? (Fragnesia precedent: the Dirty Frag fix made an older bug in the same primitive class exploitable.)
 
 **If unchecked:** Network segmentation controls may be claimed as compensating controls when they are actually part of the attack surface. "Patch landed therefore safe" misses sibling-bug introductions.
 
@@ -297,7 +297,7 @@ A threat model is "current" only if it accounts for every `data/cve-catalog.json
 | CVE-2026-30615 | Windsurf MCP local-vector RCE | 8.0 | 35 | No | Yes | No | Yes (IDE update) | Must include MCP supply chain if any developer uses any MCP-capable assistant. |
 | CVE-2026-43284 | Dirty Frag (ESP/IPsec) | 8.8 | 53 | No | Yes — chain component | AI-assisted discovery | No | Required if IPsec-based controls are claimed as compensating. |
 | CVE-2026-43500 | Dirty Frag (RxRPC) | 7.6 | 47 | No | Yes — chain component | AI-assisted discovery | No | Required when chained with CVE-2026-43284 in IR scenario planning. |
-| CVE-2026-46300 | Fragnesia | 7.8 | 50 (75 if KEV-listed) | No | Yes — one-liner vs /usr/bin/su | AI-assisted discovery (Zellic's agentic auditing tool) | No (live patches cover some distributions' kernels only; the entry takes 0 live-patch credit) | Required when the threat model claims patches close bug families — Fragnesia is the sibling bug introduced by the Dirty Frag patch; the same `blacklist esp4 / esp6 / rxrpc` mitigation covers both. Treat as the canonical "today" example of threat-intel decay measured in days, not quarters. |
+| CVE-2026-46300 | Fragnesia | 7.8 | 50 (75 if KEV-listed) | No | Yes — one-liner vs /usr/bin/su | AI-assisted discovery (Zellic's agentic auditing tool) | No (live patches cover some distributions' kernels only; the entry takes 0 live-patch credit) | Required when the threat model claims patches close bug families — the Dirty Frag fix made Fragnesia's older defect exploitable; the same `blacklist esp4 / esp6 / rxrpc` mitigation covers both. Treat as the canonical "today" example of threat-intel decay measured in days, not quarters. |
 
 The hard rule for currency scoring: every CVE in the catalog with RWEP >= 50 (query `data/cve-catalog.json` for the current set) must appear in the threat model under its named threat or its CVE ID. RWEP 40–49 entries should appear if the org uses the affected technology. Sub-40 entries appear by exception.
 

@@ -139,9 +139,9 @@ Rows with a high RWEP and a public PoC or confirmed exploitation, led by Copy Fa
    If > 90 days: THEATER FLAG (likely accumulating unpatched kernel CVEs behind the "compliant" SLA)
 ```
 
-**What a real control looks like:** Tiered SLA: CISA KEV = 4 hours to live-patch or isolate; public PoC = 24 hours; Critical (no public PoC) = 72 hours; High = 7 days. Live patching capability deployed and verified quarterly.
+**What a real control looks like:** Tiered SLA: CISA KEV = 4 hours to patch, live-patch or isolate the vulnerable service, and for a kernel local privilege escalation, to load a live patch or reboot into the fixed kernel, with untrusted users and workloads kept off the host until then; public PoC = 24 hours; Critical (no public PoC) = 72 hours; High = 7 days. Live patching capability deployed and verified quarterly.
 
-**Bug-family sequel sub-pattern (Fragnesia, CVE-2026-46300):** when a CVE patch lands, retain the pre-patch compensating controls (module blacklists, sysctl restrictions) until the patched code has soaked. The Dirty Frag patch introduced Fragnesia — a sibling page-cache-corruption bug in the same primitive class. The module-unload mitigation (`blacklist esp4 / esp6 / rxrpc`) covers both. A patch-management program that removed the Dirty Frag blacklist when the patch landed re-exposed the host to Fragnesia. Theater signal: a vulnerability scanner that reports "patched for CVE-2026-43284" while the kernel still lacks the CVE-2026-46300 patch and the module blacklist has been removed.
+**Bug-family sequel sub-pattern (Fragnesia, CVE-2026-46300):** when a CVE patch lands, retain the pre-patch compensating controls (module blacklists, sysctl restrictions) until the patched code has soaked. The Dirty Frag fix for CVE-2026-43284 made Fragnesia, an older page-cache-corruption defect in the same primitive class, exploitable. The module-unload mitigation (`blacklist esp4 / esp6 / rxrpc`) covers both. A patch-management program that removed the Dirty Frag blacklist when the patch landed re-exposed the host to Fragnesia. Theater signal: a vulnerability scanner that reports "patched for CVE-2026-43284" while the kernel still lacks the CVE-2026-46300 patch and the module blacklist has been removed.
 
 ---
 
