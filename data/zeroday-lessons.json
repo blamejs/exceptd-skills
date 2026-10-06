@@ -200,7 +200,7 @@
       "description": "Page-cache write primitive in the Linux kernel ESP/IPsec subsystem. Chained with CVE-2026-43500 (RxRPC component) to achieve local privilege escalation. Notably: the exploit runs through the IPsec subsystem, meaning IPsec-based network controls are NOT compensating controls for unpatched systems.",
       "privileges_required": "unprivileged local user or container process",
       "complexity": "moderate — requires kernel version fingerprinting to select correct gadget chain",
-      "ai_factor": "Not AI-discovered. Human-discovered via subsystem analysis following Copy Fail disclosure."
+      "ai_factor": "No primary source credits an AI tool with the discovery. Hyunwoo Kim, an independent researcher, reported it. Sysdig's statement that AI was likely used is an inference from the age of the defect."
     },
     "defense_chain": {
       "prevention": {
@@ -262,7 +262,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "bug_bounty_ai_augmented",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "low"
   },
   "CVE-2026-43500": {
@@ -272,7 +272,7 @@
       "description": "Page-cache write primitive in the Linux kernel RxRPC subsystem. Used as chain component with CVE-2026-43284 (ESP/IPsec component). The chain enables local privilege escalation on affected kernels with either IPsec or RxRPC support.",
       "privileges_required": "unprivileged local user or container process",
       "complexity": "moderate — requires chaining with CVE-2026-43284 and subsystem fingerprinting",
-      "ai_factor": "Not AI-discovered."
+      "ai_factor": "No primary source credits an AI tool with the discovery. Hyunwoo Kim, an independent researcher, reported it with CVE-2026-43284."
     },
     "defense_chain": {
       "prevention": {
@@ -328,7 +328,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "bug_bounty_ai_augmented",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "low"
   },
   "CVE-2026-30615": {
@@ -732,7 +732,7 @@
       "description": "Page-cache corruption via XFRM ESP-in-TCP skb coalescing in the Linux kernel. skb_try_coalesce() drops the SKBFL_SHARED_FRAG marker when coalescing paged fragments, so the kernel loses track of externally-backed fragments (page-cache pages spliced from a file). Unprivileged local user can overwrite read-only file data in the kernel page cache without touching the on-disk file. Public PoC targets /usr/bin/su for a deterministic root shell.",
       "privileges_required": "unprivileged local user or container process",
       "complexity": "deterministic, no race condition",
-      "ai_factor": "Human-discovered by William Bowling (V12 security team). Not AI-discovered, but lives in the same primitive class as the AI-discoverable Dirty Frag family. The coalescing defect dates from Linux 3.9 and became exploitable after the upstream Dirty Frag fix for CVE-2026-43284."
+      "ai_factor": "No primary source credits an AI tool with the discovery. William Bowling of the V12 security team found it, and one press report says an AI tool helped, without citing a source. The coalescing defect dates from Linux 3.9, and Hyunwoo Kim, who reported Dirty Frag, says it became exploitable after the Dirty Frag fix for CVE-2026-43284."
     },
     "defense_chain": {
       "prevention": {
@@ -827,7 +827,7 @@
       "theater_pattern": "patch_management"
     },
     "ai_discovered_zeroday": false,
-    "ai_discovery_source": "bug_bounty_ai_augmented",
+    "ai_discovery_source": "human_researcher",
     "ai_assist_factor": "low"
   },
   "CVE-2024-3094": {
