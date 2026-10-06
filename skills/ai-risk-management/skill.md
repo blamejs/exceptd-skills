@@ -118,8 +118,8 @@ Governance failure surfaces as exploitable threat. The TTPs below are the diagno
 | ATLAS ID | Technique | Governance failure that exposes it | Where the gap appears in the AIMS |
 |---|---|---|---|
 | AML.T0051 | LLM Prompt Injection | No prompt/response logging, no semantic monitoring, no AI use-case-level risk treatment decision | ISO/IEC 23894 clause 6.5 risk treatment register has no entry; OWASP LLM01 control unowned. CWE-1426 (improper validation of generative AI output) is the root-cause class. |
-| AML.T0096 | AI Service API (covert C2) | No baseline of normal AI API traffic per principal; AI API egress treated as trusted internal traffic | NIST AI RMF MEASURE 2.5 not operationalized; SesameOp-class detection absent from SOC playbooks. |
-| AML.T0013 | Discover AI Model Ontology: adversary reconnaissance of deployed model family / guardrails | No inference-API rate / shape baseline; model-registry RBAC absent; system-prompt extraction queries undetected | NIST AI RMF MEASURE 2.5 not requiring per-identity inference monitoring; AIMS lacks a probing-detection control. |
+| AML.T0096 | AI Service API (covert C2) | No baseline of normal AI API traffic per principal; AI API egress treated as trusted internal traffic | NIST AI RMF MEASURE 2.4 (production monitoring) not operationalized; SesameOp-class detection absent from SOC playbooks. |
+| AML.T0013 | Discover AI Model Ontology: adversary reconnaissance of deployed model family / guardrails | No inference-API rate / shape baseline; model-registry RBAC absent; system-prompt extraction queries undetected | NIST AI RMF MEASURE 2.4 (production monitoring) not requiring per-identity inference monitoring; AIMS lacks a probing-detection control. |
 | AML.T0017 | Develop Capabilities (adversary AI-assisted exploit / payload development) | No threat-intelligence ingestion path for AI-discovered vulnerabilities; patch SLAs sized for human-speed exploit development | EU AI Act Art. 9 RMS not iterating on the input that 41% of 2025 zero-days are AI-discovered (per `ai-attack-surface` and `zeroday-lessons.json`). |
 
 Supporting weakness classes consumed from `data/cwe-catalog.json`:
@@ -190,7 +190,7 @@ Acceptance decisions require sign-off from the risk-accepting authority. Accepta
 
 ### Step 5 — Set up an AI red-team cadence
 
-Continuous adversarial testing is the operational expression of EU AI Act Art. 55(1)(a) and NIST AI RMF MEASURE 2.5. Program requirements:
+EU AI Act Art. 55(1)(a) requires providers of GPAI models with systemic risk to conduct and document adversarial testing, and NIST AI RMF MEASURE 2.7 expects AI system security and resilience to be evaluated and documented. Neither sets a testing schedule. The cadence and coverage minimums below are exceptd requirements. Program requirements:
 - Minimum quarterly cadence for high-risk AI use cases; semi-annually for limited-risk.
 - ATLAS-coverage minimum: every AML.T* in `data/atlas-ttps.json` applicable to the use case is tested or has a documented exclusion.
 - Adversarial-test results feed both `defensive-countermeasure-mapping` (for D3FEND mitigation production) and the risk-treatment register (for residual-risk re-evaluation).

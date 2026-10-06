@@ -97,7 +97,7 @@
       "path": "data/d3fend-catalog.json",
       "purpose": "MITRE D3FEND countermeasures (D3-xxx) keyed by id, with tactic + name. Pinned to D3FEND v1.3.0 release.",
       "schema_version": "1.0.0",
-      "last_updated": "2026-05-19",
+      "last_updated": "2026-10-06",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
