@@ -1422,6 +1422,12 @@
     "RFC-9989": [
       "email-security-anti-phishing"
     ],
+    "RFC-9990": [
+      "email-security-anti-phishing"
+    ],
+    "RFC-9991": [
+      "email-security-anti-phishing"
+    ],
     "RFC-6376": [
       "email-security-anti-phishing"
     ],
@@ -1432,6 +1438,12 @@
       "email-security-anti-phishing"
     ],
     "RFC-8461": [
+      "email-security-anti-phishing"
+    ],
+    "RFC-8617": [
+      "email-security-anti-phishing"
+    ],
+    "RFC-8460": [
       "email-security-anti-phishing"
     ],
     "RFC-8693": [

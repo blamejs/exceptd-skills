@@ -16,7 +16,7 @@ Fourteen skills whose last threat review was more than 30 days old were checked 
 
 Nine skills named D3FEND techniques that D3FEND does not define, such as Cryptographic Verification, Log Integrity, Input Normalization and Resource Consumption Limiting. Each now names the D3FEND technique that matches, or describes the control without a D3FEND name where none does. ATT&CK, ATLAS and CWE names that a skill shortened or mislabeled now match the pinned catalogs, PCI DSS references cite v4.0.1, and `self-update-integrity` says the EU Cyber Resilience Act's Annex I requirements apply from 2027-12-11.
 
-The RFC catalog now carries RFC 9846 (TLS 1.3, which obsoletes RFC 8446) and RFC 10024 (the PQ/T hybrid key agreements for TLS 1.3), so `exceptd rfc 9846` and `exceptd rfc 10024` resolve offline, and RFC 8446 is marked obsoleted by RFC 9846.
+The RFC catalog now carries RFC 9846 (TLS 1.3, which obsoletes RFC 8446) and RFC 10024 (the PQ/T hybrid key agreements for TLS 1.3), so `exceptd rfc 9846` and `exceptd rfc 10024` resolve offline. RFC 8446, RFC 5077, RFC 5246, RFC 6961, RFC 7627 and RFC 8422 are marked obsoleted by RFC 9846, and RFC 5705 and RFC 6066 updated by it. `email-security-anti-phishing` lists RFC 9990, RFC 9991, RFC 8617 and RFC 8460 in its `rfc_refs`, the reporting, ARC and TLS reporting RFCs its procedure cites.
 
 ## 0.21.42 — 2026-10-05
 

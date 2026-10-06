@@ -44,10 +44,14 @@ framework_gaps:
   - AU-Essential-8-App-Hardening
 rfc_refs:
   - RFC-9989
+  - RFC-9990
+  - RFC-9991
   - RFC-6376
   - RFC-7208
   - RFC-8616
   - RFC-8461
+  - RFC-8617
+  - RFC-8460
 cwe_refs: []
 d3fend_refs:
   - D3-NTA

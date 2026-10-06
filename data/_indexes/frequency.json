@@ -2261,6 +2261,18 @@
           "email-security-anti-phishing"
         ]
       },
+      "RFC-9990": {
+        "count": 1,
+        "skills": [
+          "email-security-anti-phishing"
+        ]
+      },
+      "RFC-9991": {
+        "count": 1,
+        "skills": [
+          "email-security-anti-phishing"
+        ]
+      },
       "RFC-6376": {
         "count": 1,
         "skills": [
@@ -2280,6 +2292,18 @@
         ]
       },
       "RFC-8461": {
+        "count": 1,
+        "skills": [
+          "email-security-anti-phishing"
+        ]
+      },
+      "RFC-8617": {
+        "count": 1,
+        "skills": [
+          "email-security-anti-phishing"
+        ]
+      },
+      "RFC-8460": {
         "count": 1,
         "skills": [
           "email-security-anti-phishing"
@@ -3253,8 +3277,10 @@
       "RFC-7296",
       "RFC-7591",
       "RFC-7970",
+      "RFC-8460",
       "RFC-8461",
       "RFC-8616",
+      "RFC-8617",
       "RFC-8693",
       "RFC-9000",
       "RFC-9068",
@@ -3264,7 +3290,9 @@
       "RFC-9622",
       "RFC-9794",
       "RFC-9846",
-      "RFC-9989"
+      "RFC-9989",
+      "RFC-9990",
+      "RFC-9991"
     ],
     "dlp_refs": []
   },
@@ -11491,7 +11519,6 @@
       "RFC-8457",
       "RFC-8458",
       "RFC-8459",
-      "RFC-8460",
       "RFC-8462",
       "RFC-8463",
       "RFC-8464",
@@ -11650,7 +11677,6 @@
       "RFC-8613",
       "RFC-8614",
       "RFC-8615",
-      "RFC-8617",
       "RFC-8618",
       "RFC-8619",
       "RFC-862",
@@ -13018,9 +13044,7 @@
       "RFC-9972",
       "RFC-9975",
       "RFC-998",
-      "RFC-9983",
-      "RFC-9990",
-      "RFC-9991"
+      "RFC-9983"
     ],
     "dlp_refs": [
       "DLP-CHAN-CLIPBOARD-AI",

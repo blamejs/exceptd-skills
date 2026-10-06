@@ -1966,10 +1966,14 @@
         ],
         "rfc_refs": [
           "RFC-9989",
+          "RFC-9990",
+          "RFC-9991",
           "RFC-6376",
           "RFC-7208",
           "RFC-8616",
-          "RFC-8461"
+          "RFC-8461",
+          "RFC-8617",
+          "RFC-8460"
         ],
         "dlp_refs": []
       },
@@ -1979,7 +1983,7 @@
       "framework_gap_count": 6,
       "cwe_count": 0,
       "d3fend_count": 4,
-      "rfc_count": 5,
+      "rfc_count": 9,
       "last_threat_review": "2026-10-05",
       "path": "skills/email-security-anti-phishing/skill.md",
       "handoff_targets": [
