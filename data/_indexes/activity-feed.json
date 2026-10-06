@@ -16,6 +16,14 @@
     {
       "date": "2026-10-05",
       "type": "catalog_update",
+      "artifact": "data/exploit-availability.json",
+      "path": "data/exploit-availability.json",
+      "schema_version": "1.1.0",
+      "entry_count": 28
+    },
+    {
+      "date": "2026-10-05",
+      "type": "catalog_update",
       "artifact": "data/framework-control-gaps.json",
       "path": "data/framework-control-gaps.json",
       "schema_version": "1.0.0",
@@ -418,14 +426,6 @@
       "artifact": "sector-telecom",
       "path": "skills/sector-telecom/skill.md",
       "note": "Telecom and 5G security for mid-2026 — Salt Typhoon, Volt Typhoon, CALEA / IPA-LI gateway compromise, signaling-protocol abuse (SS7 / Diameter / GTP), 5G N6 / N9 isolation, gNB / DU / CU integrity, OEM-equipment supply-chain compromise, AI-RAN / O-RAN security; FCC CPNI + 4-business-day notification, NIS2 Annex I telecom essential entities, UK TSA 2021 + Ofcom, AU SOCI / TSSR, GSMA NESAS, 3GPP TR 33.926 + TS 33.501, ITU-T X.805."
-    },
-    {
-      "date": "2026-05-15",
-      "type": "catalog_update",
-      "artifact": "data/exploit-availability.json",
-      "path": "data/exploit-availability.json",
-      "schema_version": "1.1.0",
-      "entry_count": 28
     },
     {
       "date": "2026-05-15",
