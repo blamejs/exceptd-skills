@@ -90,7 +90,7 @@ Security skills have a half-life. The specific decay mechanisms are:
 | New CVE in covered domain | New kernel LPE in Copy Fail class | CISA KEV + NVD monitoring |
 | ATLAS version update | New TTP added, TTP ID changed | atlas.mitre.org changelog |
 | Framework amendment | NIST SP revision, ISO amendment | NIST/ISO publication monitors |
-| New forward_watch item resolved | HQC becomes FIPS 206 | NIST csrc.nist.gov |
+| New forward_watch item resolved | NIST publishes the final HQC standard | NIST csrc.nist.gov |
 | Algorithm deprecation | NIST deprecates classical algo | NIST SP 800-131A updates |
 | New attack class not in any skill | Novel technique documented in research | CVE database, academic preprints |
 | Exploit availability change | PoC goes from private to public | Exploit databases, researcher announcements |
@@ -216,7 +216,8 @@ When any pqc-first `forward_watch` item resolves:
 
 | Item | Action |
 |---|---|
-| FIPS 206 (HQC) published | Add HQC to pqc-first algorithm registry; note as backup KEM |
+| HQC final standard published (NIST expects 2027) | Add HQC to pqc-first algorithm registry; note as backup KEM |
+| FIPS 206 (FN-DSA) published | Add FN-DSA to the pqc-first signature algorithms |
 | X25519+ML-KEM TLS RFC published | Update pqc-first TLS section from "draft" to "standard" |
 | OpenSSL FIPS 140-3 certified | Update pqc-first version gate commentary |
 | CNSA 2.0 deadline passes for a sector | Update pqc-first framework compliance table |

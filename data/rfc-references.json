@@ -607,7 +607,7 @@
     "errata_count": 39,
     "tracker": "https://www.rfc-editor.org/info/rfc8446",
     "relevance": "TLS 1.3 is the baseline assumption for every AI provider egress channel, every MCP HTTP transport, and every kernel-userspace TLS exchange. Skills that analyze boundary inspection, cert pinning, or AI-API C2 detection must ground in this RFC.",
-    "lag_notes": "RFC 8446 alone is not PQC-ready. Hybrid PQC drafts (draft-ietf-tls-ecdhe-mlkem, draft-ietf-tls-hybrid-design) layer on top — see those entries.",
+    "lag_notes": "Obsoleted by RFC 9846 (July 2026), which republishes TLS 1.3. Neither is PQC-ready on its own: the hybrid key agreements are published as RFC 10024 and the hybrid design as RFC 9954, both layered on TLS 1.3.",
     "skills_referencing": [
       "ai-c2-detection",
       "api-security",
@@ -292007,7 +292007,7 @@
     "errata_count": 0,
     "tracker": "https://www.rfc-editor.org/info/rfc9954",
     "relevance": "Publishes the concatenation-based hybrid key-exchange construction for TLS 1.3 that the PQC migration story depends on. Gives operators a citable standard for X25519MLKEM768 rather than a moving draft, which matters for a control an auditor has to verify.",
-    "lag_notes": "Informational, not Standards Track — it specifies the construction, not a mandate. No compliance framework requires it (NIST 800-53 SC-13, ISO 27001:2022 A.8.24, PCI DSS 4.0 4.2.1 and NIS2 Art. 21 name no IETF profile), and CNSA 2.0 sets a 2030 deadline without pinning one. Supersedes draft-ietf-tls-hybrid-design; draft-ietf-tls-ecdhe-mlkem remains a separate Standards-Track draft and is NOT covered by this RFC.",
+    "lag_notes": "Informational, not Standards Track — it specifies the construction, not a mandate. No compliance framework requires it (NIST 800-53 SC-13, ISO 27001:2022 A.8.24, PCI DSS v4.0.1 4.2.1 and NIS2 Art. 21 name no IETF profile), and CNSA 2.0 sets a 2030 deadline without pinning one. Supersedes draft-ietf-tls-hybrid-design. The concrete hybrid groups from draft-ietf-tls-ecdhe-mlkem were published separately as RFC 10024 (Proposed Standard) and are not covered by this RFC.",
     "skills_referencing": [
       "pqc-first",
       "security-maturity-tiers"

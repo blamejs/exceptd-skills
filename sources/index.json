@@ -299,10 +299,15 @@
         "published": "2024-08-13"
       },
       "fips_206": {
-        "name": "FIPS 206 — HQC (pending)",
+        "name": "FIPS 206 — FN-DSA (FALCON-based signatures, pending)",
+        "url": "https://csrc.nist.gov/projects/post-quantum-cryptography",
+        "status": "pending"
+      },
+      "hqc": {
+        "name": "HQC KEM standard (backup KEM selected 2025-03-11, pending)",
         "url": "https://csrc.nist.gov/projects/post-quantum-cryptography",
         "status": "pending",
-        "expected": "2026-2027"
+        "expected": "2027"
       }
     },
     "eu_frameworks": {

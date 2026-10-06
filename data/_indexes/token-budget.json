@@ -3,8 +3,8 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1788427,
-    "total_approx_tokens": 447113,
+    "total_chars": 1788822,
+    "total_approx_tokens": 447213,
     "skill_count": 51
   },
   "skills": {
@@ -70,10 +70,10 @@
     },
     "ai-attack-surface": {
       "path": "skills/ai-attack-surface/skill.md",
-      "bytes": 29751,
-      "chars": 29681,
+      "bytes": 29824,
+      "chars": 29754,
       "lines": 339,
-      "approx_tokens": 7420,
+      "approx_tokens": 7439,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -82,9 +82,9 @@
           "approx_tokens": 1966
         },
         "framework-lag-declaration": {
-          "bytes": 6512,
-          "chars": 6504,
-          "approx_tokens": 1626
+          "bytes": 6585,
+          "chars": 6577,
+          "approx_tokens": 1644
         },
         "ttp-mapping": {
           "bytes": 2125,
@@ -370,10 +370,10 @@
     },
     "rag-pipeline-security": {
       "path": "skills/rag-pipeline-security/skill.md",
-      "bytes": 31956,
-      "chars": 31781,
+      "bytes": 32031,
+      "chars": 31856,
       "lines": 334,
-      "approx_tokens": 7945,
+      "approx_tokens": 7964,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -407,9 +407,9 @@
           "approx_tokens": 419
         },
         "framework-lag-declaration": {
-          "bytes": 2157,
-          "chars": 2151,
-          "approx_tokens": 538
+          "bytes": 2232,
+          "chars": 2226,
+          "approx_tokens": 557
         },
         "ttp-mapping": {
           "bytes": 3696,
@@ -870,10 +870,10 @@
     },
     "skill-update-loop": {
       "path": "skills/skill-update-loop/skill.md",
-      "bytes": 47912,
-      "chars": 47778,
-      "lines": 522,
-      "approx_tokens": 11945,
+      "bytes": 48036,
+      "chars": 47902,
+      "lines": 523,
+      "approx_tokens": 11976,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -892,14 +892,14 @@
           "approx_tokens": 272
         },
         "why-skills-decay": {
-          "bytes": 887,
-          "chars": 887,
-          "approx_tokens": 222
+          "bytes": 904,
+          "chars": 904,
+          "approx_tokens": 226
         },
         "update-triggers-and-assigned-skills": {
-          "bytes": 27475,
-          "chars": 27403,
-          "approx_tokens": 6851
+          "bytes": 27582,
+          "chars": 27510,
+          "approx_tokens": 6878
         },
         "skill-currency-scores": {
           "bytes": 590,
@@ -2130,10 +2130,10 @@
     },
     "mlops-security": {
       "path": "skills/mlops-security/skill.md",
-      "bytes": 46842,
-      "chars": 46556,
+      "bytes": 46965,
+      "chars": 46679,
       "lines": 332,
-      "approx_tokens": 11639,
+      "approx_tokens": 11670,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2142,9 +2142,9 @@
           "approx_tokens": 1445
         },
         "framework-lag-declaration": {
-          "bytes": 5771,
-          "chars": 5757,
-          "approx_tokens": 1439
+          "bytes": 5894,
+          "chars": 5880,
+          "approx_tokens": 1470
         },
         "ttp-mapping": {
           "bytes": 4453,
