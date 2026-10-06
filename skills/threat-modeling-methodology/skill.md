@@ -108,7 +108,7 @@ No major risk-assessment, secure-development, or AI-management framework prescri
 | Global | ISO | ISO/IEC 27001:2022 A.5.7 (Threat Intelligence), A.8.28 (Secure Coding) | Listed in `data/framework-control-gaps.json` as `ISO-27001-2022-A.8.28`. Silent on methodology; prompt-injection-as-RCE is outside the scope of "secure coding". |
 | Global | ISO | ISO/IEC 27005:2022 (Information security risk management) | Process guidance; methodology-neutral; predates current AI threat catalog. |
 | Global | ISO | ISO/IEC 42001:2023 (AI Management System), clause 6.1.2 | Listed as `ISO-IEC-42001-2023-clause-6.1.2`. AI risk assessment as periodic activity; no runtime threat-surface methodology; cross-jurisdiction obligations not enumerated. |
-| Global | ISO | ISO/IEC 23894:2023 (AI Risk Management Guidance) clause 7 | Process-level lifecycle guidance; no specific methodology binding. |
+| Global | ISO | ISO/IEC 23894:2023 (AI Risk Management Guidance) clause 6 | Process-level lifecycle guidance; no specific methodology binding. |
 | Global | ISO | ISO 31000:2018 (Risk management) | Enterprise-risk umbrella; no operational methodology. |
 | Global | COSO | ERM Framework | Enterprise risk; no operational threat-modeling methodology. |
 | Privacy | EU / global | GDPR Art. 35 (DPIA); LGPD Art. 38 (RIPD); PIPL Art. 55; India DPDPA 2023 | Require impact assessments but bind no methodology. LINDDUN is the de facto privacy threat-modeling methodology; none of these regulations name it. |

@@ -4720,8 +4720,8 @@
   },
   "ISO-IEC-23894-2023-clause-7": {
     "framework": "ISO/IEC 23894:2023 (AI Risk Management Guidance)",
-    "control_id": "Clause 7",
-    "control_name": "AI risk management process",
+    "control_id": "Clause 6",
+    "control_name": "Risk management process",
     "designed_for": "Process-level guidance for managing risk across the AI lifecycle (design, develop, deploy, operate, decommission). Used globally as the methodological backbone behind ISO 42001 clause 6, EU AI Act risk management requirements, UK AI Assurance roadmap, AU AI Ethics Framework, and Singapore Model AI Governance Framework.",
     "misses": [
       "Post-deployment adversarial input drift — clause 7 treats risk identification as a phased activity rather than a continuous adversarial-evaluation loop",
@@ -4742,7 +4742,7 @@
       "T1059"
     ],
     "theater_test": {
-      "claim": "We perform AI risk assessment per ISO/IEC 23894:2023 clause 7.",
+      "claim": "We perform AI risk assessment per ISO/IEC 23894:2023 clause 6.",
       "test": "Pull the most recent AI risk assessment. Confirm coverage of supply-chain risks (model provenance, MCP/plugin trust, training-data integrity), prompt-injection as a current threat, and operational AI-incident scenarios. Confirm the assessment is dated within the framework's review cadence. Theater verdict if supply-chain or prompt-injection risks are absent, or if the assessment has no documented owner who acted on findings.",
       "evidence_required": [
         "AI risk assessment document",
@@ -8473,10 +8473,10 @@
   "NIST-AI-RMF-MEASURE-2.5": {
     "framework": "NIST AI RMF 1.0",
     "control_id": "MEASURE 2.5",
-    "control_name": "AI system to human interaction evaluation",
-    "designed_for": "Evaluating AI system outputs and behaviors in human-AI interaction contexts",
+    "control_name": "Validity and reliability of the AI system to be deployed",
+    "designed_for": "Demonstrating that the AI system to be deployed is valid and reliable, and documenting the limits of its generalizability beyond the conditions under which it was developed",
     "misses": [
-      "MEASURE 2.5 measures human-AI interaction quality, not adversarial input resistance",
+      "MEASURE 2.5 measures validity and reliability under development conditions, not adversarial input resistance",
       "Does not require adversarial prompt injection testing as a measurement activity",
       "No methodology for measuring AI tool action authorization boundary compliance",
       "Human feedback evaluation does not capture adversarially-induced behavioral changes"
