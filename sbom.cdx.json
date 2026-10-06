@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:7aaef240-aa15-4250-9db3-895357d4737d",
+  "serialNumber": "urn:uuid:5838aacd-75bd-40f9-950e-a78d1756a86e",
   "version": 1,
   "metadata": {
     "timestamp": "2026-10-05T00:00:00.000Z",
@@ -29,7 +29,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "df67eeb82c240bf4101ee4c62de589fce72ab7d0b4e98ffbe0fae329cf1f4ba3"
+          "content": "195426c22992532a7e5519f3f63f655f6e30f2dda87b98c271ade8cbb80a3e6c"
         }
       ],
       "externalReferences": [
@@ -124,11 +124,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "2a49df6ab66b71edfa6b7bf19a43a88fb4d03755476fcd89a8c96db1374211cc"
+          "content": "e27aa7c05728c27a01cc321c4ddbdbb44cad7f393245d3d85ba2d6158ff85bfc"
         },
         {
           "alg": "SHA3-512",
-          "content": "acbdd672c1e0124b24569f4212578a326ff4a788db8f842fe13bbecd43c68bd14ceee6d4fe77a5feccca4a387fd860a0c7b0c082f060d397d072a5c8d819f45d"
+          "content": "b3cc729346a9e6828a162643983f2ae8f3b6c0c37b7c86c8f31fd4400080ab2d5ffe5c9ffa18ee31a36c5569ba51249190ce6569db660c63f0d3482b1c5c369c"
         }
       ]
     },
@@ -334,11 +334,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "1adebf5d45436cbbef44a82eba9e14ff946003f01dff4eb336875b2fa2c08b1d"
+          "content": "ceb4e4fb4ce362370182d846b497281e1513654e00036a3001eee05e7bd9fd51"
         },
         {
           "alg": "SHA3-512",
-          "content": "5f7a8ef1edc33feda1c39f48434a409662dbfe5e295b1674054ee7c0258103942c83b78386c212acf265529b48e4ad4e67ae714ce0403a5a8c44957dc1472dc0"
+          "content": "cc86dc5b1ac59e640737d61a35e187db4c379e6adfa28eef7769ab663a77373e8b1aaa4328588249cbd570261ee3bfcebd7c30fbaa1430cd6144db7193bae953"
         }
       ]
     },
@@ -1984,11 +1984,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "7c47afa7885b3c632984cc297803450d99f8f731bae43ac93c0682a88f192d30"
+          "content": "9bf7b4e775d815cbf3018eda7163c1eeafa210d192840dce93fc8654bfebbe0d"
         },
         {
           "alg": "SHA3-512",
-          "content": "a5af8df4c2f30a17fca443430b1f649c8dfd474561729ec7e80bfe59b7194a4a2ba750946ca7752af7a2071db049a51b78ca0d13758d8eb5c31483ddcdb074ac"
+          "content": "9f5563a7f5a2449aa09c3c0f030a9773eb1936760e12d73b9fead1083cdbd92a0435c9b22d8f973215471953bcc23eb8c2020c3abff8ca00bc3aead22cf6b494"
         }
       ]
     },
