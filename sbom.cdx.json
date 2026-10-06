@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:5838aacd-75bd-40f9-950e-a78d1756a86e",
+  "serialNumber": "urn:uuid:b147a4a5-a24d-41d0-b0cd-21e840cc8937",
   "version": 1,
   "metadata": {
     "timestamp": "2026-10-05T00:00:00.000Z",
@@ -29,7 +29,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "195426c22992532a7e5519f3f63f655f6e30f2dda87b98c271ade8cbb80a3e6c"
+          "content": "4a65034cbf6fddaef73283ec855c42abae0cdec798bbeb5daa7f5e88dc1302db"
         }
       ],
       "externalReferences": [
@@ -124,11 +124,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "e27aa7c05728c27a01cc321c4ddbdbb44cad7f393245d3d85ba2d6158ff85bfc"
+          "content": "07e8b239bacfa9eebb7ea0267c4e665f854d06f64b466f62e30c7ec553771375"
         },
         {
           "alg": "SHA3-512",
-          "content": "b3cc729346a9e6828a162643983f2ae8f3b6c0c37b7c86c8f31fd4400080ab2d5ffe5c9ffa18ee31a36c5569ba51249190ce6569db660c63f0d3482b1c5c369c"
+          "content": "917d02155e9ccd738fbc3c5f49cf42aa43e6e958d9e01ce8832af4b6b79eac0083e8c4f1b5ff49bc9f5cc890d141b6a429308c15316198e249c62a47363b48f1"
         }
       ]
     },
@@ -334,11 +334,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "ceb4e4fb4ce362370182d846b497281e1513654e00036a3001eee05e7bd9fd51"
+          "content": "0a9fc0edcd1bf16d563867dc1f5bfd8ccebb00f1016d8f59a5bb08860c2f6e4b"
         },
         {
           "alg": "SHA3-512",
-          "content": "cc86dc5b1ac59e640737d61a35e187db4c379e6adfa28eef7769ab663a77373e8b1aaa4328588249cbd570261ee3bfcebd7c30fbaa1430cd6144db7193bae953"
+          "content": "4b19c261af353d8100762aae942c505f1aac12dfb3886e198979e08a0fd517b8c5eb034a347db9c0e4c29121d47a1e29633835bdf3885b024ec32eab69f6f97b"
         }
       ]
     },
@@ -1984,11 +1984,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "9bf7b4e775d815cbf3018eda7163c1eeafa210d192840dce93fc8654bfebbe0d"
+          "content": "249515de99471e0c0bd4df02629d791071e87bd92af9c2d96b4f7b1a90025c16"
         },
         {
           "alg": "SHA3-512",
-          "content": "9f5563a7f5a2449aa09c3c0f030a9773eb1936760e12d73b9fead1083cdbd92a0435c9b22d8f973215471953bcc23eb8c2020c3abff8ca00bc3aead22cf6b494"
+          "content": "67b3be3d5139358f0b19f31cfde73518e54a0fe86397340cc72777b49caa3ad75e93353b8273bdac0538c784005fa07b14206cc6cb1a811876db6940ede1a0fb"
         }
       ]
     },
