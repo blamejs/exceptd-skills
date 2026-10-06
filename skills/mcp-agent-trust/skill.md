@@ -75,7 +75,7 @@ last_threat_review: "2026-09-18"
 
 ## Threat Context (mid-2026)
 
-The Model Context Protocol (MCP) is an open protocol for connecting AI assistants to external tools and data sources. It is now the standard integration layer for AI coding assistants: Cursor, VS Code + GitHub Copilot, Windsurf, Claude Code, and Gemini CLI all support MCP servers. Background reality: 41% of 2025 zero-days were AI-discovered (GTIG 2025); Fragnesia (CVE-2026-46300, 2026-05-13) is the canonical AI-driven autonomous-discovery anchor — Zellic's agentic auditor surfaced an 18-year-old kernel primitive that load-bearing MCP-server hosts depend on. The first documented AI-built in-the-wild zero-day landed 2026-05-11 (GTIG AI 2FA-bypass). MCP trust posture should align to CTID Secure AI v2 (2026-05-06, replaces v1).
+The Model Context Protocol (MCP) is an open protocol for connecting AI assistants to external tools and data sources. It is now the standard integration layer for AI coding assistants: Cursor, VS Code + GitHub Copilot, Windsurf, Claude Code, and Gemini CLI all support MCP servers. Background reality: 41% of 2025 zero-days were AI-discovered (GTIG 2025). The first documented AI-built in-the-wild zero-day landed 2026-05-11 (GTIG AI 2FA-bypass). MCP trust posture should align to CTID Secure AI v2 (2026-05-06, replaces v1).
 
 MCP creates an architectural trust problem that no existing security framework addresses.
 
