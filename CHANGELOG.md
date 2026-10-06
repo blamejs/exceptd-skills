@@ -8,7 +8,7 @@ The lessons, the exploit-availability matrix, the AI-discovered CVE triage playb
 
 The Fragnesia entry no longer cites five pages that return HTTP 404 (at The Register, BleepingComputer, SecurityWeek, an earlier Help Net Security address and the Rocky Linux forum). It cites the live Microsoft and Help Net Security pages, V12's disclosure on oss-security and V12's blog instead, and its vendor advisories no longer list the Rocky Linux forum thread. The Dirty Frag entries cite Kim's oss-security disclosure and the Sysdig write-up.
 
-The three entries now record their finders as `human_researcher`. The catalog schema describes that value as an outside finder whom no primary source credits with AI tooling, and `ai_discovery_notes` records any unverified claim of AI assistance; it does not state that no AI tool was used. The AI-discovered CVE triage playbook is at version 1.0.1, with a dated changelog record for the Fragnesia correction.
+The three entries now record their finders as `human_researcher`. The catalog schema describes that value as an outside finder whom no primary source credits with AI tooling, and `ai_discovery_notes` records any unverified claim of AI assistance; it does not state that no AI tool was used. The AI-discovered CVE triage playbook is at version 1.0.1, with a dated changelog record for the Fragnesia correction; it no longer lists Fragnesia among the CVEs it scans for or carries a Fragnesia recheck directive, so a run no longer reports Fragnesia as an AI-discovered match.
 
 ## 0.21.41 — 2026-10-05
 
