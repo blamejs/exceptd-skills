@@ -2599,7 +2599,7 @@
     },
     "threat-modeling-methodology": {
       "path": "skills/threat-modeling-methodology/skill.md",
-      "total_bytes": 32182,
+      "total_bytes": 32317,
       "total_lines": 324,
       "frontmatter": {
         "line_start": 1,
@@ -2658,16 +2658,16 @@
           "normalized_name": "exploit-availability-matrix",
           "line": 142,
           "byte_start": 15758,
-          "byte_end": 18121,
-          "bytes": 2363,
+          "byte_end": 18256,
+          "bytes": 2498,
           "h3_count": 0
         },
         {
           "name": "Analysis Procedure",
           "normalized_name": "analysis-procedure",
           "line": 164,
-          "byte_start": 18121,
-          "byte_end": 24726,
+          "byte_start": 18256,
+          "byte_end": 24861,
           "bytes": 6605,
           "h3_count": 10
         },
@@ -2675,8 +2675,8 @@
           "name": "Output Format",
           "normalized_name": "output-format",
           "line": 239,
-          "byte_start": 24726,
-          "byte_end": 27034,
+          "byte_start": 24861,
+          "byte_end": 27169,
           "bytes": 2308,
           "h3_count": 0
         },
@@ -2684,8 +2684,8 @@
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
           "line": 283,
-          "byte_start": 27034,
-          "byte_end": 28964,
+          "byte_start": 27169,
+          "byte_end": 29099,
           "bytes": 1930,
           "h3_count": 0
         },
@@ -2693,8 +2693,8 @@
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
           "line": 301,
-          "byte_start": 28964,
-          "byte_end": 30642,
+          "byte_start": 29099,
+          "byte_end": 30777,
           "bytes": 1678,
           "h3_count": 0
         },
@@ -2702,8 +2702,8 @@
           "name": "Hand-Off / Related Skills",
           "normalized_name": "hand-off",
           "line": 314,
-          "byte_start": 30642,
-          "byte_end": 32182,
+          "byte_start": 30777,
+          "byte_end": 32317,
           "bytes": 1540,
           "h3_count": 0
         }
