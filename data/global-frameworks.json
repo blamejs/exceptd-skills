@@ -2,7 +2,7 @@
   "_meta": {
     "schema_version": "1.3.0",
     "version": "1.3.0",
-    "last_updated": "2026-05-15",
+    "last_updated": "2026-10-05",
     "last_threat_review": "2026-05-17",
     "note": "Multi-jurisdiction framework registry. patch_sla in hours. notification_sla in hours. source field must be primary regulatory source. v1.3.0 expansion: NO, MX, AR, TR, TH, PH, US_CALIFORNIA top-level jurisdictions added; EU member-state sub-regulator blocks added for Germany (BSI), France (ANSSI), Spain (AEPD + AESIA), Italy (ACN + AgID); EU-level technical body ENISA added as cross-cutting reference. v1.2.0 expansion: IL, CH, HK, TW, ID, VN, US_NYDFS added; JP expanded with APPI/PPC, FISC, NISC, METI, Economic Security Promotion Act, AI Strategy Council guidance. v1.1.0 expansion: BR, CN, ZA, AE, SA, NZ, KR, CL added; IN and CA enriched with data-protection law entries (DPDPA, Quebec Law 25, PIPEDA).",
     "tlp": "CLEAR",
@@ -122,10 +122,11 @@
         "source": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32024R1689",
         "effective_date": "2024-08-01",
         "full_application_date": "2026-08-02",
-        "gpai_obligations_date": "2026-08-02",
-        "high_risk_obligations_date": "2026-08-02",
+        "gpai_obligations_date": "2025-08-02",
+        "high_risk_obligations_date": "2027-12-02",
+        "high_risk_obligations_note": "Regulation (EU) 2026/1744 (the Digital Omnibus on AI), in force since 2026-07-27, moved the high-risk obligations to 2027-12-02 for Annex III systems and to 2028-08-02 for systems embedded in Annex I products.",
         "prohibited_practices_date": "2025-02-02",
-        "version": "2024/1689",
+        "version": "2024/1689, amended by 2026/1744",
         "security_article": "Article 9 — Risk Management System (High-Risk AI); Article 15 — Cybersecurity; Article 55 — GPAI Systemic Risk",
         "critical_controls": [
           "Art. 5 — prohibited AI practices (in force 2025-02-02)",
@@ -134,13 +135,13 @@
           "Art. 12 — technical documentation and logging requirements",
           "Art. 15 — accuracy, robustness, and cybersecurity requirements for high-risk AI",
           "Art. 43 + Annex IX — conformity assessment route (internal control vs. notified body) for high-risk AI",
-          "Art. 53 — GPAI provider obligations: technical documentation, downstream-provider info package, copyright policy, training-content summary (active 2026-08-02)",
-          "Art. 55 — GPAI with systemic risk: adversarial evaluation, systemic-risk assessment, serious-incident reporting, cybersecurity of model layer (active 2026-08-02)"
+          "Art. 53 — GPAI provider obligations: technical documentation, downstream-provider info package, copyright policy, training-content summary (applies since 2025-08-02)",
+          "Art. 55 — GPAI with systemic risk: adversarial evaluation, systemic-risk assessment, serious-incident reporting, cybersecurity of model layer (applies since 2025-08-02)"
         ],
         "implementing_measures_2026": [
           "GPAI Code of Practice signed 2026-02 — presumed-compliance route for Art. 53 + 55 until harmonised standards published",
-          "GPAI obligations full application 2026-08-02",
-          "High-risk obligations full application 2026-08-02",
+          "GPAI obligations apply from 2025-08-02",
+          "High-risk obligations apply from 2027-12-02 for Annex III systems and from 2028-08-02 for systems embedded in Annex I products (Regulation (EU) 2026/1744)",
           "Harmonised standards under Art. 40 — CEN-CENELEC JTC 21 deliverables tracked through 2026-2027"
         ],
         "high_risk_categories": [
@@ -161,7 +162,7 @@
           "Art. 53 training-content summary granularity is operationally undefined",
           "Art. 55 incident-reporting clock (15-day) misaligned with DORA Art. 19 (4h) and NIS2 Art. 23 (24h)"
         ],
-        "ai_coverage": "Specific AI security requirements for high-risk AI and GPAI models — most complete AI security framework globally; GPAI + high-risk obligations active 2026-08-02",
+        "ai_coverage": "Specific AI security requirements for high-risk AI and GPAI models — most complete AI security framework globally; GPAI obligations apply since 2025-08-02, and high-risk obligations from 2027-12-02 (Annex III) and 2028-08-02 (Annex I) under Regulation (EU) 2026/1744",
         "pqc_coverage": "Not addressed",
         "theater_risk": "medium — Code of Practice provides presumed-compliance route but adversarial-evaluation methodology + energy-reporting cadence remain provider-defined as of 2026-05"
       },

@@ -130,6 +130,14 @@
     {
       "date": "2026-10-05",
       "type": "catalog_update",
+      "artifact": "data/global-frameworks.json",
+      "path": "data/global-frameworks.json",
+      "schema_version": "1.3.0",
+      "entry_count": 35
+    },
+    {
+      "date": "2026-10-05",
+      "type": "catalog_update",
       "artifact": "data/rfc-references.json",
       "path": "data/rfc-references.json",
       "schema_version": "1.0.0",
@@ -440,14 +448,6 @@
       "path": "data/d3fend-catalog.json",
       "schema_version": "1.0.0",
       "entry_count": 468
-    },
-    {
-      "date": "2026-05-15",
-      "type": "catalog_update",
-      "artifact": "data/global-frameworks.json",
-      "path": "data/global-frameworks.json",
-      "schema_version": "1.3.0",
-      "entry_count": 35
     },
     {
       "date": "2026-05-11",

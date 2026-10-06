@@ -2575,7 +2575,7 @@
     "framework": "EU Artificial Intelligence Act (2024/1689) — General-Purpose AI provider obligations",
     "control_id": "Art. 53",
     "control_name": "Obligations for providers of general-purpose AI (GPAI) models",
-    "designed_for": "Providers of general-purpose AI models placed on the EU market. Active 2026-08-02. Requires technical documentation, downstream-provider information package, copyright-policy disclosure, and a summary of training content. Cross-walks to UK AISI voluntary commitments, US NIST AI RMF GPAI profile, OECD AI Principles GPAI annex, ISO/IEC 42001:2023.",
+    "designed_for": "Providers of general-purpose AI models placed on the EU market. Applies since 2025-08-02. Requires technical documentation, downstream-provider information package, copyright-policy disclosure, and a summary of training content. Cross-walks to UK AISI voluntary commitments, US NIST AI RMF GPAI profile, OECD AI Principles GPAI annex, ISO/IEC 42001:2023.",
     "misses": [
       "Training-data summary granularity — the prescribed 'sufficiently detailed' standard is operationally undefined; providers can satisfy with sector-level descriptors that defeat copyright/audit traceability",
       "Downstream-provider information package contemplates documentation handoff but not runtime telemetry — a downstream provider integrating a GPAI cannot verify the production model is the documented model",
@@ -2609,7 +2609,7 @@
     "framework": "EU Artificial Intelligence Act (2024/1689) — GPAI with systemic risk",
     "control_id": "Art. 55",
     "control_name": "Additional obligations for providers of GPAI models with systemic risk",
-    "designed_for": "Providers of GPAI models presumed to have systemic risk (cumulative training compute ≥ 10^25 FLOPs benchmark; AI Office may designate other models). Active 2026-08-02. Requires model evaluation including adversarial testing, systemic-risk assessment + mitigation, serious-incident reporting to AI Office + national authorities, and energy/cybersecurity protection at the model layer. Cross-walks to UK AISI safety evaluations, US AISI consortium, NIST AI RMF systemic-risk profile.",
+    "designed_for": "Providers of GPAI models presumed to have systemic risk (cumulative training compute ≥ 10^25 FLOPs benchmark; AI Office may designate other models). Applies since 2025-08-02. Requires model evaluation including adversarial testing, systemic-risk assessment + mitigation, serious-incident reporting to AI Office + national authorities, and energy/cybersecurity protection at the model layer. Cross-walks to UK AISI safety evaluations, US AISI consortium, NIST AI RMF systemic-risk profile.",
     "misses": [
       "Adversarial-evaluation methodology is not prescribed — providers self-define the red-team scope, leaving prompt-injection coverage, agentic-task exploitation, RAG-poisoning resistance, and MCP-trust scenarios at provider discretion",
       "Energy-consumption reporting cadence + units of measurement are not standardised — comparison across providers is operationally impossible",
@@ -2647,7 +2647,7 @@
     "framework": "EU Artificial Intelligence Act (2024/1689) — Annex IX conformity assessment",
     "control_id": "Annex IX",
     "control_name": "Conformity assessment based on internal control or notified body assessment for high-risk AI systems",
-    "designed_for": "Sets the conformity-assessment route for high-risk AI systems (Art. 43). Internal control (Annex VI) suffices for most providers; notified-body assessment (Annex VII) applies to specific Annex III categories. Active 2026-08-02 for high-risk obligations. Cross-walks to EU CRA Annex VIII conformity, EU MDR clinical-AI conformity, UK MHRA AI-as-a-Medical-Device, AU TGA Software-as-Medical-Device.",
+    "designed_for": "Sets the conformity-assessment route for high-risk AI systems (Art. 43). Internal control (Annex VI) suffices for most providers; notified-body assessment (Annex VII) applies to specific Annex III categories. The high-risk obligations apply from 2027-12-02 for Annex III systems and from 2028-08-02 for systems embedded in Annex I products (Regulation (EU) 2026/1744). Cross-walks to EU CRA Annex VIII conformity, EU MDR clinical-AI conformity, UK MHRA AI-as-a-Medical-Device, AU TGA Software-as-Medical-Device.",
     "misses": [
       "Internal-control conformity assessment is self-attestation — there is no third-party verification of Art. 9 risk management, Art. 10 data governance, Art. 15 cybersecurity claims for most high-risk AI",
       "Notified-body capacity is constrained — the small number of designated notified bodies (under 30 across the Union as of 2026-Q2) creates assessment-queue risk that operators cannot mitigate",
