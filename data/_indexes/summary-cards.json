@@ -527,6 +527,8 @@
         "rfc_refs": [
           "RFC-9846",
           "RFC-10024",
+          "DRAFT-IETF-TLS-MLKEM",
+          "DRAFT-IETF-HPKE-PQ",
           "DRAFT-IETF-TLS-HYBRID-DESIGN",
           "RFC-9180",
           "RFC-9420",
@@ -543,7 +545,7 @@
       "framework_gap_count": 2,
       "cwe_count": 1,
       "d3fend_count": 2,
-      "rfc_count": 9,
+      "rfc_count": 11,
       "last_threat_review": "2026-10-05",
       "path": "skills/pqc-first/skill.md",
       "handoff_targets": []
@@ -1397,7 +1399,9 @@
         ],
         "rfc_refs": [
           "RFC-8032",
-          "RFC-8446"
+          "RFC-8446",
+          "RFC-9846",
+          "RFC-10024"
         ],
         "dlp_refs": []
       },
@@ -1407,7 +1411,7 @@
       "framework_gap_count": 7,
       "cwe_count": 3,
       "d3fend_count": 3,
-      "rfc_count": 2,
+      "rfc_count": 4,
       "last_threat_review": "2026-09-28",
       "path": "skills/sector-federal-government/skill.md",
       "handoff_targets": [
@@ -1938,7 +1942,7 @@
     "email-security-anti-phishing": {
       "description": "Email security + anti-phishing for mid-2026 — SPF/DKIM/DMARC/BIMI/ARC/MTA-STS/TLSRPT, AI-augmented phishing (vishing, deepfake video, hyperpersonalized email), Business Email Compromise, secure email gateways",
       "threat_context_excerpt": "The Verizon DBIR 2025 names credential abuse (22%) and exploitation of vulnerabilities (20%) as the leading initial attack vectors, and the 2026 DBIR reports that 31% of breaches start with software vulnerabilities, ahead of stolen credentials. The 2026 DBIR lists social engineering, phishing and stolen credentials among the most frequent breach causes. The structural shift between 2024 and 2026 is **AI-augmentation of the phishing kill-chain** — content generation, voice synthesis, and live deepfake video have all collapsed from \"demonstrated in research\" to \"deployed against treasury, ...",
-      "produces": "The skill produces a structured assessment with these sections:\n\n1. **DMARC enforcement scorecard** — table of all owned domains × `{SPF, DKIM, DMARC policy, sp=, t=, legacy pct=, RUA destination, BIMI, ARC verification, MTA-STS, TLSRPT}`; aggregate score = (# domains at `p=reject` with neither `t=y` nor a `pct=` value below 100) / (total sending domains).\n2. **Email-auth coverage matrix** — per-protocol deployment status (SPF / DKIM / DMARC / BIMI / ARC / MTA-STS / TLSRPT) with gap flags.\n3. **Passkey rollout percentage** — overall and per-role-class (executive, finance, IT-admin, helpdesk, g ...",
+      "produces": "The skill produces a structured assessment with these sections:\n\n1. **DMARC enforcement scorecard** — table of all owned domains × `{use (domain whose users might post to mailing lists, or not), SPF, DKIM, DMARC policy, sp=, t=, legacy pct=, RUA destination, BIMI, ARC verification, MTA-STS, TLSRPT}`; aggregate score = (# domains whose users do not post to mailing lists at `p=reject` + # domains whose users might at `p=quarantine` or stricter, counting only domains with neither `t=y` nor a `pct=` value below 100) / (total sending domains). RFC 9989 Section 7.4 says domains that host users who m ...",
       "key_xrefs": {
         "cwe_refs": [],
         "d3fend_refs": [

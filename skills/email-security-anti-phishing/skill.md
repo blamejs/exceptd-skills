@@ -170,7 +170,7 @@ Email-authentication RFCs cited throughout the procedure (`RFC-9989` DMARC, `RFC
 
 The skill produces a structured assessment with these sections:
 
-1. **DMARC enforcement scorecard** — table of all owned domains × `{SPF, DKIM, DMARC policy, sp=, t=, legacy pct=, RUA destination, BIMI, ARC verification, MTA-STS, TLSRPT}`; aggregate score = (# domains at `p=reject` with neither `t=y` nor a `pct=` value below 100) / (total sending domains).
+1. **DMARC enforcement scorecard** — table of all owned domains × `{use (domain whose users might post to mailing lists, or not), SPF, DKIM, DMARC policy, sp=, t=, legacy pct=, RUA destination, BIMI, ARC verification, MTA-STS, TLSRPT}`; aggregate score = (# domains whose users do not post to mailing lists at `p=reject` + # domains whose users might at `p=quarantine` or stricter, counting only domains with neither `t=y` nor a `pct=` value below 100) / (total sending domains). RFC 9989 Section 7.4 says domains that host users who might post messages to mailing lists SHOULD NOT publish `p=reject`, so `p=quarantine` is full credit for those domains.
 2. **Email-auth coverage matrix** — per-protocol deployment status (SPF / DKIM / DMARC / BIMI / ARC / MTA-STS / TLSRPT) with gap flags.
 3. **Passkey rollout percentage** — overall and per-role-class (executive, finance, IT-admin, helpdesk, general workforce), with target = 100% for privileged-user classes.
 4. **Phishing simulation results trend** — 12-month click-rate and report-rate by role-class, with explicit AI-generated-lure cohort separated from template-lure cohort.

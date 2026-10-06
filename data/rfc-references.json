@@ -1338,6 +1338,38 @@
     "last_verified": "2026-10-06",
     "abstract": "IETF Internet-Draft (TLS WG) defining hybrid ECDHE + ML-KEM key exchange for TLS 1.3. Combines classical X25519 / P-256 ECDHE with the NIST FIPS 203 ML-KEM (Kyber) post-quantum KEM in a single handshake exchange so a successful TLS connection requires breaking BOTH primitives. Foundational primitive for federal PQ-ready posture and EU NIS2 + DORA crypto-agility obligations."
   },
+  "DRAFT-IETF-TLS-MLKEM": {
+    "number": null,
+    "draft_id": "draft-ietf-tls-mlkem",
+    "revision": "11",
+    "title": "ML-KEM Post-Quantum Key Agreement for TLS 1.3",
+    "status": "Draft",
+    "published": "revision 11, 2026-10-05",
+    "tracker": "https://datatracker.ietf.org/doc/draft-ietf-tls-mlkem/11/",
+    "relevance": "Defines ML-KEM-512, ML-KEM-768 and ML-KEM-1024 as TLS 1.3 named groups for post-quantum key establishment without a traditional component. The pqc-first skill watches it for publication as an RFC.",
+    "lag_notes": "Revision 11 (2026-10-05) is pinned. The datatracker shows the draft in the RFC Editor queue with an intended status of Informational. Re-check the revision before relying on its text.",
+    "skills_referencing": [
+      "pqc-first"
+    ],
+    "last_verified": "2026-10-06",
+    "abstract": "This memo defines ML-KEM-512, ML-KEM-768, and ML-KEM-1024 as NamedGroups and registers IANA values in the TLS Supported Groups registry for use in TLS 1.3 to achieve post-quantum (PQ) key establishment."
+  },
+  "DRAFT-IETF-HPKE-PQ": {
+    "number": null,
+    "draft_id": "draft-ietf-hpke-pq",
+    "revision": "05",
+    "title": "Post-Quantum and Post-Quantum/Traditional Hybrid Algorithms for HPKE",
+    "status": "Draft",
+    "published": "revision 05, 2026-07-06",
+    "tracker": "https://datatracker.ietf.org/doc/draft-ietf-hpke-pq/05/",
+    "relevance": "Defines post-quantum and post-quantum/traditional hybrid KEMs, and a SHA-3 based KDF, for HPKE (RFC 9180). The pqc-first skill watches it for publication as an RFC.",
+    "lag_notes": "Revision 05 (2026-07-06) is pinned; the draft is an active HPKE working group document. Re-check the revision before relying on its text.",
+    "skills_referencing": [
+      "pqc-first"
+    ],
+    "last_verified": "2026-10-06",
+    "abstract": "Updating key exchange and public-key encryption protocols to resist attack by quantum computers is a high priority given the possibility of \"harvest now, decrypt later\" attacks. Hybrid Public Key Encryption (HPKE) is a widely-used public key encryption scheme based on combining a Key Encapsulation Mechanism (KEM), a Key Derivation Function (KDF), and an Authenticated Encryption with Associated Data (AEAD) scheme. In this document, we define KEM algorithms for HPKE based on both post-quantum KEMs and hybrid constructions of post- quantum KEMs with traditional KEMs, as well as a KDF based on SHA-3 that is suitable for use with these KEMs. When used with these algorithms, HPKE is resilient with respect to attacks by a quantum computer."
+  },
   "DRAFT-IETF-TLS-HYBRID-DESIGN": {
     "number": null,
     "draft_id": "draft-ietf-tls-hybrid-design",
@@ -1345,7 +1377,7 @@
     "status": "Informational",
     "tracker": "https://datatracker.ietf.org/doc/draft-ietf-tls-hybrid-design/",
     "relevance": "General-purpose hybrid-KEM design that the ecdhe-mlkem draft instantiates. Operators evaluating the migration story should read both.",
-    "lag_notes": "Published as RFC 9954 (Informational, July 2026) — cite RFC-9954 rather than this draft for the hybrid construction. Retained so existing references resolve. Never status-synchronized with draft-ietf-tls-ecdhe-mlkem, which remains an active Standards-Track draft.",
+    "lag_notes": "Published as RFC 9954 (Informational, July 2026) — cite RFC-9954 rather than this draft for the hybrid construction. Retained so existing references resolve. draft-ietf-tls-ecdhe-mlkem was published as RFC 10024 in August 2026.",
     "skills_referencing": [
       "pqc-first"
     ],
@@ -232928,7 +232960,8 @@
     "tracker": "https://www.rfc-editor.org/info/rfc9846",
     "relevance": "TLS 1.3 as republished in July 2026. It obsoletes RFC 8446, RFC 5246 and RFCs 5077, 6961, 7627 and 8422, and sets new requirements for TLS 1.2 implementations. The pqc-first skill cites it as the TLS 1.3 specification that the hybrid key agreements of RFC 10024 extend.",
     "skills_referencing": [
-      "pqc-first"
+      "pqc-first",
+      "sector-federal-government"
     ],
     "last_verified": "2026-10-05",
     "abstract": "This document specifies version 1.3 of the Transport Layer Security (TLS) protocol. TLS allows client/server applications to communicate over the Internet in a way that is designed to prevent eavesdropping, tampering, and message forgery. This document obsoletes RFC 8446, which specified TLS 1.3. This document obsoletes RFC 5246 (specifying TLS 1.2) and RFCs 5077, 6961, 7627, and 8422, all of which pertain to TLS 1.2 or earlier, and updates RFCs 5705 and 6066. This document also specifies new requirements for TLS 1.2 implementations.",
@@ -232964,7 +232997,8 @@
     "tracker": "https://www.rfc-editor.org/info/rfc10024",
     "relevance": "Defines the X25519MLKEM768, SecP256r1MLKEM768 and SecP384r1MLKEM1024 hybrid key agreements for TLS 1.3. The pqc-first skill cites it as the published specification of the hybrid groups it recommends, which draft-ietf-tls-ecdhe-mlkem carried before publication.",
     "skills_referencing": [
-      "pqc-first"
+      "pqc-first",
+      "sector-federal-government"
     ],
     "last_verified": "2026-10-05",
     "abstract": "This document defines three hybrid key agreement mechanisms for TLS 1.3 -- X25519MLKEM768, SecP256r1MLKEM768, and SecP384r1MLKEM1024 -- that combine the post-quantum ML-KEM (Module-Lattice-Based Key Encapsulation Mechanism) with an ECDHE (Ephemeral Elliptic Curve Diffie-Hellman) exchange.",

@@ -41,6 +41,8 @@ framework_gaps:
 rfc_refs:
   - RFC-8032
   - RFC-8446
+  - RFC-9846
+  - RFC-10024
 cwe_refs:
   - CWE-1357
   - CWE-1395

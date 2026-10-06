@@ -30,6 +30,8 @@ framework_gaps:
 rfc_refs:
   - RFC-9846
   - RFC-10024
+  - DRAFT-IETF-TLS-MLKEM
+  - DRAFT-IETF-HPKE-PQ
   - DRAFT-IETF-TLS-HYBRID-DESIGN
   - RFC-9180
   - RFC-9420

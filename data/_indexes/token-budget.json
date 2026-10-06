@@ -3,8 +3,8 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1787007,
-    "total_approx_tokens": 446758,
+    "total_chars": 1787442,
+    "total_approx_tokens": 446866,
     "skill_count": 51
   },
   "skills": {
@@ -785,10 +785,10 @@
     },
     "pqc-first": {
       "path": "skills/pqc-first/skill.md",
-      "bytes": 41509,
-      "chars": 41355,
-      "lines": 573,
-      "approx_tokens": 10339,
+      "bytes": 41557,
+      "chars": 41403,
+      "lines": 575,
+      "approx_tokens": 10351,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1800,10 +1800,10 @@
     },
     "sector-federal-government": {
       "path": "skills/sector-federal-government/skill.md",
-      "bytes": 45103,
-      "chars": 44930,
-      "lines": 308,
-      "approx_tokens": 11233,
+      "bytes": 45130,
+      "chars": 44957,
+      "lines": 310,
+      "approx_tokens": 11239,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2295,10 +2295,10 @@
     },
     "email-security-anti-phishing": {
       "path": "skills/email-security-anti-phishing/skill.md",
-      "bytes": 31524,
-      "chars": 31412,
+      "bytes": 31884,
+      "chars": 31772,
       "lines": 224,
-      "approx_tokens": 7853,
+      "approx_tokens": 7943,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2327,9 +2327,9 @@
           "approx_tokens": 2085
         },
         "output-format": {
-          "bytes": 1865,
-          "chars": 1840,
-          "approx_tokens": 460
+          "bytes": 2225,
+          "chars": 2200,
+          "approx_tokens": 550
         },
         "compliance-theater-check": {
           "bytes": 1892,

@@ -1366,9 +1366,17 @@
       "ai-c2-detection"
     ],
     "RFC-9846": [
-      "pqc-first"
+      "pqc-first",
+      "sector-federal-government"
     ],
     "RFC-10024": [
+      "pqc-first",
+      "sector-federal-government"
+    ],
+    "DRAFT-IETF-TLS-MLKEM": [
+      "pqc-first"
+    ],
+    "DRAFT-IETF-HPKE-PQ": [
       "pqc-first"
     ],
     "DRAFT-IETF-TLS-HYBRID-DESIGN": [

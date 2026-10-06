@@ -2154,12 +2154,26 @@
         ]
       },
       "RFC-9846": {
+        "count": 2,
+        "skills": [
+          "pqc-first",
+          "sector-federal-government"
+        ]
+      },
+      "RFC-10024": {
+        "count": 2,
+        "skills": [
+          "pqc-first",
+          "sector-federal-government"
+        ]
+      },
+      "DRAFT-IETF-TLS-MLKEM": {
         "count": 1,
         "skills": [
           "pqc-first"
         ]
       },
-      "RFC-10024": {
+      "DRAFT-IETF-HPKE-PQ": {
         "count": 1,
         "skills": [
           "pqc-first"
@@ -3153,11 +3167,11 @@
         ]
       },
       {
-        "id": "RFC-9458",
+        "id": "RFC-10024",
         "count": 2,
         "skills": [
-          "ai-c2-detection",
-          "dlp-gap-analysis"
+          "pqc-first",
+          "sector-federal-government"
         ]
       }
     ],
@@ -3264,10 +3278,11 @@
     ],
     "rfc_refs": [
       "CSAF-2.0",
+      "DRAFT-IETF-HPKE-PQ",
       "DRAFT-IETF-TLS-HYBRID-DESIGN",
+      "DRAFT-IETF-TLS-MLKEM",
       "ISO-29147",
       "ISO-30111",
-      "RFC-10024",
       "RFC-4301",
       "RFC-4303",
       "RFC-6376",
@@ -3289,7 +3304,6 @@
       "RFC-9420",
       "RFC-9622",
       "RFC-9794",
-      "RFC-9846",
       "RFC-9989",
       "RFC-9990",
       "RFC-9991"
