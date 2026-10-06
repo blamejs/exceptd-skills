@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "last_updated": "2026-09-22",
+    "last_updated": "2026-10-05",
     "note": "status: open = gap still exists. status: closed = framework update closed the gap. Never delete entries — preserve gap history.",
     "tlp": "CLEAR",
     "source_confidence": {
@@ -8735,7 +8735,7 @@
     "designed_for": "A06:2021 calls out applications that use components (libraries, frameworks, runtimes) with known vulnerabilities or out-of-date versions. The standard remediation guidance is to upgrade the vulnerable component to a fixed release through the normal patch-management process — vendor patch, dependency bump, redeploy.",
     "misses": [
       "Configuration-side mitigation paths are not enumerated — when a CVE is exploitable only when a specific configuration pattern is present (NGINX Rift requires unnamed PCRE captures in a rewrite directive), the operator-side fix (rewrite the directive to use named captures) is a faster mitigation than the vendor-patch path but A06 guidance defaults operators to vendor-patch waiting",
-      "Live-patch / no-restart mitigation paths (operator-side configuration edits that retire the vulnerable code path without requiring a vendor release or component restart) are not framed as A06 remediation options",
+      "No-restart configuration mitigations (operator-side configuration edits that retire the vulnerable code path without requiring a vendor release or component restart) are not framed as A06 remediation options",
       "A06 risk scoring inherits CVSS without recognising configuration-derived exposure — a CVE with a configuration prerequisite has lower real-world exposure than its CVSS suggests, and the configuration-prerequisite check is the real-world prioritization filter",
       "AI-discovered components / AI-discovered vulnerabilities are not enumerated in A06 risk identification — Hard Rule #7 establishes AI-discovery as current operational reality, A06 still implicitly assumes human-discovery cadence"
     ],

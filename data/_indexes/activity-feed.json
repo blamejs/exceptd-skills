@@ -6,6 +6,30 @@
   },
   "events": [
     {
+      "date": "2026-10-05",
+      "type": "catalog_update",
+      "artifact": "data/cve-catalog.json",
+      "path": "data/cve-catalog.json",
+      "schema_version": "1.0.0",
+      "entry_count": 1764
+    },
+    {
+      "date": "2026-10-05",
+      "type": "catalog_update",
+      "artifact": "data/framework-control-gaps.json",
+      "path": "data/framework-control-gaps.json",
+      "schema_version": "1.0.0",
+      "entry_count": 199
+    },
+    {
+      "date": "2026-10-05",
+      "type": "catalog_update",
+      "artifact": "data/zeroday-lessons.json",
+      "path": "data/zeroday-lessons.json",
+      "schema_version": "1.1.0",
+      "entry_count": 1764
+    },
+    {
       "date": "2026-10-04",
       "type": "skill_review",
       "artifact": "fuzz-testing-strategy",
@@ -61,22 +85,6 @@
       "path": "data/attack-techniques.json",
       "schema_version": "1.0.0",
       "entry_count": 794
-    },
-    {
-      "date": "2026-10-04",
-      "type": "catalog_update",
-      "artifact": "data/cve-catalog.json",
-      "path": "data/cve-catalog.json",
-      "schema_version": "1.0.0",
-      "entry_count": 1764
-    },
-    {
-      "date": "2026-10-04",
-      "type": "catalog_update",
-      "artifact": "data/zeroday-lessons.json",
-      "path": "data/zeroday-lessons.json",
-      "schema_version": "1.1.0",
-      "entry_count": 1764
     },
     {
       "date": "2026-09-28",
@@ -162,14 +170,6 @@
       "path": "data/atlas-ttps.json",
       "schema_version": "1.0.0",
       "entry_count": 174
-    },
-    {
-      "date": "2026-09-22",
-      "type": "catalog_update",
-      "artifact": "data/framework-control-gaps.json",
-      "path": "data/framework-control-gaps.json",
-      "schema_version": "1.0.0",
-      "entry_count": 199
     },
     {
       "date": "2026-09-18",
