@@ -154,7 +154,7 @@
       "days_since_review": 0,
       "currency_score": 100,
       "currency_label": "current",
-      "forward_watch_count": 0,
+      "forward_watch_count": 5,
       "action_required": false
     },
     {

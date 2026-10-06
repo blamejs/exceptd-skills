@@ -58,6 +58,7 @@ d3fend_refs:
   - D3-NTPM
   - D3-IOPR
   - D3-NI
+  - D3-FV
 forward_watch:
   - "FCC CPNI rule updates (47 CFR 64.2009 / 64.2011 amendments)"
   - "5G AI-RAN security guidance from CISA, ENISA, NCSC, ASD ACSC"

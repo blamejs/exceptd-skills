@@ -42,6 +42,12 @@ cwe_refs:
   - CWE-345
   - CWE-778
   - CWE-672
+d3fend_refs:
+  - D3-HD
+  - D3-IRA
+  - D3-MAN
+  - D3-DI
+  - D3-DEM
 last_threat_review: "2026-10-05"
 ---
 

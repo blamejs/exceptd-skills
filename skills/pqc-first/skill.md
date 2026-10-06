@@ -32,6 +32,7 @@ rfc_refs:
   - RFC-10024
   - DRAFT-IETF-TLS-MLKEM
   - DRAFT-IETF-HPKE-PQ
+  - DRAFT-IETF-LAMPS-PQ-COMPOSITE-SIGS
   - DRAFT-IETF-TLS-HYBRID-DESIGN
   - RFC-9180
   - RFC-9420
@@ -354,7 +355,7 @@ Both signatures must verify for the message to be accepted.
 Rationale: if one algorithm is broken (classical by quantum, PQC by classical cryptanalysis),
            the other component still provides security.
 
-Use composite signature formats per IETF draft-ietf-lamps-pq-composite-sigs (which replaced draft-ounsworth-pq-composite-sigs)
+Use composite signature formats per IETF draft-ietf-lamps-pq-composite-sigs (revision 19, in the RFC Editor queue; it replaced draft-ounsworth-pq-composite-sigs)
 ```
 
 ### TLS Configuration

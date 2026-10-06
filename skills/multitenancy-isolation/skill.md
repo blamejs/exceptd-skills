@@ -45,6 +45,11 @@ cwe_refs:
   - CWE-863
   - CWE-668
   - CWE-400
+d3fend_refs:
+  - D3-AMED
+  - D3-AZET
+  - D3-RAPA
+  - D3-ACH
 last_threat_review: "2026-10-05"
 ---
 

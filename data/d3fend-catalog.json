@@ -59,6 +59,7 @@
       "dlp-gap-analysis",
       "fuzz-testing-strategy",
       "global-grc",
+      "identity-assurance",
       "kernel-lpe-triage",
       "mcp-agent-trust",
       "mlops-security",
@@ -385,6 +386,7 @@
       "cloud-iam-incident",
       "cloud-security",
       "defensive-countermeasure-mapping",
+      "identity-assurance",
       "idp-incident-response",
       "mcp-agent-trust",
       "sector-federal-government",
@@ -479,7 +481,8 @@
     ],
     "skills_referencing": [
       "ai-c2-detection",
-      "defensive-countermeasure-mapping"
+      "defensive-countermeasure-mapping",
+      "identity-assurance"
     ],
     "implementation_examples": [
       "Certificate Transparency log monitoring (Sigsum, CT Watch)",
@@ -1345,7 +1348,11 @@
     "last_verified": "2026-05-19",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-d3fend-owl",
-    "description_full": "Modifying an application's configuration to reduce its attack surface."
+    "description_full": "Modifying an application's configuration to reduce its attack surface.",
+    "skills_referencing": [
+      "decompression-dos",
+      "multitenancy-isolation"
+    ]
   },
   "D3-AEM": {
     "id": "D3-AEM",
@@ -1450,7 +1457,10 @@
     "enables": [
       "Isolate"
     ],
-    "kb_reference": "Reference-CNNSI-4009"
+    "kb_reference": "Reference-CNNSI-4009",
+    "skills_referencing": [
+      "multitenancy-isolation"
+    ]
   },
   "D3-ANAA": {
     "id": "D3-ANAA",
@@ -1568,7 +1578,10 @@
     "last_verified": "2026-05-19",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-d3fend-owl",
-    "description_full": "Collecting authorization events, creating a baseline user profile, and determining whether authorization events are consistent with the baseline profile."
+    "description_full": "Collecting authorization events, creating a baseline user profile, and determining whether authorization events are consistent with the baseline profile.",
+    "skills_referencing": [
+      "multitenancy-isolation"
+    ]
   },
   "D3-BA": {
     "id": "D3-BA",
@@ -1976,7 +1989,10 @@
     "last_verified": "2026-05-19",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-d3fend-owl",
-    "description_full": "Data exchange mapping identifies and models the organization's intended design for the flows of the data types, formats, and volumes between systems at the application layer."
+    "description_full": "Data exchange mapping identifies and models the organization's intended design for the flows of the data types, formats, and volumes between systems at the application layer.",
+    "skills_referencing": [
+      "privacy-consent-ops"
+    ]
   },
   "D3-DENCR": {
     "id": "D3-DENCR",
@@ -2021,7 +2037,10 @@
       "Database",
       "DocumentFile"
     ],
-    "kb_reference": "Reference-DataProcessingAndScanningSystemsForGeneratingAndPopulatingADataInventory"
+    "kb_reference": "Reference-DataProcessingAndScanningSystemsForGeneratingAndPopulatingADataInventory",
+    "skills_referencing": [
+      "privacy-consent-ops"
+    ]
   },
   "D3-DKE": {
     "id": "D3-DKE",
@@ -2685,7 +2704,10 @@
     "last_verified": "2026-05-19",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-d3fend-owl",
-    "description_full": "Cryptographically verifying firmware integrity."
+    "description_full": "Cryptographically verifying firmware integrity.",
+    "skills_referencing": [
+      "sector-telecom"
+    ]
   },
   "D3-HBPI": {
     "id": "D3-HBPI",
@@ -2743,7 +2765,10 @@
     "last_verified": "2026-05-19",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-d3fend-owl",
-    "description_full": "Comparing strings using a variety of techniques to determine if a deceptive or malicious string is being presented to a user."
+    "description_full": "Comparing strings using a variety of techniques to determine if a deceptive or malicious string is being presented to a user.",
+    "skills_referencing": [
+      "privacy-consent-ops"
+    ]
   },
   "D3-HDDL": {
     "id": "D3-HDDL",
@@ -2970,7 +2995,10 @@
     "reference_url": "https://d3fend.mitre.org/technique/D3-IRA/",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-d3fend-owl"
+    "_intake_method": "mitre-d3fend-owl",
+    "skills_referencing": [
+      "privacy-consent-ops"
+    ]
   },
   "D3-IRV": {
     "id": "D3-IRV",
@@ -2990,7 +3018,10 @@
     "reference_url": "https://d3fend.mitre.org/technique/D3-IRV/",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-d3fend-owl"
+    "_intake_method": "mitre-d3fend-owl",
+    "skills_referencing": [
+      "decompression-dos"
+    ]
   },
   "D3-ISVA": {
     "id": "D3-ISVA",
@@ -3200,7 +3231,10 @@
     "reference_url": "https://d3fend.mitre.org/technique/D3-MAN/",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-d3fend-owl"
+    "_intake_method": "mitre-d3fend-owl",
+    "skills_referencing": [
+      "privacy-consent-ops"
+    ]
   },
   "D3-MBSV": {
     "id": "D3-MBSV",
@@ -4344,7 +4378,10 @@
     "reference_url": "https://d3fend.mitre.org/technique/D3-RAPA/",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
-    "_intake_method": "mitre-d3fend-owl"
+    "_intake_method": "mitre-d3fend-owl",
+    "skills_referencing": [
+      "multitenancy-isolation"
+    ]
   },
   "D3-RC": {
     "id": "D3-RC",

@@ -45,6 +45,9 @@ cwe_refs:
   - CWE-22
   - CWE-834
   - CWE-770
+d3fend_refs:
+  - D3-IRV
+  - D3-ACH
 last_threat_review: "2026-10-05"
 ---
 

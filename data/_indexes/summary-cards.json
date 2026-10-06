@@ -529,6 +529,7 @@
           "RFC-10024",
           "DRAFT-IETF-TLS-MLKEM",
           "DRAFT-IETF-HPKE-PQ",
+          "DRAFT-IETF-LAMPS-PQ-COMPOSITE-SIGS",
           "DRAFT-IETF-TLS-HYBRID-DESIGN",
           "RFC-9180",
           "RFC-9420",
@@ -545,7 +546,7 @@
       "framework_gap_count": 2,
       "cwe_count": 1,
       "d3fend_count": 2,
-      "rfc_count": 11,
+      "rfc_count": 12,
       "last_threat_review": "2026-10-05",
       "path": "skills/pqc-first/skill.md",
       "handoff_targets": []
@@ -913,7 +914,10 @@
         ],
         "d3fend_refs": [
           "D3-MFA",
-          "D3-CSPP"
+          "D3-CSPP",
+          "D3-CBAN",
+          "D3-CA",
+          "D3-EAL"
         ],
         "framework_gaps": [
           "NIST-800-63B-rev4",
@@ -947,7 +951,7 @@
       "attack_count": 3,
       "framework_gap_count": 8,
       "cwe_count": 7,
-      "d3fend_count": 2,
+      "d3fend_count": 5,
       "rfc_count": 5,
       "last_threat_review": "2026-10-05",
       "path": "skills/identity-assurance/skill.md",
@@ -1502,7 +1506,8 @@
           "D3-NTA",
           "D3-NTPM",
           "D3-IOPR",
-          "D3-NI"
+          "D3-NI",
+          "D3-FV"
         ],
         "framework_gaps": [
           "FCC-CPNI-4.1",
@@ -1536,7 +1541,7 @@
       "attack_count": 6,
       "framework_gap_count": 9,
       "cwe_count": 3,
-      "d3fend_count": 4,
+      "d3fend_count": 5,
       "rfc_count": 1,
       "last_threat_review": "2026-10-05",
       "path": "skills/sector-telecom/skill.md",
@@ -1977,7 +1982,8 @@
           "RFC-8616",
           "RFC-8461",
           "RFC-8617",
-          "RFC-8460"
+          "RFC-8460",
+          "DRAFT-IETF-DKIM-DKIM2-SPEC"
         ],
         "dlp_refs": []
       },
@@ -1987,7 +1993,7 @@
       "framework_gap_count": 6,
       "cwe_count": 0,
       "d3fend_count": 4,
-      "rfc_count": 9,
+      "rfc_count": 10,
       "last_threat_review": "2026-10-05",
       "path": "skills/email-security-anti-phishing/skill.md",
       "handoff_targets": [
@@ -2401,7 +2407,12 @@
           "CWE-668",
           "CWE-400"
         ],
-        "d3fend_refs": [],
+        "d3fend_refs": [
+          "D3-AMED",
+          "D3-AZET",
+          "D3-RAPA",
+          "D3-ACH"
+        ],
         "framework_gaps": [
           "NIST-800-53-AC-3",
           "NIS2-Art21-network-security",
@@ -2423,7 +2434,7 @@
       "attack_count": 4,
       "framework_gap_count": 4,
       "cwe_count": 5,
-      "d3fend_count": 0,
+      "d3fend_count": 4,
       "rfc_count": 0,
       "last_threat_review": "2026-10-05",
       "path": "skills/multitenancy-isolation/skill.md",
@@ -2443,7 +2454,10 @@
           "CWE-834",
           "CWE-770"
         ],
-        "d3fend_refs": [],
+        "d3fend_refs": [
+          "D3-IRV",
+          "D3-ACH"
+        ],
         "framework_gaps": [
           "NIST-800-53-SI-2",
           "NIS2-Art21-network-security",
@@ -2464,7 +2478,7 @@
       "attack_count": 3,
       "framework_gap_count": 4,
       "cwe_count": 7,
-      "d3fend_count": 0,
+      "d3fend_count": 2,
       "rfc_count": 0,
       "last_threat_review": "2026-10-05",
       "path": "skills/decompression-dos/skill.md",
@@ -2520,7 +2534,13 @@
           "CWE-778",
           "CWE-672"
         ],
-        "d3fend_refs": [],
+        "d3fend_refs": [
+          "D3-HD",
+          "D3-IRA",
+          "D3-MAN",
+          "D3-DI",
+          "D3-DEM"
+        ],
         "framework_gaps": [
           "NIST-800-53-SI-2",
           "NIS2-Art21-network-security",
@@ -2541,7 +2561,7 @@
       "attack_count": 3,
       "framework_gap_count": 4,
       "cwe_count": 4,
-      "d3fend_count": 0,
+      "d3fend_count": 5,
       "rfc_count": 0,
       "last_threat_review": "2026-10-05",
       "path": "skills/privacy-consent-ops/skill.md",

@@ -56,6 +56,9 @@ cwe_refs:
 d3fend_refs:
   - D3-MFA
   - D3-CSPP
+  - D3-CBAN
+  - D3-CA
+  - D3-EAL
 last_threat_review: "2026-10-05"
 ---
 

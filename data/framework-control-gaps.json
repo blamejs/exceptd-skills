@@ -4724,12 +4724,12 @@
     "control_name": "Risk management process",
     "designed_for": "Process-level guidance for managing risk across the AI lifecycle (design, develop, deploy, operate, decommission). Used globally as the methodological backbone behind ISO 42001 clause 6, EU AI Act risk management requirements, UK AI Assurance roadmap, AU AI Ethics Framework, and Singapore Model AI Governance Framework.",
     "misses": [
-      "Post-deployment adversarial input drift — clause 7 treats risk identification as a phased activity rather than a continuous adversarial-evaluation loop",
+      "Post-deployment adversarial input drift — clause 6 treats risk identification (6.4.2) as a phased activity rather than a continuous adversarial-evaluation loop",
       "No requirement for red-team / adversarial prompt regression after model or system-prompt updates",
       "Drift detection is framed around statistical model performance, not adversarial robustness — prompt-injection success rate is not a monitored signal",
-      "Cross-jurisdiction harmonisation (EU AI Act Art. 9 risk management, UK CAF, AU ISM) is referenced but not operationalised in clause 7 examples"
+      "Cross-jurisdiction harmonisation (EU AI Act Art. 9 risk management, UK CAF, AU ISM) is referenced but not operationalised in clause 6 examples"
     ],
-    "real_requirement": "Clause 7 implementations must add a runtime adversarial-evaluation control: standing red-team prompt suite, success-rate baseline, alerting on regression after model/system-prompt change, evidence retention for incident reconstruction. Drift monitoring must include adversarial robustness, not only statistical accuracy.",
+    "real_requirement": "Clause 6 implementations, in risk identification (6.4.2) and risk treatment (6.5), must add a runtime adversarial-evaluation control: standing red-team prompt suite, success-rate baseline, alerting on regression after model/system-prompt change, evidence retention for incident reconstruction. Drift monitoring must include adversarial robustness, not only statistical accuracy.",
     "status": "open",
     "opened_date": "2026-05-11",
     "evidence_cves": [],

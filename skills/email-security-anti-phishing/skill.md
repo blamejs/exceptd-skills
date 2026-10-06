@@ -52,6 +52,13 @@ rfc_refs:
   - RFC-8461
   - RFC-8617
   - RFC-8460
+  - DRAFT-IETF-DKIM-DKIM2-SPEC
+forward_watch:
+  - DKIM2 (draft-ietf-dkim-dkim2-spec, revision 06 published 2026-08-28) in the IETF DKIM working group, whose charter lets it choose a technology that supersedes DKIM, DMARC and ARC
+  - Deepfake liveness-detection standardization in video-conferencing platforms (Zoom, Teams, Webex)
+  - FIDO Alliance updates to recovery-flow guidance
+  - New IC3 and DBIR reports as they publish
+  - Microsoft, Google, Anthropic and OpenAI abuse-program transparency reports
 cwe_refs: []
 d3fend_refs:
   - D3-NTA

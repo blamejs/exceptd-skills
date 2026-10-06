@@ -3,8 +3,8 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1787442,
-    "total_approx_tokens": 446866,
+    "total_chars": 1788226,
+    "total_approx_tokens": 447063,
     "skill_count": 51
   },
   "skills": {
@@ -785,10 +785,10 @@
     },
     "pqc-first": {
       "path": "skills/pqc-first/skill.md",
-      "bytes": 41557,
-      "chars": 41403,
-      "lines": 575,
-      "approx_tokens": 10351,
+      "bytes": 41631,
+      "chars": 41477,
+      "lines": 576,
+      "approx_tokens": 10369,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -827,9 +827,9 @@
           "approx_tokens": 888
         },
         "hybrid-construction-requirements": {
-          "bytes": 1364,
-          "chars": 1364,
-          "approx_tokens": 341
+          "bytes": 1399,
+          "chars": 1399,
+          "approx_tokens": 350
         },
         "harvest-now-decrypt-later-hndl-threat-assessment": {
           "bytes": 1631,
@@ -1345,10 +1345,10 @@
     },
     "identity-assurance": {
       "path": "skills/identity-assurance/skill.md",
-      "bytes": 35054,
-      "chars": 34905,
-      "lines": 278,
-      "approx_tokens": 8726,
+      "bytes": 35087,
+      "chars": 34938,
+      "lines": 281,
+      "approx_tokens": 8735,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -1910,10 +1910,10 @@
     },
     "sector-telecom": {
       "path": "skills/sector-telecom/skill.md",
-      "bytes": 23214,
-      "chars": 23138,
-      "lines": 257,
-      "approx_tokens": 5785,
+      "bytes": 23224,
+      "chars": 23148,
+      "lines": 258,
+      "approx_tokens": 5787,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2295,10 +2295,10 @@
     },
     "email-security-anti-phishing": {
       "path": "skills/email-security-anti-phishing/skill.md",
-      "bytes": 31884,
-      "chars": 31772,
-      "lines": 224,
-      "approx_tokens": 7943,
+      "bytes": 32390,
+      "chars": 32278,
+      "lines": 231,
+      "approx_tokens": 8070,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2765,10 +2765,10 @@
     },
     "multitenancy-isolation": {
       "path": "skills/multitenancy-isolation/skill.md",
-      "bytes": 8028,
-      "chars": 8014,
-      "lines": 84,
-      "approx_tokens": 2004,
+      "bytes": 8088,
+      "chars": 8074,
+      "lines": 89,
+      "approx_tokens": 2019,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2815,10 +2815,10 @@
     },
     "decompression-dos": {
       "path": "skills/decompression-dos/skill.md",
-      "bytes": 7643,
-      "chars": 7635,
-      "lines": 84,
-      "approx_tokens": 1909,
+      "bytes": 7678,
+      "chars": 7670,
+      "lines": 87,
+      "approx_tokens": 1918,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
@@ -2915,10 +2915,10 @@
     },
     "privacy-consent-ops": {
       "path": "skills/privacy-consent-ops/skill.md",
-      "bytes": 7809,
-      "chars": 7793,
-      "lines": 81,
-      "approx_tokens": 1948,
+      "bytes": 7875,
+      "chars": 7859,
+      "lines": 87,
+      "approx_tokens": 1965,
       "approx_chars_per_token": 4,
       "sections": {
         "threat-context": {
