@@ -31,13 +31,13 @@ function iocsPopulated(e) {
 // catalog threat-intel (protestware-and-malware-catalog-entries)
 // ---------------------------------------------------------------------------
 
-test('MAL-2026-MOIKA-DEPCONFUSION — first dependency-confusion entry: RWEP 43, populated iocs', () => {
+test('MAL-2026-MOIKA-DEPCONFUSION — first dependency-confusion entry: RWEP 53, populated iocs', () => {
   const e = CAT[ID];
   assert.ok(e, 'MOIKA entry must be in the catalog');
   assert.equal(e.cisa_kev, false);
   assert.equal(e.type, 'supply-chain-dependency-confusion');
-  assert.equal(e.rwep_score, 43);
-  assert.equal(rwepSum(e), 43);
+  assert.equal(e.rwep_score, 53);
+  assert.equal(rwepSum(e), 53);
   assert.ok(iocsPopulated(e));
   assert.ok(/oob\.moika\.tech/.test(JSON.stringify(e.iocs)), 'C2 oob.moika.tech must be recorded in iocs');
 });

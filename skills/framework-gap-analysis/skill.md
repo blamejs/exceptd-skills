@@ -99,8 +99,8 @@ This skill consumes the matrix produced upstream by the exploit-scoring skill. T
 | CVE-2026-31431 (Copy Fail) | 7.8 | 100 | Yes (2026-05-01) | Yes (732 bytes, deterministic) | Yes (AI-discovered) | No (live patches cover some distributions' kernels only; the entry takes zero live-patch credit) | Confirmed |
 | CVE-2026-43284 (Dirty Frag) | 8.8 | 53 | No | Yes (chain component) | Yes (AI-assisted discovery) | Limited (kpatch RHEL-only) | Suspected |
 | CVE-2026-46300 (Fragnesia) | 7.8 | 50 (75 if KEV-listed) | No | Yes (one-liner vs /usr/bin/su) | Yes (AI-assisted discovery) | No (live patches cover some distributions' kernels only; the entry takes zero live-patch credit) | None observed |
-| CVE-2025-53773 (Copilot YOLO-mode RCE) | 7.8 | 30 | No | Yes (demonstrated) | Yes (AI tooling enables) | Yes (SaaS push / IDE update) | Suspected |
-| CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 | 35 | No | Yes | No | Yes (IDE update) | Suspected |
+| CVE-2025-53773 (Copilot YOLO-mode RCE) | 7.8 | 40 | No | Yes (demonstrated) | Yes (AI tooling enables) | No (the fix is an IDE or extension upgrade) | Suspected |
+| CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 | 45 | No | Yes | No | No (the fix is an IDE upgrade) | Suspected |
 
 When a gap analysis cites a CVE not in this matrix, the analyst must populate the row from `data/cve-catalog.json` before producing the declaration. A declaration without an evidence row is incomplete.
 

@@ -71,7 +71,7 @@ The AI attack surface is not speculative. It is actively exploited. The followin
 
 ### 1. Prompt Injection as Enterprise RCE
 
-**CVE-2025-53773** — Hidden prompt injection in GitHub Copilot agent mode coerces the assistant to write `"chat.tools.autoApprove": true` into `.vscode/settings.json`, flipping every subsequent tool call into auto-approval. CVSS 7.8 (AV:L — local-vector through developer-side IDE interaction; RWEP 30). The attack embeds adversarial instructions in any agent-readable content (source comments, README, PR descriptions, retrieved docs, MCP tool responses). Once the YOLO-mode flag lands, the next shell tool call executes attacker-chosen commands in the developer's user context.
+**CVE-2025-53773** — Hidden prompt injection in GitHub Copilot agent mode coerces the assistant to write `"chat.tools.autoApprove": true` into `.vscode/settings.json`, flipping every subsequent tool call into auto-approval. CVSS 7.8 (AV:L — local-vector through developer-side IDE interaction; RWEP 40). The attack embeds adversarial instructions in any agent-readable content (source comments, README, PR descriptions, retrieved docs, MCP tool responses). Once the YOLO-mode flag lands, the next shell tool call executes attacker-chosen commands in the developer's user context.
 
 This is not a chatbot trick. This is enterprise RCE via a developer tool used by hundreds of millions of developers. The attack surface is any system that:
 - Feeds external content (user input, web content, documents, PR descriptions, emails, calendar events) into an LLM prompt
@@ -85,7 +85,7 @@ This is not a chatbot trick. This is enterprise RCE via a developer tool used by
 
 The Model Context Protocol (MCP) introduced an architectural vulnerability affecting every major AI coding assistant: Cursor, VS Code + GitHub Copilot, Windsurf, Claude Code, Gemini CLI.
 
-**CVE-2026-30615** — Windsurf MCP. CVSS 8.0 (AV:L — local-vector RCE requiring attacker-controlled HTML the MCP client processes; RWEP 35). The vulnerability allows a malicious or compromised MCP server to drive code execution in the context of the AI assistant once a victim installs it. 150M+ combined downloads across MCP-capable assistants share the same architectural attack surface.
+**CVE-2026-30615** — Windsurf MCP. CVSS 8.0 (AV:L — local-vector RCE requiring attacker-controlled HTML the MCP client processes; RWEP 45). The vulnerability allows a malicious or compromised MCP server to drive code execution in the context of the AI assistant once a victim installs it. 150M+ combined downloads across MCP-capable assistants share the same architectural attack surface.
 
 This is a supply chain attack surface. Every MCP server a user installs is a potential RCE vector. Trust boundaries that exist for npm packages do not exist for MCP servers because most MCP clients do not enforce signed manifests or tool allowlists.
 
@@ -192,8 +192,8 @@ AI-assisted reconnaissance is observed at 36,000 probes per second per campaign.
 
 | Vulnerability | CVSS | RWEP | KEV | PoC | AI-Accelerated | Active Exploitation |
 |---|---|---|---|---|---|---|
-| CVE-2025-53773 (Copilot YOLO-mode RCE) | 7.8 | 30 | No | Yes — demonstrated | Yes (AI tooling enables) | Suspected |
-| CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 | 35 | No | Partial | No | Suspected |
+| CVE-2025-53773 (Copilot YOLO-mode RCE) | 7.8 | 40 | No | Yes — demonstrated | Yes (AI tooling enables) | Suspected |
+| CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 | 45 | No | Partial | No | Suspected |
 | SesameOp (AI C2 technique) | N/A | N/A | N/A | Yes (ATLAS documented) | Yes | Confirmed campaign |
 | PROMPTFLUX family | N/A | N/A | N/A | Behavioral signatures | Yes | Active |
 | PROMPTSTEAL family | N/A | N/A | N/A | Behavioral signatures | Yes | Active |

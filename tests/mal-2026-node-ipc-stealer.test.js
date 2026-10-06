@@ -31,7 +31,7 @@ test(`${ENTRY_ID} catalog entry shape (kev_scope_note, rwep Shape B, iocs object
   assert.equal(entry.active_exploitation, 'confirmed');
   assert.equal(entry.ai_discovered, false);
   assert.equal(entry.ai_assisted_weaponization, false);
-  assert.equal(entry.rwep_score, 43);
+  assert.equal(entry.rwep_score, 53);
 
   assert.equal(typeof entry.kev_scope_note, 'string', `${ENTRY_ID}.kev_scope_note must be a string`);
   assert.equal(entry.kev_scope_note.length >= 50, true,
@@ -47,7 +47,7 @@ test(`${ENTRY_ID} catalog entry shape (kev_scope_note, rwep Shape B, iocs object
   assert.equal(entry.rwep_factors.active_exploitation, 20);
   assert.equal(entry.rwep_factors.blast_radius, 28);
   assert.equal(entry.rwep_factors.patch_available, -15);
-  assert.equal(entry.rwep_factors.live_patch_available, -10);
+  assert.equal(entry.rwep_factors.live_patch_available, 0);
   assert.equal(entry.rwep_factors.reboot_required, 0);
 
   assert.equal(typeof entry.iocs, 'object', `${ENTRY_ID}.iocs must be an object (diff-coverage gate keys on the "iocs" literal)`);
@@ -121,7 +121,7 @@ test(`v0.12.33 intake: ${ENTRY_ID} catalog entry shape (kev_scope_note, rwep Sha
   assert.equal(entry.active_exploitation, 'confirmed');
   assert.equal(entry.ai_discovered, false);
   assert.equal(entry.ai_assisted_weaponization, false);
-  assert.equal(entry.rwep_score, 43);
+  assert.equal(entry.rwep_score, 53);
   assert.equal(typeof entry.kev_scope_note, 'string');
   assert.equal(entry.kev_scope_note.length >= 50, true);
   const sum = Object.values(entry.rwep_factors).reduce((a, b) => a + (typeof b === 'number' ? b : 0), 0);

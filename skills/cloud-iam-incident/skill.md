@@ -168,7 +168,7 @@ The playbook `cloud-iam-incident` operationalizes this skill into a seven-phase 
 | CVE-2024-21626 runc container escape | 8.6 | 35 | No | Yes | No | None recorded | Vendor patch | Container-runtime telemetry |
 | CVE-2024-3094 xz-utils supply-chain backdoor | 10.0 | 45 | No | Yes | No | Suspected | Vendor patch | SBOM-driven detection |
 | CVE-2026-20182 Cisco SD-WAN cloud-edge | 10.0 | 65 | Yes (2026-05-14) | No | No | Confirmed | Vendor patch | Network telemetry |
-| CVE-2026-30623 Anthropic MCP STDIO (cloud-hosted MCP servers) | 8.8 | 30 | No | Yes | No | Suspected | Vendor patch + config hardening | MCP-aware telemetry |
+| CVE-2026-30623 Anthropic MCP STDIO (cloud-hosted MCP servers) | 8.8 | 40 | No | Yes | No | Suspected | Vendor patch + config hardening | MCP-aware telemetry |
 | Leaked access key in public repo (Snowflake-AA24-class) | n/a (config) | high (exploited within minutes) | n/a | Documented at scale | n/a | Confirmed mass exploitation | Configuration hardening + key rotation + scraper-bot countermeasures | GitGuardian / Trufflehog firehose; behavioral detection on CreateAccessKey + key-use anomaly |
 | IMDSv1 SSRF / metadata exfil | n/a (design class) | high | n/a | Documented at scale | n/a | Confirmed ongoing | IMDSv2 enforcement | VPC Flow Logs + CloudTrail Insights |
 | OIDC trust-policy wildcard subject claim (fork-PR-to-takeover) | n/a (config class) | high | n/a | Demonstrated 2024-2026 | n/a | Suspected ongoing | Trust-policy tightening + per-environment OIDC trust | Trust-policy static analysis + assume-role telemetry |
