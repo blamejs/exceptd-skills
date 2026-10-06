@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.1.0",
-    "last_updated": "2026-10-04",
+    "last_updated": "2026-10-05",
     "last_threat_review": "2026-05-17",
     "purpose": "Zero-day learning loop output. Each entry maps a CVE to: attack vector, defense chain analysis, framework coverage, new control requirements generated, and exposure scoring. v1.1.0 (2026-05-15): every entry now carries ai_discovered_zeroday boolean + ai_discovery_source enum + ai_discovery_date + ai_assist_factor ladder, per AGENTS.md Hard Rule #7.",
     "note": "Never delete entries. Closed gaps are marked status: closed. History is data.",
@@ -960,7 +960,7 @@
       "OWASP-Top-10-2021-A06": {
         "covered": true,
         "adequate": false,
-        "gap": "Vulnerable and outdated components — nginx upgrade is the standard answer; the configuration-side live-patch path is not covered."
+        "gap": "Vulnerable and outdated components — nginx upgrade is the standard answer; the configuration-side no-restart mitigation is not covered."
       },
       "DORA-Art-9": {
         "covered": true,
@@ -2046,7 +2046,7 @@
         "what_would_have_worked": "Upgrade to CRI-O 1.27.10 / 1.28.7 / 1.29.4. Pre-patch, AppArmor or SELinux deny-module-load profiles on the node block the exploit primitive without runtime change.",
         "was_this_required": false,
         "framework_requiring_it": null,
-        "adequacy": "Patch is definitive; AppArmor/SELinux deny-module-load is an effective live-patch for unpatched fleets."
+        "adequacy": "Patch is definitive; AppArmor/SELinux deny-module-load is an effective mitigation for unpatched fleets."
       },
       "detection": {
         "what_would_have_worked": "auditd rules on init_module / finit_module syscalls correlated with container PIDs; alert on any module load originating from a containerd/CRI-O managed process namespace.",
@@ -2091,7 +2091,7 @@
         "id": "NEW-CTRL-009",
         "name": "KERNEL-MODULE-INVENTORY-AND-DISABLE",
         "description": "On every node running CRI-O, treat the host's loadable-module surface as the blast radius of the container runtime: inventory the modules a node actually needs for its workloads, blocklist the remainder in modprobe configuration, and enforce a locked/signed module set so a modprobe invocation carrying pod-spec-derived arguments cannot pull in a module the node's business function never requires. This is the compensating layer that survives an attacker who legitimately holds pod-create RBAC, because the module load is performed by the runtime on the host — not inside the container — so pod-level confinement (dropped capabilities, seccomp, AppArmor) never observes it. The distinguishing test: from a pod-create-capable service account on a staging CRI-O cluster, submit a pod spec whose attributes drive modprobe toward a module outside the node's approved inventory and confirm the load is refused rather than silently completed on the host; a cluster that passes image-scan and RBAC review still yields node-level module loading if the node's module set is unbounded.",
-        "evidence": "Pod-spec attributes reach the modprobe argument path in CRI-O without validation, so an attacker with pod-create RBAC on a cluster using CRI-O can cause arbitrary kernel modules to load on the host node, achieving container-escape-equivalent capability (CWE-20). The flaw has a CVSS score of 8.1 and an RWEP score of 30, and a proof of concept is available. It is not listed in CISA's Known Exploited Vulnerabilities catalog and active exploitation is unknown, which is the reason a CVSS/KEV-tiered flaw-remediation cadence deprioritizes it despite node-level impact. A fixed release and a live-patch path are both available; the module-inventory control is what covers the window before that fix lands and the residual after it.",
+        "evidence": "Pod-spec attributes reach the modprobe argument path in CRI-O without validation, so an attacker with pod-create RBAC on a cluster using CRI-O can cause arbitrary kernel modules to load on the host node, achieving container-escape-equivalent capability (CWE-20). The flaw has a CVSS score of 8.1 and an RWEP score of 40, and a proof of concept is available. It is not listed in CISA's Known Exploited Vulnerabilities catalog and active exploitation is unknown, which is the reason a CVSS/KEV-tiered flaw-remediation cadence deprioritizes it despite node-level impact. A fixed release and a mitigation path are both available; the module-inventory control is what covers the window before that fix lands and the residual after it.",
         "gap_closes": [
           "NIST-800-53-CM-7",
           "AU-Essential-8-App-Hardening",
@@ -2102,7 +2102,7 @@
         "id": "NEW-CTRL-036",
         "name": "FLEET-CONTROL-PLANE-ADMIN-PRIVILEGE-TIER",
         "description": "Classify pod-create authority on a CRI-O cluster as fleet-control-plane privilege rather than application-developer privilege. This CVE collapses the distance between the two: the namespace-scoped ability to submit a pod spec is, on an unpatched CRI-O node, the ability to load an arbitrary kernel module on the host. Every identity that holds pod-create on such a cluster — human operators and CI service accounts alike — therefore needs the control-plane tier's handling: an identity separate from application admin roles, just-in-time elevation with an approval step, and access only through a privileged path; and cluster RBAC must be audited for who holds pod-create outside that tier. The CIS Kubernetes admission guidance cited against this entry inspects what a pod requests (assigned capabilities, AppArmor profile) and does not help here, because the escape requires no elevated capability in the pod at all — the privileged action is taken by the runtime on the pod's behalf.",
-        "evidence": "Pod-spec attributes reach the modprobe argument path in CRI-O without validation. An attacker with pod-create RBAC on a cluster using CRI-O can cause arbitrary kernel modules to load on the host node, achieving container-escape-equivalent capability. The gap cited against this entry, CIS Kubernetes Benchmark v1.10.0 item 4.2.13, is scoped as 'Minimize the admission of containers with capabilities assigned (Kubelet / AppArmor profile guidance)'. The flaw is CWE-20, with a CVSS score of 8.1 and an RWEP score of 30, and a proof of concept is available.",
+        "evidence": "Pod-spec attributes reach the modprobe argument path in CRI-O without validation. An attacker with pod-create RBAC on a cluster using CRI-O can cause arbitrary kernel modules to load on the host node, achieving container-escape-equivalent capability. The gap cited against this entry, CIS Kubernetes Benchmark v1.10.0 item 4.2.13, is scoped as 'Minimize the admission of containers with capabilities assigned (Kubelet / AppArmor profile guidance)'. The flaw is CWE-20, with a CVSS score of 8.1 and an RWEP score of 40, and a proof of concept is available.",
         "gap_closes": [
           "CIS-Kubernetes-Benchmark-4.2.13"
         ]
@@ -73615,7 +73615,7 @@
     },
     "defense_chain": {
       "prevention": {
-        "what_would_have_worked": "Install the 2022-12-13 cumulative updates — KB5021233, KB5021234, KB5021235, KB5021237, KB5021249 — or apply 0patch's in-memory micropatches, which shipped in October ahead of the vendor fix and redirect the SmartScreen-error path to the legacy security-warning dialog. Independently, block .js/.jse execution through the script host so the payload class dies whether or not the prompt renders.",
+        "what_would_have_worked": "Install the 2022-12-13 cumulative updates — KB5021233, KB5021234, KB5021235, KB5021237, KB5021249 — or, on the Windows builds 0patch targets, apply its in-memory micropatches, which shipped in October ahead of the vendor fix and redirect the SmartScreen-error path to the legacy security-warning dialog. Independently, block .js/.jse execution through the script host so the payload class dies whether or not the prompt renders.",
         "was_this_required": true,
         "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2022-12-13)",
         "adequacy": "Partial. The December fix closed one throw site in smartscreen.exe rather than the fail-open default, and Google TAG observed the same class re-weaponized by Magniber as CVE-2023-24880 with over 100,000 malicious MSI downloads from January 2023, more than 80% against European users, until the March 2023 update."
@@ -103196,7 +103196,7 @@
         "id": "NEW-CTRL-001",
         "name": "CISA-KEV-RESPONSE-SLA",
         "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
-        "evidence": "Windows Task Scheduler is the asset and the timeline is the argument: SandboxEscaper published a working exploit on 2018-08-27, ESET identified PowerPool using it two days later, Microsoft shipped on 2018-09-11, and CISA listed the id on 2022-03-28 with knownRansomwareCampaignUse 'Known' and a 2022-04-18 due date. The control's three accepted mitigations map exactly onto what was available at each point — documented compensating controls in the first four days, 0patch's 2018-08-31 micropatch after that, and the vendor update from 2018-09-11.",
+        "evidence": "Windows Task Scheduler is the asset and the timeline is the argument: SandboxEscaper published a working exploit on 2018-08-27, ESET identified PowerPool using it two days later, Microsoft shipped on 2018-09-11, and CISA listed the id on 2022-03-28 with knownRansomwareCampaignUse 'Known' and a 2022-04-18 due date. The control's three accepted mitigations map exactly onto what was available at each point — documented compensating controls in the first four days, 0patch's 2018-08-31 micropatch after that on the builds it covered, and the vendor update from 2018-09-11.",
         "gap_closes": [
           "NIST-800-53-SI-2",
           "AU-Essential-8-Patch",

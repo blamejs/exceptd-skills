@@ -24,13 +24,13 @@ function iocsPopulated(e) {
   return e.iocs && typeof e.iocs === 'object' && !Array.isArray(e.iocs) && Object.keys(e.iocs).length > 0;
 }
 
-test('MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM — RWEP 55, AI-assistant weaponization, populated iocs', () => {
+test('MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM — RWEP 65, AI-assistant weaponization, populated iocs', () => {
   const e = CAT[ID];
   assert.ok(e, 'TrapDoor entry must be in the catalog');
   assert.equal(e.cisa_kev, false);
   assert.equal(e.ai_assisted_weaponization, true, 'the .cursorrules/CLAUDE.md zero-width poisoning is AI-assisted weaponization');
-  assert.equal(e.rwep_score, 55);
-  assert.equal(rwepSum(e), 55);
+  assert.equal(e.rwep_score, 65);
+  assert.equal(rwepSum(e), 65);
   assert.ok(iocsPopulated(e));
   assert.ok(e.atlas_refs.includes('AML.T0051'), 'LLM prompt injection (AI-assistant poisoning vector)');
 });

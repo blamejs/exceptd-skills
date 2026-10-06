@@ -154,7 +154,7 @@ Methodologies are catalog consumers, not catalog producers. The matrix shows the
 | Cyber Kill Chain | Intrusion phases | Yes (KEV common in initial-access phase) | Yes | Yes | No |
 | Diamond Model | Adversary–capability–infrastructure–victim | Yes (capabilities include live CVEs) | Yes | Yes (campaigns increasingly use AI-developed capabilities — AI-assisted attack development is current operational reality) | Yes (Diamond pivots into IR and IR drives live-patch decisions) |
 | MITRE Unified Kill Chain v3.0 | Full ATLAS + ATT&CK across 18 phases | Yes | Yes | Yes | Yes (phases 14–18 include impact stages where live-patch SLAs are decisive) |
-| AI-system composite | Full ATLAS catalog | Yes (CVE-2025-53773 prompt-injection RCE, CVE-2026-30615 MCP RCE, both in `data/cve-catalog.json`) | Yes | Yes | Yes (CVE-2025-53773 is SaaS live-patchable; CVE-2026-30615 is IDE-update live-patchable) |
+| AI-system composite | Full ATLAS catalog | Yes (CVE-2025-53773 prompt-injection RCE, CVE-2026-30615 MCP RCE, both in `data/cve-catalog.json`) | Yes | Yes | Yes (neither has a live patch: the CVE-2025-53773 fix is a Visual Studio and Copilot Chat extension upgrade, and the CVE-2026-30615 fix is a Windsurf IDE upgrade, so the decision is how fast clients reach the fixed version) |
 | Agent-based composite | ATLAS subset (AML.T0010, AML.T0051, AML.T0096) + MCP-class CVEs | Yes | Yes | Yes | Yes |
 
 None of these methodologies directly consume the CVE catalog as a primary input. All of them must be *informed* by `data/cve-catalog.json` for currency — which is what makes `threat-model-currency` the natural companion skill.

@@ -88,10 +88,10 @@ test('scoreCustom() reproduces the catalog score of Copy Fail (CVE-2026-31431), 
   assert.equal(s, catalog['CVE-2026-31431'].rwep_score);
 });
 
-test('scoreCustom() reproduces Copilot prompt-injection (CVE-2025-53773) at 30 — below CVSS-equivalent of 78', () => {
-  // v0.12.6: CVE-2025-53773 CVSS corrected 9.6 → 7.8 (AV:N → AV:L per NVD). blast_radius
-  // dropped 22 → 10 because the exploit is local-vector (developer-side IDE interaction;
-  // the attacker doesn't reach in over the network). RWEP recomputed accordingly.
+test('scoreCustom() scores the Copilot prompt-injection (CVE-2025-53773) factors with a live patch at 30', () => {
+  // CVE-2025-53773 has CVSS 7.8 (AV:L per NVD) and blast_radius 10 because the
+  // exploit is local-vector (developer-side IDE interaction; the attacker does not
+  // reach in over the network).
   const s = scoreCustom({
     cisa_kev: false,
     poc_available: true,
@@ -104,8 +104,26 @@ test('scoreCustom() reproduces Copilot prompt-injection (CVE-2025-53773) at 30 �
   });
   // 0 + 20 + 15 + 10 + 10 - 15 - 10 + 0 = 30
   assert.equal(s, 30);
-  // CVSS 7.8 → cvssEquivalent 78 — RWEP still lower than the CVSS-equivalent ceiling
+  // CVSS 7.8 gives a cvssEquivalent of 78, and RWEP is lower than that.
   assert.ok(s < 78, 'RWEP should be lower than CVSS-equivalent for prompt-injection CVE (patch + live-patch reduce RWEP substantially)');
+});
+
+test('scoreCustom() reproduces the catalog score of Copilot prompt-injection (CVE-2025-53773), which takes no live-patch credit, at 40', () => {
+  const s = scoreCustom({
+    cisa_kev: false,
+    poc_available: true,
+    ai_assisted_weapon: true,
+    active_exploitation: 'suspected',
+    blast_radius: 10,
+    patch_available: true,
+    live_patch_available: false,
+    reboot_required: false
+  });
+  // 0 + 20 + 15 + 10 + 10 - 15 + 0 = 40
+  assert.equal(s, 40);
+  assert.equal(s, catalog['CVE-2025-53773'].rwep_score);
+  // CVSS 7.8 gives a cvssEquivalent of 78, and RWEP is lower than that.
+  assert.ok(s < 78, 'RWEP should be lower than CVSS-equivalent for prompt-injection CVE (patch availability reduces RWEP)');
 });
 
 test('scoreCustom() reproduces Dirty Frag (CVE-2026-43284) at 38', () => {
@@ -242,12 +260,12 @@ test('compare() flags Copy Fail as RWEP-significantly-higher-than-CVSS-equivalen
 });
 
 test('compare() flags Copilot prompt-injection as RWEP-lower-than-CVSS-equivalent (overscored)', () => {
-  // v0.12.6: CVSS corrected 9.6 → 7.8 (AV:N → AV:L per NVD); RWEP recomputed 42 → 30.
-  // cvssEquivalent = 78; delta = 30 - 78 = -48; still well below -20 threshold.
+  // CVSS is 7.8 (AV:L per NVD) and RWEP is 40.
+  // cvssEquivalent = 78; delta = 40 - 78 = -38, below the -10 band.
   const r = compare('CVE-2025-53773', catalog);
   assert.equal(r.cvss, 7.8);
-  assert.equal(r.rwep, 30);
-  assert.equal(r.delta, -48);
+  assert.equal(r.rwep, 40);
+  assert.equal(r.delta, -38);
   assert.match(r.explanation, /lower than CVSS equivalent/);
 });
 

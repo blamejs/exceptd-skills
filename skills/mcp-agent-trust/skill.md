@@ -97,7 +97,7 @@ This means: a malicious or compromised MCP server can execute arbitrary code by 
 
 ### CVE-2026-30615 — Windsurf MCP Local-Vector RCE
 
-**CVSS:** 8.0 (AV:L, NVD-authoritative; corrected from initial 9.8/AV:N) | **RWEP:** 35/100
+**CVSS:** 8.0 (AV:L, NVD-authoritative; corrected from initial 9.8/AV:N) | **RWEP:** 45/100
 
 A vulnerability in the Windsurf MCP client that allows a malicious MCP server to drive code execution in the user's context by returning attacker-controlled HTML the client processes. The attack vector is local — the attacker must first land a malicious MCP server in the user's installed set (typosquatting, supply-chain compromise, or social engineering). Once installed, the AI assistant invokes the tool and follows the adversarial response without an additional user-action gate.
 
@@ -179,13 +179,13 @@ Sourced from `data/cve-catalog.json` and `data/exploit-availability.json` as of 
 
 | Threat | CVSS | RWEP | PoC Public? | CISA KEV? | AI-Accelerated Weaponization? | Patch Available? | Reboot / Version Bump Required? |
 |---|---|---|---|---|---|---|---|
-| CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 | 35 | Partial — conceptual exploit demonstrated; weaponization stage `partial` | No (architectural class; not in KEV catalog as of 2026-05) | No direct AI-assisted weaponization recorded; the attack vector itself rides on the AI agent's tool-call autonomy | Yes — vendor IDE update | IDE update / version bump required (no reboot); `live_patch_available: true` via vendor channel |
+| CVE-2026-30615 (Windsurf MCP local-vector RCE) | 8.0 | 45 | Partial — conceptual exploit demonstrated; weaponization stage `partial` | No (architectural class; not in KEV catalog as of 2026-05) | No direct AI-assisted weaponization recorded; the attack vector itself rides on the AI agent's tool-call autonomy | Yes — vendor IDE update | IDE update / version bump required (no reboot); the fix is a version upgrade, not a live patch |
 | CVE-2026-39884 (Flux159 mcp-server-kubernetes argument injection) | 8.3 | n/a | Yes — GHSA-4xqg-gf5c-ghwq publishes the PoC (port_forward `resourceName='pod --address=0.0.0.0'`) | No | No direct AI-assisted weaponization; the bug is reached by tricking the assistant via prompt injection in retrieved docs / commit messages into passing a tainted resourceName | Yes — upgrade mcp-server-kubernetes to 3.5.0+ (argv-array refactor); workaround: disable `port_forward` in MCP allowlist | Version bump on the MCP server side; no client reboot |
 | MCP supply chain compromise — typosquatting / dependency confusion (ATLAS AML.T0010) | N/A (technique, not vendor CVE) | N/A | Yes — public typosquatting incidents in `@modelcontextprotocol/*` namespace observed | No (technique class) | Yes — AI assistants accelerate writing of convincing malicious tool descriptions | Mitigation only: pin versions, verify npm provenance attestation, enforce allowlist | Re-install / pin to known-good version |
 | Adversarial tool response → indirect prompt injection (ATLAS AML.T0054 in MCP context) | N/A (technique, not vendor CVE) | N/A | Yes — public research demonstrations; weaponizable wherever output is unsanitized | No | Yes — adversarial instruction crafting is a documented AI-accelerated capability | Mitigation only: output sanitization, system-prompt authority hierarchy, tool allowlisting | Client configuration change; no version bump strictly required |
 | AML.T0096 — MCP tool call as covert C2 conduit | N/A (technique) | N/A | Yes — SesameOp-class techniques apply when an MCP tool call is the relay | No | Yes — see `data/atlas-ttps.json` AML.T0096 real-world instances | Mitigation only: process-level AI/MCP egress monitoring | Configuration / monitoring change |
 
-**Interpretation:** CVE-2026-30615 has a vendor patch and live-update path — verify Windsurf clients are on the patched version. The remaining rows are technique classes with no vendor CVE; mitigation is configurational (signed manifests, tool allowlists, bearer auth, output sanitization, version pinning) and cannot be "patched away" by a single vendor release.
+**Interpretation:** CVE-2026-30615 has a vendor patch that ships as an IDE version upgrade, with no live patch — verify Windsurf clients are on the patched version. The remaining rows are technique classes with no vendor CVE; mitigation is configurational (signed manifests, tool allowlists, bearer auth, output sanitization, version pinning) and cannot be "patched away" by a single vendor release.
 
 ---
 
