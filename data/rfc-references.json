@@ -1327,14 +1327,15 @@
     "draft_id": "draft-ietf-tls-ecdhe-mlkem",
     "title": "Post-Quantum Hybrid ECDHE-MLKEM Key Agreement for TLSv1.3",
     "status": "Draft",
-    "published": "in flight as of 2026-05",
+    "published": "2026-08 as RFC 10024",
+    "published_as": "RFC-10024",
     "tracker": "https://datatracker.ietf.org/doc/draft-ietf-tls-ecdhe-mlkem/",
-    "relevance": "Defines X25519+ML-KEM-768 and similar hybrid groups for TLS 1.3 — the operational path for PQC migration without rip-and-replace. Pinned in pqc-first as the recommended hybrid posture.",
-    "lag_notes": "Still a draft as of mid-2026. OpenSSL 3.5+ ships the hybrid groups under provisional codepoints. Final RFC number TBD on WG consensus.",
+    "relevance": "The Internet-Draft that was published in August 2026 as RFC 10024, which defines the X25519MLKEM768, SecP256r1MLKEM768 and SecP384r1MLKEM1024 hybrid key agreements for TLS 1.3. Cite RFC-10024; this entry is kept so references to the draft name resolve.",
+    "lag_notes": "Published as RFC 10024 in August 2026; no further draft revisions are expected.",
     "skills_referencing": [
       "pqc-first"
     ],
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-10-06",
     "abstract": "IETF Internet-Draft (TLS WG) defining hybrid ECDHE + ML-KEM key exchange for TLS 1.3. Combines classical X25519 / P-256 ECDHE with the NIST FIPS 203 ML-KEM (Kyber) post-quantum KEM in a single handshake exchange so a successful TLS connection requires breaking BOTH primitives. Foundational primitive for federal PQ-ready posture and EU NIS2 + DORA crypto-agility obligations."
   },
   "DRAFT-IETF-TLS-HYBRID-DESIGN": {
