@@ -1347,10 +1347,10 @@
     "revision": "11",
     "title": "ML-KEM Post-Quantum Key Agreement for TLS 1.3",
     "status": "Draft",
-    "published": "revision 11, 2026-10-05",
+    "published": "revision 11, 2026-09-17",
     "tracker": "https://datatracker.ietf.org/doc/draft-ietf-tls-mlkem/11/",
     "relevance": "Defines ML-KEM-512, ML-KEM-768 and ML-KEM-1024 as TLS 1.3 named groups for post-quantum key establishment without a traditional component. The pqc-first skill watches it for publication as an RFC.",
-    "lag_notes": "Revision 11 (2026-10-05) is pinned. The datatracker shows the draft in the RFC Editor queue with an intended status of Informational. Re-check the revision before relying on its text.",
+    "lag_notes": "Revision 11 (2026-09-17) is pinned. The datatracker shows the draft in the RFC Editor queue with an intended status of Informational. Re-check the revision before relying on its text.",
     "skills_referencing": [
       "pqc-first"
     ],
@@ -1379,10 +1379,10 @@
     "revision": "19",
     "title": "Composite Module-Lattice-Based Digital Signature Algorithm (ML-DSA) for use in X.509 Public Key Infrastructure",
     "status": "Draft",
-    "published": "revision 19, 2026-10-02",
+    "published": "revision 19, 2026-04-21",
     "tracker": "https://datatracker.ietf.org/doc/draft-ietf-lamps-pq-composite-sigs/19/",
     "relevance": "Defines composite ML-DSA signatures that pair ML-DSA with RSASSA-PKCS1-v1.5, RSASSA-PSS, ECDSA, Ed25519 or Ed448 for X.509 and PKIX. The pqc-first skill cites it for composite signature formats.",
-    "lag_notes": "Revision 19 (2026-10-02) is pinned; the datatracker shows the draft in the RFC Editor queue. It replaced draft-ounsworth-pq-composite-sigs. Re-check the revision before relying on its text.",
+    "lag_notes": "Revision 19 (2026-04-21) is pinned; the datatracker shows the draft in the RFC Editor queue. It replaced draft-ounsworth-pq-composite-sigs. Re-check the revision before relying on its text.",
     "skills_referencing": [
       "pqc-first"
     ],

@@ -218,6 +218,7 @@ Note: OQS provider algorithms are NOT FIPS-certified. Use for hybrid modes with 
 ```
 Use X25519MLKEM768 (ML-KEM-768 hybrid, TLS codepoint 0x11EC). Chrome 131 replaced the Kyber768 draft hybrid (0x6399) with it.
 Post-FIPS-203 finalization: ML-KEM-768 via `SSL_CTX_set1_groups_list(ctx, "X25519MLKEM768:X25519")`
+Every tagged BoringSSL release that defines X25519MLKEM768 exports `SSL_CTX_set1_groups_list`. `SSL_CTX_set1_curves_list` is the older name and remains as an alias for it.
 Note: BoringSSL follows Chrome's needs. Current BoringSSL no longer accepts the X25519Kyber768Draft00 group name.
 ```
 
@@ -227,7 +228,7 @@ Note: BoringSSL follows Chrome's needs. Current BoringSSL no longer accepts the 
 Minimum: Go 1.24+ (crypto/mlkem package added: ML-KEM-768 and ML-KEM-1024 in stdlib)
 PQC TLS: crypto/tls supports X25519MLKEM768 key agreement in Go 1.24+ (enabled by default; Go 1.23 offered only X25519Kyber768Draft00)
 Check: go version  # must be >= 1.24
-       grep mlkem go.sum  # if using crypto/mlkem directly
+       grep -rn '"crypto/mlkem"' --include=*.go .  # direct use; crypto/mlkem is standard library, so go.sum never lists it
 ```
 
 ### Rust
