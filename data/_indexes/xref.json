@@ -301,6 +301,7 @@
       "dlp-gap-analysis",
       "fuzz-testing-strategy",
       "global-grc",
+      "identity-assurance",
       "kernel-lpe-triage",
       "mcp-agent-trust",
       "mlops-security",
@@ -410,6 +411,7 @@
       "cloud-iam-incident",
       "cloud-security",
       "defensive-countermeasure-mapping",
+      "identity-assurance",
       "idp-incident-response",
       "mcp-agent-trust",
       "sector-federal-government",
@@ -444,7 +446,8 @@
     ],
     "D3-CA": [
       "ai-c2-detection",
-      "defensive-countermeasure-mapping"
+      "defensive-countermeasure-mapping",
+      "identity-assurance"
     ],
     "D3-DA": [
       "ai-c2-detection",
@@ -502,6 +505,40 @@
       "defensive-countermeasure-mapping",
       "incident-response-playbook",
       "ransomware-response"
+    ],
+    "D3-FV": [
+      "sector-telecom"
+    ],
+    "D3-AMED": [
+      "multitenancy-isolation"
+    ],
+    "D3-AZET": [
+      "multitenancy-isolation"
+    ],
+    "D3-RAPA": [
+      "multitenancy-isolation"
+    ],
+    "D3-ACH": [
+      "decompression-dos",
+      "multitenancy-isolation"
+    ],
+    "D3-IRV": [
+      "decompression-dos"
+    ],
+    "D3-HD": [
+      "privacy-consent-ops"
+    ],
+    "D3-IRA": [
+      "privacy-consent-ops"
+    ],
+    "D3-MAN": [
+      "privacy-consent-ops"
+    ],
+    "D3-DI": [
+      "privacy-consent-ops"
+    ],
+    "D3-DEM": [
+      "privacy-consent-ops"
     ]
   },
   "framework_gaps": {
@@ -1218,6 +1255,9 @@
     "T1566.003": [
       "email-security-anti-phishing"
     ],
+    "T1566.004": [
+      "email-security-anti-phishing"
+    ],
     "T1078.004": [
       "cloud-iam-incident",
       "idp-incident-response"
@@ -1317,7 +1357,6 @@
       "container-runtime-security",
       "dlp-gap-analysis",
       "mcp-agent-trust",
-      "pqc-first",
       "sector-federal-government",
       "sector-financial",
       "webapp-security"
@@ -1363,7 +1402,21 @@
     "RFC-9000": [
       "ai-c2-detection"
     ],
-    "DRAFT-IETF-TLS-ECDHE-MLKEM": [
+    "RFC-9846": [
+      "pqc-first",
+      "sector-federal-government"
+    ],
+    "RFC-10024": [
+      "pqc-first",
+      "sector-federal-government"
+    ],
+    "DRAFT-IETF-TLS-MLKEM": [
+      "pqc-first"
+    ],
+    "DRAFT-IETF-HPKE-PQ": [
+      "pqc-first"
+    ],
+    "DRAFT-IETF-LAMPS-PQ-COMPOSITE-SIGS": [
       "pqc-first"
     ],
     "DRAFT-IETF-TLS-HYBRID-DESIGN": [
@@ -1414,7 +1467,13 @@
     "RFC-7970": [
       "incident-response-playbook"
     ],
-    "RFC-7489": [
+    "RFC-9989": [
+      "email-security-anti-phishing"
+    ],
+    "RFC-9990": [
+      "email-security-anti-phishing"
+    ],
+    "RFC-9991": [
       "email-security-anti-phishing"
     ],
     "RFC-6376": [
@@ -1427,6 +1486,15 @@
       "email-security-anti-phishing"
     ],
     "RFC-8461": [
+      "email-security-anti-phishing"
+    ],
+    "RFC-8617": [
+      "email-security-anti-phishing"
+    ],
+    "RFC-8460": [
+      "email-security-anti-phishing"
+    ],
+    "DRAFT-IETF-DKIM-DKIM2-SPEC": [
       "email-security-anti-phishing"
     ],
     "RFC-8693": [

@@ -42,7 +42,13 @@ cwe_refs:
   - CWE-345
   - CWE-778
   - CWE-672
-last_threat_review: "2026-06-02"
+d3fend_refs:
+  - D3-HD
+  - D3-IRA
+  - D3-MAN
+  - D3-DI
+  - D3-DEM
+last_threat_review: "2026-10-05"
 ---
 
 # Privacy / Consent / Sanctions Operational Integrity
@@ -77,4 +83,4 @@ The recurring theater is "we screen all parties against OFAC," "we capture user 
 
 ## Defensive Countermeasure Mapping
 
-Map findings to MITRE D3FEND: confusable-folding + alias/fuzzy screening realizes Input Normalization and Identifier Reputation Analysis (countering T1036 evasion); server-bound + re-validated consent realizes Authentication-Token Verification and Stored-Record Integrity (countering T1565.001 forged/stale consent); evidence-gated + propagated erasure realizes Verifiable Deletion and Data-Inventory Mapping (countering T1070 false-erasure claims); ROPA reconciliation realizes Asset/Processing Inventory accuracy. The sanctions-normalization control reuses the vendored Unicode confusable / codepoint-class tooling. The residual risk is a novel transliteration the alias list does not cover and a processor retaining data outside the data-map, accepted at the CISO level with periodic re-reconciliation.
+Map findings to MITRE D3FEND: confusable-folding + alias/fuzzy screening realizes Homoglyph Detection (D3-HD) and Identifier Reputation Analysis (D3-IRA) (countering T1036 evasion); server-bound + re-validated consent realizes Message Authentication (D3-MAN) (countering T1565.001 forged/stale consent); evidence-gated + propagated erasure realizes Data Inventory (D3-DI) to locate every copy (countering T1070 false-erasure claims), and D3FEND has no technique for verifying the erasure of personal data; ROPA reconciliation realizes Data Exchange Mapping (D3-DEM). The sanctions-normalization control reuses the vendored Unicode confusable / codepoint-class tooling. The residual risk is a novel transliteration the alias list does not cover and a processor retaining data outside the data-map, accepted at the CISO level with periodic re-reconciliation.

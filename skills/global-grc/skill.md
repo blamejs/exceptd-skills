@@ -132,7 +132,7 @@ Art. 32 is intentionally technology-neutral. For 2026 threat reality, DPAs (part
 
 **Application timeline** (Art. 113 as amended by the Digital Omnibus on AI, in force 2026-07-27):
 - 2025-02-02 — Chapters I–II: prohibitions (Art. 5) and AI literacy
-- 2025-08-02 — GPAI model obligations (Chapter V), governance, penalties regime
+- 2025-08-02 — GPAI model obligations (Chapter V), governance, penalties regime; providers of GPAI models placed on the market before this date have until 2027-08-02 (Art. 111(3))
 - 2026-08-02 — general application date: Art. 50 transparency obligations bind, and the Commission / AI Office holds supervision and enforcement powers over GPAI model providers
 - 2026-12-02 — new Art. 5(1)(ba)/(bb) prohibitions; Art. 50(2) compliance deadline for systems placed on the market before 2026-08-02
 - **2027-12-02 — Chapter III Sections 1–3 (high-risk requirements, including Art. 9 risk management and Art. 15 cybersecurity) for Annex III / Art. 6(2) systems**

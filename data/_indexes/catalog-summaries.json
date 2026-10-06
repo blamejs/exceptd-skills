@@ -97,7 +97,7 @@
       "path": "data/d3fend-catalog.json",
       "purpose": "MITRE D3FEND countermeasures (D3-xxx) keyed by id, with tactic + name. Pinned to D3FEND v1.3.0 release.",
       "schema_version": "1.0.0",
-      "last_updated": "2026-05-19",
+      "last_updated": "2026-10-06",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -185,7 +185,7 @@
       "path": "data/global-frameworks.json",
       "purpose": "Multi-jurisdiction framework registry: per-jurisdiction applicable frameworks × patch_sla / notification_sla / critical_controls / framework_gaps (jurisdiction count is reported by entry_count, not duplicated here). Cross-cutting authority for jurisdiction-clocks index.",
       "schema_version": "1.3.0",
-      "last_updated": "2026-05-15",
+      "last_updated": "2026-10-05",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -207,7 +207,7 @@
       "path": "data/rfc-references.json",
       "purpose": "IETF RFCs + active Internet-Drafts cited by skills (TLS, IPsec, PQ crypto migration, HTTP/3, CT). Cross-validated against IETF Datatracker via validate-rfcs.",
       "schema_version": "1.0.0",
-      "last_updated": "2026-08-05",
+      "last_updated": "2026-10-05",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -216,7 +216,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 8889,
+      "entry_count": 8895,
       "sample_keys": [
         "RFC-4301",
         "RFC-4303",

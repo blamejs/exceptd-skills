@@ -45,7 +45,12 @@ cwe_refs:
   - CWE-863
   - CWE-668
   - CWE-400
-last_threat_review: "2026-06-02"
+d3fend_refs:
+  - D3-AMED
+  - D3-AZET
+  - D3-RAPA
+  - D3-ACH
+last_threat_review: "2026-10-05"
 ---
 
 # Application Multitenancy Isolation + Availability/DoS Resilience
@@ -60,7 +65,7 @@ Organizational controls treat "we have an authorization layer" as tenant isolati
 
 ## TTP Mapping
 
-The multitenancy failures map to MITRE ATT&CK: **T1078 (Valid Accounts)** for cross-tenant access from a legitimate account via a client-trusted tenant id, an unscoped query, or an RLS-bypassing request role; **T1530 (Data from Cloud Storage / shared store)** for cross-tenant leakage through un-namespaced cache/queue keys; **T1499 (Endpoint DoS)** for the noisy-neighbor, distributed-lock, and circuit-breaker gaps; and **T1499.001 (OS Exhaustion Flood)** for HTTP/2 Rapid Reset and unbounded per-request allocation. The weakness classes are CWE-639 (authorization bypass through user-controlled key), CWE-863 (incorrect authorization), CWE-668 (exposure to wrong control sphere — shared keys), CWE-770 (allocation without limits), and CWE-400 (uncontrolled resource consumption).
+The multitenancy failures map to MITRE ATT&CK: **T1078 (Valid Accounts)** for cross-tenant access from a legitimate account via a client-trusted tenant id, an unscoped query, or an RLS-bypassing request role; **T1530 (Data from Cloud Storage)** for cross-tenant leakage from a shared store through un-namespaced cache/queue keys; **T1499 (Endpoint Denial of Service)** for the noisy-neighbor, distributed-lock, and circuit-breaker gaps; and **T1499.001 (OS Exhaustion Flood)** for HTTP/2 Rapid Reset and unbounded per-request allocation. The weakness classes are CWE-639 (authorization bypass through user-controlled key), CWE-863 (incorrect authorization), CWE-668 (exposure to wrong control sphere — shared keys), CWE-770 (allocation without limits), and CWE-400 (uncontrolled resource consumption).
 
 ## Exploit Availability Matrix
 
@@ -80,4 +85,4 @@ The recurring theater is "we have an authorization layer, so tenants are isolate
 
 ## Defensive Countermeasure Mapping
 
-Map findings to MITRE D3FEND: principal-bound tenant id + data-layer RLS under a non-bypass role realize Authorization Event Thresholding and Mandatory Access Control (countering T1078 cross-tenant access); tenant-namespaced shared keys realize Resource Access Pattern isolation (countering T1530 leakage); per-tenant quotas + HTTP/2 Rapid Reset caps + bounded allocation realize Resource Consumption Limiting (countering T1499/T1499.001); distributed-lock fencing and circuit breakers realize System Availability and Failure-Domain isolation. Pair data-layer RLS with an automated test asserting no query runs without a tenant filter. The residual risk after these controls is compromise of a legitimately-scoped tenant account, an identity-control concern, accepted at the CISO level.
+Map findings to MITRE D3FEND: principal-bound tenant id + data-layer RLS under a non-bypass role realize Access Mediation (D3-AMED), and Authorization Event Thresholding (D3-AZET) flags authorization events that depart from a principal's baseline (countering T1078 cross-tenant access); tenant-namespaced shared keys counter T1530 leakage, and Resource Access Pattern Analysis (D3-RAPA) detects a principal reading another tenant's keys; per-tenant quotas + HTTP/2 Rapid Reset caps + bounded allocation counter T1499/T1499.001, and distributed-lock fencing and circuit breakers counter T1499. The Rapid Reset cap is Application Configuration Hardening (D3-ACH); D3FEND has no technique for per-tenant quotas, allocation bounds, lock fencing or circuit breakers. Pair data-layer RLS with an automated test asserting no query runs without a tenant filter. The residual risk after these controls is compromise of a legitimately-scoped tenant account, an identity-control concern, accepted at the CISO level.

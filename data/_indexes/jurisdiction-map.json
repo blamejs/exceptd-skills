@@ -496,7 +496,6 @@
       "coordinated-vuln-disclosure",
       "global-grc",
       "incident-response-playbook",
-      "pqc-first",
       "researcher",
       "sector-energy",
       "sector-federal-government",
@@ -507,6 +506,6 @@
       "skill-update-loop"
     ],
     "example_excerpts": {},
-    "skill_count": 16
+    "skill_count": 15
   }
 }

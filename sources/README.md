@@ -91,7 +91,8 @@ sources/
 | FIPS 203 (ML-KEM) | csrc.nist.gov/pubs/fips/203/final |
 | FIPS 204 (ML-DSA) | csrc.nist.gov/pubs/fips/204/final |
 | FIPS 205 (SLH-DSA) | csrc.nist.gov/pubs/fips/205/final |
-| FIPS 206 (HQC, pending) | csrc.nist.gov/projects/post-quantum-cryptography |
+| FIPS 206 (FN-DSA, pending) | csrc.nist.gov/projects/post-quantum-cryptography |
+| HQC KEM standard (pending; NIST expects 2027) | csrc.nist.gov/projects/post-quantum-cryptography |
 | OpenSSL 3.5 release notes | github.com/openssl/openssl/blob/master/CHANGES.md |
 | CNSA 2.0 | cnss.gov |
 

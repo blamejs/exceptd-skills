@@ -6,6 +6,112 @@
   },
   "events": [
     {
+      "date": "2026-10-06",
+      "type": "catalog_update",
+      "artifact": "data/d3fend-catalog.json",
+      "path": "data/d3fend-catalog.json",
+      "schema_version": "1.0.0",
+      "entry_count": 468
+    },
+    {
+      "date": "2026-10-05",
+      "type": "skill_review",
+      "artifact": "pqc-first",
+      "path": "skills/pqc-first/skill.md",
+      "note": "Post-quantum cryptography first mentality — hard version gates (OpenSSL 3.5+), algorithm sunset tracking, HNDL assessment, loopback learning for NIST/IETF standards evolution"
+    },
+    {
+      "date": "2026-10-05",
+      "type": "skill_review",
+      "artifact": "identity-assurance",
+      "path": "skills/identity-assurance/skill.md",
+      "note": "Identity assurance for mid-2026 — NIST 800-63 AAL/IAL/FAL, FIDO2/WebAuthn passkeys, OIDC/SAML/SCIM, agent-as-principal identity, short-lived workload tokens, OAuth 2.0 + RFC 9700 BCP"
+    },
+    {
+      "date": "2026-10-05",
+      "type": "skill_review",
+      "artifact": "ai-risk-management",
+      "path": "skills/ai-risk-management/skill.md",
+      "note": "AI governance and risk management for mid-2026 — ISO/IEC 23894 risk process, ISO/IEC 42001 management system, NIST AI RMF, EU AI Act high-risk obligations, AI impact assessments, AI red-team programs, AI incident lifecycle"
+    },
+    {
+      "date": "2026-10-05",
+      "type": "skill_review",
+      "artifact": "sector-telecom",
+      "path": "skills/sector-telecom/skill.md",
+      "note": "Telecom and 5G security for mid-2026 — Salt Typhoon, Volt Typhoon, CALEA / IPA-LI gateway compromise, signaling-protocol abuse (SS7 / Diameter / GTP), 5G N6 / N9 isolation, gNB / DU / CU integrity, OEM-equipment supply-chain compromise, AI-RAN / O-RAN security; FCC CPNI + 7-business-day breach notification, NIS2 Annex I telecom essential entities, UK TSA 2021 + Ofcom, AU SOCI Act (Part 2D replaced TSSR on 2025-04-04), GSMA NESAS, 3GPP TR 33.926 + TS 33.501, ITU-T X.805."
+    },
+    {
+      "date": "2026-10-05",
+      "type": "skill_review",
+      "artifact": "email-security-anti-phishing",
+      "path": "skills/email-security-anti-phishing/skill.md",
+      "note": "Email security + anti-phishing for mid-2026 — SPF/DKIM/DMARC/BIMI/ARC/MTA-STS/TLSRPT, AI-augmented phishing (vishing, deepfake video, hyperpersonalized email), Business Email Compromise, secure email gateways"
+    },
+    {
+      "date": "2026-10-05",
+      "type": "skill_review",
+      "artifact": "vc-wallet-trust",
+      "path": "skills/vc-wallet-trust/skill.md",
+      "note": "Verifiable-credential / digital-wallet verifier trust for mid-2026 — SD-JWT-VC, OID4VCI/OID4VP, mdoc (ISO 18013-5), DID resolution, OAuth Token Status List revocation, OpenID Federation trust anchors, and the EUDI wallet (eIDAS 2.0) acceptance path"
+    },
+    {
+      "date": "2026-10-05",
+      "type": "skill_review",
+      "artifact": "mail-server-hardening",
+      "path": "skills/mail-server-hardening/skill.md",
+      "note": "Inbound mail-server protocol hardening for mid-2026 — SMTP smuggling, STARTTLS command/response injection, IMAP/POP3/ManageSieve command injection, Sieve redirect exfiltration, open relay, mailbox-DAV traversal/XXE, and cleartext-AUTH (the server-side protocol layer that SPF/DKIM/DMARC do not protect)"
+    },
+    {
+      "date": "2026-10-05",
+      "type": "skill_review",
+      "artifact": "network-trust",
+      "path": "skills/network-trust/skill.md",
+      "note": "Network-layer trust and adversary-in-the-middle resistance for mid-2026 — DNSSEC validation, DANE/TLSA pinning, TSIG, mTLS private-CA pinning, RFC 9421 HTTP message signatures, DNS-rebinding/SSRF guarding, and authenticated time (NTS) and its effect on certificate validity and TOTP"
+    },
+    {
+      "date": "2026-10-05",
+      "type": "skill_review",
+      "artifact": "audit-log-integrity",
+      "path": "skills/audit-log-integrity/skill.md",
+      "note": "Audit-log integrity for mid-2026 — tamper-evident hash-chaining, off-host signing, compliance-mode WORM immutability, legal-hold-vs-retention enforcement, writer/custodian separation, and deception (honeytoken) coverage that resist the privileged attacker most likely to tamper with the trail"
+    },
+    {
+      "date": "2026-10-05",
+      "type": "skill_review",
+      "artifact": "self-update-integrity",
+      "path": "skills/self-update-integrity/skill.md",
+      "note": "Consumer-side self-update and artifact integrity for mid-2026 — signature-verification-before-apply, out-of-band key pinning, anti-rollback/downgrade protection, channel pinning, Subresource Integrity on browser modules, and C2PA / SCITT-TSA transparency verification on received artifacts"
+    },
+    {
+      "date": "2026-10-05",
+      "type": "skill_review",
+      "artifact": "multitenancy-isolation",
+      "path": "skills/multitenancy-isolation/skill.md",
+      "note": "Application multitenancy isolation and availability/DoS resilience for mid-2026 — principal-bound tenant identity, data-layer row-level-security under a non-bypass role, cross-tenant cache/queue namespacing, per-tenant rate/byte quotas, HTTP/2 Rapid Reset caps, bounded allocation, distributed-lock fencing, and circuit breakers"
+    },
+    {
+      "date": "2026-10-05",
+      "type": "skill_review",
+      "artifact": "decompression-dos",
+      "path": "skills/decompression-dos/skill.md",
+      "note": "Decompression-bomb, parser-DoS, and ReDoS resistance for mid-2026 — decompression size/ratio caps, Zip Slip path confinement, XML entity-expansion disabling, linear-time regex on untrusted input, parse-depth limits, and length-field allocation bounds against single-input amplification denial of service"
+    },
+    {
+      "date": "2026-10-05",
+      "type": "skill_review",
+      "artifact": "log-injection-telemetry",
+      "path": "skills/log-injection-telemetry/skill.md",
+      "note": "Telemetry-pipeline integrity for mid-2026 — CR/LF log-injection neutralization across every sink, secret/PII redaction before shipping, authenticated metrics endpoints, and exporter destination allowlisting, secret-store credentials, verified TLS, and webhook SSRF guarding"
+    },
+    {
+      "date": "2026-10-05",
+      "type": "skill_review",
+      "artifact": "privacy-consent-ops",
+      "path": "skills/privacy-consent-ops/skill.md",
+      "note": "Privacy, consent, and sanctions operational integrity for mid-2026 — confusable/homoglyph normalization before sanctions screening, integrity-bound and re-validated consent records, evidence-gated and downstream-propagated DSR erasure, and ROPA reconciliation against actual processing"
+    },
+    {
       "date": "2026-10-05",
       "type": "catalog_update",
       "artifact": "data/cve-catalog.json",
@@ -32,10 +138,33 @@
     {
       "date": "2026-10-05",
       "type": "catalog_update",
+      "artifact": "data/global-frameworks.json",
+      "path": "data/global-frameworks.json",
+      "schema_version": "1.3.0",
+      "entry_count": 35
+    },
+    {
+      "date": "2026-10-05",
+      "type": "catalog_update",
+      "artifact": "data/rfc-references.json",
+      "path": "data/rfc-references.json",
+      "schema_version": "1.0.0",
+      "entry_count": 8895
+    },
+    {
+      "date": "2026-10-05",
+      "type": "catalog_update",
       "artifact": "data/zeroday-lessons.json",
       "path": "data/zeroday-lessons.json",
       "schema_version": "1.1.0",
       "entry_count": 1764
+    },
+    {
+      "date": "2026-10-05",
+      "type": "manifest_review",
+      "artifact": "manifest.json",
+      "path": "manifest.json",
+      "note": "manifest threat_review_date — 51 skills, 11 catalogs"
     },
     {
       "date": "2026-10-04",
@@ -319,135 +448,6 @@
       "path": "data/cwe-catalog.json",
       "schema_version": "1.0.0",
       "entry_count": 241
-    },
-    {
-      "date": "2026-08-05",
-      "type": "skill_review",
-      "artifact": "pqc-first",
-      "path": "skills/pqc-first/skill.md",
-      "note": "Post-quantum cryptography first mentality — hard version gates (OpenSSL 3.5+), algorithm sunset tracking, HNDL assessment, loopback learning for NIST/IETF standards evolution"
-    },
-    {
-      "date": "2026-08-05",
-      "type": "catalog_update",
-      "artifact": "data/rfc-references.json",
-      "path": "data/rfc-references.json",
-      "schema_version": "1.0.0",
-      "entry_count": 8889
-    },
-    {
-      "date": "2026-06-02",
-      "type": "skill_review",
-      "artifact": "vc-wallet-trust",
-      "path": "skills/vc-wallet-trust/skill.md",
-      "note": "Verifiable-credential / digital-wallet verifier trust for mid-2026 — SD-JWT-VC, OID4VCI/OID4VP, mdoc (ISO 18013-5), DID resolution, OAuth Token Status List revocation, OpenID Federation trust anchors, and the EUDI wallet (eIDAS 2.0) acceptance path"
-    },
-    {
-      "date": "2026-06-02",
-      "type": "skill_review",
-      "artifact": "mail-server-hardening",
-      "path": "skills/mail-server-hardening/skill.md",
-      "note": "Inbound mail-server protocol hardening for mid-2026 — SMTP smuggling, STARTTLS command/response injection, IMAP/POP3/ManageSieve command injection, Sieve redirect exfiltration, open relay, mailbox-DAV traversal/XXE, and cleartext-AUTH (the server-side protocol layer that SPF/DKIM/DMARC do not protect)"
-    },
-    {
-      "date": "2026-06-02",
-      "type": "skill_review",
-      "artifact": "network-trust",
-      "path": "skills/network-trust/skill.md",
-      "note": "Network-layer trust and adversary-in-the-middle resistance for mid-2026 — DNSSEC validation, DANE/TLSA pinning, TSIG, mTLS private-CA pinning, RFC 9421 HTTP message signatures, DNS-rebinding/SSRF guarding, and authenticated time (NTS) and its effect on certificate validity and TOTP"
-    },
-    {
-      "date": "2026-06-02",
-      "type": "skill_review",
-      "artifact": "audit-log-integrity",
-      "path": "skills/audit-log-integrity/skill.md",
-      "note": "Audit-log integrity for mid-2026 — tamper-evident hash-chaining, off-host signing, compliance-mode WORM immutability, legal-hold-vs-retention enforcement, writer/custodian separation, and deception (honeytoken) coverage that resist the privileged attacker most likely to tamper with the trail"
-    },
-    {
-      "date": "2026-06-02",
-      "type": "skill_review",
-      "artifact": "self-update-integrity",
-      "path": "skills/self-update-integrity/skill.md",
-      "note": "Consumer-side self-update and artifact integrity for mid-2026 — signature-verification-before-apply, out-of-band key pinning, anti-rollback/downgrade protection, channel pinning, Subresource Integrity on browser modules, and C2PA / SCITT-TSA transparency verification on received artifacts"
-    },
-    {
-      "date": "2026-06-02",
-      "type": "skill_review",
-      "artifact": "multitenancy-isolation",
-      "path": "skills/multitenancy-isolation/skill.md",
-      "note": "Application multitenancy isolation and availability/DoS resilience for mid-2026 — principal-bound tenant identity, data-layer row-level-security under a non-bypass role, cross-tenant cache/queue namespacing, per-tenant rate/byte quotas, HTTP/2 Rapid Reset caps, bounded allocation, distributed-lock fencing, and circuit breakers"
-    },
-    {
-      "date": "2026-06-02",
-      "type": "skill_review",
-      "artifact": "decompression-dos",
-      "path": "skills/decompression-dos/skill.md",
-      "note": "Decompression-bomb, parser-DoS, and ReDoS resistance for mid-2026 — decompression size/ratio caps, Zip Slip path confinement, XML entity-expansion disabling, linear-time regex on untrusted input, parse-depth limits, and length-field allocation bounds against single-input amplification denial of service"
-    },
-    {
-      "date": "2026-06-02",
-      "type": "skill_review",
-      "artifact": "log-injection-telemetry",
-      "path": "skills/log-injection-telemetry/skill.md",
-      "note": "Telemetry-pipeline integrity for mid-2026 — CR/LF log-injection neutralization across every sink, secret/PII redaction before shipping, authenticated metrics endpoints, and exporter destination allowlisting, secret-store credentials, verified TLS, and webhook SSRF guarding"
-    },
-    {
-      "date": "2026-06-02",
-      "type": "skill_review",
-      "artifact": "privacy-consent-ops",
-      "path": "skills/privacy-consent-ops/skill.md",
-      "note": "Privacy, consent, and sanctions operational integrity for mid-2026 — confusable/homoglyph normalization before sanctions screening, integrity-bound and re-validated consent records, evidence-gated and downstream-propagated DSR erasure, and ROPA reconciliation against actual processing"
-    },
-    {
-      "date": "2026-05-19",
-      "type": "catalog_update",
-      "artifact": "data/d3fend-catalog.json",
-      "path": "data/d3fend-catalog.json",
-      "schema_version": "1.0.0",
-      "entry_count": 468
-    },
-    {
-      "date": "2026-05-18",
-      "type": "skill_review",
-      "artifact": "email-security-anti-phishing",
-      "path": "skills/email-security-anti-phishing/skill.md",
-      "note": "Email security + anti-phishing for mid-2026 — SPF/DKIM/DMARC/BIMI/ARC/MTA-STS/TLSRPT, AI-augmented phishing (vishing, deepfake video, hyperpersonalized email), Business Email Compromise, secure email gateways"
-    },
-    {
-      "date": "2026-05-15",
-      "type": "skill_review",
-      "artifact": "ai-risk-management",
-      "path": "skills/ai-risk-management/skill.md",
-      "note": "AI governance and risk management for mid-2026 — ISO/IEC 23894 risk process, ISO/IEC 42001 management system, NIST AI RMF, EU AI Act high-risk obligations, AI impact assessments, AI red-team programs, AI incident lifecycle"
-    },
-    {
-      "date": "2026-05-15",
-      "type": "skill_review",
-      "artifact": "sector-telecom",
-      "path": "skills/sector-telecom/skill.md",
-      "note": "Telecom and 5G security for mid-2026 — Salt Typhoon, Volt Typhoon, CALEA / IPA-LI gateway compromise, signaling-protocol abuse (SS7 / Diameter / GTP), 5G N6 / N9 isolation, gNB / DU / CU integrity, OEM-equipment supply-chain compromise, AI-RAN / O-RAN security; FCC CPNI + 4-business-day notification, NIS2 Annex I telecom essential entities, UK TSA 2021 + Ofcom, AU SOCI / TSSR, GSMA NESAS, 3GPP TR 33.926 + TS 33.501, ITU-T X.805."
-    },
-    {
-      "date": "2026-05-15",
-      "type": "catalog_update",
-      "artifact": "data/global-frameworks.json",
-      "path": "data/global-frameworks.json",
-      "schema_version": "1.3.0",
-      "entry_count": 35
-    },
-    {
-      "date": "2026-05-15",
-      "type": "manifest_review",
-      "artifact": "manifest.json",
-      "path": "manifest.json",
-      "note": "manifest threat_review_date — 51 skills, 11 catalogs"
-    },
-    {
-      "date": "2026-05-11",
-      "type": "skill_review",
-      "artifact": "identity-assurance",
-      "path": "skills/identity-assurance/skill.md",
-      "note": "Identity assurance for mid-2026 — NIST 800-63 AAL/IAL/FAL, FIDO2/WebAuthn passkeys, OIDC/SAML/SCIM, agent-as-principal identity, short-lived workload tokens, OAuth 2.0 + RFC 9700 BCP"
     },
     {
       "date": "2026-05-11",

@@ -469,7 +469,7 @@
         ]
       },
       "D3-EAL": {
-        "count": 16,
+        "count": 17,
         "skills": [
           "ai-attack-surface",
           "attack-surface-pentest",
@@ -479,6 +479,7 @@
           "dlp-gap-analysis",
           "fuzz-testing-strategy",
           "global-grc",
+          "identity-assurance",
           "kernel-lpe-triage",
           "mcp-agent-trust",
           "mlops-security",
@@ -612,12 +613,13 @@
         ]
       },
       "D3-CBAN": {
-        "count": 9,
+        "count": 10,
         "skills": [
           "api-security",
           "cloud-iam-incident",
           "cloud-security",
           "defensive-countermeasure-mapping",
+          "identity-assurance",
           "idp-incident-response",
           "mcp-agent-trust",
           "sector-federal-government",
@@ -661,10 +663,11 @@
         ]
       },
       "D3-CA": {
-        "count": 2,
+        "count": 3,
         "skills": [
           "ai-c2-detection",
-          "defensive-countermeasure-mapping"
+          "defensive-countermeasure-mapping",
+          "identity-assurance"
         ]
       },
       "D3-DA": {
@@ -755,6 +758,73 @@
           "defensive-countermeasure-mapping",
           "incident-response-playbook",
           "ransomware-response"
+        ]
+      },
+      "D3-FV": {
+        "count": 1,
+        "skills": [
+          "sector-telecom"
+        ]
+      },
+      "D3-AMED": {
+        "count": 1,
+        "skills": [
+          "multitenancy-isolation"
+        ]
+      },
+      "D3-AZET": {
+        "count": 1,
+        "skills": [
+          "multitenancy-isolation"
+        ]
+      },
+      "D3-RAPA": {
+        "count": 1,
+        "skills": [
+          "multitenancy-isolation"
+        ]
+      },
+      "D3-ACH": {
+        "count": 2,
+        "skills": [
+          "decompression-dos",
+          "multitenancy-isolation"
+        ]
+      },
+      "D3-IRV": {
+        "count": 1,
+        "skills": [
+          "decompression-dos"
+        ]
+      },
+      "D3-HD": {
+        "count": 1,
+        "skills": [
+          "privacy-consent-ops"
+        ]
+      },
+      "D3-IRA": {
+        "count": 1,
+        "skills": [
+          "privacy-consent-ops"
+        ]
+      },
+      "D3-MAN": {
+        "count": 1,
+        "skills": [
+          "privacy-consent-ops"
+        ]
+      },
+      "D3-DI": {
+        "count": 1,
+        "skills": [
+          "privacy-consent-ops"
+        ]
+      },
+      "D3-DEM": {
+        "count": 1,
+        "skills": [
+          "privacy-consent-ops"
         ]
       }
     },
@@ -1907,6 +1977,12 @@
           "email-security-anti-phishing"
         ]
       },
+      "T1566.004": {
+        "count": 1,
+        "skills": [
+          "email-security-anti-phishing"
+        ]
+      },
       "T1078.004": {
         "count": 2,
         "skills": [
@@ -2072,7 +2148,7 @@
         ]
       },
       "RFC-8446": {
-        "count": 10,
+        "count": 9,
         "skills": [
           "ai-c2-detection",
           "api-security",
@@ -2080,7 +2156,6 @@
           "container-runtime-security",
           "dlp-gap-analysis",
           "mcp-agent-trust",
-          "pqc-first",
           "sector-federal-government",
           "sector-financial",
           "webapp-security"
@@ -2148,7 +2223,33 @@
           "ai-c2-detection"
         ]
       },
-      "DRAFT-IETF-TLS-ECDHE-MLKEM": {
+      "RFC-9846": {
+        "count": 2,
+        "skills": [
+          "pqc-first",
+          "sector-federal-government"
+        ]
+      },
+      "RFC-10024": {
+        "count": 2,
+        "skills": [
+          "pqc-first",
+          "sector-federal-government"
+        ]
+      },
+      "DRAFT-IETF-TLS-MLKEM": {
+        "count": 1,
+        "skills": [
+          "pqc-first"
+        ]
+      },
+      "DRAFT-IETF-HPKE-PQ": {
+        "count": 1,
+        "skills": [
+          "pqc-first"
+        ]
+      },
+      "DRAFT-IETF-LAMPS-PQ-COMPOSITE-SIGS": {
         "count": 1,
         "skills": [
           "pqc-first"
@@ -2244,7 +2345,19 @@
           "incident-response-playbook"
         ]
       },
-      "RFC-7489": {
+      "RFC-9989": {
+        "count": 1,
+        "skills": [
+          "email-security-anti-phishing"
+        ]
+      },
+      "RFC-9990": {
+        "count": 1,
+        "skills": [
+          "email-security-anti-phishing"
+        ]
+      },
+      "RFC-9991": {
         "count": 1,
         "skills": [
           "email-security-anti-phishing"
@@ -2269,6 +2382,24 @@
         ]
       },
       "RFC-8461": {
+        "count": 1,
+        "skills": [
+          "email-security-anti-phishing"
+        ]
+      },
+      "RFC-8617": {
+        "count": 1,
+        "skills": [
+          "email-security-anti-phishing"
+        ]
+      },
+      "RFC-8460": {
+        "count": 1,
+        "skills": [
+          "email-security-anti-phishing"
+        ]
+      },
+      "DRAFT-IETF-DKIM-DKIM2-SPEC": {
         "count": 1,
         "skills": [
           "email-security-anti-phishing"
@@ -2514,7 +2645,7 @@
       },
       {
         "id": "D3-EAL",
-        "count": 16,
+        "count": 17,
         "skills": [
           "ai-attack-surface",
           "attack-surface-pentest",
@@ -2524,6 +2655,7 @@
           "dlp-gap-analysis",
           "fuzz-testing-strategy",
           "global-grc",
+          "identity-assurance",
           "kernel-lpe-triage",
           "mcp-agent-trust",
           "mlops-security",
@@ -2555,12 +2687,13 @@
       },
       {
         "id": "D3-CBAN",
-        "count": 9,
+        "count": 10,
         "skills": [
           "api-security",
           "cloud-iam-incident",
           "cloud-security",
           "defensive-countermeasure-mapping",
+          "identity-assurance",
           "idp-incident-response",
           "mcp-agent-trust",
           "sector-federal-government",
@@ -3013,22 +3146,6 @@
     ],
     "rfc_refs": [
       {
-        "id": "RFC-8446",
-        "count": 10,
-        "skills": [
-          "ai-c2-detection",
-          "api-security",
-          "cloud-security",
-          "container-runtime-security",
-          "dlp-gap-analysis",
-          "mcp-agent-trust",
-          "pqc-first",
-          "sector-federal-government",
-          "sector-financial",
-          "webapp-security"
-        ]
-      },
-      {
         "id": "RFC-7519",
         "count": 9,
         "skills": [
@@ -3040,6 +3157,21 @@
           "mcp-agent-trust",
           "sector-financial",
           "sector-healthcare",
+          "webapp-security"
+        ]
+      },
+      {
+        "id": "RFC-8446",
+        "count": 9,
+        "skills": [
+          "ai-c2-detection",
+          "api-security",
+          "cloud-security",
+          "container-runtime-security",
+          "dlp-gap-analysis",
+          "mcp-agent-trust",
+          "sector-federal-government",
+          "sector-financial",
           "webapp-security"
         ]
       },
@@ -3119,11 +3251,11 @@
         ]
       },
       {
-        "id": "RFC-9458",
+        "id": "RFC-10024",
         "count": 2,
         "skills": [
-          "ai-c2-detection",
-          "dlp-gap-analysis"
+          "pqc-first",
+          "sector-federal-government"
         ]
       }
     ],
@@ -3147,8 +3279,18 @@
       "CWE-93"
     ],
     "d3fend_refs": [
+      "D3-AMED",
+      "D3-AZET",
+      "D3-DEM",
+      "D3-DI",
       "D3-FCR",
-      "D3-ITF"
+      "D3-FV",
+      "D3-HD",
+      "D3-IRA",
+      "D3-IRV",
+      "D3-ITF",
+      "D3-MAN",
+      "D3-RAPA"
     ],
     "framework_gaps": [
       "3GPP-TR-33.926",
@@ -3218,6 +3360,7 @@
       "T1566.001",
       "T1566.002",
       "T1566.003",
+      "T1566.004",
       "T1568",
       "T1574",
       "T1580",
@@ -3229,8 +3372,11 @@
     ],
     "rfc_refs": [
       "CSAF-2.0",
-      "DRAFT-IETF-TLS-ECDHE-MLKEM",
+      "DRAFT-IETF-DKIM-DKIM2-SPEC",
+      "DRAFT-IETF-HPKE-PQ",
+      "DRAFT-IETF-LAMPS-PQ-COMPOSITE-SIGS",
       "DRAFT-IETF-TLS-HYBRID-DESIGN",
+      "DRAFT-IETF-TLS-MLKEM",
       "ISO-29147",
       "ISO-30111",
       "RFC-4301",
@@ -3240,11 +3386,12 @@
       "RFC-6546",
       "RFC-7208",
       "RFC-7296",
-      "RFC-7489",
       "RFC-7591",
       "RFC-7970",
+      "RFC-8460",
       "RFC-8461",
       "RFC-8616",
+      "RFC-8617",
       "RFC-8693",
       "RFC-9000",
       "RFC-9068",
@@ -3252,7 +3399,10 @@
       "RFC-9116",
       "RFC-9420",
       "RFC-9622",
-      "RFC-9794"
+      "RFC-9794",
+      "RFC-9989",
+      "RFC-9990",
+      "RFC-9991"
     ],
     "dlp_refs": []
   },
@@ -3614,14 +3764,12 @@
       "D3-AA",
       "D3-ABPI",
       "D3-ACA",
-      "D3-ACH",
       "D3-AEM",
       "D3-AH",
       "D3-AI",
       "D3-AL",
       "D3-ALLM",
       "D3-AM",
-      "D3-AMED",
       "D3-ANAA",
       "D3-ANCI",
       "D3-ANET",
@@ -3631,7 +3779,6 @@
       "D3-APM",
       "D3-ARMA",
       "D3-AVE",
-      "D3-AZET",
       "D3-BA",
       "D3-BAN",
       "D3-BDI",
@@ -3662,10 +3809,8 @@
       "D3-DAM",
       "D3-DCE",
       "D3-DE",
-      "D3-DEM",
       "D3-DENCR",
       "D3-DF",
-      "D3-DI",
       "D3-DKE",
       "D3-DKF",
       "D3-DKP",
@@ -3716,11 +3861,9 @@
       "D3-FMVV",
       "D3-FRDDL",
       "D3-FRIDL",
-      "D3-FV",
       "D3-HBPI",
       "D3-HBWP",
       "D3-HCI",
-      "D3-HD",
       "D3-HDDL",
       "D3-HDL",
       "D3-HR",
@@ -3732,8 +3875,6 @@
       "D3-IHN",
       "D3-IPCTA",
       "D3-IPRA",
-      "D3-IRA",
-      "D3-IRV",
       "D3-ISVA",
       "D3-JFAPA",
       "D3-LAM",
@@ -3742,7 +3883,6 @@
       "D3-LFP",
       "D3-LLM",
       "D3-MA",
-      "D3-MAN",
       "D3-MBSV",
       "D3-MBT",
       "D3-MH",
@@ -3795,7 +3935,6 @@
       "D3-PWA",
       "D3-RA",
       "D3-RAM",
-      "D3-RAPA",
       "D3-RC",
       "D3-RD",
       "D3-RDI",
@@ -4155,6 +4294,7 @@
       "SLSA-v1.0-Source-L3"
     ],
     "rfc_refs": [
+      "DRAFT-IETF-TLS-ECDHE-MLKEM",
       "RFC-1001",
       "RFC-1002",
       "RFC-1004",
@@ -10482,6 +10622,7 @@
       "RFC-7486",
       "RFC-7487",
       "RFC-7488",
+      "RFC-7489",
       "RFC-749",
       "RFC-7490",
       "RFC-7491",
@@ -11477,7 +11618,6 @@
       "RFC-8457",
       "RFC-8458",
       "RFC-8459",
-      "RFC-8460",
       "RFC-8462",
       "RFC-8463",
       "RFC-8464",
@@ -11636,7 +11776,6 @@
       "RFC-8613",
       "RFC-8614",
       "RFC-8615",
-      "RFC-8617",
       "RFC-8618",
       "RFC-8619",
       "RFC-862",
@@ -13004,10 +13143,7 @@
       "RFC-9972",
       "RFC-9975",
       "RFC-998",
-      "RFC-9983",
-      "RFC-9989",
-      "RFC-9990",
-      "RFC-9991"
+      "RFC-9983"
     ],
     "dlp_refs": [
       "DLP-CHAN-CLIPBOARD-AI",

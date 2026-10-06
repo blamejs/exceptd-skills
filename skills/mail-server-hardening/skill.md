@@ -46,18 +46,18 @@ cwe_refs:
   - CWE-611
   - CWE-863
   - CWE-400
-last_threat_review: "2026-06-02"
+last_threat_review: "2026-10-05"
 ---
 
 # Inbound Mail-Server Protocol Hardening
 
 ## Threat Context (mid-2026)
 
-A mail server that terminates inbound SMTP, IMAP, POP3, JMAP, or ManageSieve exposes a protocol surface that sender-authentication (SPF/DKIM/DMARC) and transport TLS do not protect. SMTP smuggling (CVE-2023-51764/51765/51766) exploits a server that accepts a non-standard end-of-data sequence to deliver a second message that inherits the outer connection's authentication pass — spoofed mail past DMARC. STARTTLS command/response injection (CVE-2021-38371, CVE-2021-33515) executes attacker plaintext buffered before the handshake. An open relay lends the operator's reputation to spammers. Uncapped Sieve `redirect` is a silent mail-exfiltration primitive. Mailbox-DAV (CalDAV/CardDAV) endpoints add path-traversal and XXE. Each is a configuration or parser-hardening gap, not a CVE to patch.
+A mail server that terminates inbound SMTP, IMAP, POP3, JMAP, or ManageSieve exposes a protocol surface that sender-authentication (SPF/DKIM/DMARC) and transport TLS do not protect. SMTP smuggling (CVE-2023-51764/51765/51766) exploits a server that accepts a non-standard end-of-data sequence to deliver a second message that inherits the outer connection's authentication pass — spoofed mail past DMARC. STARTTLS command/response injection (CVE-2021-38371, CVE-2021-33515) executes attacker plaintext buffered before the handshake. An open relay lends the operator's reputation to spammers. Uncapped Sieve `redirect` is a silent mail-exfiltration primitive. Mailbox-DAV (CalDAV/CardDAV) endpoints add path-traversal and XXE. Each is a configuration or parser-hardening gap. The named CVEs also have vendor patches.
 
 ## Framework Lag Declaration
 
-Organizational mail controls center on sender authentication and transport encryption: SPF, DKIM, DMARC, and a TLS certificate. None prescribe the server-side protocol hardening this skill audits. NIST 800-53 SI-2 expects flaw remediation via a patch cadence, but the smuggling and STARTTLS-injection fixes are configuration (strict end-of-data handling, receive-buffer drain) the patch process never surfaces. NIS2 Art.21 names network security of essential services but assumes SPF/DKIM/DMARC and TLS suffice — they are bypassed at the protocol layer. A clean DMARC + TLS audit is therefore NON-EVIDENCE for inbound protocol hardening; the two address different boundaries.
+Organizational mail controls center on sender authentication and transport encryption: SPF, DKIM, DMARC, and a TLS certificate. None prescribe the server-side protocol hardening this skill audits. NIST 800-53 SI-2 expects flaw remediation via a patch cadence, but on Postfix releases before 3.9 the smuggling fix (`smtpd_forbid_bare_newline`, strict end-of-data handling) is off by default and takes effect only when the operator sets it. NIS2 Art.21 requires essential and important entities to manage risks to the security of network and information systems but assumes SPF/DKIM/DMARC and TLS suffice — they are bypassed at the protocol layer. A clean DMARC + TLS audit is therefore NON-EVIDENCE for inbound protocol hardening; the two address different boundaries.
 
 ## TTP Mapping
 
@@ -81,4 +81,4 @@ The recurring theater is "we have SPF/DKIM/DMARC and TLS, so our mail server is 
 
 ## Defensive Countermeasure Mapping
 
-Map findings to MITRE D3FEND: strict end-of-data enforcement and command-parser hardening realize Message Authentication and Inbound Traffic Filtering (countering T1071.003/T1190); STARTTLS receive-buffer draining and AUTH-after-TLS gating realize Transport Session Integrity (countering T1557/T1040); relay authorization realizes Outbound Traffic Filtering (countering open-relay reputation abuse); Sieve redirect caps realize Email Filtering (countering T1114 exfiltration). Pair the protocol hardening with auth rate limiting and greylisting (countering T1110). The residual risk after hardening is a compromised authenticated account acting within its own authorization, which protocol hardening does not address — accept it at the CISO level with identity-control compensation.
+Map findings to MITRE D3FEND: strict end-of-data enforcement and command-parser hardening realize Message Authentication and Inbound Traffic Filtering (countering T1071.003/T1190); STARTTLS receive-buffer draining and AUTH-after-TLS gating realize Message Hardening (countering T1557/T1040); relay authorization realizes Outbound Traffic Filtering (countering open-relay reputation abuse); Sieve redirect caps realize Email Filtering (countering T1114 exfiltration). Pair the protocol hardening with auth rate limiting and greylisting (countering T1110). The residual risk after hardening is a compromised authenticated account acting within its own authorization, which protocol hardening does not address — accept it at the CISO level with identity-control compensation.

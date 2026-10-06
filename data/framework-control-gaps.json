@@ -2575,7 +2575,7 @@
     "framework": "EU Artificial Intelligence Act (2024/1689) — General-Purpose AI provider obligations",
     "control_id": "Art. 53",
     "control_name": "Obligations for providers of general-purpose AI (GPAI) models",
-    "designed_for": "Providers of general-purpose AI models placed on the EU market. Active 2026-08-02. Requires technical documentation, downstream-provider information package, copyright-policy disclosure, and a summary of training content. Cross-walks to UK AISI voluntary commitments, US NIST AI RMF GPAI profile, OECD AI Principles GPAI annex, ISO/IEC 42001:2023.",
+    "designed_for": "Providers of general-purpose AI models placed on the EU market. Applies since 2025-08-02; providers of models placed on the market before that date have until 2027-08-02 (Art. 111(3)). Requires technical documentation, downstream-provider information package, copyright-policy disclosure, and a summary of training content. Cross-walks to UK AISI voluntary commitments, US NIST AI RMF GPAI profile, OECD AI Principles GPAI annex, ISO/IEC 42001:2023.",
     "misses": [
       "Training-data summary granularity — the prescribed 'sufficiently detailed' standard is operationally undefined; providers can satisfy with sector-level descriptors that defeat copyright/audit traceability",
       "Downstream-provider information package contemplates documentation handoff but not runtime telemetry — a downstream provider integrating a GPAI cannot verify the production model is the documented model",
@@ -2609,7 +2609,7 @@
     "framework": "EU Artificial Intelligence Act (2024/1689) — GPAI with systemic risk",
     "control_id": "Art. 55",
     "control_name": "Additional obligations for providers of GPAI models with systemic risk",
-    "designed_for": "Providers of GPAI models presumed to have systemic risk (cumulative training compute ≥ 10^25 FLOPs benchmark; AI Office may designate other models). Active 2026-08-02. Requires model evaluation including adversarial testing, systemic-risk assessment + mitigation, serious-incident reporting to AI Office + national authorities, and energy/cybersecurity protection at the model layer. Cross-walks to UK AISI safety evaluations, US AISI consortium, NIST AI RMF systemic-risk profile.",
+    "designed_for": "Providers of GPAI models presumed to have systemic risk (cumulative training compute ≥ 10^25 FLOPs benchmark; AI Office may designate other models). Applies since 2025-08-02; providers of models placed on the market before that date have until 2027-08-02 (Art. 111(3)). Requires model evaluation including adversarial testing, systemic-risk assessment + mitigation, serious-incident reporting to AI Office + national authorities, and energy/cybersecurity protection at the model layer. Cross-walks to UK AISI safety evaluations, US AISI consortium, NIST AI RMF systemic-risk profile.",
     "misses": [
       "Adversarial-evaluation methodology is not prescribed — providers self-define the red-team scope, leaving prompt-injection coverage, agentic-task exploitation, RAG-poisoning resistance, and MCP-trust scenarios at provider discretion",
       "Energy-consumption reporting cadence + units of measurement are not standardised — comparison across providers is operationally impossible",
@@ -2647,7 +2647,7 @@
     "framework": "EU Artificial Intelligence Act (2024/1689) — Annex IX conformity assessment",
     "control_id": "Annex IX",
     "control_name": "Conformity assessment based on internal control or notified body assessment for high-risk AI systems",
-    "designed_for": "Sets the conformity-assessment route for high-risk AI systems (Art. 43). Internal control (Annex VI) suffices for most providers; notified-body assessment (Annex VII) applies to specific Annex III categories. Active 2026-08-02 for high-risk obligations. Cross-walks to EU CRA Annex VIII conformity, EU MDR clinical-AI conformity, UK MHRA AI-as-a-Medical-Device, AU TGA Software-as-Medical-Device.",
+    "designed_for": "Sets the conformity-assessment route for high-risk AI systems (Art. 43). Internal control (Annex VI) suffices for most providers; notified-body assessment (Annex VII) applies to specific Annex III categories. The high-risk obligations apply from 2027-12-02 for Annex III systems and from 2028-08-02 for systems embedded in Annex I products (Regulation (EU) 2026/1744). Cross-walks to EU CRA Annex VIII conformity, EU MDR clinical-AI conformity, UK MHRA AI-as-a-Medical-Device, AU TGA Software-as-Medical-Device.",
     "misses": [
       "Internal-control conformity assessment is self-attestation — there is no third-party verification of Art. 9 risk management, Art. 10 data governance, Art. 15 cybersecurity claims for most high-risk AI",
       "Notified-body capacity is constrained — the small number of designated notified bodies (under 30 across the Union as of 2026-Q2) creates assessment-queue risk that operators cannot mitigate",
@@ -4720,16 +4720,16 @@
   },
   "ISO-IEC-23894-2023-clause-7": {
     "framework": "ISO/IEC 23894:2023 (AI Risk Management Guidance)",
-    "control_id": "Clause 7",
-    "control_name": "AI risk management process",
+    "control_id": "Clause 6",
+    "control_name": "Risk management process",
     "designed_for": "Process-level guidance for managing risk across the AI lifecycle (design, develop, deploy, operate, decommission). Used globally as the methodological backbone behind ISO 42001 clause 6, EU AI Act risk management requirements, UK AI Assurance roadmap, AU AI Ethics Framework, and Singapore Model AI Governance Framework.",
     "misses": [
-      "Post-deployment adversarial input drift — clause 7 treats risk identification as a phased activity rather than a continuous adversarial-evaluation loop",
+      "Post-deployment adversarial input drift — clause 6 treats risk identification (6.4.2) as a phased activity rather than a continuous adversarial-evaluation loop",
       "No requirement for red-team / adversarial prompt regression after model or system-prompt updates",
       "Drift detection is framed around statistical model performance, not adversarial robustness — prompt-injection success rate is not a monitored signal",
-      "Cross-jurisdiction harmonisation (EU AI Act Art. 9 risk management, UK CAF, AU ISM) is referenced but not operationalised in clause 7 examples"
+      "Cross-jurisdiction harmonisation (EU AI Act Art. 9 risk management, UK CAF, AU ISM) is referenced but not operationalised in clause 6 examples"
     ],
-    "real_requirement": "Clause 7 implementations must add a runtime adversarial-evaluation control: standing red-team prompt suite, success-rate baseline, alerting on regression after model/system-prompt change, evidence retention for incident reconstruction. Drift monitoring must include adversarial robustness, not only statistical accuracy.",
+    "real_requirement": "Clause 6 implementations, in risk identification (6.4.2) and risk treatment (6.5), must add a runtime adversarial-evaluation control: standing red-team prompt suite, success-rate baseline, alerting on regression after model/system-prompt change, evidence retention for incident reconstruction. Drift monitoring must include adversarial robustness, not only statistical accuracy.",
     "status": "open",
     "opened_date": "2026-05-11",
     "evidence_cves": [],
@@ -4742,7 +4742,7 @@
       "T1059"
     ],
     "theater_test": {
-      "claim": "We perform AI risk assessment per ISO/IEC 23894:2023 clause 7.",
+      "claim": "We perform AI risk assessment per ISO/IEC 23894:2023 clause 6.",
       "test": "Pull the most recent AI risk assessment. Confirm coverage of supply-chain risks (model provenance, MCP/plugin trust, training-data integrity), prompt-injection as a current threat, and operational AI-incident scenarios. Confirm the assessment is dated within the framework's review cadence. Theater verdict if supply-chain or prompt-injection risks are absent, or if the assessment has no documented owner who acted on findings.",
       "evidence_required": [
         "AI risk assessment document",
@@ -8473,10 +8473,10 @@
   "NIST-AI-RMF-MEASURE-2.5": {
     "framework": "NIST AI RMF 1.0",
     "control_id": "MEASURE 2.5",
-    "control_name": "AI system to human interaction evaluation",
-    "designed_for": "Evaluating AI system outputs and behaviors in human-AI interaction contexts",
+    "control_name": "Validity and reliability of the AI system to be deployed",
+    "designed_for": "Demonstrating that the AI system to be deployed is valid and reliable, and documenting the limits of its generalizability beyond the conditions under which it was developed",
     "misses": [
-      "MEASURE 2.5 measures human-AI interaction quality, not adversarial input resistance",
+      "MEASURE 2.5 measures validity and reliability under development conditions, not adversarial input resistance",
       "Does not require adversarial prompt injection testing as a measurement activity",
       "No methodology for measuring AI tool action authorization boundary compliance",
       "Human feedback evaluation does not capture adversarially-induced behavioral changes"
@@ -9914,15 +9914,15 @@
   "FCC-Cyber-Incident-Notification-2024": {
     "framework": "FCC",
     "control_id": "47-CFR-64.2011",
-    "control_name": "FCC Cyber Incident Notification (4 business days)",
-    "designed_for": "Notification rule requiring US telecom carriers to report PII or CPNI breaches within 4 business days of discovery (effective 2024-03-13).",
+    "control_name": "FCC CPNI Breach Notification (7 business days)",
+    "designed_for": "Notification rule requiring US telecommunications carriers to notify the US Secret Service and the FBI of a CPNI breach as soon as practicable and no later than 7 business days after reasonable determination of the breach (47 CFR 64.2011(b)).",
     "misses": [
       "No requirement to notify on lawful-intercept-system compromise that does not exfiltrate PII directly (e.g. Salt Typhoon access to LI feeds covering counter-intelligence targets)",
       "No requirement to notify on signaling-protocol intrusion (SS7 / Diameter abuse) absent PII loss",
-      "4-business-day window is too slow for an ongoing nation-state campaign — peer regulators set tighter limits (NIS2 24h, DORA 4h)",
+      "The 7-business-day window is too slow for an ongoing nation-state campaign; peer regulators set tighter limits (NIS2 24h, DORA 4h)",
       "No structured-data feed for cross-carrier IOC sharing"
     ],
-    "real_requirement": "4-business-day window paired with 24-hour preliminary signal-flag for LI-system compromise + structured CISA / NSA / FBI IOC handoff format.",
+    "real_requirement": "The 7-business-day window paired with a 24-hour preliminary signal-flag for LI-system compromise + structured CISA / NSA / FBI IOC handoff format.",
     "status": "open",
     "opened_date": "2026-05-15",
     "evidence_cves": [],

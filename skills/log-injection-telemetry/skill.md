@@ -42,7 +42,7 @@ cwe_refs:
   - CWE-532
   - CWE-918
   - CWE-200
-last_threat_review: "2026-06-02"
+last_threat_review: "2026-10-05"
 ---
 
 # Telemetry-Pipeline Integrity (Log Injection + Sink Confidentiality)
@@ -53,11 +53,11 @@ The telemetry pipeline is both an integrity target and a confidentiality leak th
 
 ## Framework Lag Declaration
 
-Organizational logging controls require events be recorded, centralized, and access-controlled. NIST 800-53 AU-9 (protection of audit information) is attested by access controls on the log store and does not address CR/LF log injection that forges entries before they reach the store. SI-11 (error handling / output neutralization) is named generally but not operationalized as per-sink CR/LF neutralization or secret redaction. ISO 27001 A.8.15 is met with "we log and protect logs." None address telemetry-exporter egress, SSRF, or unauthenticated metrics. A clean "we centralize logs to a SIEM with access controls" audit is therefore NON-EVIDENCE for telemetry-pipeline integrity; it confirms log presence and store ACLs, not neutralization, redaction, metrics auth, or exporter posture.
+Organizational logging controls require events be recorded, centralized, and access-controlled. NIST 800-53 AU-9 (protection of audit information) is attested by access controls on the log store and does not address CR/LF log injection that forges entries before they reach the store. SI-11 (error handling) is named generally but not operationalized as per-sink CR/LF neutralization or secret redaction. ISO 27001 A.8.15 is met with "we log and protect logs." None address telemetry-exporter egress, SSRF, or unauthenticated metrics. A clean "we centralize logs to a SIEM with access controls" audit is therefore NON-EVIDENCE for telemetry-pipeline integrity; it confirms log presence and store ACLs, not neutralization, redaction, metrics auth, or exporter posture.
 
 ## TTP Mapping
 
-The telemetry-pipeline failures map to MITRE ATT&CK: **T1565.001 (Stored Data Manipulation)** for CR/LF log forging that rewrites or splits the audit record; **T1530 (Data from Cloud Storage / shipped telemetry)** for secrets/PII leaking through logs, exporter exfiltration, and webhook-sink SSRF reaching internal services; and **T1213 (Data from Information Repositories)** for an unauthenticated metrics/debug endpoint disclosing internal state. The weakness classes are CWE-117 (improper output neutralization for logs — log injection), CWE-532 (insertion of sensitive information into log files), CWE-918 (server-side request forgery — exporter/webhook egress), and CWE-200 (exposure of sensitive information — unauthenticated metrics).
+The telemetry-pipeline failures map to MITRE ATT&CK: **T1565.001 (Stored Data Manipulation)** for CR/LF log forging that rewrites or splits the audit record; **T1530 (Data from Cloud Storage)** for secrets/PII leaking through logs, exporter exfiltration, and webhook-sink SSRF reaching internal services; and **T1213 (Data from Information Repositories)** for an unauthenticated metrics/debug endpoint disclosing internal state. The weakness classes are CWE-117 (improper output neutralization for logs — log injection), CWE-532 (insertion of sensitive information into log file), CWE-918 (server-side request forgery — exporter/webhook egress), and CWE-200 (exposure of sensitive information — unauthenticated metrics).
 
 ## Exploit Availability Matrix
 

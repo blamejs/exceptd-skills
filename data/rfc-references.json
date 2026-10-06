@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "last_updated": "2026-08-05",
+    "last_updated": "2026-10-05",
     "note": "IETF RFCs and Internet-Drafts that exceptd skills depend on. RFCs are the layer beneath compliance frameworks: a control like 'TLS 1.3 required' implicitly references RFC 8446; a 'use strong KEM' control depends on whatever draft-ietf-tls-ecdhe-mlkem settles into. Frameworks lag RFCs; RFCs lag attacker innovation. This catalog tracks both kinds of lag.",
     "status_values": [
       "Internet Standard",
@@ -607,7 +607,7 @@
     "errata_count": 39,
     "tracker": "https://www.rfc-editor.org/info/rfc8446",
     "relevance": "TLS 1.3 is the baseline assumption for every AI provider egress channel, every MCP HTTP transport, and every kernel-userspace TLS exchange. Skills that analyze boundary inspection, cert pinning, or AI-API C2 detection must ground in this RFC.",
-    "lag_notes": "RFC 8446 alone is not PQC-ready. Hybrid PQC drafts (draft-ietf-tls-ecdhe-mlkem, draft-ietf-tls-hybrid-design) layer on top — see those entries.",
+    "lag_notes": "Obsoleted by RFC 9846 (July 2026), which republishes TLS 1.3. Neither is PQC-ready on its own: the hybrid key agreements are published as RFC 10024 and the hybrid design as RFC 9954, both layered on TLS 1.3.",
     "skills_referencing": [
       "ai-c2-detection",
       "api-security",
@@ -620,7 +620,7 @@
       "sector-financial",
       "webapp-security"
     ],
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-10-06",
     "abstract": "This document specifies version 1.3 of the Transport Layer Security (TLS) protocol. TLS allows client/server applications to communicate over the Internet in a way that is designed to prevent eavesdropping, tampering, and message forgery. This document updates RFCs 5705 and 6066, and obsoletes RFCs 5077, 5246, and 6961. This document also specifies new requirements for TLS 1.2 implementations.",
     "keywords": [
       "international data algorithm",
@@ -647,7 +647,10 @@
       "RFC6066"
     ],
     "txt_url": "https://www.rfc-editor.org/rfc/rfc8446.txt",
-    "html_url": "https://www.rfc-editor.org/rfc/rfc8446.html"
+    "html_url": "https://www.rfc-editor.org/rfc/rfc8446.html",
+    "obsoleted_by": [
+      "RFC9846"
+    ]
   },
   "RFC-8460": {
     "number": 8460,
@@ -656,7 +659,9 @@
     "published": "2018-09",
     "tracker": "https://www.rfc-editor.org/info/rfc8460",
     "relevance": "Defines a DNS-published TLSRPT policy and an aggregate-reporting mechanism (RUA endpoint) where receiving MTAs report success / failure of inbound TLS negotiation. Operator-facing: TLSRPT is the monitoring half of the MTA-STS pair (RFC 8461) — without it, an MTA-STS `enforce` policy silently degrades when downgrade attempts occur or receiver-side TLS configurations break. Phishing-defense relevance is indirect but load-bearing: visibility into STARTTLS-stripping attempts is otherwise absent.",
-    "skills_referencing": [],
+    "skills_referencing": [
+      "email-security-anti-phishing"
+    ],
     "last_verified": "2026-05-19",
     "abstract": "A number of protocols exist for establishing encrypted channels between SMTP Mail Transfer Agents (MTAs), including STARTTLS, DNS- Based Authentication of Named Entities (DANE) TLSA, and MTA Strict Transport Security (MTA-STS). These protocols can fail due to misconfiguration or active attack, leading to undelivered messages or delivery over unencrypted or unauthenticated channels. This document describes a reporting mechanism and format by which sending systems can share statistics and specific information about potential failures with recipient domains. Recipient domains can then use this information to both detect potential attacks and diagnose unintentional misconfigurations.",
     "keywords": [
@@ -748,7 +753,9 @@
     "published": "2019-07",
     "tracker": "https://www.rfc-editor.org/info/rfc8617",
     "relevance": "ARC preserves authentication results across legitimate forwarding paths (mailing lists, alias services) where SPF + DKIM alignment would otherwise break, producing false DMARC failures. Operator-facing: ARC is the load-bearing complement to DMARC for organisations that receive mail via forwarders — anti-phishing programs that publish `p=reject` without an ARC strategy face increased false-positive bounce rates that pressure operators to relax DMARC. The skill-update-loop tracks ARC adoption signals as a forward-watch indicator for email-authentication posture changes.",
-    "skills_referencing": [],
+    "skills_referencing": [
+      "email-security-anti-phishing"
+    ],
     "last_verified": "2026-05-19",
     "abstract": "The Authenticated Received Chain (ARC) protocol provides an authenticated \"chain of custody\" for a message, allowing each entity that handles the message to see what entities handled it before and what the message's authentication assessment was at each step in the handling. ARC allows Internet Mail Handlers to attach assertions of message authentication assessment to individual messages. As messages traverse ARC-enabled Internet Mail Handlers, additional ARC assertions can be attached to messages to form ordered sets of ARC assertions that represent the authentication assessment at each step of the message-handling paths. ARC-enabled Internet Mail Handlers can process sets of ARC assertions to inform message disposition decisions, identify Internet Mail Handlers that might break existing authentication mechanisms, and convey original authentication assessments across trust boundaries.",
     "keywords": [
@@ -1319,16 +1326,84 @@
     "number": null,
     "draft_id": "draft-ietf-tls-ecdhe-mlkem",
     "title": "Post-Quantum Hybrid ECDHE-MLKEM Key Agreement for TLSv1.3",
-    "status": "Draft",
-    "published": "in flight as of 2026-05",
+    "status": "Proposed Standard",
+    "published": "2026-08 as RFC 10024",
+    "published_as": "RFC-10024",
+    "replaced_by": [
+      "RFC-10024"
+    ],
     "tracker": "https://datatracker.ietf.org/doc/draft-ietf-tls-ecdhe-mlkem/",
-    "relevance": "Defines X25519+ML-KEM-768 and similar hybrid groups for TLS 1.3 — the operational path for PQC migration without rip-and-replace. Pinned in pqc-first as the recommended hybrid posture.",
-    "lag_notes": "Still a draft as of mid-2026. OpenSSL 3.5+ ships the hybrid groups under provisional codepoints. Final RFC number TBD on WG consensus.",
+    "relevance": "The Internet-Draft that was published in August 2026 as RFC 10024, which defines the X25519MLKEM768, SecP256r1MLKEM768 and SecP384r1MLKEM1024 hybrid key agreements for TLS 1.3. Cite RFC-10024; this entry is kept so references to the draft name resolve.",
+    "lag_notes": "Published as RFC 10024 in August 2026; no further draft revisions are expected.",
     "skills_referencing": [
       "pqc-first"
     ],
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-10-06",
     "abstract": "IETF Internet-Draft (TLS WG) defining hybrid ECDHE + ML-KEM key exchange for TLS 1.3. Combines classical X25519 / P-256 ECDHE with the NIST FIPS 203 ML-KEM (Kyber) post-quantum KEM in a single handshake exchange so a successful TLS connection requires breaking BOTH primitives. Foundational primitive for federal PQ-ready posture and EU NIS2 + DORA crypto-agility obligations."
+  },
+  "DRAFT-IETF-TLS-MLKEM": {
+    "number": null,
+    "draft_id": "draft-ietf-tls-mlkem",
+    "revision": "11",
+    "title": "ML-KEM Post-Quantum Key Agreement for TLS 1.3",
+    "status": "Draft",
+    "published": "revision 11, 2026-09-17",
+    "tracker": "https://datatracker.ietf.org/doc/draft-ietf-tls-mlkem/11/",
+    "relevance": "Defines ML-KEM-512, ML-KEM-768 and ML-KEM-1024 as TLS 1.3 named groups for post-quantum key establishment without a traditional component. The pqc-first skill watches it for publication as an RFC.",
+    "lag_notes": "Revision 11 (2026-09-17) is pinned. The datatracker shows the draft in the RFC Editor queue with an intended status of Informational. Re-check the revision before relying on its text.",
+    "skills_referencing": [
+      "pqc-first"
+    ],
+    "last_verified": "2026-10-06",
+    "abstract": "This memo defines ML-KEM-512, ML-KEM-768, and ML-KEM-1024 as NamedGroups and registers IANA values in the TLS Supported Groups registry for use in TLS 1.3 to achieve post-quantum (PQ) key establishment."
+  },
+  "DRAFT-IETF-HPKE-PQ": {
+    "number": null,
+    "draft_id": "draft-ietf-hpke-pq",
+    "revision": "05",
+    "title": "Post-Quantum and Post-Quantum/Traditional Hybrid Algorithms for HPKE",
+    "status": "Draft",
+    "published": "revision 05, 2026-07-06",
+    "tracker": "https://datatracker.ietf.org/doc/draft-ietf-hpke-pq/05/",
+    "relevance": "Defines post-quantum and post-quantum/traditional hybrid KEMs, and a SHA-3 based KDF, for HPKE (RFC 9180). The pqc-first skill watches it for publication as an RFC.",
+    "lag_notes": "Revision 05 (2026-07-06) is pinned; the draft is an active HPKE working group document. Re-check the revision before relying on its text.",
+    "skills_referencing": [
+      "pqc-first"
+    ],
+    "last_verified": "2026-10-06",
+    "abstract": "Updating key exchange and public-key encryption protocols to resist attack by quantum computers is a high priority given the possibility of \"harvest now, decrypt later\" attacks. Hybrid Public Key Encryption (HPKE) is a widely-used public key encryption scheme based on combining a Key Encapsulation Mechanism (KEM), a Key Derivation Function (KDF), and an Authenticated Encryption with Associated Data (AEAD) scheme. In this document, we define KEM algorithms for HPKE based on both post-quantum KEMs and hybrid constructions of post- quantum KEMs with traditional KEMs, as well as a KDF based on SHA-3 that is suitable for use with these KEMs. When used with these algorithms, HPKE is resilient with respect to attacks by a quantum computer."
+  },
+  "DRAFT-IETF-LAMPS-PQ-COMPOSITE-SIGS": {
+    "number": null,
+    "draft_id": "draft-ietf-lamps-pq-composite-sigs",
+    "revision": "19",
+    "title": "Composite Module-Lattice-Based Digital Signature Algorithm (ML-DSA) for use in X.509 Public Key Infrastructure",
+    "status": "Draft",
+    "published": "revision 19, 2026-04-21",
+    "tracker": "https://datatracker.ietf.org/doc/draft-ietf-lamps-pq-composite-sigs/19/",
+    "relevance": "Defines composite ML-DSA signatures that pair ML-DSA with RSASSA-PKCS1-v1.5, RSASSA-PSS, ECDSA, Ed25519 or Ed448 for X.509 and PKIX. The pqc-first skill cites it for composite signature formats.",
+    "lag_notes": "Revision 19 (2026-04-21) is pinned; the datatracker shows the draft in the RFC Editor queue. It replaced draft-ounsworth-pq-composite-sigs. Re-check the revision before relying on its text.",
+    "skills_referencing": [
+      "pqc-first"
+    ],
+    "last_verified": "2026-10-06",
+    "abstract": "This document defines combinations of US NIST Module-Lattice-Based Digital Signature Algorithm (ML-DSA) in hybrid with traditional algorithms RSASSA-PKCS1-v1.5, RSASSA-PSS, ECDSA, Ed25519, and Ed448. These combinations are tailored to meet regulatory guidelines in certain regions. Composite ML-DSA is applicable in applications that use X.509 or PKIX data structures that accept ML-DSA, but where the operator wants extra protection against breaks or catastrophic bugs in ML-DSA, and where existential unforgeability (EUF-CMA) level security is acceptable."
+  },
+  "DRAFT-IETF-DKIM-DKIM2-SPEC": {
+    "number": null,
+    "draft_id": "draft-ietf-dkim-dkim2-spec",
+    "revision": "06",
+    "title": "DomainKeys Identified Mail Signatures v2 (DKIM2)",
+    "status": "Draft",
+    "published": "revision 06, 2026-08-28",
+    "tracker": "https://datatracker.ietf.org/doc/draft-ietf-dkim-dkim2-spec/06/",
+    "relevance": "The DKIM working group's DKIM2 specification, which chains signatures across intermediaries, records the changes they make and detects replayed messages. The email-security-anti-phishing skill watches it as a possible successor to DKIM, DMARC and ARC.",
+    "lag_notes": "Revision 06 (2026-08-28) is pinned; the draft is an active DKIM working group document. Re-check the revision before relying on its text.",
+    "skills_referencing": [
+      "email-security-anti-phishing"
+    ],
+    "last_verified": "2026-10-06",
+    "abstract": "DomainKeys Identified Mail v2 (DKIM2) permits a person, role, or organization that owns a signing domain to document that it has handled an email message by associating their domain with the message. This is achieved by providing a hash value that has been calculated on the current contents of the message and then applying a cryptographic signature that covers the hash values and other details about the transmission of the message. Verification is performed by querying an entry within the signing domain's DNS space to retrieve an appropriate public key. As a message is transferred from author to recipient systems that alter the body or header fields will provide details of their changes and calculate new hash values. Further signatures will be added to provide a validatable \"chain\". This permits validators to identify the nature of changes made by intermediaries and apply a reputation to the systems that made changed. DKIM2 also allows recipients to detect when messages have been unexpectedly \"replayed\" and will ensure that Delivery Status Notifications are only sent to entities that were involved in the transmission of a message."
   },
   "DRAFT-IETF-TLS-HYBRID-DESIGN": {
     "number": null,
@@ -1337,7 +1412,7 @@
     "status": "Informational",
     "tracker": "https://datatracker.ietf.org/doc/draft-ietf-tls-hybrid-design/",
     "relevance": "General-purpose hybrid-KEM design that the ecdhe-mlkem draft instantiates. Operators evaluating the migration story should read both.",
-    "lag_notes": "Published as RFC 9954 (Informational, July 2026) — cite RFC-9954 rather than this draft for the hybrid construction. Retained so existing references resolve. Never status-synchronized with draft-ietf-tls-ecdhe-mlkem, which remains an active Standards-Track draft.",
+    "lag_notes": "Published as RFC 9954 (Informational, July 2026) — cite RFC-9954 rather than this draft for the hybrid construction. Retained so existing references resolve. draft-ietf-tls-ecdhe-mlkem was published as RFC 10024 in August 2026.",
     "skills_referencing": [
       "pqc-first"
     ],
@@ -113834,7 +113909,7 @@
     "tracker": "https://www.rfc-editor.org/info/rfc5705",
     "relevance": "Auto-imported v0.13.18 from the IETF RFC index. Operator-curated relevance pending — refine when this RFC becomes operationally cited in a skill body or finding.",
     "skills_referencing": [],
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-10-06",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-ietf-rfc-index",
     "abstract": "A number of protocols wish to leverage Transport Layer Security (TLS) to perform key establishment but then use some of the keying material for their own purposes. This document describes a general mechanism for allowing that. [STANDARDS-TRACK]",
@@ -113851,7 +113926,8 @@
     "page_count": 7,
     "updated_by": [
       "RFC8446",
-      "RFC8447"
+      "RFC8447",
+      "RFC9846"
     ],
     "txt_url": "https://www.rfc-editor.org/rfc/rfc5705.txt",
     "html_url": "https://www.rfc-editor.org/rfc/rfc5705.html"
@@ -123768,7 +123844,7 @@
     "tracker": "https://www.rfc-editor.org/info/rfc6066",
     "relevance": "Auto-imported v0.13.18 from the IETF RFC index. Operator-curated relevance pending — refine when this RFC becomes operationally cited in a skill body or finding.",
     "skills_referencing": [],
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-10-06",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-ietf-rfc-index",
     "abstract": "This document provides specifications for existing TLS extensions. It is a companion document for RFC 5246, \"The Transport Layer Security (TLS) Protocol Version 1.2\". The extensions specified are server_name, max_fragment_length, client_certificate_url, trusted_ca_keys, truncated_hmac, and status_request. [STANDARDS-TRACK]",
@@ -123794,7 +123870,8 @@
     "updated_by": [
       "RFC8446",
       "RFC8449",
-      "RFC9325"
+      "RFC9325",
+      "RFC9846"
     ],
     "txt_url": "https://www.rfc-editor.org/rfc/rfc6066.txt",
     "html_url": "https://www.rfc-editor.org/rfc/rfc6066.html"
@@ -166407,7 +166484,7 @@
     "tracker": "https://www.rfc-editor.org/info/rfc7627",
     "relevance": "Auto-imported v0.13.18 from the IETF RFC index. Operator-curated relevance pending — refine when this RFC becomes operationally cited in a skill body or finding.",
     "skills_referencing": [],
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-10-06",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-ietf-rfc-index",
     "abstract": "The Transport Layer Security (TLS) master secret is not cryptographically bound to important session parameters such as the server certificate. Consequently, it is possible for an active attacker to set up two sessions, one with a client and another with a server, such that the master secrets on the two sessions are the same. Thereafter, any mechanism that relies on the master secret for authentication, including session resumption, becomes vulnerable to a man-in-the-middle attack, where the attacker can simply forward messages back and forth between the client and server. This specification defines a TLS extension that contextually binds the master secret to a log of the full handshake that computes it, thus preventing such attacks.",
@@ -166427,7 +166504,10 @@
       "RFC5246"
     ],
     "txt_url": "https://www.rfc-editor.org/rfc/rfc7627.txt",
-    "html_url": "https://www.rfc-editor.org/rfc/rfc7627.html"
+    "html_url": "https://www.rfc-editor.org/rfc/rfc7627.html",
+    "obsoleted_by": [
+      "RFC9846"
+    ]
   },
   "RFC-7628": {
     "number": 7628,
@@ -190226,7 +190306,7 @@
     "tracker": "https://www.rfc-editor.org/info/rfc8422",
     "relevance": "Auto-imported v0.13.18 from the IETF RFC index. Operator-curated relevance pending — refine when this RFC becomes operationally cited in a skill body or finding.",
     "skills_referencing": [],
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-10-06",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-ietf-rfc-index",
     "abstract": "This document describes key exchange algorithms based on Elliptic Curve Cryptography (ECC) for the Transport Layer Security (TLS) protocol. In particular, it specifies the use of Ephemeral Elliptic Curve Diffie-Hellman (ECDHE) key agreement in a TLS handshake and the use of the Elliptic Curve Digital Signature Algorithm (ECDSA) and Edwards-curve Digital Signature Algorithm (EdDSA) as authentication mechanisms. This document obsoletes RFC 4492.",
@@ -190251,7 +190331,10 @@
       "RFC8996"
     ],
     "txt_url": "https://www.rfc-editor.org/rfc/rfc8422.txt",
-    "html_url": "https://www.rfc-editor.org/rfc/rfc8422.html"
+    "html_url": "https://www.rfc-editor.org/rfc/rfc8422.html",
+    "obsoleted_by": [
+      "RFC9846"
+    ]
   },
   "RFC-8423": {
     "number": 8423,
@@ -232903,6 +232986,80 @@
     "page_count": 28,
     "txt_url": "https://www.rfc-editor.org/rfc/rfc9845.txt",
     "html_url": "https://www.rfc-editor.org/rfc/rfc9845.html"
+  },
+  "RFC-9846": {
+    "number": 9846,
+    "title": "The Transport Layer Security (TLS) Protocol Version 1.3",
+    "status": "Proposed Standard",
+    "published": "2026-07",
+    "errata_count": 5,
+    "tracker": "https://www.rfc-editor.org/info/rfc9846",
+    "relevance": "TLS 1.3 as republished in July 2026. It obsoletes RFC 8446, RFC 5246 and RFCs 5077, 6961, 7627 and 8422, and sets new requirements for TLS 1.2 implementations. The pqc-first skill cites it as the TLS 1.3 specification that the hybrid key agreements of RFC 10024 extend.",
+    "skills_referencing": [
+      "pqc-first",
+      "sector-federal-government"
+    ],
+    "last_verified": "2026-10-05",
+    "abstract": "This document specifies version 1.3 of the Transport Layer Security (TLS) protocol. TLS allows client/server applications to communicate over the Internet in a way that is designed to prevent eavesdropping, tampering, and message forgery. This document obsoletes RFC 8446, which specified TLS 1.3. This document obsoletes RFC 5246 (specifying TLS 1.2) and RFCs 5077, 6961, 7627, and 8422, all of which pertain to TLS 1.2 or earlier, and updates RFCs 5705 and 6066. This document also specifies new requirements for TLS 1.2 implementations.",
+    "keywords": [],
+    "area": "sec",
+    "working_group": "tls",
+    "stream": "IETF",
+    "authors": [
+      "E. Rescorla"
+    ],
+    "doi": "10.17487/RFC9846",
+    "page_count": 137,
+    "obsoletes": [
+      "RFC5077",
+      "RFC5246",
+      "RFC6961",
+      "RFC7627",
+      "RFC8422",
+      "RFC8446"
+    ],
+    "updates": [
+      "RFC5705",
+      "RFC6066"
+    ],
+    "txt_url": "https://www.rfc-editor.org/rfc/rfc9846.txt",
+    "html_url": "https://www.rfc-editor.org/rfc/rfc9846.html"
+  },
+  "RFC-10024": {
+    "number": 10024,
+    "title": "Post-Quantum Traditional (PQ/T) Hybrid Key Agreement Mechanisms for TLS 1.3",
+    "status": "Proposed Standard",
+    "published": "2026-08",
+    "errata_count": 0,
+    "tracker": "https://www.rfc-editor.org/info/rfc10024",
+    "relevance": "Defines the X25519MLKEM768, SecP256r1MLKEM768 and SecP384r1MLKEM1024 hybrid key agreements for TLS 1.3. The pqc-first skill cites it as the published specification of the hybrid groups it recommends, which draft-ietf-tls-ecdhe-mlkem carried before publication.",
+    "skills_referencing": [
+      "pqc-first",
+      "sector-federal-government"
+    ],
+    "last_verified": "2026-10-05",
+    "abstract": "This document defines three hybrid key agreement mechanisms for TLS 1.3 -- X25519MLKEM768, SecP256r1MLKEM768, and SecP384r1MLKEM1024 -- that combine the post-quantum ML-KEM (Module-Lattice-Based Key Encapsulation Mechanism) with an ECDHE (Ephemeral Elliptic Curve Diffie-Hellman) exchange.",
+    "keywords": [
+      "ECDH",
+      "ECDHE",
+      "hybrid",
+      "ML-KEM",
+      "post-quantum",
+      "x25519"
+    ],
+    "area": "sec",
+    "working_group": "tls",
+    "stream": "IETF",
+    "authors": [
+      "K. Kwiatkowski",
+      "P. Kampanakis",
+      "B. E. Westerbaan",
+      "D. Stebila"
+    ],
+    "doi": "10.17487/RFC10024",
+    "page_count": 9,
+    "txt_url": "https://www.rfc-editor.org/rfc/rfc10024.txt",
+    "html_url": "https://www.rfc-editor.org/rfc/rfc10024.html"
   },
   "RFC-9847": {
     "number": 9847,
@@ -280287,12 +280444,13 @@
     "html_url": "https://www.rfc-editor.org/rfc/rfc5077.html",
     "relevance": "Auto-imported from the IETF RFC index. Operator-curated relevance pending — refine when this RFC becomes operationally cited in a skill body or finding.",
     "skills_referencing": [],
-    "last_verified": "2026-05-27",
+    "last_verified": "2026-10-06",
     "_auto_imported": true,
     "_intake_method": "ietf-rfc-index",
     "_obsoleted": true,
     "obsoleted_by": [
-      "RFC8446"
+      "RFC8446",
+      "RFC9846"
     ]
   },
   "RFC-5078": {
@@ -281045,12 +281203,13 @@
     "html_url": "https://www.rfc-editor.org/rfc/rfc5246.html",
     "relevance": "Auto-imported from the IETF RFC index. Operator-curated relevance pending — refine when this RFC becomes operationally cited in a skill body or finding.",
     "skills_referencing": [],
-    "last_verified": "2026-05-27",
+    "last_verified": "2026-10-06",
     "_auto_imported": true,
     "_intake_method": "ietf-rfc-index",
     "_obsoleted": true,
     "obsoleted_by": [
-      "RFC8446"
+      "RFC8446",
+      "RFC9846"
     ]
   },
   "RFC-5268": {
@@ -286915,12 +287074,13 @@
     "html_url": "https://www.rfc-editor.org/rfc/rfc6961.html",
     "relevance": "Auto-imported from the IETF RFC index. Operator-curated relevance pending — refine when this RFC becomes operationally cited in a skill body or finding.",
     "skills_referencing": [],
-    "last_verified": "2026-05-27",
+    "last_verified": "2026-10-06",
     "_auto_imported": true,
     "_intake_method": "ietf-rfc-index",
     "_obsoleted": true,
     "obsoleted_by": [
-      "RFC8446"
+      "RFC8446",
+      "RFC9846"
     ]
   },
   "RFC-6982": {
@@ -291756,7 +291916,9 @@
     "txt_url": "https://www.rfc-editor.org/rfc/rfc9989.txt",
     "html_url": "https://www.rfc-editor.org/rfc/rfc9989.html",
     "relevance": "Auto-imported from the IETF RFC index. Operator-curated relevance pending — refine when this RFC becomes operationally cited in a skill body or finding.",
-    "skills_referencing": [],
+    "skills_referencing": [
+      "email-security-anti-phishing"
+    ],
     "last_verified": "2026-05-27",
     "_auto_imported": true,
     "_intake_method": "ietf-rfc-index"
@@ -291787,7 +291949,9 @@
     "txt_url": "https://www.rfc-editor.org/rfc/rfc9990.txt",
     "html_url": "https://www.rfc-editor.org/rfc/rfc9990.html",
     "relevance": "Auto-imported from the IETF RFC index. Operator-curated relevance pending — refine when this RFC becomes operationally cited in a skill body or finding.",
-    "skills_referencing": [],
+    "skills_referencing": [
+      "email-security-anti-phishing"
+    ],
     "last_verified": "2026-05-27",
     "_auto_imported": true,
     "_intake_method": "ietf-rfc-index"
@@ -291828,7 +291992,9 @@
     "txt_url": "https://www.rfc-editor.org/rfc/rfc9991.txt",
     "html_url": "https://www.rfc-editor.org/rfc/rfc9991.html",
     "relevance": "Auto-imported from the IETF RFC index. Operator-curated relevance pending — refine when this RFC becomes operationally cited in a skill body or finding.",
-    "skills_referencing": [],
+    "skills_referencing": [
+      "email-security-anti-phishing"
+    ],
     "last_verified": "2026-05-27",
     "_auto_imported": true,
     "_intake_method": "ietf-rfc-index"
@@ -291841,7 +292007,7 @@
     "errata_count": 0,
     "tracker": "https://www.rfc-editor.org/info/rfc9954",
     "relevance": "Publishes the concatenation-based hybrid key-exchange construction for TLS 1.3 that the PQC migration story depends on. Gives operators a citable standard for X25519MLKEM768 rather than a moving draft, which matters for a control an auditor has to verify.",
-    "lag_notes": "Informational, not Standards Track — it specifies the construction, not a mandate. No compliance framework requires it (NIST 800-53 SC-13, ISO 27001:2022 A.8.24, PCI DSS 4.0 4.2.1 and NIS2 Art. 21 name no IETF profile), and CNSA 2.0 sets a 2030 deadline without pinning one. Supersedes draft-ietf-tls-hybrid-design; draft-ietf-tls-ecdhe-mlkem remains a separate Standards-Track draft and is NOT covered by this RFC.",
+    "lag_notes": "Informational, not Standards Track — it specifies the construction, not a mandate. No compliance framework requires it (NIST 800-53 SC-13, ISO 27001:2022 A.8.24, PCI DSS v4.0.1 4.2.1 and NIS2 Art. 21 name no IETF profile), and CNSA 2.0 sets a 2030 deadline without pinning one. Supersedes draft-ietf-tls-hybrid-design. The concrete hybrid groups from draft-ietf-tls-ecdhe-mlkem were published separately as RFC 10024 (Proposed Standard) and are not covered by this RFC.",
     "skills_referencing": [
       "pqc-first",
       "security-maturity-tiers"
