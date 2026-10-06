@@ -1326,9 +1326,12 @@
     "number": null,
     "draft_id": "draft-ietf-tls-ecdhe-mlkem",
     "title": "Post-Quantum Hybrid ECDHE-MLKEM Key Agreement for TLSv1.3",
-    "status": "Draft",
+    "status": "Proposed Standard",
     "published": "2026-08 as RFC 10024",
     "published_as": "RFC-10024",
+    "replaced_by": [
+      "RFC-10024"
+    ],
     "tracker": "https://datatracker.ietf.org/doc/draft-ietf-tls-ecdhe-mlkem/",
     "relevance": "The Internet-Draft that was published in August 2026 as RFC 10024, which defines the X25519MLKEM768, SecP256r1MLKEM768 and SecP384r1MLKEM1024 hybrid key agreements for TLS 1.3. Cite RFC-10024; this entry is kept so references to the draft name resolve.",
     "lag_notes": "Published as RFC 10024 in August 2026; no further draft revisions are expected.",
@@ -232989,6 +232992,7 @@
     "title": "The Transport Layer Security (TLS) Protocol Version 1.3",
     "status": "Proposed Standard",
     "published": "2026-07",
+    "errata_count": 5,
     "tracker": "https://www.rfc-editor.org/info/rfc9846",
     "relevance": "TLS 1.3 as republished in July 2026. It obsoletes RFC 8446, RFC 5246 and RFCs 5077, 6961, 7627 and 8422, and sets new requirements for TLS 1.2 implementations. The pqc-first skill cites it as the TLS 1.3 specification that the hybrid key agreements of RFC 10024 extend.",
     "skills_referencing": [
@@ -233026,6 +233030,7 @@
     "title": "Post-Quantum Traditional (PQ/T) Hybrid Key Agreement Mechanisms for TLS 1.3",
     "status": "Proposed Standard",
     "published": "2026-08",
+    "errata_count": 0,
     "tracker": "https://www.rfc-editor.org/info/rfc10024",
     "relevance": "Defines the X25519MLKEM768, SecP256r1MLKEM768 and SecP384r1MLKEM1024 hybrid key agreements for TLS 1.3. The pqc-first skill cites it as the published specification of the hybrid groups it recommends, which draft-ietf-tls-ecdhe-mlkem carried before publication.",
     "skills_referencing": [

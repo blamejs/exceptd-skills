@@ -3,8 +3,8 @@
     "schema_version": "1.0.0",
     "tokenizer_note": "Character-density approximation: 1 token ≈ 4 chars. This is the canonical rule-of-thumb for OpenAI tokenizers on English+technical text. Claude's tokenizer is typically more efficient on prose; treat this as an upper-bound budget for both. Consumers with stricter precision needs should re-tokenize with their own tokenizer.",
     "approx_chars_per_token": 4,
-    "total_chars": 1788226,
-    "total_approx_tokens": 447063,
+    "total_chars": 1788427,
+    "total_approx_tokens": 447113,
     "skill_count": 51
   },
   "skills": {
@@ -650,10 +650,10 @@
     },
     "global-grc": {
       "path": "skills/global-grc/skill.md",
-      "bytes": 58645,
-      "chars": 58363,
+      "bytes": 58745,
+      "chars": 58463,
       "lines": 662,
-      "approx_tokens": 14591,
+      "approx_tokens": 14616,
       "approx_chars_per_token": 4,
       "sections": {
         "frontmatter-scope": {
@@ -662,9 +662,9 @@
           "approx_tokens": 107
         },
         "framework-registry-mid-2026-currency": {
-          "bytes": 27026,
-          "chars": 26886,
-          "approx_tokens": 6722
+          "bytes": 27126,
+          "chars": 26986,
+          "approx_tokens": 6747
         },
         "universal-gaps-no-jurisdiction-covers-these": {
           "bytes": 1104,
@@ -1630,10 +1630,10 @@
     },
     "ai-risk-management": {
       "path": "skills/ai-risk-management/skill.md",
-      "bytes": 36263,
-      "chars": 36091,
+      "bytes": 36364,
+      "chars": 36192,
       "lines": 324,
-      "approx_tokens": 9023,
+      "approx_tokens": 9048,
       "approx_chars_per_token": 4,
       "sections": {
         "purpose": {
@@ -1642,9 +1642,9 @@
           "approx_tokens": 194
         },
         "threat-context": {
-          "bytes": 4466,
-          "chars": 4448,
-          "approx_tokens": 1112
+          "bytes": 4567,
+          "chars": 4549,
+          "approx_tokens": 1137
         },
         "framework-lag-declaration": {
           "bytes": 5835,
