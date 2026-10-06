@@ -45,7 +45,7 @@ cwe_refs:
   - CWE-22
   - CWE-834
   - CWE-770
-last_threat_review: "2026-06-02"
+last_threat_review: "2026-10-05"
 ---
 
 # Decompression-Bomb / Parser-DoS / ReDoS Resistance
@@ -60,7 +60,7 @@ Organizational controls treat "we validate all input" and "the cloud autoscales"
 
 ## TTP Mapping
 
-The amplification-DoS failures map to MITRE ATT&CK: **T1499 (Endpoint Denial of Service)** for ReDoS and circuit-style resource exhaustion; **T1499.001 (OS Exhaustion Flood)** for decompression bombs, billion-laughs entity expansion, deep-recursion parsing, and length-field over-allocation that exhaust memory/CPU from a single input; and **T1059 (Command/Execution)** for Zip Slip path traversal that overwrites an executable or config to gain code execution. The weakness classes are CWE-409 (improper handling of highly compressed data), CWE-1333 (inefficient regular expression complexity / ReDoS), CWE-776 (XML entity expansion), CWE-834 (excessive iteration / unbounded recursion), CWE-22 (path traversal — Zip Slip), CWE-400 (uncontrolled resource consumption), and CWE-770 (allocation without limits).
+The amplification-DoS failures map to MITRE ATT&CK: **T1499 (Endpoint Denial of Service)** for ReDoS and circuit-style resource exhaustion; **T1499.001 (OS Exhaustion Flood)** for decompression bombs, billion-laughs entity expansion, deep-recursion parsing, and length-field over-allocation that exhaust memory/CPU from a single input; and **T1059 (Command and Scripting Interpreter)** for Zip Slip path traversal that overwrites an executable or config to gain code execution. The weakness classes are CWE-409 (improper handling of highly compressed data), CWE-1333 (inefficient regular expression complexity / ReDoS), CWE-776 (XML entity expansion), CWE-834 (excessive iteration / unbounded recursion), CWE-22 (path traversal — Zip Slip), CWE-400 (uncontrolled resource consumption), and CWE-770 (allocation without limits).
 
 ## Exploit Availability Matrix
 
@@ -80,4 +80,4 @@ The recurring theater is "we validate all input, so malformed data is handled," 
 
 ## Defensive Countermeasure Mapping
 
-Map findings to MITRE D3FEND: decompression size/ratio caps and length-field bounds realize Resource Consumption Limiting and Input-Size Restriction (countering T1499.001); XML entity disabling realizes Document Parser Hardening (countering billion-laughs / XXE); linear-time regex realizes Algorithmic-Complexity Limiting (countering ReDoS / T1499); extraction path confinement realizes Path-Traversal Prevention (countering Zip Slip / T1059); parse-depth limits realize Recursion Bounding. Pair the static bounds with continuous coverage-guided fuzzing (the fuzz-testing-strategy skill) as the regression control for novel amplification inputs. The residual risk after bounding the known classes is an unforeseen pathological input, caught by the fuzzer rather than the caps, accepted at the CISO level.
+Map findings to MITRE D3FEND: length-field bounds realize Integer Range Validation (D3-IRV, countering T1499.001), and XML entity disabling realizes Application Configuration Hardening (D3-ACH, countering billion-laughs / XXE). Decompression size and ratio caps counter T1499.001, as do parse-depth limits. Linear-time regex counters ReDoS / T1499, and extraction path confinement counters Zip Slip / T1059. Pair the static bounds with continuous coverage-guided fuzzing (the fuzz-testing-strategy skill) as the regression control for novel amplification inputs. The residual risk after bounding the known classes is an unforeseen pathological input, caught by the fuzzer rather than the caps, accepted at the CISO level.

@@ -45,7 +45,7 @@ cwe_refs:
   - CWE-1039
 d3fend_refs:
   - D3-IOPR
-last_threat_review: "2026-05-15"
+last_threat_review: "2026-10-05"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief ai-risk-management` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
@@ -63,9 +63,9 @@ This skill does not produce a technical control list — `defensive-countermeasu
 
 AI governance moved from voluntary to mandatory between 2024 and 2026. The transition has three concrete dates that anchor the current state of the practice:
 
-- **2023-08-22** — ISO/IEC 42001:2023 published as the first international standard for an AI Management System (AIMS). Certification bodies began offering accredited certification through 2024–2025; by Q2 2026 it is the de facto certification target for any organization that builds or deploys AI at scale.
-- **2023-12-15** — ISO/IEC 23894:2023 published, providing the AI risk management process that 42001 operationalizes. The two standards are designed as a pair: 23894 is the *process*, 42001 is the *management system that runs the process*.
-- **2024-08-01** to **2026-08-02** — EU AI Act (Regulation 2024/1689) staged entry into force. Prohibited-AI provisions effective 2025-02-02; GPAI obligations effective 2025-08-02; **high-risk AI system obligations under Art. 9 (risk management system), Art. 10 (data governance), Art. 12 (logging), Art. 14 (human oversight), and Art. 15 (accuracy, robustness, cybersecurity) become fully enforceable on 2026-08-02** — less than three months from the date stamped at the top of this skill.
+- **2023-12-18** — ISO/IEC 42001:2023 published as the first international standard for an AI Management System (AIMS). Certification bodies began offering accredited certification through 2024–2025; by Q2 2026 it is the de facto certification target for any organization that builds or deploys AI at scale.
+- **2023-02-06** — ISO/IEC 23894:2023 published, providing the AI risk management process that 42001 operationalizes. The two standards are designed as a pair: 23894 is the *process*, 42001 is the *management system that runs the process*.
+- **2024-08-01** to **2028-08-02**: the EU AI Act (Regulation 2024/1689) entered into force on 2024-08-01 and applies in stages. Prohibited-AI provisions have applied since 2025-02-02, and GPAI obligations have applied since 2025-08-02. The general application date was 2026-08-02. Regulation (EU) 2026/1744 (the Digital Omnibus on AI), in force since 2026-07-27, moved the **high-risk AI system obligations under Art. 9 (risk management system), Art. 10 (data governance), Art. 12 (logging), Art. 14 (human oversight), and Art. 15 (accuracy, robustness, cybersecurity)** to 2027-12-02 for Annex III systems and to 2028-08-02 for systems embedded in Annex I products.
 
 The gap on the ground is severe and the same in every jurisdiction the maintainers have spot-checked through Q2 2026: most organizations deploying LLMs, agents, RAG pipelines, and AI-augmented developer tooling have **zero governance artifact specific to AI**. They assume general security policies, the existing risk register, the existing vendor management program, and the existing incident response playbook cover AI by inheritance. They do not. Concretely:
 
@@ -77,13 +77,13 @@ The gap on the ground is severe and the same in every jurisdiction the maintaine
 
 AI red-team activity has likewise shifted from voluntary research practice to governance obligation:
 
-- EU AI Act Art. 72 mandates adversarial testing of GPAI models with systemic risk.
-- NIST AI RMF MEASURE 2.5 expects organizations to assess AI risks during operation (`data/framework-control-gaps.json` → `NIST-AI-RMF-MEASURE-2.5`).
+- EU AI Act Art. 55(1)(a) mandates adversarial testing of GPAI models with systemic risk.
+- NIST AI RMF MEASURE 2.5 expects organizations to demonstrate that the AI system to be deployed is valid and reliable and to document the limits of its generalizability (`data/framework-control-gaps.json` → `NIST-AI-RMF-MEASURE-2.5`).
 - OWASP LLM Top 10 2025 (LLM01: Prompt Injection — `data/framework-control-gaps.json` → `OWASP-LLM-Top-10-2025-LLM01`) is treated by auditors as the working operational checklist where ISO/IEC 42001 is silent on technical specifics.
 
-The 2024–2026 disclosure record is unforgiving: vendor advisories from OpenAI, Anthropic, Google DeepMind, and Microsoft have published AI vulnerability disclosures spanning prompt-injection-driven RCE (CVE-2025-53773, CVSS 7.8 / AV:L), local-vector MCP supply-chain RCE (CVE-2026-30615, CVSS 8.0 / AV:L), agentic-pipeline compromise patterns, and indirect-injection via retrieved content. An organization with no governance artifact mapping these classes to internal use cases is not in a position to act on any of them.
+The 2024–2026 disclosure record is unforgiving: vendor advisories from OpenAI, Anthropic, Google DeepMind, and Microsoft, and researcher advisories such as OX Security's, have published AI vulnerability disclosures spanning prompt-injection-driven RCE (CVE-2025-53773, CVSS 7.8 / AV:L, in a Microsoft advisory), local-vector MCP supply-chain RCE in Windsurf (CVE-2026-30615, CVSS 8.0 / AV:L, in an OX Security advisory of 2026-04-15), agentic-pipeline compromise patterns, and indirect-injection via retrieved content. An organization with no governance artifact mapping these classes to internal use cases is not in a position to act on any of them.
 
-AI as adversary is now operational reality, not forecast: 41% of 2025 zero-days were AI-discovered (GTIG 2025 annual), and the first documented AI-built in-the-wild zero-day surfaced 2026-05-11 (GTIG AI 2FA-bypass case). Risk registers, vendor questionnaires, and incident playbooks that omit AI-as-discovery-actor are out of currency. Align the AIMS to **CTID Secure AI v2 (2026-05-06)** — Secure AI v1 is superseded; Annex SL clause-by-clause mapping in `data/framework-control-gaps.json`.
+AI as adversary is now operational reality, not forecast: 41% of 2025 zero-days were AI-discovered (GTIG 2025 annual), and the first documented AI-built in-the-wild zero-day surfaced 2026-05-11 (GTIG AI 2FA-bypass case). Risk registers, vendor questionnaires, and incident playbooks that omit AI-as-discovery-actor are out of currency. Align the AIMS to **CTID Secure AI v2 (2026-05-06)** — Secure AI v1 is superseded.
 
 ---
 
@@ -93,16 +93,16 @@ AI governance lag is global and asymmetric. Regulatory expectation outruns opera
 
 | Jurisdiction | Framework | Control / Article | What it misses for AI governance |
 |---|---|---|---|
-| Global | ISO | ISO/IEC 42001:2023 clause 6.1.2 (AI risk treatment) — gap key `ISO-IEC-42001-2023-clause-6.1.2` | Mandates an AIMS but is **process-focused**. Specifies neither prompt-injection-resistant context boundaries, nor MCP server trust posture, nor AI-as-C2 detection. Certification is achievable without any of these technical controls. |
-| Global | ISO | ISO/IEC 23894:2023 clause 7 (AI risk management process) — gap key `ISO-IEC-23894-2023-clause-7` | Details a generic risk-management process for AI; does not enumerate AI-specific threat classes, does not bind to ATLAS, does not require an AI red-team cadence. |
-| US | NIST | AI RMF 1.0 — MEASURE 2.5 — gap key `NIST-AI-RMF-MEASURE-2.5` | "Measure AI risks and impacts" is a function; provides no schedule, no minimum test set, no requirement to map findings to ATLAS or to a defensive-countermeasure catalog. NIST AI RMF MAP-3.1 (categorization) is similarly process-only. |
+| Global | ISO | ISO/IEC 42001:2023 clause 6.1.2 (AI risk assessment) — gap key `ISO-IEC-42001-2023-clause-6.1.2` | Mandates an AIMS but is **process-focused**. Specifies neither prompt-injection-resistant context boundaries, nor MCP server trust posture, nor AI-as-C2 detection. Certification is achievable without any of these technical controls. |
+| Global | ISO | ISO/IEC 23894:2023 clause 6 (risk management process) — gap key `ISO-IEC-23894-2023-clause-7` | Details a generic risk-management process for AI; does not enumerate AI-specific threat classes, does not bind to ATLAS, does not require an AI red-team cadence. |
+| US | NIST | AI RMF 1.0 — MEASURE 2.5 — gap key `NIST-AI-RMF-MEASURE-2.5` | MEASURE 2.5 states the outcome that the AI system to be deployed is demonstrated to be valid and reliable. It provides no schedule, no minimum test set, no requirement to map findings to ATLAS or to a defensive-countermeasure catalog. NIST AI RMF MAP 2 (categorization) is similarly process-only. |
 | Global | OWASP | LLM Top 10 (2025) — LLM01 Prompt Injection — gap key `OWASP-LLM-Top-10-2025-LLM01` | Operational checklist treated by auditors as a substitute for binding control language. Helpful for engineers, not legally binding, and does not address ISO/IEC 42001 management-system obligations. |
-| EU | EU AI Office | EU AI Act (Regulation 2024/1689) Art. 9 (Risk Management System, high-risk AI) | Mandatory **continuous iterative** RMS for high-risk AI systems from 2026-08-02. Silent on internal-use AI tooling (Copilot-for-office-workers, internal coding assistants) where staff productivity AI doubles as data exfiltration surface. |
+| EU | EU AI Office | EU AI Act (Regulation 2024/1689) Art. 9 (Risk Management System, high-risk AI) | Mandatory **continuous iterative** RMS for high-risk AI systems from 2027-12-02 (Annex III systems) and 2028-08-02 (Annex I product-embedded systems) under Regulation (EU) 2026/1744. Silent on internal-use AI tooling (Copilot-for-office-workers, internal coding assistants) where staff productivity AI doubles as data exfiltration surface. |
 | EU | EU AI Office | EU AI Act Art. 15 (accuracy, robustness, cybersecurity) | "Cybersecurity" requirement for high-risk AI is undefined at the technical level. Prompt injection not addressed in Art. 15 or implementing measures (per `data/global-frameworks.json` → EU.EU_AI_ACT.framework_gaps). |
-| EU | EU AI Office | EU AI Act Art. 72 (GPAI adversarial testing) | Adversarial testing required for GPAI with systemic risk; no specification of test methodology, no required ATLAS coverage, no signing/attestation requirement for adversarial-test results. |
+| EU | EU AI Office | EU AI Act Art. 55(1)(a) (GPAI adversarial testing) | Adversarial testing required for GPAI with systemic risk; no specification of test methodology, no required ATLAS coverage, no signing/attestation requirement for adversarial-test results. |
 | UK | DSIT / NCSC | UK AI Regulation White Paper (2023) — sectoral, principles-based approach | Five cross-sectoral principles (safety/security, transparency, fairness, accountability, contestability). **Non-statutory.** No central AI authority equivalent to the EU AI Office. NCSC's 2024 AI security guidance is sectoral and voluntary. |
-| AU | DISR / NAIC | AU Voluntary AI Safety Standard (2024) + ASD ISM AI annex (2025) | Voluntary standard; ten guardrails patterned on EU AI Act but **non-binding**. ISM AI annex (2025) names ATLAS but does not bind methodology. |
-| JP | Cabinet Office | AI Strategy Council Human-Centric AI Society Principles + AI Guidelines for Business v1.0 (2024-04) + Hiroshima AI Process Code of Conduct (2023-10) — per `data/global-frameworks.json` → JP.AI_STRATEGY_COUNCIL | **Entire regime non-binding** as of 2026-05. No statutory AI law; LDP/Cabinet discussions on a Japanese AI Act ongoing. No mandatory adversarial testing equivalent to EU Art. 72. |
+| AU | DISR / NAIC | AU Voluntary AI Safety Standard (2024) + ASD ISM AI controls (2025) | Voluntary standard; ten guardrails patterned on EU AI Act but **non-binding**. The ISM AI controls (2025) name ATLAS as further information but do not bind a methodology. |
+| JP | Cabinet Office | AI Strategy Council Human-Centric AI Society Principles + AI Guidelines for Business v1.2 (2026-03-31) + Hiroshima AI Process Code of Conduct (2023-10) — per `data/global-frameworks.json` → JP.AI_STRATEGY_COUNCIL | Japan's AI Act (Act on Promotion of Research and Development, and Utilization of AI-related Technology, Act No. 53 of 2025) has been fully in force since 2025-09-01. Article 7 requires business operators that use AI-related technology to cooperate with the measures that the national and local governments carry out under the Act, and the Act sets no penalties. The AI Guidelines for Business and the Hiroshima AI Process Code of Conduct remain voluntary. Japan has no mandatory adversarial-testing duty equivalent to EU Art. 55(1)(a). |
 | IL | INCD | Cyber Defense for AI Systems guidance (2024) under INCD Cyber Defense Methodology v2.1 — per `data/global-frameworks.json` → IL.INCD_METHODOLOGY | Explicit AI-systems guidance: adversarial ML threat modeling, prompt injection, training-data integrity, model supply chain. The most operationally-specific national AI-security guidance available in mid-2026. Voluntary for private sector; mandatory for designated essential service providers via INCD directives. |
 | ID | Komdigi / BSSN | UU PDP (Law 27/2022) Art. 35; no dedicated AI law as of 2026-05 — per `data/global-frameworks.json` → ID.PDP_LAW | UU PDP general security obligation extends to AI by inheritance; no AI-specific risk-management requirement, no AI inventory obligation, no adversarial-testing duty. |
 | US sub-national | NYDFS | 23 NYCRR Part 500 — Cybersecurity Requirements for Financial Services Companies; 2024 NYDFS letter on AI cybersecurity risks — per `data/global-frameworks.json` → US_NYDFS.NYDFS_PART_500 | Part 500 second amendment (2023) is not AI-specific; the 2024 NYDFS AI letter is **interpretive guidance**, not a regulation, but applies Part 500 risk-assessment, vendor-management, and access-control obligations to AI systems. Functions as a de facto financial-sector AI risk-management baseline for any entity holding a New York banking, insurance, or financial-services license (including non-US institutions). |
@@ -117,7 +117,7 @@ Governance failure surfaces as exploitable threat. The TTPs below are the diagno
 
 | ATLAS ID | Technique | Governance failure that exposes it | Where the gap appears in the AIMS |
 |---|---|---|---|
-| AML.T0051 | LLM Prompt Injection | No prompt/response logging, no semantic monitoring, no AI use-case-level risk treatment decision | ISO/IEC 23894 clause 7 risk treatment register has no entry; OWASP LLM01 control unowned. CWE-1426 (improper validation of generative AI output) is the root-cause class. |
+| AML.T0051 | LLM Prompt Injection | No prompt/response logging, no semantic monitoring, no AI use-case-level risk treatment decision | ISO/IEC 23894 clause 6.5 risk treatment register has no entry; OWASP LLM01 control unowned. CWE-1426 (improper validation of generative AI output) is the root-cause class. |
 | AML.T0096 | AI Service API (covert C2) | No baseline of normal AI API traffic per principal; AI API egress treated as trusted internal traffic | NIST AI RMF MEASURE 2.5 not operationalized; SesameOp-class detection absent from SOC playbooks. |
 | AML.T0013 | Discover AI Model Ontology: adversary reconnaissance of deployed model family / guardrails | No inference-API rate / shape baseline; model-registry RBAC absent; system-prompt extraction queries undetected | NIST AI RMF MEASURE 2.5 not requiring per-identity inference monitoring; AIMS lacks a probing-detection control. |
 | AML.T0017 | Develop Capabilities (adversary AI-assisted exploit / payload development) | No threat-intelligence ingestion path for AI-discovered vulnerabilities; patch SLAs sized for human-speed exploit development | EU AI Act Art. 9 RMS not iterating on the input that 41% of 2025 zero-days are AI-discovered (per `ai-attack-surface` and `zeroday-lessons.json`). |
@@ -142,7 +142,7 @@ Adversary capability versus organizational governance maturity is the relevant a
 | Low (off-the-shelf prompt injection per AML.T0051) | Exploitable today. Bypass rates >85% against SOTA defenses (per `ai-attack-surface`). No detection. | Exploitable. Risk register names the threat; no detection or response capability deployed. | Detection latency: minutes-to-hours. Response playbook bound to incident class. |
 | Medium (AI-as-C2 per AML.T0096, SesameOp pattern) | Exploited last quarter by definition — no AI API logging, no baseline. | Detection-blind: AI traffic logged but no behavioral baseline. | Behavioral baseline + correlation with host activity per `ai-attack-surface` Step 4. |
 | High (AI-assisted exploit development per AML.T0017, Copy Fail-class) | Patch SLA structurally inadequate; live-patch capability absent. | Patch SLA sized for human-speed exploit development. | RWEP-driven prioritization (`lib/scoring.js`), live-patch SLA <4h for KEV+PoC+AI-discovered class. |
-| Frontier (training pipeline poisoning, supply-chain compromise of model weights — AML.T0020 catalog) | No AI supplier risk register; vendor SOC 2 accepted as adequate. | AI vendor register exists; no 4th-party (AI-of-AI) coverage. | EU AI Act Art. 10 data governance + Art. 72 adversarial testing operationalized; vendor adversarial-test attestations required contractually. |
+| Frontier (training pipeline poisoning, supply-chain compromise of model weights — AML.T0020 catalog) | No AI supplier risk register; vendor SOC 2 accepted as adequate. | AI vendor register exists; no 4th-party (AI-of-AI) coverage. | EU AI Act Art. 10 data governance + Art. 55(1)(a) adversarial testing operationalized; vendor adversarial-test attestations required contractually. |
 
 Reference incident inputs to the matrix: vendor advisories from Anthropic, OpenAI, Google DeepMind, Microsoft across 2024–2026; the emergent agentic-attack patterns observed through 2025–2026 disclosed in coordinated-vulnerability programs per `coordinated-vuln-disclosure`; the AI-as-C2 evidence base referenced in `ai-c2-detection`; the prompt-injection-RCE and MCP-RCE CVE evidence referenced in `ai-attack-surface`.
 
@@ -156,7 +156,7 @@ Every AI risk-management exercise must explicitly thread three foundational desi
 
 - **Defense in depth (program layering, not just technical layering).** Governance ≠ technical defense. The AIMS is a *defense-in-depth scaffold for the technical defenses*. Program layers:
   - Layer 1 — **AI inventory** (every model, every API, every agent, every MCP server, every RAG corpus, every fine-tuning artifact).
-  - Layer 2 — **AI impact assessment per use case** (ISO/IEC 23894 clause 7 process; EU AI Act AIA + GDPR DPIA crosswalk for high-risk and personal-data-processing cases).
+  - Layer 2 — **AI impact assessment per use case** (ISO/IEC 23894 clause 6 process; EU AI Act AIA + GDPR DPIA crosswalk for high-risk and personal-data-processing cases).
   - Layer 3 — **AI risk-treatment register** (acceptable / mitigated / transferred / avoided, with owner and review cadence per use case).
   - Layer 4 — **AI incident response playbook** (incident classes, declaration thresholds, regulatory notification timelines per jurisdiction).
   - Layer 5 — **AI red-team program** (continuous adversarial testing on a documented cadence, with findings routed to the risk register and to `defensive-countermeasure-mapping`).
@@ -180,7 +180,7 @@ For organizations operating outside the EU, the classification is still useful a
 
 ### Step 3 — Run AI impact assessment per ISO/IEC 23894
 
-For each inventory row above the minimal-risk threshold, run the ISO/IEC 23894 clause 7 risk-management process: context establishment → risk identification (cross-walking to ATLAS via `data/atlas-ttps.json`) → risk analysis → risk evaluation → risk treatment. For personal-data-processing AI use cases, integrate with the GDPR Art. 35 DPIA, LGPD Art. 38 RIPD, PIPL Art. 55, India DPDPA, Indonesia UU PDP Art. 35 obligations as a combined AIA+DPIA. Hand off the threat-enumeration step to `threat-modeling-methodology` (LINDDUN for privacy, STRIDE-ML for technical, composite for AI-agent systems).
+For each inventory row above the minimal-risk threshold, run the ISO/IEC 23894 clause 6 risk-management process: context establishment → risk identification (cross-walking to ATLAS via `data/atlas-ttps.json`) → risk analysis → risk evaluation → risk treatment. For personal-data-processing AI use cases, integrate with the GDPR Art. 35 DPIA, LGPD Art. 38 RIPD, PIPL Art. 55, India DPDPA, Indonesia UU PDP Art. 34 obligations as a combined AIA+DPIA. Hand off the threat-enumeration step to `threat-modeling-methodology` (LINDDUN for privacy, STRIDE-ML for technical, composite for AI-agent systems).
 
 ### Step 4 — Log every risk-treatment decision
 
@@ -190,7 +190,7 @@ Acceptance decisions require sign-off from the risk-accepting authority. Accepta
 
 ### Step 5 — Set up an AI red-team cadence
 
-Continuous adversarial testing is the operational expression of EU AI Act Art. 72 and NIST AI RMF MEASURE 2.5. Program requirements:
+Continuous adversarial testing is the operational expression of EU AI Act Art. 55(1)(a) and NIST AI RMF MEASURE 2.5. Program requirements:
 - Minimum quarterly cadence for high-risk AI use cases; semi-annually for limited-risk.
 - ATLAS-coverage minimum: every AML.T* in `data/atlas-ttps.json` applicable to the use case is tested or has a documented exclusion.
 - Adversarial-test results feed both `defensive-countermeasure-mapping` (for D3FEND mitigation production) and the risk-treatment register (for residual-risk re-evaluation).
@@ -228,7 +228,7 @@ The skill produces a structured AI Risk Management Program assessment scoring th
 ## AI Risk Management Program — <organization / scope>
 **Assessment Date:** YYYY-MM-DD
 **Standards in scope:** ISO/IEC 42001:2023 | ISO/IEC 23894:2023 | NIST AI RMF 1.0 | EU AI Act (2024/1689) | <jurisdiction-specific frameworks>
-**EU AI Act enforcement reference date:** 2026-08-02 (high-risk system obligations fully enforceable)
+**EU AI Act enforcement reference date:** 2027-12-02 for Annex III high-risk systems and 2028-08-02 for Annex I product-embedded systems (Regulation (EU) 2026/1744)
 
 ### 1. AI Inventory Ledger
 | ID | Name | Owner | Runtime | Data tier | EU AI Act risk tier | Personal data? | Tool-call surface | MCP servers | Dependencies |
@@ -282,7 +282,7 @@ Apply each test. A "no" on any of (a)–(e) means the AI governance posture is p
 
 (a) **Show me your AI inventory ledger.** If there is no list of every model + API + agent + MCP server + RAG corpus, the governance claim is theater. ISO/IEC 42001 cannot be implemented over an unknown surface. The test is concrete: ask for the inventory; if the response is "we use OpenAI for some things" or "let me check with the AI team", the inventory does not exist.
 
-(b) **Show me your most recent AI impact assessment for a high-risk EU AI Act use case.** Per the 2026-08-02 enforcement date, any high-risk use case in production requires a documented Art. 9 RMS output before that date. If none exist for a deployed high-risk use case, the organization is non-compliant with the upcoming deadline — and the governance program is paper. If the response is "we don't think any of our use cases are high-risk" without a documented classification exercise referencing EU AI Act Annex III, that *is* the theater.
+(b) **Show me your most recent AI impact assessment for a high-risk EU AI Act use case.** Art. 9 applies to Annex III high-risk systems from 2027-12-02 and to Annex I product-embedded systems from 2028-08-02 under Regulation (EU) 2026/1744. If no documented Art. 9 RMS output exists for a deployed high-risk use case, the organization is not prepared for that deadline, and the governance program is paper. If the response is "we don't think any of our use cases are high-risk" without a documented classification exercise referencing EU AI Act Annex III, that *is* the theater.
 
 (c) **What is your AI red-team cadence and last finding?** If the answer is "we haven't tested" or "we ran a red-team exercise in 2023", the red-team program is theater. The pattern auditors look for in 2026: a documented cadence, ATLAS-coverage matrix, last-test date within the cadence window, findings routed to the risk-treatment register, and at least one residual-risk re-evaluation triggered by a red-team finding.
 

@@ -1,7 +1,7 @@
 ---
 name: sector-telecom
 version: "1.0.0"
-description: Telecom and 5G security for mid-2026 — Salt Typhoon, Volt Typhoon, CALEA / IPA-LI gateway compromise, signaling-protocol abuse (SS7 / Diameter / GTP), 5G N6 / N9 isolation, gNB / DU / CU integrity, OEM-equipment supply-chain compromise, AI-RAN / O-RAN security; FCC CPNI + 4-business-day notification, NIS2 Annex I telecom essential entities, UK TSA 2021 + Ofcom, AU SOCI / TSSR, GSMA NESAS, 3GPP TR 33.926 + TS 33.501, ITU-T X.805.
+description: Telecom and 5G security for mid-2026 — Salt Typhoon, Volt Typhoon, CALEA / IPA-LI gateway compromise, signaling-protocol abuse (SS7 / Diameter / GTP), 5G N6 / N9 isolation, gNB / DU / CU integrity, OEM-equipment supply-chain compromise, AI-RAN / O-RAN security; FCC CPNI + 7-business-day breach notification, NIS2 Annex I telecom essential entities, UK TSA 2021 + Ofcom, AU SOCI Act (Part 2D replaced TSSR on 2025-04-04), GSMA NESAS, 3GPP TR 33.926 + TS 33.501, ITU-T X.805.
 triggers:
   - telecom security
   - 5g core
@@ -11,7 +11,7 @@ triggers:
   - lawful intercept
   - calea
   - fcc cpni
-  - 4-business-day notification
+  - 7-business-day notification
   - gsma nesas
   - ss7
   - diameter
@@ -65,28 +65,28 @@ forward_watch:
   - "Volt Typhoon / Salt Typhoon successor-actor disclosures"
   - "Five Eyes joint advisories on telecom-equipment intrusion"
   - "3GPP TS 33.501 updates (5G security architecture rebaseline)"
-  - "O-RAN SFG / WG11 security specifications"
-last_threat_review: "2026-05-15"
+  - "O-RAN Alliance WG11 (Security Work Group) security specifications"
+last_threat_review: "2026-10-05"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief sector-telecom` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
 ## Threat Context (mid-2026)
 
-**Salt Typhoon (China nation-state; PRC Ministry of State Security nexus).** The 2024–2026 campaign — disclosed in successive Five Eyes joint advisories from October 2024 onward (CISA / NSA / FBI joint product reissued through 2025–2026) — compromised at least nine US carriers (publicly named: AT&T, Verizon, T-Mobile US, Lumen, Charter, Cox, Windstream, Consolidated, plus undisclosed others) and extended to AU / CA / NZ / UK Tier-1 carriers. Threat actor TTPs map to T1199 (Trusted Relationship) via OEM vendor supply chain, T1098 (Account Manipulation) for persistent admin access on NMS, and T1078 (Valid Accounts) with stolen LI-gateway operator credentials. The campaign's defining feature: targeted access to CALEA-mandated lawful-intercept systems, allowing PRC actors to read US-authorized intercept feeds — including those covering PRC counter-intelligence targets and presidential-campaign communications (2024 election cycle). The intercept-system vector is structurally novel: every carrier serving US-jurisdiction subscribers is legally required to maintain a CALEA-compliant intercept capability, which means every carrier has a high-value, low-monitored attack surface by mandate.
+**Salt Typhoon (China nation-state; PRC Ministry of State Security nexus).** The campaign, active since at least 2021, was disclosed in an FBI and CISA joint statement (2024-11-13), in the joint guide Enhanced Visibility and Hardening Guidance for Communications Infrastructure from CISA, NSA, FBI, ASD's ACSC, the Canadian Centre for Cyber Security and NCSC-NZ (2024-12-04), and in joint advisory AA25-239A from the Five Eyes agencies and partner agencies in eight more countries (2025-08-27, last revised 2025-09-03). It compromised at least nine US carriers (publicly named: AT&T, Verizon, T-Mobile US, Lumen, Charter, Cox, Windstream, Consolidated, plus undisclosed others) and extended to AU / CA / NZ / UK Tier-1 carriers. Threat actor TTPs map to T1199 (Trusted Relationship) via OEM vendor supply chain, T1098 (Account Manipulation) for persistent admin access on NMS, and T1078 (Valid Accounts) with stolen LI-gateway operator credentials. The campaign's defining feature: targeted access to CALEA-mandated lawful-intercept systems, allowing PRC actors to read US-authorized intercept feeds — including those covering PRC counter-intelligence targets and presidential-campaign communications (2024 election cycle). The intercept-system vector is structurally novel: every carrier serving US-jurisdiction subscribers is legally required to maintain a CALEA-compliant intercept capability, which means every carrier has a high-value, low-monitored attack surface by mandate.
 
 **Volt Typhoon (China; OT-adjacent telecom + ISP critical infrastructure).** CISA AA24-038A (Feb 2024) and follow-ons document prepositioning across US critical infrastructure operators, including telecom-adjacent ISPs and edge equipment. Living-off-the-land TTPs (T1190 + T1556) defeat conventional EDR. Distinct from Salt Typhoon in mission (prepositioning vs intelligence collection) but the equipment-supply-chain access pattern overlaps.
 
-**Lawful-intercept abuse vectors.** LI gateway compromise can defeat CALEA / IPA-LI / EU EECC Art. 40 mandated intercept capability protections. LIDB poisoning, J-STD-025 / ATIS-1000013 reference-data tampering, and operator-credential theft against the LI-management subsystems are the primary access patterns. The same vectors apply to UK IPA 2016 + TSA 2021, AU TSSR / SOCI Act 2018, Singapore IMDA TCCSCoP, India CERT-In 6-hour rule, Japan Telecommunications Business Act amended 2023.
+**Lawful-intercept abuse vectors.** LI gateway compromise can defeat CALEA / IPA-LI mandated intercept capability protections and EU NIS2 security measures (NIS2 Art. 43 deleted EECC Art. 40 with effect from 2024-10-18). LIDB poisoning, J-STD-025 / ATIS-1000013 reference-data tampering, and operator-credential theft against the LI-management subsystems are the primary access patterns. The same vectors apply to UK IPA 2016 + TSA 2021, AU SOCI Act 2018 (Part 2D, which replaced the TSSR obligations in the Telecommunications Act 1997 on 2025-04-04), Singapore IMDA TCCSCoP, India CERT-In 6-hour rule, Japan Telecommunications Business Act amended 2023.
 
 **Signaling-protocol attacks.** SS7 (2G/3G legacy), Diameter (4G LTE/IMS), GTP (3G/4G data plane), and 5G core interfaces N1 / N2 / N4 / N6 / N9 — each carries authentication and authorization fragility legacies. SS7-class abuse remains operationally relevant in mid-2026 against carriers maintaining legacy interconnect. 5G core slice-isolation under TS 33.501 is the modern equivalent control surface.
 
 **OEM equipment supply-chain compromise.** Cisco / Juniper / Nokia / Ericsson / Huawei / ZTE equipment vendors are the high-value target. Vendor remote-support inbound tunnels (Cisco TAC, Ericsson ENS, Nokia 1350 OMS) are a recurring intrusion vector. GSMA NESAS (FS.13 / FS.14 / FS.15) is product-time certification — operator-attested deployment posture is the operational gap.
 
-**AI-RAN / O-RAN security.** ETSI O-RAN SFG / WG11, 3GPP TR 33.926, NIST IR 8505 (5G Cybersecurity Practice Guide). AI-RAN deployments add model-tampering and slice-mismapping risks that 3GPP TR 33.926 does not yet model.
+**AI-RAN / O-RAN security.** O-RAN Alliance WG11 (Security Work Group), 3GPP TR 33.926, NIST SP 1800-33 (5G Cybersecurity practice guide, in draft; the Volume A initial public draft was published 2025-03-18). AI-RAN deployments add model-tampering and slice-mismapping risks that 3GPP TR 33.926 does not yet model.
 
 ## Framework Lag Declaration
 
-Telecom security mandates lag the current threat reality because the regulatory frame was constructed before the Salt Typhoon-class adversary access pattern surfaced. **NIS2 Annex I** (EU) designates telecom providers as essential entities and requires 24-hour incident notification + supply-chain due diligence (Art. 21(2)(d)), but does not name OEM-equipment firmware integrity attestation, AI-RAN model-tampering controls, or LI-gateway-specific access auditing. **FCC CPNI rules** (47 CFR 64.2009(e) annual certification, 47 CFR 64.2011 4-business-day cyber incident notification effective 2024-03-13) predate the Salt Typhoon LI-system vector and do not require notification on LI-system compromise that does not exfiltrate PII directly. **UK CAF Principle B5** (resilient networks) is outcome-tested but the outcome catalog does not include signaling-anomaly detection, gNB firmware attestation, or slice-isolation tests; lawful-intercept access is covered separately by IPA 2016 + TSA 2021. **AU ISM-1556** (privileged user MFA) covers human privileged users but does not reach telecom NMS service accounts (the actual privilege-holders) or OEM remote-support tunnels. **DORA Art. 21** (EU) binds the financial entity consuming telecom services but does not align cadences with NIS2 telecom-essential-entity reporting and does not bridge to 5G slice-isolation obligations for finance-dedicated slices. **GSMA NESAS** is product-time, vendor-attested certification with no operator-attested-runtime check, no firmware-update-cadence-tied recertification, and no EMS / OSS / NMS coverage. **3GPP TR 33.926** assumes deterministic equipment behavior — adversary-modified firmware that passes the SCAS suite at submission remains undetected after deployment. **ITU-T X.805** (2003) is reference architecture, not a deployment-validation framework, and predates 5G, O-RAN, AI-RAN, and the modern threat model. **CTID Secure AI v2** (2026-05-06) extends MITRE ATLAS coverage of agentic-AI and AI-RAN attacks but is layered guidance, not a mandate.
+Telecom security mandates lag the current threat reality because the regulatory frame was constructed before the Salt Typhoon-class adversary access pattern surfaced. **NIS2 Annex I** (EU) designates telecom providers as essential entities and requires a 24-hour early warning and a 72-hour incident notification (Art. 23) + supply-chain due diligence (Art. 21(2)(d)), but does not name OEM-equipment firmware integrity attestation, AI-RAN model-tampering controls, or LI-gateway-specific access auditing. **FCC CPNI rules** (47 CFR 64.2009(e) annual certification, 47 CFR 64.2011 CPNI breach notification to the USSS and FBI within seven business days; the amendments published 2024-02-12, which add FCC notification and widen the breach definition, remain delayed until the FCC publishes their effective date) predate the Salt Typhoon LI-system vector and do not require notification on LI-system compromise that does not exfiltrate PII directly. **UK CAF Principle B5** (resilient networks) is outcome-tested but the outcome catalog does not include signaling-anomaly detection, gNB firmware attestation, or slice-isolation tests; lawful-intercept access is covered separately by IPA 2016 + TSA 2021. **AU ISM-1173** (multi-factor authentication for privileged human users) covers human privileged users but does not reach telecom NMS service accounts (the actual privilege-holders) or OEM remote-support tunnels. **DORA Art. 28** (EU, ICT third-party risk) binds the financial entity consuming telecom services but does not align cadences with NIS2 telecom-essential-entity reporting and does not bridge to 5G slice-isolation obligations for finance-dedicated slices. **GSMA NESAS** is product-time, vendor-attested certification with no operator-attested-runtime check, no firmware-update-cadence-tied recertification, and no EMS / OSS / NMS coverage. **3GPP TR 33.926** assumes deterministic equipment behavior — adversary-modified firmware that passes the SCAS suite at submission remains undetected after deployment. **ITU-T X.805** (2003) is reference architecture, not a deployment-validation framework, and predates 5G, O-RAN, AI-RAN, and the modern threat model. **CTID Secure AI v2** (2026-05-06) extends MITRE ATLAS coverage of agentic-AI and large language model threats but is layered guidance, not a mandate.
 
 ## TTP Mapping
 
@@ -95,8 +95,8 @@ Telecom security mandates lag the current threat reality because the regulatory 
 | Initial Access | T1199 Trusted Relationship | AML.T0010 (AI Supply Chain Compromise) | OEM vendor remote-support tunnel or AI-RAN plugin compromise opens a path into the operator network |
 | Initial Access | T1190 Exploit Public-Facing Application | — | Internet-facing OSS / EMS / NMS exposed services (Salt Typhoon access pattern) |
 | Persistence | T1098 Account Manipulation | — | Persistent admin role grants on NMS / EMS / OSS after initial compromise |
-| Defense Evasion | T1556 Modify Authentication Process | — | LI-gateway credential pivot — operator account credentials forged or replayed against LI provisioning subsystem |
-| Credential Access | T1078 Valid Accounts | — | Stolen LI-gateway operator credentials used directly, no separate exploitation path |
+| Credential Access | T1556 Modify Authentication Process | — | LI-gateway credential pivot — operator account credentials forged or replayed against LI provisioning subsystem |
+| Initial Access | T1078 Valid Accounts | — | Stolen LI-gateway operator credentials used directly, no separate exploitation path |
 | Command and Control | T1071 Application Layer Protocol | — | Living-off-the-land C2 over telecom internal management protocols (SNMP, NETCONF, Telco-IP-fabric) |
 | Collection | T1199 (downstream) | AML.T0010 (downstream) | Pulling subscriber call-detail records, location data, and LI feed contents via compromised access |
 
@@ -106,7 +106,7 @@ ATLAS AML.T0010 (AI Supply Chain Compromise) anchors the AI-RAN attack class: pl
 
 | Vector | PoC status | Weaponization | AI-assist factor | Notes |
 |---|---|---|---|---|
-| LI-gateway operator credential theft | Public (per CISA AA24 advisories) | Confirmed in-the-wild | Low | Salt Typhoon TTP; credentials harvested through OEM-vendor supply chain |
+| LI-gateway operator credential theft | Public (credential-capture TTPs in CISA AA25-239A) | Confirmed in-the-wild | Low | Salt Typhoon TTP; credentials harvested through OEM-vendor supply chain |
 | OEM vendor remote-support tunnel | Public (TTP class, no single PoC) | Confirmed in-the-wild | Low | Vendor TAC / ENS tunnels documented as Salt Typhoon vector |
 | SS7 / Diameter signaling abuse | Public (signaling-research community) | Commodity | Low | Pre-dates AI-augmented attack landscape |
 | GTP-U tunneling attacks | Public | Demonstrated | Low | Operator-side defense via signaling firewalls |
@@ -121,12 +121,12 @@ ATLAS AML.T0010 (AI Supply Chain Compromise) anchors the AI-RAN attack class: pl
 
 Surface the operator's jurisdictional notification clocks immediately on detection:
 
-- **US**: FCC 47 CFR 64.2011 — 4 business days from discovery of PII/CPNI breach; CALEA / Title III LI-system compromise reporting through DOJ / FBI per separate channel
-- **EU**: NIS2 Art. 23 — 24 hours initial notification, 72 hours intermediate, 1 month final (telecom essential entity)
+- **US**: FCC 47 CFR 64.2011 — notify the USSS and FBI through the central reporting facility within seven business days after reasonable determination of a CPNI breach; CALEA / Title III LI-system compromise reporting through DOJ / FBI per separate channel
+- **EU**: NIS2 Art. 23 — 24 hours early warning, 72 hours incident notification, final report 1 month after the incident notification (telecom essential entity)
 - **EU finance-touching**: DORA Art. 19 — 4 hours major-ICT-incident initial notification for financial-entity-impacting telecom incidents
-- **UK**: TSA 2021 + Electronic Communications (Security Measures) Regulations 2022 — Ofcom notification immediately on a security compromise of significance; NCSC notification when applicable
-- **AU**: SOCI Act 2018 (as amended 2022) + TSSR 2017 — Critical Infrastructure Centre notification + ACMA where applicable; ASD ACSC reporting per Essential 8 obligations
-- **CA**: Bill C-26 (Critical Cyber Systems Protection Act) notification once in force
+- **UK**: TSA 2021 + Electronic Communications (Security Measures) Regulations 2022 — Ofcom notification as soon as reasonably practicable of a security compromise that has a significant effect on the operation of the network or service (Communications Act 2003 s.105K); NCSC notification when applicable
+- **AU**: SOCI Act 2018 Part 2B: report a cyber security incident to ASD within 12 hours of becoming aware when it has a significant impact on the availability of a critical telecommunications asset, or within 72 hours when it has a relevant impact (Part 2B has applied since 2025-04-04 to critical telecommunications assets owned or operated by a carrier and to relevant carriage service provider assets). The TSSR obligations in Part 14 of the Telecommunications Act 1997 ceased on 2025-04-04 and are now in the SOCI Act and the Security of Critical Infrastructure (Telecommunications Security and Risk Management Program) Rules 2025. Under Part 2D, the responsible entity for a critical telecommunications asset owned or operated by a carrier notifies the Secretary of Home Affairs, using the Cyber and Infrastructure Security Centre (CISC) Change Notification Form, of changes or proposed changes to its networks and services that could have a material effect on its capacity to protect the security of the asset. Notify ACMA where applicable.
+- **CA**: Critical Cyber Systems Protection Act (enacted by Bill C-8 as S.C. 2026, c. 9, s. 11, Royal Assent 2026-06-15, not in force as of 2026-09-21) notification once in force
 - **JP**: MIC Telecommunications Business Act amended 2023; immediate notification
 - **IN**: Telecommunications (Security) Rules 2024 + CERT-In 6-hour rule
 - **SG**: IMDA TCCSCoP (2022 v2 + 2024 update) — immediate
@@ -136,7 +136,7 @@ Wait for operator acknowledgment of the highest-priority clock before proceeding
 
 ### Threat context briefing
 
-Brief the operator on Salt Typhoon-class TTPs + RWEP-threshold bands. For telecom CVEs with active exploitation: live-patch threshold 90, urgent-patch 70, scheduled 30.
+Brief the operator on Salt Typhoon-class TTPs + RWEP-threshold bands. For telecom CVEs with active exploitation: RWEP 90 or above, live patch or isolate within 4 hours; 75 or above, patch or apply compensating controls within 24 hours; 60 or above, patch within 72 hours; 40 or above, patch within 7 days; 20 or above, patch within 30 days; below 20, patch at the next scheduled maintenance.
 
 ### Artifacts to capture
 
@@ -232,7 +232,7 @@ Theater patterns specific to telecom posture:
 - **"We have CPNI annual certification."** Annual certification is a process artifact, not a compromise-detection control. The certification covers operational procedures; it does not test LI-gateway compromise detection. Theater test: ask whether the last CPNI certification audit reviewed LI provisioning logs for anomalous activations.
 - **"We are GSMA NESAS certified."** NESAS is product-time, vendor-attested certification of the equipment itself — not the deployed posture. Theater test: ask for the most recent operator-attested-runtime gNB firmware hash report compared against the NESAS-certified build hash. Mismatch or absence is theater.
 - **"OEM firmware is verified at receipt."** Vendor-supplied hash is the input to the receipt verification; the operator does not independently re-derive the hash from upstream OEM-vendor source. Theater test: ask whether the operator separately verifies OEM firmware against an out-of-band PGP-signed vendor bulletin OR an operator-side reproducible build.
-- **"3GPP TR 33.926 tests passed at deployment."** TR 33.926 SCAS is product-class testing; it does not detect adversary-modified firmware that passes the test suite at submission. Theater test: ask for the post-deployment hash-attestation report on the running gNB.
+- **"3GPP TR 33.926 tests passed at deployment."** TR 33.926 lists threats and critical assets per network product class, and SCAS testing against specifications such as TS 33.511 (gNB) is product-class testing; it does not detect adversary-modified firmware that passes the test suite at submission. Theater test: ask for the post-deployment hash-attestation report on the running gNB.
 - **"ITU-T X.805 framework adopted."** X.805 is reference architecture, not validation. Theater test: ask for a deployment validation checklist mapping X.805's 8 dimensions to specific operational telemetry. Most operators cite the framework but do not validate against it.
 - **"We have signaling firewall (SS7 / Diameter / GTP)."** Signaling firewalls are policy-engine dependent on a current threat-actor PLMN catalog. Theater test: ask when the threat-actor PLMN list was last refreshed against GSMA Fraud and Security Group bulletins.
 - **"LI-gateway operator credentials use MFA."** Human-MFA on the LI gateway is necessary but not sufficient — service accounts and OEM remote-support tunnels frequently bypass. Theater test: count the LI-gateway admin actions executed in the last 30 days by service-account principals vs human-MFA principals.
@@ -245,7 +245,7 @@ Theater patterns specific to telecom posture:
 | 5G slice cross-leak | D3-NTPM (Network Traffic Policy Mapping) | Per-slice ACL + AMF/SMF/UPF reachability testing |
 | LI-gateway audit-trail integrity | D3-IOPR (I/O Read) | Immutable / append-only LI provisioning log + cross-system reconciliation |
 | 5GC slice / N6 / N9 isolation | D3-NI (Network Isolation) | Slice ID + DNN + S-NSSAI policy enforcement; N6 transit egress monitoring |
-| OEM firmware tampering | D3-EFA (Executable File Analysis) | Out-of-band hash verification + operator-attested-runtime checks |
+| OEM firmware tampering | D3-FV (Firmware Verification) | Out-of-band hash verification + operator-attested-runtime checks |
 
 ## Hand-Off / Related Skills
 

@@ -41,7 +41,7 @@ cwe_refs:
   - CWE-829
   - CWE-353
   - CWE-347
-last_threat_review: "2026-06-02"
+last_threat_review: "2026-10-05"
 ---
 
 # Consumer-Side Self-Update & Artifact Integrity
@@ -52,11 +52,11 @@ The self-update loop is the highest-privilege code path most products ship: it f
 
 ## Framework Lag Declaration
 
-Organizational supply-chain controls focus on the publisher: signing, SBOM generation, SLSA build levels. NIST 800-53 SR-11 (component authenticity) covers the supplier side and does not require the consumer's update path to verify signatures against a pinned key before applying or to refuse downgrades. The EU Cyber Resilience Act mandates secure updates for products with digital elements, but conformance is commonly attested by "we ship signed updates" without verifying the receiving client enforces signature + anti-rollback + key-pin. A clean "updates are signed / SLSA-attested / SBOM-published" audit is therefore NON-EVIDENCE for consumer-side update integrity; it confirms publisher posture, not signature-before-apply, key pinning, anti-rollback, or verifier-gating on the receiving client.
+Organizational supply-chain controls focus on the publisher: signing, SBOM generation, SLSA build levels. NIST 800-53 SR-11 (component authenticity) covers the supplier side and does not require the consumer's update path to verify signatures against a pinned key before applying or to refuse downgrades. The EU Cyber Resilience Act mandates secure updates for products with digital elements from 2027-12-11, but conformance can be attested by "we ship signed updates" without verifying the receiving client enforces signature + anti-rollback + key-pin. A clean "updates are signed / SLSA-attested / SBOM-published" audit is therefore NON-EVIDENCE for consumer-side update integrity; it confirms publisher posture, not signature-before-apply, key pinning, anti-rollback, or verifier-gating on the receiving client.
 
 ## TTP Mapping
 
-The consumer-side update failures map to MITRE ATT&CK: **T1195.002 (Supply Chain Compromise: Compromise Software Supply Chain)** for an update applied without signature verification, against an in-band key, over an unauthenticated channel, or as an unverified browser module / artifact; and **T1574 (Hijack Execution Flow)** for an apply step that swaps the new code into the execution path without gating on the verifier. The weakness classes are CWE-494 (Download of Code Without Integrity Check), CWE-829 (Inclusion of Functionality from an Untrusted Control Sphere), CWE-353 (Missing Support for Integrity Check — e.g. absent SRI), and CWE-347 (Improper Verification of Cryptographic Signature — in-band or unpinned key).
+The consumer-side update failures map to MITRE ATT&CK: **T1195.002 (Supply Chain Compromise: Compromise Software Supply Chain)** for an update applied without signature verification, against an in-band key, over an unauthenticated channel, or as an unverified browser module / artifact; and **T1574 (Hijack Execution Flow)** for an apply step that swaps the new code into the execution path without gating on the verifier. The weakness classes are CWE-494 (Download of Code Without Integrity Check), CWE-829 (Inclusion of Functionality from Untrusted Control Sphere), CWE-353 (Missing Support for Integrity Check — e.g. absent SRI), and CWE-347 (Improper Verification of Cryptographic Signature — in-band or unpinned key).
 
 ## Exploit Availability Matrix
 
@@ -76,4 +76,4 @@ The recurring theater is "our updates are signed, so the channel is secure," "up
 
 ## Defensive Countermeasure Mapping
 
-Map findings to MITRE D3FEND: signature-before-apply with an out-of-band-pinned key realizes Executable Allowlisting and Cryptographic Verification (countering T1195.002); anti-rollback realizes Software Version Pinning (countering downgrade reintroduction); channel pinning realizes Certificate Pinning; Subresource Integrity realizes Resource Integrity Checking on browser modules; verifier-gating realizes Execution Flow Integrity (countering T1574). Pair the signature check with provenance (C2PA) and transparency (SCITT/TSA) verification for non-repudiation. The residual risk after consumer-side enforcement is compromise of the publisher's signing key or build pipeline itself, which yields a validly-signed malicious update — addressed publisher-side (supply-chain-integrity) and accepted at the CISO level with key-management oversight.
+Map findings to MITRE D3FEND: signature-before-apply with an out-of-band-pinned key realizes Executable Allowlisting (countering T1195.002); D3FEND defines no technique for anti-rollback (countering downgrade reintroduction); channel pinning realizes Certificate Pinning; D3FEND defines no technique for Subresource Integrity on browser modules or for verifier-gating (countering T1574). Pair the signature check with provenance (C2PA) and transparency (SCITT/TSA) verification for non-repudiation. The residual risk after consumer-side enforcement is compromise of the publisher's signing key or build pipeline itself, which yields a validly-signed malicious update — addressed publisher-side (supply-chain-integrity) and accepted at the CISO level with key-management oversight.

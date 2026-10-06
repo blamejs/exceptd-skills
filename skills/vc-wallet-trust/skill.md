@@ -46,7 +46,7 @@ cwe_refs:
   - CWE-863
   - CWE-200
   - CWE-672
-last_threat_review: "2026-06-02"
+last_threat_review: "2026-10-05"
 ---
 
 # Verifiable-Credential / Digital-Wallet Verifier Trust
@@ -81,4 +81,4 @@ The recurring theater is "we accept a certified wallet, so acceptance is trustwo
 
 ## Defensive Countermeasure Mapping
 
-Map findings to MITRE D3FEND: trust-anchor pinning and issuer-allowlist validation realize Credential Hardening and Certificate Pinning (countering T1606/T1556); presentation nonce/audience binding and mdoc device-auth verification realize Authentication Event Thresholding and Message Authentication (countering T1550 replay); fail-closed revocation enforcement realizes Credential Revoking. Pair the verifier checks with issuer key-rotation monitoring and a fast anchor-revocation path so a compromised-but-trusted issuer can be removed quickly. The residual risk after pinning is a trusted issuer's own key compromise, which trust-anchor pinning does not address — accept it at the CISO level with compensating issuer-key monitoring.
+Map findings to MITRE D3FEND: trust-anchor pinning and issuer-allowlist validation realize Credential Hardening and Certificate Pinning (countering T1606/T1556); presentation nonce/audience binding and mdoc device-auth verification realize Authentication Event Thresholding and Message Authentication (countering T1550 replay); fail-closed revocation enforcement realizes Credential Revocation. Pair the verifier checks with issuer key-rotation monitoring and a fast anchor-revocation path so a compromised-but-trusted issuer can be removed quickly. The residual risk after pinning is a trusted issuer's own key compromise, which trust-anchor pinning does not address — accept it at the CISO level with compensating issuer-key monitoring.

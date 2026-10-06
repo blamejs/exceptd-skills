@@ -9914,15 +9914,15 @@
   "FCC-Cyber-Incident-Notification-2024": {
     "framework": "FCC",
     "control_id": "47-CFR-64.2011",
-    "control_name": "FCC Cyber Incident Notification (4 business days)",
-    "designed_for": "Notification rule requiring US telecom carriers to report PII or CPNI breaches within 4 business days of discovery (effective 2024-03-13).",
+    "control_name": "FCC CPNI Breach Notification (7 business days)",
+    "designed_for": "Notification rule requiring US telecommunications carriers to notify the US Secret Service and the FBI of a CPNI breach as soon as practicable and no later than 7 business days after reasonable determination of the breach (47 CFR 64.2011(b)).",
     "misses": [
       "No requirement to notify on lawful-intercept-system compromise that does not exfiltrate PII directly (e.g. Salt Typhoon access to LI feeds covering counter-intelligence targets)",
       "No requirement to notify on signaling-protocol intrusion (SS7 / Diameter abuse) absent PII loss",
-      "4-business-day window is too slow for an ongoing nation-state campaign — peer regulators set tighter limits (NIS2 24h, DORA 4h)",
+      "The 7-business-day window is too slow for an ongoing nation-state campaign; peer regulators set tighter limits (NIS2 24h, DORA 4h)",
       "No structured-data feed for cross-carrier IOC sharing"
     ],
-    "real_requirement": "4-business-day window paired with 24-hour preliminary signal-flag for LI-system compromise + structured CISA / NSA / FBI IOC handoff format.",
+    "real_requirement": "The 7-business-day window paired with a 24-hour preliminary signal-flag for LI-system compromise + structured CISA / NSA / FBI IOC handoff format.",
     "status": "open",
     "opened_date": "2026-05-15",
     "evidence_cves": [],

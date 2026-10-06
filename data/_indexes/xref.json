@@ -1218,6 +1218,9 @@
     "T1566.003": [
       "email-security-anti-phishing"
     ],
+    "T1566.004": [
+      "email-security-anti-phishing"
+    ],
     "T1078.004": [
       "cloud-iam-incident",
       "idp-incident-response"
@@ -1317,7 +1320,6 @@
       "container-runtime-security",
       "dlp-gap-analysis",
       "mcp-agent-trust",
-      "pqc-first",
       "sector-federal-government",
       "sector-financial",
       "webapp-security"
@@ -1363,7 +1365,10 @@
     "RFC-9000": [
       "ai-c2-detection"
     ],
-    "DRAFT-IETF-TLS-ECDHE-MLKEM": [
+    "RFC-9846": [
+      "pqc-first"
+    ],
+    "RFC-10024": [
       "pqc-first"
     ],
     "DRAFT-IETF-TLS-HYBRID-DESIGN": [
@@ -1414,7 +1419,7 @@
     "RFC-7970": [
       "incident-response-playbook"
     ],
-    "RFC-7489": [
+    "RFC-9989": [
       "email-security-anti-phishing"
     ],
     "RFC-6376": [

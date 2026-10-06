@@ -1907,6 +1907,12 @@
           "email-security-anti-phishing"
         ]
       },
+      "T1566.004": {
+        "count": 1,
+        "skills": [
+          "email-security-anti-phishing"
+        ]
+      },
       "T1078.004": {
         "count": 2,
         "skills": [
@@ -2072,7 +2078,7 @@
         ]
       },
       "RFC-8446": {
-        "count": 10,
+        "count": 9,
         "skills": [
           "ai-c2-detection",
           "api-security",
@@ -2080,7 +2086,6 @@
           "container-runtime-security",
           "dlp-gap-analysis",
           "mcp-agent-trust",
-          "pqc-first",
           "sector-federal-government",
           "sector-financial",
           "webapp-security"
@@ -2148,7 +2153,13 @@
           "ai-c2-detection"
         ]
       },
-      "DRAFT-IETF-TLS-ECDHE-MLKEM": {
+      "RFC-9846": {
+        "count": 1,
+        "skills": [
+          "pqc-first"
+        ]
+      },
+      "RFC-10024": {
         "count": 1,
         "skills": [
           "pqc-first"
@@ -2244,7 +2255,7 @@
           "incident-response-playbook"
         ]
       },
-      "RFC-7489": {
+      "RFC-9989": {
         "count": 1,
         "skills": [
           "email-security-anti-phishing"
@@ -3013,22 +3024,6 @@
     ],
     "rfc_refs": [
       {
-        "id": "RFC-8446",
-        "count": 10,
-        "skills": [
-          "ai-c2-detection",
-          "api-security",
-          "cloud-security",
-          "container-runtime-security",
-          "dlp-gap-analysis",
-          "mcp-agent-trust",
-          "pqc-first",
-          "sector-federal-government",
-          "sector-financial",
-          "webapp-security"
-        ]
-      },
-      {
         "id": "RFC-7519",
         "count": 9,
         "skills": [
@@ -3040,6 +3035,21 @@
           "mcp-agent-trust",
           "sector-financial",
           "sector-healthcare",
+          "webapp-security"
+        ]
+      },
+      {
+        "id": "RFC-8446",
+        "count": 9,
+        "skills": [
+          "ai-c2-detection",
+          "api-security",
+          "cloud-security",
+          "container-runtime-security",
+          "dlp-gap-analysis",
+          "mcp-agent-trust",
+          "sector-federal-government",
+          "sector-financial",
           "webapp-security"
         ]
       },
@@ -3218,6 +3228,7 @@
       "T1566.001",
       "T1566.002",
       "T1566.003",
+      "T1566.004",
       "T1568",
       "T1574",
       "T1580",
@@ -3229,10 +3240,10 @@
     ],
     "rfc_refs": [
       "CSAF-2.0",
-      "DRAFT-IETF-TLS-ECDHE-MLKEM",
       "DRAFT-IETF-TLS-HYBRID-DESIGN",
       "ISO-29147",
       "ISO-30111",
+      "RFC-10024",
       "RFC-4301",
       "RFC-4303",
       "RFC-6376",
@@ -3240,7 +3251,6 @@
       "RFC-6546",
       "RFC-7208",
       "RFC-7296",
-      "RFC-7489",
       "RFC-7591",
       "RFC-7970",
       "RFC-8461",
@@ -3252,7 +3262,9 @@
       "RFC-9116",
       "RFC-9420",
       "RFC-9622",
-      "RFC-9794"
+      "RFC-9794",
+      "RFC-9846",
+      "RFC-9989"
     ],
     "dlp_refs": []
   },
@@ -4155,6 +4167,7 @@
       "SLSA-v1.0-Source-L3"
     ],
     "rfc_refs": [
+      "DRAFT-IETF-TLS-ECDHE-MLKEM",
       "RFC-1001",
       "RFC-1002",
       "RFC-1004",
@@ -10482,6 +10495,7 @@
       "RFC-7486",
       "RFC-7487",
       "RFC-7488",
+      "RFC-7489",
       "RFC-749",
       "RFC-7490",
       "RFC-7491",
@@ -13005,7 +13019,6 @@
       "RFC-9975",
       "RFC-998",
       "RFC-9983",
-      "RFC-9989",
       "RFC-9990",
       "RFC-9991"
     ],

@@ -28,8 +28,8 @@ framework_gaps:
   - NIST-800-53-SC-8
   - NIST-800-53-SC-28
 rfc_refs:
-  - RFC-8446
-  - DRAFT-IETF-TLS-ECDHE-MLKEM
+  - RFC-9846
+  - RFC-10024
   - DRAFT-IETF-TLS-HYBRID-DESIGN
   - RFC-9180
   - RFC-9420
@@ -38,15 +38,15 @@ rfc_refs:
   - RFC-8032
   - RFC-9106
 forward_watch:
-  - NIST FIPS 206 (HQC — backup KEM)
+  - NIST HQC standard (backup KEM selected 2025-03-11; final standard expected in 2027)
   - NIST SP 800-208 (stateful hash-based signatures — LMS/XMSS)
-  - IETF RFC for ML-KEM in TLS 1.3 (draft-connolly-tls-mlkem-key-agreement)
-  - IETF RFC for hybrid X25519+ML-KEM (RFC 9180 extension)
-  - OpenSSL 3.5 default algorithm changes
+  - IETF RFC for ML-KEM in TLS 1.3 (draft-ietf-tls-mlkem, which replaced draft-connolly-tls-mlkem-key-agreement; in the RFC Editor queue as of 2026-10-04)
+  - IETF RFC for post-quantum and hybrid HPKE, extending RFC 9180 (draft-ietf-hpke-pq; the TLS hybrid groups were published as RFC 10024 in August 2026)
+  - OpenSSL default algorithm changes after 3.5.0 (3.5.0, released 2025-04-08, offers X25519MLKEM768 and X25519 as default TLS keyshares)
   - CISA PQC Migration Project timelines
   - NSA CNSS advisory updates (Commercial National Security Algorithm Suite 2.0)
-  - EU ENISA PQC transition timeline updates
-  - Browser TLS negotiation support for ML-KEM (Chrome, Firefox milestones)
+  - EU NIS Cooperation Group PQC roadmap updates (Member State national roadmaps due by 2026-12-31)
+  - Browser TLS negotiation support for ML-KEM (X25519MLKEM768 shipped in Chrome 131 and Firefox 132; watch later milestones)
   - HSM/TPM vendor PQC firmware support timelines
   - New CRQC timeline estimates from academic cryptanalysis
 cwe_refs:
@@ -54,7 +54,7 @@ cwe_refs:
 d3fend_refs:
   - D3-FE
   - D3-MENCR
-last_threat_review: "2026-08-05"
+last_threat_review: "2026-10-05"
 ---
 
 # PQC-First Mentality
@@ -67,13 +67,13 @@ The post-quantum migration is not a planning exercise. It is an operational dead
 - **FIPS 203 (ML-KEM)** — finalized 2024-08-13. Module-Lattice KEM. Production-ready.
 - **FIPS 204 (ML-DSA)** — finalized 2024-08-13. Module-Lattice signature. Production-ready.
 - **FIPS 205 (SLH-DSA)** — finalized 2024-08-13. Stateless hash-based signature. Production-ready.
-- **FIPS 206 (HQC)** — still pending. Hamming Quasi-Cyclic backup KEM. Expected finalization 2026–2027.
-- **NIST SP 800-227** (ML-KEM implementation guidance) — draft, finalization tracked.
+- **HQC (Hamming Quasi-Cyclic)**: backup KEM, selected by NIST on 2025-03-11. NIST has not released the draft standard and expects to publish the final standard in 2027. FIPS 206 is the number for the FALCON-based FN-DSA signature standard.
+- **NIST SP 800-227** (Recommendations for Key-Encapsulation Mechanisms): final, published 2025-09-18.
 
 **CRQC timeline pressure has tightened:**
 - **NSA CNSA 2.0** mandates PQC for National Security Systems by 2030. This deadline is not aspirational — it is binding for NSS vendors and rolling forward through the federal supply chain.
 - **US OMB M-23-02** requires federal agencies to maintain a PQC migration inventory and timeline. Inventory compliance is being audited; migration progress is the next reporting cycle.
-- **EU ENISA** PQC transition mandate is progressing toward binding Member State implementation timelines; commercial entities operating in EU jurisdictions should treat 2027–2028 as the alignment window.
+- **EU:** the Member States, through the NIS Cooperation Group, published A Coordinated Implementation Roadmap for the Transition to Post-Quantum Cryptography on 2025-06-23, following the Commission Recommendation of 2024-04-11. Its recommended timeline sets three milestones: initial national PQC transition roadmaps in all Member States by 2026-12-31, completion of the PQC transition for high-risk use cases by 2030-12-31, and completion of the PQC transition for medium-risk use cases by 2035-12-31.
 - Academic CRQC estimates have shortened. Aggressive estimates of 5–8 years (from mid-2026) now appear in peer-reviewed cryptanalysis literature, not only opinion pieces.
 
 **Harvest-now-decrypt-later (HNDL) is the active threat surface:**
@@ -96,17 +96,17 @@ PQC migration exposes a framework class lag: every major commercial framework de
 | NIST 800-53 | SC-13 (Cryptographic Protection) | Requires "cryptographic mechanisms" with FIPS-validated algorithms. ML-KEM/ML-DSA/SLH-DSA are now FIPS-validated, but SC-13 does not require their selection over classical FIPS algorithms. An organization fully compliant with SC-13 today can be using exclusively RSA-2048 and ECDSA-P-256 and still pass audit — while leaving every long-sensitivity archive HNDL-vulnerable. |
 | NIST 800-53 | SC-8 / SC-28 (Transmission / At-Rest Confidentiality) | Algorithm-neutral. No PQC requirement. |
 | ISO 27001:2022 | A.8.24 (Use of Cryptography) | Algorithm-agnostic. Requires that cryptographic use be "appropriate" without defining what appropriate means against a CRQC threat model. An ISO-certified org with no PQC plan is fully compliant. |
-| PCI DSS 4.0 | §4.2.1 (Strong Cryptography in Transit) | Defines "strong cryptography" by reference to NIST guidance that pre-dates FIPS 203/204/205 mandates. AES-128+ and RSA-2048+ satisfy the requirement. No PQC mandate. |
+| PCI DSS v4.0.1 | §4.2.1 (Strong Cryptography in Transit) | Defines "strong cryptography" by reference to NIST guidance that pre-dates FIPS 203/204/205 mandates. AES-128+ and RSA-2048+ satisfy the requirement. No PQC mandate. |
 | NIS2 | Art. 21(2)(h) | Requires "policies on cryptography and, where appropriate, encryption". Silent on algorithm specifics, silent on PQC, silent on HNDL. "Appropriate" is left to the entity. |
 | DORA | Art. 9 (ICT Security Measures) | Requires encryption commensurate with risk. Does not operationalize quantum risk. |
 | EU CRA | Essential Requirements Annex I | References "appropriate cryptography for the level of risk". No PQC specifics. |
 | HIPAA Security Rule | §164.312(a)(2)(iv), §164.312(e)(2)(ii) | Algorithm-neutral "addressable" encryption. No PQC mandate. PHI sensitivity windows routinely exceed 20 years. |
-| CNSA 2.0 (US classified) | Algorithm Suite | **Does** mandate ML-KEM, ML-DSA, SLH-DSA for NSS by 2030. The only major framework with a hard PQC mandate as of mid-2026 — and it applies only to National Security Systems. Commercial frameworks have not yet aligned. |
-| UK NCSC CAF | Principle B.4 (Cryptography) | Recommends following NCSC guidance which now references PQC transition planning, but the CAF principle itself is outcome-based and does not mandate PQC. |
-| AU ISM | Control 0467 (Cryptographic Equipment and Algorithms) | References ASD-Approved Cryptographic Algorithms (AACAs). AACA list does not yet require PQC for non-classified data. |
+| CNSA 2.0 (US classified) | Algorithm Suite | **Does** mandate ML-KEM-1024 and ML-DSA-87 for NSS by 2030. The suite also includes LMS and XMSS; it does not include SLH-DSA. It applies only to National Security Systems. The AU ISM also sets a 2030 date: ISM-1917 requires the development and procurement of new cryptographic equipment, applications and libraries to support ML-DSA-87 and ML-KEM-1024 by no later than 2030. Commercial frameworks have not yet aligned. |
+| UK NCSC CAF | Principle B3 (Data security), outcomes B3.b and B3.c | Recommends following NCSC guidance which now references PQC transition planning, but the CAF principle itself is outcome-based and does not mandate PQC. |
+| AU ISM | ISM-0471 (AACAs or high assurance cryptographic algorithms only) | ISM-0471 allows only ASD-Approved Cryptographic Algorithms (AACAs) or high assurance cryptographic algorithms. ISM-1917 requires the development and procurement of new cryptographic equipment, applications and libraries to support ML-DSA-87, ML-KEM-1024, SHA-384, SHA-512 and AES-256 by no later than 2030, and ISM-2073 requires a post-quantum cryptography transition plan. Both controls apply at every classification, including non-classified systems. The ISM guidance states that DH, ECDH, ECDSA and RSA will not be approved beyond 2030. |
 | ISO 27001:2022 | A.8.10 (Information Deletion) | HNDL counterpoint: even where deletion is implemented, an adversary who captured the ciphertext before deletion still possesses the encrypted record. Framework has no concept of "ciphertext exfiltration during transmission" as a deletion-defeating event. |
 
-**Net effect:** an organization can be fully compliant with NIST 800-53, ISO 27001:2022, PCI DSS 4.0, NIS2, DORA, HIPAA, and SOC 2 simultaneously while having zero PQC deployment and a 30-year HNDL exposure window. Compliance is not protection in this control class.
+**Net effect:** an organization can be fully compliant with NIST 800-53, ISO 27001:2022, PCI DSS v4.0.1, NIS2, DORA, HIPAA, and SOC 2 simultaneously while having zero PQC deployment and a 30-year HNDL exposure window. Compliance is not protection in this control class.
 
 ### Expanded jurisdictional coverage (per `data/global-frameworks.json`)
 
@@ -128,19 +128,19 @@ PQC migration is the clearest example of why a global-first lens matters: the la
 
 ### IETF Tracking — The IETF Lag IS the Framework Lag for PQC
 
-FIPS 203/204/205 are NIST publications, but the operational PQC migration story is IETF-tracked. TLS 1.3 (RFC 8446) is not PQC-ready on its own; hybrid groups arrive via `draft-ietf-tls-ecdhe-mlkem` and the general hybrid-design framework, which was published as RFC 9954 (Informational, July 2026). `draft-ietf-tls-ecdhe-mlkem` — the Standards-Track profile that names the concrete groups — is still a draft; the two were never status-synchronized, so the construction being an RFC does not make the named groups standardized. HPKE (RFC 9180, classical-only today) is the substrate for TLS ECH and MLS (RFC 9420); PQC composition for HPKE is being worked at IETF CFRG. Terminology pins on RFC 9794 (Terminology for PQC, September 2025). EdDSA (RFC 8032) — what exceptd uses for skill integrity signing — is not PQC-safe; SLH-DSA / ML-DSA migration applies here too. Compliance frameworks (NIST 800-53 SC-13, ISO 27001:2022 A.8.24, PCI DSS 4.0 §4.2.1, NIS2 Art. 21) do not yet require any specific RFC or draft. CNSA 2.0 requires PQC migration by 2030 but does not specify which IETF profile. See `data/rfc-references.json` for the tracked entries.
+FIPS 203/204/205 are NIST publications, but the operational PQC migration story is IETF-tracked. TLS 1.3 (RFC 9846, which obsoleted RFC 8446 in July 2026) is not PQC-ready on its own; hybrid groups arrive via `draft-ietf-tls-ecdhe-mlkem` and the general hybrid-design framework, which was published as RFC 9954 (Informational, July 2026). `draft-ietf-tls-ecdhe-mlkem`, the Standards-Track profile that names the concrete groups (X25519MLKEM768, SecP256r1MLKEM768 and SecP384r1MLKEM1024), was published as RFC 10024 (Proposed Standard, August 2026). HPKE (RFC 9180, classical-only today) is the substrate for TLS ECH and MLS (RFC 9420); Post-quantum and hybrid HPKE is being worked in the IETF HPKE working group (`draft-ietf-hpke-pq`). Terminology pins on RFC 9794 (Terminology for Post-Quantum Traditional Hybrid Schemes, June 2025). EdDSA (RFC 8032) — what exceptd uses for skill integrity signing — is not PQC-safe; SLH-DSA / ML-DSA migration applies here too. Compliance frameworks (NIST 800-53 SC-13, ISO 27001:2022 A.8.24, PCI DSS v4.0.1 §4.2.1, NIS2 Art. 21) do not yet require any specific RFC or draft. CNSA 2.0 requires PQC migration by 2030 but does not specify which IETF profile. See `data/rfc-references.json` for the tracked entries.
 
 ---
 
 ## TTP Mapping
 
-This skill addresses a **future-state attack class** that is not yet represented in `data/atlas-ttps.json` or in MITRE ATT&CK as of v15. CRQC-enabled record-and-decrypt is a known gap in the ATT&CK matrix — the framework currently has no technique that captures "adversary decrypts previously-captured ciphertext using a quantum cryptanalytic capability". This is intentionally called out: the skill's `atlas_refs` and `attack_refs` are empty arrays because no published TTP currently maps cleanly to the threat. Empty arrays here are not a stand-in for missing content — they are a deliberate gap flag.
+This skill addresses a **future-state attack class** that is not yet represented in `data/atlas-ttps.json` or in MITRE ATT&CK as of v19.2. CRQC-enabled record-and-decrypt is a known gap in the ATT&CK matrix — the framework currently has no technique that captures "adversary decrypts previously-captured ciphertext using a quantum cryptanalytic capability". This is intentionally called out: the skill's `atlas_refs` and `attack_refs` are empty arrays because no published TTP currently maps cleanly to the threat. Empty arrays here are not a stand-in for missing content — they are a deliberate gap flag.
 
 | Technique Reference | Maps To PQC Threat? | Gap Description |
 |---|---|---|
 | MITRE ATT&CK T1557 (Adversary-in-the-Middle) | Partial — operational family | T1557 covers AitM credential capture and traffic interception. The capture half of HNDL falls into T1557 operationally; the later decrypt phase has no ATT&CK technique. |
 | MITRE ATT&CK T1040 (Network Sniffing) | Partial — capture phase | Covers passive traffic capture. Does not cover the strategic-archive intent of HNDL, where the captured data has no immediate use and is stored for future decryption. |
-| MITRE ATT&CK — "Cryptanalysis via CRQC" | **MISSING** | No technique presently captures CRQC-enabled decryption of previously-captured ciphertext. Known gap through ATT&CK v19.2 (May 2026). |
+| MITRE ATT&CK — "Cryptanalysis via CRQC" | **MISSING** | No technique presently captures CRQC-enabled decryption of previously-captured ciphertext. Known gap through ATT&CK v19.2 (August 2026). |
 | MITRE ATLAS | **MISSING (out of scope)** | ATLAS scope is ML/AI system attacks. CRQC cryptanalysis is not in ATLAS scope. |
 | CAPEC-114 (Authentication Abuse) | Indirect | Forged signatures via broken signature scheme would manifest as authentication abuse, but CAPEC does not enumerate "signature scheme broken by CRQC" as a precondition. |
 | CAPEC-475 (Signature Spoofing by Improper Validation) | Indirect | Same — the post-CRQC equivalent has no CAPEC entry. |
@@ -159,7 +159,7 @@ This skill addresses a **future-state attack class** that is not yet represented
 | Active exploitation? | **Confirmed (capture phase)** | The HNDL capture phase is confirmed active across state-level adversaries and is publicly documented in threat-intelligence reporting. The decrypt phase awaits CRQC; the ciphertext is being accumulated now. |
 | Live-patchable / fast migration? | **No** | Algorithm migration is months-to-years for any non-trivial cryptographic footprint. Rip-and-replace is not viable. Hybrid (X25519 + ML-KEM-768) is the operational migration path because it (a) preserves classical interop, (b) adds PQC security against HNDL immediately, and (c) lets the classical component be removed later once interop catches up. |
 | Detection of HNDL in progress? | **No reliable detection** | Passive ciphertext capture is undetectable in transit. The only defense is to render the captured ciphertext valueless via PQC encryption before capture, or to ensure the data's sensitivity window expires before CRQC arrival. |
-| Migration tooling maturity? | **Mature for libraries, immature for systems** | OpenSSL 3.5+, Go 1.23+, Rust ml-kem 0.3+, Bouncy Castle 1.78+ ship FIPS-aligned PQC. HSM/TPM vendor firmware support is uneven. Certificate authority PQC issuance is limited. PKI-wide migration is the hard part. |
+| Migration tooling maturity? | **Mature for libraries, immature for systems** | OpenSSL 3.5+, Go 1.24+, Rust ml-kem 0.3+, Bouncy Castle 1.79+ ship FIPS-aligned PQC. HSM/TPM vendor firmware support is uneven. Certificate authority PQC issuance is limited. PKI-wide migration is the hard part. |
 
 **Cross-references:** `data/exploit-availability.json` tracks per-CVE PoC and KEV status with `last_verified` dates; algorithm-class threats use the matrix above because they do not map to a single CVE.
 
@@ -187,11 +187,11 @@ These are hard version gates. Using older versions for new PQC-capable work is a
 Minimum version: OpenSSL 3.5.0 (released April 2025)
 Why: First OpenSSL release with ML-KEM, ML-DSA, and SLH-DSA in the stable mainline
      Provider API for post-quantum algorithms
-     FIPS 140-3 module certification in progress for 3.x branch
+     FIPS 140-3 validated FIPS provider (3.1.2, certificate #4985) does not include ML-KEM, ML-DSA or SLH-DSA; another OpenSSL FIPS Provider is on the CMVP Modules In Process list
 
 Rejected versions:
   OpenSSL 1.1.x: EOL, no PQC, security-only patches ended
-  OpenSSL 3.0.x / 3.1.x / 3.2.x / 3.3.x: Pre-stable PQC; use only if 3.5 unavailable 
+  OpenSSL 3.0.x / 3.1.x / 3.2.x / 3.3.x: Out of support, no built-in PQC; use only if 3.5 unavailable 
                                               with documented justification
 
 Check:
@@ -213,18 +213,17 @@ Note: OQS provider algorithms are NOT FIPS-certified. Use for hybrid modes with 
 ### BoringSSL (Google/Android)
 
 ```
-Use Kyber768 (ML-KEM draft) hybrid mode: already deployed in Chrome since 2023
-Post-FIPS-203 finalization: ML-KEM-768 via `SSL_CTX_set1_curves_list("X25519Kyber768Draft00:X25519")`
-Note: BoringSSL follows Chrome's needs; track chromestatus.com for ML-KEM graduation
+Use X25519MLKEM768 (ML-KEM-768 hybrid, TLS codepoint 0x11EC). Chrome 131 replaced the Kyber768 draft hybrid (0x6399) with it.
+Post-FIPS-203 finalization: ML-KEM-768 via `SSL_CTX_set1_groups_list(ctx, "X25519MLKEM768:X25519")`
+Note: BoringSSL follows Chrome's needs. Current BoringSSL no longer accepts the X25519Kyber768Draft00 group name.
 ```
 
 ### Go
 
 ```
-Minimum: Go 1.23+ (crypto/mlkem package added)
-         Go 1.24+ (full ML-KEM-768 and ML-KEM-1024 in stdlib)
-PQC TLS: crypto/tls supports X25519MLKEM768 key agreement in Go 1.23+
-Check: go version  # must be >= 1.23
+Minimum: Go 1.24+ (crypto/mlkem package added: ML-KEM-768 and ML-KEM-1024 in stdlib)
+PQC TLS: crypto/tls supports X25519MLKEM768 key agreement in Go 1.24+ (enabled by default; Go 1.23 offered only X25519Kyber768Draft00)
+Check: go version  # must be >= 1.24
        grep mlkem go.sum  # if using crypto/mlkem directly
 ```
 
@@ -233,22 +232,22 @@ Check: go version  # must be >= 1.23
 ```
 Minimum: ml-kem crate 0.3.0+ (pure Rust FIPS 203 implementation)
          ml-dsa crate 0.1.0+
-         rustls >= 0.23 with aws-lc-rs backend for PQC TLS
+         rustls >= 0.23.22 with aws-lc-rs backend for PQC TLS (X25519MLKEM768; preferred by default from 0.23.27)
 ```
 
 ### Python
 
 ```
-Minimum: cryptography >= 42.0.0 (PQC via OpenSSL 3.x bindings)
-         pqcrypto >= 0.2.0 (pure-Python reference implementations — not production use)
+Minimum: cryptography >= 48.0.0 (ML-KEM and ML-DSA with OpenSSL 3.5.0+; 47.0.0 supports them only with AWS-LC or BoringSSL)
+         pqcrypto (Python bindings to Rust implementations; not for production use)
 For production: use cryptography library backed by OpenSSL 3.5+
 ```
 
 ### Java / JVM
 
 ```
-Minimum: Bouncy Castle 1.78+ (ML-KEM, ML-DSA, SLH-DSA implementations)
-         JDK 23 Preview / JDK 25+ (Module system PQC)
+Minimum: Bouncy Castle 1.79+ (ML-KEM, ML-DSA, SLH-DSA implementations)
+         JDK 24+ (ML-KEM via JEP 496, ML-DSA via JEP 497)
 For enterprise: IBM JCE PQC provider or Bouncy Castle FIPS module
 ```
 
@@ -353,7 +352,7 @@ Both signatures must verify for the message to be accepted.
 Rationale: if one algorithm is broken (classical by quantum, PQC by classical cryptanalysis),
            the other component still provides security.
 
-Use composite signature formats per IETF draft-ounsworth-pq-composite-sigs
+Use composite signature formats per IETF draft-ietf-lamps-pq-composite-sigs (which replaced draft-ounsworth-pq-composite-sigs)
 ```
 
 ### TLS Configuration
@@ -361,11 +360,12 @@ Use composite signature formats per IETF draft-ounsworth-pq-composite-sigs
 ```
 TLS 1.3 minimum (TLS 1.2 only for legacy compatibility with documented justification)
 TLS 1.3 PQC key exchange:
-  Preferred: X25519MLKEM768 (IETF RFC in progress, Chrome/Firefox supported)
-  High-security: SecP256r1MLKEM768 (IETF draft)
+  Preferred: X25519MLKEM768 (RFC 10024, Chrome/Firefox supported)
+  High-security: SecP384r1MLKEM1024 (RFC 10024)
+  P-256 hybrid: SecP256r1MLKEM768 (RFC 10024)
   
 OpenSSL 3.5 TLS config:
-  SSL_CTX_set1_groups(ctx, "X25519MLKEM768:X25519:P-384");
+  SSL_CTX_set1_groups_list(ctx, "X25519MLKEM768:X25519:P-384");
 ```
 
 ---
@@ -411,16 +411,16 @@ PQC standards change. This section is the explicit loopback mechanism: when trac
 
 | Source | What to watch | Update trigger |
 |---|---|---|
-| NIST PQC Project | New FIPS publications | FIPS 206 (HQC) finalization → add HQC to algorithm registry |
-| NIST PQC Project | SP 800-227 (draft guidance for ML-KEM) | Finalization → update implementation guidance |
-| IETF TLS WG | ML-KEM in TLS 1.3 RFC | RFC publication → update TLS configuration section |
+| NIST PQC Project | New FIPS publications | HQC standard finalization (expected 2027) → add HQC to algorithm registry |
+| NIST PQC Project | SP 800-227 (Recommendations for Key-Encapsulation Mechanisms, final 2025-09-18) | Revision → update implementation guidance |
+| IETF TLS WG | Pure ML-KEM in TLS 1.3 RFC (draft-ietf-tls-mlkem); the hybrid groups were published as RFC 10024 in August 2026 | RFC publication → update TLS configuration section |
 | IETF LAMPS WG | Composite signatures RFC | RFC publication → update hybrid signature section |
 | OpenSSL | 3.5+ point releases | Algorithm additions/changes → update version gate commentary |
-| OpenSSL | FIPS 140-3 module for 3.x | Certification → update FIPS section |
-| Chrome | ML-KEM TLS graduation | When ML-KEM becomes non-experimental → update browser compatibility |
+| OpenSSL | FIPS 140-3 provider that includes ML-KEM and ML-DSA (the validated 3.1.2 provider, certificate #4985, includes neither) | Certification → update FIPS section |
+| Chrome | ML-KEM TLS support (X25519MLKEM768 since Chrome 131, replacing Kyber) | Default group changes → update browser compatibility |
 | NSA CNSS | CNSA 2.0 timeline updates | New mandatory dates → update migration timeline section |
 | CISA PQC | Migration project guidance | New sector-specific guidance → update compliance section |
-| ENISA | EU PQC transition timeline | Publication → add to global-grc skill |
+| NIS Cooperation Group | EU PQC roadmap (published 2025-06-23) and Member State national roadmaps (due by 2026-12-31) | Publication → add to global-grc skill |
 | Academic | CRQC timeline estimate changes | Major new estimate → update HNDL threat assessment |
 | HSM vendors | PQC firmware support | Availability → update HSM section |
 
@@ -429,8 +429,8 @@ PQC standards change. This section is the explicit loopback mechanism: when trac
 The following are in active standards development as of mid-2026. When they finalize, this skill requires update:
 
 **HQC (Hamming Quasi-Cyclic):**
-- Status: NIST Round 4 finalist (backup KEM to ML-KEM)
-- Finalization: expected 2026–2027 as FIPS 206
+- Status: selected by NIST on 2025-03-11 as the backup KEM to ML-KEM; the draft standard has not been released
+- Finalization: expected in 2027
 - Action on finalization: add HQC to algorithm registry, note as backup KEM when ML-KEM performance is constrained
 
 **XMSS / LMS (Stateful hash-based signatures):**
@@ -438,12 +438,12 @@ The following are in active standards development as of mid-2026. When they fina
 - Note: Stateful — state management is critical; not suitable for most use cases. Add warning section on state management requirements.
 
 **X25519 + ML-KEM-768 hybrid in TLS:**
-- Status: IETF draft-connolly-tls-mlkem-key-agreement
-- Chrome/Firefox: deployed in production since 2024 (Kyber768 draft), upgrading to final ML-KEM
-- Action on RFC publication: update TLS configuration from "in progress" to "standard"
+- Status: published as RFC 10024 (Proposed Standard, August 2026), from draft-ietf-tls-ecdhe-mlkem
+- Chrome/Firefox: deployed in production since 2024 (Kyber768 draft). Chrome 131 switched to X25519MLKEM768 and dropped Kyber; Firefox 132 added X25519MLKEM768 (mlkem768x25519) support
+- Related: pure ML-KEM key agreement for TLS 1.3 (draft-ietf-tls-mlkem) is in the RFC Editor queue as of 2026-10-04
 
 **FIPS 140-3 for OpenSSL 3.x:**
-- Status: CMVP testing in progress
+- Status: OpenSSL FIPS Provider 3.1.2 was validated on 2025-03-11 (FIPS 140-3 certificate #4985) without ML-KEM, ML-DSA or SLH-DSA. Another OpenSSL FIPS Provider is on the CMVP Modules In Process list (Comment Resolution, 2026-09-21).
 - Action on certification: update version gate to recommend FIPS module explicitly
 
 ---
@@ -455,15 +455,15 @@ The following are in active standards development as of mid-2026. When they fina
 | Framework | PQC Requirement | Assessment |
 |---|---|---|
 | NIST 800-53 SC-8, SC-28 | "Employ cryptographic mechanisms" — algorithm-neutral | Adequate in intent; "appropriate" now includes PQC consideration |
-| NSA CNSA 2.0 | Mandates ML-KEM, ML-DSA, SLH-DSA for National Security Systems | Strongest mandate; applies to NSS only |
+| NSA CNSA 2.0 | Mandates ML-KEM-1024 and ML-DSA-87 (with LMS and XMSS) for National Security Systems | Strongest mandate; applies to NSS only |
 | CISA PQC Guidance | Strong recommendation for all critical infrastructure | Non-binding but authoritative |
-| EU ENISA | PQC migration recommended; no hard mandate yet | Track for 2027 timeline |
+| EU (NIS Cooperation Group roadmap) | PQC migration recommended; the roadmap's recommended timeline sets 2030-12-31 for high-risk use cases and 2035-12-31 for medium-risk use cases | Track Member State national roadmaps due by 2026-12-31 |
 | ISO 27001:2022 | A.8.24 (Use of cryptography): "appropriate" — algorithm-neutral | Requires interpretation to include PQC consideration |
-| PCI DSS 4.0 | Requirement 4: "strong cryptography" — currently defined as AES-128+, RSA-2048+ | Does not yet mandate PQC; will require update |
+| PCI DSS v4.0.1 | Requirement 4: "strong cryptography" — currently defined as AES-128+, RSA-2048+ | Does not yet mandate PQC; will require update |
 | HIPAA | "appropriate" standard — algorithm-neutral | Same as ISO interpretation |
 | NIS2 Art. 21(2)(h) | "policies on cryptography and, where appropriate, encryption" | No PQC mandate but "appropriate policies" implies current standard |
 
-**Key takeaway:** No major framework mandates PQC migration with hard timelines yet (except CNSA 2.0 for NSS). However, "appropriate" and "strong" cryptography requirements will be interpreted to require PQC as the standards mature and CRQC timelines tighten.
+**Key takeaway:** No major framework other than CNSA 2.0 (for NSS) and the AU ISM mandates PQC migration with hard timelines yet. ISM-1917 requires the development and procurement of new cryptographic equipment, applications and libraries to support ML-DSA-87 and ML-KEM-1024 by no later than 2030. However, "appropriate" and "strong" cryptography requirements will be interpreted to require PQC as the standards mature and CRQC timelines tighten.
 
 **Proactive migration now is operationally superior** to reactive migration under regulatory pressure — because migration timelines for complex cryptographic infrastructure typically exceed 2–5 years.
 
@@ -484,7 +484,7 @@ For the target system:
 
 For each library:
 - OpenSSL: is version >= 3.5.0?
-- Go: is version >= 1.23?
+- Go: is version >= 1.24?
 - Others: per version gate table above
 
 ### Step 3: Classify algorithms

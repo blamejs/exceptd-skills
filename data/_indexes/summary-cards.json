@@ -525,8 +525,8 @@
         "atlas_refs": [],
         "attack_refs": [],
         "rfc_refs": [
-          "RFC-8446",
-          "DRAFT-IETF-TLS-ECDHE-MLKEM",
+          "RFC-9846",
+          "RFC-10024",
           "DRAFT-IETF-TLS-HYBRID-DESIGN",
           "RFC-9180",
           "RFC-9420",
@@ -544,7 +544,7 @@
       "cwe_count": 1,
       "d3fend_count": 2,
       "rfc_count": 9,
-      "last_threat_review": "2026-08-05",
+      "last_threat_review": "2026-10-05",
       "path": "skills/pqc-first/skill.md",
       "handoff_targets": []
     },
@@ -897,7 +897,7 @@
     },
     "identity-assurance": {
       "description": "Identity assurance for mid-2026 — NIST 800-63 AAL/IAL/FAL, FIDO2/WebAuthn passkeys, OIDC/SAML/SCIM, agent-as-principal identity, short-lived workload tokens, OAuth 2.0 + RFC 9700 BCP",
-      "threat_context_excerpt": "Identity is the new perimeter, and the perimeter expanded. The 2026 principal population is no longer \"humans + service accounts\" — it now includes AI agents acting on behalf of users, MCP servers exchanging short-lived tokens, and ephemeral workload identities minted per function invocation. Each of these is a principal that authenticates, holds scopes, and shows up in audit logs — and each was outside the design envelope of every identity standard in production use before NIST 800-63 rev 4 (Q4 2025).",
+      "threat_context_excerpt": "Identity is the new perimeter, and the perimeter expanded. The 2026 principal population is no longer \"humans + service accounts\" — it now includes AI agents acting on behalf of users, MCP servers exchanging short-lived tokens, and ephemeral workload identities minted per function invocation. Each of these is a principal that authenticates, holds scopes, and shows up in audit logs — and each was outside the design envelope of every identity standard in production use before NIST 800-63 rev 4 (July 2025).",
       "produces": "The skill produces an Identity Assurance Assessment covering per-IdP AAL/IAL/FAL posture, passkey / WebAuthn / FIDO2 deployment coverage, agent-identity scoping (workload, service-account, AI-agent principal), and the prioritized roadmap to close phishing-resistance gaps. The shape below is consumed downstream by `idp-incident-response` (which scopes IR on confirmed identity compromise), by `email-security-anti-phishing` (which inherits the phishing-resistant-MFA coverage), and by `compliance-theater` (which compares the deployed authenticator class against any AAL2 / AAL3 compliance claim). P ...",
       "key_xrefs": {
         "cwe_refs": [
@@ -947,7 +947,7 @@
       "cwe_count": 7,
       "d3fend_count": 2,
       "rfc_count": 5,
-      "last_threat_review": "2026-05-11",
+      "last_threat_review": "2026-10-05",
       "path": "skills/identity-assurance/skill.md",
       "handoff_targets": [
         "compliance-theater",
@@ -1216,7 +1216,7 @@
       "cwe_count": 2,
       "d3fend_count": 1,
       "rfc_count": 0,
-      "last_threat_review": "2026-05-15",
+      "last_threat_review": "2026-10-05",
       "path": "skills/ai-risk-management/skill.md",
       "handoff_targets": [
         "ai-attack-surface",
@@ -1485,8 +1485,8 @@
       ]
     },
     "sector-telecom": {
-      "description": "Telecom and 5G security for mid-2026 — Salt Typhoon, Volt Typhoon, CALEA / IPA-LI gateway compromise, signaling-protocol abuse (SS7 / Diameter / GTP), 5G N6 / N9 isolation, gNB / DU / CU integrity, OEM-equipment supply-chain compromise, AI-RAN / O-RAN security; FCC CPNI + 4-business-day notification, NIS2 Annex I telecom essential entities, UK TSA 2021 + Ofcom, AU SOCI / TSSR, GSMA NESAS, 3GPP TR 33.926 + TS 33.501, ITU-T X.805.",
-      "threat_context_excerpt": "**Salt Typhoon (China nation-state; PRC Ministry of State Security nexus).** The 2024–2026 campaign — disclosed in successive Five Eyes joint advisories from October 2024 onward (CISA / NSA / FBI joint product reissued through 2025–2026) — compromised at least nine US carriers (publicly named: AT&T, Verizon, T-Mobile US, Lumen, Charter, Cox, Windstream, Consolidated, plus undisclosed others) and extended to AU / CA / NZ / UK Tier-1 carriers. Threat actor TTPs map to T1199 (Trusted Relationship) via OEM vendor supply chain, T1098 (Account Manipulation) for persistent admin access on NMS, and ...",
+      "description": "Telecom and 5G security for mid-2026 — Salt Typhoon, Volt Typhoon, CALEA / IPA-LI gateway compromise, signaling-protocol abuse (SS7 / Diameter / GTP), 5G N6 / N9 isolation, gNB / DU / CU integrity, OEM-equipment supply-chain compromise, AI-RAN / O-RAN security; FCC CPNI + 7-business-day breach notification, NIS2 Annex I telecom essential entities, UK TSA 2021 + Ofcom, AU SOCI Act (Part 2D replaced TSSR on 2025-04-04), GSMA NESAS, 3GPP TR 33.926 + TS 33.501, ITU-T X.805.",
+      "threat_context_excerpt": "**Salt Typhoon (China nation-state; PRC Ministry of State Security nexus).** The campaign, active since at least 2021, was disclosed in an FBI and CISA joint statement (2024-11-13), in the joint guide Enhanced Visibility and Hardening Guidance for Communications Infrastructure from CISA, NSA, FBI, ASD's ACSC, the Canadian Centre for Cyber Security and NCSC-NZ (2024-12-04), and in joint advisory AA25-239A from the Five Eyes agencies and partner agencies in eight more countries (2025-08-27, last revised 2025-09-03). It compromised at least nine US carriers (publicly named: AT&T, Verizon, ...",
       "produces": "The investigation evidence bundle has this shape:\n\n```json\n{\n  \"session_id\": \"telecom-<iso>\",\n  \"playbook_id\": \"sector-telecom\",\n  \"classification\": \"detected | clean | not_detected | inconclusive\",\n  \"evidence_hash\": \"sha256:...\",\n  \"telecom_specific_findings\": {\n    \"li_gateway_audit\": {\n      \"anomalous_activations\": 0,\n      \"activations_outside_ticket\": 0,\n      \"outbound_tunnel_to_non_allowlist_ip\": 0\n    },\n    \"gnb_attestation_state\": {\n      \"expected_hashes_compared\": 0,\n      \"drifted_basestations\": [],\n      \"downgrade_events\": 0\n    },\n    \"signaling_anomaly_count\": {\n      \"ss7_p ...",
       "key_xrefs": {
         "cwe_refs": [
@@ -1534,7 +1534,7 @@
       "cwe_count": 3,
       "d3fend_count": 4,
       "rfc_count": 1,
-      "last_threat_review": "2026-05-15",
+      "last_threat_review": "2026-10-05",
       "path": "skills/sector-telecom/skill.md",
       "handoff_targets": []
     },
@@ -1937,8 +1937,8 @@
     },
     "email-security-anti-phishing": {
       "description": "Email security + anti-phishing for mid-2026 — SPF/DKIM/DMARC/BIMI/ARC/MTA-STS/TLSRPT, AI-augmented phishing (vishing, deepfake video, hyperpersonalized email), Business Email Compromise, secure email gateways",
-      "threat_context_excerpt": "Phishing remained the #1 initial-access vector through 2025 (Verizon DBIR 2025) and into 2026. The structural shift between 2024 and 2026 is **AI-augmentation of the phishing kill-chain** — content generation, voice synthesis, and live deepfake video have all collapsed from \"demonstrated in research\" to \"deployed against treasury, IT-helpdesk, and executive offices.\"",
-      "produces": "The skill produces a structured assessment with these sections:\n\n1. **DMARC enforcement scorecard** — table of all owned domains × `{SPF, DKIM, DMARC policy, sp=, pct=, RUA destination, BIMI, ARC verification, MTA-STS, TLSRPT}`; aggregate score = (# domains at `p=reject` with `pct=100`) / (total sending domains).\n2. **Email-auth coverage matrix** — per-protocol deployment status (SPF / DKIM / DMARC / BIMI / ARC / MTA-STS / TLSRPT) with gap flags.\n3. **Passkey rollout percentage** — overall and per-role-class (executive, finance, IT-admin, helpdesk, general workforce), with target = 100% for pr ...",
+      "threat_context_excerpt": "The Verizon DBIR 2025 names credential abuse (22%) and exploitation of vulnerabilities (20%) as the leading initial attack vectors, and the 2026 DBIR reports that 31% of breaches start with software vulnerabilities, ahead of stolen credentials. The 2026 DBIR lists social engineering, phishing and stolen credentials among the most frequent breach causes. The structural shift between 2024 and 2026 is **AI-augmentation of the phishing kill-chain** — content generation, voice synthesis, and live deepfake video have all collapsed from \"demonstrated in research\" to \"deployed against treasury, ...",
+      "produces": "The skill produces a structured assessment with these sections:\n\n1. **DMARC enforcement scorecard** — table of all owned domains × `{SPF, DKIM, DMARC policy, sp=, t=, legacy pct=, RUA destination, BIMI, ARC verification, MTA-STS, TLSRPT}`; aggregate score = (# domains at `p=reject` with neither `t=y` nor a `pct=` value below 100) / (total sending domains).\n2. **Email-auth coverage matrix** — per-protocol deployment status (SPF / DKIM / DMARC / BIMI / ARC / MTA-STS / TLSRPT) with gap flags.\n3. **Passkey rollout percentage** — overall and per-role-class (executive, finance, IT-admin, helpdesk, g ...",
       "key_xrefs": {
         "cwe_refs": [],
         "d3fend_refs": [
@@ -1961,10 +1961,11 @@
           "T1566.001",
           "T1566.002",
           "T1566.003",
+          "T1566.004",
           "T1078"
         ],
         "rfc_refs": [
-          "RFC-7489",
+          "RFC-9989",
           "RFC-6376",
           "RFC-7208",
           "RFC-8616",
@@ -1974,12 +1975,12 @@
       },
       "trigger_count": 17,
       "atlas_count": 0,
-      "attack_count": 5,
+      "attack_count": 6,
       "framework_gap_count": 6,
       "cwe_count": 0,
       "d3fend_count": 4,
       "rfc_count": 5,
-      "last_threat_review": "2026-05-18",
+      "last_threat_review": "2026-10-05",
       "path": "skills/email-security-anti-phishing/skill.md",
       "handoff_targets": [
         "ai-attack-surface",
@@ -2223,7 +2224,7 @@
       "cwe_count": 5,
       "d3fend_count": 0,
       "rfc_count": 0,
-      "last_threat_review": "2026-06-02",
+      "last_threat_review": "2026-10-05",
       "path": "skills/vc-wallet-trust/skill.md",
       "handoff_targets": []
     },
@@ -2263,7 +2264,7 @@
       "cwe_count": 6,
       "d3fend_count": 0,
       "rfc_count": 0,
-      "last_threat_review": "2026-06-02",
+      "last_threat_review": "2026-10-05",
       "path": "skills/mail-server-hardening/skill.md",
       "handoff_targets": []
     },
@@ -2301,7 +2302,7 @@
       "cwe_count": 4,
       "d3fend_count": 0,
       "rfc_count": 0,
-      "last_threat_review": "2026-06-02",
+      "last_threat_review": "2026-10-05",
       "path": "skills/network-trust/skill.md",
       "handoff_targets": []
     },
@@ -2339,7 +2340,7 @@
       "cwe_count": 4,
       "d3fend_count": 0,
       "rfc_count": 0,
-      "last_threat_review": "2026-06-02",
+      "last_threat_review": "2026-10-05",
       "path": "skills/audit-log-integrity/skill.md",
       "handoff_targets": []
     },
@@ -2376,7 +2377,7 @@
       "cwe_count": 4,
       "d3fend_count": 0,
       "rfc_count": 0,
-      "last_threat_review": "2026-06-02",
+      "last_threat_review": "2026-10-05",
       "path": "skills/self-update-integrity/skill.md",
       "handoff_targets": []
     },
@@ -2416,7 +2417,7 @@
       "cwe_count": 5,
       "d3fend_count": 0,
       "rfc_count": 0,
-      "last_threat_review": "2026-06-02",
+      "last_threat_review": "2026-10-05",
       "path": "skills/multitenancy-isolation/skill.md",
       "handoff_targets": []
     },
@@ -2457,7 +2458,7 @@
       "cwe_count": 7,
       "d3fend_count": 0,
       "rfc_count": 0,
-      "last_threat_review": "2026-06-02",
+      "last_threat_review": "2026-10-05",
       "path": "skills/decompression-dos/skill.md",
       "handoff_targets": []
     },
@@ -2496,7 +2497,7 @@
       "cwe_count": 4,
       "d3fend_count": 0,
       "rfc_count": 0,
-      "last_threat_review": "2026-06-02",
+      "last_threat_review": "2026-10-05",
       "path": "skills/log-injection-telemetry/skill.md",
       "handoff_targets": []
     },
@@ -2534,7 +2535,7 @@
       "cwe_count": 4,
       "d3fend_count": 0,
       "rfc_count": 0,
-      "last_threat_review": "2026-06-02",
+      "last_threat_review": "2026-10-05",
       "path": "skills/privacy-consent-ops/skill.md",
       "handoff_targets": []
     }

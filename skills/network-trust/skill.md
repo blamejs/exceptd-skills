@@ -43,7 +43,7 @@ cwe_refs:
   - CWE-918
   - CWE-290
   - CWE-347
-last_threat_review: "2026-06-02"
+last_threat_review: "2026-10-05"
 ---
 
 # Network-Layer Trust (AiTM Resistance)
@@ -54,7 +54,7 @@ Below the application, TLS authenticates a certificate against a CA bundle — n
 
 ## Framework Lag Declaration
 
-Organizational network controls equate TLS with peer authenticity and assume DNS and time are trustworthy. NIST 800-53 SC-8 (transmission integrity) is satisfied by TLS to a CA bundle and does not require DANE pinning, DNSSEC, or authenticated time. ISO 27001 A.8.21 (security of network services) is met with TLS + a CA bundle. NIS2 Art.21 names network security of essential services but not the DNS/time/transport trust-anchor posture that AiTM exploits. A clean "we use TLS and a validating resolver and NTP" audit is therefore NON-EVIDENCE for network-trust posture; it confirms encryption and a CA bundle, not end-to-end DNSSEC validation, peer pinning, or authenticated time.
+Organizational network controls equate TLS with peer authenticity and assume DNS and time are trustworthy. NIST 800-53 SC-8 (transmission integrity) is satisfied by TLS to a CA bundle and does not require DANE pinning, DNSSEC, or authenticated time. ISO 27001 A.8.21 (security of network services) is met with TLS + a CA bundle. NIS2 Art.21 requires essential and important entities to manage risks to the security of their network and information systems but does not name the DNS/time/transport trust-anchor posture that AiTM exploits. A clean "we use TLS and a validating resolver and NTP" audit is therefore NON-EVIDENCE for network-trust posture; it confirms encryption and a CA bundle, not end-to-end DNSSEC validation, peer pinning, or authenticated time.
 
 ## TTP Mapping
 
@@ -78,4 +78,4 @@ The recurring theater is "we use TLS everywhere, so the peer is authenticated," 
 
 ## Defensive Countermeasure Mapping
 
-Map findings to MITRE D3FEND: DNSSEC validation and DNS-rebinding guarding realize DNS Traffic Analysis and Resolution-Trust enforcement (countering T1071.004/T1557); DANE/TLSA and mTLS CA pinning realize Certificate Pinning and Public Key Infrastructure validation (countering T1557 mis-issuance); authenticated time (NTS) realizes System Time Integrity (countering clock-shift cert/TOTP abuse); RFC 9421 message-signature verification realizes Message Authentication (countering T1556). Pair DANE with DNSSEC (TLSA without DNSSEC is meaningless) and treat the clock as a security input. The residual risk after validation is compromise of the trust anchor itself (signing key, pinned CA, time authority), addressed by key-management and monitoring, accepted at the CISO level.
+Map findings to MITRE D3FEND: DNSSEC validation and DNS-rebinding guarding realize DNS Traffic Analysis and Forward Resolution IP Denylisting (countering T1071.004/T1557); DANE/TLSA and mTLS CA pinning realize Certificate Pinning and Certificate Analysis (countering T1557 mis-issuance); authenticated time (NTS) counters clock-shift cert/TOTP abuse, and D3FEND has no technique specific to time integrity; RFC 9421 message-signature verification realizes Message Authentication (countering T1556). Pair DANE with DNSSEC (TLSA without DNSSEC is meaningless) and treat the clock as a security input. The residual risk after validation is compromise of the trust anchor itself (signing key, pinned CA, time authority), addressed by key-management and monitoring, accepted at the CISO level.
