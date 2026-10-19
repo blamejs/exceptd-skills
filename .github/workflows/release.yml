@@ -70,7 +70,7 @@ jobs:
           ref: ${{ inputs.tag || github.ref }}
 
       - name: Set up Node 24
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           # Pin the exact patch ci.yml and docker/test.Dockerfile pin so the
           # gates here and the published-artifact build run the same Node a
@@ -230,7 +230,7 @@ jobs:
           ref: ${{ inputs.tag || github.ref }}
 
       - name: Set up Node 24 + npm provenance support
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           # Same exact patch as ci.yml / docker/test.Dockerfile — the publish
           # path must not build the tarball on a different Node than the gates
@@ -333,7 +333,7 @@ jobs:
         # minted token is per-run, repo-scoped, expires with the job, and carries
         # ONLY contents:write — so the workflow grants no write and the Scorecard
         # Token-Permissions finding clears, with the release capability unchanged.
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510  # v3.3.0
         with:
           client-id: ${{ secrets.REFRESH_APP_CLIENT_ID }}
           private-key: ${{ secrets.REFRESH_APP_PRIVATE_KEY }}
