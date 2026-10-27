@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.1.0",
-    "last_updated": "2026-10-05",
+    "last_updated": "2026-10-27",
     "last_threat_review": "2026-05-17",
     "purpose": "Zero-day learning loop output. Each entry maps a CVE to: attack vector, defense chain analysis, framework coverage, new control requirements generated, and exposure scoring. v1.1.0 (2026-05-15): every entry now carries ai_discovered_zeroday boolean + ai_discovery_source enum + ai_discovery_date + ai_assist_factor ladder, per AGENTS.md Hard Rule #7.",
     "note": "Never delete entries. Closed gaps are marked status: closed. History is data.",
@@ -17,7 +17,7 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "entry_count": 1764
+    "entry_count": 1765
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -146645,6 +146645,91 @@
           "AU-Essential-8-Patch",
           "NIS2-Art21-patch-management",
           "UK-CAF-B4"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-111497": {
+    "name": "Google Brotli decoder out-of-bounds write (Node2Shell)",
+    "lesson_date": "2026-10-27",
+    "ai_discovered_zeroday": true,
+    "ai_discovery_source": "bug_bounty_ai_augmented",
+    "ai_discovery_date": null,
+    "ai_assist_factor": "high",
+    "attack_vector": {
+      "description": "A crafted Brotli stream with an invalid block switch makes the streaming decoder keep appending input to an eight-byte internal buffer and write past it. Any process that decompresses attacker-controlled Brotli data reaches the flaw: a server that decodes request bodies sent with Content-Encoding: br, or a client whose fetch() decodes a Brotli response from a malicious or intercepted server.",
+      "privileges_required": "None. The attacker needs to deliver a Brotli stream that the target decompresses.",
+      "complexity": "low",
+      "ai_factor": "Found by OpenAI's Codex Security, an AI application-security agent, credited in the CVE record. Exploitation reported so far is by human researchers and one recorded, failed in-the-wild attempt; no source attributes the weaponization to AI."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Treating the 2026-02-27 upstream commit 'Detect and report invalid stream earlier.' as a security fix and shipping it, and not decompressing Brotli data from untrusted senders where it is not needed.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST-800-53-SI-2",
+        "adequacy": "SI-2 starts its clock at a vendor release, and the fix was public in google/brotli for eight months before any release named it, so no patch control triggered in that window."
+      },
+      "detection": {
+        "what_would_have_worked": "Alerting on Brotli-encoded request bodies of about 23 MB, on the source address and payload hash ELLIO published, and on Node.js worker crash and restart loops after Brotli input.",
+        "was_this_required": false,
+        "framework_requiring_it": "ISO-27001-2022-A.8.8",
+        "adequacy": "These indicators cover the published probe and one recorded attempt. A different payload size or source evades them, and Brotli responses to outbound fetches are not visible at the inbound proxy."
+      },
+      "response": {
+        "what_would_have_worked": "Upgrading Node.js to 22.23.4, 24.22.1 or 26.12.1, restarting every process, rebuilding container images, and rejecting Content-Encoding: br at the proxy until that was done.",
+        "was_this_required": true,
+        "framework_requiring_it": "AU-Essential-8-Patch",
+        "adequacy": "A package update alone leaves running processes on the old decoder until they restart, and end-of-life Node.js lines receive no fix."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patch tracking keyed to the brotli package misses copies compiled into Node.js and other products, and the upstream fix had no release for eight months."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "process.versions.brotli reports the same version on vulnerable and fixed Node.js builds, so a library-version inventory cannot evaluate exposure."
+      },
+      "NIS2-Art21-vulnerability-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Article 21(2)(e) does not require an inventory of products that embed a shared decoder, so bundled copies stay vulnerable after the system package is patched."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The 48-hour or two-week window depends on whether the operator takes the vendor's High rating or the CNA's Critical score and whether the disputed proof of concept counts as a working exploit."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "B4.d addresses externally exposed vulnerabilities and gives no mechanism for Brotli responses the application fetches from other servers."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-144",
+        "name": "EMBEDDED-MEDIA-PARSER-LIBRARY-INVENTORY-AND-PATCH-PARITY",
+        "description": "Enumerate every runtime and product that carries the Brotli decoder, and hold each to its own fixed build: Node.js at 22.23.4, 24.22.1 or 26.12.1 or later, the PyPI Brotli package at 1.2.1 and brotlicffi at 1.2.1.0, Envoy and Istio at their fixed releases, PAN-OS at the listed hotfixes, and the distribution brotli package at the DLA-4855-1, DSA-6582-1, USN-8956-1 or RHEL errata version. Measure Node.js by node --version on each running process or image, not by process.versions.brotli, which reports 1.2.0 on both vulnerable and fixed Node.js 24 builds. A Node.js 20, 23 or 25 runtime has no fixed build and is counted as exposed until it moves to a supported line. The fix is live only after each process restarts and each container image is rebuilt and redeployed.",
+        "evidence": "The Node.js October 2026 security release fixes CVE-2026-111497 in 22.23.4, 24.22.1 and 26.12.1, and Node.js 20, 23 and 25 are end of life with no fixed release. deps/brotli/c/common/version.h reads 1.2.0 at v24.22.1. The google/brotli fix commit 0ed4268a is dated 2026-02-27 and the first releases carrying it, 1.0.10, 1.1.1 and 1.2.1, are dated 2026-10-21. Fixed copies are also listed in GHSA-9v8h-qqgm-4m35, the Envoy and Istio advisories, and the Debian, Ubuntu and Red Hat errata.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "ISO-27001-2022-A.8.8",
+          "AU-Essential-8-Patch",
+          "UK-CAF-B4"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-021",
+        "name": "TIER-3-DEPENDENCY-INVENTORY",
+        "description": "Component inventory reaches the depth where the Brotli decoder sits: compiled into the Node.js binary, linked from the system libbrotli, or pulled in through a PyPI binding, a proxy or an appliance. For each application it also records whether the application decompresses untrusted Brotli data, through node:zlib, fetch() and other HTTP clients that decode a Content-Encoding: br response, or Express 5 and body-parser 2 decoding a request body, since those paths decide exposure and a proxy rule that rejects Brotli request bodies leaves the response paths open.",
+        "evidence": "The Node.js advisory names node:zlib, and Aikido and Red Hat name fetch() response decompression and Express 5 with body-parser 2 request decompression as the paths that reach the decoder. Debian and Ubuntu record that their nodejs packages link the system libbrotli, so the brotli package update fixes them after a restart, while Ubuntu focal nodejs uses a vendored copy.",
+        "gap_closes": [
+          "NIS2-Art21-vulnerability-management",
+          "ISO-27001-2022-A.8.8"
         ]
       }
     ]
