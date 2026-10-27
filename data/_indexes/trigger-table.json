@@ -1986,6 +1986,15 @@
   "input amplification": [
     "decompression-dos"
   ],
+  "brotli": [
+    "decompression-dos"
+  ],
+  "node2shell": [
+    "decompression-dos"
+  ],
+  "content-encoding br": [
+    "decompression-dos"
+  ],
   "log injection": [
     "log-injection-telemetry"
   ],

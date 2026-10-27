@@ -46,10 +46,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Node 24.21.0 LTS
+      - name: Set up Node 24.22.1 LTS
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
-          node-version: '24.21.0'
+          node-version: '24.22.1'
 
       - name: Show Node + npm version
         run: node --version && npm --version
@@ -78,10 +78,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Node 24.21.0 LTS
+      - name: Set up Node 24.22.1 LTS
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
-          node-version: '24.21.0'
+          node-version: '24.22.1'
 
       - name: Run tests (node:test)
         run: npm test
@@ -102,10 +102,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Node 24.21.0 LTS
+      - name: Set up Node 24.22.1 LTS
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
-          node-version: '24.21.0'
+          node-version: '24.22.1'
 
       - name: Validate CVE catalog schema + zero-day learning coverage
         run: node lib/validate-cve-catalog.js
@@ -161,10 +161,10 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up Node 24.21.0 LTS
+      - name: Set up Node 24.22.1 LTS
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
-          node-version: '24.21.0'
+          node-version: '24.22.1'
 
       - name: Run diff coverage analyzer
         run: node scripts/check-test-coverage.js --base origin/main
@@ -186,10 +186,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Node 24.21.0 LTS
+      - name: Set up Node 24.22.1 LTS
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
-          node-version: '24.21.0'
+          node-version: '24.22.1'
 
       - name: Validate playbooks (schema + cross-refs)
         run: node lib/validate-playbooks.js
@@ -212,10 +212,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Node 24.21.0 LTS
+      - name: Set up Node 24.22.1 LTS
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
-          node-version: '24.21.0'
+          node-version: '24.22.1'
 
       - name: Run skill lint
         id: lint

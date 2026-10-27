@@ -123,8 +123,8 @@
     },
     {
       "skill": "decompression-dos",
-      "last_threat_review": "2026-06-02",
-      "days_since_review": -18,
+      "last_threat_review": "2026-10-27",
+      "days_since_review": -165,
       "currency_score": 100,
       "currency_label": "current",
       "forward_watch_count": 0,

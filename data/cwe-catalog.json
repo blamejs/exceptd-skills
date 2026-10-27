@@ -2472,6 +2472,7 @@
     "skills_referencing": [
       "attack-surface-pentest",
       "container-runtime-security",
+      "decompression-dos",
       "fuzz-testing-strategy",
       "kernel-lpe-triage"
     ],
@@ -2628,6 +2629,7 @@
       "CVE-2025-6965",
       "CVE-2025-9242",
       "CVE-2026-0300",
+      "CVE-2026-111497",
       "CVE-2026-11645",
       "CVE-2026-22778",
       "CVE-2026-3909",
@@ -7779,5 +7781,30 @@
     "real_requirement": "Input that reaches a file the product later executes or interprets must be rejected or encoded for that file's syntax before it is written, and the write path must require authentication. Where a product saves operator-supplied values into templates or configuration it evaluates, a test must show that code syntax in those values is not executed.",
     "lag_notes": "SI-10 and A.8.28 ask for input validation and secure coding in general terms and are satisfied by a validation library on request parameters. Neither addresses input that is stored first and executed later, so a product can pass both while a saved value becomes code on the next load.",
     "last_verified": "2026-09-19"
+  },
+  "CWE-252": {
+    "id": "CWE-252",
+    "name": "Unchecked Return Value",
+    "abstraction": "Base",
+    "category": "Error Handling",
+    "description": "The product does not check the return value from a method or function, which can prevent it from detecting unexpected states and conditions. In a decoder or parser, an ignored error or length result lets processing continue on a state the callee already reported as invalid, and a later copy or write can then run past a buffer.",
+    "top_25_rank_2024": null,
+    "top_25_rank_2025": null,
+    "view_memberships": [
+      "CWE-1003",
+      "CWE-1000"
+    ],
+    "related_attack_patterns_capec": [],
+    "skills_referencing": [],
+    "evidence_cves": [
+      "CVE-2026-111497"
+    ],
+    "framework_controls_partially_addressing": [
+      "NIST-800-53-SI-2",
+      "ISO-27001-2022-A.8.8"
+    ],
+    "real_requirement": "Every call whose result reports an error, a short read or a length must have that result checked before the caller uses the state it describes, enforced by compiler warnings or static analysis that fail the build (for example warn_unused_result or [[nodiscard]]), and fuzzing of decoders and parsers that reach the unchecked path with malformed input.",
+    "lag_notes": "SI-2 flaw remediation and A.8.8 technical-vulnerability management act after a flaw is published. Neither requires the build-time return-value checking or decoder fuzzing that would find an ignored error result before release, so a library bundled into a runtime ships the defect to every product that embeds it.",
+    "last_verified": "2026-10-27"
   }
 }
