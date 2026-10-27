@@ -629875,6 +629875,11 @@
           "category": "Logging"
         },
         {
+          "id": "CWE-787",
+          "name": "Out-of-bounds Write",
+          "category": "Memory Safety"
+        },
+        {
           "id": "CWE-798",
           "name": "Use of Hard-coded Credentials",
           "category": "Credentials"
@@ -771260,6 +771265,11 @@
           "category": "Logging"
         },
         {
+          "id": "CWE-787",
+          "name": "Out-of-bounds Write",
+          "category": "Memory Safety"
+        },
+        {
           "id": "CWE-798",
           "name": "Use of Hard-coded Credentials",
           "category": "Credentials"
@@ -777393,6 +777403,11 @@
           "id": "CWE-778",
           "name": "Insufficient Logging",
           "category": "Logging"
+        },
+        {
+          "id": "CWE-787",
+          "name": "Out-of-bounds Write",
+          "category": "Memory Safety"
         },
         {
           "id": "CWE-807",
@@ -1043739,6 +1043754,11 @@
           "category": "Logging"
         },
         {
+          "id": "CWE-787",
+          "name": "Out-of-bounds Write",
+          "category": "Memory Safety"
+        },
+        {
           "id": "CWE-798",
           "name": "Use of Hard-coded Credentials",
           "category": "Credentials"
@@ -1058564,6 +1058584,11 @@
           "id": "CWE-778",
           "name": "Insufficient Logging",
           "category": "Logging"
+        },
+        {
+          "id": "CWE-787",
+          "name": "Out-of-bounds Write",
+          "category": "Memory Safety"
         },
         {
           "id": "CWE-798",
@@ -1137836,9 +1137861,10 @@
       "kernel-lpe-triage",
       "attack-surface-pentest",
       "fuzz-testing-strategy",
-      "container-runtime-security"
+      "container-runtime-security",
+      "decompression-dos"
     ],
-    "skill_count": 4,
+    "skill_count": 5,
     "chain": {
       "atlas": [
         {
@@ -1137863,6 +1137889,8 @@
         "T1078",
         "T1133",
         "T1190",
+        "T1499",
+        "T1499.001",
         "T1548.001",
         "T1610",
         "T1611"
@@ -1137877,6 +1137905,11 @@
           "id": "AU-Essential-8-Patch",
           "framework": "ASD Essential Eight (AU)",
           "control_name": "Patch applications and patch operating systems"
+        },
+        {
+          "id": "AU-ISM-1240",
+          "framework": "Australian Government Information Security Manual (ISM)",
+          "control_name": "Validation and sanitisation are performed on all input received over the internet by software"
         },
         {
           "id": "CIS-Controls-v8-Control7",
@@ -1137897,6 +1137930,11 @@
           "id": "NIS2-Art21-incident-handling",
           "framework": "EU NIS2 Directive (Directive (EU) 2022/2555)",
           "control_name": "Incident handling"
+        },
+        {
+          "id": "NIS2-Art21-network-security",
+          "framework": "EU NIS2 Directive (Directive (EU) 2022/2555)",
+          "control_name": "Security of network and information systems"
         },
         {
           "id": "NIS2-Art21-patch-management",
@@ -1137962,6 +1138000,11 @@
           "id": "UK-CAF-B2",
           "framework": "UK NCSC Cyber Assessment Framework v4.0",
           "control_name": "Identity and access control"
+        },
+        {
+          "id": "UK-CAF-B4",
+          "framework": "UK NCSC Cyber Assessment Framework v4.0",
+          "control_name": "System security"
         },
         {
           "id": "UK-CAF-D1",
@@ -1138063,6 +1138106,7 @@
     "related_cves": [
       "BUG-2026-NIGHTMARE-ECLIPSE-GREENPLASMA",
       "BUG-2026-NIGHTMARE-ECLIPSE-UNDEFEND",
+      "BUG-2026-NIGHTMARE-ECLIPSE-YELLOWKEY",
       "CVE-2002-0367",
       "CVE-2004-0210",
       "CVE-2004-1464",
@@ -1138935,6 +1138979,7 @@
       "CVE-2022-26485",
       "CVE-2022-26486",
       "CVE-2022-26500",
+      "CVE-2022-26501",
       "CVE-2022-26871",
       "CVE-2022-26904",
       "CVE-2022-26923",
@@ -1138963,6 +1139008,7 @@
       "CVE-2022-34713",
       "CVE-2022-35405",
       "CVE-2022-35914",
+      "CVE-2022-36537",
       "CVE-2022-36551",
       "CVE-2022-36804",
       "CVE-2022-37042",
@@ -1139297,6 +1139343,7 @@
       "CVE-2024-38856",
       "CVE-2024-39717",
       "CVE-2024-39722",
+      "CVE-2024-39891",
       "CVE-2024-4040",
       "CVE-2024-40635",
       "CVE-2024-40711",
@@ -1139812,6 +1139859,7 @@
       "CVE-2026-9198",
       "CVE-2026-93952",
       "CVE-2026-9586",
+      "MAL-2024-PYPI-ULTRALYTICS-XMRIG",
       "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP",
       "MAL-2025-PYPI-COLORAMA-SOLANA-STEALER",
       "MAL-2026-3083",

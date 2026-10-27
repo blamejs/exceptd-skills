@@ -44,10 +44,11 @@
         ]
       },
       "CWE-787": {
-        "count": 4,
+        "count": 5,
         "skills": [
           "attack-surface-pentest",
           "container-runtime-security",
+          "decompression-dos",
           "fuzz-testing-strategy",
           "kernel-lpe-triage"
         ]

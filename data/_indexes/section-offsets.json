@@ -4828,84 +4828,84 @@
     },
     "decompression-dos": {
       "path": "skills/decompression-dos/skill.md",
-      "total_bytes": 7711,
-      "total_lines": 84,
+      "total_bytes": 10038,
+      "total_lines": 92,
       "frontmatter": {
         "line_start": 1,
-        "line_end": 49,
+        "line_end": 53,
         "byte_start": 0,
-        "byte_end": 1186
+        "byte_end": 1248
       },
       "sections": [
         {
           "name": "Threat Context (mid-2026)",
           "normalized_name": "threat-context",
-          "line": 53,
-          "byte_start": 1241,
-          "byte_end": 2037,
-          "bytes": 796,
+          "line": 57,
+          "byte_start": 1303,
+          "byte_end": 3114,
+          "bytes": 1811,
           "h3_count": 0
         },
         {
           "name": "Framework Lag Declaration",
           "normalized_name": "framework-lag-declaration",
-          "line": 57,
-          "byte_start": 2037,
-          "byte_end": 2868,
+          "line": 63,
+          "byte_start": 3114,
+          "byte_end": 3945,
           "bytes": 831,
           "h3_count": 0
         },
         {
           "name": "TTP Mapping",
           "normalized_name": "ttp-mapping",
-          "line": 61,
-          "byte_start": 2868,
-          "byte_end": 3698,
+          "line": 67,
+          "byte_start": 3945,
+          "byte_end": 4775,
           "bytes": 830,
           "h3_count": 0
         },
         {
           "name": "Exploit Availability Matrix",
           "normalized_name": "exploit-availability-matrix",
-          "line": 65,
-          "byte_start": 3698,
-          "byte_end": 4388,
-          "bytes": 690,
+          "line": 71,
+          "byte_start": 4775,
+          "byte_end": 6103,
+          "bytes": 1328,
           "h3_count": 0
         },
         {
           "name": "Analysis Procedure",
           "normalized_name": "analysis-procedure",
-          "line": 69,
-          "byte_start": 4388,
-          "byte_end": 5310,
-          "bytes": 922,
+          "line": 77,
+          "byte_start": 6103,
+          "byte_end": 7637,
+          "bytes": 1534,
           "h3_count": 0
         },
         {
           "name": "Output Format",
           "normalized_name": "output-format",
-          "line": 73,
-          "byte_start": 5310,
-          "byte_end": 6198,
+          "line": 81,
+          "byte_start": 7637,
+          "byte_end": 8525,
           "bytes": 888,
           "h3_count": 0
         },
         {
           "name": "Compliance Theater Check",
           "normalized_name": "compliance-theater-check",
-          "line": 77,
-          "byte_start": 6198,
-          "byte_end": 6868,
+          "line": 85,
+          "byte_start": 8525,
+          "byte_end": 9195,
           "bytes": 670,
           "h3_count": 0
         },
         {
           "name": "Defensive Countermeasure Mapping",
           "normalized_name": "defensive-countermeasure-mapping",
-          "line": 81,
-          "byte_start": 6868,
-          "byte_end": 7711,
+          "line": 89,
+          "byte_start": 9195,
+          "byte_end": 10038,
           "bytes": 843,
           "h3_count": 0
         }

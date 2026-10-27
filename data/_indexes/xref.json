@@ -20,6 +20,7 @@
     "CWE-787": [
       "attack-surface-pentest",
       "container-runtime-security",
+      "decompression-dos",
       "fuzz-testing-strategy",
       "kernel-lpe-triage"
     ],

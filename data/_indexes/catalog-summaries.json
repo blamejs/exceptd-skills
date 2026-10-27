@@ -141,7 +141,7 @@
       "path": "data/exploit-availability.json",
       "purpose": "Per-CVE exploit availability: PoC public status, weaponization signal, AI-assist status, blast-radius. Project-curated (B2 Admiralty confidence) with source citations.",
       "schema_version": "1.1.0",
-      "last_updated": "2026-10-05",
+      "last_updated": "2026-10-27",
       "tlp": "CLEAR",
       "source_confidence_default": "B2",
       "freshness_policy": {
@@ -150,7 +150,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 28,
+      "entry_count": 29,
       "sample_keys": [
         "CVE-2025-53773",
         "CVE-2026-30615",

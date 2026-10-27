@@ -19,6 +19,9 @@ triggers:
   - recursion depth
   - length field allocation
   - input amplification
+  - brotli
+  - node2shell
+  - content-encoding br
 discovery_mode: standalone
 data_deps:
   - cve-catalog.json
@@ -45,7 +48,8 @@ cwe_refs:
   - CWE-22
   - CWE-834
   - CWE-770
-last_threat_review: "2026-06-02"
+  - CWE-787
+last_threat_review: "2026-10-27"
 ---
 
 # Decompression-Bomb / Parser-DoS / ReDoS Resistance
@@ -53,6 +57,8 @@ last_threat_review: "2026-06-02"
 ## Threat Context (mid-2026)
 
 Amplification denial of service turns a tiny, structurally-valid input into ruinous server work. A 42 KB zip bomb expands to petabytes; a few lines of nested XML entities expand to gigabytes (the billion-laughs attack); a crafted string pins a CPU core for seconds-to-minutes on a backtracking regular expression (ReDoS); a binary parser that reads a declared 2 GB length field allocates a 2 GB buffer from a 10-byte message. A Zip Slip archive entry named `../../x` escapes the extraction directory to overwrite a binary on the execution path. Input-format validation passes all of these because each input is valid — the amplification lives in how it is processed, not in its shape. The defense is a resource bound at the parser, not validation or autoscaling.
+
+A resource bound does not protect against a memory-safety flaw in the decoder itself. CVE-2026-111497 (Node2Shell, CVSS 4.0 9.2, RWEP 55) is an out-of-bounds write in the Google Brotli decoder 1.0.3 through 1.2.0: a crafted stream with an invalid block switch makes the streaming decoder write past an eight-byte internal buffer, which can crash the process, disclose memory or, under narrow conditions, execute code. Node.js bundles the decoder and is fixed in 22.23.4, 24.22.1 and 26.12.1; Node.js 20, 23 and 25 receive no fix. A Node.js process reaches it through `node:zlib` (`brotliDecompress`, `createBrotliDecompress`), through Express 5 and body-parser 2 decoding a request body sent with `Content-Encoding: br`, and through `fetch()` and other HTTP clients, which decode a `Content-Encoding: br` response even when the request advertised only gzip and deflate. A size cap on the decompressed output does not stop the write, because the overflow happens inside the decoder before any output limit applies.
 
 ## Framework Lag Declaration
 
@@ -66,9 +72,11 @@ The amplification-DoS failures map to MITRE ATT&CK: **T1499 (Endpoint Denial of 
 
 These are processing-bound gaps exploited by a single small input, so the exploit is the absent bound, not a published CVE. Zip bombs (42.zip), billion-laughs XML, and ReDoS strings are public, well-documented, and trivially reproduced; Zip Slip has public proof-of-concept archives. None require a network position beyond an endpoint that accepts an upload or a string. The real-world priority is set by whether the ingest is internet-facing and whether a single crafted input can exhaust the whole instance (one-shot DoS) or, for Zip Slip, write outside the extraction target — the latter escalating from DoS to arbitrary file write and code execution.
 
+CVE-2026-111497 is the exception to the processing-bound pattern: it is a decoder memory-safety flaw with a published CVE and public proof-of-concept code. The dimasma0305/CVE-2026-111497-POC repository reports probabilistic code execution against Express 5.3.0 on Node.js v24.22.0, other researchers argue code execution is unreachable, and ProjectDiscovery's nuclei template and Assetnote's node2shell-scanner send a 23,068,764-byte Brotli probe that does not execute a command. It is not in the CISA KEV catalog; one vendor, ELLIO, reports a failed in-the-wild attempt on 2026-10-26, so the catalog records exploitation as suspected.
+
 ## Analysis Procedure
 
-1. Enumerate every code path that decompresses an archive, parses XML/JSON/CBOR/protobuf/ASN.1/MIME, or applies a regex to attacker-suppliable input. 2. Confirm decompression caps total output size and per-entry ratio, and caps cumulative output + recursion depth for nested archives. 3. Confirm archive extraction normalizes and confines each entry path within the target (Zip Slip). 4. Confirm the XML parser disables DTDs and external/general entities. 5. Confirm regexes on untrusted input are linear-time (RE2) or length-capped with no catastrophic-backtracking patterns. 6. Confirm structured parsers enforce a maximum nesting depth and validate declared length/count fields against remaining input before allocating. Run the `decompression-dos` playbook to execute these as detect indicators with false-positive checks, then score by internet-reachability and one-shot-exhaustion potential.
+1. Enumerate every code path that decompresses an archive, parses XML/JSON/CBOR/protobuf/ASN.1/MIME, or applies a regex to attacker-suppliable input. 2. Confirm decompression caps total output size and per-entry ratio, and caps cumulative output + recursion depth for nested archives. 3. Confirm archive extraction normalizes and confines each entry path within the target (Zip Slip). 4. Confirm the XML parser disables DTDs and external/general entities. 5. Confirm regexes on untrusted input are linear-time (RE2) or length-capped with no catastrophic-backtracking patterns. 6. Confirm structured parsers enforce a maximum nesting depth and validate declared length/count fields against remaining input before allocating. 7. For every Brotli decode path (`node:zlib` Brotli calls, request-body parsers that accept `Content-Encoding: br`, and HTTP clients that decode Brotli responses), confirm the decoder is a fixed build: Node.js 22.23.4, 24.22.1 or 26.12.1 or later, checked with `node --version` on the running process or image, since `process.versions.brotli` reports 1.2.0 on vulnerable and fixed Node.js 24 builds; Brotli 1.0.10, 1.1.1 or 1.2.1 or later elsewhere; and a process restarted since the update. Rejecting `Content-Encoding: br` at the proxy covers request bodies only, not Brotli responses the application fetches. Run the `decompression-dos` playbook to execute these as detect indicators with false-positive checks, then score by internet-reachability and one-shot-exhaustion potential.
 
 ## Output Format
 

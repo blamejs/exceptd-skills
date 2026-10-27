@@ -2432,7 +2432,8 @@
           "CWE-776",
           "CWE-22",
           "CWE-834",
-          "CWE-770"
+          "CWE-770",
+          "CWE-787"
         ],
         "d3fend_refs": [],
         "framework_gaps": [
@@ -2450,14 +2451,14 @@
         "rfc_refs": [],
         "dlp_refs": []
       },
-      "trigger_count": 16,
+      "trigger_count": 19,
       "atlas_count": 0,
       "attack_count": 3,
       "framework_gap_count": 4,
-      "cwe_count": 7,
+      "cwe_count": 8,
       "d3fend_count": 0,
       "rfc_count": 0,
-      "last_threat_review": "2026-06-02",
+      "last_threat_review": "2026-10-27",
       "path": "skills/decompression-dos/skill.md",
       "handoff_targets": []
     },
