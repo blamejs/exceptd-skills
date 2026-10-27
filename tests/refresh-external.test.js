@@ -2348,6 +2348,28 @@ require('node:test').describe('epss-triple-coherence', () => {
       'a complete, stable entry must not churn');
   });
 
+  test('a stable entry whose row has aged past the maximum age takes the new dated row', () => {
+    const { EPSS_MAX_AGE_DAYS } = require(path.join(ROOT, 'lib', 'refresh-external.js'));
+    const complete = { epss_score: 0.84793, epss_percentile: 0.99688, epss_date: '2026-07-28' };
+    const stable = { score: 0.85, percentile: 0.9971, date: '2026-10-27' };
+    assert.ok(Math.abs(stable.score - complete.epss_score) < EPSS_DRIFT,
+      'precondition: neither number crossed the drift threshold');
+    assert.ok(EPSS_MAX_AGE_DAYS < 90, 'the refresh age must stay inside the 90-day staleness window');
+
+    const diffs = epssTripleDiffs('CVE-2099-0001', complete, stable, EPSS_DRIFT);
+    assert.deepEqual(diffs.map((d) => d.field).sort(), ['epss_date', 'epss_percentile', 'epss_score'],
+      'the whole row is written, so the date never moves without its numbers');
+    assert.equal(diffs.find((d) => d.field === 'epss_date').after, '2026-10-27');
+
+    const recent = { ...complete, epss_date: '2026-10-20' };
+    assert.deepEqual(epssTripleDiffs('CVE-2099-0002', recent, stable, EPSS_DRIFT), [],
+      'a stable entry inside the maximum age is left alone');
+
+    const undated = { epss_score: 0.84793, epss_percentile: 0.99688 };
+    assert.equal(epssTripleDiffs('CVE-2099-0003', undated, stable, EPSS_DRIFT)
+      .find((d) => d.field === 'epss_date').after, '2026-10-27', 'an undated entry takes the row date');
+  });
+
   test('a partial fetched row never refreshes a COMPLETE entry either', () => {
     // The partial-row guard first sat inside the repair branch, so it only
     // applied to half-populated entries. A complete entry meeting a row that
