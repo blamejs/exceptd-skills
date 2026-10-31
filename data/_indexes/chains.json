@@ -9,11 +9,11 @@
   },
   "CVE-2026-111497": {
     "name": "Google Brotli Decoder Out-of-Bounds Write (Node2Shell)",
-    "rwep": 55,
+    "rwep": 80,
     "cvss": 9.2,
-    "cisa_kev": false,
-    "epss_score": 0.55483,
-    "epss_percentile": 0.9903,
+    "cisa_kev": true,
+    "epss_score": 0.82641,
+    "epss_percentile": 0.99666,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -2085,8 +2085,8 @@
     "rwep": 65,
     "cvss": 8.7,
     "cisa_kev": true,
-    "epss_score": 0.01955,
-    "epss_percentile": 0.80161,
+    "epss_score": 0.22478,
+    "epss_percentile": 0.97703,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -2596,8 +2596,8 @@
     "rwep": 78,
     "cvss": 8.5,
     "cisa_kev": true,
-    "epss_score": 0.00857,
-    "epss_percentile": 0.58237,
+    "epss_score": 0.10936,
+    "epss_percentile": 0.95877,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -469581,8 +469581,8 @@
     "rwep": 55,
     "cvss": 7,
     "cisa_kev": true,
-    "epss_score": 0.00332,
-    "epss_percentile": 0.26241,
+    "epss_score": 0.08567,
+    "epss_percentile": 0.95064,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -471314,8 +471314,8 @@
     "rwep": 53,
     "cvss": 10,
     "cisa_kev": true,
-    "epss_score": 0.01001,
-    "epss_percentile": 0.62656,
+    "epss_score": 0.0176,
+    "epss_percentile": 0.77972,
     "referencing_skills": [
       "kernel-lpe-triage",
       "coordinated-vuln-disclosure",
@@ -743038,11 +743038,11 @@
   },
   "CVE-2026-46300": {
     "name": "Fragnesia",
-    "rwep": 35,
+    "rwep": 60,
     "cvss": 7.8,
-    "cisa_kev": false,
-    "epss_score": 0.10192,
-    "epss_percentile": 0.95643,
+    "cisa_kev": true,
+    "epss_score": 0.1613,
+    "epss_percentile": 0.96923,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -897688,8 +897688,8 @@
     "rwep": 72,
     "cvss": 7.5,
     "cisa_kev": true,
-    "epss_score": 0.65189,
-    "epss_percentile": 0.99236,
+    "epss_score": 0.74939,
+    "epss_percentile": 0.99505,
     "referencing_skills": [
       "kernel-lpe-triage",
       "ai-attack-surface",
@@ -943910,8 +943910,8 @@
     "rwep": 57,
     "cvss": 8.6,
     "cisa_kev": true,
-    "epss_score": 0.33524,
-    "epss_percentile": 0.98339,
+    "epss_score": 0.413,
+    "epss_percentile": 0.98667,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -949698,8 +949698,8 @@
     "rwep": 77,
     "cvss": 9.4,
     "cisa_kev": true,
-    "epss_score": 0.01899,
-    "epss_percentile": 0.78956,
+    "epss_score": 0.02514,
+    "epss_percentile": 0.8478,
     "referencing_skills": [
       "kernel-lpe-triage",
       "attack-surface-pentest",
@@ -1097829,6 +1097829,1706 @@
         "RFC-7296",
         "RFC-9116"
       ]
+    }
+  },
+  "CVE-2026-118527": {
+    "name": "Ivanti Connect Secure Generation of Predictable Numbers or Identifiers Vulnerability",
+    "rwep": 75,
+    "cvss": null,
+    "cisa_kev": true,
+    "epss_score": null,
+    "epss_percentile": null,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-111357": {
+    "name": "Ivanti Connect Secure Missing Authentication for Critical Function Vulnerability",
+    "rwep": 75,
+    "cvss": 7,
+    "cisa_kev": true,
+    "epss_score": 0.00316,
+    "epss_percentile": 0.24569,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-97229": {
+    "name": "GitLab Community Edition and Enterprise Edition Integer Overflow or Wraparound Vulnerability",
+    "rwep": 75,
+    "cvss": 10,
+    "cisa_kev": true,
+    "epss_score": 0.26569,
+    "epss_percentile": 0.98015,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-76418": {
+    "name": "Cisco Secure Firewall ASA Software and Cisco Secure FTD Software Unchecked Return Value to NULL Pointer Dereference Vulnerability",
+    "rwep": 75,
+    "cvss": 8.6,
+    "cisa_kev": true,
+    "epss_score": 0.0091,
+    "epss_percentile": 0.59949,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-41709": {
+    "name": "Broadcom VMWare ESX Insufficient Logging Vulnerability",
+    "rwep": 75,
+    "cvss": 2.7,
+    "cisa_kev": true,
+    "epss_score": 0.00689,
+    "epss_percentile": 0.52718,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-48356": {
+    "name": "Adobe Commerce and Magento Unrestricted Upload of File with Dangerous Type Vulnerability",
+    "rwep": 75,
+    "cvss": 9.3,
+    "cisa_kev": true,
+    "epss_score": 0.44579,
+    "epss_percentile": 0.98767,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-109618": {
+    "name": "PHP Memory Corruption Vulnerability",
+    "rwep": 75,
+    "cvss": 9.2,
+    "cisa_kev": true,
+    "epss_score": 0.99999,
+    "epss_percentile": 0.99998,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-109619": {
+    "name": "PHP Stale Internal Request-State Vulnerability",
+    "rwep": 75,
+    "cvss": 9.2,
+    "cisa_kev": true,
+    "epss_score": 0.99999,
+    "epss_percentile": 0.99999,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-114625": {
+    "name": "Arista VeloCloud Orchestrator SQL Injection Vulnerability",
+    "rwep": 75,
+    "cvss": 9.4,
+    "cisa_kev": true,
+    "epss_score": 0.01025,
+    "epss_percentile": 0.63541,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-110447": {
+    "name": "Collabora Online – Built-in CODE Server OS Command Injection Vulnerability",
+    "rwep": 75,
+    "cvss": 9.2,
+    "cisa_kev": true,
+    "epss_score": 0.73307,
+    "epss_percentile": 0.9946,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-106931": {
+    "name": "EG Secure Solutions SiteGuard Server Edition OS Command Injection Vulnerability",
+    "rwep": 75,
+    "cvss": 8.5,
+    "cisa_kev": true,
+    "epss_score": 0.02528,
+    "epss_percentile": 0.84877,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-96656": {
+    "name": "Plex Media Server External Control of File Name or Path Vulnerability",
+    "rwep": 75,
+    "cvss": 8.6,
+    "cisa_kev": true,
+    "epss_score": 0.01785,
+    "epss_percentile": 0.78279,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-96655": {
+    "name": "Plex Media Server Server-Side Request Forgery (SSRF) Vulnerability",
+    "rwep": 75,
+    "cvss": 5.3,
+    "cisa_kev": true,
+    "epss_score": 0.01637,
+    "epss_percentile": 0.7631,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-96654": {
+    "name": "Plex Media Server Improper Neutralization of Encoded URI Schemes in a Web Page Vulnerability",
+    "rwep": 75,
+    "cvss": 6.9,
+    "cisa_kev": true,
+    "epss_score": 0.01949,
+    "epss_percentile": 0.80195,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-96652": {
+    "name": "Plex Media Server Server-Side Request Forgery (SSRF) Vulnerability",
+    "rwep": 75,
+    "cvss": 5.3,
+    "cisa_kev": true,
+    "epss_score": 0.01821,
+    "epss_percentile": 0.78731,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-110936": {
+    "name": "Siemens Software Center Uncontrolled Search Path Element Vulnerability",
+    "rwep": 75,
+    "cvss": 8.4,
+    "cisa_kev": true,
+    "epss_score": 0.00967,
+    "epss_percentile": 0.6171,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-102764": {
+    "name": "BeyondTrust Remote Support Authentication Bypass by Spoofing Vulnerability",
+    "rwep": 75,
+    "cvss": 9.3,
+    "cisa_kev": true,
+    "epss_score": 0.1895,
+    "epss_percentile": 0.97297,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2025-61624": {
+    "name": "Fortinet Multiple Products Path Traversal Vulnerability",
+    "rwep": 75,
+    "cvss": 6.5,
+    "cisa_kev": true,
+    "epss_score": 0.01343,
+    "epss_percentile": 0.71332,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-21589": {
+    "name": "Atlassian Multiple Products Files or Directories Accessible to External Parties Vulnerability",
+    "rwep": 75,
+    "cvss": 9.3,
+    "cisa_kev": true,
+    "epss_score": 0.99477,
+    "epss_percentile": 0.99943,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-105134": {
+    "name": "Ahsay AhsayCBS Command Injection Vulnerability",
+    "rwep": 75,
+    "cvss": 10,
+    "cisa_kev": true,
+    "epss_score": 0.81763,
+    "epss_percentile": 0.99644,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-76519": {
+    "name": "Cisco Secure Email Gateway Relative Path Traversal Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.02152,
+    "epss_percentile": 0.82127,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-105133": {
+    "name": "Ahsay AhsayCBS Improper Authentication Vulnerability",
+    "rwep": 75,
+    "cvss": 6.9,
+    "cisa_kev": true,
+    "epss_score": 0.7947,
+    "epss_percentile": 0.99602,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-0322": {
+    "name": "Palo Alto Networks PAN-OS Code Injection Vulnerability",
+    "rwep": 75,
+    "cvss": 8.6,
+    "cisa_kev": true,
+    "epss_score": 0.0174,
+    "epss_percentile": 0.77702,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-104935": {
+    "name": "Ivanti Connect Secure Authentication Bypass by Spoofing Vulnerability",
+    "rwep": 75,
+    "cvss": 8.6,
+    "cisa_kev": true,
+    "epss_score": 0.86766,
+    "epss_percentile": 0.99742,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-96951": {
+    "name": "Microsoft Windows Command Injection Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.09813,
+    "epss_percentile": 0.95543,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2015-5477": {
+    "name": " ISC BIND Data Processing Errors Vulnerability",
+    "rwep": 75,
+    "cvss": 7.5,
+    "cisa_kev": true,
+    "epss_score": 0.99584,
+    "epss_percentile": 0.99947,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2016-3081": {
+    "name": "Apache Struts Command Injection Vulnerability",
+    "rwep": 75,
+    "cvss": 8.1,
+    "cisa_kev": true,
+    "epss_score": 0.96525,
+    "epss_percentile": 0.99882,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2023-22894": {
+    "name": "Strapi Cleartext Storage of Sensitive Information Vulnerability",
+    "rwep": 75,
+    "cvss": 4.9,
+    "cisa_kev": true,
+    "epss_score": 0.04114,
+    "epss_percentile": 0.90767,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-3199": {
+    "name": "ONLYOFFICE Docs Server Path Traversal Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.30244,
+    "epss_percentile": 0.98219,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2015-3306": {
+    "name": "ProFTPD Improper Access Control Vulnerability",
+    "rwep": 75,
+    "cvss": 10,
+    "cisa_kev": true,
+    "epss_score": 0.99497,
+    "epss_percentile": 0.99945,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-88779": {
+    "name": "Citrix NetScaler Improper Restriction of Operations within the Bounds of a Memory Buffer Vulnerability",
+    "rwep": 75,
+    "cvss": 8.7,
+    "cisa_kev": true,
+    "epss_score": 0.11388,
+    "epss_percentile": 0.95988,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-104286": {
+    "name": "Fortinet FortiMail Path Traversal Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.04573,
+    "epss_percentile": 0.91609,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-76504": {
+    "name": "Cisco Catalyst SD-WAN Manager Hex Encoding Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.38928,
+    "epss_percentile": 0.98587,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-86950": {
+    "name": "Apple Multiple Products Out-of-Bounds Write Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.26166,
+    "epss_percentile": 0.97992,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-88771": {
+    "name": "Citrix NetScaler Improper Input Validation Vulnerability",
+    "rwep": 75,
+    "cvss": 9.5,
+    "cisa_kev": true,
+    "epss_score": 0.8216,
+    "epss_percentile": 0.99655,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-67279": {
+    "name": "Mikrotik RouterOS Improper Enforcement of Behavioral Workflow Vulnerability",
+    "rwep": 75,
+    "cvss": 6.9,
+    "cisa_kev": true,
+    "epss_score": 0.02277,
+    "epss_percentile": 0.83093,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-65660": {
+    "name": "Microsoft SharePoint Code Injection Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.08189,
+    "epss_percentile": 0.94862,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-87902": {
+    "name": "WordPress Core Remote File Inclusion Vulnerability",
+    "rwep": 75,
+    "cvss": 8.1,
+    "cisa_kev": true,
+    "epss_score": 0.95769,
+    "epss_percentile": 0.99872,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-5430": {
+    "name": "WSO2 Multiple Products Path Traversal Vulnerability ",
+    "rwep": 75,
+    "cvss": 10,
+    "cisa_kev": true,
+    "epss_score": 0.2239,
+    "epss_percentile": 0.97691,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-71362": {
+    "name": "Adobe Commerce and Magento Incorrect Authorization Vulnerability ",
+    "rwep": 75,
+    "cvss": 9.1,
+    "cisa_kev": true,
+    "epss_score": 0.90491,
+    "epss_percentile": 0.99801,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-94127": {
+    "name": "F5 BIG-IP APM Heap-based Buffer Overflow Vulnerability",
+    "rwep": 75,
+    "cvss": 9.3,
+    "cisa_kev": true,
+    "epss_score": 0.24938,
+    "epss_percentile": 0.97912,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-93616": {
+    "name": "Check Point Multiple Products Path Traversal Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.91605,
+    "epss_percentile": 0.99813,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2026-85102": {
+    "name": "Check Point Multiple Products Improper Certificate Validation Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.5414,
+    "epss_percentile": 0.99006,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-8657": {
+    "name": "EyesOfNetwork Use of Hard-Coded Credentials Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.91874,
+    "epss_percentile": 0.99817,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-33771": {
+    "name": "Microsoft Windows Kernel Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.10172,
+    "epss_percentile": 0.95654,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-31956": {
+    "name": "Microsoft Windows NTFS Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.22273,
+    "epss_percentile": 0.97679,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-31979": {
+    "name": "Microsoft Windows Kernel Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.0454,
+    "epss_percentile": 0.91555,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-0938": {
+    "name": "Microsoft Windows Adobe Font Manager Library Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.6895,
+    "epss_percentile": 0.99348,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-17144": {
+    "name": "Microsoft Exchange Server Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 8.4,
+    "cisa_kev": true,
+    "epss_score": 0.36514,
+    "epss_percentile": 0.9849,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-1020": {
+    "name": "Microsoft Windows Adobe Font Manager Library Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.65037,
+    "epss_percentile": 0.9925,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-34523": {
+    "name": "Microsoft Exchange Server Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 9,
+    "cisa_kev": true,
+    "epss_score": 0.9999,
+    "epss_percentile": 0.99985,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2017-7269": {
+    "name": "Microsoft Windows Server Buffer Overflow Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.99823,
+    "epss_percentile": 0.9996,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-0688": {
+    "name": "Microsoft Exchange Server Validation Key Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.99955,
+    "epss_percentile": 0.99974,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2017-0143": {
+    "name": "Microsoft Windows Server Message Block (SMBv1) Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.93307,
+    "epss_percentile": 0.99836,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2016-7255": {
+    "name": "Microsoft Win32k Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.80968,
+    "epss_percentile": 0.9963,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2019-0708": {
+    "name": "Microsoft Remote Desktop Services Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.99999,
+    "epss_percentile": 0.99999,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-1464": {
+    "name": "Microsoft Windows Spoofing Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.38946,
+    "epss_percentile": 0.98588,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-1732": {
+    "name": "Microsoft Win32k Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.78376,
+    "epss_percentile": 0.99581,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-34527": {
+    "name": "Microsoft Windows Print Spooler Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.99792,
+    "epss_percentile": 0.99956,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2019-0803": {
+    "name": "Microsoft Win32k Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.4523,
+    "epss_percentile": 0.98784,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-1040": {
+    "name": "Microsoft Hyper-V RemoteFX vGPU Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 9,
+    "cisa_kev": true,
+    "epss_score": 0.07393,
+    "epss_percentile": 0.94419,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-1350": {
+    "name": "Microsoft Windows DNS Server Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 10,
+    "cisa_kev": true,
+    "epss_score": 0.96721,
+    "epss_percentile": 0.99885,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-26411": {
+    "name": "Microsoft Internet Explorer Memory Corruption Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.81667,
+    "epss_percentile": 0.99642,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2019-0859": {
+    "name": "Microsoft Win32k Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.04151,
+    "epss_percentile": 0.90851,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-40444": {
+    "name": "Microsoft MSHTML Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.9784,
+    "epss_percentile": 0.99907,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2017-8759": {
+    "name": "Microsoft .NET Framework Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.88698,
+    "epss_percentile": 0.99774,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-36942": {
+    "name": "Microsoft Windows Local Security Authority (LSA) Spoofing Vulnerability",
+    "rwep": 75,
+    "cvss": 7.5,
+    "cisa_kev": true,
+    "epss_score": 0.66023,
+    "epss_percentile": 0.99272,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2019-1215": {
+    "name": "Microsoft Windows Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.19254,
+    "epss_percentile": 0.97333,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2018-0798": {
+    "name": "Microsoft Office Memory Corruption Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.95121,
+    "epss_percentile": 0.99863,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2018-0802": {
+    "name": "Microsoft Office Memory Corruption Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.93289,
+    "epss_percentile": 0.99835,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2012-0158": {
+    "name": "Microsoft MSCOMCTL.OCX Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.99976,
+    "epss_percentile": 0.99979,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2015-1641": {
+    "name": "Microsoft Office Memory Corruption Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.97246,
+    "epss_percentile": 0.99896,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2017-11882": {
+    "name": "Microsoft Office Memory Corruption Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.99945,
+    "epss_percentile": 0.99973,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-0674": {
+    "name": "Microsoft Internet Explorer Scripting Engine Memory Corruption Vulnerability",
+    "rwep": 75,
+    "cvss": 7.5,
+    "cisa_kev": true,
+    "epss_score": 0.86863,
+    "epss_percentile": 0.99745,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2019-1367": {
+    "name": "Microsoft Internet Explorer Scripting Engine Memory Corruption Vulnerability",
+    "rwep": 75,
+    "cvss": 7.5,
+    "cisa_kev": true,
+    "epss_score": 0.52449,
+    "epss_percentile": 0.98962,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2017-0199": {
+    "name": "Microsoft Office and WordPad Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.99497,
+    "epss_percentile": 0.99945,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-0968": {
+    "name": "Microsoft Internet Explorer Scripting Engine Memory Corruption Vulnerability",
+    "rwep": 75,
+    "cvss": 7.5,
+    "cisa_kev": true,
+    "epss_score": 0.30676,
+    "epss_percentile": 0.98243,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-1472": {
+    "name": "Microsoft Netlogon Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 5.5,
+    "cisa_kev": true,
+    "epss_score": 0.99389,
+    "epss_percentile": 0.9994,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-26855": {
+    "name": "Microsoft Exchange Server Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 9.1,
+    "cisa_kev": true,
+    "epss_score": 0.99996,
+    "epss_percentile": 0.99988,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-26858": {
+    "name": "Microsoft Exchange Server Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.93651,
+    "epss_percentile": 0.99843,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-27065": {
+    "name": "Microsoft Exchange Server Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.99876,
+    "epss_percentile": 0.99964,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-1054": {
+    "name": "Microsoft Win32k Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7,
+    "cisa_kev": true,
+    "epss_score": 0.53878,
+    "epss_percentile": 0.98999,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-1675": {
+    "name": "Microsoft Windows Print Spooler Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.85305,
+    "epss_percentile": 0.99716,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-34448": {
+    "name": "Microsoft Windows Scripting Engine Memory Corruption Vulnerability",
+    "rwep": 75,
+    "cvss": 6.8,
+    "cisa_kev": true,
+    "epss_score": 0.40062,
+    "epss_percentile": 0.98631,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-0646": {
+    "name": "Microsoft .NET Framework Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.99222,
+    "epss_percentile": 0.99935,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2019-0808": {
+    "name": "Microsoft Win32k Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.53017,
+    "epss_percentile": 0.98976,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-26857": {
+    "name": "Microsoft Exchange Server Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.95762,
+    "epss_percentile": 0.99871,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-1147": {
+    "name": "Microsoft .NET Framework, SharePoint, and Visual Studio Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.95804,
+    "epss_percentile": 0.99872,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2016-3235": {
+    "name": "Microsoft Office OLE DLL Side Loading Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.43308,
+    "epss_percentile": 0.98727,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-36955": {
+    "name": "Microsoft Windows Common Log File System (CLFS) Driver Privilege Escalation Vulnerability",
+    "rwep": 75,
+    "cvss": 7.8,
+    "cisa_kev": true,
+    "epss_score": 0.04071,
+    "epss_percentile": 0.90669,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2019-17026": {
+    "name": "Mozilla Firefox And Thunderbird Type Confusion Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.46311,
+    "epss_percentile": 0.98816,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-26919": {
+    "name": "Netgear JGS516PE Devices Missing Function Level Access Control Vulnerability",
+    "rwep": 75,
+    "cvss": 9.8,
+    "cisa_kev": true,
+    "epss_score": 0.57468,
+    "epss_percentile": 0.99078,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2019-19356": {
+    "name": "Netis WF2419 Devices Remote Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.5,
+    "cisa_kev": true,
+    "epss_score": 0.28075,
+    "epss_percentile": 0.98105,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2012-3152": {
+    "name": "Oracle Fusion Middleware Unspecified Vulnerability",
+    "rwep": 75,
+    "cvss": 9.1,
+    "cisa_kev": true,
+    "epss_score": 0.98793,
+    "epss_percentile": 0.99926,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-14871": {
+    "name": "Oracle Solaris and Zettabyte File System (ZFS) Unspecified Vulnerability",
+    "rwep": 75,
+    "cvss": 10,
+    "cisa_kev": true,
+    "epss_score": 0.80157,
+    "epss_percentile": 0.99617,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-8243": {
+    "name": "Ivanti Pulse Connect Secure Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.2,
+    "cisa_kev": true,
+    "epss_score": 0.90759,
+    "epss_percentile": 0.99804,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-22900": {
+    "name": "Ivanti Pulse Connect Secure Unrestricted File Upload Vulnerability",
+    "rwep": 75,
+    "cvss": 7.2,
+    "cisa_kev": true,
+    "epss_score": 0.14146,
+    "epss_percentile": 0.96572,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-22894": {
+    "name": "Ivanti Pulse Connect Secure Collaboration Suite Buffer Overflow Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.41284,
+    "epss_percentile": 0.98667,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2020-8260": {
+    "name": "Ivanti Pulse Connect Secure Code Execution Vulnerability",
+    "rwep": 75,
+    "cvss": 7.2,
+    "cisa_kev": true,
+    "epss_score": 0.9648,
+    "epss_percentile": 0.99881,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
+    }
+  },
+  "CVE-2021-22899": {
+    "name": "Ivanti Pulse Connect Secure Command Injection Vulnerability",
+    "rwep": 75,
+    "cvss": 8.8,
+    "cisa_kev": true,
+    "epss_score": 0.22915,
+    "epss_percentile": 0.97741,
+    "referencing_skills": [],
+    "chain": {
+      "cwes": [],
+      "atlas": [],
+      "d3fend": [],
+      "framework_gaps": [],
+      "attack_refs": [],
+      "rfc_refs": []
     }
   },
   "CWE-20": {

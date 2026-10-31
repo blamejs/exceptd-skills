@@ -6,19 +6,19 @@
   },
   "events": [
     {
+      "date": "2026-10-31",
+      "type": "catalog_update",
+      "artifact": "data/cve-catalog.json",
+      "path": "data/cve-catalog.json",
+      "schema_version": "1.0.0",
+      "entry_count": 1865
+    },
+    {
       "date": "2026-10-27",
       "type": "skill_review",
       "artifact": "decompression-dos",
       "path": "skills/decompression-dos/skill.md",
       "note": "Decompression-bomb, parser-DoS, and ReDoS resistance for mid-2026 — decompression size/ratio caps, Zip Slip path confinement, XML entity-expansion disabling, linear-time regex on untrusted input, parse-depth limits, and length-field allocation bounds against single-input amplification denial of service"
-    },
-    {
-      "date": "2026-10-27",
-      "type": "catalog_update",
-      "artifact": "data/cve-catalog.json",
-      "path": "data/cve-catalog.json",
-      "schema_version": "1.0.0",
-      "entry_count": 1765
     },
     {
       "date": "2026-10-27",
