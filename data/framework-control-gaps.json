@@ -2288,7 +2288,7 @@
       "Treating 'Top 25 addressed' as a compliance signal creates a compliance-theatre risk for organisations with significant AI surface",
       "No cross-walk requirement to ATLAS TTPs — CWE addresses weaknesses; ATLAS addresses adversary techniques. Both are needed for AI coverage"
     ],
-    "real_requirement": "Programmes that claim 'Top 25 addressed' as compliance evidence must additionally: (1) enumerate AI-relevant CWEs outside the Top 25 (CWE-1426 Improper Output Validation, CWE-1039 Inadequate Detection of Adversarial Input, CWE-1230 Exposure of Sensitive Info Through Metadata) with explicit treatment, (2) cross-walk to ATLAS v2026.09 TTPs for adversarial coverage, (3) re-baseline against the next-published Top 25 with delta analysis. Aligns with EU CRA Annex I, UK NCSC, AU ISM, ISO 27001 A.8.28.",
+    "real_requirement": "Programmes that claim 'Top 25 addressed' as compliance evidence must additionally: (1) enumerate AI-relevant CWEs outside the Top 25 (CWE-1426 Improper Output Validation, CWE-1039 Inadequate Detection of Adversarial Input, CWE-1230 Exposure of Sensitive Info Through Metadata) with explicit treatment, (2) cross-walk to ATLAS v2026.10 TTPs for adversarial coverage, (3) re-baseline against the next-published Top 25 with delta analysis. Aligns with EU CRA Annex I, UK NCSC, AU ISM, ISO 27001 A.8.28.",
     "status": "open",
     "opened_date": "2026-05-11",
     "evidence_cves": [],
@@ -2481,7 +2481,7 @@
     "atlas_refs": [
       "AML.T0051",
       "AML.T0054",
-      "AML.T0057"
+      "AML.T0085.002"
     ],
     "attack_refs": [
       "T1059"
@@ -2558,7 +2558,7 @@
       "AML.T0010",
       "AML.T0051",
       "AML.T0054",
-      "AML.T0057"
+      "AML.T0085.002"
     ],
     "attack_refs": [],
     "theater_test": {
@@ -4767,7 +4767,7 @@
       "LLM-API-as-C2 (SesameOp pattern, ATLAS AML.T0096) is not in the clause 6.1.2 example threat list — risk register templates omit it",
       "No requirement to link AI risk register entries to specific TTP IDs (ATLAS / ATT&CK) — risks remain framework-internal abstractions"
     ],
-    "real_requirement": "Clause 6.1.2 risk registers must (1) ingest ATLAS v2026.09 TTPs as enumerated AI-specific threat sources, (2) cross-reference jurisdictional obligations (EU AI Act Annex III, NIS2 Art. 21, DORA Art. 28, UK CAF B4, AU ISM AI annex, ISO 27001:2022 A.5.7), (3) include AI-API-as-C2 and prompt-injection-as-RCE as named scenarios, (4) be re-run on threat-intel triggers, not only on calendar cycles.",
+    "real_requirement": "Clause 6.1.2 risk registers must (1) ingest ATLAS v2026.10 TTPs as enumerated AI-specific threat sources, (2) cross-reference jurisdictional obligations (EU AI Act Annex III, NIS2 Art. 21, DORA Art. 28, UK CAF B4, AU ISM AI annex, ISO 27001:2022 A.5.7), (3) include AI-API-as-C2 and prompt-injection-as-RCE as named scenarios, (4) be re-run on threat-intel triggers, not only on calendar cycles.",
     "status": "open",
     "opened_date": "2026-05-11",
     "evidence_cves": [],
@@ -9737,7 +9737,7 @@
     "atlas_refs": [
       "AML.T0096",
       "AML.T0024",
-      "AML.T0057"
+      "AML.T0085.002"
     ],
     "attack_refs": [
       "T1567"
@@ -15729,9 +15729,9 @@
     }
   },
   "ATLAS-AML.T0010": {
-    "framework": "MITRE ATLAS v2026.09",
+    "framework": "MITRE ATLAS v2026.10",
     "control_id": "AML.T0010",
-    "control_name": "AI Supply Chain Compromise (bundled-codec / inference-server class)",
+    "control_name": "Supply Chain Compromise (bundled-codec / inference-server class)",
     "designed_for": "ATLAS AML.T0010 catalogs compromise of the AI supply chain, including hardware, AI software, data, models, container registries and AI agent tools. The technique-level mitigations cover model provenance, hash pinning and weight integrity at the model-artifact and library-consumption layer.",
     "misses": [
       "AML.T0010 names AI software as a supply-chain component, but bundled-codec attack surfaces inside inference servers (vLLM multimodal heap overflow via JPEG2000 / FFmpeg / OpenCV, CVE-2026-22778) sit a layer below: the codec is not an ML library in the usual sense of the taxonomy",
@@ -15746,7 +15746,7 @@
       "CVE-2026-22778"
     ],
     "theater_test": {
-      "claim": "We are compliant with AML.T0010 (AI Supply Chain Compromise) because our AI supply-chain program covers model provenance, hash pinning and weight integrity.",
+      "claim": "We are compliant with AML.T0010 (Supply Chain Compromise) because our AI supply-chain program covers model provenance, hash pinning and weight integrity.",
       "test": "Pull the operational evidence supporting AML.T0010 for the last audit cycle. Confirm the program addresses the gap proven by CVE-2026-22778, where a heap overflow in a decoder bundled into the vLLM inference server (JPEG2000 / FFmpeg / OpenCV) sits below the model and ML-library layer. Theater verdict if the operator cannot produce evidence that bundled decoders are inventoried in the SBOM and patched on a KEV-grade SLA, or if the only artifact is a written policy with no execution log.",
       "evidence_required": [
         "operational execution log demonstrating the gap is closed in practice, not just on paper",

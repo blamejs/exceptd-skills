@@ -49,7 +49,7 @@ d3fend_refs:
   - D3-NI
   - D3-NTA
   - D3-NTPM
-last_threat_review: "2026-09-18"
+last_threat_review: "2026-11-01"
 ---
 
 # AI C2 Detection
@@ -330,12 +330,12 @@ level: medium
 
 ---
 
-## TTP Mapping (MITRE ATLAS v2026.09 + MITRE ATT&CK)
+## TTP Mapping (MITRE ATLAS v2026.10 + MITRE ATT&CK)
 
 | ID | Source | Technique | C2 Relevance | Gap Flag — Which Detection Control Fails |
 |---|---|---|---|---|
-| AML.T0096 | ATLAS v2026.09 | AI Service API (LLM API as covert C2) | Direct: SesameOp encodes commands and exfiltrated data in prompt and completion fields against api.openai.com, api.anthropic.com, generativelanguage.googleapis.com. AI provider domain is the relay, not the attacker C2 endpoint. | NIST-800-53-SC-7 (Boundary Protection) — AI provider domains are allowlisted in most enterprise egress for legitimate developer and product use, so boundary inspection cannot distinguish benign developer prompts from C2-encoded prompts. See SC-7 entry in `data/framework-control-gaps.json` — real requirement is SDK-level prompt logging with identity binding, anomaly detection on prompt-shape and token-volume, and an allowlist that enumerates the sanctioned business reason per identity. Boundary-only SC-7 evidence is incomplete for any org with AI API access in production. |
-| AML.T0016 | ATLAS v2026.09 | Obtain Capabilities (generative AI): adversary use of public inference APIs to generate or refine malware, evasion and phishing payloads | PROMPTFLUX queries public LLMs to generate per-execution evasion code, and PROMPTSTEAL uses LLMs to prioritize exfiltration targets. Both consume public LLMs as a real-time capability service, so the inference API does weaponization work for the adversary. | NIST-800-53-SI-3 fails because there is no static signature for code a public LLM generates per event. NIST-800-53-SI-4 fails as commonly deployed because there is no AI-API behavioral baseline per process or identity. SC-7 boundary control treats the AI provider as allowlisted SaaS. |
+| AML.T0096 | ATLAS v2026.10 | AI Service API (LLM API as covert C2) | Direct: SesameOp encodes commands and exfiltrated data in prompt and completion fields against api.openai.com, api.anthropic.com, generativelanguage.googleapis.com. AI provider domain is the relay, not the attacker C2 endpoint. | NIST-800-53-SC-7 (Boundary Protection) — AI provider domains are allowlisted in most enterprise egress for legitimate developer and product use, so boundary inspection cannot distinguish benign developer prompts from C2-encoded prompts. See SC-7 entry in `data/framework-control-gaps.json` — real requirement is SDK-level prompt logging with identity binding, anomaly detection on prompt-shape and token-volume, and an allowlist that enumerates the sanctioned business reason per identity. Boundary-only SC-7 evidence is incomplete for any org with AI API access in production. |
+| AML.T0016 | ATLAS v2026.10 | Obtain Capabilities (generative AI): adversary use of public inference APIs to generate or refine malware, evasion and phishing payloads | PROMPTFLUX queries public LLMs to generate per-execution evasion code, and PROMPTSTEAL uses LLMs to prioritize exfiltration targets. Both consume public LLMs as a real-time capability service, so the inference API does weaponization work for the adversary. | NIST-800-53-SI-3 fails because there is no static signature for code a public LLM generates per event. NIST-800-53-SI-4 fails as commonly deployed because there is no AI-API behavioral baseline per process or identity. SC-7 boundary control treats the AI provider as allowlisted SaaS. |
 | T1071 | ATT&CK | Application Layer Protocol (C2) | AI C2 traffic is standard HTTPS REST to api.openai.com or equivalent. Application-protocol C2 detection that looks for DGA, unusual TLS, or beaconing does not fire. | SC-7 boundary control sees only the destination domain (allowlisted) — no protocol anomaly to alert on. Detection requires identity-bound prompt content inspection, which SC-7 as written does not require. |
 | T1102 | ATT&CK | Web Service (C2 via legitimate web service) | AI API endpoints are exactly the "legitimate web service used as C2" pattern that T1102 describes — but at scale and pre-allowlisted in nearly every enterprise. | SOC 2 CC7 anomaly-detection control: AI API traffic shares the SaaS blind spot — typically not baselined per process or identity. ISO 27001 A.8.16 monitoring activities: no guidance for AI-API-shaped traffic. |
 | T1568 | ATT&CK | Dynamic Resolution | AI provider responses can carry encoded instructions that dynamically determine the next-hop behavior for the malware (effectively model-mediated dynamic resolution of the next attacker instruction). | No standard DNS-tunneling or DGA detection applies — the "resolution" happens inside an HTTPS payload to a trusted endpoint. SC-7 cannot see it without SDK-level prompt + response logging. |

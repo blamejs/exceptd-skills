@@ -22,7 +22,7 @@ forward_watch:
   - New CISA KEV entries in kernel/AI/supply chain categories
   - New MCP or agent protocol security disclosures
   - Emerging malware families using AI for evasion
-last_threat_review: "2026-09-28"
+last_threat_review: "2026-11-01"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief threat-model-currency` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
@@ -199,14 +199,14 @@ This skill produces a currency score and a specific update roadmap. Currency is 
 
 ---
 
-### Class 13: MITRE ATLAS v2026.09 Coverage
+### Class 13: MITRE ATLAS v2026.10 Coverage
 
-**2026 reality:** MITRE ATLAS (September 2026, v2026.09) is the primary AI threat framework. Most SOC detection engineering programs are built on ATT&CK, not ATLAS. AI-specific TTPs have zero detection coverage in ATT&CK-only programs.
+**2026 reality:** MITRE ATLAS (October 2026, v2026.10) is the primary AI threat framework. Most SOC detection engineering programs are built on ATT&CK, not ATLAS. AI-specific TTPs have zero detection coverage in ATT&CK-only programs.
 
 **Currency check questions:**
-- Is MITRE ATLAS v2026.09 incorporated into the threat model?
+- Is MITRE ATLAS v2026.10 incorporated into the threat model?
 - Are ATLAS TTPs mapped to detection controls?
-- What is the current ATLAS version in use? (Current: 2026.09, September 2026)
+- What is the current ATLAS version in use? (Current: 2026.10, October 2026)
 
 **If unchecked:** AI-specific threat techniques are not covered by the detection architecture. The SOC has no alerts for ATLAS TTPs.
 
@@ -263,7 +263,7 @@ The recurring failure across all of the above: every framework treats threat mod
 
 ## TTP Mapping
 
-The 14-class checklist above *is* the TTP map. Each class is a coverage requirement against the canonical sources of truth: `data/atlas-ttps.json` (MITRE ATLAS v2026.09) and the ATT&CK techniques referenced in `data/cve-catalog.json`. A current threat model must address — explicitly or by reasoned exclusion — every TTP below.
+The 14-class checklist above *is* the TTP map. Each class is a coverage requirement against the canonical sources of truth: `data/atlas-ttps.json` (MITRE ATLAS v2026.10) and the ATT&CK techniques referenced in `data/cve-catalog.json`. A current threat model must address — explicitly or by reasoned exclusion — every TTP below.
 
 | Class | Primary TTP | Catalog source | Gap if absent |
 |---|---|---|---|
@@ -271,7 +271,7 @@ The 14-class checklist above *is* the TTP map. Each class is a coverage requirem
 | 2 — Deterministic LPE | T1068 | cve-catalog.json: CVE-2026-31431 | IR plan treats LPE as probabilistic |
 | 3 — IPsec subsystem LPE | T1068 | cve-catalog.json: CVE-2026-43284 / CVE-2026-43500 / CVE-2026-46300 | Network-segmentation claimed as compensating control for the attack surface itself; patch-landed-therefore-safe assumes patches close bug families (Fragnesia disproved this in days) |
 | 4 — Prompt injection RCE | AML.T0051 (LLM Prompt Injection), AML.T0054 (LLM Jailbreak) | atlas-ttps.json + CVE-2025-53773 | Prompt injection treated as T&S, not security |
-| 5 — MCP supply chain RCE | AML.T0010 (AI Supply Chain Compromise), T1190 (Exploit Public-Facing Application) | atlas-ttps.json + CVE-2026-30615 | AI plugin ecosystem out of supply-chain scope |
+| 5 — MCP supply chain RCE | AML.T0010 (Supply Chain Compromise), T1190 (Exploit Public-Facing Application) | atlas-ttps.json + CVE-2026-30615 | AI plugin ecosystem out of supply-chain scope |
 | 6 — AI-assisted weaponization | AML.T0017 (Develop Capabilities) | atlas-ttps.json | Patch SLAs sized for 2019 attacker speed |
 | 7 — AI as covert C2 | AML.T0096 (AI Service API, C2) | atlas-ttps.json | C2 detection architecture has total blind spot |
 | 8 — AI-generated malware evasion | AML.T0016 (Obtain Capabilities, payload generation) | atlas-ttps.json | Detection stack signature-bound; PROMPTFLUX bypasses by design |
@@ -400,14 +400,14 @@ The skill produces a structured Threat Model Currency Assessment that scores the
 | 10 | Model Poisoning | 0/1/2 | |
 | 11 | AI-Speed Reconnaissance | 0/1/2 | |
 | 12 | AI-Generated Credential Phishing | 0/1/2 | |
-| 13 | MITRE ATLAS v2026.09 Coverage | 0/1/2 | |
+| 13 | MITRE ATLAS v2026.10 Coverage | 0/1/2 | |
 | 14 | Post-Quantum Adversary Timeline | 0/1/2 | |
 
 ### Priority Update Roadmap
 [Ordered by current exposure risk: specific additions for each gap]
 
 ### ATLAS Version Check
-Current reference: MITRE ATLAS v2026.09 (September 2026)
+Current reference: MITRE ATLAS v2026.10 (October 2026)
 Threat model references: [version cited in document]
 Gap: [if different]
 ```

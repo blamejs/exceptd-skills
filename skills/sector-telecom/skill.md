@@ -66,7 +66,7 @@ forward_watch:
   - "Five Eyes joint advisories on telecom-equipment intrusion"
   - "3GPP TS 33.501 updates (5G security architecture rebaseline)"
   - "O-RAN SFG / WG11 security specifications"
-last_threat_review: "2026-05-15"
+last_threat_review: "2026-11-01"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief sector-telecom` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
@@ -92,7 +92,7 @@ Telecom security mandates lag the current threat reality because the regulatory 
 
 | Tactic | ATT&CK | ATLAS | Description |
 |---|---|---|---|
-| Initial Access | T1199 Trusted Relationship | AML.T0010 (AI Supply Chain Compromise) | OEM vendor remote-support tunnel or AI-RAN plugin compromise opens a path into the operator network |
+| Initial Access | T1199 Trusted Relationship | AML.T0010 (Supply Chain Compromise) | OEM vendor remote-support tunnel or AI-RAN plugin compromise opens a path into the operator network |
 | Initial Access | T1190 Exploit Public-Facing Application | — | Internet-facing OSS / EMS / NMS exposed services (Salt Typhoon access pattern) |
 | Persistence | T1098 Account Manipulation | — | Persistent admin role grants on NMS / EMS / OSS after initial compromise |
 | Defense Evasion | T1556 Modify Authentication Process | — | LI-gateway credential pivot — operator account credentials forged or replayed against LI provisioning subsystem |
@@ -100,7 +100,7 @@ Telecom security mandates lag the current threat reality because the regulatory 
 | Command and Control | T1071 Application Layer Protocol | — | Living-off-the-land C2 over telecom internal management protocols (SNMP, NETCONF, Telco-IP-fabric) |
 | Collection | T1199 (downstream) | AML.T0010 (downstream) | Pulling subscriber call-detail records, location data, and LI feed contents via compromised access |
 
-ATLAS AML.T0010 (AI Supply Chain Compromise) anchors the AI-RAN attack class: plugin-layer compromise of an O-RAN xApp or rApp can route traffic through an adversary-controlled inference path while the NMS believes the legitimate xApp is still in use.
+ATLAS AML.T0010 (Supply Chain Compromise) anchors the AI-RAN attack class: plugin-layer compromise of an O-RAN xApp or rApp can route traffic through an adversary-controlled inference path while the NMS believes the legitimate xApp is still in use.
 
 ## Exploit Availability Matrix
 

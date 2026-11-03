@@ -39,7 +39,7 @@ d3fend_refs:
   - D3-OTF
   - D3-SCA
   - D3-CSPP
-last_threat_review: "2026-09-09"
+last_threat_review: "2026-11-01"
 ---
 
 # Global GRC Assessment
@@ -432,7 +432,7 @@ D3FEND references from `data/d3fend-catalog.json`. This skill produces jurisdict
 | Universal gap | Offensive TTP class | D3FEND ID | Defensive technique | Owning downstream skill |
 |---|---|---|---|---|
 | Prompt injection as access-control failure | AML.T0051 (LLM Prompt Injection) | `D3-IOPR` + `D3-CSPP` | Input/Output Profiling + Client-server Payload Profiling | `ai-attack-surface` |
-| MCP/agent tool trust boundaries | AML.T0010 (AI Supply Chain Compromise) | `D3-EAL` + `D3-EFA` | Executable Allowlisting + Executable File Analysis | `mcp-agent-trust` |
+| MCP/agent tool trust boundaries | AML.T0010 (Supply Chain Compromise) | `D3-EAL` + `D3-EFA` | Executable Allowlisting + Executable File Analysis | `mcp-agent-trust` |
 | AI pipeline integrity (model versioning + behavioral regression) | AML.T0018 (Manipulate AI Model), AML.T0020 (Training Data Poisoning) | `D3-FAPA` + `D3-EFA` | File Access Pattern Analysis + Executable File Analysis | `mlops-security` |
 | AI-as-C2 detection | AML.T0096 (AI Service API, C2) | `D3-NTA` + `D3-OTF` | Network Traffic Analysis + Outbound Traffic Filtering | `ai-c2-detection` |
 | Live kernel patching as required capability | T1068 (Exploitation for Privilege Escalation) | `D3-KBPI` + `D3-SCA` | Kernel-Based Process Isolation + System Call Analysis | `kernel-lpe-triage` |

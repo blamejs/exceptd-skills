@@ -24,7 +24,7 @@ data_deps:
 atlas_refs: []
 attack_refs: []
 framework_gaps: []
-last_threat_review: "2026-09-09"
+last_threat_review: "2026-11-01"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief researcher` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
@@ -85,7 +85,7 @@ This is a routing skill. The TTP coverage of any specific output equals the TTP 
 
 | ATLAS / ATT&CK Class | Researcher Routes To |
 |---|---|
-| AML.T0010 (AI Supply Chain Compromise) | `mcp-agent-trust`, `ai-attack-surface` |
+| AML.T0010 (Supply Chain Compromise) | `mcp-agent-trust`, `ai-attack-surface` |
 | AML.T0016 / AML.T0017 (Obtain Capabilities / Develop Capabilities, AI-assisted) | `ai-attack-surface`, `kernel-lpe-triage`, `exploit-scoring` |
 | AML.T0013 (Discover AI Model Ontology) | `ai-attack-surface`, `mlops-security`, `api-security` |
 | AML.T0018 (Manipulate AI Model) | `ai-attack-surface` |
