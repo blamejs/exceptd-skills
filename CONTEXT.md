@@ -116,7 +116,7 @@ Skills and playbooks read from `data/`. Authoritative catalog inventory:
 | File | Entries | Purpose |
 |------|---------|---------|
 | `cve-catalog.json` | 1323 | CVEs with CVSS, RWEP score, EPSS estimates, CISA KEV flags, PoC and live-patch availability |
-| `atlas-ttps.json` | 174 | MITRE ATLAS v2026.09 (September 2026) techniques with framework gap flags |
+| `atlas-ttps.json` | 171 | MITRE ATLAS v2026.10 (October 2026) techniques with framework gap flags |
 | `attack-techniques.json` | 794 | MITRE ATT&CK techniques with framework coverage mappings |
 | `framework-control-gaps.json` | 194 | Framework control gap entries: designed-for vs. what each control misses |
 | `exploit-availability.json` | 28 | Per-CVE PoC locations, weaponization stage, AI-acceleration factor, live-patch status |
@@ -255,7 +255,7 @@ The `researcher` **skill** (front-door dispatcher) and `threat-researcher` **age
 |------|------------|
 | RWEP | Real-World Exploit Priority — risk score beyond CVSS |
 | KEV | CISA Known Exploited Vulnerabilities catalog |
-| ATLAS | MITRE ATLAS v2026.06 — AI threat framework |
+| ATLAS | MITRE ATLAS v2026.10 — AI threat framework |
 | MCP | Model Context Protocol — AI tool integration standard |
 | HNDL | Harvest-Now-Decrypt-Later — quantum threat to current crypto |
 | Framework lag | Gap between what a framework requires and what current TTPs demand |

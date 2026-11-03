@@ -1,14 +1,14 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "atlas_version": "2026.09",
-    "atlas_release_date": "2026-09-15",
+    "atlas_version": "2026.10",
+    "atlas_release_date": "2026-10-28",
     "secure_ai_v2_release_date": "2026-05-06",
     "secure_ai_v2_source": "https://ctid.mitre.org/blog/2026/05/06/secure-ai-v2-release",
-    "last_updated": "2026-09-22",
-    "last_threat_review": "2026-09-22",
+    "last_updated": "2026-11-01",
+    "last_threat_review": "2026-11-01",
     "source": "https://atlas.mitre.org",
-    "note": "AI-relevant ATLAS TTPs with framework_gap field, curated as a subset of the full ATLAS matrix and pinned to v2026.09. ATLAS content follows a YYYY.MM calendar-versioning scheme; the CalVer scheme and the per-technique platform tags (Predictive AI, Generative AI, Agentic AI, Enterprise) were introduced in release 2026.05. Release 2026.06 published AML.T0113 (Steal Web Session Cookie), AML.T0091.001 (Use Alternate Authentication Material: Web Session Cookie) and AML.T0114 (AI Service Web Interface), all three carried here. Release 2026.07 consolidated three separately-numbered publish-poisoned techniques, AML.T0019 (datasets), AML.T0058 (models) and AML.T0104 (agent tools), under a single parent, AML.T0115 (Publish Poisoned AI Artifacts), with the artifact class recorded by sub-technique. Those three ids are retired upstream; entries carrying them here were re-keyed and declare a `supersedes` field so an operator holding older data can still join the two. Release 2026.08 generalized AML.T0072, AML.T0075 and AML.T0089 and renamed tactic AML.TA0001. Release 2026.09 updated AML.T0054 (LLM Jailbreak) and added techniques this subset does not carry. This curated subset holds 174 techniques and intentionally trails the full matrix. framework_gap: no framework has a control that addresses this TTP. secure_ai_v2_layer flags entries included in the CTID Secure AI v2 layered set (May 2026); maturity reflects CTID's technique-maturity classification (low / moderate / high).",
+    "note": "AI-relevant ATLAS TTPs with framework_gap field, curated as a subset of the full ATLAS matrix and pinned to v2026.10. ATLAS content follows a YYYY.MM calendar-versioning scheme; the CalVer scheme and the per-technique platform tags (Predictive AI, Generative AI, Agentic AI, Enterprise) were introduced in release 2026.05. Release 2026.06 published AML.T0113 (Steal Web Session Cookie), AML.T0091.001 (Use Alternate Authentication Material: Web Session Cookie) and AML.T0114 (AI Service Web Interface), all three carried here. Release 2026.07 consolidated three separately-numbered publish-poisoned techniques, AML.T0019 (datasets), AML.T0058 (models) and AML.T0104 (agent tools), under a single parent, AML.T0115 (Publish Poisoned AI Artifacts), with the artifact class recorded by sub-technique. Those three ids are retired upstream; entries carrying them here were re-keyed and declare a `supersedes` field so an operator holding older data can still join the two. Release 2026.08 generalized AML.T0072, AML.T0075 and AML.T0089 and renamed tactic AML.TA0001. Release 2026.09 updated AML.T0054 (LLM Jailbreak) and added techniques this subset does not carry. Release 2026.10 renamed AML.T0010 (now Supply Chain Compromise) and AML.T0005 (now Replicate AI Model Behavior) with their sub-techniques, moved AML.T0057 (LLM Data Leakage) to AML.T0085.002 and AML.T0056 (Extract LLM System Prompt) to AML.T0085.003, moved AML.T0024.000 and AML.T0024.001 to AML.T0137.000 and AML.T0137.002, and removed AML.T0024.002. Entries carrying a retired id were re-keyed and declare a `supersedes` field; the three AML.T0024 sub-technique entries were dropped because AML.T0024 no longer has sub-techniques. This curated subset holds 171 techniques and intentionally trails the full matrix. framework_gap: no framework has a control that addresses this TTP. secure_ai_v2_layer flags entries included in the CTID Secure AI v2 layered set (May 2026); maturity reflects CTID's technique-maturity classification (low / moderate / high).",
     "tlp": "CLEAR",
     "source_confidence": {
       "scheme": "Admiralty (A-F + 1-6)",
@@ -82,7 +82,7 @@
   },
   "AML.T0010": {
     "id": "AML.T0010",
-    "name": "AI Supply Chain Compromise",
+    "name": "Supply Chain Compromise",
     "tactic": "Initial Access",
     "description": "Adversary compromises the AI supply chain — pretrained models, datasets, training infrastructure, or AI tool plugins — to inject backdoors or malicious behavior before the model reaches the target organization.",
     "subtechniques": [
@@ -119,7 +119,7 @@
     ],
     "secure_ai_v2_layer": true,
     "maturity": "high",
-    "last_verified": "2026-09-09",
+    "last_verified": "2026-11-01",
     "cve_refs": [
       "CVE-2023-43654",
       "CVE-2023-6016",
@@ -310,7 +310,7 @@
       "MAL-2026-NODE-IPC-STEALER",
       "MAL-2026-TRAPDOOR-CROSS-ECOSYSTEM"
     ],
-    "description_full": "Adversaries may attempt to poison datasets used by an AI model by modifying the underlying data or its labels. This allows the adversary to embed vulnerabilities in AI models trained on the data that may not be easily detectable. Data poisoning attacks may or may not require modifying the labels. The embedded vulnerability is activated at a later time by data samples with an [Insert Backdoor Trigger](/techniques/AML.T0043.004) Poisoned data can be introduced via [AI Supply Chain Compromise](/techniques/AML.T0010) or the data may be poisoned after the adversary gains [Initial Access](/tactics/AML.TA0004) to the system.",
+    "description_full": "Adversaries may attempt to poison datasets used by an AI model by modifying the underlying data or its labels. This allows the adversary to embed vulnerabilities in AI models trained on the data that may not be easily detectable. Data poisoning attacks may or may not require modifying the labels. The embedded vulnerability is activated at a later time by data samples with an [Insert Backdoor Trigger](/techniques/AML.T0043.004) Poisoned data can be introduced via [Supply Chain Compromise](/techniques/AML.T0010) or the data may be poisoned after the adversary gains [Initial Access](/tactics/AML.TA0004) to the system.",
     "platforms": [
       "ATLAS"
     ],
@@ -323,11 +323,7 @@
     "name": "Exfiltration via AI Inference API",
     "tactic": "Exfiltration",
     "description": "Adversary uses an AI inference API as the exfiltration channel for stolen data — embedding sensitive content in prompts, retrieval queries, or function-call arguments and reconstructing it from responses, logs, or training feedback. Distinguished from classical exfiltration by the channel being a categorically-trusted AI endpoint that egress controls do not flag.",
-    "subtechniques": [
-      "AML.T0024.000",
-      "AML.T0024.001",
-      "AML.T0024.002"
-    ],
+    "subtechniques": [],
     "real_world_instances": [
       "RAG exfiltration: attacker-injected document instructs the model to summarize org secrets into a follow-up query that hits an external endpoint",
       "Coding-assistant exfil: AI completion suggestions carry repository secrets in trailing comments that the developer accepts without scrutiny"
@@ -350,14 +346,14 @@
     ],
     "secure_ai_v2_layer": true,
     "maturity": "high",
-    "last_verified": "2026-09-09",
+    "last_verified": "2026-11-01",
     "cve_refs": [
       "CVE-2025-10725",
       "CVE-2025-53767",
       "CVE-2025-6965",
       "MAL-2025-AI-FOUND-FFMPEG-BIGSLEEP"
     ],
-    "description_full": "Adversaries may exfiltrate private information via [AI Model Inference API Access](/techniques/AML.T0040). AI Models have been shown leak private information about their training data (e.g. [Infer Training Data Membership](/techniques/AML.T0024.000), [Invert AI Model](/techniques/AML.T0024.001)). The model itself may also be extracted ([Extract AI Model](/techniques/AML.T0024.002)) for the purposes of [AI Intellectual Property Theft](/techniques/AML.T0048.004). Exfiltration of information relating to private training data raises privacy concerns. Private training data may include personally identifiable information, or other protected data.",
+    "description_full": "Adversaries may exfiltrate information from a victim-controlled AI model or service through responses returned by its inference API. Transferred information may include predictions, scores, embeddings, generated content (e.g. text or images), or other sensitive information disclosed in model responses. Responses may be received directly or relayed through an intermediary. Adversaries may submit inputs designed to cause information to be returned through ordinary API response fields or streaming outputs. The inference API response serves as the transfer channel, including when adversaries use valid accounts or credentials to obtain responses as part of an unauthorized extraction operation. Received responses may be gathered as [Outputs from AI Models](/techniques/AML.T0135), analyzed to obtain [Training Data Information from AI Models](/techniques/AML.T0137), used to [Craft Adversarial Data](/techniques/AML.T0043), or to [Replicate Behavior from Model Outputs](/techniques/AML.T0005.001).",
     "platforms": [
       "ATLAS"
     ],
@@ -604,7 +600,7 @@
     "cve_refs": [
       "CVE-2025-53773"
     ],
-    "description_full": "Adversaries may induce a large language model (LLM) to ignore, circumvent, or override its safety/alignment behaviors and/or guardails to elicit outputs the model is intended to withhold. Once jailbroken, the LLM may be used in unintended ways by the adversary. Jailbreaks may be achieved via adversarial prompting, or by modifying model weights or safety mechanisms. Adversaries may attempt a jailbreak for [Defense Evasion](/tactics/AML.TA0007) of the LLM's guidelines and guardrails itself to then reveal information (ex: [LLM Data Leakage](/techniques/AML.T0057), [Discover LLM System Information](/techniques/AML.T0069)) or generate harmful content (ex: [Generate Malicious Commands](/techniques/AML.T0102), [Spearphishing via Social Engineering LLM](/techniques/AML.T0052.000)). They may also jailbreak a model for [Privilege Escalation](/tactics/AML.TA0012) to invoke tools or perform actions for their own purposes (ex: [AI Agent Tool Invocation](/techniques/AML.T0053)) or abuse the agent for a [Command and Control](/tactics/AML.TA0014) channel (ex: [AI Agent](/techniques/AML.T0108)). Adversaries use a variety of strategies to craft jailbreak prompts. Prompts may target specific models or model families and are iterated upon until successful. Model providers actively update their model guardrails to make them more resistant to jailbreak prompts as new prompts are developed. Common strategies [\\[1\\]][jailbreak-guide] include but are not limited to: - Instruction override: Use phrasing that attempts to supersede prior constraints (e.g. \"ignore previous instructions\"). - Roleplay / persona switching: Instruct the LLM to adopt an identity or mode that allows unrestricted answers (e.g. \"as a security researcher\"). - Fictionalization and hypotheticals: Instruct the LLM to include disallowed content as part of a story, screenplay, or educational scenario. - Separate intent from content: request analysis, examples, templates, or edge cases, that implicitly contain disallowed content. - Multi-turn escalation / Crescendo: Utilize a sequence of prompts that start benign, establish trust, then gradually cross policy boundaries with incremental prompts. - Constrained output formats: Instruct the LLM to output to a strict schema or format (e.g. JSON, YAML, code, or tables). - Obfuscation and transformation: Use encoding, transformations, translation, or euphemisms, (e.g., base64 encoding, \"describe it in another language\"). - Create a high priority objective: Frame compliance as necessary to fulfill the user's main task (e.g. \"to complete the evaluation,\" \"to follow the spec,\" \"to follow safety guidelines\"). Adversaries may also use algorithmic approaches to generating jailbreak prompts [\\[2\\]][jailbreak-zoo] [\\[3\\]][jailbreak-survey]. Algorithmic jailbreak generation allows for automated methods that discover jailbreaks at scale. Some approaches automate manual strategies [\\[4\\]][autodan] [\\[5\\]][gptfuzzer] [\\[6\\]][crescendo] [\\[7\\]][echo-chamber] while others optimize a string of tokens directly [\\[8\\]][universal] to produce nonsensical text. Both black-box (applicable to commercial models where the adversary has only query access to the model) and white-box (applicable in the open-source setting, where the adversary has full access to the model weights) optimization approaches are viable. Adversaries may also directly manipulate a model's weights, or modify or remove parts of a model to create a jailbroken of \"uncensored\" variant of the target model. This is applicable to open-source models, or cases where the adversary gains full access to the target model. Approaches include fine-tuning to reduce refusals [\\[9\\]][single-direction], targeted model editing [\\[10\\]][rome], addition of adapters [\\[11\\]][lora], and removing safety mechanisms such as guardrails. Jailbreak prompts that are known to work on various classes of LLMs are often published in the open-source community [\\[12\\]][dan]. Jailbroken or uncensored LLMs that have been trained or fine-tuned to be jailbroken are shared in public model registries such as huggingface [\\[13\\]][abliteration]. [jailbreak-survey]: https://arxiv.org/abs/2407.04295 \"Jailbreak Attacks and Defenses Against Large Language Models: A Survey\" [jailbreak-zoo]: https://arxiv.org/abs/2407.01599 \"JailbreakZoo: Survey, Landscapes, and Horizons in Jailbreaking Large Language and Vision-Language Models\" [jailbreak-guide]: https://www.promptfoo.dev/blog/how-to-jailbreak-llms/ \"Jailbreaking LLMs: A Comprehensive Guide (With Examples)\" [autodan]: https://arxiv.org/abs/2310.04451 \"AutoDAN: Generating Stealthy Jailbreak Prompts on Aligned Large Language Models\" [gptfuzzer]: https://arxiv.org/abs/2309.10253 \"GPTFUZZER: Red Teaming Large Language Models with Auto-Generated Jailbreak Prompts\" [crescendo]: https://arxiv.org/abs/2404.01833 \"Great, Now Write an Article About That: The Crescendo Multi-Turn LLM Jailbreak Attack\" [echo-chamber]: https://arxiv.org/abs/2601.05742 \"The Echo Chamber Multi-Turn LLM Jailbreak\" [dan]: https://github.com/0xk1h0/ChatGPT_DAN \"ChatGPT DAN\" [rome]: https://arxiv.org/abs/2202.05262 \"Locating and Editing Factual Associations in GPT\" [universal]: https://arxiv.org/abs/2307.15043 \"Universal and Transferable Adversarial Attacks on Aligned Language Models\" [single-direction]: https://arxiv.org/abs/2406.11717 \"Refusal in Language Models Is Mediated by a Single Direction\" [lora]: https://arxiv.org/abs/2310.20624 \"LoRA Fine-tuning Efficiently Undoes Safety Training in Llama 2-Chat 70B\" [abliteration]: https://huggingface.co/blog/mlabonne/abliteration \"Uncensor any LLM with abliteration\"",
+    "description_full": "Adversaries may induce a large language model (LLM) to ignore, circumvent, or override its safety/alignment behaviors and/or guardails to elicit outputs the model is intended to withhold. Once jailbroken, the LLM may be used in unintended ways by the adversary. Jailbreaks may be achieved via adversarial prompting, or by modifying model weights or safety mechanisms. Adversaries may attempt a jailbreak for [Defense Evasion](/tactics/AML.TA0007) of the LLM's guidelines and guardrails itself to then reveal information (ex: [Conversation Context and Memory](/techniques/AML.T0085.002), [Discover LLM System Information](/techniques/AML.T0069)) or generate harmful content (ex: [Generate Malicious Commands](/techniques/AML.T0102), [Spearphishing via Social Engineering LLM](/techniques/AML.T0052.000)). They may also jailbreak a model for [Privilege Escalation](/tactics/AML.TA0012) to invoke tools or perform actions for their own purposes (ex: [AI Agent Tool Invocation](/techniques/AML.T0053)) or abuse the agent for a [Command and Control](/tactics/AML.TA0014) channel (ex: [AI Agent](/techniques/AML.T0108)). Adversaries use a variety of strategies to craft jailbreak prompts. Prompts may target specific models or model families and are iterated upon until successful. Model providers actively update their model guardrails to make them more resistant to jailbreak prompts as new prompts are developed. Common strategies [\\[1\\]][jailbreak-guide] include but are not limited to: - Instruction override: Use phrasing that attempts to supersede prior constraints (e.g. \"ignore previous instructions\"). - Roleplay / persona switching: Instruct the LLM to adopt an identity or mode that allows unrestricted answers (e.g. \"as a security researcher\"). - Fictionalization and hypotheticals: Instruct the LLM to include disallowed content as part of a story, screenplay, or educational scenario. - Separate intent from content: request analysis, examples, templates, or edge cases, that implicitly contain disallowed content. - Multi-turn escalation / Crescendo: Utilize a sequence of prompts that start benign, establish trust, then gradually cross policy boundaries with incremental prompts. - Constrained output formats: Instruct the LLM to output to a strict schema or format (e.g. JSON, YAML, code, or tables). - Obfuscation and transformation: Use encoding, transformations, translation, or euphemisms, (e.g., base64 encoding, \"describe it in another language\"). - Create a high priority objective: Frame compliance as necessary to fulfill the user's main task (e.g. \"to complete the evaluation,\" \"to follow the spec,\" \"to follow safety guidelines\"). Adversaries may also use algorithmic approaches to generating jailbreak prompts [\\[2\\]][jailbreak-zoo] [\\[3\\]][jailbreak-survey]. Algorithmic jailbreak generation allows for automated methods that discover jailbreaks at scale. Some approaches automate manual strategies [\\[4\\]][autodan] [\\[5\\]][gptfuzzer] [\\[6\\]][crescendo] [\\[7\\]][echo-chamber] while others optimize a string of tokens directly [\\[8\\]][universal] to produce nonsensical text. Both black-box (applicable to commercial models where the adversary has only query access to the model) and white-box (applicable in the open-source setting, where the adversary has full access to the model weights) optimization approaches are viable. Adversaries may also directly manipulate a model's weights, or modify or remove parts of a model to create a jailbroken of \"uncensored\" variant of the target model. This is applicable to open-source models, or cases where the adversary gains full access to the target model. Approaches include fine-tuning to reduce refusals [\\[9\\]][single-direction], targeted model editing [\\[10\\]][rome], addition of adapters [\\[11\\]][lora], and removing safety mechanisms such as guardrails. Jailbreak prompts that are known to work on various classes of LLMs are often published in the open-source community [\\[12\\]][dan]. Jailbroken or uncensored LLMs that have been trained or fine-tuned to be jailbroken are shared in public model registries such as huggingface [\\[13\\]][abliteration]. [jailbreak-survey]: https://arxiv.org/abs/2407.04295 \"Jailbreak Attacks and Defenses Against Large Language Models: A Survey\" [jailbreak-zoo]: https://arxiv.org/abs/2407.01599 \"JailbreakZoo: Survey, Landscapes, and Horizons in Jailbreaking Large Language and Vision-Language Models\" [jailbreak-guide]: https://www.promptfoo.dev/blog/how-to-jailbreak-llms/ \"Jailbreaking LLMs: A Comprehensive Guide (With Examples)\" [autodan]: https://arxiv.org/abs/2310.04451 \"AutoDAN: Generating Stealthy Jailbreak Prompts on Aligned Large Language Models\" [gptfuzzer]: https://arxiv.org/abs/2309.10253 \"GPTFUZZER: Red Teaming Large Language Models with Auto-Generated Jailbreak Prompts\" [crescendo]: https://arxiv.org/abs/2404.01833 \"Great, Now Write an Article About That: The Crescendo Multi-Turn LLM Jailbreak Attack\" [echo-chamber]: https://arxiv.org/abs/2601.05742 \"The Echo Chamber Multi-Turn LLM Jailbreak\" [dan]: https://github.com/0xk1h0/ChatGPT_DAN \"ChatGPT DAN\" [rome]: https://arxiv.org/abs/2202.05262 \"Locating and Editing Factual Associations in GPT\" [universal]: https://arxiv.org/abs/2307.15043 \"Universal and Transferable Adversarial Attacks on Aligned Language Models\" [single-direction]: https://arxiv.org/abs/2406.11717 \"Refusal in Language Models Is Mediated by a Single Direction\" [lora]: https://arxiv.org/abs/2310.20624 \"LoRA Fine-tuning Efficiently Undoes Safety Training in Llama 2-Chat 70B\" [abliteration]: https://huggingface.co/blog/mlabonne/abliteration \"Uncensor any LLM with abliteration\"",
     "platforms": [
       "ATLAS"
     ],
@@ -656,12 +652,11 @@
     "stix_id": "attack-pattern--1b2fb3ca-e233-5cf5-8103-2b1fa37524eb",
     "is_subtechnique": false
   },
-  "AML.T0057": {
-    "id": "AML.T0057",
-    "name": "LLM Data Leakage",
-    "tactic": "Exfiltration",
-    "description": "Adversary causes an LLM to disclose information from its training data, retrieval corpus, system prompt, or conversation context that should not have been accessible. Includes training-data memorization recovery, system-prompt extraction, retrieved-document leakage to the wrong tenant, and cross-conversation context bleed.",
-    "subtechniques": [],
+  "AML.T0085.002": {
+    "id": "AML.T0085.002",
+    "name": "Conversation Context and Memory",
+    "tactic": "Collection",
+    "description": "Adversaries may collect sensitive information from an AI service's current or stored interactions and memory. This may include user messages, model responses, conversation summaries, and retained user facts and preferences.",
     "real_world_instances": [
       "Production AI assistant prompt-extraction incidents 2025-2026",
       "Public LLM training-data memorization studies (NYT v. OpenAI, Carlini et al. extraction works)"
@@ -681,14 +676,17 @@
     "exceptd_skills": [],
     "secure_ai_v2_layer": true,
     "maturity": "high",
-    "last_verified": "2026-05-19",
-    "description_full": "Adversaries may craft prompts that induce the LLM to leak sensitive information. This can include private user data or proprietary information. The leaked information may come from proprietary training data, data sources the LLM is connected to, or information from other users of the LLM.",
+    "last_verified": "2026-11-01",
+    "description_full": "Adversaries may collect sensitive information from an AI service's current or stored interactions and memory. This may include user messages, model responses, conversation summaries, and retained user facts and preferences. Adversaries may induce the service to reveal information available in its current context or retrieve information retained across sessions. Collection may also occur through interfaces that expose conversation histories or memory records. The information may reveal private user activity, organizational information, or details useful for subsequent adversarial operations.",
     "platforms": [
       "ATLAS"
     ],
-    "reference_url": "https://atlas.mitre.org/techniques/AML.T0057",
-    "stix_id": "attack-pattern--0c8eca96-8d33-5fd4-a9c0-51db41128b89",
-    "is_subtechnique": false
+    "reference_url": "https://atlas.mitre.org/techniques/AML.T0085.002",
+    "stix_id": "attack-pattern--07466519-8d5c-577e-a78e-781382af1d72",
+    "is_subtechnique": true,
+    "parent_technique": "AML.T0085",
+    "supersedes": "AML.T0057",
+    "superseded_stix_id": "attack-pattern--0c8eca96-8d33-5fd4-a9c0-51db41128b89"
   },
   "AML.T0096": {
     "id": "AML.T0096",
@@ -1177,7 +1175,7 @@
       "CVE-2026-5760",
       "MAL-2024-PYPI-ULTRALYTICS-XMRIG"
     ],
-    "description_full": "An adversary may rely upon specific actions by a user in order to gain execution. Users may inadvertently execute unsafe code introduced via [AI Supply Chain Compromise](/techniques/AML.T0010). Users may be subjected to social engineering to get them to execute malicious code by, for example, opening a malicious document file or link.",
+    "description_full": "An adversary may rely upon specific actions by a user in order to gain execution. Users may inadvertently execute unsafe code introduced via [Supply Chain Compromise](/techniques/AML.T0010). Users may be subjected to social engineering to get them to execute malicious code by, for example, opening a malicious document file or link.",
     "platforms": [
       "ATLAS"
     ],
@@ -1217,7 +1215,7 @@
     "last_verified": "2026-05-19",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
-    "description_full": "Adversaries may search for publicly available research and technical documentation to learn how and where AI is used within a victim organization. The adversary can use this information to identify targets for attack, or to tailor an existing attack to make it more effective. Organizations often use open source model architectures trained on additional proprietary data in production. Knowledge of this underlying architecture allows the adversary to craft more realistic proxy models ([Create Proxy AI Model](/techniques/AML.T0005)). An adversary can search these resources for publications for authors employed at the victim organization. Research and technical materials may exist as academic papers published in [Journals and Conference Proceedings](/techniques/AML.T0000.000), or stored in [Pre-Print Repositories](/techniques/AML.T0000.001), as well as [Technical Blogs](/techniques/AML.T0000.002).",
+    "description_full": "Adversaries may search for publicly available research and technical documentation to learn how and where AI is used within a victim organization. The adversary can use this information to identify targets for attack, or to tailor an existing attack to make it more effective. Organizations often use open source model architectures trained on additional proprietary data in production. Knowledge of this underlying architecture allows the adversary to craft more realistic proxy models ([Replicate AI Model Behavior](/techniques/AML.T0005)). An adversary can search these resources for publications for authors employed at the victim organization. Research and technical materials may exist as academic papers published in [Journals and Conference Proceedings](/techniques/AML.T0000.000), or stored in [Pre-Print Repositories](/techniques/AML.T0000.001), as well as [Technical Blogs](/techniques/AML.T0000.002).",
     "platforms": [
       "ATLAS"
     ],
@@ -1233,7 +1231,7 @@
     "last_verified": "2026-05-19",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
-    "description_full": "Adversaries may search public sources, including cloud storage, public-facing services, and software or data repositories, to identify AI artifacts. These AI artifacts may include the software stack used to train and deploy models, training and testing data, model configurations and parameters. An adversary will be particularly interested in artifacts hosted by or associated with the victim organization as they may represent what that organization uses in a production environment. Adversaries may identify artifact repositories via other resources associated with the victim organization (e.g. [Search Victim-Owned Websites](/techniques/AML.T0003) or [Search Open Technical Databases](/techniques/AML.T0000)). These AI artifacts often provide adversaries with details of the AI task and approach. AI artifacts can aid in an adversary's ability to [Create Proxy AI Model](/techniques/AML.T0005). If these artifacts include pieces of the actual model in production, they can be used to directly [Craft Adversarial Data](/techniques/AML.T0043). Acquiring some artifacts requires registration (providing user details such email/name), AWS keys, or written requests, and may require the adversary to [Establish Accounts](/techniques/AML.T0021). Artifacts might be hosted on victim-controlled infrastructure, providing the victim with some information on who has accessed that data.",
+    "description_full": "Adversaries may search public sources, including cloud storage, public-facing services, and software or data repositories, to identify AI artifacts. These AI artifacts may include the software stack used to train and deploy models, training and testing data, model configurations and parameters. An adversary will be particularly interested in artifacts hosted by or associated with the victim organization as they may represent what that organization uses in a production environment. Adversaries may identify artifact repositories via other resources associated with the victim organization (e.g. [Search Victim-Owned Websites](/techniques/AML.T0003) or [Search Open Technical Databases](/techniques/AML.T0000)). These AI artifacts often provide adversaries with details of the AI task and approach. AI artifacts can aid in an adversary's ability to [Replicate AI Model Behavior](/techniques/AML.T0005). If these artifacts include pieces of the actual model in production, they can be used to directly [Craft Adversarial Data](/techniques/AML.T0043). Acquiring some artifacts requires registration (providing user details such email/name), AWS keys, or written requests, and may require the adversary to [Establish Accounts](/techniques/AML.T0021). Artifacts might be hosted on victim-controlled infrastructure, providing the victim with some information on who has accessed that data.",
     "platforms": [
       "ATLAS"
     ],
@@ -1274,11 +1272,11 @@
   },
   "AML.T0005": {
     "id": "AML.T0005",
-    "name": "Create Proxy AI Model",
+    "name": "Replicate AI Model Behavior",
     "tactic": "AI Attack Adaptation",
     "description": "Adversaries may obtain models to serve as proxies for the target model in use at the victim organization.",
     "reference_url": "https://atlas.mitre.org/techniques/AML.T0005",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-11-01",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
     "description_full": "Adversaries may obtain models to serve as proxies for the target model in use at the victim organization. Proxy models are used to simulate complete access to the target model in a fully offline manner. Adversaries may train models from representative datasets, attempt to replicate models from victim inference APIs, or use available pre-trained models.",
@@ -1735,26 +1733,28 @@
     "stix_id": "attack-pattern--c9a9741c-6c66-5456-807f-1d47140851a9",
     "is_subtechnique": false
   },
-  "AML.T0056": {
-    "id": "AML.T0056",
-    "name": "Extract LLM System Prompt",
-    "tactic": "Exfiltration",
-    "description": "Adversary extracts an LLM application's system prompt, tool definitions or hidden instructions, usually through prompt injection that makes the model reveal them, or from a configuration file. A recovered prompt shows which tools and data the application can reach, helps the adversary refine jailbreaks and impersonate the application, and can itself be valuable intellectual property.",
-    "subtechniques": [],
+  "AML.T0085.003": {
+    "id": "AML.T0085.003",
+    "name": "System Instructions",
+    "tactic": "Collection",
+    "description": "Adversaries may collect non-public instructions used to configure the behavior of an AI model or agent. These may include system prompts or application-specific rules governing tasks, tool use, response formatting, and handling of sensitive information.",
     "real_world_instances": [],
     "framework_gap": true,
     "framework_gap_detail": "No framework treats a system prompt as sensitive configuration, so no control covers scoping it, rotating it, or detecting that it has been exposed.",
     "controls_that_partially_help": [],
     "controls_that_dont_help": [],
     "detection": "Output-side filtering for system-prompt fingerprints; input-side anomaly detection for injection inputs that target <system>, <SYS> or role:system markers.",
-    "reference_url": "https://atlas.mitre.org/techniques/AML.T0056",
-    "last_verified": "2026-09-22",
-    "description_full": "Adversaries may attempt to extract a large language model's (LLM) system prompt. This can be done via prompt injection to induce the model to reveal its own system prompt or may be extracted from a configuration file. System prompts can be a portion of an AI provider's competitive advantage and are thus valuable intellectual property that may be targeted by adversaries.",
+    "reference_url": "https://atlas.mitre.org/techniques/AML.T0085.003",
+    "last_verified": "2026-11-01",
+    "description_full": "Adversaries may collect non-public instructions used to configure the behavior of an AI model or agent. These may include system prompts or application-specific rules governing tasks, tool use, response formatting, and handling of sensitive information. Adversaries may request that the service reproduce, summarize, or transform its instructions, or use [LLM Prompt Injection](/techniques/AML.T0051) or [LLM Jailbreak](/techniques/AML.T0054) to induce disclosure. Collection may reveal complete instructions or selected portions across multiple responses. Collected instructions may expose proprietary application logic, internal workflows, tool descriptions, or sensitive information embedded in the instructions. This information may support replication of application behavior or help adversaries tailor subsequent attacks.",
     "platforms": [
       "ATLAS"
     ],
-    "stix_id": "attack-pattern--b8b16dac-3b95-59f7-8bf7-60e39b0c062f",
-    "is_subtechnique": false
+    "stix_id": "attack-pattern--ebfd71bd-35d2-5dc4-9a7d-48f41ec91ac8",
+    "is_subtechnique": true,
+    "parent_technique": "AML.T0085",
+    "supersedes": "AML.T0056",
+    "superseded_stix_id": "attack-pattern--b8b16dac-3b95-59f7-8bf7-60e39b0c062f"
   },
   "AML.T0059": {
     "id": "AML.T0059",
@@ -1797,7 +1797,7 @@
     "last_verified": "2026-05-19",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
-    "description_full": "An adversary may use a carefully crafted [LLM Prompt Injection](/techniques/AML.T0051) designed to cause the LLM to replicate the prompt as part of its output. This allows the prompt to propagate to other LLMs and persist on the system. The self-replicating prompt is typically paired with other malicious instructions (ex: [LLM Jailbreak](/techniques/AML.T0054), [LLM Data Leakage](/techniques/AML.T0057)).",
+    "description_full": "An adversary may use a carefully crafted [LLM Prompt Injection](/techniques/AML.T0051) designed to cause the LLM to replicate the prompt as part of its output. This allows the prompt to propagate to other LLMs and persist on the system. The self-replicating prompt is typically paired with other malicious instructions (ex: [LLM Jailbreak](/techniques/AML.T0054), [Conversation Context and Memory](/techniques/AML.T0085.002)).",
     "platforms": [
       "ATLAS"
     ],
@@ -2182,6 +2182,12 @@
     "id": "AML.T0085",
     "name": "Data from AI Services",
     "tactic": "Collection",
+    "subtechniques": [
+      "AML.T0085.000",
+      "AML.T0085.001",
+      "AML.T0085.002",
+      "AML.T0085.003"
+    ],
     "description": "Adversaries may use their access to a victim organization's AI-enabled services to collect proprietary or otherwise sensitive information.",
     "reference_url": "https://atlas.mitre.org/techniques/AML.T0085",
     "last_verified": "2026-05-19",
@@ -2367,12 +2373,12 @@
     "id": "AML.T0109",
     "name": "AI Supply Chain Rug Pull",
     "tactic": "Defense Evasion",
-    "description": "Adversaries may publish legitimate AI components or software, gain user adoption, then push an update with a malicious variant, leading to [AI Supply Chain Compromise](/techniques/AML.T0010).",
+    "description": "Adversaries may publish legitimate AI components or software, gain user adoption, then push an update with a malicious variant, leading to [Supply Chain Compromise](/techniques/AML.T0010).",
     "reference_url": "https://atlas.mitre.org/techniques/AML.T0109",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
-    "description_full": "Adversaries may publish legitimate AI components or software, gain user adoption, then push an update with a malicious variant, leading to [AI Supply Chain Compromise](/techniques/AML.T0010). More scrutiny is often placed on a supply chain dependency when it is first being considered for inclusion in an AI system. Performing a rug pull may allow adversaries to bypass these defenses and be more likely to achieve [Initial Access](/tactics/AML.TA0004). Adversaries may publish malicious AI components via [Publish Poisoned Models](/techniques/AML.T0058), [Publish Poisoned Datasets](/techniques/AML.T0019), or [Publish Poisoned AI Agent Tool](/techniques/AML.T0104). Adversaries may use other techniques (See [AI Supply Chain Reputation Inflation](/techniques/AML.T0111)) to gain user trust and increase adoption before performing the rug pull.",
+    "description_full": "Adversaries may publish legitimate AI components or software, gain user adoption, then push an update with a malicious variant, leading to [Supply Chain Compromise](/techniques/AML.T0010). More scrutiny is often placed on a supply chain dependency when it is first being considered for inclusion in an AI system. Performing a rug pull may allow adversaries to bypass these defenses and be more likely to achieve [Initial Access](/tactics/AML.TA0004). Adversaries may publish malicious AI components via [Publish Poisoned Models](/techniques/AML.T0058), [Publish Poisoned Datasets](/techniques/AML.T0019), or [Publish Poisoned AI Agent Tool](/techniques/AML.T0104). Adversaries may use other techniques (See [AI Supply Chain Reputation Inflation](/techniques/AML.T0111)) to gain user trust and increase adoption before performing the rug pull.",
     "platforms": [
       "ATLAS"
     ],
@@ -2545,11 +2551,11 @@
   },
   "AML.T0005.000": {
     "id": "AML.T0005.000",
-    "name": "Train Proxy via Gathered AI Artifacts",
+    "name": "Replicate Behavior from Gathered AI Artifacts",
     "tactic": "AI Attack Adaptation",
     "description": "Proxy models may be trained from AI artifacts (such as data, model architectures, and pre-trained models) that are representative of the target model gathered by the adversary.",
     "reference_url": "https://atlas.mitre.org/techniques/AML.T0005.000",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-11-01",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
     "description_full": "Proxy models may be trained from AI artifacts (such as data, model architectures, and pre-trained models) that are representative of the target model gathered by the adversary. This can be used to develop attacks that require higher levels of access than the adversary has available or as a means to validate pre-existing attacks without interacting with the target model.",
@@ -2561,11 +2567,11 @@
   },
   "AML.T0005.001": {
     "id": "AML.T0005.001",
-    "name": "Train Proxy via Replication",
+    "name": "Replicate Behavior from Model Outputs",
     "tactic": "AI Attack Adaptation",
     "description": "Adversaries may replicate a private model.",
     "reference_url": "https://atlas.mitre.org/techniques/AML.T0005.001",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-11-01",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
     "description_full": "Adversaries may replicate a private model. By repeatedly querying the victim's [AI Model Inference API Access](/techniques/AML.T0040), the adversary can collect the target model's inferences into a dataset. The inferences are used as labels for training a separate model offline that will mimic the behavior and performance of the target model. A replicated model that closely mimic's the target model is a valuable resource in staging the attack. The adversary can use the replicated model to [Craft Adversarial Data](/techniques/AML.T0043) for various purposes (e.g. [Evade AI Model](/techniques/AML.T0015), [Spamming AI System with Chaff Data](/techniques/AML.T0046)).",
@@ -2577,11 +2583,11 @@
   },
   "AML.T0005.002": {
     "id": "AML.T0005.002",
-    "name": "Use Pre-Trained Model",
+    "name": "Adapt Existing Model to Replicate Behavior",
     "tactic": "AI Attack Adaptation",
     "description": "Adversaries may use an off-the-shelf pre-trained model as a proxy for the victim model to aid in staging the attack.",
     "reference_url": "https://atlas.mitre.org/techniques/AML.T0005.002",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-11-01",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
     "description_full": "Adversaries may use an off-the-shelf pre-trained model as a proxy for the victim model to aid in staging the attack.",
@@ -2705,11 +2711,11 @@
   },
   "AML.T0010.001": {
     "id": "AML.T0010.001",
-    "name": "AI Software",
+    "name": "Software",
     "tactic": "Initial Access",
     "description": "Adversaries may target software packages that are commonly used in AI-enabled systems or are part of the AI DevOps lifecycle.",
     "reference_url": "https://atlas.mitre.org/techniques/AML.T0010.001",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-11-01",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
     "description_full": "Adversaries may target software packages that are commonly used in AI-enabled systems or are part of the AI DevOps lifecycle. This can include deep learning frameworks used to build AI models (e.g. PyTorch, TensorFlow, Jax), generative AI integration frameworks (e.g. LangChain, LangFlow), inference engines, and AI DevOps tools. They may also target the dependency chains of any of these software packages [\\[1\\]][1]. Additionally, adversaries may target specific components used by AI software such as configuration files [\\[2\\]][2] or example usage of AI packages, which may be distributed in Jupyter notebooks [\\[3\\]][3]. Adversaries may compromise legitimate packages [\\[4\\]][4] or publish malicious software to a namesquatted location [\\[1\\]][1]. They may target package names that are hallucinated by large language models [\\[5\\]][5] (see: Publish Hallucinated Entities). They may also perform a [AI Supply Chain Rug Pull](/techniques/AML.T0109) in which they first publish a legitimate package and then publish a malicious version once they reach a critical mass of users. [1]: https://pytorch.org/blog/compromised-nightly-dependency/ \"Compromised PyTorch-nightly dependency chain between December 25th and December 30th, 2022.\" [2]: https://www.pillar.security/blog/new-vulnerability-in-github-copilot-and-cursor-how-hackers-can-weaponize-code-agents \"New Vulnerability in GitHub Copilot and Cursor: How Hackers Can Weaponize Code Agents\" [3]: https://medium.com/mlearning-ai/careful-who-you-colab-with-fa8001f933e7 \"Careful Who You Colab With: abusing google colaboratory\" [4]: https://aws.amazon.com/security/security-bulletins/AWS-2025-015/ \"Security Update for Amazon Q Developer Extension for Visual Studio Code (Version #1.84)\" [5]: https://www.trendmicro.com/vinfo/us/security/news/cybercrime-and-digital-threats/slopsquatting-when-ai-agents-hallucinate-malicious-packages \"Slopsquatting: When AI Agents Hallucinate Malicious Packages\"",
@@ -2721,11 +2727,11 @@
   },
   "AML.T0010.002": {
     "id": "AML.T0010.002",
-    "name": "Data",
+    "name": "Data Repository",
     "tactic": "Initial Access",
     "description": "Data is a key vector of supply chain compromise for adversaries.",
     "reference_url": "https://atlas.mitre.org/techniques/AML.T0010.002",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-11-01",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
     "description_full": "Data is a key vector of supply chain compromise for adversaries. Every AI project will require some form of data. Many rely on large open source datasets that are publicly available. An adversary could rely on compromising these sources of data. The malicious data could be a result of [Poison Training Data](/techniques/AML.T0020) or include traditional malware. An adversary can also target private datasets in the labeling phase. The creation of private datasets will often require the hiring of outside labeling services. An adversary can poison a dataset by modifying the labels being generated by the labeling service.",
@@ -2737,11 +2743,11 @@
   },
   "AML.T0010.003": {
     "id": "AML.T0010.003",
-    "name": "Model",
+    "name": "Model Repository",
     "tactic": "Initial Access",
     "description": "AI-enabled systems often rely on open sourced models in various ways.",
     "reference_url": "https://atlas.mitre.org/techniques/AML.T0010.003",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-11-01",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
     "description_full": "AI-enabled systems often rely on open sourced models in various ways. Most commonly, the victim organization may be using these models for fine tuning. These models will be downloaded from an external source and then used as the base for the model as it is tuned on a smaller, private dataset. Loading models often requires executing some saved code in the form of a saved model file. These can be compromised with traditional malware, or through some adversarial AI techniques.",
@@ -2792,7 +2798,7 @@
     "last_verified": "2026-05-19",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
-    "description_full": "Adversaries may develop unsafe AI artifacts that when executed have a deleterious effect. The adversary can use this technique to establish persistent access to systems. These models may be introduced via a [AI Supply Chain Compromise](/techniques/AML.T0010). Serialization of models is a popular technique for model storage, transfer, and loading. However, this format without proper checking presents an opportunity for code execution.",
+    "description_full": "Adversaries may develop unsafe AI artifacts that when executed have a deleterious effect. The adversary can use this technique to establish persistent access to systems. These models may be introduced via a [Supply Chain Compromise](/techniques/AML.T0010). Serialization of models is a popular technique for model storage, transfer, and loading. However, this format without proper checking presents an opportunity for code execution.",
     "platforms": [
       "ATLAS"
     ],
@@ -2826,7 +2832,7 @@
     "last_verified": "2026-05-19",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
-    "description_full": "Adversaries may develop malicious software packages that when imported by a user have a deleterious effect. Malicious packages may behave as expected to the user. They may be introduced via [AI Supply Chain Compromise](/techniques/AML.T0010). They may not present as obviously malicious to the user and may appear to be useful for an AI-related task.",
+    "description_full": "Adversaries may develop malicious software packages that when imported by a user have a deleterious effect. Malicious packages may behave as expected to the user. They may be introduced via [Supply Chain Compromise](/techniques/AML.T0010). They may not present as obviously malicious to the user and may appear to be useful for an AI-related task.",
     "platforms": [
       "ATLAS"
     ],
@@ -2973,54 +2979,6 @@
     "stix_id": "attack-pattern--55ad0ff6-ab08-5ea5-8204-aaa28578d805",
     "is_subtechnique": true
   },
-  "AML.T0024.000": {
-    "id": "AML.T0024.000",
-    "name": "Infer Training Data Membership",
-    "tactic": "Exfiltration",
-    "description": "Adversaries may infer the membership of a data sample or global characteristics of the data in its training set, which raises privacy concerns.",
-    "reference_url": "https://atlas.mitre.org/techniques/AML.T0024.000",
-    "last_verified": "2026-05-19",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
-    "description_full": "Adversaries may infer the membership of a data sample or global characteristics of the data in its training set, which raises privacy concerns. Some strategies make use of a shadow model that could be obtained via [Train Proxy via Replication](/techniques/AML.T0005.001), others use statistics of model prediction scores. This can cause the victim model to leak private information, such as PII of those in the training set or other forms of protected IP.",
-    "platforms": [
-      "ATLAS"
-    ],
-    "stix_id": "attack-pattern--df4da5b6-5fad-5c93-a854-be2b187d1fbc",
-    "is_subtechnique": true
-  },
-  "AML.T0024.001": {
-    "id": "AML.T0024.001",
-    "name": "Invert AI Model",
-    "tactic": "Exfiltration",
-    "description": "AI models' training data could be reconstructed by exploiting the confidence scores that are available via an inference API.",
-    "reference_url": "https://atlas.mitre.org/techniques/AML.T0024.001",
-    "last_verified": "2026-05-19",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
-    "description_full": "AI models' training data could be reconstructed by exploiting the confidence scores that are available via an inference API. By querying the inference API strategically, adversaries can back out potentially private information embedded within the training data. This could lead to privacy violations if the attacker can reconstruct the data of sensitive features used in the algorithm.",
-    "platforms": [
-      "ATLAS"
-    ],
-    "stix_id": "attack-pattern--9e0f6fd8-948c-508e-8d36-8b6517c6aaa1",
-    "is_subtechnique": true
-  },
-  "AML.T0024.002": {
-    "id": "AML.T0024.002",
-    "name": "Extract AI Model",
-    "tactic": "Exfiltration",
-    "description": "Adversaries may extract a functional copy of a private model.",
-    "reference_url": "https://atlas.mitre.org/techniques/AML.T0024.002",
-    "last_verified": "2026-05-19",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
-    "description_full": "Adversaries may extract a functional copy of a private model. By repeatedly querying the victim's [AI Model Inference API Access](/techniques/AML.T0040), the adversary can collect the target model's inferences into a dataset. The inferences are used as labels for training a separate model offline that will mimic the behavior and performance of the target model. Adversaries may extract the model to avoid paying per query in an artificial-intelligence-as-a-service (AIaaS) setting. Model extraction is used for [AI Intellectual Property Theft](/techniques/AML.T0048.004).",
-    "platforms": [
-      "ATLAS"
-    ],
-    "stix_id": "attack-pattern--3f567912-629a-5e0b-ab0c-0102977c2d6c",
-    "is_subtechnique": true
-  },
   "AML.T0034.000": {
     "id": "AML.T0034.000",
     "name": "Excessive Queries",
@@ -3108,12 +3066,12 @@
     "id": "AML.T0043.002",
     "name": "Black-Box Transfer",
     "tactic": "AI Attack Adaptation",
-    "description": "In Black-Box Transfer attacks, the adversary uses one or more proxy models (trained via [Create Proxy AI Model](/techniques/AML.T0005) or [Train Proxy via Replication](/techniques/AML.T0005.001)) they have full access to and are representative of the target model.",
+    "description": "In Black-Box Transfer attacks, the adversary uses one or more proxy models (trained via [Replicate AI Model Behavior](/techniques/AML.T0005) or [Replicate Behavior from Model Outputs](/techniques/AML.T0005.001)) they have full access to and are representative of the target model.",
     "reference_url": "https://atlas.mitre.org/techniques/AML.T0043.002",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
-    "description_full": "In Black-Box Transfer attacks, the adversary uses one or more proxy models (trained via [Create Proxy AI Model](/techniques/AML.T0005) or [Train Proxy via Replication](/techniques/AML.T0005.001)) they have full access to and are representative of the target model. The adversary uses [White-Box Optimization](/techniques/AML.T0043.000) on the proxy models to generate adversarial examples. If the set of proxy models are close enough to the target model, the adversarial example should generalize from one to another. This means that an attack that works for the proxy models will likely then work for the target model. If the adversary has [AI Model Inference API Access](/techniques/AML.T0040), they may use [Verify Attack](/techniques/AML.T0042) to confirm the attack is working and incorporate that information into their training process.",
+    "description_full": "In Black-Box Transfer attacks, the adversary uses one or more proxy models (trained via [Replicate AI Model Behavior](/techniques/AML.T0005) or [Replicate Behavior from Model Outputs](/techniques/AML.T0005.001)) they have full access to and are representative of the target model. The adversary uses [White-Box Optimization](/techniques/AML.T0043.000) on the proxy models to generate adversarial examples. If the set of proxy models are close enough to the target model, the adversarial example should generalize from one to another. This means that an attack that works for the proxy models will likely then work for the target model. If the adversary has [AI Model Inference API Access](/techniques/AML.T0040), they may use [Verify Attack](/techniques/AML.T0042) to confirm the attack is working and incorporate that information into their training process.",
     "platforms": [
       "ATLAS"
     ],
@@ -3220,12 +3178,12 @@
     "id": "AML.T0048.004",
     "name": "AI Intellectual Property Theft",
     "tactic": "Impact",
-    "description": "Adversaries may exfiltrate AI artifacts to steal intellectual property and cause economic harm to the victim organization.",
+    "description": "Adversaries may appropriate AI-related intellectual property in a manner that causes economic or competitive harm to the victim organization. Targeted material may include model architectures and weights, training data, or model behaviors and capabilities.",
     "reference_url": "https://atlas.mitre.org/techniques/AML.T0048.004",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-11-01",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-atlas-stix",
-    "description_full": "Adversaries may exfiltrate AI artifacts to steal intellectual property and cause economic harm to the victim organization. Proprietary training data is costly to collect and annotate and may be a target for [Exfiltration](/tactics/AML.TA0010) and theft. AIaaS providers charge for use of their API. An adversary who has stolen a model via [Exfiltration](/tactics/AML.TA0010) or via [Extract AI Model](/techniques/AML.T0024.002) now has unlimited use of that service without paying the owner of the intellectual property.",
+    "description_full": "Adversaries may appropriate AI-related intellectual property in a manner that causes economic or competitive harm to the victim organization. Targeted material may include model architectures and weights, training data, or model behaviors and capabilities. Adversaries may steal AI models or other artifacts via exfiltration from the victim system. Access may be obtained through [Valid Accounts](/techniques/AML.T0012), exposed storage, misconfigured permissions, or exploitation of systems that store or serve the AI artifacts. Alternatively, adversaries may collect [Outputs from AI Models](/techniques/AML.T0135) to [Replicate AI Model Behavior](/techniques/AML.T0005) without obtaining the original model artifacts. Model training approaches include knowledge distillation, fine-tuning, and reinforcement learning. Adversaries may use a stolen or replicated model internally themselves, sell or distribute it, offer competing AI services, or incorporate its capabilities into their own products without compensating the model owner. Possession of the model also allows adversaries to modify or fine-tune it and operate outside the original provider's access controls, usage restrictions, and monitoring. These activities may reduce the victim's competitive advantage and undermine the exclusivity of proprietary AI capabilities.",
     "platforms": [
       "ATLAS"
     ],
@@ -3603,7 +3561,7 @@
     "description": "Adversaries may [Poison Training Data](/techniques/AML.T0020) and publish it to a public location.",
     "reference_url": "https://atlas.mitre.org/techniques/AML.T0115.000",
     "last_verified": "2026-08-08",
-    "description_full": "Adversaries may [Poison Training Data](/techniques/AML.T0020) and publish it to a public location. The poisoned dataset may be a novel dataset or a poisoned variant of an existing open source dataset. This data may be introduced to a victim system via [AI Supply Chain Compromise](/techniques/AML.T0010).",
+    "description_full": "Adversaries may [Poison Training Data](/techniques/AML.T0020) and publish it to a public location. The poisoned dataset may be a novel dataset or a poisoned variant of an existing open source dataset. This data may be introduced to a victim system via [Supply Chain Compromise](/techniques/AML.T0010).",
     "platforms": [
       "ATLAS"
     ],
@@ -3620,7 +3578,7 @@
     "description": "Adversaries may publish a poisoned model to a public location such as a model registry or code repository.",
     "reference_url": "https://atlas.mitre.org/techniques/AML.T0115.001",
     "last_verified": "2026-08-08",
-    "description_full": "Adversaries may publish a poisoned model to a public location such as a model registry or code repository. The poisoned model may be a novel model or a poisoned variant of an existing open-source model. This model may be introduced to a victim system via [AI Supply Chain Compromise](/techniques/AML.T0010).",
+    "description_full": "Adversaries may publish a poisoned model to a public location such as a model registry or code repository. The poisoned model may be a novel model or a poisoned variant of an existing open-source model. This model may be introduced to a victim system via [Supply Chain Compromise](/techniques/AML.T0010).",
     "platforms": [
       "ATLAS"
     ],

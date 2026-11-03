@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.21.45 — 2026-11-03
+
+The pinned MITRE ATT&CK release is now 20.0 (published 2026-10-13) and the pinned MITRE ATLAS release is now 2026.10 (published 2026-10-28). The skills, playbooks, catalogs and README state the new versions, and 35 skills that cite the changed techniques or name the pins carry a `last_threat_review` of 2026-11-01.
+
+ATT&CK 20.0 deprecated the ICS techniques T0807 (Command-Line Interface) and T0853 (Scripting) and added T1701 (Command and Scripting Interpreter). `data/attack-techniques.json` now holds T1701 with both retired ids in `supersedes`, and the `ot-ics-security` skill cites T1701 for OT scripting.
+
+ATLAS 2026.10 moved AML.T0057 (LLM Data Leakage) to AML.T0085.002 (Conversation Context and Memory) and AML.T0056 (Extract LLM System Prompt) to AML.T0085.003 (System Instructions), both under Collection. The catalog re-keys both entries with the retired id in `supersedes`, and the DLP controls and framework gaps that cited AML.T0057 now cite AML.T0085.002. AML.T0024 (Exfiltration via AI Inference API) has no sub-techniques in 2026.10: Infer Training Data Membership and Invert AI Model moved to AML.T0137.000 and AML.T0137.002, and Extract AI Model was removed, so the three AML.T0024.00x entries are gone and the catalog holds 171 techniques instead of 174.
+
+MITRE renamed AML.T0010 to Supply Chain Compromise, with the sub-techniques Software, Data Repository and Model Repository, and renamed AML.T0005 to Replicate AI Model Behavior, with the sub-techniques Replicate Behavior from Gathered AI Artifacts, Replicate Behavior from Model Outputs and Adapt Existing Model to Replicate Behavior. The catalog, skills, playbooks and framework gaps use the new names.
+
 ## 0.21.43 — 2026-10-27
 
 The minimum supported Node.js is now 24.22.1, so `engines.node` reads `>=24.22.1`. Node 24.22.1 fixes CVE-2026-111497 (Node2Shell), an out-of-bounds write in the Brotli decoder that Node bundles. Node's `fetch()` decompresses a response sent with `Content-Encoding: br` even though it requests only gzip and deflate, so on an earlier Node a malicious or intercepted response to `exceptd refresh` or `exceptd watchlist --org-scan` is decoded by the vulnerable code. Install 24.22.1 before upgrading; npm reports an engines warning on 24.21. Continuous integration, the release workflow, the daily-refresh and ATLAS-currency workflows, the Docker reproduction harness and `.nvmrc` all use 24.22.1, and the harness base image is pinned to the 24.22.1-alpine3.23 manifest digest.

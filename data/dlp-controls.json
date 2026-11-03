@@ -173,7 +173,7 @@
     "attack_techniques_addressed": [
       "AML.T0024",
       "AML.T0051",
-      "AML.T0057"
+      "AML.T0085.002"
     ],
     "framework_controls_partially_mapping": [
       "NIST-800-53-AC-4",
@@ -222,7 +222,7 @@
     "attack_techniques_addressed": [
       "AML.T0024",
       "AML.T0048",
-      "AML.T0057"
+      "AML.T0085.002"
     ],
     "framework_controls_partially_mapping": [
       "NIST-800-53-AC-4",
@@ -544,7 +544,7 @@
     "attack_techniques_addressed": [
       "AML.T0024",
       "AML.T0048",
-      "AML.T0057"
+      "AML.T0085.002"
     ],
     "framework_controls_partially_mapping": [
       "NIST-800-53-SI-12",
@@ -631,7 +631,7 @@
     "attack_techniques_addressed": [
       "AML.T0024",
       "AML.T0048",
-      "AML.T0057"
+      "AML.T0085.002"
     ],
     "framework_controls_partially_mapping": [
       "NIST-800-53-AC-3",
@@ -1004,7 +1004,7 @@
       "AML.T0024",
       "AML.T0048",
       "AML.T0051",
-      "AML.T0057"
+      "AML.T0085.002"
     ],
     "framework_controls_partially_mapping": [
       "NIST-800-53-AC-4",
