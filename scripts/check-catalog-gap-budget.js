@@ -49,8 +49,12 @@ const BUDGET = {
   // Machine holds no capture of it, so that entry tells the operator to confirm
   // the installed build instead. An entry cannot cite an advisory that does not
   // exist, and inventing a plausible URL would send an operator somewhere
-  // authoritative-looking and wrong.
-  "content-quality": 15,
+  // authoritative-looking and wrong. Two more KEV-listed entries have no
+  // vendor advisory to cite: CVE-2016-3643 (SolarWinds Virtualization Manager,
+  // whose only references are third-party disclosures and exploit listings)
+  // and CVE-2018-14558 (Tenda routers, whose vendor download page lists no
+  // advisory or fixed firmware).
+  "content-quality": 17,
   // temporal-staleness counts only the maintainer-controllable freshness fields,
   // which sit at 0 on fresh data; the headroom covers entries aging past a
   // threshold between refreshes.

@@ -17,7 +17,7 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "entry_count": 1781
+    "entry_count": 1797
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -147933,6 +147933,1174 @@
         "evidence": "CISA lists CVE-2026-76418 in KEV (2026-10-29, due 2026-11-01) and exploitation is confirmed. The KEV-keyed deadline covers the fixed ASA and FTD builds (for example ASA 9.20.4.50 and FTD 7.6.7) and accepts the configuration mitigation where the update cannot be applied at once.",
         "gap_closes": [
           "NIS2-Art21-availability"
+        ]
+      }
+    ]
+  },
+  "CVE-2012-0158": {
+    "name": "Microsoft MSCOMCTL.OCX Remote Code Execution Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "unknown",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "A crafted Office document, RTF file or web page instantiates one of the ListView, ListView2, TreeView or TreeView2 ActiveX controls in MSCOMCTL.OCX and corrupts system state, which runs attacker code in the context of the current user. Spear-phishing documents are the delivery route in the reported campaigns.",
+      "privileges_required": "none; the user must open the file or page (UI:R)",
+      "complexity": "low; a Metasploit module builds a working RTF",
+      "ai_factor": "None. No source attributes discovery or weaponization to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install the MS12-027 update for each product that carries MSCOMCTL.OCX (KB2664258 and the per-product KBs). Before patching, set the kill bit for the four control CLSIDs and avoid opening untrusted Office or RTF files, as Microsoft states.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "Patching works where the inventory records every product that bundles the control. SQL Server, BizTalk, Commerce Server, Visual FoxPro and the Visual Basic 6.0 Runtime are easy to leave out of an Office-focused process."
+      },
+      "detection": {
+        "what_would_have_worked": "Mail gateway rules that flag RTF content with a .doc extension, and endpoint telemetry that flags Word or Office processes launching child processes or writing executables after a document opens.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Signature coverage exists for the public Metasploit module and the builders, but targeted campaigns reuse the exploit with new payloads, and the only reported indicator is the extension mismatch."
+      },
+      "response": {
+        "what_would_have_worked": "Treat any host that opened a suspect document as compromised, identify the payload family (PlugX, Gh0stRAT and similar remote access tools appear in the reported campaigns), and rotate credentials used on that host.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Response depends on retaining the original document and mail record, which many organizations do not keep for years."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Flaw remediation is tracked per product, and a shared component needs a separate update for each product that bundles it."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patch handling does not require inventory of embedded components in legacy runtimes such as Visual Basic 6.0 and Visual FoxPro."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "System security outcomes can be rated achieved while a crafted document still reaches a vulnerable ActiveX control."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The two-week patch window assumes the product is in patch reporting; installations that never received MS12-027 sit outside it."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Vulnerability identification fails when the inventory records product names and not bundled components."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2012-0158 was fixed in April 2012 and CISA lists it in KEV on 2021-11-03 with known ransomware campaign use, which shows installations still unpatched nearly a decade later.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2012-3152": {
+    "name": "Oracle Fusion Middleware Unspecified Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "The Report Server in Oracle Reports Developer accepts requests to reports/rwservlet whose URLPARAMETER functionality lets a remote caller read and upload arbitrary files. Combined with CVE-2012-3153, uploading a JSP file gives code execution on the server.",
+      "privileges_required": "none; CVSS PR:N and UI:N",
+      "complexity": "low; Exploit-DB 31253 automates the chain",
+      "ai_factor": "None. No source attributes discovery or weaponization to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Oracle October 2012 Critical Patch Update for the Fusion Middleware line in use, and remove Report Server from direct internet reach.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "The NVD description, which quotes the October 2012 CPU, calls the flaw an unspecified vulnerability, so operators had no description of the attack surface and the Report Server exposure was not obvious from that text."
+      },
+      "detection": {
+        "what_would_have_worked": "Web server logs showing requests to reports/rwservlet with URLPARAMETER, and file integrity monitoring for new .jsp files in web-accessible directories of the Oracle Reports host.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "These signals derive from the NVD description and Exploit-DB 31253. Oracle Reports hosts are rarely covered by web application monitoring."
+      },
+      "response": {
+        "what_would_have_worked": "Treat any Report Server host with unexpected .jsp files as compromised, remove the files, rotate credentials the server stores, and review the Reports configuration for exposed credentials.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Exploit-DB 31253 enumerates server credentials during the chain, so response scope includes credentials that the Report Server holds."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Remediation depends on the vendor's description of affected versions, which for this CVE was unspecified and disputed for earlier releases."
+      },
+      "NIS2-Art21-vulnerability-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "An advisory with no attack vector prevents risk ranking until later public analysis."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "System security outcomes do not require removing unneeded middleware servlets from reach."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A check against recent CPUs can miss an unapplied 2012 update on an 11g Fusion Middleware line."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Asset records that list only the application server can omit the Reports Developer component named in the NVD record."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2012-3152 was patched in October 2012, a public Ruby exploit has been available since January 2014, and CISA lists it in KEV on 2021-11-03, so unpatched hosts were reachable for years.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2015-1641": {
+    "name": "Microsoft Office Memory Corruption Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "unknown",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "Word mishandles a crafted rich text format file in memory, and the file runs attacker code in the context of the current user. The file arrives by email attachment or web link, and the user must open it.",
+      "privileges_required": "none; the user must open the file (UI:R)",
+      "complexity": "low; weaponized RTF builders produce the documents",
+      "ai_factor": "None. No source attributes discovery or weaponization to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install MS15-033 (KB3048019 and the per-product KBs) on every Word, Compatibility Pack, SharePoint Word Automation Services and Office Web Apps Server instance. Microsoft lists no workaround.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "Patching is complete only if server-side components receive the update, since Microsoft states Office Web Apps Server 2013 SP1 cannot use automatic updating."
+      },
+      "detection": {
+        "what_would_have_worked": "Mail filtering that compares file extension with content type for RTF documents named .doc, and endpoint rules for Word launching child processes.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The extension mismatch is the only reported indicator, and attackers can change it."
+      },
+      "response": {
+        "what_would_have_worked": "Isolate hosts that opened a suspect document, identify the remote access tool the payload installed (PlugX, Gh0stRAT, Kivars, Graber and Agent.XST are reported), and reset credentials used on the host.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Response needs the original attachment, which is often not retained."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Malicious code protection can miss a valid RTF with a .DOC extension."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Server-side Office components such as Office Web Apps Server 2013 SP1 cannot use automatic updating, so automated patching does not reach them."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No workaround exists, so system hardening outcomes do not reduce exposure before patching."
+      },
+      "AU-Essential-8-App-Hardening": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Office hardening settings do not affect this RTF parser flaw."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Only a complete application of MS15-033 across Word and server components addresses the flaw."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2015-1641 was patched in April 2015 and CISA lists it in KEV on 2021-11-03, so a KEV-triggered deadline reaches installations that skipped the 2015 update.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "NIS2-Art21-patch-management"
+        ]
+      }
+    ]
+  },
+  "CVE-2016-3235": {
+    "name": "Microsoft Office OLE DLL Side Loading Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "Visio COM components loaded as embedded OLE objects cause Windows to load msoutls.dll from the current working directory (Securify). Microsoft states the attacker needs access to the local system and the ability to run a crafted application.",
+      "privileges_required": "none per CVSS (PR:N, UI:R); Microsoft states local access is needed",
+      "complexity": "low per CVSS, but the attacker must place a DLL in a directory the victim opens a file from",
+      "ai_factor": "None. No source attributes discovery or weaponization to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install MS16-070 (KB3163610 and the per-product KBs) on Visio and Visio Viewer installations. Microsoft lists no workaround.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "Patching depends on knowing where Visio and Visio Viewer are installed, which standard Office inventories can miss."
+      },
+      "detection": {
+        "what_would_have_worked": "Endpoint telemetry for Visio or Office processes loading msoutls.dll from a path other than the system location.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Image-load telemetry is available only where the endpoint tool collects module load events."
+      },
+      "response": {
+        "what_would_have_worked": "Identify the DLL and its source directory, isolate the host, and review what the loaded DLL executed.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "No public indicators exist for real-world payloads, so response relies on local telemetry."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A remediation count based on core Office applications can miss Visio and Visio Viewer."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Secondary desktop products such as Visio are often missing from inventories."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No outcome addresses DLL search order for desktop products."
+      },
+      "AU-Essential-8-App-Hardening": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Application hardening does not control DLL loading by Visio."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A local-access flaw in a secondary product ranks low in routine prioritization."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2016-3235 was rated Important and not exploited at release in June 2016, and CISA lists it in KEV on 2021-11-03, so severity at release does not predict later exploitation.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "NIS2-Art21-patch-management"
+        ]
+      }
+    ]
+  },
+  "CVE-2016-3643": {
+    "name": "SolarWinds Virtualization Manager Privilege Escalation Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "The appliance's sudo configuration lets any local user run commands as root. An attacker who already has a shell on the Virtualization Manager appliance uses sudo to gain root privileges.",
+      "privileges_required": "low; a local operating system shell on the appliance (PR:L)",
+      "complexity": "low; the NVD description demonstrates it with a single sudo command",
+      "ai_factor": "None. No source attributes discovery or exploitation to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the SolarWinds hotfix or the release that carries the fix, and restrict shell access to the appliance to administrators.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "The sources do not give the hotfix build number, so operators cannot confirm from public text that a given appliance is fixed."
+      },
+      "detection": {
+        "what_would_have_worked": "Authentication log review for sudo use by accounts that are not appliance administrators, and alerts on new shell sessions on the appliance.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Management appliances often do not forward logs to a SIEM."
+      },
+      "response": {
+        "what_would_have_worked": "Treat the appliance as compromised after unexpected root activity, rotate credentials stored on the appliance, and rebuild from a fixed image.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Root on an appliance exposes any credentials and data stored on it."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-6": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Least privilege audits of locally created accounts do not cover privilege granted by a vendor appliance image."
+      },
+      "NIS2-Art21-vulnerability-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Virtual appliances are vendor-managed and their sudo policy is outside normal scanning scope."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Hardening outcomes are often not assessed for management appliances."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A hotfix for an appliance can be absent from application patch reports."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A configuration weakness does not appear in a patch inventory."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2016-3643 was fixed by a vendor hotfix in June 2016 and CISA lists it in KEV on 2021-11-03, which shows appliances that never received the hotfix.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2016-7255": {
+    "name": "Microsoft Win32k Privilege Escalation Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "A locally executed application sends crafted requests to the Win32k kernel-mode driver, which mishandles objects in memory, and runs code in kernel mode. Google describes the flaw as a kernel privilege escalation used as a sandbox escape, so it is the second stage after a browser or document exploit.",
+      "privileges_required": "low: the attacker must already run code as a local user",
+      "complexity": "low: AC:L, no race or special configuration is described; a public exploit exists for 64-bit Windows 7, 8, 8.1 and pre-Anniversary-Update Windows 10",
+      "ai_factor": "None. The report credits Trend Micro and Google's Threat Analysis Group, and no source attributes the discovery or the exploit to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install the MS16-135 update for the host's release (KB3198234, KB3197867/3197868, KB3197873/3197874, KB3197876/3197877, KB3198585, KB3198586 or KB3200970). Moving Windows 10 to the 1607 Anniversary Update also blocks the in-the-wild exploit class, per Microsoft.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "Patching works after 2016-11-08, but Google's 2016-10-31 post shows exploitation was active with no fix available, so patch-cycle controls could not prevent exposure during that window."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on a sandboxed or low-integrity process (a browser renderer, an Office child) that is followed by a SYSTEM-level process or token without a logon event.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Few endpoint baselines record integrity-level transitions, and the successful exploit leaves no vendor-published artifact, so detection depends on EDR behavior rules."
+      },
+      "response": {
+        "what_would_have_worked": "Treat any host where a sandboxed process gained SYSTEM as fully compromised: rotate credentials held in memory, review persistence, and reimage if the exploit stage cannot be bounded.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Because the flaw is the second stage of a chain, response must find the first-stage browser or document compromise as well, which the privilege escalation event alone does not identify."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Remediation periods start at vendor fix availability; this flaw was exploited and public before the 2016-11-08 fix, so SI-2 leaves the pre-patch window unaddressed."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patching measures define process, not speed, and offer nothing for an exploited kernel flaw with no fix; each affected Windows release also needed its own KB."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Hardening cannot remove the Win32k attack surface on the affected releases; the update and the Windows 10 1607 platform change were the only remedies."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Time windows run from update release and exclude operating systems outside vendor support, so exploitation before the update and unsupported hosts both fall outside the control."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The control accepts evaluation plus a scheduled patch cycle and does not require an interim measure for a kernel flaw with confirmed exploitation and no vendor fix."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2016-7255 was exploited and publicly disclosed on 2016-10-31 with no fix, patched on 2016-11-08 across ten KB packages for seven Windows lines, and added to KEV on 2021-11-03; a KEV-triggered deadline compresses deployment of the per-release updates that a routine cycle spreads over weeks.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
+  },
+  "CVE-2016-9563": {
+    "name": "SAP NetWeaver XML External Entity (XXE) Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "The bpemuwlconn servlet in the BC-BMT-BPM-DSK component of SAP NetWeaver AS Java parses XML from an authenticated request without disabling external entities. A request that declares an external entity makes the server read local files or contact an attacker-chosen host, which ERPScan lists as enabling file reads and denial of service.",
+      "privileges_required": "low: PR:L, any authenticated user able to reach the servlet",
+      "complexity": "low per NVD (AC:L); ERPScan scored attack complexity high",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Implement SAP Security Note 2296909 on every system running the affected BPM portal content, and restrict network access to the Java portal to the users who need it.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "The note works when implemented, but it is a per-component correction that version-based scans do not detect, and SAP's note text is not public."
+      },
+      "detection": {
+        "what_would_have_worked": "Search Java server access logs for POST requests to /sap.com~tc~bpem~him~uwlconn~provider~web/bpemuwlconn and inspect bodies for DOCTYPE and ENTITY declarations; alert on outbound connections from the SAP server to unexpected hosts.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Default access logs record the URI but not the request body, so entity declarations are visible only with a web application firewall or full request logging."
+      },
+      "response": {
+        "what_would_have_worked": "Implement the note, then review which authenticated accounts called the servlet, rotate credentials and secrets stored in files the Java stack could read, and review outbound connection logs for connections to external hosts.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The impact depends on which files the Java process can read, so response must enumerate secrets on the host and not only the vulnerable servlet."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The XML parser belongs to vendor portal content, so the only remedy is the vendor correction; the operator has no input-validation setting for the component."
+      },
+      "NIS2-Art21-vulnerability-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A process that tracks SAP patch day does not show whether Note 2296909, published in 2016, was implemented on a given system."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The attack needs only a low-privilege portal account, and network-level hardening does not constrain XML submitted by a legitimate portal user."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Back-end SAP Java stacks are often outside the assessed application scope, and CISA added the flaw to KEV in 2021, five years after the note."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "SAP corrections are per-note, so a version-based scan can report compliant while Note 2296909 is missing."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2016-9563 has a public advisory with a demonstration request, a SAP note dating from 2016 and a KEV listing on 2021-11-03; a KEV-triggered deadline that requires a note-level inventory of implemented SAP Security Notes covers the gap that version scans leave.",
+        "gap_closes": [
+          "NIS2-Art21-vulnerability-management",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2017-0143": {
+    "name": "Microsoft Windows Server Message Block (SMBv1) Remote Code Execution Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "unknown",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "The SMBv1 server mishandles specially crafted messages and executes attacker code on the server. Microsoft states that in most situations an unauthenticated attacker can send the messages. A public Metasploit module exists, and the same SMB exploit family was used by the WannaCry ransomware to spread between hosts.",
+      "privileges_required": "none in most situations per Microsoft; the NVD vector records PR:L",
+      "complexity": "low: AC:L; a public exploit module exists for the SMBv1 flaw, and its description warns the exploit may crash the target",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install the MS17-010 update for the release (KB4012598, KB4012212/4012215, KB4012213/4012216, KB4012214/4012217, KB4012606, KB4013198 or KB4013429). Where patching is delayed, disable SMBv1 (KB2696547) and block TCP 445, TCP 139 and UDP 137-138 at network boundaries.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "Patching and disabling SMBv1 both work, but a patch-compliance report does not show whether SMBv1 is still enabled, and perimeter blocking does not stop spread from an internal host."
+      },
+      "detection": {
+        "what_would_have_worked": "Monitor for SMBv1 negotiation in SMB logs, a new service named mssecsvc2.0, the file C:\\WINDOWS\\tasksche.exe and the three WannaCry mutexes, and alert on one host opening TCP 445 connections to many internal addresses.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The listed service, file and mutex indicators identify WannaCry only; an attacker using the same exploit with different malware needs the SMBv1 and connection-pattern detections."
+      },
+      "response": {
+        "what_would_have_worked": "Isolate hosts showing the indicators, block SMB between segments, disable SMBv1 and apply the update. Restore encrypted data from backups that were not reachable over SMB.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Blocking SMB can interrupt file and device sharing, as CISA warns, so response plans need to state which shares are restored first."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Perimeter blocking of TCP 445 does not contain spread from an internal host, and flat internal segments let one compromise reach every unpatched server."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patching is required but retiring SMBv1 is not; the feature can stay enabled on a patched host and the bulletin treats disabling it as a workaround."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Secure-configuration outcomes can be marked achieved on patch status while the legacy SMBv1 feature remains enabled."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Only supported releases are in scope; Windows XP, Windows 8 and Windows Server 2003 are not in the MS17-010 bulletin, and CISA states patches for them were released on 2017-05-13, so those hosts sat outside the control."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The control does not require disabling a protocol with remote-exploitation history, and a scan can report the patch present while SMBv1 stays reachable."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2017-0143 was patched on 2017-03-14 across ten KB packages for seven Windows lines and is the SMB flaw that WannaCry exploits per CISA's 2017-05-12 alert; a KEV-triggered deadline with an explicit SMBv1-disable fallback shortens the period in which reachable SMBv1 hosts stay unmitigated.",
+        "gap_closes": [
+          "NIST-800-53-SC-7",
+          "NIS2-Art21-patch-management"
+        ]
+      }
+    ]
+  },
+  "CVE-2017-0199": {
+    "name": "Microsoft Office and WordPad Remote Code Execution Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "A crafted Word or RTF document contains an OLE link object. When the document is opened or previewed, Word requests content from a remote server, Windows maps the returned content type to the HTA handler and runs it through mshta.exe, which executes script in the user's context. Microsoft states exploitation requires a user to open or preview the file.",
+      "privileges_required": "none; the attacker needs the target to open or preview a document, typically delivered by email",
+      "complexity": "low: AC:L; a public Metasploit module generates the document",
+      "ai_factor": "None. FireEye detected the in-the-wild documents and no source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the April 2017 Office and Windows updates for the host's release (KB3141529, KB3141538, KB3178710, KB3178703, KB4015549, KB4015546, KB4014793, KB4015551, KB4015548), including the Windows update that enables the API the Office fix depends on. Block Office applications from launching mshta.exe and other script hosts.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "The patch works once both the Office and Windows parts are installed; before 2017-04-11 only Office child-process restrictions and email filtering stood between a user and the document."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on winword.exe followed by mshta.exe via svchost, winword.exe followed by taskkill.exe, deletion of Word Resiliency registry keys, files named template*.hta in the Temporary Internet Files directory, and outbound HTTP from winword.exe to an HTA, VBS or EXE.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The chain uses signed Windows binaries, so detection depends on parent-child process and file-write telemetry; Mandiant states its email and network products detected the documents."
+      },
+      "response": {
+        "what_would_have_worked": "Isolate hosts showing the chain, collect the cached HTA and dropped files, remove Startup-folder and maintenance.vbs persistence, block the staging addresses and reset credentials entered on the host.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The payload families named by Mandiant (LATENTBOT, WingBird) are modular and can load further stages, so cleaning the dropped files alone is not sufficient evidence of recovery."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A document whose only active content is an OLE link to remote HTA content has no macro or shellcode for signature scanning to match, and Mandiant states the exploit bypassed most mitigations before the patch."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The fix needs both Office and Windows updates across Office 2007 to 2016, and exploitation preceded the 2017-04-11 patch."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No B4 outcome names Office child-process restrictions, so a rating of achieved does not show that Word cannot start a script host."
+      },
+      "AU-Essential-8-App-Hardening": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Hardening depends on Protected View and an Office-to-script-host child-process rule that the baseline does not guarantee, and preview alone triggers the flaw."
+      },
+      "ISO-27001-2022-A.8.7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The chain uses legitimate Windows binaries until the second-stage payload is written, and A.8.7 does not require behavioral rules on Office child processes."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2017-0199 was exploited before its 2017-04-11 patch, remained in use for years (CISA AA20-133A ranks it second of 2016 to 2019), and needs two coordinated updates; a KEV-triggered deadline that requires the Office and Windows parts together closes a half-patched state.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management",
+          "AU-Essential-8-App-Hardening"
+        ]
+      }
+    ]
+  },
+  "CVE-2017-16651": {
+    "name": "Roundcube Webmail File Disclosure Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "unknown",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An authenticated Roundcube session sends a settings request to the upload-display action with a crafted _from value. Insufficient input validation in conjunction with the file-based attachment plugins lets the request return arbitrary files from the web server's filesystem, including Roundcube configuration files that hold database and LDAP credentials and the des_key.",
+      "privileges_required": "low: a valid username and password and an active session",
+      "complexity": "low: AC:L; a public Python implementation exists",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to Roundcube 1.3.3, 1.2.7 or 1.1.10 or later, restrict webmail to users who need it, and give the database and LDAP accounts in the configuration only the privileges Roundcube needs.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "The upgrade removes the flaw, but it was a zero-day exploited at announcement, so configuration secrets may already have been read before any patch could be applied."
+      },
+      "detection": {
+        "what_would_have_worked": "Search web server access logs for ?_task=settings&_action=upload-display&_from=timezone and correlate the account in each matching session; the Roundcube team recommends exactly this check.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The log search works only where access logs with query strings were retained since the exploitation began, and a retention shorter than the exposure leaves no evidence."
+      },
+      "response": {
+        "what_would_have_worked": "Upgrade, change credentials for external services (database, LDAP) and the des_key option, and review the accounts that issued matching requests for compromise.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Credential rotation covers only secrets in the configuration files; any other file the web server account could read is also exposed, so response must enumerate that account's readable files."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-6": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The web server account reads the configuration files by design, and an ordinary webmail session turns that access into a disclosure of its secrets."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patching does not revoke secrets already read; the vendor also directs credential and des_key rotation, which patch reports do not capture."
+      },
+      "UK-CAF-B2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A successful login satisfies the control while the session reads files the account should not reach; no B2 outcome examines post-authentication requests."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The flaw was a zero-day exploited at announcement, before any fixed release existed."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The control does not require rotating secrets that an exploited flaw could have disclosed, so credentials read before patching stay valid."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2017-16651 was a zero-day used to read Roundcube configuration files, fixed in three stable lines on 2017-11-08 and listed in KEV on 2021-11-03; a KEV-triggered deadline that includes credential rotation for secrets stored in the application's files closes the gap the patch alone leaves.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2017-7269": {
+    "name": "Microsoft Windows Server Buffer Overflow Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "A remote attacker sends a WebDAV PROPFIND request whose If header begins with \"<http://\" and is far longer than a lock token. The ScStoragePathFromUrl function copies it into a fixed buffer and the attacker gains code execution in the IIS worker process.",
+      "privileges_required": "none; the request is unauthenticated and needs no user interaction",
+      "complexity": "low; public exploit code and standalone scripts exist. The only precondition is WebDAV enabled on an IIS 6.0 site of a host that has not installed KB3197835.",
+      "ai_factor": "None. The public exploit was written by two named researchers in 2017 and no source credits AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install Microsoft security update KB3197835, disable WebDAV on IIS 6.0, or retire the Windows Server 2003 R2 host and keep it off untrusted networks.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, due 2022-05-03)",
+        "adequacy": "BOD 22-01 can be met by applying KB3197835 on hosts that still run Server 2003. It does not address hosts outside update tracking, which stay exploitable."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on PROPFIND requests with an oversized If header and on w3wp.exe access violations at httpext!ScStoragePathFromUrl, and inventory Server 2003 hosts with WebDAV enabled and without KB3197835.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Server 2003 hosts rarely forward logs to a central collector, and a crash of the worker process is easily read as an application fault rather than an attack."
+      },
+      "response": {
+        "what_would_have_worked": "Treat a w3wp.exe access violation with a matching oversized PROPFIND request as a compromise indicator, isolate the host, and rebuild on a supported operating system.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The host is already end-of-life, so response plans seldom name it."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "SI-2 is written around installing vendor fixes. Microsoft released KB3197835 for an operating system past extended support, and a host outside update tracking can pass a flaw-remediation review while exploitable."
+      },
+      "NIS2-Art21-vulnerability-handling": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The article does not require an entity to find end-of-life hosts that missed an out-of-support update, so a documented legacy exception can still meet the wording."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "B4 expects unsupported systems to be managed but sets no exposure threshold, which lets an internet-reachable Server 2003 host without KB3197835 stay in service as a recorded risk."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patch timeframes track routinely published patches, so an end-of-life host that received only an out-of-support update can report no overdue patch."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A.8.8 allows risk acceptance of a known-exploited remote code execution flaw on an end-of-life host that never installed KB3197835."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2017-7269 affects Windows Server 2003 R2, which was past extended support when Microsoft released KB3197835 on June 13, 2017. Hosts that never installed it need WebDAV disabled, replacement, or the third-party 0patch micropatch, and a deadline written around routine vendor patches does not require an inventory of such hosts.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "NIST-800-53-SI-2"
+        ]
+      }
+    ]
+  },
+  "CVE-2017-8759": {
+    "name": "Microsoft .NET Framework Remote Code Execution Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "A victim opens a malicious RTF document containing an embedded SOAP moniker. The moniker fetches an attacker-controlled WSDL definition, the .NET parser writes a source file from it without rejecting CRLF sequences, csc.exe compiles it and the resulting DLL runs attacker code inside the Office process.",
+      "privileges_required": "none; the user must open the document (UI:R) and the code runs with that user's rights",
+      "complexity": "low; no memory corruption or race is involved, and public sample documents exist",
+      "ai_factor": "None. FireEye found the flaw in a malicious document used in the wild and no source credits AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install the September 2017 .NET Framework update for every installed .NET version on each Windows line, and block RTF attachments or open them in Protected View or a sandbox.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, due 2022-05-03)",
+        "adequacy": "Patching removes the flaw, and hosts missing the package for any installed .NET version stay exploitable."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on Office processes starting csc.exe or mshta.exe, on .cs, .dll and .pdb files created and then deleted in the working directory, and on the OfficeUpdte-KB file name under %appdata%.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Process-creation logging with command lines is needed to see the csc.exe and mshta.exe children, and many estates did not collect it in 2017."
+      },
+      "response": {
+        "what_would_have_worked": "Treat a host that ran the lure as compromised by spyware: collect the payload, the HTA and the mutex WininetStartupMutex0, then reimage and reset credentials used on the host.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "FINSPY is a lawful-intercept product sold to governments, so response teams rarely hold prior playbooks for it."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The failing input check sits inside the vendor runtime, so SI-10 is satisfied by inheritance while the flaw is exploitable."
+      },
+      "NIS2-Art21-vulnerability-handling": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Art. 21 patch handling does not require an interim restriction on untrusted documents while an update is pending."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": ".NET Framework is a shared dependency that inventories often attribute to individual applications, so B4 can be met without a per-host runtime check."
+      },
+      "AU-Essential-8-App-Hardening": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The hardening measures do not cover RTF documents with embedded monikers, so the lure runs on a hardened host."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The control does not require confirming that the matching KB package exists for each installed .NET version."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2017-8759 was fixed in September 2017 and listed in KEV on 2021-11-03 with a 2022-05-03 due date. A 4-hour mitigation deadline applied to every installed .NET version closes the window for hosts that missed the package for one version.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8",
+          "AU-Essential-8-App-Hardening"
+        ]
+      }
+    ]
+  },
+  "CVE-2017-9248": {
+    "name": "Progress Telerik UI for ASP.NET AJAX and Sitefinity Cryptographic Weakness Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "Telerik.Web.UI.dll protects Telerik.Web.UI.DialogParametersEncryptionKey and the MachineKey weakly. An unauthenticated attacker sends many requests to Telerik.Web.UI.DialogHandler.aspx to recover the key, then uses the key to reach the Document Manager dialog and upload, download, delete or modify files, which in practice leads to webshells and code execution.",
+      "privileges_required": "none; the attacker needs only network reach to the DialogHandler",
+      "complexity": "low; public tooling automates the key recovery",
+      "ai_factor": "None. Two outside researchers reported the flaw in 2017 and the public tooling is conventional scripts."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to R2 2017 SP1 (2017.2.621) or, as Telerik now recommends, R1 2020 (2020.1.114) or later; generate new DialogParametersEncryptionKey and MachineKey values afterwards; block the Dialog Handler where the dialogs are not used.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, due 2022-05-03)",
+        "adequacy": "Patching without rekeying leaves a recovered key usable, and CISA AA23-074A reports an agency server running Telerik.Web.UI.dll build 2009.3.1.1208.35, found in the .NET Framework directory."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on repeated DialogHandler requests with changing dp values from one address, on new .aspx or .php files in upload folders, and on new App_Web_*.dll files in the ASP.NET temporary directory.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Seeing the brute-force burst needs IIS request logs retained with query strings."
+      },
+      "response": {
+        "what_would_have_worked": "Remove the webshells, rotate the MachineKey and DialogParametersEncryptionKey, treat ViewState signed with the old MachineKey as untrusted, and review other applications on the host.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Teams that only delete the webshell leave the recovered key valid, so the same attacker can return."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SC-28": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The control does not require rekeying after a disclosure flaw is fixed, so protected values remain exposed by a previously recovered key."
+      },
+      "NIS2-Art21-supply-chain": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Bundled third-party DLLs inside a web application are not listed in supplier registers, so the exposure is invisible to supply chain reviews."
+      },
+      "UK-CAF-B2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Application authentication does not bound the DialogHandler, so access control reviews can pass while the advisories describe arbitrary file upload and download through the handler."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patch measures cover known applications; an embedded Telerik DLL falls outside the inventory and rekeying is not a patch step."
+      },
+      "ISO-27001-2022-A.8.24": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Key management rules do not require rotation after a key disclosure flaw is fixed."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2017-9248 was fixed in 2017 and still exploited on a federal agency server in April 2023 (CISA AA23-074A), on a server running Telerik.Web.UI.dll build 2009.3.1.1208.35. A KEV-triggered mitigation deadline that also requires rotating the MachineKey and DialogParametersEncryptionKey after the upgrade closes the case where patching leaves a recovered key valid.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.24"
+        ]
+      }
+    ]
+  },
+  "CVE-2018-0798": {
+    "name": "Microsoft Office Memory Corruption Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "A user opens a crafted RTF or Office document with an embedded Equation Editor object. Equation Editor mishandles an object in memory, giving the attacker code execution as the current user. If that user is an administrator the attacker can take control of the system.",
+      "privileges_required": "none; the user must open the file (UI:R)",
+      "complexity": "low once a weaponizer exists; SecurityWeek reports Anomali research that Chinese threat groups added this flaw to a shared RTF weaponizer.",
+      "ai_factor": "None. No source credits AI tooling for discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install the January 2018 Office updates for every installed Office line, and block or disable Equation Editor where equation editing is not needed.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, due 2022-05-03)",
+        "adequacy": "Patching works, but the three Equation Editor CVEs are separate fixes, and patching for one does not confirm the other two."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on .wll files created in the Word startup folder after an RTF is opened.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "File-creation logging on the Word startup folder is needed to see the .wll file, and few estates collect it."
+      },
+      "response": {
+        "what_would_have_worked": "Treat the user's host as compromised if a mail-delivered RTF document was opened and a .wll file appeared in the Word startup folder, retrieve the dropped payload, and reset credentials used on that host.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Payloads differ by threat group, so a single playbook rarely fits."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Signature-based malicious code protection does not stop an exploit document that looks like a normal RTF until Equation Editor runs."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A patch process keyed on CVE-2017-11882 does not confirm the separate CVE-2018-0798 fix."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "B4 does not require disabling a legacy component most users never need."
+      },
+      "AU-Essential-8-App-Hardening": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Macro restrictions do not cover a macro-free RTF with an embedded equation object."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The control does not require verifying each Equation Editor CVE individually."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2018-0798 was fixed in January 2018 and listed in KEV on 2021-11-03, and CISA's note records that it is chained with CVE-2018-0802, so a deadline applied to one CVE at a time leaves the sibling Equation Editor flaw open. A KEV deadline that covers every listed Equation Editor CVE or removes the component closes that gap.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2018-0802": {
+    "name": "Microsoft Office Memory Corruption Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "A user opens a crafted document with an embedded Equation Editor object. EQNEDT32.EXE overflows a stack buffer while parsing the SIZE record, as Check Point Research describes, which gives the attacker code execution as the current user.",
+      "privileges_required": "none; the user must open the file (UI:R) and the code runs with that user's rights",
+      "complexity": "low; the user only has to open the file, and NVD lists public exploit references",
+      "ai_factor": "None. No source credits AI tooling for discovery or weaponization."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install the January 2018 Office update for every installed Office line, and disable or remove Equation Editor on hosts where it is not needed.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, due 2022-05-03)",
+        "adequacy": "Patching works, but each Equation Editor CVE needs its own confirmation, and CISA listed the flaw in KEV on 2021-11-03, nearly four years after the January 2018 update."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on EQNEDT32.EXE execution in process-creation logs and apply the Check Point IPS signatures for CVE-2018-0802 and the Equation ASLR bypass at the network edge.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Estates without process-creation logging or IPS coverage on mail traffic see nothing before the payload runs."
+      },
+      "response": {
+        "what_would_have_worked": "Isolate the host where EQNEDT32.EXE ran from a mail-delivered document, recover the dropped payload, and reset credentials used on that host.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "CISA lists known ransomware campaign use for this CVE, so response should cover the wider network."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-CM-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Least functionality does not name Equation Editor, so baselines commonly leave the component enabled."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A process that closed CVE-2017-11882 does not confirm the separate CVE-2018-0802 fix."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "B4 does not require disabling a legacy component where equation editing is not a business function."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Time-to-patch is measured per product, so a host can miss the Equation Editor package and still be reported as compliant."
+      },
+      "ISO-27001-2022-A.8.7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Malware protection does not require blocking the component that processes a crafted RTF."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CISA lists known ransomware campaign use for CVE-2018-0802, and the flaw was listed in KEV on 2021-11-03, nearly four years after the January 2018 update. A 4-hour KEV deadline that includes disabling Equation Editor compresses the remaining window and removes the component for sibling CVEs as well.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "NIST-800-53-CM-7"
+        ]
+      }
+    ]
+  },
+  "CVE-2018-14558": {
+    "name": "Tenda AC7, AC9, and AC10 Routers Command Injection Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "unknown",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "A crafted request to goform/setUsbUnload on the router's web interface reaches the formsetUsbUnload function, which passes request input to dosystemCmd. The router runs the attacker's operating system commands.",
+      "privileges_required": "none per the NVD vector (PR:N)",
+      "complexity": "low; a single HTTP request to a fixed path",
+      "ai_factor": "None. No source credits AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Do not expose the router's web management interface to the internet, restrict it to a management host on the LAN, and replace routers that have no fixed firmware available.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, due 2022-05-03)",
+        "adequacy": "The directive says to apply vendor updates, and NVD records no fixed firmware version, so the directive gives no firmware target for these devices."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on any HTTP request to /goform/setUsbUnload at the perimeter or in router logs, and on unexpected outbound connections from the router.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Consumer routers rarely log HTTP requests or forward them to a collector, so the request is only visible at an upstream proxy or IDS."
+      },
+      "response": {
+        "what_would_have_worked": "Treat a router that received the request as compromised: factory reset it, replace it where no fixed firmware is available, and change credentials used through it.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "A factory reset does not change the vulnerable firmware, so the request can be repeated against the reset router."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The failing input check is in vendor firmware the operator cannot change, and NVD records no fixed version."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Small-office routers are frequently missing from the asset register, so boundary devices fall outside the measure."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "B4 expects maintained devices but does not tell the operator to retire a router with no fixed firmware."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A device with no fixed version recorded has no measurable patch timeline."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The control does not require choosing between removing management exposure and replacing the device."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2018-14558 affects consumer routers with no fixed firmware version in NVD, and CISA's required action is only to apply vendor updates. A KEV deadline that accepts compensating controls such as closing the management interface or replacing the device gives these hosts an action they can take.",
+        "gap_closes": [
+          "AU-Essential-8-Patch",
+          "ISO-27001-2022-A.8.8"
         ]
       }
     ]
