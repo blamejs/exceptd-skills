@@ -146794,7 +146794,28 @@
         "gap": "Does not require identifying which virtual servers carry the vulnerable APM plus OAuth combination."
       }
     },
-    "new_control_requirements": []
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-030",
+        "name": "PERIMETER-DEVICE-ZERODAY-SLA-TIER",
+        "description": "Compliance frameworks must define a distinct patch SLA tier for pre-auth RCE on perimeter-trust-boundary devices (firewalls, VPN concentrators, WAFs, edge load-balancers). Tier requirement: vendor-mitigation deployed within 4 hours of KEV listing OR isolation of the vulnerable interface; standard 14/30-day SLAs do not apply because the device IS the trust boundary.",
+        "evidence": "F5 BIG-IP APM is the perimeter device here, and the heap-based buffer overflow in the data plane gives an unauthenticated remote attacker code execution through crafted traffic to a virtual server with an APM access policy and an OAuth authorization server profile. Exploitation is confirmed and CISA listed the CVE in KEV on 2026-09-22. A distinct perimeter tier with a 4-hour mitigation window or interface isolation replaces the standard patch cycle, which is the wrong clock for a flaw on the trust boundary itself.",
+        "gap_closes": [
+          "NIS2-Art21-vulnerability-management",
+          "UK-CAF-B4",
+          "AU-Essential-8-Patch"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CISA lists CVE-2026-94127 in KEV with a due date of 2026-09-25, three days after the 2026-09-22 listing, and exploitation is confirmed. The KEV-keyed response clock starts at the listing and accepts a documented compensating control such as the F5 iRule when a hotfix cannot be applied at once.",
+        "gap_closes": [
+          "NIST-800-53-SI-2"
+        ]
+      }
+    ]
   },
   "CVE-2026-93616": {
     "name": "Check Point Multiple Products Path Traversal Vulnerability",
@@ -146856,7 +146877,18 @@
         "gap": "Does not require inventory of which Check Point server roles run on each host."
       }
     },
-    "new_control_requirements": []
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CISA lists CVE-2026-93616 in KEV (2026-09-22, due 2026-09-25) and exploitation is confirmed. The fix ships as the R82.20 Security Hotfix and in Jumbo Hotfix Accumulators, so a KEV-keyed deadline that accepts the TCP/19009 restriction as a compensating control closes the exposure window for management servers that are not treated as internet-facing.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
   },
   "CVE-2026-5430": {
     "name": "WSO2 Multiple Products Path Traversal Vulnerability",
@@ -146918,7 +146950,18 @@
         "gap": "Single-score triage misses the 10.0 versus 9.8 deployment split."
       }
     },
-    "new_control_requirements": []
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "WSO2 API Manager, API Control Plane, Traffic Manager and Universal Gateway accept a JWT signed with an algorithm the deployment does not support, which gives unauthorized access including administrative accounts and full account takeover. Exploitation is confirmed, CISA listed the CVE in KEV on 2026-09-24, and the advisory lists no interim workaround. A KEV-keyed response deadline forces the update (for example 4.6.0 U2 21 or the matching level for each product) onto the exposed gateways instead of leaving an available fix unapplied.",
+        "gap_closes": [
+          "NIS2-Art21-vulnerability-management",
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
   },
   "CVE-2026-67279": {
     "name": "Mikrotik RouterOS Improper Enforcement of Behavioral Workflow Vulnerability",
@@ -146980,7 +147023,28 @@
         "gap": "An incomplete fix for a sibling CVE leaves patched devices exposed."
       }
     },
-    "new_control_requirements": []
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-030",
+        "name": "PERIMETER-DEVICE-ZERODAY-SLA-TIER",
+        "description": "Compliance frameworks must define a distinct patch SLA tier for pre-auth RCE on perimeter-trust-boundary devices (firewalls, VPN concentrators, WAFs, edge load-balancers). Tier requirement: vendor-mitigation deployed within 4 hours of KEV listing OR isolation of the vulnerable interface; standard 14/30-day SLAs do not apply because the device IS the trust boundary.",
+        "evidence": "MikroTik RouterOS lets an unauthenticated client request an SSH rekey and then open a session channel and send an exec request without authenticating, which creates or overwrites files in the managed file namespace. The vendor workarounds are to keep SSH and WebFig unreachable from untrusted networks, allow only trusted IP addresses and prefer a VPN. A perimeter tier that accepts isolating the vulnerable interface as the response covers these routers when an update (6.49.21, 7.23.4 or 7.24.2) cannot be applied at once.",
+        "gap_closes": [
+          "NIS2-Art21-vulnerability-management",
+          "UK-CAF-B4",
+          "AU-Essential-8-Patch"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-042",
+        "name": "INCOMPLETE-PATCH-SEQUENCE-SEVERITY-MULTIPLIER",
+        "description": "Vulnerability-management programs must apply a severity multiplier when a CVE is the Nth in an incomplete-patch sequence on the same primitive (third MOTW bypass, second AMSI bypass, etc.). Framework controls treating each CVE as discrete obscure the structural defect; the Nth CVE in a sequence implies that future bypasses on the same primitive are likely.",
+        "evidence": "MikroTik states that the incomplete fix in 7.24.2 and 7.23.4 applies only to the sibling CVE-2026-67278, while CVE-2026-67279 is fixed in the listed versions. Treating a CVE that follows an incomplete fix on the same code path with a higher severity prevents a router from being recorded as patched for one CVE while the sibling remains open. The CVE is chained with CVE-2026-86060 for full administrative access.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
   },
   "CVE-2026-76504": {
     "name": "Cisco Catalyst SD-WAN Manager Hex Encoding Vulnerability",
@@ -147042,7 +147106,26 @@
         "gap": "Cisco reports active exploitation, so an evaluation also has to look for prior abuse; checking the named log files is a separate step."
       }
     },
-    "new_control_requirements": []
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-038",
+        "name": "MITIGATION-ACTIVE-PATCH-PENDING-VERDICT-CLASS",
+        "description": "Compliance verdicts must distinguish three states: (a) binary patch deployed (vulnerability eliminated), (b) vendor-mitigation rule active, no binary patch (residual risk: any defect in the mitigation rule reopens the vulnerability), (c) no mitigation, no patch (full exposure). Audit reports must surface (b) as a distinct compensating-control state with an associated time-bound action item, not as a 'patched per SLA' outcome.",
+        "evidence": "Cisco added a Live Protect shield in advisory version 1.1 on 2026-10-02 that gives temporary, partial protection and may block legitimate users who log in with URI encoding. Upgrading to a fixed release (for example 20.12.8.2 or 20.15.6.1) is the only full remediation. A verdict class for a vendor mitigation that is active with no binary patch keeps a Manager running the shield from being reported as patched.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CISA lists CVE-2026-76504 in KEV (2026-09-30, due 2026-10-03) and Cisco PSIRT became aware of exploitation in September 2026, before the fixed releases were available for every train. Releases earlier than 20.9 have no fix in their train, so the KEV-keyed deadline has to accept removing internet reachability as the compensating control.",
+        "gap_closes": [
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
   },
   "CVE-2026-104286": {
     "name": "Fortinet FortiMail Path Traversal Vulnerability",
@@ -147104,7 +147187,17 @@
         "gap": "Vulnerability evaluation after publication does not cover a gateway attackers may already have written to."
       }
     },
-    "new_control_requirements": []
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "Pre-rehearsed IR runbook for any perimeter device that suffers a pre-auth RCE CVE in active exploitation MUST default to config-exfil + rebuild + credential rotation, not patch-in-place. Patch-in-place leaves attacker-installed implants intact.",
+        "evidence": "CISA lists CVE-2026-104286 in KEV (2026-10-01) with confirmed exploitation, and the logged artifacts include a root cron entry written through the traversal. A gateway that attackers may already have written to is not shown clean by a firmware update, so the runbook defaults to configuration export, rebuild and credential rotation.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
   },
   "CVE-2026-88779": {
     "name": "Citrix NetScaler Improper Restriction of Operations within the Bounds of a Memory Buffer Vulnerability",
@@ -147166,7 +147259,27 @@
         "gap": "Version-only vulnerability evaluation mis-sizes an exposure that depends on a configuration."
       }
     },
-    "new_control_requirements": []
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "An unauthenticated request class crashes Citrix NetScaler ADC or Gateway configured as a SAML service provider or identity provider, and repeated triggering leaves the service unavailable. CISA lists CVE-2026-88779 in KEV (2026-10-04, due 2026-10-07) and exploitation is confirmed. Citrix lists no workaround, so the KEV-keyed deadline pushes the fixed builds (14.1-73.41, 13.1-64.28 and the FIPS and NDcPP builds) to appliances configured with samlAction or samlIdPProfile first.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "AU-Essential-8-Patch"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-038",
+        "name": "MITIGATION-ACTIVE-PATCH-PENDING-VERDICT-CLASS",
+        "description": "Compliance verdicts must distinguish three states: (a) binary patch deployed (vulnerability eliminated), (b) vendor-mitigation rule active, no binary patch (residual risk: any defect in the mitigation rule reopens the vulnerability), (c) no mitigation, no patch (full exposure). Audit reports must surface (b) as a distinct compensating-control state with an associated time-bound action item, not as a 'patched per SLA' outcome.",
+        "evidence": "Press reports of Citrix's blog say Citrix observed attacks before the fix, and Help Net Security reports that Citrix Global Deny List signatures can block known malicious IP addresses while an upgrade is planned. That is partial protection and not a fix. A distinct verdict for an active mitigation with the patch pending keeps appliances relying on the Global Deny List from being reported as patched.",
+        "gap_closes": [
+          "NIST-800-53-SI-2"
+        ]
+      }
+    ]
   },
   "CVE-2026-76519": {
     "name": "Cisco Secure Email Gateway Relative Path Traversal Vulnerability",
@@ -147228,7 +147341,28 @@
         "gap": "Gives no assurance that a root-compromised appliance is clean."
       }
     },
-    "new_control_requirements": []
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-030",
+        "name": "PERIMETER-DEVICE-ZERODAY-SLA-TIER",
+        "description": "Compliance frameworks must define a distinct patch SLA tier for pre-auth RCE on perimeter-trust-boundary devices (firewalls, VPN concentrators, WAFs, edge load-balancers). Tier requirement: vendor-mitigation deployed within 4 hours of KEV listing OR isolation of the vulnerable interface; standard 14/30-day SLAs do not apply because the device IS the trust boundary.",
+        "evidence": "Cisco Secure Email Gateway with File Reputation (AMP) enabled and assigned to a mail policy accepts a crafted attachment from an unauthenticated remote sender, which writes arbitrary files and runs commands as root. Cisco lists no workaround, and the fix is Content Scanner Tools 25.3.0.5525 or later, AsyncOS 15.5.5-014 or 16.5.0-780. The mail gateway is the perimeter device, so a tier that requires the mitigation within 4 hours of the KEV listing replaces the standard patch cycle.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-patch-management",
+          "AU-Essential-8-Patch"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "Pre-rehearsed IR runbook for any perimeter device that suffers a pre-auth RCE CVE in active exploitation MUST default to config-exfil + rebuild + credential rotation, not patch-in-place. Patch-in-place leaves attacker-installed implants intact.",
+        "evidence": "CISA lists CVE-2026-76519 in KEV (2026-10-14) and exploitation was known when the fix was published. A gateway that ran attacker commands as root is not shown clean by the Content Scanner Tools update, so the runbook defaults to configuration export, rebuild and credential rotation instead of patching in place.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
   },
   "CVE-2026-0322": {
     "name": "Palo Alto Networks PAN-OS Code Injection Vulnerability",
@@ -147290,7 +147424,17 @@
         "gap": "Does not require isolating the management plane from untrusted networks."
       }
     },
-    "new_control_requirements": []
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CISA lists CVE-2026-0322 in KEV (2026-10-14, due 2026-10-17) and exploitation is confirmed. Fixed builds differ per maintenance train (for example 11.2.16 and 12.2.4), so a KEV-keyed deadline that accepts the listed management-plane measures as compensating controls covers appliances that cannot reach their train's fixed build at once.",
+        "gap_closes": [
+          "NIS2-Art21-vulnerability-management"
+        ]
+      }
+    ]
   },
   "CVE-2025-61624": {
     "name": "Fortinet Multiple Products Path Traversal Vulnerability",
@@ -147352,7 +147496,17 @@
         "gap": "A medium score can lead to low prioritization of a known exploited flaw."
       }
     },
-    "new_control_requirements": []
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CISA lists CVE-2025-61624 in KEV (2026-10-16, due 2026-10-19) and exploitation is confirmed, while the flaw needs an admin profile with read-write permission and scores medium. A KEV-keyed response clock applies regardless of the score, which prevents the medium rating from placing a known exploited flaw in a low-priority queue.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
   },
   "CVE-2026-106931": {
     "name": "EG Secure Solutions SiteGuard Server Edition OS Command Injection Vulnerability",
@@ -147414,7 +147568,18 @@
         "gap": "A privileged security product is itself the attack surface."
       }
     },
-    "new_control_requirements": []
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CISA lists CVE-2026-106931 in KEV (2026-10-20, due 2026-10-23) and exploitation is confirmed. The vendor advises downloading diagnostic information from the web admin console before updating because updating may erase attack traces, so the response clock has to include that evidence step in its deployment of the patch.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
   },
   "CVE-2026-110936": {
     "name": "Siemens Software Center Uncontrolled Search Path Element Vulnerability",
@@ -147548,7 +147713,18 @@
         "gap": "Least-privilege role assignment does not limit a privilege escalation flaw."
       }
     },
-    "new_control_requirements": []
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CISA lists CVE-2026-114625 in KEV (2026-10-23, due 2026-10-26) and Arista states that the flaw is known to be actively exploited. A KEV-keyed deadline that accepts the Arista workarounds as compensating controls starts at the listing instead of after a fix exists.",
+        "gap_closes": [
+          "NIS2-Art21-vulnerability-management",
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
   },
   "CVE-2026-110447": {
     "name": "Collabora Online – Built-in CODE Server OS Command Injection Vulnerability",
@@ -147677,7 +147853,17 @@
         "gap": "Log configuration reviews do not reveal operations the host omits."
       }
     },
-    "new_control_requirements": []
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "VMware ESX does not log certain operations of a malicious administrator, so the flaw removes evidence and does not give access. CISA lists CVE-2026-41709 in KEV (2026-10-28, due 2026-11-11) and exploitation is confirmed, although the flaw carries a low CVSS score. A KEV-keyed deadline applies the fixed builds (for example ESXi80U3j-25429389) to the listed lines regardless of the score.",
+        "gap_closes": [
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
   },
   "CVE-2026-76418": {
     "name": "Cisco Secure Firewall ASA Software and Cisco Secure FTD Software Unchecked Return Value to NULL Pointer Dereference Vulnerability",
@@ -147739,6 +147925,16 @@
         "gap": "Inventory by version overstates exposure and cannot find the default tunnel group case."
       }
     },
-    "new_control_requirements": []
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CISA lists CVE-2026-76418 in KEV (2026-10-29, due 2026-11-01) and exploitation is confirmed. The KEV-keyed deadline covers the fixed ASA and FTD builds (for example ASA 9.20.4.50 and FTD 7.6.7) and accepts the configuration mitigation where the update cannot be applied at once.",
+        "gap_closes": [
+          "NIS2-Art21-availability"
+        ]
+      }
+    ]
   }
 }
