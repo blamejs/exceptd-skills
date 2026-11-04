@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.1.0",
-    "last_updated": "2026-10-27",
+    "last_updated": "2026-11-04",
     "last_threat_review": "2026-05-17",
     "purpose": "Zero-day learning loop output. Each entry maps a CVE to: attack vector, defense chain analysis, framework coverage, new control requirements generated, and exposure scoring. v1.1.0 (2026-05-15): every entry now carries ai_discovered_zeroday boolean + ai_discovery_source enum + ai_discovery_date + ai_assist_factor ladder, per AGENTS.md Hard Rule #7.",
     "note": "Never delete entries. Closed gaps are marked status: closed. History is data.",
@@ -17,7 +17,7 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "entry_count": 1765
+    "entry_count": 1781
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -146730,6 +146730,1209 @@
         "gap_closes": [
           "NIS2-Art21-vulnerability-management",
           "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-94127": {
+    "name": "F5 BIG-IP APM Heap-based Buffer Overflow Vulnerability",
+    "lesson_date": "2026-11-03",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "unknown",
+    "ai_discovery_date": "2026-09-22",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "Specially crafted traffic sent to a BIG-IP virtual server that has an APM access policy and an OAuth authorization server profile triggers a heap-based buffer overflow in the data plane and gives remote code execution. Failed UserInfo requests with an invalid access token precede the abuse in the logs F5 describes.",
+      "privileges_required": "None",
+      "complexity": "Low",
+      "ai_factor": "No source attributes discovery or weaponization to AI."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Applying the engineering hotfix for the branch, or deploying F5's iRule on the affected virtual server until patched. Not publishing the OAuth authorization server profile to untrusted networks would have reduced exposure.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST-800-53-SI-2, NIS2 Art. 21, AU Essential Eight patching",
+        "adequacy": "F5 states the flaw is actively exploited. Patch-timeline controls do not require the interim iRule, which F5 provides only through a support case."
+      },
+      "detection": {
+        "what_would_have_worked": "Alerting on 10 or more invalid_token UserInfo failures from one IP in /var/log/apm, trending the total_failed OAuth counter, and watching /var/log/audit and TMM SIGABRT events.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST-800-53-SI-4, ISO-27001-2022-A.8.16",
+        "adequacy": "F5 states no single indicator is conclusive; generic monitoring requirements do not name these appliance-specific signals."
+      },
+      "response": {
+        "what_would_have_worked": "Preserve forensic evidence, apply the iRule or hotfix, check the F5-listed indicators, and start incident response if signs appear, as CERT-EU advises. Sources do not say whether the hotfix removes access already gained.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIS2-Art21-incident-handling",
+        "adequacy": "Incident-handling requirements do not address the open question of whether patching evicts an existing foothold."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Remediation timelines do not require the interim iRule, which needs a support case."
+      },
+      "NIS2-Art21-vulnerability-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No distinction between data-plane and management-plane exposure; management restriction does not help."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Appliance hardening does not address a data-plane memory corruption flaw on a public virtual server."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patch timelines presume a vendor update path; here a hotfix per branch and a support-case iRule are the options."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not require identifying which virtual servers carry the vulnerable APM plus OAuth combination."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-030",
+        "name": "PERIMETER-DEVICE-ZERODAY-SLA-TIER",
+        "description": "Compliance frameworks must define a distinct patch SLA tier for pre-auth RCE on perimeter-trust-boundary devices (firewalls, VPN concentrators, WAFs, edge load-balancers). Tier requirement: vendor-mitigation deployed within 4 hours of KEV listing OR isolation of the vulnerable interface; standard 14/30-day SLAs do not apply because the device IS the trust boundary.",
+        "evidence": "F5 BIG-IP APM is the perimeter device here, and the heap-based buffer overflow in the data plane gives an unauthenticated remote attacker code execution through crafted traffic to a virtual server with an APM access policy and an OAuth authorization server profile. Exploitation is confirmed and CISA listed the CVE in KEV on 2026-09-22. A distinct perimeter tier with a 4-hour mitigation window or interface isolation replaces the standard patch cycle, which is the wrong clock for a flaw on the trust boundary itself.",
+        "gap_closes": [
+          "NIS2-Art21-vulnerability-management",
+          "UK-CAF-B4",
+          "AU-Essential-8-Patch"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CISA lists CVE-2026-94127 in KEV with a due date of 2026-09-25, three days after the 2026-09-22 listing, and exploitation is confirmed. The KEV-keyed response clock starts at the listing and accepts a documented compensating control such as the F5 iRule when a hotfix cannot be applied at once.",
+        "gap_closes": [
+          "NIST-800-53-SI-2"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-93616": {
+    "name": "Check Point Multiple Products Path Traversal Vulnerability",
+    "lesson_date": "2026-11-03",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-09-22",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An unauthenticated attacker with network access to the management web service uses a directory traversal and file upload to place and run scripts and load Java classes on a Check Point management or log server.",
+      "privileges_required": "None",
+      "complexity": "Low",
+      "ai_factor": "No source attributes discovery or weaponization to AI."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Installing the R82.20 Security Hotfix or a Jumbo Hotfix Accumulator at the fixed take, and restricting TCP/19009 to trusted IP addresses.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST-800-53-SI-2, NIS2 Art. 21, AU Essential Eight patching",
+        "adequacy": "Exploitation began 2026-07-23 before a fix, so patch timelines could not protect the early window."
+      },
+      "detection": {
+        "what_would_have_worked": "Searching cpm.elg for usernames over 1,000 characters, traversal or encoded version paths, upgrade-tools upload paths and JAR path breakouts, and checking for FWM or MDS core dumps.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST-800-53-SI-4, ISO-27001-2022-A.8.16",
+        "adequacy": "Generic log monitoring requirements do not name these product-specific signals; Check Point states a match does not confirm compromise."
+      },
+      "response": {
+        "what_would_have_worked": "Treat any indicator match as a possible compromise of the management server, which controls policy for managed gateways, and investigate before and after patching.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIS2-Art21-incident-handling",
+        "adequacy": "Incident handling requirements do not address credential and policy exposure from a compromised management server."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Timelines cannot cover exploitation that predates the fix; LivePatch does not address this CVE."
+      },
+      "NIS2-Art21-vulnerability-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not require restricting management-plane ports to trusted hosts."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not name pre-authentication exposure of security management servers."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Management servers are often not treated as internet-facing, so tight timelines may not apply; End of Support lines have no fix."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not require inventory of which Check Point server roles run on each host."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CISA lists CVE-2026-93616 in KEV (2026-09-22, due 2026-09-25) and exploitation is confirmed. The fix ships as the R82.20 Security Hotfix and in Jumbo Hotfix Accumulators, so a KEV-keyed deadline that accepts the TCP/19009 restriction as a compensating control closes the exposure window for management servers that are not treated as internet-facing.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-5430": {
+    "name": "WSO2 Multiple Products Path Traversal Vulnerability",
+    "lesson_date": "2026-11-03",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2026-09-24",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An attacker crafts a JWT signed with an algorithm the deployment does not support; the validator accepts it, which gives unauthorized access including administrative accounts and full account takeover.",
+      "privileges_required": "None",
+      "complexity": "Low",
+      "ai_factor": "No source attributes discovery or weaponization to AI."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Installing the update level or pull-request patch published 2026-05-03.",
+        "was_this_required": true,
+        "framework_requiring_it": "AU Essential Eight patching, NIS2 Art. 21",
+        "adequacy": "The fix was public for about four months before exploitation was observed; patch deadlines existed but were not met."
+      },
+      "detection": {
+        "what_would_have_worked": "Alerting on admin API calls whose JWT algorithm header differs from the configured algorithms.",
+        "was_this_required": false,
+        "framework_requiring_it": "none",
+        "adequacy": "Standard log monitoring sees an authenticated admin session; no control requires validating the token's signing algorithm."
+      },
+      "response": {
+        "what_would_have_worked": "Rotate consumer keys, secrets and backend credentials stored in the gateway, and review admin-account activity since the fix was published (2026-05-03).",
+        "was_this_required": true,
+        "framework_requiring_it": "NIS2-Art21-incident-handling",
+        "adequacy": "Incident-handling requirements do not specify rotating application credentials held by an API gateway."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-IA-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A forged token passes identification when the validator accepts an unsupported algorithm."
+      },
+      "NIS2-Art21-vulnerability-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A fix available for four months was not applied before exploitation."
+      },
+      "UK-CAF-B2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Assumes tokens come from the trusted identity provider."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patch path differs for subscribers and open-source users."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Single-score triage misses the 10.0 versus 9.8 deployment split."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "WSO2 API Manager, API Control Plane, Traffic Manager and Universal Gateway accept a JWT signed with an algorithm the deployment does not support, which gives unauthorized access including administrative accounts and full account takeover. Exploitation is confirmed, CISA listed the CVE in KEV on 2026-09-24, and the advisory lists no interim workaround. A KEV-keyed response deadline forces the update (for example 4.6.0 U2 21 or the matching level for each product) onto the exposed gateways instead of leaving an available fix unapplied.",
+        "gap_closes": [
+          "NIS2-Art21-vulnerability-management",
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-67279": {
+    "name": "Mikrotik RouterOS Improper Enforcement of Behavioral Workflow Vulnerability",
+    "lesson_date": "2026-11-03",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2026-09-25",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An unauthenticated client requests an SSH rekey, after which RouterOS enters the connection protocol without authentication, so the client can open a session channel and send an exec request that creates, overwrites or reconstructs files in the RouterOS managed file namespace, including support files with configuration and diagnostic data. Chained with CVE-2026-86060 it gives full administrative access.",
+      "privileges_required": "None",
+      "complexity": "Low",
+      "ai_factor": "No source attributes discovery or weaponization to AI."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrading to a fixed build (6.49.21, 7.23.4 or 7.24.2 for this CVE; 7.24.3 and 7.23.6 also complete the sibling CVE-2026-67278 fix) and keeping SSH and WebFig off untrusted networks, with a VPN for management.",
+        "was_this_required": true,
+        "framework_requiring_it": "AU Essential Eight patching, NIS2 Art. 21",
+        "adequacy": "Exploitation of the chain began 2026-09-02, before the 2026-09-03 patch release and 2026-09-05 disclosure."
+      },
+      "detection": {
+        "what_would_have_worked": "Reviewing /system history logs for the -2 username, ops account creation, RIF file creation with transfer to 82.192.72.4, and the Flagged log entry.",
+        "was_this_required": false,
+        "framework_requiring_it": "none",
+        "adequacy": "Small network devices often have no log forwarding, and CERT Polska states the absence of indicators does not rule out compromise."
+      },
+      "response": {
+        "what_would_have_worked": "Isolate, preserve logs and configuration, factory reset, rebuild from a trusted configuration and rotate credentials.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIS2-Art21-incident-handling",
+        "adequacy": "Incident-handling requirements do not specify device rebuild from a trusted configuration."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-IA-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A state-machine error grants a session before authentication is attempted."
+      },
+      "NIS2-Art21-vulnerability-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not cover internet-exposed management SSH on network equipment."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Management-interface restriction is configuration, not satisfied by patching."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Edge routers often fall outside assessed scope; some updates need physical access."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "An incomplete fix for a sibling CVE leaves patched devices exposed."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-030",
+        "name": "PERIMETER-DEVICE-ZERODAY-SLA-TIER",
+        "description": "Compliance frameworks must define a distinct patch SLA tier for pre-auth RCE on perimeter-trust-boundary devices (firewalls, VPN concentrators, WAFs, edge load-balancers). Tier requirement: vendor-mitigation deployed within 4 hours of KEV listing OR isolation of the vulnerable interface; standard 14/30-day SLAs do not apply because the device IS the trust boundary.",
+        "evidence": "MikroTik RouterOS lets an unauthenticated client request an SSH rekey and then open a session channel and send an exec request without authenticating, which creates or overwrites files in the managed file namespace. The vendor workarounds are to keep SSH and WebFig unreachable from untrusted networks, allow only trusted IP addresses and prefer a VPN. A perimeter tier that accepts isolating the vulnerable interface as the response covers these routers when an update (6.49.21, 7.23.4 or 7.24.2) cannot be applied at once.",
+        "gap_closes": [
+          "NIS2-Art21-vulnerability-management",
+          "UK-CAF-B4",
+          "AU-Essential-8-Patch"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-042",
+        "name": "INCOMPLETE-PATCH-SEQUENCE-SEVERITY-MULTIPLIER",
+        "description": "Vulnerability-management programs must apply a severity multiplier when a CVE is the Nth in an incomplete-patch sequence on the same primitive (third MOTW bypass, second AMSI bypass, etc.). Framework controls treating each CVE as discrete obscure the structural defect; the Nth CVE in a sequence implies that future bypasses on the same primitive are likely.",
+        "evidence": "MikroTik states that the incomplete fix in 7.24.2 and 7.23.4 applies only to the sibling CVE-2026-67278, while CVE-2026-67279 is fixed in the listed versions. Treating a CVE that follows an incomplete fix on the same code path with a higher severity prevents a router from being recorded as patched for one CVE while the sibling remains open. The CVE is chained with CVE-2026-86060 for full administrative access.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-76504": {
+    "name": "Cisco Catalyst SD-WAN Manager Hex Encoding Vulnerability",
+    "lesson_date": "2026-11-03",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-09-30",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An unauthenticated remote attacker sends an HTTP request to the Manager API in which a character of the path is percent-encoded. The Manager handles the encoding improperly, so the request bypasses the authentication rule that restricts one API endpoint, and the attacker obtains API access as the admin user.",
+      "privileges_required": "none; PR:N and UI:N",
+      "complexity": "low; AC:L, one crafted request",
+      "ai_factor": "Cisco states it found the flaw while resolving a TAC support case. No source attributes discovery or exploitation to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to the fixed release for the train (20.9.10.1, 20.12.8.2, 20.15.6.1, 20.18.4.1, 26.1.2.1 or 26.2.1), migrate releases earlier than 20.9, and keep the Manager off the internet behind a filtering device or jump host. Cisco's hardening guide says ports 443, 22 and 830 should not be exposed directly.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, listed 2026-09-30)",
+        "adequacy": "Cisco PSIRT became aware of exploitation in September 2026, so patching closes the flaw only for installations not already accessed. Cisco does not state whether upgrading removes an attacker who already holds access."
+      },
+      "detection": {
+        "what_would_have_worked": "Review serviceproxy-access.log for j_security_check requests with encoded characters from unknown addresses, and vmanage-server.log for j_security_check calls by viptela-reserved- users.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Cisco states some matches occur in normal operations, so each hit needs review against a baseline, and the advisory ships no detection rule."
+      },
+      "response": {
+        "what_would_have_worked": "Run request admin-tech on the Manager and keep the output, then open a Severity 3 TAC case with CVE-2026-76504 in the title to have Cisco check for compromise, as the advisory directs.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The advisory gives no information on attacker activity after access, so responders must treat the admin API as fully compromised for any exposed Manager."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access enforcement exists in the product but a URI-encoded path bypasses it, and the operator cannot inspect or change that rule."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Cisco PSIRT became aware of exploitation in September 2026, and the only stated mitigations are removing internet reachability and the partial Live Protect shield."
+      },
+      "UK-CAF-B2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Identity and access outcomes assume authentication is applied to each request; the bypass returns the admin user with no identity check."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patch windows start at fix availability, Cisco PSIRT became aware of exploitation in September 2026, and releases before 20.9 have no fix in their train."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Cisco reports active exploitation, so an evaluation also has to look for prior abuse; checking the named log files is a separate step."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-038",
+        "name": "MITIGATION-ACTIVE-PATCH-PENDING-VERDICT-CLASS",
+        "description": "Compliance verdicts must distinguish three states: (a) binary patch deployed (vulnerability eliminated), (b) vendor-mitigation rule active, no binary patch (residual risk: any defect in the mitigation rule reopens the vulnerability), (c) no mitigation, no patch (full exposure). Audit reports must surface (b) as a distinct compensating-control state with an associated time-bound action item, not as a 'patched per SLA' outcome.",
+        "evidence": "Cisco added a Live Protect shield in advisory version 1.1 on 2026-10-02 that gives temporary, partial protection and may block legitimate users who log in with URI encoding. Upgrading to a fixed release (for example 20.12.8.2 or 20.15.6.1) is the only full remediation. A verdict class for a vendor mitigation that is active with no binary patch keeps a Manager running the shield from being reported as patched.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CISA lists CVE-2026-76504 in KEV (2026-09-30, due 2026-10-03) and Cisco PSIRT became aware of exploitation in September 2026, before the fixed releases were available for every train. Releases earlier than 20.9 have no fix in their train, so the KEV-keyed deadline has to accept removing internet reachability as the compensating control.",
+        "gap_closes": [
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-104286": {
+    "name": "Fortinet FortiMail Path Traversal Vulnerability",
+    "lesson_date": "2026-11-03",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-10-01",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An unauthenticated attacker sends crafted HTTP or HTTPS requests that traverse out of the intended directory (CWE-22, with improper NULL-byte neutralization, CWE-158) and write arbitrary files on the FortiMail system. Fortinet states this can lead to unauthorized code or command execution, and the logged artifacts include a root cron entry.",
+      "privileges_required": "none; PR:N and UI:N",
+      "complexity": "low; AC:L",
+      "ai_factor": "Fortinet's own Product Security team found the flaw; no source attributes discovery or exploitation to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to 8.0.2, 7.6.7 or 7.4.9 or later; migrate 7.0 and, until 7.2.10 ships, move 7.2 to a fixed line. Before upgrading, disable IBE or restrict webmail to trusted private networks, or block POST requests to /ibe containing ../ at a WAF.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, listed 2026-10-01)",
+        "adequacy": "Fixes were not available for every line on the KEV date, so the workaround carried the exposure for 7.2 and 7.0 users."
+      },
+      "detection": {
+        "what_would_have_worked": "Check system logs for an added archive account such as archive234 pointing to a remote IP and /uploads, root cron entries running /bin/sh -c with O=/migadmin, and encryption logs showing the Invalid Base64 BufferException at position 0, plus the two source IP addresses Fortinet lists.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The indicators come from the vendor and cover observed attacks; they do not describe all variants of a file write primitive."
+      },
+      "response": {
+        "what_would_have_worked": "Treat a gateway with any listed artifact as compromised because the write primitive can reach root execution; apply the fix or workaround and review files and cron entries written by the attacker.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The advisory does not describe what attackers did after the write, so scope must be established from host forensics."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The validation failure is inside vendor firmware, so the control is met only by the vendor and does not reduce exposure before the fix."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No fix exists for FortiMail 7.0 and 7.2 had none released at the time of the advisory, so a patching obligation cannot be met on those lines."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The flaw is in an exposed optional feature; a hardening baseline helps only if it already disables IBE or restricts webmail."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The advisory marks the flaw Known Exploited, and 7.0 has no fixed release."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Vulnerability evaluation after publication does not cover a gateway attackers may already have written to."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "Pre-rehearsed IR runbook for any perimeter device that suffers a pre-auth RCE CVE in active exploitation MUST default to config-exfil + rebuild + credential rotation, not patch-in-place. Patch-in-place leaves attacker-installed implants intact.",
+        "evidence": "CISA lists CVE-2026-104286 in KEV (2026-10-01) with confirmed exploitation, and the logged artifacts include a root cron entry written through the traversal. A gateway that attackers may already have written to is not shown clean by a firmware update, so the runbook defaults to configuration export, rebuild and credential rotation.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-88779": {
+    "name": "Citrix NetScaler Improper Restriction of Operations within the Bounds of a Memory Buffer Vulnerability",
+    "lesson_date": "2026-11-03",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2026-10-04",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An unauthenticated attacker sends network traffic that triggers a memory overflow (CWE-119) in NetScaler ADC or Gateway when the appliance is configured as a SAML service provider or identity provider. The appliance crashes, and repeated triggering can leave the service unavailable.",
+      "privileges_required": "none; PR:N and UI:N",
+      "complexity": "low; AC:L and AT:N",
+      "ai_factor": "Credited to JPMorgan Chase, Bishop Fox and watchTowr in the Citrix bulletin. No source attributes discovery or exploitation to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to 14.1-73.41, 13.1-64.28 or the matching FIPS and NDcPP builds. Identify exposed appliances by searching the configuration for samlAction and samlIdPProfile entries, and apply Global Deny List signatures while the upgrade is planned.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, listed 2026-10-04)",
+        "adequacy": "Press reports say Citrix observed attacks before the fix shipped, and the update has to be installed on an appliance that sits in the authentication path."
+      },
+      "detection": {
+        "what_would_have_worked": "Watch for appliance crashes and unexpected reboots, run Citrix's IOC script from NetScaler Console and review its output, and apply the SIGMA rule shared for scanning and exploitation attempts.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Citrix and the press publish no network indicators, and the IOC script reports false positives for 'nobody' processes."
+      },
+      "response": {
+        "what_would_have_worked": "Preserve evidence before upgrading, run the compromise-check script, and treat unexplained web shell installation attempts as a sign of a separate compromise path because the code-execution question is unresolved.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Citrix has not established whether the flaw gives code execution, so responders cannot rely on the denial-of-service description alone."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Remediation windows start at the fix, and press reports of Citrix's blog say Citrix observed attacks before the fix; no interim protection or workaround exists."
+      },
+      "NIS2-Art21-availability": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A single request class can take down the authentication appliance and remote access for all users."
+      },
+      "UK-CAF-B5": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A high-availability pair does not help if the same request crashes both nodes."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Version inventories over-scope work because exposure depends on SAML configuration, and the pre-fix window remains uncovered."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Version-only vulnerability evaluation mis-sizes an exposure that depends on a configuration."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "An unauthenticated request class crashes Citrix NetScaler ADC or Gateway configured as a SAML service provider or identity provider, and repeated triggering leaves the service unavailable. CISA lists CVE-2026-88779 in KEV (2026-10-04, due 2026-10-07) and exploitation is confirmed. Citrix lists no workaround, so the KEV-keyed deadline pushes the fixed builds (14.1-73.41, 13.1-64.28 and the FIPS and NDcPP builds) to appliances configured with samlAction or samlIdPProfile first.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "AU-Essential-8-Patch"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-038",
+        "name": "MITIGATION-ACTIVE-PATCH-PENDING-VERDICT-CLASS",
+        "description": "Compliance verdicts must distinguish three states: (a) binary patch deployed (vulnerability eliminated), (b) vendor-mitigation rule active, no binary patch (residual risk: any defect in the mitigation rule reopens the vulnerability), (c) no mitigation, no patch (full exposure). Audit reports must surface (b) as a distinct compensating-control state with an associated time-bound action item, not as a 'patched per SLA' outcome.",
+        "evidence": "Press reports of Citrix's blog say Citrix observed attacks before the fix, and Help Net Security reports that Citrix Global Deny List signatures can block known malicious IP addresses while an upgrade is planned. That is partial protection and not a fix. A distinct verdict for an active mitigation with the patch pending keeps appliances relying on the Global Deny List from being reported as patched.",
+        "gap_closes": [
+          "NIST-800-53-SI-2"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-76519": {
+    "name": "Cisco Secure Email Gateway Relative Path Traversal Vulnerability",
+    "lesson_date": "2026-11-03",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-10-14",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An unauthenticated remote sender emails a crafted attachment through the gateway. Improper handling of the attachment by the Advanced Malware Protection File Reputation path lets the attacker write arbitrary files on the appliance operating system and run commands as root.",
+      "privileges_required": "none",
+      "complexity": "low",
+      "ai_factor": "none"
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Installing Content Scanner Tools 25.3.0.5525 or a fixed AsyncOS release. Cisco lists no workaround.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 SI-2, NIS2 Art. 21 patch management, Essential Eight patching",
+        "adequacy": "Inadequate for lead time: the advisory and the KEV listing share the date 2026-10-14, and exploitation was already known when the fix was published."
+      },
+      "detection": {
+        "what_would_have_worked": "Running grep \"System Security\" system_logs on each cluster member and reviewing off-box network and firewall logs for unexpected uploads or downloads.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 SI-4, ISO 27001:2022 A.8.16",
+        "adequacy": "Partial: the compromise check is vendor-supplied and root access may allow log tampering."
+      },
+      "response": {
+        "what_would_have_worked": "Following the advisory's Recommendations section when the suspected compromise message appears, contacting Cisco TAC, and upgrading to a fixed release.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIS2 Art. 21 incident handling, NIST 800-53 IR-4",
+        "adequacy": "Adequate only if the compromise check is run before or with the upgrade."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Flaw remediation timelines start at fix publication and do not cover exploitation already underway; no workaround exists."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Exploitation was known when the fix was published, so timely handling had no lead time."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Secure configuration does not reduce exposure to unauthenticated email delivery."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patch timeframes begin at fix availability, and exploitation was already known when the fix was published."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Gives no assurance that a root-compromised appliance is clean."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-030",
+        "name": "PERIMETER-DEVICE-ZERODAY-SLA-TIER",
+        "description": "Compliance frameworks must define a distinct patch SLA tier for pre-auth RCE on perimeter-trust-boundary devices (firewalls, VPN concentrators, WAFs, edge load-balancers). Tier requirement: vendor-mitigation deployed within 4 hours of KEV listing OR isolation of the vulnerable interface; standard 14/30-day SLAs do not apply because the device IS the trust boundary.",
+        "evidence": "Cisco Secure Email Gateway with File Reputation (AMP) enabled and assigned to a mail policy accepts a crafted attachment from an unauthenticated remote sender, which writes arbitrary files and runs commands as root. Cisco lists no workaround, and the fix is Content Scanner Tools 25.3.0.5525 or later, AsyncOS 15.5.5-014 or 16.5.0-780. The mail gateway is the perimeter device, so a tier that requires the mitigation within 4 hours of the KEV listing replaces the standard patch cycle.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-patch-management",
+          "AU-Essential-8-Patch"
+        ]
+      },
+      {
+        "id": "NEW-CTRL-032",
+        "name": "PERIMETER-COMPROMISE-REBUILD-NOT-PATCH",
+        "description": "Pre-rehearsed IR runbook for any perimeter device that suffers a pre-auth RCE CVE in active exploitation MUST default to config-exfil + rebuild + credential rotation, not patch-in-place. Patch-in-place leaves attacker-installed implants intact.",
+        "evidence": "CISA lists CVE-2026-76519 in KEV (2026-10-14) and exploitation was known when the fix was published. A gateway that ran attacker commands as root is not shown clean by the Content Scanner Tools update, so the runbook defaults to configuration export, rebuild and credential rotation instead of patching in place.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-0322": {
+    "name": "Palo Alto Networks PAN-OS Code Injection Vulnerability",
+    "lesson_date": "2026-11-03",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-10-14",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An authenticated attacker with network access to the PAN-OS management interface triggers a code injection flaw and executes arbitrary code with root privileges on the firewall or Panorama appliance.",
+      "privileges_required": "high (authenticated administrator)",
+      "complexity": "low",
+      "ai_factor": "none"
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Restricting management interface access to trusted internal addresses or a jump box, per the vendor's best-practice guidance, and upgrading to a fixed build.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 SC-7, NIS2 Art. 21 network security, Essential Eight patching",
+        "adequacy": "Partial: restriction reduces exposure but the flaw remains exploitable from any permitted address."
+      },
+      "detection": {
+        "what_would_have_worked": "Alerting on management-interface connections from outside the trusted range and on the three published source addresses; Threat IDs 510046 and 510047 with SSL Decryption.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 SI-4, ISO 27001:2022 A.8.16",
+        "adequacy": "Partial: the vendor signatures require SSL Decryption on management traffic."
+      },
+      "response": {
+        "what_would_have_worked": "Upgrading to a fixed build, reviewing administrator accounts and configuration, and rotating credentials on devices whose management interface was reachable from untrusted networks.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIS2 Art. 21 incident handling, NIST 800-53 IR-4",
+        "adequacy": "Adequate when the upgrade and account review are both performed."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The advisory lists mitigations but no workaround, and fixed builds differ per maintenance train."
+      },
+      "NIS2-Art21-vulnerability-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Only an upgrade satisfies the obligation; vendor signatures need SSL Decryption."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Restricting the interface does not stop an authenticated administrator session."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Version tracking at major-release level cannot show patch compliance."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not require isolating the management plane from untrusted networks."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CISA lists CVE-2026-0322 in KEV (2026-10-14, due 2026-10-17) and exploitation is confirmed. Fixed builds differ per maintenance train (for example 11.2.16 and 12.2.4), so a KEV-keyed deadline that accepts the listed management-plane measures as compensating controls covers appliances that cannot reach their train's fixed build at once.",
+        "gap_closes": [
+          "NIS2-Art21-vulnerability-management"
+        ]
+      }
+    ]
+  },
+  "CVE-2025-61624": {
+    "name": "Fortinet Multiple Products Path Traversal Vulnerability",
+    "lesson_date": "2026-11-03",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-10-16",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An authenticated attacker with an admin profile and read-write permission runs specific CLI commands with crafted path arguments to write or delete arbitrary files outside the intended directory on the device.",
+      "privileges_required": "high (admin profile with read-write permission)",
+      "complexity": "low",
+      "ai_factor": "none"
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrading to a fixed release for supported lines, migrating off lines with no fix, and restricting administrative access to trusted addresses.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 SI-2, NIS2 Art. 21 vulnerability handling",
+        "adequacy": "Inadequate for lines with no fix."
+      },
+      "detection": {
+        "what_would_have_worked": "The IPS virtual patch FG-VD-59270.0day (FMWP database update 25.120) and review of administrator CLI activity.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 AU-6, ISO 27001:2022 A.8.16",
+        "adequacy": "Partial: the advisory publishes no concrete indicators."
+      },
+      "response": {
+        "what_would_have_worked": "Migrating to a fixed release, reviewing administrator accounts and recent file changes, and rotating administrator credentials on devices whose management plane was exposed.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIS2 Art. 21 incident handling, NIST 800-53 IR-4",
+        "adequacy": "Adequate when account review accompanies the upgrade."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Several lines have no fix, so remediation means migration."
+      },
+      "NIS2-Art21-vulnerability-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Cannot be met by patching on unfixed lines."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Does not address abuse by a legitimate privileged account."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Routine patch cycles do not schedule line migrations."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A medium score can lead to low prioritization of a known exploited flaw."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CISA lists CVE-2025-61624 in KEV (2026-10-16, due 2026-10-19) and exploitation is confirmed, while the flaw needs an admin profile with read-write permission and scores medium. A KEV-keyed response clock applies regardless of the score, which prevents the medium rating from placing a known exploited flaw in a low-priority queue.",
+        "gap_closes": [
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-106931": {
+    "name": "EG Secure Solutions SiteGuard Server Edition OS Command Injection Vulnerability",
+    "lesson_date": "2026-11-03",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "unknown",
+    "ai_discovery_date": "2026-10-20",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "The statistics feature of SiteGuard Server Edition passes attacker-influenced input to an OS command, allowing arbitrary commands to run with root or SYSTEM privileges, in the context of the product inside the web server.",
+      "privileges_required": "low (per the published CVSS 4.0 vector)",
+      "complexity": "low",
+      "ai_factor": "none"
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Updating to Ver8.00 Update5 (or Ver7.00 Update6 for FreeBSD) or applying the vendor's statistics-file patch on unsupported versions, after saving diagnostic information.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 SI-2, Essential Eight patching",
+        "adequacy": "Partial: the vendor alert states exploitation is confirmed but does not say when it began."
+      },
+      "detection": {
+        "what_would_have_worked": "Downloading and reviewing the diagnostic information from the web admin console.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST 800-53 SI-4, ISO 27001:2022 A.8.16",
+        "adequacy": "Partial: the vendor publishes no concrete indicators."
+      },
+      "response": {
+        "what_would_have_worked": "Preserving diagnostic information before updating, then treating the host as compromised if the diagnostic data shows abuse.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIS2 Art. 21 incident handling, NIST 800-53 IR-4",
+        "adequacy": "Adequate only if evidence is saved before the update."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Updating can erase attack traces, so remediation needs an evidence-first step."
+      },
+      "NIS2-Art21-vulnerability-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "End-of-support versions have only a file-replacement patch."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The vulnerable feature is enabled by default."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patch timeframes do not account for the evidence preservation step."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A privileged security product is itself the attack surface."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CISA lists CVE-2026-106931 in KEV (2026-10-20, due 2026-10-23) and exploitation is confirmed. The vendor advises downloading diagnostic information from the web admin console before updating because updating may erase attack traces, so the response clock has to include that evidence step in its deployment of the patch.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-110936": {
+    "name": "Siemens Software Center Uncontrolled Search Path Element Vulnerability",
+    "lesson_date": "2026-11-03",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2026-10-20",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "Software Center loads DLLs from an uncontrolled search path. Attackers placed their own DLL beside a genuine signed copy of the executable so that it loaded when the program started.",
+      "privileges_required": "high (Siemens SSA-580366 describes an authenticated local attacker with high privileges, PR:H)",
+      "complexity": "Low once the attacker has a file delivery path",
+      "ai_factor": "None attributed by Siemens or CISA."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Updating to 4.0.9.8, blocking execution of Siemens binaries from AppData\\Local\\Programs, and training users not to paste commands from web pages into Run or PowerShell.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST-800-53-SI-2, ISO-27001-2022-A.8.8, AU-Essential-8-Patch",
+        "adequacy": "Partial. Patch controls cover the managed copy only, and the attacker brings their own vulnerable copy."
+      },
+      "detection": {
+        "what_would_have_worked": "Alerting on SiemensSoftwareCenter.exe started by msiexec.exe or running from AppData, and on unexpected DLLs loaded from the same folder as the executable.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST-800-53-SI-4, ISO-27001-2022-A.8.16",
+        "adequacy": "Weak. The binary is genuine, so signature-based detection of the executable does not fire. Siemens advises detecting on folder and behavior."
+      },
+      "response": {
+        "what_would_have_worked": "Isolate the host, stop the process, remove the start-up entry and scheduled task, block the listed IP and domain, and reset passwords.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIS2-Art21-incident-handling",
+        "adequacy": "Adequate if the indicators in the Siemens post are searched across the fleet."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patching does not reach an attacker-supplied older copy of the binary."
+      },
+      "NIS2-Art21-vulnerability-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Inventory-based handling misses carriers that never pass through the managed install."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No expectation covers signed vendor binaries run from user-writable paths."
+      },
+      "AU-Essential-8-App-Hardening": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Publisher-based allow rules approve the abused signed executable."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Version scanning does not see an unmanaged copy delivered by a lure."
+      },
+      "NIST-800-53-CM-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Least functionality does not restrict the launch path of a legitimately signed binary."
+      }
+    },
+    "new_control_requirements": []
+  },
+  "CVE-2026-114625": {
+    "name": "Arista VeloCloud Orchestrator SQL Injection Vulnerability",
+    "lesson_date": "2026-11-03",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2026-10-23",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An authenticated user on the on-prem VCO web interface reaches a SQL injection that grants operator privileges and access to internal-only functionality, with impact on the VCO host.",
+      "privileges_required": "Any authenticated user, minimum role Enterprise Read Only",
+      "complexity": "Low",
+      "ai_factor": "None attributed by Arista or CISA."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrading to 5.2.3.18, 6.1.3.10 or 6.4.2.12, and restricting the VCO web interface to trusted administrative networks.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST-800-53-SI-2, NIS2-Art21-vulnerability-management, AU-Essential-8-Patch",
+        "adequacy": "Partial. Network restriction helps, and Arista states the flaw is known to be actively exploited."
+      },
+      "detection": {
+        "what_would_have_worked": "Reviewing web access logs for URL-like path components, encoded characters, internal service references and high request rates, and alerting on the two source IPs and on new webshells or outbound connections from the VCO host.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST-800-53-SI-4, ISO-27001-2022-A.8.16",
+        "adequacy": "Weak. Without the vendor's patterns, generic logging does not mark the requests as hostile."
+      },
+      "response": {
+        "what_would_have_worked": "Preserve web access, application, system and database logs and file-system timestamps before remediation, review administrator changes, and contact Arista TAC if compromise is suspected.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIS2-Art21-incident-handling",
+        "adequacy": "Adequate when followed, since the advisory gives specific preservation steps."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Input validation lives inside vendor code the operator cannot test."
+      },
+      "NIS2-Art21-vulnerability-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Arista states the flaw is known to be actively exploited, so timely patching alone does not address compromise that has already occurred."
+      },
+      "UK-CAF-B2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Role separation fails when any authenticated user can act as a superuser operator."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patch timelines start after a fix exists, and Arista states the flaw is known to be actively exploited."
+      },
+      "ISO-27001-2022-A.8.28": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Secure coding is verifiable only by the vendor."
+      },
+      "NIST-800-53-AC-6": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Least-privilege role assignment does not limit a privilege escalation flaw."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CISA lists CVE-2026-114625 in KEV (2026-10-23, due 2026-10-26) and Arista states that the flaw is known to be actively exploited. A KEV-keyed deadline that accepts the Arista workarounds as compensating controls starts at the listing instead of after a fix exists.",
+        "gap_closes": [
+          "NIS2-Art21-vulnerability-management",
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-110447": {
+    "name": "Collabora Online – Built-in CODE Server OS Command Injection Vulnerability",
+    "lesson_date": "2026-11-03",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "unknown",
+    "ai_discovery_date": "2026-10-23",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An unauthenticated HTTP request to proxy.php while the bundled coolwsd server is not running reaches a launch path that builds a shell command from request-derived input, giving command execution as the web server user.",
+      "privileges_required": "None",
+      "complexity": "Low, with the precondition that the bundled server is stopped",
+      "ai_factor": "None attributed by any source."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Updating richdocumentscode to a fixed build (26.4.502 recommended by Corgea), or removing the app and using a standalone Collabora server.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST-800-53-SI-2, NIS2-Art21-vulnerability-management, AU-Essential-8-Patch",
+        "adequacy": "Partial. Corgea reports first logged exploitation requests on 2026-09-10."
+      },
+      "detection": {
+        "what_would_have_worked": "Web log searches for proxy.php requests with shell metacharacters or path traversal, file integrity checks for extra PHP files (occ integrity:check-app richdocumentscode), and egress alerts for webhook.site.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIST-800-53-SI-4, ISO-27001-2022-A.8.16",
+        "adequacy": "Adequate if integrity checking is run on a schedule, weak otherwise."
+      },
+      "response": {
+        "what_would_have_worked": "Remove web shells, rebuild from a clean image if compromised, and rotate database, SMTP and config.php secrets and app passwords. Patching alone does not remove persistence.",
+        "was_this_required": true,
+        "framework_requiring_it": "NIS2-Art21-incident-handling",
+        "adequacy": "Adequate when credentials are rotated as well as the app updated."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Unvalidated request data reaches a shell command before any authentication check."
+      },
+      "NIS2-Art21-vulnerability-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Corgea reports exploitation from 2026-09-10, so handling driven by a CVE-based notice arrives after exposure."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Disabling the app in the platform UI does not remove the reachable proxy.php."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Fixed builds require Nextcloud 30 or newer, so unsupported platforms cannot patch the app."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Updating does not remove web shells or undo credential exposure."
+      },
+      "NIST-800-53-CM-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A bundled document server that is not needed remains installed and reachable."
+      }
+    },
+    "new_control_requirements": []
+  },
+  "CVE-2026-41709": {
+    "name": "Broadcom VMWare ESX Insufficient Logging Vulnerability",
+    "lesson_date": "2026-11-03",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2026-10-28",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "A malicious administrator on an ESX host performs certain operations that the host does not log. The flaw does not give access; it removes evidence of what an already-privileged actor does.",
+      "privileges_required": "High: administrator access to the ESX host (PR:H).",
+      "complexity": "Low (AC:L) per the CVSS vector. The advisory does not describe the technique.",
+      "ai_factor": "No source attributes the discovery or exploitation to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the fixed ESX builds listed in advisory 38017 and limit who holds administrator credentials on hosts, since exploitation requires them.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 26-04 (KEV remediation, due 2026-11-11 for federal agencies); NIS2 Art. 21 patch handling",
+        "adequacy": "Patching closes the flaw, but it does not recover evidence from the period when hosts ran an unfixed build and an actor with administrator access was active."
+      },
+      "detection": {
+        "what_would_have_worked": "Compare host-local logs with independent records for the same period: vCenter task and event history, authentication systems, and network flow to the management interfaces. Operations visible there and absent from host logs indicate abuse.",
+        "was_this_required": false,
+        "framework_requiring_it": "NIST 800-53 AU-2/AU-12 and ISO 27001:2022 A.8.15 require audit logging, but not cross-source reconciliation.",
+        "adequacy": "Host logs alone cannot detect the flaw. Neither Broadcom nor CISA lists indicators, so detection depends on a second record source."
+      },
+      "response": {
+        "what_would_have_worked": "Treat hosts that ran an unfixed build with possible administrator compromise as having incomplete logs: rotate administrator credentials, review vCenter and identity records for the exposure window, and rebuild trust in host state before relying on host logs.",
+        "was_this_required": false,
+        "framework_requiring_it": "NIS2 Art. 21 incident handling",
+        "adequacy": "Response plans usually assume the logs are complete. Missing log entries on the host leave scope assessment dependent on other sources."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-AU-9": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Protects stored audit records, not events that were never written."
+      },
+      "NIS2-Art21-incident-handling": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Assumes logs are available to scope an incident."
+      },
+      "UK-CAF-C1": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Monitoring on host logs has a blind spot for the unlogged operations."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A low CVSS score can delay patching of an exploited flaw."
+      },
+      "ISO-27001-2022-A.8.15": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Log configuration reviews do not reveal operations the host omits."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "VMware ESX does not log certain operations of a malicious administrator, so the flaw removes evidence and does not give access. CISA lists CVE-2026-41709 in KEV (2026-10-28, due 2026-11-11) and exploitation is confirmed, although the flaw carries a low CVSS score. A KEV-keyed deadline applies the fixed builds (for example ESXi80U3j-25429389) to the listed lines regardless of the score.",
+        "gap_closes": [
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
+  },
+  "CVE-2026-76418": {
+    "name": "Cisco Secure Firewall ASA Software and Cisco Secure FTD Software Unchecked Return Value to NULL Pointer Dereference Vulnerability",
+    "lesson_date": "2026-11-03",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "unknown",
+    "ai_discovery_date": "2026-10-29",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An unauthenticated remote attacker sends a crafted request to the SSL remote access VPN service. Logic errors in handling secondary authentication on a tunnel group lead to an unchecked return value and a NULL pointer dereference, and the device reloads. A successful VPN login is not required.",
+      "privileges_required": "None.",
+      "complexity": "Low (AC:L). The device must run SSL VPN with secondary authentication configured on a tunnel group.",
+      "ai_factor": "No source attributes the discovery or exploitation to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install the fixed ASA or FTD release for the train in use, or apply Cisco's temporary configuration mitigations (disable the tunnel group list when DefaultWEBVPNGroup uses no secondary authentication, or remove secondary authentication from affected tunnel groups).",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 26-04 (KEV remediation, due 2026-11-01 for federal agencies); NIS2 Art. 21 vulnerability handling",
+        "adequacy": "The mitigation that removes secondary authentication weakens login security, so it is a trade rather than a fix. The 3-day KEV window leaves little time to schedule firewall maintenance."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on unplanned ASA or FTD reloads and crash records, and correlate them with SSL VPN connection attempts from the same source addresses.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Cisco publishes no indicators. Reload events are visible, but a single reload resembles a hardware or software fault unless it is correlated with VPN traffic."
+      },
+      "response": {
+        "what_would_have_worked": "Fail over to a patched or mitigated standby, block the sending sources at an upstream device, and move to the fixed release.",
+        "was_this_required": false,
+        "framework_requiring_it": "NIS2 Art. 21 business continuity",
+        "adequacy": "A high-availability pair is only effective if both members are fixed or mitigated, because an unpatched member remains exposed."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SC-5": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Volume-based DoS controls do not stop a single crafted request."
+      },
+      "NIS2-Art21-availability": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Redundancy does not help if the standby has the same exposure."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Exposure depends on configuration that version inventory does not show."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Version-based patch tracking misses the configuration condition."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Inventory by version overstates exposure and cannot find the default tunnel group case."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CISA lists CVE-2026-76418 in KEV (2026-10-29, due 2026-11-01) and exploitation is confirmed. The KEV-keyed deadline covers the fixed ASA and FTD builds (for example ASA 9.20.4.50 and FTD 7.6.7) and accepts the configuration mitigation where the update cannot be applied at once.",
+        "gap_closes": [
+          "NIS2-Art21-availability"
         ]
       }
     ]

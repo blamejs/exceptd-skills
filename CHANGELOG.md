@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.21.46 — 2026-11-03
+
+The catalog gains 16 CISA KEV entries listed between 2026-09-22 and 2026-10-29, each with its fixed versions per product line, discoverer credit, exploitation status, indicators taken from the cited advisories and reports, framework control gaps for the NIST, EU, UK, AU and ISO buckets, and a lesson. The products are F5 BIG-IP APM (CVE-2026-94127), Check Point management servers (CVE-2026-93616), WSO2 (CVE-2026-5430), MikroTik RouterOS (CVE-2026-67279), Cisco Catalyst SD-WAN Manager (CVE-2026-76504), Fortinet FortiMail (CVE-2026-104286) and FortiOS and related products (CVE-2025-61624), Citrix NetScaler (CVE-2026-88779), Cisco Secure Email Gateway (CVE-2026-76519), Palo Alto PAN-OS (CVE-2026-0322), EG Secure SiteGuard (CVE-2026-106931), Siemens Software Center (CVE-2026-110936), Arista VeloCloud Orchestrator (CVE-2026-114625), the Collabora CODE server bundled with Nextcloud (CVE-2026-110447), Broadcom ESX (CVE-2026-41709) and Cisco ASA and FTD (CVE-2026-76418).
+
+Where a vendor publishes no fix for a supported line, the entry records `patch_available` as false. Where a vendor does not state whether the update needs a restart, `live_patch_notes` says so. NVD assigns CWE-841, CWE-177 and CWE-690 to CVE-2026-67279, CVE-2026-76504 and CVE-2026-76418; the CWE catalog does not carry them, so those entries cite CWE-284, CWE-20 and CWE-476 and say so in `complexity_notes`.
+
 ## 0.21.45 — 2026-11-03
 
 The pinned MITRE ATT&CK release is now 20.0 (published 2026-10-13) and the pinned MITRE ATLAS release is now 2026.10 (published 2026-10-28). The skills, playbooks, catalogs and README state the new versions, and 35 skills that cite the changed techniques or name the pins carry a `last_threat_review` of 2026-11-01.
