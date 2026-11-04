@@ -53,8 +53,14 @@ const BUDGET = {
   // vendor advisory to cite: CVE-2016-3643 (SolarWinds Virtualization Manager,
   // whose only references are third-party disclosures and exploit listings)
   // and CVE-2018-14558 (Tenda routers, whose vendor download page lists no
-  // advisory or fixed firmware).
-  "content-quality": 17,
+  // advisory or fixed firmware). Seven more have no vendor page to cite:
+  // CVE-2018-20062 (noneCMS, an archived project with no releases),
+  // CVE-2019-9082 (ThinkPHP, whose NVD references are issue-tracker and
+  // exploit-listing pages), CVE-2019-9978 (Social Warfare, whose references
+  // are a third-party post), CVE-2019-19356 (Netis), CVE-2019-20085 (TVT),
+  // CVE-2019-16256 (SIM Toolkit, a specification issue with no vendor patch) and
+  // CVE-2019-16759 (vBulletin, whose forum announcement returns HTTP 403).
+  "content-quality": 24,
   // temporal-staleness counts only the maintainer-controllable freshness fields,
   // which sit at 0 on fresh data; the headroom covers entries aging past a
   // threshold between refreshes.

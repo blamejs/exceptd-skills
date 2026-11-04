@@ -323,8 +323,10 @@ test("shipped catalogs: missing-context budget is enforced per catalog (no silen
     // for an entry whose weakness merely went unresearched. Five more follow
     // the same pattern: CVE-2012-3152, CVE-2016-3235, CVE-2016-7255,
     // CVE-2017-0143 and CVE-2017-0199 carry NVD-CWE-noinfo, a CISA-ADP
-    // "Not enough information" container and no vendor weakness class.
-    "cve-catalog":     { iocs: 0, cwe_refs: 10 },
+    // "Not enough information" container and no vendor weakness class. Five
+    // more match: CVE-2018-20062, CVE-2019-0803, CVE-2019-0808, CVE-2019-0859
+    // and CVE-2019-16256 carry NVD-CWE-noinfo or no weakness at all.
+    "cve-catalog":     { iocs: 0, cwe_refs: 15 },
     "cwe-catalog":     {},
     "attack-techniques": {},
     "atlas-ttps":      {},
