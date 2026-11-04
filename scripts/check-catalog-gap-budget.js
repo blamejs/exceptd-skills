@@ -60,7 +60,9 @@ const BUDGET = {
   // are a third-party post), CVE-2019-19356 (Netis), CVE-2019-20085 (TVT),
   // CVE-2019-16256 (SIM Toolkit, a specification issue with no vendor patch) and
   // CVE-2019-16759 (vBulletin, whose forum announcement returns HTTP 403).
-  "content-quality": 24,
+  // Three more: CVE-2020-10181 (Sumavision EMR), CVE-2020-10221 (rConfig) and
+  // CVE-2020-10987 (Tenda AC15), whose NVD references name no vendor advisory.
+  "content-quality": 27,
   // temporal-staleness counts only the maintainer-controllable freshness fields,
   // which sit at 0 on fresh data; the headroom covers entries aging past a
   // threshold between refreshes.
