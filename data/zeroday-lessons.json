@@ -17,7 +17,7 @@
       "rebuild_after_days": 365,
       "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
     },
-    "entry_count": 1822
+    "entry_count": 1843
   },
   "CVE-2026-31431": {
     "name": "Copy Fail",
@@ -150903,5 +150903,1573 @@
       }
     },
     "new_control_requirements": []
+  },
+  "CVE-2020-0646": {
+    "name": "Microsoft .NET Framework Remote Code Execution Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "The .NET Framework fails to validate input passed to susceptible methods; Microsoft states an attacker passes specific input to an application that uses those methods and can then take control of the system. NVD lists a public exploit.",
+      "privileges_required": "none in the NVD vector (PR:N)",
+      "complexity": "low: AC:L in the NVD vector; a public exploit is listed by NVD",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install the January 2020 update that Microsoft lists for each .NET Framework version and Windows release, and restart the host where Microsoft marks the update as requiring one.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "Patching fixes the flaw, but the update differs per framework version and Windows release, so coverage has to be checked per host."
+      },
+      "detection": {
+        "what_would_have_worked": "Compare each server's installed framework update with the KB number Microsoft lists for its release; Microsoft and CISA publish no exploitation log strings or hashes for this CVE.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Without published exploitation indicators, detection depends on update inventory rather than on observed attack behavior."
+      },
+      "response": {
+        "what_would_have_worked": "Apply the listed update and restart where Microsoft marks it Yes.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Microsoft marks restart as Maybe for most packages, so a team has to confirm per host whether a restart is needed."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Application-level input validation does not reach the missing validation inside the .NET Framework methods."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Seventeen update numbers across framework and Windows combinations are not visible in a Windows-build-level compliance report."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The fix arrives as a framework update through Windows rollups and security updates, outside a review of an application's own version."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The ISM timeframe that applies depends on whether the framework update is treated as an operating system, online service or application patch."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A public exploit exists for a flaw Microsoft rated 'Exploitation Less Likely' at publication, so the evaluation needs to be revisited."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2020-0646 was patched on 2020-01-14, a public exploit is listed by NVD, and CISA added it to KEV on 2021-11-03; a KEV-triggered deadline with a per-framework update inventory shortens exposure on hosts that still lack the .NET update.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-0674": {
+    "name": "Microsoft Internet Explorer Scripting Engine Memory Corruption Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "The legacy scripting engine in Internet Explorer handles objects in memory in a way that lets a crafted page corrupt memory and run code with the current user's rights; Microsoft states the attacker hosts a crafted website, or embeds an ActiveX control in an application or Office document that hosts the IE rendering engine. Google Project Zero identifies the bug as a use-after-free in JScript.",
+      "privileges_required": "none; user must view the crafted content (UI:R)",
+      "complexity": "high in the NVD vector (AC:H); public proof-of-concept code exists",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install the February 2020 Internet Explorer update for the release. Where that is delayed, Microsoft's workaround restricts access to jscript.dll, and the restriction has to be reversed before the update is installed. Disabling or removing IE11 removes the exposure.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "The update fixes the flaw; the workaround breaks features that rely on jscript.dll and is not a permanent state."
+      },
+      "detection": {
+        "what_would_have_worked": "Inventory hosts that load jscript.dll as the page scripting engine, check for the jscript.dll access restriction and for the absence of the listed update, and match the Project Zero sample SHA-256 on file stores and mail gateways.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The hash identifies one exploit sample; other builds of the exploit will not match it."
+      },
+      "response": {
+        "what_would_have_worked": "Apply the update and restart, reverse the jscript.dll restriction first if it was applied, and review browsing history on hosts that ran an unpatched IE for crafted pages.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Every listed package needs a restart, so response plans must schedule one for each affected host."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-CM-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The jscript.dll restriction reduces functionality such as proxy automatic configuration scripts and has to be reverted before updating."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Separate updates per IE version and Windows release, each needing a restart, have to be tracked to show completion."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The workaround state and the patched state are mutually exclusive, so a configuration assessment can report one without the other."
+      },
+      "AU-Essential-8-App-Hardening": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The ISM asks for IE11 to be disabled or removed; patching alone leaves the legacy engine in place."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The evaluation must decide on the interim jscript.dll restriction for a flaw Microsoft recorded as exploited at publication."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2020-0674 was exploited when Microsoft published its record on 2020-02-11, public proof-of-concept code exists, and CISA added it to KEV on 2021-11-03; a KEV-triggered deadline that covers the jscript.dll restriction and removal of IE11 shortens exposure on hosts awaiting a restart.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management",
+          "AU-Essential-8-App-Hardening"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-0688": {
+    "name": "Microsoft Exchange Server Validation Key Remote Code Execution Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "Exchange does not create a unique validation key at install time. Microsoft states that knowledge of the key lets an authenticated user with a mailbox pass arbitrary objects to be deserialized by the web application, which runs as SYSTEM. Public exploit code is listed by NVD, and the Canadian Cyber Centre states it is aware of public reporting that sophisticated threat actors are attempting to exploit the flaw.",
+      "privileges_required": "low; any authenticated user with a mailbox (PR:L)",
+      "complexity": "low: AC:L; public exploit code is listed by NVD",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install the February 2020 Exchange update for the installed CU or rollup (KB4536987, KB4536988 or KB4536989). Where the Control Panel is internet-reachable, the Canadian Cyber Centre advises protecting it with two-factor authentication and states it has not been able to substantiate public reporting that the flaw can be exploited where two-factor authentication is in place.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "The update fixes key creation; Microsoft's text does not state what it does to keys on servers already installed."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on /ecp/ requests that carry __VIEWSTATE, MSExchange Control Panel Event ID 4 entries in the Application log, and executables started by w3wp.exe on Exchange servers.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The indicators come from a government alert; they do not identify the payload or the actor."
+      },
+      "response": {
+        "what_would_have_worked": "Isolate Exchange servers showing the indicators, install the update, review accounts that held mailboxes on the server, and examine the server for files or services created by processes spawned from w3wp.exe.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Because the vulnerable application runs as SYSTEM, a confirmed hit means the whole server, not one mailbox, is in scope."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A patch-installed record does not show how key uniqueness was confirmed on servers installed before the update."
+      },
+      "NIS2-Art21-vulnerability-handling": {
+        "covered": true,
+        "adequate": false,
+        "gap": "An Important rating with 'Exploitation More Likely' and a mailbox-only prerequisite is routine under a critical-only escalation rule."
+      },
+      "UK-CAF-B2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Any mailbox credential reaches SYSTEM-level code execution, so ordinary user access control does not bound the impact."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The ISM 48-hour timeframe for online services keys off vendor-critical or working exploits; Microsoft rated the flaw Important."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The Cyber Centre could not substantiate reports that exploitation works with two-factor authentication in place, so the effect of that control on this flaw is unconfirmed."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2020-0688 was patched on 2020-02-11, the Canadian Cyber Centre stated on 2020-03-12 that it was aware of public reporting of exploitation attempts, and CISA added it to KEV on 2021-11-03 with ransomware use marked Known; a KEV-triggered deadline shortens exposure on Exchange servers still running an unpatched CU.",
+        "gap_closes": [
+          "NIS2-Art21-vulnerability-handling",
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-0938": {
+    "name": "Microsoft Windows Adobe Font Manager Library Remote Code Execution Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "The Windows Adobe Type Manager Library mishandles a specially crafted multi-master font in Adobe Type 1 PostScript format. Google Project Zero identifies a stack out-of-bounds write in the SetBlendDesignPositions handler. Microsoft states the user opens a crafted document or views it in the Windows Explorer Preview Pane.",
+      "privileges_required": "none; the user must open or preview the file (UI:R)",
+      "complexity": "low: AC:L in the NVD vector; Microsoft states attacks were limited and targeted",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install the April 2020 update for the release (Windows 7 and Server 2008 R2 need an ESU license). Interim workarounds are disabling the Explorer Preview Pane and Details Pane, disabling the WebClient service, and on releases before Windows 10 the DisableATMFD registry value or renaming ATMFD.DLL.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "The update fixes the flaw; Microsoft states the Preview Pane and WebClient workarounds do not stop an attack when the user opens a document that carries the font."
+      },
+      "detection": {
+        "what_would_have_worked": "Check hosts for the DisableATMFD value and for the update numbers listed for the release, and review Explorer preview activity on hosts that lack the update.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Microsoft and Project Zero publish no sample hash or network indicator, so detection depends on configuration and update state."
+      },
+      "response": {
+        "what_would_have_worked": "Apply the update and restart, apply the workarounds on hosts that cannot be updated, and treat unexplained crashes of font-processing components on unpatched Windows 8.1 and earlier hosts as a lead for review.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Microsoft's workarounds can break applications that rely on embedded fonts, so response plans need a test step."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "ESU entitlement is a precondition for the fix on Windows 7 and Server 2008 and 2008 R2."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "On Windows 10 the interim workarounds do not stop the user-opened path, and the complete ones apply only before Windows 10."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Exposure differs by Windows release because ATMFD.DLL is absent from Windows 10 version 1709 and later."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The ISM calls for replacing unsupported operating systems; an ESU-only fix is not the same as replacement."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The record has to state which workaround applies to which Windows release."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2020-0938 was patched on 2020-04-14 with Microsoft reporting limited, targeted attacks, and CISA added it to KEV on 2021-11-03; a KEV-triggered deadline that covers ESU entitlement and per-release workarounds shortens exposure on hosts awaiting the update.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-0968": {
+    "name": "Microsoft Internet Explorer Scripting Engine Memory Corruption Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "unknown",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "The scripting engine in Internet Explorer handles objects in memory in a way that lets crafted web content corrupt memory and run code in the context of the current user; Microsoft states the attacker gains the user's rights and takes control of the system if the user is an administrator.",
+      "privileges_required": "none in the NVD vector; the user must view crafted content (UI:R)",
+      "complexity": "high in the NVD vector (AC:H); no public exploit code is referenced",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install the April 2020 Internet Explorer update for the release and restart. Disabling or removing IE11 removes the exposure.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "The update fixes the flaw; Microsoft lists no workaround for it."
+      },
+      "detection": {
+        "what_would_have_worked": "Compare each host's installed Internet Explorer update with the KB number Microsoft lists for its release.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Microsoft and CISA publish no exploitation indicators for this CVE, so detection depends on update inventory."
+      },
+      "response": {
+        "what_would_have_worked": "Apply the update and restart, then review hosts that ran an unpatched Internet Explorer with administrative accounts, since Microsoft states an administrator account gives the attacker control of the system.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "No workaround is listed, so hosts that cannot restart remain exposed until they do."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Per-release update tracking and a restart on every host are needed to show remediation."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A rating recorded at release does not follow the change from not exploited to CISA-listed exploited."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Microsoft lists no workaround, so a configuration standard does not reduce the exposure."
+      },
+      "AU-Essential-8-App-Hardening": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The ISM asks for IE11 to be disabled or removed; patching alone leaves the engine in place."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The evaluation needs a re-rating trigger when exploitation is reported after release."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2020-0968 was patched on 2020-04-14 with Microsoft stating Exploited: No, and CISA added it to KEV on 2021-11-03 with ransomware use marked Known; a KEV-triggered deadline shortens exposure on hosts that were rated as not exploited at release.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-10181": {
+    "name": "Sumavision EMR Cross-Site Request Forgery (CSRF) Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "unknown",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "The goform/formEMR30 handler in Sumavision EMR 3.0.4.27 accepts a request that creates a user with administrator privileges, and CISA classes the flaw as cross-site request forgery.",
+      "privileges_required": "none in the NVD vector (PR:N)",
+      "complexity": "low: AC:L in the NVD vector; public exploit material is referenced by NVD",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "No fixed firmware is documented. Remove the router's web management interface from networks and browsers that untrusted content can reach, or replace the device.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "The required action, applying vendor updates, cannot be met when the vendor documents none."
+      },
+      "detection": {
+        "what_would_have_worked": "List administrator accounts on each EMR and compare them with the approved set, and alert on requests to goform/formEMR30 that carry a setString parameter.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "NVD and CISA state nothing about the router's logging, so request-level detection depends on a proxy or gateway in front of it."
+      },
+      "response": {
+        "what_would_have_worked": "Delete administrator accounts nobody approved, rotate credentials for the remaining accounts, and isolate or replace the device.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "With no vendor fix, an account clean-up does not stop the same request from creating a new account."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-AC-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The device accepts an account-creation request without confirming it came from a deliberate administrator action."
+      },
+      "NIS2-Art21-vulnerability-handling": {
+        "covered": true,
+        "adequate": false,
+        "gap": "No vendor advisory or fixed firmware exists to apply, so handling needs a compensating action."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "NVD lists no vendor setting or fix, so the configuration cannot be assessed against a vendor baseline."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A patch-timeframe figure cannot be met when no fixed firmware is documented."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The evaluation has to record the device as unpatched and name an isolation or replacement action."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2020-10181 is listed in CISA KEV as of 2021-11-03 and no vendor fix is documented; a KEV-triggered deadline that accepts documented compensating controls, such as isolating the device, shortens exposure when no patch exists.",
+        "gap_closes": [
+          "NIS2-Art21-vulnerability-handling",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-10189": {
+    "name": "Zoho ManageEngine Desktop Central File Upload Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An unauthenticated remote attacker sends serialized data to the Desktop Central web server, which deserializes it in the getChartImage method of the FileStorage class through the CewolfServlet and MDMLogUploaderServlet servlets, leading to remote code execution. Mandiant reports APT41 used it in March 2020 to download PowerShell and BITSAdmin payloads and a Cobalt Strike BEACON loader.",
+      "privileges_required": "none; ManageEngine states authentication is not required",
+      "complexity": "low: AC:L; a Source Incite proof of concept and a Packet Storm exploit are published",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install build 10.0.479 or later. Where that is delayed, remove the MDMLogUploaderServlet and CewolfServlet entries from web.xml and restart the service, and do not expose the server to untrusted networks.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "ManageEngine names 10.0.479 as the complete fix and states builds with the 10.0.474 short-term fix are not vulnerable to this exploit; NVD lists 10.0.479 as the first unaffected build."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on the Desktop Central java.exe starting cmd.exe, bitsadmin.exe or PowerShell, on creation of the StorSyncSvc service, on install.bat and storesyncsvc.dll under Windows Temp, and on requests to the /mdm/mdmLogUploader and /cewolf/ paths from unexpected sources.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The hashes, file names and addresses come from one APT41 intrusion; the java.exe child-process pattern applies to other payloads."
+      },
+      "response": {
+        "what_would_have_worked": "Isolate the server, remove the StorSyncSvc service and the dropped files, install the fixed build, and rotate credentials and review the endpoints the server manages, since it holds management access to them.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "A compromised endpoint-management server can push software to managed hosts, so cleaning the server alone does not establish that managed hosts are unaffected."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Serialized input handled in a servlet is outside a network input filter's view."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The vendor and NVD give different fixed builds (10.0.474 and 10.0.479), so a version check against one overstates or understates remediation."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The web.xml workaround is a configuration state that update-status checks do not report."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A public proof of concept dated 2020-03-05 preceded the dated complete fix, so the ISM 48-hour window starts after a working exploit is public."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The evaluation has to treat an endpoint-management server as a high-impact asset."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2020-10189 had a public proof of concept on 2020-03-05, Mandiant reported APT41 exploitation attempts from 2020-03-08, and CISA added it to KEV on 2021-11-03; a KEV-triggered deadline with a documented servlet-removal fallback shortens exposure while build 10.0.479 is being installed.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management",
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-10199": {
+    "name": "Sonatype Nexus Repository Remote Code Execution Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "Nexus Repository 3.x evaluates a Java Expression Language expression taken from a crafted request. An attacker with an account on the instance sends the request and the server runs the supplied code with the privileges of the user running the server. Sonatype states the issue was fixed by adjusting the configuration of a third-party library.",
+      "privileges_required": "low per NVD (PR:L): a valid account of any type on the instance; Sonatype's vector lists PR:H",
+      "complexity": "low (AC:L in both vectors)",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to Nexus Repository 3.21.2 or later. Limiting network access to the instance and the number of accounts that can log in reduces who can send the request.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "The upgrade closes the flaw; account and network restrictions only narrow the set of senders because any account type works."
+      },
+      "detection": {
+        "what_would_have_worked": "Inventory Nexus Repository instances at 3.21.1 or earlier, and alert on child processes started by the Nexus service account.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Sonatype, CISA and NVD publish no log string or file indicator for this CVE, so detection rests on version inventory and process behavior."
+      },
+      "response": {
+        "what_would_have_worked": "Treat an instance where unexpected code execution is confirmed as compromised, rotate the credentials and tokens stored in or reachable from the repository manager, and review the artifacts it hosts for tampering.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Sonatype's advisory states code runs with the server user's privileges, so the response scope is whatever that account can reach."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A remediation period that depends on scoring the privilege requirement can give a flaw any account can trigger a longer window."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Account and role checks do not stop an expression that the server evaluates from an authenticated request."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A repository manager treated as an internal developer tool can sit outside the patch cycle applied to internet-facing servers."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Ranking unauthenticated flaws first can place an any-account flaw below its position in the KEV catalog."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The strategy's timeframes apply to the application only if it is in the asset inventory."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "An authenticated-attacker score does not reflect that any account type can trigger code execution as the server user."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "Sonatype published the fix (3.21.2) on 2020-03-31 and stated that any account type can trigger code execution as the server user; CISA listed the CVE on 2021-11-03. A KEV-triggered deadline applies the same urgency to a repository manager regardless of how the asset is classified.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-1020": {
+    "name": "Microsoft Windows Adobe Font Manager Library Remote Code Execution Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "The Windows Adobe Type Manager Library improperly handles a specially crafted multi-master font in Adobe Type 1 PostScript format. Microsoft lists convincing a user to open a crafted document, or viewing it in the Windows Explorer Preview pane, as ways to trigger the flaw. On systems other than Windows 10 the attacker can execute code remotely; on Windows 10 the code runs in an AppContainer sandbox with limited privileges.",
+      "privileges_required": "none; user interaction (opening or previewing a file) is required (PR:N, UI:R)",
+      "complexity": "low (AC:L)",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install the April 2020 update for the platform and restart. Before the update, disable the Preview and Details panes, disable the WebClient service, or set the DisableATMFD registry value on releases that carry ATMFD.DLL.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "The update works only after the restart Microsoft lists as required, and for Windows 7 and Windows Server 2008 and 2008 R2 only with an ESU license. Microsoft states the preview-pane workaround does not stop exploitation when a user opens a document with the vulnerable font."
+      },
+      "detection": {
+        "what_would_have_worked": "Inventory hosts missing the listed KBs and check the DisableATMFD value on older releases that lack the update.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Microsoft, CISA and NVD list no file, hash or log indicators for exploitation, so detection rests on update and configuration state."
+      },
+      "response": {
+        "what_would_have_worked": "Treat a host where exploitation is confirmed as compromised at the user level, and on releases other than Windows 10 consider the code to have run with the user's full rights, then rebuild or investigate and rotate credentials the user held.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Microsoft states exploitation was observed in limited, targeted attacks, so the response scope depends on what the opened document delivered after the font parser executed code."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A remediation period keyed to the severity label does not match a flaw Microsoft marked publicly disclosed and exploited at publication."
+      },
+      "NIST-800-53-SI-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The trigger is a font parsed by the operating system, and the workarounds reduce exposure outside any malicious-code signature control."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Coverage can exclude hosts without an ESU license or hosts that installed the update but have not restarted."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Treating user interaction as a barrier can rank a preview-pane flaw below its exploited status."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "For the Windows 7 and Server 2008 lines the fix needs an ESU license and a restart."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Evaluation by CVSS and the user-interaction requirement does not reflect the Exploited: Yes status or the Preview pane vector."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "Microsoft published the fix in April 2020 with a restart required on every listed package and stated it was aware of limited, targeted attacks; a KEV-triggered deadline that counts restart completion and ESU coverage closes the installed-but-not-restarted and unlicensed windows.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management",
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-10221": {
+    "name": "rConfig OS Command Injection Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "unknown",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "The rConfig handler lib/ajaxHandlers/ajaxAddTemplate.php uses the fileName POST parameter in an operating system command without neutralizing shell metacharacters. A logged-in attacker who sends crafted input to that handler runs commands on the rConfig server.",
+      "privileges_required": "low: a valid rConfig account (PR:L)",
+      "complexity": "low (AC:L)",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade to a release past 3.9.4 if the vendor provides one for the installed line, restrict network access to the rConfig web interface, and limit which accounts can log in.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "NVD references no vendor advisory that names a fixed version, so the available measures are access restrictions that narrow who can reach the handler."
+      },
+      "detection": {
+        "what_would_have_worked": "Inventory rConfig installations at version 3.9.4 or earlier, and alert on POST requests to ajaxAddTemplate.php with shell metacharacters in fileName.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "NVD and CISA publish no log string or file indicator beyond the vulnerable file and parameter, so detection rests on request inspection."
+      },
+      "response": {
+        "what_would_have_worked": "Treat a host where command execution is confirmed as compromised, rebuild it, and rotate the credentials stored in or used by rConfig.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The scope of the response is whatever the web server account on the rConfig host could read or reach."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "An account-level check does not validate a parameter that reaches an operating system command."
+      },
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "NVD references no vendor advisory that states a fixed version, so there is no patch record to track."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The affected-version range is the only remediation input, because no vendor advisory states a fix."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Ranking unauthenticated flaws first can place a PR:L flaw below its position in the KEV catalog."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The strategy's timeframes have no vendor update to apply when none is stated."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "An authenticated-attacker score does not show that a logged-in account can run operating system commands on the server."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "NVD lists rConfig through 3.9.4 as affected and NVD references no vendor advisory that states a fixed version; a KEV-triggered deadline that accepts documented compensating controls gives a patch-management process a required action when no vendor fix is stated.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-1040": {
+    "name": "Microsoft Hyper-V RemoteFX vGPU Remote Code Execution Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "Hyper-V RemoteFX vGPU on a host fails to properly validate input from an authenticated user on a guest operating system. Microsoft states an attacker could run a specially crafted application on a guest, attacking certain third-party video drivers running on the Hyper-V host, which could cause the host operating system to execute arbitrary code.",
+      "privileges_required": "low: an authenticated user on a guest operating system (PR:L), with a changed scope from guest to host (S:C)",
+      "complexity": "low in the NVD vector (AC:L); Microsoft's CVRF record rates it high (AC:H)",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install the July 2020 updates so RemoteFX vGPU is disabled, and move graphics virtualization to Discrete Device Assignment on Windows Server 2016 or 2019 as Microsoft advises. On Windows Server 2012 R2 or older, stop using RemoteFX vGPU.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "Microsoft states there is no patch; the July 2020 update disables the RemoteFX feature, and the feature remains exposed on hosts where it was re-enabled or where the update is not installed."
+      },
+      "detection": {
+        "what_would_have_worked": "Inventory Hyper-V hosts and VMs for RemoteFX vGPU adapters, and confirm the July 2020 or later updates are installed on each host.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Microsoft, CISA and NVD publish no indicator of exploitation for this CVE, so detection rests on configuration inventory."
+      },
+      "response": {
+        "what_would_have_worked": "Treat a host where guest-to-host code execution is confirmed as compromised, which puts every VM on that host in scope, then rebuild the host and rotate the credentials the host and its VMs held.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Microsoft states the attacker's code runs on the host operating system, so the response scope is the whole virtualization host."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SC-39": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The guest-to-host isolation boundary the control relies on is the component the flaw defeats."
+      },
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "An installed update does not show whether a RemoteFX vGPU adapter is still attached to any VM."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Closure requires removing the feature from VMs, which a patch-compliance report does not measure."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Closing the flaw is a design change to graphics virtualization that vulnerability management does not by default track."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The update disables a feature and is not a code fix, so a patch-timeframe check can pass while the feature is still configured."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "An installed-update check does not show whether a RemoteFX vGPU adapter is attached or re-enabled."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "Microsoft states there is no patch for CVE-2020-1040 and that its update disables RemoteFX; a KEV-triggered deadline that requires verified mitigation, such as confirming no VM uses a RemoteFX vGPU adapter, closes the gap between an installed update and a removed feature.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-1054": {
+    "name": "Microsoft Win32k Privilege Escalation Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "The Windows kernel-mode driver (Win32k) fails to properly handle objects in memory. An attacker who has logged on runs a specially crafted application and obtains arbitrary code execution in kernel mode. NVD tags a public Packet Storm file as an Exploit reference.",
+      "privileges_required": "low: the attacker must first log on (PR:L)",
+      "complexity": "low in NVD's vector (AC:L); Microsoft's vector rates it high (AC:H)",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install the May 2020 update for the platform and restart. Restricting which accounts and processes can run code on a host limits who can reach the flaw.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "The update works only after the restart Microsoft lists as required on every package."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on standard-user processes that later run as SYSTEM, and inventory hosts missing the listed KBs.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Microsoft, CISA and NVD list no file, hash or registry indicators for exploitation, so detection rests on behavior and update state."
+      },
+      "response": {
+        "what_would_have_worked": "Treat a host where privilege escalation is confirmed as fully compromised, because Microsoft states the attacker can run code in kernel mode, then rebuild it and rotate credentials that were present.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The earlier step that gave the attacker code execution under a user account also needs response; this flaw is the second step."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A remediation period keyed to the Important rating and the exploited flag at publication does not reflect the later KEV listing."
+      },
+      "NIST-800-53-AC-6": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Least privilege confines a low-privilege account only until the account can reach a kernel-mode flaw."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Installed-but-not-restarted updates can count as deployed while the flaw is still present."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A local-vector flaw can be ranked below network-reachable flaws despite its KEV listing."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Coverage depends on the older Windows lines staying in the inventory and being restarted."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Evaluation by a local-vector score does not reflect the KEV listing, and no restart-completion check is required."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "Microsoft fixed CVE-2020-1054 in May 2020 with a restart required on every listed package; CISA listed it on 2021-11-03. A KEV-triggered deadline that counts restart completion closes the installed-but-not-restarted window.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-10987": {
+    "name": "Tenda AC1900 Router AC15 Model Remote Code Execution Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "unknown",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "The goform/setUsbUnload endpoint of Tenda AC15 AC1900 firmware 15.03.05.19 uses the deviceName POST parameter in a system command without validating it. A remote attacker who can reach the router's web interface sends a crafted request and runs system commands on the router.",
+      "privileges_required": "none per NVD (PR:N)",
+      "complexity": "low (AC:L)",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply a firmware update if the vendor provides one for the AC15. Restrict access to the router's web management interface so only trusted hosts can reach it, and replace devices that receive no fix.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "NVD references no vendor advisory that names a fixed version, so the available measures are access restrictions and device replacement."
+      },
+      "detection": {
+        "what_would_have_worked": "Inventory Tenda AC15 routers running firmware 15.03.05.19, and alert on POST requests to goform/setUsbUnload that carry a deviceName value other than a device name.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "NVD and CISA publish no log string or file indicator beyond the endpoint and parameter, so detection depends on a sensor that sees requests to the router's web interface."
+      },
+      "response": {
+        "what_would_have_worked": "Treat a router where command execution is confirmed as compromised: factory-reset it or replace it, change administrator and Wi-Fi credentials, and review devices behind it for traffic redirection.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The scope of the response is the traffic that passed through the router while it was compromised."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "With no authentication and no external validation point, the parameter can be checked only inside the firmware."
+      },
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "NVD references no vendor advisory that states a fixed firmware version, so there is no patch record to track."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The affected-version statement is the only remediation input, because no vendor advisory states a fix."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "An unauthenticated command-execution flaw with no stated fix needs a compensating control that an installed-updates assessment does not record."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The strategy's timeframes have no vendor update to measure when none is stated."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "With no stated vendor fix, evaluation by CVSS leaves the response to unspecified compensating measures."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "NVD lists firmware 15.03.05.19 as affected by an unauthenticated command-injection flaw and NVD references no vendor advisory that states a fixed firmware version; a KEV-triggered deadline that accepts documented compensating controls gives a patch-management process a required action when no vendor fix is stated.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management",
+          "ISO-27001-2022-A.8.8"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-1147": {
+    "name": "Microsoft .NET Framework, SharePoint, and Visual Studio Remote Code Execution Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "The software fails to check the source markup of XML file input handled by the DataSet and DataTable types. An attacker who uploads a specially crafted document to a server using an affected product to process content runs arbitrary code in the context of the process that deserializes the XML. NVD tags public Packet Storm files as Exploit references.",
+      "privileges_required": "none in NVD's vector (PR:N), with user interaction (UI:R) and a local attack vector (AV:L); Microsoft's description of server-side upload is the path that applies to SharePoint",
+      "complexity": "low (AC:L)",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install the July 2020 SharePoint update and the .NET Framework update, plus the Visual Studio and .NET Core updates where those products are installed, and restart where the update requires it. Restricting who can upload documents to SharePoint limits who can deliver the crafted content.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "Microsoft states full protection needs every affected product updated, so patching SharePoint alone leaves the .NET Framework path open and the reverse."
+      },
+      "detection": {
+        "what_would_have_worked": "Inventory SharePoint, .NET Framework, Visual Studio and .NET Core installs against the listed updates, and alert on child processes started by the SharePoint web worker process.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Microsoft, CISA and NVD list no file, hash or registry indicators for exploitation, so detection rests on update state and process behavior."
+      },
+      "response": {
+        "what_would_have_worked": "Treat a SharePoint server where unexpected code execution is confirmed as compromised, rebuild it, and rotate the service-account credentials and farm secrets it held.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Microsoft states the code runs in the context of the deserializing process, so the response scope is that service account's access."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A remediation period keyed to one score can understate a flaw triggered by uploading a document to a server."
+      },
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Validating an uploaded file's type or size does not cover the markup content the deserializer accepts."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A patch record showing only one of the affected products leaves part of the exposure open."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "An asset-by-asset review of one product can miss the same flaw in another product on the same host."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "One CVE spans three update streams, and some .NET Framework packages require a restart."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Evaluation by the NVD vector does not reflect the server-side document upload path Microsoft describes."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "Microsoft fixed CVE-2020-1147 in July 2020 and states full protection needs the .NET Framework update plus updates for every other affected product; a KEV-triggered deadline that verifies each affected product on a host closes the partial-patch window.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management",
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-11651": {
+    "name": "SaltStack Salt Authentication Bypass Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "A remote user reaches the salt-master over the network and calls methods of the ClearFuncs class that do not validate the call, which returns user tokens from the master or runs commands on minions. Trend Micro describes coin miners dropped on masters and minions through this path, and NVD lists published exploit code.",
+      "privileges_required": "none; NVD scores PR:N",
+      "complexity": "low: AC:L; published exploit code exists",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade Salt to 2019.2.4 or 3000.2 or later, and restrict network access to the master to the minions and administrators that need it.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "The upgrade removes the flaw. A network restriction limits who can call the master but does not fix it for callers that are allowed through."
+      },
+      "detection": {
+        "what_would_have_worked": "Alert on new files at /tmp/salt-minions and /var/tmp/salt-store, a process named [salt-store], commands run on minions with no matching job on the master, and the SHA-256 values Trend Micro lists.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The file names and hashes belong to coin-mining payloads; an attacker who runs other commands through the master leaves none of them, so minion command auditing against master job records is needed as well."
+      },
+      "response": {
+        "what_would_have_worked": "Upgrade the master, restrict its network exposure, remove the dropped files and miner processes on masters and minions, and rotate credentials and keys that were stored on or reachable from the master.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Because the master can run commands as root on every minion, a compromised master puts every minion in scope for review."
+      }
+    },
+    "framework_coverage": {
+      "AU-ISM-1546": {
+        "covered": true,
+        "adequate": false,
+        "gap": "An authentication requirement does not cover a service whose method dispatch skips authentication for some calls."
+      },
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A boundary rule leaves the master's unauthenticated methods reachable to anyone allowed through it."
+      },
+      "NIS2-Art21-vulnerability-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A patch process that treats the master as one server understates the minions a compromise reaches."
+      },
+      "UK-CAF-B2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Access reviews of Salt accounts and keys do not show whether unauthenticated callers could issue the same actions."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "An inventory that does not record the running master version does not show which masters stay exposed."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2020-11651 was fixed in Salt 2019.2.4 and 3000.2 in April 2020, Trend Micro reported coin miners exploiting it with telemetry from 2020-05-03, and CISA added it to KEV on 2021-11-03; a KEV-triggered deadline that includes a network restriction for the master shortens exposure for masters that are slow to upgrade.",
+        "gap_closes": [
+          "NIST-800-53-SC-7",
+          "NIS2-Art21-vulnerability-management"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-11652": {
+    "name": "SaltStack Salt Path Traversal Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An authenticated user calls salt-master ClearFuncs methods that do not sanitize file paths, which gives access to directories outside the intended roots on the master. NVD tags published exploit code that targets the Salt master flaws.",
+      "privileges_required": "low; NVD scores PR:L",
+      "complexity": "low: AC:L; published exploit code exists",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Upgrade Salt to 2019.2.4 or 3000.2 or later, and limit which accounts and networks can authenticate to the master.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "The upgrade removes the flaw; limiting accounts reduces who can use it before the upgrade."
+      },
+      "detection": {
+        "what_would_have_worked": "Audit file access on the master by Salt client sessions, and alert on /tmp/salt-minions, /var/tmp/salt-store and a process named [salt-store].",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The file names belong to coin-mining payloads seen in attacks that used both Salt flaws; a read-only traversal leaves none of them, so file-access auditing on the master is the relevant detection."
+      },
+      "response": {
+        "what_would_have_worked": "Upgrade the master, rotate the master's keys and any credentials stored in files on it, and review which authenticated sessions read files outside the configured roots.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Without file-access logs on the master, the set of files a session read cannot be established."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-10": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Path validation is performed inside the master, where a boundary control does not check it."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A per-CVE patch record can show one Salt flaw fixed and the other open on the same host."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A review that counts only administrators misses the low-privilege accounts that can use the traversal."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A patch-compliance figure that tracks operating-system packages does not show how a Salt master was installed."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A score-based ranking places this flaw below its unauthenticated sibling although one upgrade fixes both."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2020-11652 was fixed in Salt 2019.2.4 and 3000.2 in April 2020 and CISA added it to KEV on 2021-11-03; a KEV-triggered deadline applies to the traversal flaw as well as its unauthenticated sibling.",
+        "gap_closes": [
+          "NIS2-Art21-patch-management",
+          "NIST-800-53-SI-10"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-11738": {
+    "name": "WordPress Snap Creek Duplicator Plugin File Download Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "unknown",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An unauthenticated visitor sends an HTTP request to the WordPress site that calls the plugin's download function and passes a file parameter containing ../ path segments, so the site returns files outside the plugin's backup directory, such as wp-config.php. Published exploit files are listed by NVD.",
+      "privileges_required": "none; NVD scores PR:N",
+      "complexity": "low: AC:L; published exploit files exist",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Update to Duplicator Lite 1.3.28 or Duplicator Pro 3.8.7.1 or later, or remove the plugin from sites that do not use it.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "The update removes the flaw; a site that already served wp-config.php needs its database credentials changed in addition."
+      },
+      "detection": {
+        "what_would_have_worked": "Search web server access logs for action=duplicator_download with a file parameter containing ../, and for requests for wp-config.php.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The request pattern identifies attempts; the access log response status and size for each request show whether the site returned a file."
+      },
+      "response": {
+        "what_would_have_worked": "Update the plugin, change the database password and the authentication keys and salts in wp-config.php, and review the database and site for unauthorized changes.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "A plugin update alone leaves the stolen credentials valid."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A remediation timeline that starts at fix availability does not cover the 50,000 attempts that Tenable and Threatpost state came before the fix."
+      },
+      "NIS2-Art21-vulnerability-handling": {
+        "covered": true,
+        "adequate": false,
+        "gap": "NVD published the CVE two months after the fix and after the attacks, so handling that starts from a CVE record starts late."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A plugin list does not show which plugins expose unauthenticated actions."
+      },
+      "AU-ISM-1808": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A scan that depends on a vulnerability database covers the flaw only from the date its entry exists."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Rating the flaw as disclosure only misses that wp-config.php holds database credentials."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2020-11738 was fixed in Duplicator Lite 1.3.28 and Duplicator Pro 3.8.7.1 on 2020-02-12, Tenable and Threatpost report attacks on the plugin including about 50,000 before that fix, and CISA added the CVE to KEV on 2021-11-03; a KEV-triggered deadline that includes credential rotation shortens the exposure of sites that still run old releases.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "NIS2-Art21-vulnerability-handling"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-12271": {
+    "name": "Sophos SFOS SQL Injection Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "vendor_research",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An unauthenticated attacker sends requests to the firewall's administration (HTTPS) service or User Portal when it is exposed on the WAN zone, and a SQL injection places a command in the device database that the firewall then runs. Sophos describes the injected command downloading a shell script and further modules that collected usernames and hashed passwords of local accounts.",
+      "privileges_required": "none; NVD scores PR:N",
+      "complexity": "low: AC:L",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Apply the Sophos hotfix (automatic installation, or KBA 135415 where it is disabled), and do not expose the administration (HTTPS) service or User Portal on the WAN zone.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "The hotfix removes the flaw. Removing the WAN exposure limits who can reach the vulnerable service on an unpatched device."
+      },
+      "detection": {
+        "what_would_have_worked": "Check for a cssconf.bin process with parent ID 1, a modified generate_curl_ca_bundle.sh, the Sophos-listed files and hashes, shell commands in the admin IP field, and outbound connections to the Sophos-listed addresses and domains.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The files, addresses and domains belong to one campaign; the process and script checks are the ones that apply to variants."
+      },
+      "response": {
+        "what_would_have_worked": "Apply the hotfix, follow KBA 135412 as Sophos's blog directs, and reset passwords of local admin, portal admin and remote-access user accounts, as Sophos urges for impacted firewalls.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "External Active Directory and LDAP passwords are not stored on the device per NVD and CISA, so only the local accounts need resetting for credential exposure."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SC-7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "The exposed service is the boundary device itself, so a boundary rule does not protect it."
+      },
+      "NIS2-Art21-network-security": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A firewall treated as the trusted control gives no protection when it is the compromised system."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A patch-compliance report that assumes the vendor pushes the fix does not show devices that stayed unpatched."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A timeframe from the release date does not show whether a given device received the hotfix."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Patching does not cover credentials taken from devices before the hotfix."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2020-12271 was exploited in April 2020, Sophos published its analysis on 2020-04-26 and states a hotfix was pushed to supported devices, and CISA added the CVE to KEV on 2021-11-03 with a Known ransomware-use marker; a KEV-triggered deadline that includes removing WAN management exposure and resetting local credentials covers devices that missed the hotfix.",
+        "gap_closes": [
+          "NIST-800-53-SC-7",
+          "UK-CAF-B4"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-1350": {
+    "name": "Microsoft Windows DNS Server Remote Code Execution Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An unauthenticated attacker sends malicious requests to a Windows DNS server, which leads to remote code execution in the context of the Local System account; Microsoft calls the flaw wormable. Check Point describes the trigger as an oversized record in a DNS response handled by dns.exe and states the DNS client is not affected.",
+      "privileges_required": "none; NVD scores PR:N",
+      "complexity": "low: AC:L; Check Point states the primitives needed for exploitation exist but publishes no exploit",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install the July 2020 update for the Windows Server release and restart the server. Where the update is delayed, set TcpReceivePacketSize to 0xFF00 and restart the DNS service.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA Emergency Directive 20-03 and BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "The update removes the flaw. The registry workaround drops large TCP DNS responses, which Microsoft states can leave some queries unanswered."
+      },
+      "detection": {
+        "what_would_have_worked": "Enable DNS diagnostic logging and review it for unusually large TCP responses, and watch for dns.exe crashes and service restarts.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Microsoft names no event IDs for exploitation, so detection rests on diagnostic logging, crash records and network inspection of TCP port 53."
+      },
+      "response": {
+        "what_would_have_worked": "Patch and restart the server, then treat a DNS server that crashed with oversized responses as possibly compromised, with its Local System context and any domain controller role in scope for review.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Microsoft states DNS is commonly installed on domain controllers, so compromise of the DNS role can lead to compromise of high-level domain accounts."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Recording the workaround as remediation hides that the update and restart are still pending."
+      },
+      "NIS2-Art21-patch-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A priority that ranks only internet-facing servers leaves domain controllers that run DNS unranked."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A baseline that omits TcpReceivePacketSize cannot show which servers were mitigated."
+      },
+      "AU-ISM-0298": {
+        "covered": true,
+        "adequate": false,
+        "gap": "An installation record without a restart does not confirm the fix is in effect."
+      },
+      "ISO-27001-2022-A.8.8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Asset records need to identify DNS servers by role rather than as an application."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2020-1350 was fixed on 2020-07-14 with restart required, Microsoft offered a registry workaround, and CISA added it to KEV on 2021-11-03 with a reference to Emergency Directive 20-03; a KEV-triggered deadline with the workaround as a fallback shortens exposure on servers awaiting a restart.",
+        "gap_closes": [
+          "NIST-800-53-SI-2",
+          "AU-ISM-0298"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-1464": {
+    "name": "Microsoft Windows Spoofing Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "Windows incorrectly validates file signatures, so an attacker can add content to a signed file and Windows still reports the signature as valid, which bypasses security features that block improperly signed files. VirusTotal describes a malicious JAR appended to a signed MSI as one use.",
+      "privileges_required": "low; the NVD and CNA vectors score PR:L and a local attack vector",
+      "complexity": "low: AC:L; the technique is published and Microsoft reports exploitation",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install the August 2020 update for the Windows release and restart the system.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "The update corrects how Windows validates file signatures; Microsoft lists no workaround for systems awaiting it."
+      },
+      "detection": {
+        "what_would_have_worked": "Scan signed files with Sigcheck and alert on the warning 'Signed but the filesize is invalid (the file is too large)', and alert on Java starting an archive from an installer-named file.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The warning applies to signed files with appended data; a scanning policy that exempts signed files never raises it."
+      },
+      "response": {
+        "what_would_have_worked": "Quarantine signed files that Sigcheck flags, install the update, and review what the appended payload did on hosts where it ran.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The appended payload runs as a normal Java program, so its effects depend on the payload and need separate review."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SI-3": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A scanning policy that exempts valid signatures does not see appended content."
+      },
+      "NIS2-Art21-vulnerability-handling": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A process that tracks vendor fixes had none to track for about 19 months while the technique was in use."
+      },
+      "UK-CAF-B4": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A signed-only rule fails when Windows reports a valid signature for a modified file."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A count of installed updates without restarts does not show the fix is in effect."
+      },
+      "ISO-27001-2022-A.8.7": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Protection that trusts the signature verdict alone does not cover the appended-content technique."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2020-1464 was fixed on 2020-08-11 with restart required, Microsoft's record marks it exploited, and CISA added it to KEV on 2021-11-03; a KEV-triggered deadline that includes scanning signed files for appended data covers systems that were not restarted.",
+        "gap_closes": [
+          "NIST-800-53-SI-3",
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
+  },
+  "CVE-2020-1472": {
+    "name": "Microsoft Netlogon Privilege Escalation Vulnerability",
+    "lesson_date": "2026-11-04",
+    "ai_discovered_zeroday": false,
+    "ai_discovery_source": "human_researcher",
+    "ai_discovery_date": "2021-11-03",
+    "ai_assist_factor": "none",
+    "attack_vector": {
+      "description": "An unauthenticated attacker with network access to a domain controller uses the Netlogon Remote Protocol (MS-NRPC) to establish a vulnerable secure channel connection, which yields domain administrator access. Microsoft's update changes how Netlogon handles secure channels.",
+      "privileges_required": "none; Microsoft describes the attacker as unauthenticated, and NVD scores PR:N",
+      "complexity": "low: AC:L; published exploit code exists",
+      "ai_factor": "None. No source attributes discovery or exploit construction to AI tooling."
+    },
+    "defense_chain": {
+      "prevention": {
+        "what_would_have_worked": "Install the August 2020 or later update on every domain controller and restart it, then move to enforcement mode (mandatory with updates released on or after 2021-02-09) after resolving the NETLOGON events for devices that make vulnerable connections.",
+        "was_this_required": true,
+        "framework_requiring_it": "CISA Emergency Directive 20-04 and BOD 22-01 (KEV remediation, added 2021-11-03)",
+        "adequacy": "Microsoft states the initial update does not protect machine accounts of third-party devices or accounts in the allow group policy until enforcement mode is on."
+      },
+      "detection": {
+        "what_would_have_worked": "Review NETLOGON events 5827 to 5831 in the System log of domain controllers, and enable the Defender for Identity alert for Netlogon privilege elevation attempts.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "The events describe denied and allowed vulnerable connections after the update is installed; on an unpatched domain controller they are not generated."
+      },
+      "response": {
+        "what_would_have_worked": "Update and restart the domain controllers, enforce secure channel protection, and treat a domain controller that handled an attempt from an unknown device as potentially compromised, with domain administrator credentials in scope for review.",
+        "was_this_required": false,
+        "framework_requiring_it": null,
+        "adequacy": "Microsoft states a successful exploit gives domain administrator access, so the review scope is the whole domain."
+      }
+    },
+    "framework_coverage": {
+      "NIST-800-53-SC-8": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A record that the channel is encrypted does not show an unauthenticated client was prevented from establishing it."
+      },
+      "NIS2-Art21-identity-management": {
+        "covered": true,
+        "adequate": false,
+        "gap": "Identity controls that start from authenticated sessions do not cover the step that creates the administrator session."
+      },
+      "UK-CAF-B2": {
+        "covered": true,
+        "adequate": false,
+        "gap": "An access review that lists Windows accounts as protected misses third-party device accounts until enforcement."
+      },
+      "AU-Essential-8-Patch": {
+        "covered": true,
+        "adequate": false,
+        "gap": "An installed August 2020 update does not show enforcement mode is on."
+      },
+      "ISO-27001-2022-A.8.15": {
+        "covered": true,
+        "adequate": false,
+        "gap": "A log review that omits domain controller System logs misses events 5827 to 5831."
+      }
+    },
+    "new_control_requirements": [
+      {
+        "id": "NEW-CTRL-001",
+        "name": "CISA-KEV-RESPONSE-SLA",
+        "description": "For any CVE listed in CISA KEV: deploy verified mitigation (patch, live patch, or documented compensating controls) within 4 hours of KEV listing or patch availability, whichever is later.",
+        "evidence": "CVE-2020-1472 was fixed on 2020-08-11 with restart required, Microsoft reports exploitation activity from 2020-09-13, and CISA added it to KEV on 2021-11-03 with a Known ransomware-use marker and a reference to Emergency Directive 20-04; a KEV-triggered deadline that includes enforcement mode covers domain controllers that installed only the first-phase update.",
+        "gap_closes": [
+          "UK-CAF-B2",
+          "AU-Essential-8-Patch"
+        ]
+      }
+    ]
   }
 }
