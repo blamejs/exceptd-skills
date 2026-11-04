@@ -9,7 +9,7 @@
   },
   "CVE-2012-0158": {
     "name": "Microsoft MSCOMCTL.OCX Remote Code Execution Vulnerability",
-    "rwep": 70,
+    "rwep": 75,
     "cvss": 8.8,
     "cisa_kev": true,
     "epss_score": 0.99976,
@@ -6199,7 +6199,7 @@
   },
   "CVE-2017-7269": {
     "name": "Microsoft Windows Server Buffer Overflow Vulnerability",
-    "rwep": 62,
+    "rwep": 72,
     "cvss": 9.8,
     "cisa_kev": true,
     "epss_score": 0.99823,

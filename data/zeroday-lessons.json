@@ -148110,7 +148110,7 @@
         "adequacy": "The extension mismatch is the only reported indicator, and attackers can change it."
       },
       "response": {
-        "what_would_have_worked": "Isolate hosts that opened a suspect document, identify the remote access tool the payload installed (PlugX, Gh0stRAT, T9000, Kivars, Graber and Agent.XST are reported), and reset credentials used on the host.",
+        "what_would_have_worked": "Isolate hosts that opened a suspect document, identify the remote access tool the payload installed (PlugX, Gh0stRAT, Kivars, Graber and Agent.XST are reported), and reset credentials used on the host.",
         "was_this_required": false,
         "framework_requiring_it": null,
         "adequacy": "Response needs the original attachment, which is often not retained."
