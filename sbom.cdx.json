@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:c7d4cf0d-eb56-42d7-8cef-549e80115369",
+  "serialNumber": "urn:uuid:47f88ff4-392f-4250-a6ad-571c08ebfd0a",
   "version": 1,
   "metadata": {
     "timestamp": "2026-11-04T00:00:00.000Z",
@@ -29,7 +29,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "1105e883391434579135adce52b41cf143450f6f2e611d108b208355eae3228e"
+          "content": "361cb1266126ed96fa17efddd8423404144f626e48a31400249e53505773c230"
         }
       ],
       "externalReferences": [
@@ -334,11 +334,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "9f62f3e378047c7ee5f50dc5376ac987a5743ab4c2da748615d3e76f5e476df7"
+          "content": "5b8485d65309ccf37a15b903f4366626d78c0b88e13ddee46562e34285993528"
         },
         {
           "alg": "SHA3-512",
-          "content": "18a0393629e3bc56a13268ea0ee3486ae9cf280b51aa71cec4d7f30d70c8203ba4ca6fb5ecea3c40f9aa957fe2d042a3bc955773f1fe9aec7faa6b14333ff49e"
+          "content": "6daf9461b7f2f21b4dcebd37f23806916df7d5b9098bd6e78c612c3a68efc6312c84a6c94c4b11ecb5a858d6bb603ce030d0b9f851ce33c32e092aed28ef9f50"
         }
       ]
     },
@@ -1984,11 +1984,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "5855057cb7b057ef6460eb444af02c3252259cc97fb8bdcab79ca87f63f2e17c"
+          "content": "ba264007297cdbba476862daf2d06f20c494d566b61ac52c64a35c6e277a1036"
         },
         {
           "alg": "SHA3-512",
-          "content": "5e0e787c8ae49bff8dc91cf2b1a3644d55ccb1cda010d4498c71145caf2f491589000a0f4409fa5a290e5fdf79c0a34b80a8146e1d9dd6adcd96fa4183889369"
+          "content": "74ac9deb6db663e5aaffdf553c352f5f7fac10377caa9082dafbdf97364ba067b5cf10b00955686ab8c1ee328809b61044d7b806ac56ed78268848bcbdc220e2"
         }
       ]
     },
@@ -2109,21 +2109,6 @@
         {
           "alg": "SHA3-512",
           "content": "f3867347de6a420a0bddce85aa4718586102babf9e65b62b2762bea3c9c68238f7383a2f31518e628a9568ae605554448cde6ed39b63ddc2f50abcd01a312f5f"
-        }
-      ]
-    },
-    {
-      "bom-ref": "file:scripts/_fake_version_tag_probe.js",
-      "type": "file",
-      "name": "scripts/_fake_version_tag_probe.js",
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "9135e076ee1868399d1e90b8981102a445582dd9f09edf5474d48c4ffdb173e2"
-        },
-        {
-          "alg": "SHA3-512",
-          "content": "c3873efe20099653dc846b6d93e59342a3b74b4722d9a0def6b88b60b7de1b27b6b3136ee48b0bb8522537699eba13193a11251022a8c634e70598eaa67ff104"
         }
       ]
     },
