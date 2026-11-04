@@ -62,7 +62,10 @@ const BUDGET = {
   // CVE-2019-16759 (vBulletin, whose forum announcement returns HTTP 403).
   // Three more: CVE-2020-10181 (Sumavision EMR), CVE-2020-10221 (rConfig) and
   // CVE-2020-10987 (Tenda AC15), whose NVD references name no vendor advisory.
-  "content-quality": 27,
+  // Two more: CVE-2020-25213 (the WordPress File Manager plugin) and
+  // CVE-2020-8657 (EyesOfNetwork, whose fix is announced only in a project
+  // issue), which have no vendor advisory page.
+  "content-quality": 29,
   // temporal-staleness counts only the maintainer-controllable freshness fields,
   // which sit at 0 on fresh data; the headroom covers entries aging past a
   // threshold between refreshes.
