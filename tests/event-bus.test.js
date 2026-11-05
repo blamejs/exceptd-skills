@@ -97,7 +97,7 @@ test('P1-2: SIGTERM triggers graceful shutdown of watch (POSIX only)', (t, done)
   };
   child.stdout.on('data', onData);
   child.stderr.on('data', onData);
-  child.on('exit', (code) => {
+  child.on('close', (code) => {
     try {
       assert.match(captured, /Stopping watcher \(SIGTERM\)/);
       assert.equal(code, 0, 'graceful SIGTERM shutdown must exit 0');
@@ -115,6 +115,54 @@ test('P1-2: signal handlers registered for SIGTERM (and SIGBREAK on win32)', () 
   assert.match(src, /process\.on\('SIGINT'/);
   assert.match(src, /SIGHUP/);
   assert.match(src, /SIGBREAK/);
+});
+
+test('P1-2: watch registers its signal handlers before the scheduler starts', () => {
+  const src = fs.readFileSync(ORCH, 'utf8');
+  const body = src.slice(src.indexOf('async function runWatch()'));
+  const sigterm = body.indexOf("process.on('SIGTERM'");
+  const sigint = body.indexOf("process.on('SIGINT'");
+  const scheduler = body.indexOf('startScheduler();');
+  assert.ok(sigterm > 0 && sigint > 0 && scheduler > 0, 'runWatch registers handlers and starts the scheduler');
+  assert.ok(sigterm < scheduler && sigint < scheduler,
+    'a signal during the first currency check must reach shutdown, not the default handler');
+});
+
+test('P1-2: SIGTERM sent during the first currency check still shuts watch down cleanly (POSIX only)', (t, done) => {
+  if (process.platform === 'win32') {
+    t.skip('SIGTERM is POSIX-only');
+    return done();
+  }
+  const child = spawn(process.execPath, [ORCH, 'watch'], { env: childEnv() });
+  let captured = '';
+  let signalled = false;
+  let finishedOnce = false;
+  const finish = (err) => {
+    if (finishedOnce) return;
+    finishedOnce = true;
+    try { child.kill('SIGKILL'); } catch {}
+    done(err);
+  };
+  // The scheduler prints this line after the signal handlers are registered and
+  // while its first currency check is still running.
+  const onData = (d) => {
+    captured += d.toString();
+    if (!signalled && /\[scheduler\] Running weekly currency check/.test(captured)) {
+      signalled = true;
+      try { child.kill('SIGTERM'); } catch {}
+    }
+  };
+  child.stdout.on('data', onData);
+  child.stderr.on('data', onData);
+  child.on('close', (code, signal) => {
+    try {
+      assert.equal(signal, null, 'the child must handle SIGTERM, not die from it');
+      assert.match(captured, /Stopping watcher \(SIGTERM\)/);
+      assert.equal(code, 0);
+      finish();
+    } catch (e) { finish(e); }
+  });
+  setTimeout(() => finish(new Error('test timed out — child did not shut down within 10s')), 10000).unref();
 });
 
 // --- P1-3 — bootstrap runWeeklyCurrencyCheck wrapped in try/catch ----------

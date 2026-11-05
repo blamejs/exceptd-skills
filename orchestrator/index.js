@@ -764,8 +764,6 @@ async function runWatch() {
   };
   bus.onAny(anyListener);
 
-  startScheduler();
-
   let shuttingDown = false;
   const shutdown = (signal) => {
     if (shuttingDown) return;
@@ -791,6 +789,11 @@ async function runWatch() {
   } else {
     try { process.on('SIGBREAK', () => shutdown('SIGBREAK')); } catch { /* unsupported */ }
   }
+
+  // The scheduler runs its first currency check synchronously. The signal
+  // handlers above are registered first, so a signal that arrives during that
+  // check runs shutdown and releases the lockfile.
+  startScheduler();
 
   console.log('Press Ctrl+C to stop. (SIGTERM / SIGHUP / SIGBREAK also honored.)\n');
 }
