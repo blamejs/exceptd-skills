@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.21.53 — 2026-11-04
+
+Advisory rows that point at an NVD record or a GitHub security advisory now carry that record's own publication date. 162 rows carried the CISA KEV listing date instead, which made an advisory look as if it had been published when CISA listed the flaw, in some cases years after the vendor shipped a fix. The 332 rows that point at the CISA KEV catalog keep the KEV date, which is the date of that page. About 380 rows that point at a vendor page still carry the KEV date until each page's date is checked, so treat `published_date` on those rows as the KEV listing date.
+
 ## 0.21.52 — 2026-11-04
 
 The D3FEND catalog, 37 skills, 15 playbooks and the defense-in-depth ladders now name D3FEND 1.3.0 techniques correctly. Seven ids carried the name and description of a different technique than D3FEND gives them: D3-EHB (D3FEND: Endpoint Health Beacon), D3-SCP (System Configuration Permissions), D3-DA (Dynamic Analysis), D3-IOPR (IO Port Restriction), D3-RPA (Relay Pattern Analysis), D3-CAA (Connection Attempt Analysis) and D3-EFA (Emulated File Analysis). D3-ASLR and D3-PHRA do not exist in D3FEND, and D3-BMA, D3-CFI, D3-EMH and D3-RH exist only in later releases than the pinned 1.3.0.
