@@ -44,7 +44,7 @@ cwe_refs:
   - CWE-1426
   - CWE-1039
 d3fend_refs:
-  - D3-IOPR
+  - D3-CSPP
 last_threat_review: "2026-05-15"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief ai-risk-management` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
@@ -127,7 +127,7 @@ Supporting weakness classes consumed from `data/cwe-catalog.json`:
 - **CWE-1039** — automated recognition mechanism with inadequate detection or handling of adversarial input perturbations. Governance correlate: model robustness is a risk-treatment decision, not an implementation accident.
 
 Defensive technique consumed from `data/d3fend-catalog.json`:
-- **D3-IOPR** (Input / Output Profiling) — the closest D3FEND-mapped defensive technique to "AI prompt / response governance". Governance does not implement D3-IOPR — it *commissions and audits* the implementation done by `defensive-countermeasure-mapping`.
+- **D3-CSPP** (Client-server Payload Profiling) — the closest D3FEND-mapped defensive technique to "AI prompt / response governance". Governance does not implement D3-CSPP — it *commissions and audits* the implementation done by `defensive-countermeasure-mapping`.
 
 Threats with no TTP attachment are escalated to `zeroday-gap-learn` (the zero-day learning loop, so no threat is left orphaned without a mapped technique).
 
@@ -296,7 +296,7 @@ Apply each test. A "no" on any of (a)–(e) means the AI governance posture is p
 
 ## Defensive Countermeasure Mapping
 
-AI risk management is a process-not-technical discipline; its D3FEND mapping is therefore indirect. The closest technical correlate to *governance-of-prompt/response-flows* is **D3-IOPR** (Input / Output Profiling) from `data/d3fend-catalog.json`. The AIMS does not implement D3-IOPR — it *commissions, audits, and re-prioritizes* the D3-IOPR implementation that `defensive-countermeasure-mapping` is responsible for.
+AI risk management is a process-not-technical discipline; its D3FEND mapping is therefore indirect. The closest technical correlate to *governance-of-prompt/response-flows* is **D3-CSPP** (Client-server Payload Profiling) from `data/d3fend-catalog.json`. The AIMS does not implement D3-CSPP — it *commissions, audits, and re-prioritizes* the D3-CSPP implementation that `defensive-countermeasure-mapping` is responsible for.
 
 For each governance finding produced by this skill that maps to a technical risk class (prompt injection, AI-as-C2, model extraction, training-data poisoning, RAG exfiltration, MCP compromise), hand off to `defensive-countermeasure-mapping` to produce the D3FEND ID set with the four-axis annotation prescribed there:
 - **Defense-in-depth layer position** — the AIMS audits that every accepted residual has at least two defensive layers, or a signed acceptance for the shallow-defense position.

@@ -54,9 +54,11 @@ cwe_refs:
   - CWE-352
 d3fend_refs:
   - D3-MFA
-  - D3-CBAN
+  - D3-NI
+  - D3-UAP
   - D3-NTA
-  - D3-IOPR
+  - D3-UBA
+  - D3-CSPP
 forward_watch:
   - PSD3 + PSR (Payment Services Regulation) trilogue and final adoption (expected 2026-2027); track agent-initiated payment treatment in final text
   - DORA Art. 26 TLPT first full cycle completion mid-2027; ESAs publishing aggregate findings under JC 2024/40 RTS
@@ -319,7 +321,7 @@ Produce this structure verbatim:
 [Outcome of the four tests in the Compliance Theater Check section]
 
 ### Defensive Countermeasure Plan (D3FEND)
-[D3-MFA, D3-CBAN, D3-NTA, D3-IOPR — concrete control placements by surface]
+[D3-MFA, D3-UAP, D3-NTA, D3-UBA, D3-CSPP — concrete control placements by surface]
 
 ### Priority Remediation Actions
 1. ...
@@ -374,11 +376,12 @@ Maps financial-sector offensive findings to MITRE D3FEND IDs from `data/d3fend-c
 | D3FEND ID | Technique | Layer Position | Least-Privilege Scope | Zero-Trust Posture | AI-Pipeline Applicability |
 |---|---|---|---|---|---|
 | D3-MFA | Multi-Factor Authentication | Customer-facing channel (AAL3 / FIDO2 device-bound passkey for high-value); employee-facing channel (FIDO2 for SWIFT operator, treasury, admin); vendor remote access | Per-principal MFA enrollment; phishing-resistant factors mandatory for any payment-authority principal | Every authentication event verified, not session-trusted; step-up for high-value and AI-agent-initiated transactions | Applicable to human principals. AI-agent service accounts need a distinct attestation construct (scope token + delegated-authority assertion) — D3-MFA conceptually extends but PSD2 RTS-SCA does not yet name it (see framework gap). |
-| D3-CBAN | Credential-Based Authentication | Application + API layer for customer credentials; SWIFT secure-zone operator credentials; vendor-API tokens; AI-agent service-account credentials | Per-credential scope (amount, counterparty, time window) for agent tokens; per-operator-role for SWIFT operators; CWE-798 prohibition on hard-coded credentials in code | Credential issuance just-in-time where feasible; credential rotation per documented cadence; credential leakage detection at egress and on public-code-search surfaces | Applicable. AI-agent credentials need scope-token construct beyond conventional CBAN; PSD3/PSR forward-looking. |
+| D3-UAP | User Account Permissions | Application + API layer for customer credentials; SWIFT secure-zone operator credentials; vendor-API tokens; AI-agent service-account credentials | Per-credential scope (amount, counterparty, time window) for agent tokens; per-operator-role for SWIFT operators; CWE-798 prohibition on hard-coded credentials in code | Credential issuance just-in-time where feasible; credential rotation per documented cadence; credential leakage detection at egress and on public-code-search surfaces | Applicable. AI-agent credentials need scope-token construct beyond conventional CBAN; PSD3/PSR forward-looking. |
 | D3-NTA | Network Traffic Analysis | Network boundary (internet ↔ customer-facing portal); inter-zone boundary (customer-facing ↔ core-banking); SWIFT secure-zone boundary; administrative jump zone egress; AI-API egress | Operator alerting scoped to operator's zone; SOC aggregated visibility | Network-hostile-until-proven posture; AI-API egress explicitly allowlisted at administrative jump zone | Applicable. AI-API egress monitoring is the specific gap: DLP-aware NTA is required to detect AI-channel exfiltration (T1567) per `data/dlp-controls.json`. |
-| D3-IOPR | Input / Output Pattern Recognition | Application layer (transaction monitoring); fraud-detection model layer; AI-channel inspection (prompt + completion + tool-call) | Transaction-pattern detection per customer; model-probing detection per principal; AI-channel inspection per integration | Every transaction pattern verified against historical norm and against adversary-known patterns; AI-channel outputs treated as untrusted until cross-checked | Critical for AI-pipeline applicability. AI-channel I/O inspection is the primary defensive control against prompt injection mediating agent-initiated payments and AI-mediated SWIFT message drafting. Almost never deployed at mid-2026; this is the dominant defensive gap. |
+| D3-UBA | User Behavior Analysis | Application layer (transaction monitoring); fraud-detection model layer | Transaction-pattern detection per customer; model-probing detection per principal | Every transaction pattern verified against historical norm and against adversary-known patterns | Applies to agent-initiated payments: per-principal behavioral baselines cover AI agents acting for a customer. |
+| D3-CSPP | Client-server Payload Profiling | AI-channel inspection (prompt + completion + tool-call) | AI-channel inspection per integration | AI-channel outputs treated as untrusted until cross-checked | Critical for AI-pipeline applicability. AI-channel payload profiling is the primary defensive control against prompt injection mediating agent-initiated payments and AI-mediated SWIFT message drafting. Almost never deployed at mid-2026; this is the dominant defensive gap. |
 
-**AI-pipeline-specific posture.** Conventional D3-MFA cannot apply to autonomous AI agents acting on behalf of a customer — there is no agent-side biometric inherence factor, and possession factors are reduced to API-key custody. The AI-pipeline-appropriate construct is: scoped delegated-authority attestation (PSD3/PSR forward-looking) + out-of-band confirmation for any transaction above scoped threshold + AI-channel I/O recording (D3-IOPR) sufficient to support post-hoc dispute resolution and forensic reconstruction. Skill `identity-assurance` covers AAL/IAL/FAL constructs and is the companion for human-side authentication; this skill covers the sector-regulatory framing of the agent-side gap.
+**AI-pipeline-specific posture.** Conventional D3-MFA cannot apply to autonomous AI agents acting on behalf of a customer — there is no agent-side biometric inherence factor, and possession factors are reduced to API-key custody. The AI-pipeline-appropriate construct is: scoped delegated-authority attestation (PSD3/PSR forward-looking) + out-of-band confirmation for any transaction above scoped threshold + AI-channel I/O recording (D3-CSPP) sufficient to support post-hoc dispute resolution and forensic reconstruction. Skill `identity-assurance` covers AAL/IAL/FAL constructs and is the companion for human-side authentication; this skill covers the sector-regulatory framing of the agent-side gap.
 
 ---
 

@@ -58,7 +58,6 @@ cwe_refs:
   - CWE-918
   - CWE-1188
 d3fend_refs:
-  - D3-IOPR
   - D3-NTA
   - D3-CSPP
   - D3-EAL
@@ -264,9 +263,8 @@ Each D3FEND technique below maps an offensive finding from the assessment to a d
 
 | D3FEND ID | Technique | Layer (defense in depth) | Least-Privilege Scope | Zero-Trust Posture | AI-Pipeline Applicability |
 |---|---|--------------------------|-----------------------|--------------------|---------------------------|
-| D3-IOPR | Input / Output Profiling (Message Analysis) | Perimeter + handler entry — request shape and content profiling against a route's declared schema | Per-route schema; no shared "generic input filter" | Every request inspected; absence of WAF alert is not absence of attack — feeds SIEM, not a fail-closed control | Applies to AI-fronted routes — anomalous prompt shape (high-entropy, instruction-pattern) is a profile signal |
 | D3-NTA | Network Traffic Analysis | Network egress — webapp outbound connections profiled against intent | Per-service egress allowlist; no shared default-allow | Outbound denied by default; SSRF (CWE-918) cannot reach cloud metadata or internal-only services | Critical for AI-fronted apps — model API calls profiled for SesameOp-style covert C2 (hand-off to ai-c2-detection) |
-| D3-CSPP | Client-Server Payload Profiling | Handler entry — request payload shape, header order, TLS fingerprint anomalies | Per-route baseline; no app-wide model | Anomalous request shape is suspicious even if syntactically valid | Applies to AI-fronted routes — adversarial payload shapes (long context, repeated instruction tokens) flagged |
+| D3-CSPP | Client-server Payload Profiling | Perimeter + handler entry — request shape and content profiling against a route's declared schema, header order, TLS fingerprint anomalies | Per-route schema and baseline; no shared "generic input filter" and no app-wide model | Every request inspected; anomalous request shape is suspicious even if syntactically valid; absence of WAF alert is not absence of attack — feeds SIEM, not a fail-closed control | Applies to AI-fronted routes — adversarial payload shapes (long context, repeated instruction tokens) and anomalous prompt shape (high-entropy, instruction-pattern) flagged |
 | D3-EAL | Executable Allowlisting | Server filesystem — block T1505 web-shell installation post-CWE-22 / CWE-434 exploitation | Write-once webroot; service principal cannot execute scripts in upload directory | Even on successful upload exploit, the uploaded file cannot execute as a handler | Applies — protects AI-assistant-suggested file-upload handlers that miss the executable-extension check |
 | D3-MFA | Multi-Factor Authentication (Auth Hardening) | Identity layer — phishing-resistant FIDO2 / WebAuthn passkeys | Per-principal; no shared MFA enrollment | Every authentication challenge resistant to AiTM proxy phishing; passkey-only for privileged routes | Critical — AI-assisted phishing kit development compresses time-to-weaponize; TOTP / SMS are insufficient (hand-off to identity-assurance) |
 

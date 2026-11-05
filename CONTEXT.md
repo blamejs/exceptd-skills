@@ -123,7 +123,7 @@ Skills and playbooks read from `data/`. Authoritative catalog inventory:
 | `global-frameworks.json` | 35 jurisdictions | Patch SLAs and notification windows across global regulatory regimes |
 | `zeroday-lessons.json` | 1323 | Learning-loop entries: zero-day → attack vector → control gap → framework gap → new control |
 | `cwe-catalog.json` | 236 | CWE v4.20 entries (Top 25 2024 plus AI- and supply-chain-relevant weaknesses) |
-| `d3fend-catalog.json` | 468 | MITRE D3FEND v1.3.0 defensive techniques for offensive → defensive mapping |
+| `d3fend-catalog.json` | 457 | MITRE D3FEND v1.3.0 defensive techniques for offensive → defensive mapping |
 | `rfc-references.json` | 8889 | IETF RFC / Internet-Draft references with status, errata count, replaces / replaced-by, `last_verified` dates |
 | `dlp-controls.json` | 22 | DLP control entries indexed by channel, classifier, surface, enforcement mode, evidence type |
 | `playbooks/` | 33 | Playbook specifications (see above) |

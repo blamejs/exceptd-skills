@@ -45,7 +45,6 @@ cwe_refs:
   - CWE-862
   - CWE-1426
 d3fend_refs:
-  - D3-IOPR
   - D3-CSPP
   - D3-MFA
 last_threat_review: "2026-11-01"
@@ -141,7 +140,7 @@ Healthcare has been the most targeted sector for ransomware for three consecutiv
 
 This procedure threads the three foundational design principles — defense in depth, least privilege, zero trust — through every step.
 
-**Defense in depth.** Layer controls across: clinician identity (D3-MFA at phishing-resistant AAL2/AAL3), EHR application (RBAC + minimum-necessary enforcement + break-glass audit), API perimeter (FHIR gateway with JWT validation per RFC-7519 + HTTP message signatures per RFC-9421 where supported), data layer (encryption at rest, field-level encryption for sensitive PHI fields, tokenization for analytics), egress (DLP at LLM boundary D3-IOPR + sanctioned-AI-only egress policy D3-CSPP), endpoint (EDR + browser-isolation on clinician workstations where clipboard-paste-to-LLM is a documented vector), medical-device network (segmentation à la `ot-ics-security`), backups (immutable + air-gap + tested restore).
+**Defense in depth.** Layer controls across: clinician identity (D3-MFA at phishing-resistant AAL2/AAL3), EHR application (RBAC + minimum-necessary enforcement + break-glass audit), API perimeter (FHIR gateway with JWT validation per RFC-7519 + HTTP message signatures per RFC-9421 where supported), data layer (encryption at rest, field-level encryption for sensitive PHI fields, tokenization for analytics), egress (DLP at the LLM boundary + sanctioned-AI-only egress policy, both enforced through D3-CSPP payload profiling), endpoint (EDR + browser-isolation on clinician workstations where clipboard-paste-to-LLM is a documented vector), medical-device network (segmentation à la `ot-ics-security`), backups (immutable + air-gap + tested restore).
 
 **Least privilege.** Clinician access enforces the HIPAA "minimum necessary" standard at technical level, not just policy. EHR roles scoped to encounter, department, and time window — not blanket patient/*. AI clinical tools get scoped contexts: ambient-documentation tools get the current encounter only, not the full chart; triage copilots get triage-relevant fields only; differential-diagnosis copilots run against de-identified or tokenized inputs with re-identification at the human-in-the-loop boundary. SMART-on-FHIR scopes restricted to encounter-bound rather than patient-wide where the use case permits. Break-glass accounts heavily audited; AI-service-principals treated as distinct identities with their own AC-2 lifecycle and audit trail.
 
@@ -184,7 +183,7 @@ For each AI clinical tool in production or pilot, enumerate:
 ### Step 5 — PHI-in-LLM channel inventory (hand off to `dlp-gap-analysis`)
 
 - Enumerate every channel where PHI could reach an LLM: sanctioned vendor integration, sanctioned employee-facing copilot (e.g., Microsoft 365 Copilot, Google Workspace Duet/Gemini), shadow-AI via clinician browser, ambient-documentation pilots, patient-facing chat.
-- For each sanctioned channel, document the BAA / DPA, the data-flow boundary, the DLP coverage (D3-IOPR at egress), the logging.
+- For each sanctioned channel, document the BAA / DPA, the data-flow boundary, the DLP coverage (D3-CSPP at egress), the logging.
 - For shadow-AI, document the detection coverage (browser-isolation logging, SWG / SASE telemetry, EDR clipboard-monitoring) and the policy enforcement (web-filter category, conditional-access, awareness training).
 - Hand off to `dlp-gap-analysis` for full DLP control mapping.
 
@@ -274,7 +273,7 @@ Produce this structure verbatim:
 | Vendor | Model | Use Case | EU AI Act Tier | FDA SaMD Status | PCCP | BAA | Prompt/Completion Logging | Human-in-Loop Write Gate |
 
 ### PHI-in-LLM Channel Inventory
-| Channel | Sanctioned? | BAA | DLP Coverage (D3-IOPR) | Egress Policy (D3-CSPP) | Logging | Retention |
+| Channel | Sanctioned? | BAA | DLP Coverage (D3-CSPP) | Egress Policy (D3-CSPP) | Logging | Retention |
 
 ### FHIR / SMART-on-FHIR Security Audit
 | Endpoint | OAuth Config | Token Lifetime | Scope Granularity | JWT Validation (RFC-7519) | Bulk $export Controls |
@@ -292,7 +291,7 @@ Produce this structure verbatim:
 [Outcome of the four tests in the Compliance Theater Check section]
 
 ### Defensive Countermeasure Plan (D3FEND)
-[D3-IOPR, D3-CSPP, D3-MFA — concrete control placements by layer]
+[D3-CSPP, D3-MFA — concrete control placements by layer]
 
 ### Priority Remediation Actions
 1. ...
@@ -346,8 +345,7 @@ Maps healthcare-sector offensive findings to MITRE D3FEND IDs from `data/d3fend-
 
 | D3FEND ID | Technique | Healthcare Layer Position | Least-Privilege Scope | Zero-Trust Posture | AI-Pipeline Applicability |
 |---|---|---|---|---|---|
-| D3-IOPR | I/O Prompt Inspection (PHI inspection at the LLM boundary) | Egress proxy / DLP inline with the sanctioned AI-tool data path; browser-isolation / clipboard-DLP on clinician workstations for unsanctioned channels | Per-clinician identity binding; per-encounter context scope; per-tool BAA-coverage validation | Default-deny; every prompt inspected and policy-evaluated before reaching the model endpoint, every completion inspected before reaching the clinician | Required for sanctioned AI integration. For ephemeral / serverless clinical-AI tool architectures, the prompt-inspection point shifts to the API-gateway sidecar — never recommend host-agent-only DLP for ephemeral AI workloads. |
-| D3-CSPP | Client-Server Payload Profiling (EHR / FHIR API payload profiling for exfil detection) | At FHIR API gateway, EHR application reverse-proxy, cloud-data-warehouse egress; sampling and signature on bulk-export operations | Per-API-client identity, per-scope, per-resource-type; flag deviations from baseline access pattern | Continuous verification of API-call conformance with declared scope; deviations alert and optionally throttle | Required at every AI-service-principal egress from the EHR — distinguishes legitimate AI workload reads from exfiltration patterns. For serverless AI architectures the profiling point is the API-gateway, not the ephemeral compute. |
+| D3-CSPP | Client-server Payload Profiling (PHI inspection of prompts and completions at the LLM boundary; EHR / FHIR API payload profiling for exfil detection) | Egress proxy / DLP inline with the sanctioned AI-tool data path; browser-isolation / clipboard-DLP on clinician workstations for unsanctioned channels; FHIR API gateway, EHR application reverse-proxy, cloud-data-warehouse egress with sampling and signature on bulk-export operations | Per-clinician identity binding, per-encounter context scope, per-tool BAA-coverage validation; per-API-client identity, per-scope, per-resource-type with deviations from baseline access pattern flagged | Default-deny; every prompt inspected and policy-evaluated before reaching the model endpoint, every completion inspected before reaching the clinician; continuous verification of API-call conformance with declared scope, with deviations alerting and optionally throttling | Required for sanctioned AI integration and at every AI-service-principal egress from the EHR — distinguishes legitimate AI workload reads from exfiltration patterns. For ephemeral / serverless clinical-AI architectures the prompt-inspection and profiling point is the API-gateway sidecar, not the ephemeral compute — never recommend host-agent-only DLP for ephemeral AI workloads. |
 | D3-MFA | Multi-Factor Authentication (clinician auth at AAL2+ minimum; AAL3 for privileged access) | Identity provider (Azure AD / Entra, Okta, PingFederate, ForgeRock) federating SAML/OIDC to EHR, FHIR app marketplace, VPN, Citrix, jump hosts | Per-clinician identity; step-up for privileged roles; phishing-resistant factors required, not optional | Every session re-verified at risk-signal change; no standing trust; break-glass identities distinct and alarmed | Applicable to AI-service-principals via workload-identity federation rather than human MFA; for ephemeral AI workloads use short-lived workload-identity tokens (OIDC workload federation, SPIFFE/SPIRE) rather than long-lived service-account keys. |
 
 **Ephemeral and AI-pipeline applicability statement.** Recommendations in this skill are explicit about where the host-agent control assumption fails. Cloud-hosted clinical-AI tools and serverless ambient-documentation pipelines are by definition ephemeral; host-agent DLP and host-EDR controls do not apply. The compensating-control surface is the API-gateway / egress-proxy boundary, plus the workload-identity layer, plus immutable audit logging delivered to a SIEM under the covered entity's control rather than the vendor's. For brownfield deployments on traditional hospital infrastructure, host-agent controls do apply and should be the primary control plane — recommendations must specify which architectural mode the control is being placed in.

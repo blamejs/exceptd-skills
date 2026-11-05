@@ -27,7 +27,7 @@
           "control": "Prompt sanitization, instruction hierarchy enforcement, refusal calibration",
           "source_skill": "ai-attack-surface",
           "d3fend": [
-            "D3-IOPR"
+            "D3-CSPP"
           ]
         },
         {
@@ -35,7 +35,7 @@
           "control": "Per-tool least-privilege scopes; user-confirmation gate for destructive tool calls",
           "source_skill": "mcp-agent-trust",
           "d3fend": [
-            "D3-CBAN",
+            "D3-UAP",
             "D3-MFA"
           ]
         },
@@ -53,7 +53,7 @@
           "control": "Behavioral anomaly on tool-call sequences; canary tokens in retrieved context",
           "source_skill": "ai-c2-detection",
           "d3fend": [
-            "D3-RPA",
+            "D3-PA",
             "D3-NTA"
           ]
         }
@@ -72,7 +72,7 @@
           "control": "Up-to-date kernel + KASLR + control-flow integrity; live-patch capability deployed",
           "source_skill": "kernel-lpe-triage",
           "d3fend": [
-            "D3-ASLR",
+            "D3-SAOR",
             "D3-EAL"
           ]
         },
@@ -82,7 +82,7 @@
           "source_skill": "container-runtime-security",
           "d3fend": [
             "D3-PSEP",
-            "D3-SCP"
+            "D3-SCF"
           ]
         },
         {
@@ -99,7 +99,7 @@
           "control": "Audit on uid=0 transitions; eBPF on suspicious capability acquisitions",
           "source_skill": "ai-c2-detection",
           "d3fend": [
-            "D3-PHRA",
+            "D3-SCA",
             "D3-PA"
           ]
         },
@@ -135,7 +135,7 @@
           "control": "Service-account per AI use-case; deny human creds on AI API destinations",
           "source_skill": "identity-assurance",
           "d3fend": [
-            "D3-CBAN",
+            "D3-UAP",
             "D3-MFA"
           ]
         },
@@ -161,7 +161,7 @@
           "control": "Triage playbook for AI-as-C2 incidents; provider-side audit-log pull procedure",
           "source_skill": "incident-response-playbook",
           "d3fend": [
-            "D3-IOPR"
+            "D3-UBA"
           ]
         }
       ]
@@ -223,7 +223,7 @@
           "source_skill": "ai-c2-detection",
           "d3fend": [
             "D3-FAPA",
-            "D3-PHRA"
+            "D3-FIM"
           ]
         }
       ]
@@ -241,7 +241,7 @@
           "control": "Signed commits + branch-protection enforcement; trusted-builder allowlist",
           "source_skill": "supply-chain-integrity",
           "d3fend": [
-            "D3-EHB",
+            "D3-EAL",
             "D3-CBAN"
           ]
         },
@@ -250,7 +250,7 @@
           "control": "Hermetic builds + SLSA Level 3+ provenance attestation",
           "source_skill": "supply-chain-integrity",
           "d3fend": [
-            "D3-EHB"
+            "D3-FIM"
           ]
         },
         {
@@ -258,7 +258,7 @@
           "control": "SBOM + signed attestation per dep; transitive-dep advisory loop",
           "source_skill": "supply-chain-integrity",
           "d3fend": [
-            "D3-EHB",
+            "D3-FIM",
             "D3-CA"
           ]
         },
@@ -268,7 +268,7 @@
           "source_skill": "mcp-agent-trust",
           "d3fend": [
             "D3-EAL",
-            "D3-EHB"
+            "D3-FIM"
           ]
         },
         {
@@ -276,7 +276,7 @@
           "control": "Workload identity attestation on deploy; deny-unsigned-image admission control",
           "source_skill": "container-runtime-security",
           "d3fend": [
-            "D3-EHB",
+            "D3-EAL",
             "D3-CBAN"
           ]
         },
@@ -318,7 +318,7 @@
           "control": "OAuth scopes + per-tenant claim with cryptographic binding to identity",
           "source_skill": "identity-assurance",
           "d3fend": [
-            "D3-CBAN",
+            "D3-UAP",
             "D3-MFA"
           ]
         },
@@ -363,7 +363,7 @@
           "control": "ML-engineer workstations get read-only via signed checkouts; production weights gated",
           "source_skill": "identity-assurance",
           "d3fend": [
-            "D3-CBAN",
+            "D3-UAP",
             "D3-MFA"
           ]
         },
@@ -390,7 +390,7 @@
           "control": "Watermarked model weights for high-value models",
           "source_skill": "mlops-security",
           "d3fend": [
-            "D3-EAL"
+            "D3-FIM"
           ]
         }
       ]
@@ -408,7 +408,7 @@
           "control": "SPF + DKIM + DMARC enforcement at p=reject; impersonation-domain detection",
           "source_skill": "email-security-anti-phishing",
           "d3fend": [
-            "D3-DA",
+            "D3-DNRA",
             "D3-CA"
           ]
         },
@@ -442,7 +442,7 @@
           "control": "BEC IR playbook with FBI IC3 reporting + bank-recall window (<72h)",
           "source_skill": "incident-response-playbook",
           "d3fend": [
-            "D3-IOPR"
+            "D3-UBA"
           ]
         }
       ]

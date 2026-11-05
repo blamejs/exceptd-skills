@@ -97,7 +97,7 @@
       "path": "data/d3fend-catalog.json",
       "purpose": "MITRE D3FEND countermeasures (D3-xxx) keyed by id, with tactic + name. Pinned to D3FEND v1.3.0 release.",
       "schema_version": "1.0.0",
-      "last_updated": "2026-05-19",
+      "last_updated": "2026-11-04",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -106,13 +106,13 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 468,
+      "entry_count": 457,
       "sample_keys": [
         "D3-EAL",
-        "D3-EHB",
         "D3-PSEP",
-        "D3-ASLR",
-        "D3-SCP"
+        "D3-MENCR",
+        "D3-FE",
+        "D3-CBAN"
       ]
     },
     "dlp-controls.json": {

@@ -27,10 +27,10 @@ attack_refs: []
 framework_gaps: []
 d3fend_refs:
   - D3-EAL
-  - D3-EFA
+  - D3-FA
   - D3-FAPA
   - D3-FE
-  - D3-IOPR
+  - D3-FIM
   - D3-KBPI
   - D3-MENCR
   - D3-MFA
@@ -431,14 +431,14 @@ D3FEND references from `data/d3fend-catalog.json`. This skill produces jurisdict
 
 | Universal gap | Offensive TTP class | D3FEND ID | Defensive technique | Owning downstream skill |
 |---|---|---|---|---|
-| Prompt injection as access-control failure | AML.T0051 (LLM Prompt Injection) | `D3-IOPR` + `D3-CSPP` | Input/Output Profiling + Client-server Payload Profiling | `ai-attack-surface` |
-| MCP/agent tool trust boundaries | AML.T0010 (Supply Chain Compromise) | `D3-EAL` + `D3-EFA` | Executable Allowlisting + Executable File Analysis | `mcp-agent-trust` |
-| AI pipeline integrity (model versioning + behavioral regression) | AML.T0018 (Manipulate AI Model), AML.T0020 (Training Data Poisoning) | `D3-FAPA` + `D3-EFA` | File Access Pattern Analysis + Executable File Analysis | `mlops-security` |
+| Prompt injection as access-control failure | AML.T0051 (LLM Prompt Injection) | `D3-CSPP` | Client-server Payload Profiling (SDK and gateway placements) | `ai-attack-surface` |
+| MCP/agent tool trust boundaries | AML.T0010 (Supply Chain Compromise) | `D3-EAL` + `D3-FA` | Executable Allowlisting + File Analysis | `mcp-agent-trust` |
+| AI pipeline integrity (model versioning + behavioral regression) | AML.T0018 (Manipulate AI Model), AML.T0020 (Training Data Poisoning) | `D3-FAPA` + `D3-FIM` | File Access Pattern Analysis + File Integrity Monitoring (model weights and snapshots) | `mlops-security` |
 | AI-as-C2 detection | AML.T0096 (AI Service API, C2) | `D3-NTA` + `D3-OTF` | Network Traffic Analysis + Outbound Traffic Filtering | `ai-c2-detection` |
 | Live kernel patching as required capability | T1068 (Exploitation for Privilege Escalation) | `D3-KBPI` + `D3-SCA` | Kernel-Based Process Isolation + System Call Analysis | `kernel-lpe-triage` |
 | CISA KEV-indexed patch SLAs | T1190 (Exploit Public-Facing Application) | `D3-NI` | Network Isolation for the unpatched window | `exploit-scoring` + `kernel-lpe-triage` |
 | AI-generated phishing detection update requirement | T1566 (Phishing), AML.T0016 (Obtain Capabilities) | `D3-MFA` + `D3-CSPP` | Multi-factor Authentication (passkey class) + Client-server Payload Profiling | `email-security-anti-phishing` |
-| RAG pipeline security | AML.T0051, AML.T0020 | `D3-IOPR` + `D3-FAPA` | Input/Output Profiling + File Access Pattern Analysis | `rag-pipeline-security` |
+| RAG pipeline security | AML.T0051, AML.T0020 | `D3-CSPP` + `D3-FAPA` | Client-server Payload Profiling + File Access Pattern Analysis | `rag-pipeline-security` |
 | Post-quantum cryptography migration mandate | T1040 (Network Sniffing), T1557 (Adversary-in-the-Middle) — harvest-now-decrypt-later | `D3-MENCR` + `D3-FE` | Message Encryption (PQC-hybrid KEM) + File Encryption (PQC-wrapped envelope) | `pqc-first` |
 
 **Defense-in-depth posture:** a jurisdictional gap finding from this skill closes only when the downstream skill's technique is deployed and tested — never when a policy document cites the regulation. Because no jurisdiction mandates any row above, there is no compliance-driven forcing function for these controls: an org that implements only what a regulator can cite will have none of them. That is the entire operational point of the Universal Gaps table, and the reason each row must carry a routing target.

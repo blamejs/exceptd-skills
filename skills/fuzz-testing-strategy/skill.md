@@ -42,8 +42,9 @@ forward_watch:
   - OSS-Fuzz-Gen / AI-assisted harness generation becoming the default expectation for OSS maintainers
 d3fend_refs:
   - D3-EAL
-  - D3-IOPR
+  - D3-CSPP
   - D3-PSEP
+  - D3-SAOR
 last_threat_review: "2026-11-01"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief fuzz-testing-strategy` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
@@ -272,7 +273,7 @@ The skill produces a Fuzz Posture Assessment covering fuzz-eligible interface in
 |---|---|---|
 | Memory-safety crashes (CWE-787, CWE-416) | D3-PSEP (Process Segment Execution Prevention) | DEP/NX enforced; W^X mappings verified |
 | Command injection (CWE-78) | D3-EAL (Executable Allowlisting) | Production exec allowlist with no shell expansion paths |
-| Adversarial AI input (AML.T0043) | D3-IOPR (Input/Output Profiling) | Prompt/response telemetry baseline + drift alerting on garak-discovered probe classes |
+| Adversarial AI input (AML.T0043) | D3-CSPP (Client-server Payload Profiling) | Prompt/response telemetry baseline + drift alerting on garak-discovered probe classes |
 
 ### RWEP Pre-Fill for Open Findings
 [For each open fuzz finding likely to become a CVE: pre-filled RWEP factors per the exploit-scoring skill output format]
@@ -307,9 +308,9 @@ Fuzz output is most useful when it routes directly to a deployed countermeasure 
 | Fuzz Finding Class | Root CWE | D3FEND Countermeasure | Why This Pairing | Implementation Note |
 |---|---|---|---|---|
 | Memory-safety: out-of-bounds write | CWE-787 | D3-PSEP (Process Segment Execution Prevention) | Even when the OOB write reaches an executable region, DEP/NX denies the resulting code from executing. D3-PSEP bounds the impact while the upstream fix lands. | Enforce W^X mappings, NX stack, NX heap; verify on every binary at release time |
-| Memory-safety: use-after-free | CWE-416 | D3-PSEP | Heap UAF that achieves arbitrary write benefits from segment-execution prevention identically to OOB write. | Same as above; combine with hardened allocator (e.g., GWP-ASan, scudo) and ASLR (D3-ASLR available in `data/d3fend-catalog.json`). |
+| Memory-safety: use-after-free | CWE-416 | D3-PSEP | Heap UAF that achieves arbitrary write benefits from segment-execution prevention identically to OOB write. | Same as above; combine with hardened allocator (e.g., GWP-ASan, scudo) and segment base address randomization (D3-SAOR in `data/d3fend-catalog.json` randomizes the start address of memory segments at process initialization). |
 | Input validation failures with command-construction reachable paths | CWE-78 | D3-EAL (Executable Allowlisting) | Command injection succeeds when an attacker invokes an unexpected binary. D3-EAL constrains the runtime exec set so injected commands fail at the allowlist boundary even when the input validation regression ships. | Production exec allowlist; no shell-expansion paths in the trusted set; audit denied-exec events as high-severity. |
-| Generic input validation failures | CWE-20 | D3-EAL (where the downstream effect is exec); D3-IOPR (where the effect is logical / data-plane) | Input validation issues with non-exec consequences need profile-based detection of out-of-bounds parameter usage. | Pair input validation fixes with a runtime profile of acceptable parameter shapes; alert on drift. |
-| Adversarial AI inputs (prompt injection variants, jailbreaks) | CWE-20 (improper validation of prompt-derived control flow) | D3-IOPR (Input/Output Profiling) | Prompt-fuzz outputs (garak/PromptBench/PyRIT) produce a probe corpus. Profiling prompt-and-response telemetry against that corpus identifies the same attack class at runtime. | Maintain a probe corpus from continuous prompt fuzz; emit a telemetry signal when production traffic matches a probe class; integrate with the AI-attack-surface skill output. |
+| Generic input validation failures | CWE-20 | D3-EAL (where the downstream effect is exec); D3-CSPP (where the effect is logical / data-plane) | Input validation issues with non-exec consequences need profile-based detection of out-of-bounds parameter usage. | Pair input validation fixes with a runtime profile of acceptable parameter shapes; alert on drift. |
+| Adversarial AI inputs (prompt injection variants, jailbreaks) | CWE-20 (improper validation of prompt-derived control flow) | D3-CSPP (Client-server Payload Profiling) | Prompt-fuzz outputs (garak/PromptBench/PyRIT) produce a probe corpus. Profiling prompt-and-response telemetry against that corpus identifies the same attack class at runtime. | Maintain a probe corpus from continuous prompt fuzz; emit a telemetry signal when production traffic matches a probe class; integrate with the AI-attack-surface skill output. |
 
 **Why this section exists:** A fuzz finding that produces only a source-level fix is half-deployed. The other half — the runtime control that limits exploitability of any latent variant or regression — is what makes fuzz a security control rather than a quality activity. Every fuzz finding closes with both halves.

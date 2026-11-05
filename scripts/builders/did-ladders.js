@@ -15,10 +15,10 @@ const LADDERS = [
     primary_ttps: ["AML.T0051", "AML.T0054"],
     layers: [
       { layer: "Perimeter / Input", control: "Input source allowlist + retrieval provenance metadata", source_skill: "rag-pipeline-security", d3fend: ["D3-CA", "D3-CSPP"] },
-      { layer: "Model / Reasoning", control: "Prompt sanitization, instruction hierarchy enforcement, refusal calibration", source_skill: "ai-attack-surface", d3fend: ["D3-IOPR"] },
-      { layer: "Identity / Tool Auth", control: "Per-tool least-privilege scopes; user-confirmation gate for destructive tool calls", source_skill: "mcp-agent-trust", d3fend: ["D3-CBAN", "D3-MFA"] },
+      { layer: "Model / Reasoning", control: "Prompt sanitization, instruction hierarchy enforcement, refusal calibration", source_skill: "ai-attack-surface", d3fend: ["D3-CSPP"] },
+      { layer: "Identity / Tool Auth", control: "Per-tool least-privilege scopes; user-confirmation gate for destructive tool calls", source_skill: "mcp-agent-trust", d3fend: ["D3-UAP", "D3-MFA"] },
       { layer: "Action / Egress", control: "Network egress allowlist for agentic outbound calls; DLP on tool outputs", source_skill: "ai-c2-detection", d3fend: ["D3-NTA", "D3-NTPM"] },
-      { layer: "Detection", control: "Behavioral anomaly on tool-call sequences; canary tokens in retrieved context", source_skill: "ai-c2-detection", d3fend: ["D3-RPA", "D3-NTA"] },
+      { layer: "Detection", control: "Behavioral anomaly on tool-call sequences; canary tokens in retrieved context", source_skill: "ai-c2-detection", d3fend: ["D3-PA", "D3-NTA"] },
     ],
   },
   {
@@ -26,10 +26,10 @@ const LADDERS = [
     attack_class: "Kernel Local Privilege Escalation",
     primary_ttps: ["T1068", "T1548.001"],
     layers: [
-      { layer: "Build / Kernel", control: "Up-to-date kernel + KASLR + control-flow integrity; live-patch capability deployed", source_skill: "kernel-lpe-triage", d3fend: ["D3-ASLR", "D3-EAL"] },
-      { layer: "Workload Isolation", control: "User namespaces with no_new_privs; seccomp profiles narrowing syscall surface", source_skill: "container-runtime-security", d3fend: ["D3-PSEP", "D3-SCP"] },
+      { layer: "Build / Kernel", control: "Up-to-date kernel + KASLR + control-flow integrity; live-patch capability deployed", source_skill: "kernel-lpe-triage", d3fend: ["D3-SAOR", "D3-EAL"] },
+      { layer: "Workload Isolation", control: "User namespaces with no_new_privs; seccomp profiles narrowing syscall surface", source_skill: "container-runtime-security", d3fend: ["D3-PSEP", "D3-SCF"] },
       { layer: "Identity / Access", control: "No long-lived shell on production hosts; broker access via PAM/JIT", source_skill: "identity-assurance", d3fend: ["D3-MFA", "D3-CBAN"] },
-      { layer: "Detection", control: "Audit on uid=0 transitions; eBPF on suspicious capability acquisitions", source_skill: "ai-c2-detection", d3fend: ["D3-PHRA", "D3-PA"] },
+      { layer: "Detection", control: "Audit on uid=0 transitions; eBPF on suspicious capability acquisitions", source_skill: "ai-c2-detection", d3fend: ["D3-SCA", "D3-PA"] },
       { layer: "Patch Velocity", control: "≤72h to live-patch for CISA KEV LPE class; reboot-on-window for cold patch", source_skill: "kernel-lpe-triage", d3fend: ["D3-EAL"] },
     ],
   },
@@ -39,10 +39,10 @@ const LADDERS = [
     primary_ttps: ["AML.T0096", "T1041"],
     layers: [
       { layer: "Perimeter / Egress", control: "Egress allowlist by destination + identity-aware proxy on AI API endpoints", source_skill: "ai-c2-detection", d3fend: ["D3-NTPM", "D3-NI"] },
-      { layer: "Identity", control: "Service-account per AI use-case; deny human creds on AI API destinations", source_skill: "identity-assurance", d3fend: ["D3-CBAN", "D3-MFA"] },
+      { layer: "Identity", control: "Service-account per AI use-case; deny human creds on AI API destinations", source_skill: "identity-assurance", d3fend: ["D3-UAP", "D3-MFA"] },
       { layer: "Behavioral Detection", control: "Baseline AI-API call volume + content-length profile; alert on encoded blobs in prompts", source_skill: "ai-c2-detection", d3fend: ["D3-NTA", "D3-CSPP"] },
       { layer: "Data", control: "DLP on prompt content to AI APIs (token-redaction + PII patterns)", source_skill: "dlp-gap-analysis", d3fend: ["D3-MENCR"] },
-      { layer: "IR", control: "Triage playbook for AI-as-C2 incidents; provider-side audit-log pull procedure", source_skill: "incident-response-playbook", d3fend: ["D3-IOPR"] },
+      { layer: "IR", control: "Triage playbook for AI-as-C2 incidents; provider-side audit-log pull procedure", source_skill: "incident-response-playbook", d3fend: ["D3-UBA"] },
     ],
   },
   {
@@ -55,7 +55,7 @@ const LADDERS = [
       { layer: "Lateral Movement Block", control: "Network segmentation by zone; deny SMB cross-segment; admin-tier isolation", source_skill: "incident-response-playbook", d3fend: ["D3-NI", "D3-NTPM"] },
       { layer: "Data", control: "Immutable backups (3-2-1-1-0); offline restore-time tested quarterly", source_skill: "incident-response-playbook", d3fend: ["D3-FE"] },
       { layer: "OT Impact", control: "OT/IT segmentation per IEC 62443 zones; manual-fallback procedures rehearsed", source_skill: "ot-ics-security", d3fend: ["D3-NI"] },
-      { layer: "Detection", control: "Behavioral on file-rename rates + canary files; T1486 ATT&CK detection", source_skill: "ai-c2-detection", d3fend: ["D3-FAPA", "D3-PHRA"] },
+      { layer: "Detection", control: "Behavioral on file-rename rates + canary files; T1486 ATT&CK detection", source_skill: "ai-c2-detection", d3fend: ["D3-FAPA", "D3-FIM"] },
     ],
   },
   {
@@ -63,11 +63,11 @@ const LADDERS = [
     attack_class: "Supply Chain Compromise (Build + Dependency + MCP)",
     primary_ttps: ["AML.T0010", "T1195"],
     layers: [
-      { layer: "Source", control: "Signed commits + branch-protection enforcement; trusted-builder allowlist", source_skill: "supply-chain-integrity", d3fend: ["D3-EHB", "D3-CBAN"] },
-      { layer: "Build", control: "Hermetic builds + SLSA Level 3+ provenance attestation", source_skill: "supply-chain-integrity", d3fend: ["D3-EHB"] },
-      { layer: "Dependency", control: "SBOM + signed attestation per dep; transitive-dep advisory loop", source_skill: "supply-chain-integrity", d3fend: ["D3-EHB", "D3-CA"] },
-      { layer: "MCP / Tooling", control: "MCP server allowlist on engineering workstations; signed plugin manifests", source_skill: "mcp-agent-trust", d3fend: ["D3-EAL", "D3-EHB"] },
-      { layer: "Runtime", control: "Workload identity attestation on deploy; deny-unsigned-image admission control", source_skill: "container-runtime-security", d3fend: ["D3-EHB", "D3-CBAN"] },
+      { layer: "Source", control: "Signed commits + branch-protection enforcement; trusted-builder allowlist", source_skill: "supply-chain-integrity", d3fend: ["D3-EAL", "D3-CBAN"] },
+      { layer: "Build", control: "Hermetic builds + SLSA Level 3+ provenance attestation", source_skill: "supply-chain-integrity", d3fend: ["D3-FIM"] },
+      { layer: "Dependency", control: "SBOM + signed attestation per dep; transitive-dep advisory loop", source_skill: "supply-chain-integrity", d3fend: ["D3-FIM", "D3-CA"] },
+      { layer: "MCP / Tooling", control: "MCP server allowlist on engineering workstations; signed plugin manifests", source_skill: "mcp-agent-trust", d3fend: ["D3-EAL", "D3-FIM"] },
+      { layer: "Runtime", control: "Workload identity attestation on deploy; deny-unsigned-image admission control", source_skill: "container-runtime-security", d3fend: ["D3-EAL", "D3-CBAN"] },
       { layer: "Detection", control: "Anomalous build outputs; new outbound destinations from build hosts", source_skill: "ai-c2-detection", d3fend: ["D3-NTA"] },
     ],
   },
@@ -78,7 +78,7 @@ const LADDERS = [
     layers: [
       { layer: "API Gateway", control: "Per-route policy with object-scoped authorization; reject opaque IDs without claim binding", source_skill: "api-security", d3fend: ["D3-CSPP"] },
       { layer: "Service", control: "Authorization at the resource handler, never at the gateway alone", source_skill: "api-security", d3fend: ["D3-PA"] },
-      { layer: "Identity", control: "OAuth scopes + per-tenant claim with cryptographic binding to identity", source_skill: "identity-assurance", d3fend: ["D3-CBAN", "D3-MFA"] },
+      { layer: "Identity", control: "OAuth scopes + per-tenant claim with cryptographic binding to identity", source_skill: "identity-assurance", d3fend: ["D3-UAP", "D3-MFA"] },
       { layer: "Detection", control: "Per-user request-pattern baselining; alert on bulk-enumeration over /resource/:id", source_skill: "api-security", d3fend: ["D3-NTA", "D3-CSPP"] },
       { layer: "Testing", control: "BOLA in pen-test scope, every release; fuzz IDOR primitives", source_skill: "fuzz-testing-strategy", d3fend: ["D3-PA"] },
     ],
@@ -89,10 +89,10 @@ const LADDERS = [
     primary_ttps: ["AML.T0043", "AML.T0025"],
     layers: [
       { layer: "Storage", control: "Model weights in encrypted-at-rest object store; key access via KMS audit", source_skill: "mlops-security", d3fend: ["D3-FE", "D3-MENCR"] },
-      { layer: "Access Control", control: "ML-engineer workstations get read-only via signed checkouts; production weights gated", source_skill: "identity-assurance", d3fend: ["D3-CBAN", "D3-MFA"] },
+      { layer: "Access Control", control: "ML-engineer workstations get read-only via signed checkouts; production weights gated", source_skill: "identity-assurance", d3fend: ["D3-UAP", "D3-MFA"] },
       { layer: "Egress", control: "DLP on weight-file size patterns + chunked upload to public buckets", source_skill: "dlp-gap-analysis", d3fend: ["D3-NTA", "D3-NTPM"] },
       { layer: "Detection", control: "S3/GCS audit-log anomaly on model-bucket GET-rates; alert on cross-tenant key use", source_skill: "ai-c2-detection", d3fend: ["D3-FAPA", "D3-NTA"] },
-      { layer: "Provenance", control: "Watermarked model weights for high-value models", source_skill: "mlops-security", d3fend: ["D3-EAL"] },
+      { layer: "Provenance", control: "Watermarked model weights for high-value models", source_skill: "mlops-security", d3fend: ["D3-FIM"] },
     ],
   },
   {
@@ -100,11 +100,11 @@ const LADDERS = [
     attack_class: "Business Email Compromise (AI-generated)",
     primary_ttps: ["T1566", "T1583.001"],
     layers: [
-      { layer: "Email Gateway", control: "SPF + DKIM + DMARC enforcement at p=reject; impersonation-domain detection", source_skill: "email-security-anti-phishing", d3fend: ["D3-DA", "D3-CA"] },
+      { layer: "Email Gateway", control: "SPF + DKIM + DMARC enforcement at p=reject; impersonation-domain detection", source_skill: "email-security-anti-phishing", d3fend: ["D3-DNRA", "D3-CA"] },
       { layer: "User Awareness", control: "AI-generated-content-aware training (grammar heuristics are dead)", source_skill: "email-security-anti-phishing", d3fend: ["D3-CSPP"] },
       { layer: "Wire-Fraud Controls", control: "Out-of-band confirmation for any payment change; vendor-bank-change verification", source_skill: "sector-financial", d3fend: ["D3-CBAN"] },
       { layer: "Detection", control: "Mailflow behavioral anomaly on first-time-correspondent + payment-context", source_skill: "email-security-anti-phishing", d3fend: ["D3-NTA", "D3-CSPP"] },
-      { layer: "Recovery", control: "BEC IR playbook with FBI IC3 reporting + bank-recall window (<72h)", source_skill: "incident-response-playbook", d3fend: ["D3-IOPR"] },
+      { layer: "Recovery", control: "BEC IR playbook with FBI IC3 reporting + bank-recall window (<72h)", source_skill: "incident-response-playbook", d3fend: ["D3-UBA"] },
     ],
   },
 ];

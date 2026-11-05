@@ -51,9 +51,9 @@ cwe_refs:
   - CWE-1357
   - CWE-502
 d3fend_refs:
-  - D3-EHB
+  - D3-FIM
   - D3-EAL
-  - D3-IOPR
+  - D3-CSPP
 forward_watch:
   - CycloneDX 1.7 ML-BOM enrichment — training-data lineage fields and model-card embedding stabilize; re-baseline ML-BOM coverage when published
   - SPDX 3.1 AI / Dataset profile maturation — dataset provenance schema firms up; re-audit training-data lineage attestations
@@ -174,7 +174,7 @@ Layered controls across the MLOps lifecycle — data → training → registry �
 - **Model registry RBAC and provenance.** Project-scoped read/write permissions on MLflow Registry / SageMaker Model Registry / Vertex Model Registry / Azure ML registry / Hugging Face Hub private orgs. Every registry write produces an in-toto attestation linking training run → dataset hashes → model artifact hash → committing identity.
 - **Deployment pipeline admission gate.** Pre-deployment policy controller (Sigstore policy-controller, Kyverno verify-images extended for model artifacts, custom admission webhook) verifies model artifact signature, attestation chain, and registry-source identity before allowing deployment.
 - **Inference serving runtime hardening.** Serving containers run under restricted seccomp / AppArmor profiles. GPU isolation via NVIDIA confidential computing or dedicated nodes. Falco / Tetragon monitoring for anomalous syscalls. See `container-runtime-security` for the runtime-layer handoff.
-- **Drift and adversarial monitoring.** Statistical drift (input distribution, feature distribution, output distribution) plus semantic drift (concept drift in input meaning) plus adversarial input detection (OOD detection, prediction confidence anomaly, query-pattern profiling — D3-IOPR).
+- **Drift and adversarial monitoring.** Statistical drift (input distribution, feature distribution, output distribution) plus semantic drift (concept drift in input meaning) plus adversarial input detection (OOD detection, prediction confidence anomaly, query-pattern profiling — D3-CSPP).
 - **Feedback-loop integrity.** Every retrain run produces in-toto attestation. Feedback sources are attested (signed by collecting service). Statistical detection of feedback distribution shift. Holdout retraining where feedback is sampled and validated rather than wholesale incorporated.
 
 ### Least privilege
@@ -216,10 +216,10 @@ Every artifact is untrusted until cryptographically verified.
 
 8. **Drift detection (semantic + statistical).** Instrument three layers:
    - **Statistical drift** — input feature distributions, output distributions, accuracy on labeled holdout (Evidently, Arize, Fiddler, WhyLabs).
-   - **Semantic drift** — concept drift in input meaning; embedding-distribution shift over time; D3-IOPR-style profiling of input/output payloads.
+   - **Semantic drift** — concept drift in input meaning; embedding-distribution shift over time; D3-CSPP-style profiling of input and output payloads.
    - **Cadence** — daily statistical, weekly semantic, alert on threshold breach. Quarterly drift review is not sufficient — that is miss-the-attacker territory.
 
-9. **Adversarial monitoring.** Input distribution profiling for OOD detection, prediction confidence anomaly detection, query-pattern profiling (D3-IOPR) to surface AML.T0013 (model probing) and AML.T0043 (adversarial inputs). For LLM-serving, integrate Garak-class probing into a continuous red-team loop.
+9. **Adversarial monitoring.** Input distribution profiling for OOD detection, prediction confidence anomaly detection, query-pattern profiling (D3-CSPP) to surface AML.T0013 (model probing) and AML.T0043 (adversarial inputs). For LLM-serving, integrate Garak-class probing into a continuous red-team loop.
 
 10. **Feedback loop integrity.** Every retrain run produces an in-toto attestation. Feedback sources are signed by the collecting service. Statistical detection of feedback distribution shift on a per-source basis. Holdout retraining — feedback is sampled and validated against a labeled baseline before incorporation, not wholesale ingested. Verify that every model in production carries a chain of attestations back to the original training run plus every retrain run since.
 
@@ -300,17 +300,17 @@ A genuinely conformant MLOps program answers all four with concrete artifacts: a
 
 D3FEND techniques referenced (see `data/d3fend-catalog.json`). Each is annotated with defense-in-depth layer position, least-privilege scope, zero-trust posture, and AI-pipeline applicability (some controls are architecturally impossible in ephemeral / serverless contexts).
 
-- **D3-EHB (Executable Hash-based Allowlist)** — Hash-pinned allowlist for model artifacts at load time. Maps to model-weight SHA-256 verification at inference-service load, and to in-toto / SLSA-style attestation enforcement at deployment. Defense-in-depth layer: runtime model-load. Least-privilege scope: serving service has read-only access to a pinned set of model hashes for its project, no read on other models. Zero-trust posture: default-deny on any model hash not in the allowlist. AI-pipeline applicability: persistent registries store the allowlist; ephemeral serving pods pull and verify on each model-load.
+- **D3-FIM (File Integrity Monitoring)** — Detects changes to model artifacts by comparing each file against a pinned digest at load time. Maps to model-weight SHA-256 verification at inference-service load, and to in-toto / SLSA-style attestation checks at deployment. D3-FIM reports a model whose digest differs from the pinned value, and the loader or admission controller (D3-EAL) enforces the rejection. Defense-in-depth layer: runtime model-load. Least-privilege scope: serving service has read-only access to a pinned set of model hashes for its project, no read on other models. Zero-trust posture: default-deny on any model hash not in the pinned set. AI-pipeline applicability: persistent registries store the allowlist; ephemeral serving pods pull and verify on each model-load.
 
 - **D3-EAL (Executable Allowlisting)** — Runtime restriction of execution to pre-approved executables, extended in the MLOps context to inference-service binary lineage. Closes the loop on training-run signing: even if a tampered training artifact reaches the serving host, D3-EAL on the serving container blocks unauthorized binary execution emerging from a deserialization-RCE in the model artifact. Defense-in-depth layer: runtime inference-service host. Least-privilege scope: serving container has a minimum binary allowlist for the model-serving framework only — no shell, no debugging utilities, no outbound-network utilities. Zero-trust posture: every binary execution is verified against the allowlist regardless of pathway. AI-pipeline applicability: ephemeral serving pods are reprovisioned with the allowlist baked into the immutable image; persistent training runs use a separate, broader allowlist scoped to training-only operations.
 
-- **D3-IOPR (Input/Output Profiling)** — Profiling of input and output payloads at inference services to detect adversarial inputs (AML.T0043) and model-probing patterns (AML.T0013). Defense-in-depth layer: serving-layer pre- and post-inference. Least-privilege scope: profiling service has read-only access to inference traffic at the serving proxy; no model-load privileges, no registry-write privileges. Zero-trust posture: every inference request is profiled regardless of source authentication — authenticated users execute AML.T0043 attacks too. AI-pipeline applicability: serves both ephemeral inference pods (profiling sidecar) and persistent monitoring services (drift-detection pipeline ingesting profiled telemetry).
+- **D3-CSPP (Client-server Payload Profiling)** — Profiling of input and output payloads at inference services to detect adversarial inputs (AML.T0043) and model-probing patterns (AML.T0013). Defense-in-depth layer: serving-layer pre- and post-inference. Least-privilege scope: profiling service has read-only access to inference traffic at the serving proxy; no model-load privileges, no registry-write privileges. Zero-trust posture: every inference request is profiled regardless of source authentication — authenticated users execute AML.T0043 attacks too. AI-pipeline applicability: serves both ephemeral inference pods (profiling sidecar) and persistent monitoring services (drift-detection pipeline ingesting profiled telemetry).
 
 MLOps stacks span three architectural layers, each requiring an explicit defense story (and each surfacing controls that are architecturally impossible in ephemeral environments):
 
 - **Ephemeral training jobs** — per-run pods on Kubeflow / Vertex / SageMaker / Ray. SLSA-style training-run attestation is the integrity anchor; D3-EAL on the training container is the runtime control. Live patching is not applicable — runs are torn down post-training.
 - **Persistent model registries** — MLflow Model Registry, SageMaker Model Registry, Vertex Model Registry, Azure ML registry, Hugging Face Hub private orgs. RBAC is the access-layer control; signature attestation on every write is the integrity control. Standard server-hardening + patch-SLA applies.
-- **Ephemeral inference serving pods** — KServe, SageMaker endpoints, Vertex endpoints, Azure ML online endpoints, BentoML, Seldon. Pre-load signature verification + D3-EHB allowlist + D3-EAL + D3-IOPR profiling. Live patching is replacement of the immutable image; rolling redeploy is the operational control.
+- **Ephemeral inference serving pods** — KServe, SageMaker endpoints, Vertex endpoints, Azure ML online endpoints, BentoML, Seldon. Pre-load signature verification + D3-FIM digest check + D3-EAL + D3-CSPP profiling. Live patching is replacement of the immutable image; rolling redeploy is the operational control.
 
 Signing baseline reference: RFC 8032 (Ed25519 / Ed448) is the asymmetric signature algorithm used by Sigstore keyless signing for cosign and is one of the supported algorithms for OpenSSF model-signing. PQC migration to ML-DSA (FIPS 204) / SLH-DSA (FIPS 205) for model-weight signing is on the forward-watch list; track via `pqc-first`.
 
@@ -323,7 +323,7 @@ After producing the MLOps pipeline security assessment, chain into the following
 - **`rag-pipeline-security`** — retrieval-side of the inference path. Where this skill identifies a feedback-loop poisoning risk or a model serving an embedding-similarity retrieval surface, chain into the RAG skill for the vector-store, retrieval-filter, and indirect-prompt-injection treatment.
 - **`ai-attack-surface`** — broader AI threat landscape. MLOps integrity findings are one component of the wider AI-application threat model; the AI attack surface skill situates them alongside LLM tool-use, prompt-handling, and agent autonomy threats.
 - **`supply-chain-integrity`** — SLSA / Sigstore / in-toto / SBOM foundation. Every signing, attestation, and provenance recommendation in this skill is operationalized through the controls defined there. Model weights are supply-chain artifacts; this skill's MLOps integration sits on top of the supply-chain skill's signing primitives.
-- **`container-runtime-security`** — inference serving hardening. Where this skill identifies a serving-layer hardening gap (D3-EAL, D3-EHB at load, seccomp / AppArmor profiles, GPU isolation, Falco / Tetragon monitoring), hand off the runtime treatment to the container-runtime-security skill.
+- **`container-runtime-security`** — inference serving hardening. Where this skill identifies a serving-layer hardening gap (D3-EAL, D3-FIM at load, seccomp / AppArmor profiles, GPU isolation, Falco / Tetragon monitoring), hand off the runtime treatment to the container-runtime-security skill.
 - **`cloud-security`** — cloud MLOps. Where the stack is Vertex AI / SageMaker / Azure ML, cloud-side IAM, KMS key custody for signing keys, VPC service controls / private endpoints for registries, and cloud-native admission policies are the operational substrate. Chain into cloud-security for the cloud-control-plane treatment.
 - **`ai-risk-management`** — governance overlay (ISO 42001, ISO 23894, NIST AI RMF). Where this skill identifies a framework gap, the governance overlay translates findings into the management-system documentation, AI impact assessment, and high-risk AI classification work products.
 - **`coordinated-vuln-disclosure`** — AI vulnerability intake. Where this skill surfaces a vendor vulnerability (MLflow class, framework class, MCP server class), or where research surfaces a novel poisoning pattern requiring coordinated disclosure, chain into the CVD skill for the ISO 29147 / 30111 / CSAF 2.0 publication workflow.

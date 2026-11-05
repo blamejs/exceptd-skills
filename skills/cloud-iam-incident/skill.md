@@ -57,10 +57,10 @@ cwe_refs:
   - CWE-269
 d3fend_refs:
   - D3-MFA
-  - D3-CBAN
+  - D3-UAP
   - D3-NTA
-  - D3-IOPR
-  - D3-CAA
+  - D3-UBA
+  - D3-RAPA
 forward_watch:
   - AWS IAM Identity Center session-policy refresh and step-up-on-admin enforcement (anticipated 2026-H2 release)
   - GCP Workload Identity Federation principal-set attribute mapping tightening (post-2026 Q3 Federation hardening guide)
@@ -186,7 +186,7 @@ The playbook `cloud-iam-incident` operationalizes this skill into a seven-phase 
 
 This procedure threads defense in depth, least privilege, and zero trust through every step. Pair it with the `cloud-iam-incident` playbook for the operational seven-phase walk.
 
-**Defense in depth.** Multi-layer authentication at every privilege boundary: AAL3 / FIDO2 device-bound passkey for human admins (skill `identity-assurance`); per-account SCP / Org Policy / Management Group denies; cross-account external-id on every assume-role trust; KMS / Cloud KMS / Key Vault key-policy least-privilege; resource-policy default-deny; network-layer segmentation (D3-NTA) between accounts and between zones; behavioral CloudTrail / Cloud Audit Log analytics (D3-IOPR) on top of posture tools; out-of-band confirmation on root-equivalent actions; help-desk OOB-callback for MFA resets.
+**Defense in depth.** Multi-layer authentication at every privilege boundary: AAL3 / FIDO2 device-bound passkey for human admins (skill `identity-assurance`); per-account SCP / Org Policy / Management Group denies; cross-account external-id on every assume-role trust; KMS / Cloud KMS / Key Vault key-policy least-privilege; resource-policy default-deny; network-layer segmentation (D3-NTA) between accounts and between zones; behavioral CloudTrail / Cloud Audit Log analytics (D3-UBA) on top of posture tools; out-of-band confirmation on root-equivalent actions; help-desk OOB-callback for MFA resets.
 
 **Least privilege.** Per-principal scope; CWE-863 default-permissive role assignments are the dominant failing. External-id on every cross-account trust; non-wildcard subject claims on every federated OIDC trust; audience-pinned SAML; session-policy tightening on every AssumeRole / AssumeRoleWithSAML / AssumeRoleWithWebIdentity to scope-down beyond the role's permissions; KMS key-policy explicit-allow rather than IAM-policy-via-default-deny; managed-identity scope-token TTL ceilings (scope-token TTL ceilings: <= 1 hour for non-CAE-enabled, <= 24 hours with CAE).
 
@@ -316,7 +316,7 @@ The output is the operator-facing cloud-IAM incident assessment. Every section i
 [Per-compromised-principal blast_radius score 1-5]
 
 ### Defensive Countermeasure Plan (D3FEND)
-[D3-MFA, D3-CBAN, D3-NTA, D3-IOPR, D3-CAA — concrete control placements by account]
+[D3-MFA, D3-UAP, D3-NTA, D3-UBA, D3-RAPA — concrete control placements by account]
 
 ### Priority Remediation Actions
 1. ...
@@ -378,10 +378,10 @@ Maps cloud-IAM offensive findings to MITRE D3FEND IDs from `data/d3fend-catalog.
 | D3FEND ID | Technique | Layer Position | Least-Privilege Scope | Zero-Trust Posture | AI-Pipeline Applicability |
 |---|---|---|---|---|---|
 | D3-MFA | Multi-Factor Authentication | Human-admin layer; help-desk MFA-reset gate | Per-principal MFA enrollment; phishing-resistant factors for any admin-equivalent principal | Step-up on root-equivalent action, AWS Organizations management actions, and AssumeRole into production accounts | Applicable to human principals. Service accounts / managed identities need scope-token + audience-binding constructs (not MFA). |
-| D3-CBAN | Credential-Based Authentication | API + management plane; access-key issuance and rotation | Per-credential scope (action + resource + time window); CWE-798 prohibition on hard-coded credentials | Credential issuance just-in-time where feasible (IAM Identity Center session policies, GCP impersonation tokens, Azure Just-In-Time access); rotation cadence per documented policy | Applicable. Bearer-token TTL ceilings on every non-human principal (<= 1h non-CAE, <= 24h with Continuous Access Evaluation). |
+| D3-UAP | User Account Permissions | API + management plane; access-key issuance and rotation | Per-credential scope (action + resource + time window); CWE-798 prohibition on hard-coded credentials | Credential issuance just-in-time where feasible (IAM Identity Center session policies, GCP impersonation tokens, Azure Just-In-Time access); rotation cadence per documented policy | Applicable. Bearer-token TTL ceilings on every non-human principal (<= 1h non-CAE, <= 24h with Continuous Access Evaluation). |
 | D3-NTA | Network Traffic Analysis | Inter-account / inter-zone boundary; IMDS metadata-service network; AI-API egress from administrative jump zones | Operator alerting scoped to operator's account / project / management group | Network-hostile-until-proven posture; IMDSv2 enforced; AI-API egress explicitly allowlisted | Applicable. AI-API egress monitoring from cloud-hosted workloads to LLM provider endpoints (OpenAI, Anthropic, Google) is a sub-control of DLP-aware NTA. |
-| D3-IOPR | Input / Output Pattern Recognition | CloudTrail / Cloud Audit Logs / Activity Logs analytics; behavioral-graph monitoring | Cross-account assume-role graphs over rolling 24h windows; IAM-mutation events outside IaC apply baselines; billing anomalies | Every behavioral pattern verified against historical norm and against adversary-known patterns | Critical. Behavioral-analytics on cloud-IAM is the primary defensive control gap in mid-2026. Posture tools do not provide this; D3-IOPR placement is required. |
-| D3-CAA | Credential and Access Analytics | Federated-trust-policy posture; cross-system credential-reuse mapping | Per-IdP downstream-consumer inventory; per-federated-role trust-policy condition specificity | Federated trust treated as untrusted-until-claim-validated; trust-policy condition specificity continuously attested | Applicable. Cross-system credential-reuse is the Snowflake-AA24-class vector; D3-CAA placement attests against this class. |
+| D3-UBA | User Behavior Analysis | CloudTrail / Cloud Audit Logs / Activity Logs analytics; behavioral-graph monitoring | Cross-account assume-role graphs over rolling 24h windows; IAM-mutation events outside IaC apply baselines; billing anomalies | Every behavioral pattern verified against historical norm and against adversary-known patterns | Critical. Behavioral-analytics on cloud-IAM is the primary defensive control gap in mid-2026. Posture tools do not provide this; D3-UBA placement is required. |
+| D3-RAPA | Resource Access Pattern Analysis | Federated-trust-policy posture; cross-system credential-reuse mapping; per-identity resource-access baselines in cloud audit logs | Per-IdP downstream-consumer inventory; per-federated-role trust-policy condition specificity; per-identity baseline of the resources each identity accesses | Federated trust treated as untrusted-until-claim-validated; resources accessed by a federated identity compared against that identity's baseline | Applicable. Cross-system credential-reuse is the Snowflake-AA24-class vector; D3-RAPA placement flags a federated identity reaching resources outside its baseline. |
 
 **AI-pipeline-specific posture.** Cloud-hosted AI workloads (SageMaker, Vertex AI, Azure ML, plus self-hosted on EC2 / GCE / Azure VM) introduce three AI-specific attack surfaces:
 

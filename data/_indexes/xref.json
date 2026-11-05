@@ -289,15 +289,12 @@
     ]
   },
   "d3fend_refs": {
-    "D3-ASLR": [
-      "defensive-countermeasure-mapping",
-      "kernel-lpe-triage"
-    ],
     "D3-EAL": [
       "ai-attack-surface",
       "attack-surface-pentest",
       "cloud-security",
       "container-runtime-security",
+      "coordinated-vuln-disclosure",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "fuzz-testing-strategy",
@@ -308,16 +305,19 @@
       "sector-energy",
       "sector-federal-government",
       "security-maturity-tiers",
+      "skill-update-loop",
       "supply-chain-integrity",
       "webapp-security"
     ],
     "D3-PA": [
+      "attack-surface-pentest",
+      "cloud-security",
+      "container-runtime-security",
       "defensive-countermeasure-mapping",
-      "kernel-lpe-triage"
-    ],
-    "D3-PHRA": [
-      "defensive-countermeasure-mapping",
-      "kernel-lpe-triage"
+      "incident-response-playbook",
+      "kernel-lpe-triage",
+      "ransomware-response",
+      "skill-update-loop"
     ],
     "D3-PSEP": [
       "container-runtime-security",
@@ -326,34 +326,16 @@
       "kernel-lpe-triage",
       "sector-energy"
     ],
-    "D3-SCP": [
+    "D3-SAOR": [
       "defensive-countermeasure-mapping",
+      "fuzz-testing-strategy",
       "kernel-lpe-triage"
     ],
-    "D3-IOPR": [
-      "age-gates-child-safety",
-      "ai-attack-surface",
-      "ai-c2-detection",
-      "ai-risk-management",
-      "api-security",
-      "cloud-iam-incident",
-      "cloud-security",
-      "container-runtime-security",
+    "D3-SCF": [
+      "attack-surface-pentest",
       "defensive-countermeasure-mapping",
-      "dlp-gap-analysis",
-      "email-security-anti-phishing",
-      "fuzz-testing-strategy",
-      "global-grc",
-      "idp-incident-response",
-      "incident-response-playbook",
-      "mlops-security",
-      "rag-pipeline-security",
-      "ransomware-response",
-      "sector-financial",
-      "sector-healthcare",
-      "sector-telecom",
-      "security-maturity-tiers",
-      "webapp-security"
+      "kernel-lpe-triage",
+      "supply-chain-integrity"
     ],
     "D3-NTA": [
       "ai-attack-surface",
@@ -362,6 +344,7 @@
       "attack-surface-pentest",
       "cloud-iam-incident",
       "cloud-security",
+      "coordinated-vuln-disclosure",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "email-security-anti-phishing",
@@ -379,6 +362,7 @@
     "D3-FAPA": [
       "ai-attack-surface",
       "defensive-countermeasure-mapping",
+      "dlp-gap-analysis",
       "global-grc",
       "rag-pipeline-security",
       "security-maturity-tiers"
@@ -387,47 +371,48 @@
       "age-gates-child-safety",
       "ai-attack-surface",
       "ai-c2-detection",
+      "ai-risk-management",
       "api-security",
       "attack-surface-pentest",
+      "cloud-security",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "email-security-anti-phishing",
+      "fuzz-testing-strategy",
       "global-grc",
       "identity-assurance",
       "incident-response-playbook",
       "mcp-agent-trust",
+      "mlops-security",
       "rag-pipeline-security",
       "ransomware-response",
+      "sector-financial",
       "sector-healthcare",
       "security-maturity-tiers",
       "webapp-security"
     ],
-    "D3-CAA": [
-      "cloud-iam-incident",
-      "mcp-agent-trust"
-    ],
     "D3-CBAN": [
       "api-security",
-      "cloud-iam-incident",
       "cloud-security",
       "defensive-countermeasure-mapping",
-      "idp-incident-response",
       "mcp-agent-trust",
-      "sector-federal-government",
-      "sector-financial",
-      "supply-chain-integrity"
+      "sector-federal-government"
     ],
-    "D3-EHB": [
+    "D3-FIM": [
       "container-runtime-security",
       "defensive-countermeasure-mapping",
+      "global-grc",
       "mcp-agent-trust",
       "mlops-security",
       "sector-federal-government",
+      "sector-telecom",
+      "skill-update-loop",
       "supply-chain-integrity"
     ],
     "D3-MFA": [
       "age-gates-child-safety",
       "api-security",
+      "attack-surface-pentest",
       "cloud-iam-incident",
       "defensive-countermeasure-mapping",
       "email-security-anti-phishing",
@@ -440,23 +425,30 @@
       "security-maturity-tiers",
       "webapp-security"
     ],
+    "D3-RAPA": [
+      "attack-surface-pentest",
+      "cloud-iam-incident",
+      "mcp-agent-trust"
+    ],
     "D3-FCR": [
-      "rag-pipeline-security"
+      "rag-pipeline-security",
+      "skill-update-loop"
     ],
     "D3-CA": [
-      "ai-c2-detection",
-      "defensive-countermeasure-mapping"
+      "ai-c2-detection"
     ],
-    "D3-DA": [
+    "D3-DNRA": [
       "ai-c2-detection",
       "defensive-countermeasure-mapping"
     ],
     "D3-NI": [
       "ai-c2-detection",
+      "attack-surface-pentest",
       "container-runtime-security",
       "defensive-countermeasure-mapping",
       "global-grc",
       "sector-energy",
+      "sector-financial",
       "sector-telecom",
       "security-maturity-tiers"
     ],
@@ -469,12 +461,12 @@
       "sector-energy",
       "sector-telecom"
     ],
-    "D3-EFA": [
+    "D3-FA": [
       "global-grc",
+      "sector-telecom",
       "security-maturity-tiers"
     ],
     "D3-FE": [
-      "defensive-countermeasure-mapping",
       "global-grc",
       "pqc-first"
     ],
@@ -483,7 +475,7 @@
       "security-maturity-tiers"
     ],
     "D3-MENCR": [
-      "defensive-countermeasure-mapping",
+      "dlp-gap-analysis",
       "global-grc",
       "pqc-first",
       "security-maturity-tiers"
@@ -499,10 +491,25 @@
     "D3-ITF": [
       "security-maturity-tiers"
     ],
-    "D3-RPA": [
-      "defensive-countermeasure-mapping",
-      "incident-response-playbook",
-      "ransomware-response"
+    "D3-IOPR": [
+      "dlp-gap-analysis"
+    ],
+    "D3-HBPI": [
+      "defensive-countermeasure-mapping"
+    ],
+    "D3-DA": [
+      "coordinated-vuln-disclosure",
+      "email-security-anti-phishing"
+    ],
+    "D3-UAP": [
+      "cloud-iam-incident",
+      "idp-incident-response",
+      "sector-financial"
+    ],
+    "D3-UBA": [
+      "cloud-iam-incident",
+      "idp-incident-response",
+      "sector-financial"
     ]
   },
   "framework_gaps": {

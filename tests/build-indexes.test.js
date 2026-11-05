@@ -517,7 +517,7 @@ test('loadSources overlays the skill description from frontmatter', () => {
 
 test('the UK/AU global-first control mappings survive into the loaded skill record', () => {
   // kernel-lpe-triage declares UK-CAF-D1 + AU-Essential-8-Patch framework gaps,
-  // D3-PA + D3-SCP d3fend refs, and the fragnesia / cve-2026-46300 triggers in
+  // D3-PA + D3-SCF d3fend refs, and the fragnesia / cve-2026-46300 triggers in
   // its frontmatter. The manifest cache historically dropped them; the loaded
   // record must carry them.
   const ctx = loadSources();
@@ -526,7 +526,7 @@ test('the UK/AU global-first control mappings survive into the loaded skill reco
   for (const gap of ['UK-CAF-D1', 'AU-Essential-8-Patch']) {
     assert.ok(k.framework_gaps.includes(gap), `framework_gaps should include ${gap}`);
   }
-  for (const d3 of ['D3-PA', 'D3-SCP']) {
+  for (const d3 of ['D3-PA', 'D3-SCF']) {
     assert.ok(k.d3fend_refs.includes(d3), `d3fend_refs should include ${d3}`);
   }
   for (const trig of ['fragnesia', 'cve-2026-46300']) {

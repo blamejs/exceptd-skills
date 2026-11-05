@@ -97,8 +97,8 @@
       "D3-MFA",
       "D3-CBAN",
       "D3-NTA",
-      "D3-IOPR",
-      "D3-CAA"
+      "D3-UBA",
+      "D3-RAPA"
     ],
     "frameworks_in_scope": [
       "nist-800-53",

@@ -462,20 +462,14 @@
       }
     },
     "d3fend_refs": {
-      "D3-ASLR": {
-        "count": 2,
-        "skills": [
-          "defensive-countermeasure-mapping",
-          "kernel-lpe-triage"
-        ]
-      },
       "D3-EAL": {
-        "count": 16,
+        "count": 18,
         "skills": [
           "ai-attack-surface",
           "attack-surface-pentest",
           "cloud-security",
           "container-runtime-security",
+          "coordinated-vuln-disclosure",
           "defensive-countermeasure-mapping",
           "dlp-gap-analysis",
           "fuzz-testing-strategy",
@@ -486,22 +480,22 @@
           "sector-energy",
           "sector-federal-government",
           "security-maturity-tiers",
+          "skill-update-loop",
           "supply-chain-integrity",
           "webapp-security"
         ]
       },
       "D3-PA": {
-        "count": 2,
+        "count": 8,
         "skills": [
+          "attack-surface-pentest",
+          "cloud-security",
+          "container-runtime-security",
           "defensive-countermeasure-mapping",
-          "kernel-lpe-triage"
-        ]
-      },
-      "D3-PHRA": {
-        "count": 2,
-        "skills": [
-          "defensive-countermeasure-mapping",
-          "kernel-lpe-triage"
+          "incident-response-playbook",
+          "kernel-lpe-triage",
+          "ransomware-response",
+          "skill-update-loop"
         ]
       },
       "D3-PSEP": {
@@ -514,43 +508,25 @@
           "sector-energy"
         ]
       },
-      "D3-SCP": {
-        "count": 2,
+      "D3-SAOR": {
+        "count": 3,
         "skills": [
           "defensive-countermeasure-mapping",
+          "fuzz-testing-strategy",
           "kernel-lpe-triage"
         ]
       },
-      "D3-IOPR": {
-        "count": 23,
+      "D3-SCF": {
+        "count": 4,
         "skills": [
-          "age-gates-child-safety",
-          "ai-attack-surface",
-          "ai-c2-detection",
-          "ai-risk-management",
-          "api-security",
-          "cloud-iam-incident",
-          "cloud-security",
-          "container-runtime-security",
+          "attack-surface-pentest",
           "defensive-countermeasure-mapping",
-          "dlp-gap-analysis",
-          "email-security-anti-phishing",
-          "fuzz-testing-strategy",
-          "global-grc",
-          "idp-incident-response",
-          "incident-response-playbook",
-          "mlops-security",
-          "rag-pipeline-security",
-          "ransomware-response",
-          "sector-financial",
-          "sector-healthcare",
-          "sector-telecom",
-          "security-maturity-tiers",
-          "webapp-security"
+          "kernel-lpe-triage",
+          "supply-chain-integrity"
         ]
       },
       "D3-NTA": {
-        "count": 19,
+        "count": 20,
         "skills": [
           "ai-attack-surface",
           "ai-c2-detection",
@@ -558,6 +534,7 @@
           "attack-surface-pentest",
           "cloud-iam-incident",
           "cloud-security",
+          "coordinated-vuln-disclosure",
           "defensive-countermeasure-mapping",
           "dlp-gap-analysis",
           "email-security-anti-phishing",
@@ -574,74 +551,73 @@
         ]
       },
       "D3-FAPA": {
-        "count": 5,
+        "count": 6,
         "skills": [
           "ai-attack-surface",
           "defensive-countermeasure-mapping",
+          "dlp-gap-analysis",
           "global-grc",
           "rag-pipeline-security",
           "security-maturity-tiers"
         ]
       },
       "D3-CSPP": {
-        "count": 17,
+        "count": 22,
         "skills": [
           "age-gates-child-safety",
           "ai-attack-surface",
           "ai-c2-detection",
+          "ai-risk-management",
           "api-security",
           "attack-surface-pentest",
+          "cloud-security",
           "defensive-countermeasure-mapping",
           "dlp-gap-analysis",
           "email-security-anti-phishing",
+          "fuzz-testing-strategy",
           "global-grc",
           "identity-assurance",
           "incident-response-playbook",
           "mcp-agent-trust",
+          "mlops-security",
           "rag-pipeline-security",
           "ransomware-response",
+          "sector-financial",
           "sector-healthcare",
           "security-maturity-tiers",
           "webapp-security"
         ]
       },
-      "D3-CAA": {
-        "count": 2,
-        "skills": [
-          "cloud-iam-incident",
-          "mcp-agent-trust"
-        ]
-      },
       "D3-CBAN": {
-        "count": 9,
+        "count": 5,
         "skills": [
           "api-security",
-          "cloud-iam-incident",
           "cloud-security",
           "defensive-countermeasure-mapping",
-          "idp-incident-response",
           "mcp-agent-trust",
-          "sector-federal-government",
-          "sector-financial",
-          "supply-chain-integrity"
+          "sector-federal-government"
         ]
       },
-      "D3-EHB": {
-        "count": 6,
+      "D3-FIM": {
+        "count": 9,
         "skills": [
           "container-runtime-security",
           "defensive-countermeasure-mapping",
+          "global-grc",
           "mcp-agent-trust",
           "mlops-security",
           "sector-federal-government",
+          "sector-telecom",
+          "skill-update-loop",
           "supply-chain-integrity"
         ]
       },
       "D3-MFA": {
-        "count": 13,
+        "count": 14,
         "skills": [
           "age-gates-child-safety",
           "api-security",
+          "attack-surface-pentest",
           "cloud-iam-incident",
           "defensive-countermeasure-mapping",
           "email-security-anti-phishing",
@@ -655,20 +631,28 @@
           "webapp-security"
         ]
       },
-      "D3-FCR": {
-        "count": 1,
+      "D3-RAPA": {
+        "count": 3,
         "skills": [
-          "rag-pipeline-security"
+          "attack-surface-pentest",
+          "cloud-iam-incident",
+          "mcp-agent-trust"
+        ]
+      },
+      "D3-FCR": {
+        "count": 2,
+        "skills": [
+          "rag-pipeline-security",
+          "skill-update-loop"
         ]
       },
       "D3-CA": {
-        "count": 2,
+        "count": 1,
         "skills": [
-          "ai-c2-detection",
-          "defensive-countermeasure-mapping"
+          "ai-c2-detection"
         ]
       },
-      "D3-DA": {
+      "D3-DNRA": {
         "count": 2,
         "skills": [
           "ai-c2-detection",
@@ -676,13 +660,15 @@
         ]
       },
       "D3-NI": {
-        "count": 7,
+        "count": 9,
         "skills": [
           "ai-c2-detection",
+          "attack-surface-pentest",
           "container-runtime-security",
           "defensive-countermeasure-mapping",
           "global-grc",
           "sector-energy",
+          "sector-financial",
           "sector-telecom",
           "security-maturity-tiers"
         ]
@@ -699,17 +685,17 @@
           "sector-telecom"
         ]
       },
-      "D3-EFA": {
-        "count": 2,
+      "D3-FA": {
+        "count": 3,
         "skills": [
           "global-grc",
+          "sector-telecom",
           "security-maturity-tiers"
         ]
       },
       "D3-FE": {
-        "count": 3,
+        "count": 2,
         "skills": [
-          "defensive-countermeasure-mapping",
           "global-grc",
           "pqc-first"
         ]
@@ -724,7 +710,7 @@
       "D3-MENCR": {
         "count": 4,
         "skills": [
-          "defensive-countermeasure-mapping",
+          "dlp-gap-analysis",
           "global-grc",
           "pqc-first",
           "security-maturity-tiers"
@@ -750,12 +736,39 @@
           "security-maturity-tiers"
         ]
       },
-      "D3-RPA": {
+      "D3-IOPR": {
+        "count": 1,
+        "skills": [
+          "dlp-gap-analysis"
+        ]
+      },
+      "D3-HBPI": {
+        "count": 1,
+        "skills": [
+          "defensive-countermeasure-mapping"
+        ]
+      },
+      "D3-DA": {
+        "count": 2,
+        "skills": [
+          "coordinated-vuln-disclosure",
+          "email-security-anti-phishing"
+        ]
+      },
+      "D3-UAP": {
         "count": 3,
         "skills": [
-          "defensive-countermeasure-mapping",
-          "incident-response-playbook",
-          "ransomware-response"
+          "cloud-iam-incident",
+          "idp-incident-response",
+          "sector-financial"
+        ]
+      },
+      "D3-UBA": {
+        "count": 3,
+        "skills": [
+          "cloud-iam-incident",
+          "idp-incident-response",
+          "sector-financial"
         ]
       }
     },
@@ -2437,37 +2450,36 @@
     ],
     "d3fend_refs": [
       {
-        "id": "D3-IOPR",
-        "count": 23,
+        "id": "D3-CSPP",
+        "count": 22,
         "skills": [
           "age-gates-child-safety",
           "ai-attack-surface",
           "ai-c2-detection",
           "ai-risk-management",
           "api-security",
-          "cloud-iam-incident",
+          "attack-surface-pentest",
           "cloud-security",
-          "container-runtime-security",
           "defensive-countermeasure-mapping",
           "dlp-gap-analysis",
           "email-security-anti-phishing",
           "fuzz-testing-strategy",
           "global-grc",
-          "idp-incident-response",
+          "identity-assurance",
           "incident-response-playbook",
+          "mcp-agent-trust",
           "mlops-security",
           "rag-pipeline-security",
           "ransomware-response",
           "sector-financial",
           "sector-healthcare",
-          "sector-telecom",
           "security-maturity-tiers",
           "webapp-security"
         ]
       },
       {
         "id": "D3-NTA",
-        "count": 19,
+        "count": 20,
         "skills": [
           "ai-attack-surface",
           "ai-c2-detection",
@@ -2475,6 +2487,7 @@
           "attack-surface-pentest",
           "cloud-iam-incident",
           "cloud-security",
+          "coordinated-vuln-disclosure",
           "defensive-countermeasure-mapping",
           "dlp-gap-analysis",
           "email-security-anti-phishing",
@@ -2491,36 +2504,14 @@
         ]
       },
       {
-        "id": "D3-CSPP",
-        "count": 17,
-        "skills": [
-          "age-gates-child-safety",
-          "ai-attack-surface",
-          "ai-c2-detection",
-          "api-security",
-          "attack-surface-pentest",
-          "defensive-countermeasure-mapping",
-          "dlp-gap-analysis",
-          "email-security-anti-phishing",
-          "global-grc",
-          "identity-assurance",
-          "incident-response-playbook",
-          "mcp-agent-trust",
-          "rag-pipeline-security",
-          "ransomware-response",
-          "sector-healthcare",
-          "security-maturity-tiers",
-          "webapp-security"
-        ]
-      },
-      {
         "id": "D3-EAL",
-        "count": 16,
+        "count": 18,
         "skills": [
           "ai-attack-surface",
           "attack-surface-pentest",
           "cloud-security",
           "container-runtime-security",
+          "coordinated-vuln-disclosure",
           "defensive-countermeasure-mapping",
           "dlp-gap-analysis",
           "fuzz-testing-strategy",
@@ -2531,16 +2522,18 @@
           "sector-energy",
           "sector-federal-government",
           "security-maturity-tiers",
+          "skill-update-loop",
           "supply-chain-integrity",
           "webapp-security"
         ]
       },
       {
         "id": "D3-MFA",
-        "count": 13,
+        "count": 14,
         "skills": [
           "age-gates-child-safety",
           "api-security",
+          "attack-surface-pentest",
           "cloud-iam-incident",
           "defensive-countermeasure-mapping",
           "email-security-anti-phishing",
@@ -2555,31 +2548,47 @@
         ]
       },
       {
-        "id": "D3-CBAN",
+        "id": "D3-FIM",
         "count": 9,
         "skills": [
-          "api-security",
-          "cloud-iam-incident",
-          "cloud-security",
+          "container-runtime-security",
           "defensive-countermeasure-mapping",
-          "idp-incident-response",
+          "global-grc",
           "mcp-agent-trust",
+          "mlops-security",
           "sector-federal-government",
-          "sector-financial",
+          "sector-telecom",
+          "skill-update-loop",
           "supply-chain-integrity"
         ]
       },
       {
         "id": "D3-NI",
-        "count": 7,
+        "count": 9,
         "skills": [
           "ai-c2-detection",
+          "attack-surface-pentest",
           "container-runtime-security",
           "defensive-countermeasure-mapping",
           "global-grc",
           "sector-energy",
+          "sector-financial",
           "sector-telecom",
           "security-maturity-tiers"
+        ]
+      },
+      {
+        "id": "D3-PA",
+        "count": 8,
+        "skills": [
+          "attack-surface-pentest",
+          "cloud-security",
+          "container-runtime-security",
+          "defensive-countermeasure-mapping",
+          "incident-response-playbook",
+          "kernel-lpe-triage",
+          "ransomware-response",
+          "skill-update-loop"
         ]
       },
       {
@@ -2596,26 +2605,26 @@
         ]
       },
       {
-        "id": "D3-EHB",
-        "count": 6,
-        "skills": [
-          "container-runtime-security",
-          "defensive-countermeasure-mapping",
-          "mcp-agent-trust",
-          "mlops-security",
-          "sector-federal-government",
-          "supply-chain-integrity"
-        ]
-      },
-      {
         "id": "D3-FAPA",
-        "count": 5,
+        "count": 6,
         "skills": [
           "ai-attack-surface",
           "defensive-countermeasure-mapping",
+          "dlp-gap-analysis",
           "global-grc",
           "rag-pipeline-security",
           "security-maturity-tiers"
+        ]
+      },
+      {
+        "id": "D3-CBAN",
+        "count": 5,
+        "skills": [
+          "api-security",
+          "cloud-security",
+          "defensive-countermeasure-mapping",
+          "mcp-agent-trust",
+          "sector-federal-government"
         ]
       }
     ],
@@ -3148,7 +3157,9 @@
       "CWE-93"
     ],
     "d3fend_refs": [
-      "D3-FCR",
+      "D3-CA",
+      "D3-HBPI",
+      "D3-IOPR",
       "D3-ITF"
     ],
     "framework_gaps": [
@@ -3634,7 +3645,6 @@
       "D3-BA",
       "D3-BAN",
       "D3-BDI",
-      "D3-BMA",
       "D3-BSE",
       "D3-CCSA",
       "D3-CDP",
@@ -3642,7 +3652,6 @@
       "D3-CERO",
       "D3-CF",
       "D3-CFC",
-      "D3-CFI",
       "D3-CH",
       "D3-CHN",
       "D3-CI",
@@ -3672,7 +3681,6 @@
       "D3-DLV",
       "D3-DNL",
       "D3-DNR",
-      "D3-DNRA",
       "D3-DNSAL",
       "D3-DNSCE",
       "D3-DNSDL",
@@ -3693,11 +3701,9 @@
       "D3-EHPV",
       "D3-EI",
       "D3-ELM",
-      "D3-EMH",
       "D3-EPL",
       "D3-ER",
       "D3-ET",
-      "D3-FA",
       "D3-FBA",
       "D3-FC",
       "D3-FCA",
@@ -3708,7 +3714,6 @@
       "D3-FFV",
       "D3-FH",
       "D3-FHRA",
-      "D3-FIM",
       "D3-FISV",
       "D3-FMBV",
       "D3-FMCV",
@@ -3716,7 +3721,6 @@
       "D3-FRDDL",
       "D3-FRIDL",
       "D3-FV",
-      "D3-HBPI",
       "D3-HBWP",
       "D3-HCI",
       "D3-HD",
@@ -3794,7 +3798,6 @@
       "D3-PWA",
       "D3-RA",
       "D3-RAM",
-      "D3-RAPA",
       "D3-RC",
       "D3-RD",
       "D3-RDI",
@@ -3803,7 +3806,6 @@
       "D3-RFAM",
       "D3-RFS",
       "D3-RFUM",
-      "D3-RH",
       "D3-RIC",
       "D3-RKD",
       "D3-RN",
@@ -3814,9 +3816,7 @@
       "D3-RTA",
       "D3-RTSD",
       "D3-RUAA",
-      "D3-SAOR",
       "D3-SBV",
-      "D3-SCF",
       "D3-SCH",
       "D3-SDA",
       "D3-SDM",
@@ -3844,8 +3844,6 @@
       "D3-TBI",
       "D3-TL",
       "D3-UA",
-      "D3-UAP",
-      "D3-UBA",
       "D3-UDTA",
       "D3-UGLPA",
       "D3-ULA",

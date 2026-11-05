@@ -1,0 +1,8 @@
+{
+  "_comment": "Divergences between data/d3fend-catalog.json and the D3FEND release it pins, which scripts/check-d3fend-catalog-currency.js reports and allows. Any divergence not listed here fails the gate, and an entry listed here that no longer diverges also fails, so this file shrinks as the entries are repaired. names maps an id to the catalog name the release does not give it; tactics maps an id to the catalog tactics the release does not assign to it.",
+  "pinned_release": "1.3.0",
+  "recorded_on": "2026-11-04",
+  "names": {},
+  "missing_ids": [],
+  "tactics": {}
+}
