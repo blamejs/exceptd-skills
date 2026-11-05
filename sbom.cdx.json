@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:68ba4e2f-e575-4f31-b896-f9a80d3d95e4",
+  "serialNumber": "urn:uuid:b33746c4-3419-4aec-b786-4ff90b925230",
   "version": 1,
   "metadata": {
     "timestamp": "2026-11-04T00:00:00.000Z",
@@ -29,7 +29,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "bbb871962c9407ad5929f26c5b5bb9e197a4bbff8b8eb677dbfa46d4a55d0fb4"
+          "content": "0794cc9ec45746052b2734649766e7084ca05e91eff894d3bb0f4c803120fdbb"
         }
       ],
       "externalReferences": [
@@ -334,11 +334,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "752ec5629ba37c07cb491038c615be665c69d6171cae723c998e607e0de8eba4"
+          "content": "99e74634a463a33096cb461987d7a295c480ba23cc36814419f64d45de195146"
         },
         {
           "alg": "SHA3-512",
-          "content": "5fb79ea2b0eecc8415ea7cdd9ff8560133811afa2c35526c338198010913a7d948606dfc501aa3f7bb8efdd46887e392c5a1b11b87570dcdcf1f113a30810a55"
+          "content": "0deb9fbee8f35a8fb9d3723370b6f76ab799e2ecc51fb1dd718b159d0f23d0808fa32e63b6173461e44df1156adf9e7f55cd751dc5a596a25f6399cb62fa6278"
         }
       ]
     },
@@ -1984,11 +1984,11 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "19b18297cd8cd037b8e3fcae789bdfc2c1cb942c4aa91105d6e0f22d13b37aba"
+          "content": "f2fdfdc242734b7f1a75cdab10f751448f56a87acc372bc4ac0266726bac01b0"
         },
         {
           "alg": "SHA3-512",
-          "content": "71d23b32cb83c4f4d1671394e8b26d8bfdce142c307dd33072034f3375a2008c8893541b6e6ee6c59e5ee46bb87c26cda65a97a5f1462a1b823dca09e13333e3"
+          "content": "4f96b2474e418aa27269bb6ff346e70777d4a725697f5690b1d76afaafe4067652463aa42ba54e2bafb962f5446727b9f507685abbe3bf695777b248936b99c3"
         }
       ]
     },
