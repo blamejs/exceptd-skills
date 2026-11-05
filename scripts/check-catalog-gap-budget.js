@@ -64,8 +64,10 @@ const BUDGET = {
   // CVE-2020-10987 (Tenda AC15), whose NVD references name no vendor advisory.
   // Two more: CVE-2020-25213 (the WordPress File Manager plugin) and
   // CVE-2020-8657 (EyesOfNetwork, whose fix is announced only in a project
-  // issue), which have no vendor advisory page.
-  "content-quality": 29,
+  // issue), which have no vendor advisory page. Two more: CVE-2021-27561
+  // (Yealink Device Management, whose NVD references are third-party) and
+  // CVE-2021-31755 (Tenda AC11, whose vendor pages list no advisory).
+  "content-quality": 31,
   // temporal-staleness counts only the maintainer-controllable freshness fields,
   // which sit at 0 on fresh data; the headroom covers entries aging past a
   // threshold between refreshes.
