@@ -330,7 +330,9 @@ test("shipped catalogs: missing-context budget is enforced per catalog (no silen
     // NVD-CWE-Other or NVD-CWE-noinfo. Six more follow: CVE-2020-24557,
     // CVE-2020-26919, CVE-2020-5847, CVE-2020-8599, CVE-2021-1675 and
     // CVE-2021-1906 carry NVD-CWE-Other, NVD-CWE-noinfo or no weakness at all.
-    "cve-catalog":     { iocs: 0, cwe_refs: 24 },
+    // Seven more follow: CVE-2021-26858, CVE-2021-33771, CVE-2021-34523,
+    // CVE-2021-34527, CVE-2021-35395, CVE-2021-36942 and CVE-2021-36955.
+    "cve-catalog":     { iocs: 0, cwe_refs: 31 },
     "cwe-catalog":     {},
     "attack-techniques": {},
     "atlas-ttps":      {},

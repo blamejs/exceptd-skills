@@ -62,13 +62,13 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 1867,
+      "entry_count": 1894,
       "sample_keys": [
-        "CVE-2020-14871",
-        "CVE-2020-16846",
-        "CVE-2020-17144",
-        "CVE-2020-17496",
-        "CVE-2020-24557"
+        "CVE-2021-21972",
+        "CVE-2021-21985",
+        "CVE-2021-22005",
+        "CVE-2021-22894",
+        "CVE-2021-22899"
       ]
     },
     "cwe-catalog.json": {
@@ -238,7 +238,7 @@
         "rebuild_after_days": 365,
         "note": "Per-entry last_verified governs decay. Skills depending on this catalog must check entry freshness before high-stakes use."
       },
-      "entry_count": 1867,
+      "entry_count": 1894,
       "sample_keys": [
         "CVE-2026-31431",
         "CVE-2025-53773",
