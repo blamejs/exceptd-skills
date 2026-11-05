@@ -75,9 +75,9 @@
       "CWE-798"
     ],
     "d3fend_refs": [
-      "D3-RPA",
+      "D3-PA",
       "D3-NTA",
-      "D3-IOPR",
+      "D3-FIM",
       "D3-CSPP"
     ],
     "frameworks_in_scope": [

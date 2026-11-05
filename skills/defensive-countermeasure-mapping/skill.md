@@ -27,26 +27,21 @@ framework_gaps: []
 rfc_refs: []
 cwe_refs: []
 d3fend_refs:
-  - D3-ASLR
-  - D3-CA
   - D3-CBAN
   - D3-CSPP
-  - D3-DA
+  - D3-DNRA
   - D3-EAL
-  - D3-EHB
   - D3-FAPA
-  - D3-FE
-  - D3-IOPR
-  - D3-MENCR
+  - D3-FIM
+  - D3-HBPI
   - D3-MFA
   - D3-NI
   - D3-NTA
   - D3-NTPM
   - D3-PA
-  - D3-PHRA
   - D3-PSEP
-  - D3-RPA
-  - D3-SCP
+  - D3-SAOR
+  - D3-SCF
 last_threat_review: "2026-10-04"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief defensive-countermeasure-mapping` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
@@ -67,15 +62,15 @@ ATT&CK and ATLAS are now load-bearing in SOC detection engineering. Detection co
 
 The defensive side has not caught up. Most SOCs maintain an ATT&CK heatmap (coverage of detection rules by technique). Few maintain a D3FEND coverage map of the controls that actually counter those techniques. The structural failure has three observable shapes:
 
-- **Detect-only blue teams.** A SOC will claim coverage of T1068 (Privilege Escalation) because EDR alerts fire on suspicious process behavior. The Harden, Isolate, Evict, and Restore tactics are unrepresented. For Copy Fail (CVE-2026-31431) that means the org has a detection rule for the post-exploit shell but no D3-SCP (seccomp), no D3-PHRA (hardware isolation), and no live-patch path under D3-PA. Defense is one-layer-deep; the attacker only has to bypass detection to win.
-- **Framework-grained articulation.** Asked "what countermeasures are in place for prompt injection?", the team answers "we have AC-3 and SI-10." Both controls exist on paper. Neither describes a defensive technique at the grain the attack operates at. The actual D3FEND mappings (D3-IOPR for I/O profiling, D3-CSPP for client-server payload profiling, D3-EAL for tool allowlisting on the MCP server side) are absent from the team's vocabulary.
+- **Detect-only blue teams.** A SOC will claim coverage of T1068 (Privilege Escalation) because EDR alerts fire on suspicious process behavior. The Harden, Isolate, Evict, and Restore tactics are unrepresented. For Copy Fail (CVE-2026-31431) that means the org has a detection rule for the post-exploit shell but no D3-SCF (seccomp), no D3-HBPI (hardware-based process isolation), and no live-patch path under D3-PA. Defense is one-layer-deep; the attacker only has to bypass detection to win.
+- **Framework-grained articulation.** Asked "what countermeasures are in place for prompt injection?", the team answers "we have AC-3 and SI-10." Both controls exist on paper. Neither describes a defensive technique at the grain the attack operates at. The actual D3FEND mappings (D3-CSPP for client-server payload profiling of prompt and completion traffic, D3-EAL for tool allowlisting on the MCP server side) are absent from the team's vocabulary.
 - **Implicit-trust controls treated as zero-trust.** Many deployed defenses verify identity once at the perimeter and trust thereafter. Under D3FEND grain, these are not zero-trust controls — D3-NI (Network Isolation) without D3-NTA (Network Traffic Analysis) and per-request authorization assumes implicit trust on segments. The compliance audit passes; an attacker with one foothold moves laterally without re-verification.
 
 Concrete examples from this project's catalogs:
 
-- **Copy Fail (CVE-2026-31431).** Offensive: T1068 + AML.T0017. Defensive map produced by this skill: D3-EAL (Harden), D3-EHB (Harden), D3-SCP (Isolate), D3-PHRA (Isolate), D3-PA (Detect), plus the live-patch or fixed-kernel reboot path under `kernel-lpe-triage`. A SOC claiming "we have EDR" is at one D3FEND layer for a five-layer-deep finding.
-- **Windsurf MCP RCE (CVE-2026-30615).** Offensive: AML.T0010 + AML.T0096 + T1195.001. Defensive map: D3-EHB (binary hash pinning, primary), D3-EAL (executable allowlist on the MCP runtime), D3-NTA (network traffic analysis on egress from the dev workstation), D3-CSPP (payload profiling on MCP JSON-RPC calls), D3-IOPR (I/O profiling of tool invocations). Five D3FEND IDs spanning Harden / Isolate / Detect — the depth most "we trust our IDE plugins" defenses lack.
-- **SesameOp AI-as-C2 campaign.** Offensive: AML.T0096 + T1071 + T1102. Defensive map: D3-NTA + D3-CSPP on Azure OpenAI egress, D3-DA (Domain Analysis) for the C2 domain set, D3-NTPM (Network Traffic Policy Mapping) to model legitimate-versus-anomalous LLM API usage, D3-RPA (Remote Process Analysis) on the calling host. The Detect tactic dominates here because Harden does not apply to a covert channel riding legitimate API traffic — which is itself a finding worth surfacing.
+- **Copy Fail (CVE-2026-31431).** Offensive: T1068 + AML.T0017. Defensive map produced by this skill: D3-EAL (Isolate), D3-SCF (Isolate), D3-HBPI (Isolate), D3-PA (Detect), plus the live-patch or fixed-kernel reboot path under `kernel-lpe-triage`. A SOC claiming "we have EDR" is at one D3FEND layer for a five-layer-deep finding.
+- **Windsurf MCP RCE (CVE-2026-30615).** Offensive: AML.T0010 + AML.T0096 + T1195.001. Defensive map: D3-FIM (binary hash pinning and change detection, primary), D3-EAL (executable allowlist on the MCP runtime), D3-NTA (network traffic analysis on egress from the dev workstation), D3-CSPP (payload profiling on MCP JSON-RPC calls and tool invocations). Four D3FEND IDs spanning Isolate / Detect — the depth most "we trust our IDE plugins" defenses lack.
+- **SesameOp AI-as-C2 campaign.** Offensive: AML.T0096 + T1071 + T1102. Defensive map: D3-NTA + D3-CSPP on Azure OpenAI egress, D3-DNRA (Domain Name Reputation Analysis) for the C2 domain set, D3-NTPM (Network Traffic Policy Mapping) to model legitimate-versus-anomalous LLM API usage, D3-PA (Process Analysis) on the calling host. The Detect tactic dominates here because Harden does not apply to a covert channel riding legitimate API traffic — which is itself a finding worth surfacing.
 
 The skill exists because the inverse direction — given a CVE or TTP, produce the layered countermeasure map — is the question SOCs need to answer to demonstrate operational defense, and it is the question framework controls cannot answer at the right grain.
 
@@ -96,7 +91,7 @@ No major compliance framework requires technique-grained defensive mapping. Each
 | EU | EU CRA | Cybersecurity essential requirements for products with digital elements | Product-level requirements. Says nothing about how an operator should structure defensive coverage. |
 | UK | NCSC CAF v4.0 Objective B (Protecting against cyber attack) | Outcome-based principles (B1–B6) | Outcome-based by design. CAF does not prescribe defensive techniques. A B2 (identity and access control) achievement can be a SSO deployment with no D3-MFA / D3-CBAN technique verification. |
 | UK | Cyber Essentials Plus | Five technical control categories | Coarse-grained checklist. No technique-level mapping. |
-| AU | ASD Essential 8 ML1–ML3 | Eight mitigation strategies (app control, patching, MFA, etc.) | Closest to technique-grain (Essential 8 has named strategies) but still control-level not technique-level. Application Control is roughly D3-EAL / D3-EHB but the maturity model does not distinguish path-based allowlist from cryptographic hash allowlist. |
+| AU | ASD Essential 8 ML1–ML3 | Eight mitigation strategies (app control, patching, MFA, etc.) | Closest to technique-grain (Essential 8 has named strategies) but still control-level not technique-level. Application Control is roughly D3-EAL (which authenticates a file by digital signature before it opens) but the maturity model does not distinguish path-based allowlist from signature-based or hash-based allowlist. |
 | AU | ISM | Detailed control catalog | Control-level. Does not require D3FEND mapping. |
 | AU | APRA CPS 234 | Information security capability for regulated entities | Capability-level. Defensive technique grain unspecified. |
 | Global | ISO 27001:2022 Annex A | 93 controls across organizational / people / physical / technological | Control-level. ISO 27001:2022 added A.5.7 (Threat Intelligence) and A.8.16 (Monitoring activities) but neither requires defensive technique mapping. |
@@ -139,7 +134,7 @@ For each D3FEND ID surfaced by Analysis Procedure Step 3, the matrix records:
 | Tunable per environment? | `data/d3fend-catalog.json` `implementation_examples` | Can the control be tuned for serverless vs. monolith vs. ephemeral container, or is it host-only? |
 | AI-pipeline applicable? | `data/d3fend-catalog.json` `ai_pipeline_applicability` (mandatory field) | If the control is architecturally impossible in serverless / container / AI pipeline contexts, the catalog declares an explicit alternative (e.g., admission-controller signature verification as the D3-EAL surrogate for serverless). The matrix surfaces that alternative. |
 | Defense-in-depth layer | computed from `data/d3fend-catalog.json` `tactic` (Model / Harden / Detect / Isolate / Deceive / Evict / Restore) | Which DiD layer the control occupies for this finding. A finding defended only in one layer is under-defended. |
-| Privilege scope | computed from `data/d3fend-catalog.json` description and from the operator's deployment context | Per-process (D3-EAL, D3-EHB), per-segment (D3-NTA, D3-NI), per-request (D3-CBAN, D3-MFA when continuously verified), or blanket (D3-PSEP / D3-ASLR — kernel-wide). |
+| Privilege scope | computed from `data/d3fend-catalog.json` description and from the operator's deployment context | Per-process (D3-EAL, D3-SCF), per-segment (D3-NTA, D3-NI), per-request (D3-CBAN, D3-MFA when continuously verified), or blanket (D3-PSEP / D3-SAOR applied to every process). |
 | Zero-trust posture | computed from D3FEND description; verifies-per-request vs. trusts-after-perimeter | A control that verifies on every request (D3-MFA continuous reauth, D3-CBAN per-call) is zero-trust. A control that authenticates once and trusts thereafter (vanilla session cookies, perimeter-only D3-NI) is implicit-trust. |
 | Framework controls partially mapped | `data/d3fend-catalog.json` `framework_controls_partially_mapped` | The framework controls that nominally cover this technique but, per `lag_notes`, fail to operationalize it at D3FEND grain. |
 | Live-tunable vs. requires deploy | operator input, joined with `implementation_examples` | Can the control be tuned without a rolling deploy (e.g., updating a Kyverno policy) or does it require image rebuilds and reboots? |
@@ -160,10 +155,10 @@ For any offensive finding, surface **multiple D3FEND IDs across different D3FEND
 
 Every D3FEND mapping must carry a **privilege-scoping note**. Controls differ sharply in scope:
 
-- Per-process scope: D3-EAL (executable allowlisting), D3-EHB (executable hash-based allowlisting), D3-SCP (seccomp / syscall filtering), D3-PA (process analysis).
+- Per-process scope: D3-EAL (executable allowlisting), D3-SCF (seccomp / syscall filtering), D3-PA (process analysis).
 - Per-segment scope: D3-NTA (network traffic analysis), D3-NI (network isolation), D3-NTPM (network traffic policy mapping).
 - Per-request scope: D3-CBAN (certificate-based authentication when verified per call), D3-MFA (multi-factor authentication when reauthenticated per session-action).
-- Blanket scope (kernel-wide, applies to all processes uniformly): D3-PSEP (DEP/NX), D3-ASLR (KASLR), D3-PHRA (hardware resource access).
+- Blanket scope (kernel-wide, applies to all processes uniformly): D3-PSEP (DEP/NX), D3-SAOR (segment base address randomization), D3-HBPI (hardware-based process isolation).
 
 Least-privilege defense requires picking the finest available scope. A blanket-scope control is not a substitute for a per-process control when the threat operates at process grain. The output must surface, for each D3FEND ID, the scope at which it applies for this finding.
 
@@ -220,9 +215,9 @@ Example: "CVE — Linux kernel LPE. Canonical: CVE-2026-31431 (Copy Fail)."
 ## Defensive-coverage map
 | D3FEND ID | Name | Tactic (DiD layer) | Privilege scope | ZT posture | Deployed? | AI-pipeline applicable? | Framework controls partially mapped | Live-tunable? |
 |-----------|------|--------------------|-----------------|------------|-----------|--------------------------|--------------------------------------|---------------|
-| D3-EAL    | Executable Allowlisting | Harden | per-process | verifies on exec | partial | partially (serverless surrogate: admission-controller signature verification per d3fend-catalog) | NIST-800-53-CM-7(1), ISO-27001-2022-A.8.19 | tunable via policy update |
-| D3-EHB    | Executable Hashbased Allowlist | Harden | per-process | verifies on exec | not deployed | yes (hash check at load time) | NIST-800-53-SA-12, SOC2-CC9.2 | tunable via hash list update |
-| D3-SCP    | System Call Filtering | Isolate | per-process | verifies on syscall | partial | yes (seccomp profile applies in container runtime) | NIST-800-53-SC-39 | tunable via profile update |
+| D3-EAL    | Executable Allowlisting | Isolate | per-process | verifies on exec | partial | partially (serverless surrogate: admission-controller signature verification per d3fend-catalog) | NIST-800-53-CM-7(1), ISO-27001-2022-A.8.19 | tunable via policy update |
+| D3-FIM    | File Integrity Monitoring | Detect | per-file | verifies on schedule or file change | not deployed | yes (hash comparison against the pinned value) | NIST-800-53-SA-12, SOC2-CC9.2 | tunable via hash list update |
+| D3-SCF    | System Call Filtering | Isolate | per-process | verifies on syscall | partial | yes (seccomp profile applies in container runtime) | NIST-800-53-SC-39 | tunable via profile update |
 | D3-PA     | Process Analysis | Detect | per-process | verifies on event | deployed | yes (EDR or eBPF) | NIST-800-53-SI-4 | tunable via rule update |
 | ...       | ... | ... | ... | ... | ... | ... | ... | ... |
 
@@ -247,7 +242,7 @@ Example: "CVE — Linux kernel LPE. Canonical: CVE-2026-31431 (Copy Fail)."
 For each D3FEND ID surfaced, the framework controls the audit will claim as coverage and the lag-note from data/d3fend-catalog.json describing the grain mismatch. Example: "CM-7(1) covers least functionality, but accepts inventory-only implementations; D3-EAL requires runtime blocking — claim is paper-compliant only."
 
 ## Gaps and proposed remediation
-1. <Specific deployment gap, e.g. "Deploy D3-EHB hash-pinning for MCP server binaries — currently not deployed; closes Detect-only coverage of T1195.001">.
+1. <Specific deployment gap, e.g. "Deploy D3-EAL signature verification for MCP server binaries — currently not deployed; adds an Isolate-tactic control to the Detect-only coverage of T1195.001">.
 2. <Specific scope gap, e.g. "D3-NI is deployed at perimeter; add D3-NTA on internal segments to convert implicit-trust to verifies-per-request">.
 3. <Specific catalog gap, e.g. "AML.T0xxx has no D3FEND coverage in catalog — route to zeroday-gap-learn to add a defensive entry">.
 

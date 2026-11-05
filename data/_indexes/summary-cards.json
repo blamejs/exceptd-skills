@@ -17,12 +17,11 @@
           "CWE-787"
         ],
         "d3fend_refs": [
-          "D3-ASLR",
           "D3-EAL",
           "D3-PA",
-          "D3-PHRA",
           "D3-PSEP",
-          "D3-SCP"
+          "D3-SAOR",
+          "D3-SCF"
         ],
         "framework_gaps": [
           "NIST-800-53-SI-2",
@@ -51,7 +50,7 @@
       "attack_count": 2,
       "framework_gap_count": 8,
       "cwe_count": 5,
-      "d3fend_count": 6,
+      "d3fend_count": 5,
       "rfc_count": 3,
       "last_threat_review": "2026-09-28",
       "path": "skills/kernel-lpe-triage/skill.md",
@@ -74,7 +73,6 @@
           "CWE-94"
         ],
         "d3fend_refs": [
-          "D3-IOPR",
           "D3-NTA",
           "D3-EAL",
           "D3-FAPA",
@@ -118,7 +116,7 @@
       "attack_count": 3,
       "framework_gap_count": 12,
       "cwe_count": 3,
-      "d3fend_count": 5,
+      "d3fend_count": 4,
       "rfc_count": 0,
       "last_threat_review": "2026-11-01",
       "path": "skills/ai-attack-surface/skill.md",
@@ -140,12 +138,12 @@
           "CWE-94"
         ],
         "d3fend_refs": [
-          "D3-CAA",
           "D3-CBAN",
           "D3-CSPP",
           "D3-EAL",
-          "D3-EHB",
-          "D3-MFA"
+          "D3-FIM",
+          "D3-MFA",
+          "D3-RAPA"
         ],
         "framework_gaps": [
           "ALL-MCP-TOOL-TRUST",
@@ -291,7 +289,6 @@
           "D3-CSPP",
           "D3-FCR",
           "D3-FAPA",
-          "D3-IOPR",
           "D3-NTA"
         ],
         "framework_gaps": [
@@ -320,7 +317,7 @@
       "attack_count": 1,
       "framework_gap_count": 7,
       "cwe_count": 2,
-      "d3fend_count": 5,
+      "d3fend_count": 4,
       "rfc_count": 0,
       "last_threat_review": "2026-11-01",
       "path": "skills/rag-pipeline-security/skill.md",
@@ -343,8 +340,7 @@
         "d3fend_refs": [
           "D3-CA",
           "D3-CSPP",
-          "D3-DA",
-          "D3-IOPR",
+          "D3-DNRA",
           "D3-NI",
           "D3-NTA",
           "D3-NTPM"
@@ -382,7 +378,7 @@
       "attack_count": 3,
       "framework_gap_count": 7,
       "cwe_count": 1,
-      "d3fend_count": 7,
+      "d3fend_count": 6,
       "rfc_count": 6,
       "last_threat_review": "2026-11-01",
       "path": "skills/ai-c2-detection/skill.md",
@@ -452,10 +448,10 @@
         "cwe_refs": [],
         "d3fend_refs": [
           "D3-EAL",
-          "D3-EFA",
+          "D3-FA",
           "D3-FAPA",
           "D3-FE",
-          "D3-IOPR",
+          "D3-FIM",
           "D3-KBPI",
           "D3-MENCR",
           "D3-MFA",
@@ -554,7 +550,12 @@
       "produces": "The skill produces a Skill Update Loop Report covering per-skill `last_threat_review` currency, ATLAS / ATT&CK / D3FEND / CWE catalog version drift, CISA KEV additions since the last review, and the priority queue of skills requiring body updates before the next release. The shape below is consumed downstream by the release-cadence maintainer workflow, by `data/_meta` tracking, and by the predeploy `watchlist` gate. Preserve the per-skill drift columns verbatim — they are the auditable trigger for each forced body refresh.\n\n```\n## Skill Update Loop Report\n\n**Date:** YYYY-MM-DD\n**Last Full Revi ...",
       "key_xrefs": {
         "cwe_refs": [],
-        "d3fend_refs": [],
+        "d3fend_refs": [
+          "D3-EAL",
+          "D3-FCR",
+          "D3-FIM",
+          "D3-PA"
+        ],
         "framework_gaps": [],
         "atlas_refs": [],
         "attack_refs": [],
@@ -566,7 +567,7 @@
       "attack_count": 0,
       "framework_gap_count": 0,
       "cwe_count": 0,
-      "d3fend_count": 0,
+      "d3fend_count": 4,
       "rfc_count": 0,
       "last_threat_review": "2026-11-01",
       "path": "skills/skill-update-loop/skill.md",
@@ -583,9 +584,8 @@
         "d3fend_refs": [
           "D3-CSPP",
           "D3-EAL",
-          "D3-EFA",
+          "D3-FA",
           "D3-FAPA",
-          "D3-IOPR",
           "D3-ITF",
           "D3-KBPI",
           "D3-MENCR",
@@ -608,7 +608,7 @@
       "attack_count": 0,
       "framework_gap_count": 0,
       "cwe_count": 1,
-      "d3fend_count": 13,
+      "d3fend_count": 12,
       "rfc_count": 1,
       "last_threat_review": "2026-11-01",
       "path": "skills/security-maturity-tiers/skill.md",
@@ -659,7 +659,12 @@
         "d3fend_refs": [
           "D3-CSPP",
           "D3-EAL",
-          "D3-NTA"
+          "D3-MFA",
+          "D3-NI",
+          "D3-NTA",
+          "D3-PA",
+          "D3-RAPA",
+          "D3-SCF"
         ],
         "framework_gaps": [
           "NIST-800-115",
@@ -689,7 +694,7 @@
       "attack_count": 4,
       "framework_gap_count": 7,
       "cwe_count": 11,
-      "d3fend_count": 3,
+      "d3fend_count": 8,
       "rfc_count": 0,
       "last_threat_review": "2026-11-01",
       "path": "skills/attack-surface-pentest/skill.md",
@@ -710,8 +715,9 @@
         ],
         "d3fend_refs": [
           "D3-EAL",
-          "D3-IOPR",
-          "D3-PSEP"
+          "D3-CSPP",
+          "D3-PSEP",
+          "D3-SAOR"
         ],
         "framework_gaps": [
           "NIST-800-218-SSDF",
@@ -732,7 +738,7 @@
       "attack_count": 1,
       "framework_gap_count": 3,
       "cwe_count": 6,
-      "d3fend_count": 3,
+      "d3fend_count": 4,
       "rfc_count": 0,
       "last_threat_review": "2026-11-01",
       "path": "skills/fuzz-testing-strategy/skill.md",
@@ -750,7 +756,9 @@
         "d3fend_refs": [
           "D3-CSPP",
           "D3-EAL",
+          "D3-FAPA",
           "D3-IOPR",
+          "D3-MENCR",
           "D3-NTA",
           "D3-NTPM"
         ],
@@ -787,7 +795,7 @@
       "attack_count": 4,
       "framework_gap_count": 9,
       "cwe_count": 2,
-      "d3fend_count": 5,
+      "d3fend_count": 7,
       "rfc_count": 2,
       "last_threat_review": "2026-11-01",
       "path": "skills/dlp-gap-analysis/skill.md",
@@ -806,9 +814,9 @@
           "CWE-829"
         ],
         "d3fend_refs": [
-          "D3-CBAN",
           "D3-EAL",
-          "D3-EHB"
+          "D3-FIM",
+          "D3-SCF"
         ],
         "framework_gaps": [
           "NIST-800-218-SSDF",
@@ -857,26 +865,21 @@
       "key_xrefs": {
         "cwe_refs": [],
         "d3fend_refs": [
-          "D3-ASLR",
-          "D3-CA",
           "D3-CBAN",
           "D3-CSPP",
-          "D3-DA",
+          "D3-DNRA",
           "D3-EAL",
-          "D3-EHB",
           "D3-FAPA",
-          "D3-FE",
-          "D3-IOPR",
-          "D3-MENCR",
+          "D3-FIM",
+          "D3-HBPI",
           "D3-MFA",
           "D3-NI",
           "D3-NTA",
           "D3-NTPM",
           "D3-PA",
-          "D3-PHRA",
           "D3-PSEP",
-          "D3-RPA",
-          "D3-SCP"
+          "D3-SAOR",
+          "D3-SCF"
         ],
         "framework_gaps": [],
         "atlas_refs": [],
@@ -889,7 +892,7 @@
       "attack_count": 0,
       "framework_gap_count": 0,
       "cwe_count": 0,
-      "d3fend_count": 20,
+      "d3fend_count": 15,
       "rfc_count": 0,
       "last_threat_review": "2026-10-04",
       "path": "skills/defensive-countermeasure-mapping/skill.md",
@@ -1021,7 +1024,11 @@
         "cwe_refs": [
           "CWE-1357"
         ],
-        "d3fend_refs": [],
+        "d3fend_refs": [
+          "D3-DA",
+          "D3-EAL",
+          "D3-NTA"
+        ],
         "framework_gaps": [
           "NIST-800-218-SSDF",
           "ISO-27001-2022-A.8.8",
@@ -1045,7 +1052,7 @@
       "attack_count": 0,
       "framework_gap_count": 6,
       "cwe_count": 1,
-      "d3fend_count": 0,
+      "d3fend_count": 3,
       "rfc_count": 4,
       "last_threat_review": "2026-11-01",
       "path": "skills/coordinated-vuln-disclosure/skill.md",
@@ -1127,7 +1134,6 @@
           "CWE-1188"
         ],
         "d3fend_refs": [
-          "D3-IOPR",
           "D3-NTA",
           "D3-CSPP",
           "D3-EAL",
@@ -1163,7 +1169,7 @@
       "attack_count": 3,
       "framework_gap_count": 7,
       "cwe_count": 17,
-      "d3fend_count": 5,
+      "d3fend_count": 4,
       "rfc_count": 4,
       "last_threat_review": "2026-11-01",
       "path": "skills/webapp-security/skill.md",
@@ -1188,7 +1194,7 @@
           "CWE-1039"
         ],
         "d3fend_refs": [
-          "D3-IOPR"
+          "D3-CSPP"
         ],
         "framework_gaps": [
           "ISO-IEC-42001-2023-clause-6.1.2",
@@ -1244,7 +1250,6 @@
           "CWE-1426"
         ],
         "d3fend_refs": [
-          "D3-IOPR",
           "D3-CSPP",
           "D3-MFA"
         ],
@@ -1278,7 +1283,7 @@
       "attack_count": 3,
       "framework_gap_count": 7,
       "cwe_count": 4,
-      "d3fend_count": 3,
+      "d3fend_count": 2,
       "rfc_count": 2,
       "last_threat_review": "2026-11-01",
       "path": "skills/sector-healthcare/skill.md",
@@ -1311,9 +1316,11 @@
         ],
         "d3fend_refs": [
           "D3-MFA",
-          "D3-CBAN",
+          "D3-NI",
+          "D3-UAP",
           "D3-NTA",
-          "D3-IOPR"
+          "D3-UBA",
+          "D3-CSPP"
         ],
         "framework_gaps": [
           "PSD2-RTS-SCA",
@@ -1347,7 +1354,7 @@
       "attack_count": 4,
       "framework_gap_count": 7,
       "cwe_count": 5,
-      "d3fend_count": 4,
+      "d3fend_count": 6,
       "rfc_count": 4,
       "last_threat_review": "2026-11-01",
       "path": "skills/sector-financial/skill.md",
@@ -1377,7 +1384,7 @@
         ],
         "d3fend_refs": [
           "D3-EAL",
-          "D3-EHB",
+          "D3-FIM",
           "D3-CBAN"
         ],
         "framework_gaps": [
@@ -1497,7 +1504,8 @@
         "d3fend_refs": [
           "D3-NTA",
           "D3-NTPM",
-          "D3-IOPR",
+          "D3-FIM",
+          "D3-FA",
           "D3-NI"
         ],
         "framework_gaps": [
@@ -1532,7 +1540,7 @@
       "attack_count": 6,
       "framework_gap_count": 9,
       "cwe_count": 3,
-      "d3fend_count": 4,
+      "d3fend_count": 5,
       "rfc_count": 1,
       "last_threat_review": "2026-11-01",
       "path": "skills/sector-telecom/skill.md",
@@ -1555,7 +1563,6 @@
           "CWE-1188"
         ],
         "d3fend_refs": [
-          "D3-IOPR",
           "D3-NTA",
           "D3-CSPP",
           "D3-MFA",
@@ -1595,7 +1602,7 @@
       "attack_count": 3,
       "framework_gap_count": 7,
       "cwe_count": 9,
-      "d3fend_count": 5,
+      "d3fend_count": 4,
       "rfc_count": 7,
       "last_threat_review": "2026-11-01",
       "path": "skills/api-security/skill.md",
@@ -1625,7 +1632,8 @@
           "D3-NTA",
           "D3-NTPM",
           "D3-EAL",
-          "D3-IOPR",
+          "D3-CSPP",
+          "D3-PA",
           "D3-CBAN"
         ],
         "framework_gaps": [
@@ -1661,7 +1669,7 @@
       "attack_count": 4,
       "framework_gap_count": 7,
       "cwe_count": 6,
-      "d3fend_count": 5,
+      "d3fend_count": 6,
       "rfc_count": 4,
       "last_threat_review": "2026-11-01",
       "path": "skills/cloud-security/skill.md",
@@ -1694,11 +1702,11 @@
         ],
         "d3fend_refs": [
           "D3-EAL",
-          "D3-EHB",
+          "D3-FIM",
           "D3-PSEP",
           "D3-NI",
           "D3-NTPM",
-          "D3-IOPR"
+          "D3-PA"
         ],
         "framework_gaps": [
           "NIST-800-53-CM-7",
@@ -1764,9 +1772,9 @@
           "CWE-502"
         ],
         "d3fend_refs": [
-          "D3-EHB",
+          "D3-FIM",
           "D3-EAL",
-          "D3-IOPR"
+          "D3-CSPP"
         ],
         "framework_gaps": [
           "NIST-800-218-SSDF",
@@ -1820,9 +1828,8 @@
       "key_xrefs": {
         "cwe_refs": [],
         "d3fend_refs": [
-          "D3-RPA",
+          "D3-PA",
           "D3-NTA",
-          "D3-IOPR",
           "D3-CSPP"
         ],
         "framework_gaps": [
@@ -1857,7 +1864,7 @@
       "attack_count": 4,
       "framework_gap_count": 6,
       "cwe_count": 0,
-      "d3fend_count": 4,
+      "d3fend_count": 3,
       "rfc_count": 3,
       "last_threat_review": "2026-11-01",
       "path": "skills/incident-response-playbook/skill.md",
@@ -1891,9 +1898,8 @@
           "CWE-798"
         ],
         "d3fend_refs": [
-          "D3-RPA",
+          "D3-PA",
           "D3-NTA",
-          "D3-IOPR",
           "D3-CSPP"
         ],
         "framework_gaps": [
@@ -1919,7 +1925,7 @@
       "attack_count": 4,
       "framework_gap_count": 6,
       "cwe_count": 2,
-      "d3fend_count": 4,
+      "d3fend_count": 3,
       "rfc_count": 0,
       "last_threat_review": "2026-11-01",
       "path": "skills/ransomware-response/skill.md",
@@ -1944,7 +1950,7 @@
         "d3fend_refs": [
           "D3-NTA",
           "D3-CSPP",
-          "D3-IOPR",
+          "D3-DA",
           "D3-MFA"
         ],
         "framework_gaps": [
@@ -2002,7 +2008,6 @@
         ],
         "d3fend_refs": [
           "D3-MFA",
-          "D3-IOPR",
           "D3-CSPP"
         ],
         "framework_gaps": [
@@ -2026,7 +2031,7 @@
       "attack_count": 2,
       "framework_gap_count": 6,
       "cwe_count": 3,
-      "d3fend_count": 3,
+      "d3fend_count": 2,
       "rfc_count": 0,
       "last_threat_review": "2026-11-01",
       "path": "skills/age-gates-child-safety/skill.md",
@@ -2058,10 +2063,10 @@
         ],
         "d3fend_refs": [
           "D3-MFA",
-          "D3-CBAN",
+          "D3-UAP",
           "D3-NTA",
-          "D3-IOPR",
-          "D3-CAA"
+          "D3-UBA",
+          "D3-RAPA"
         ],
         "framework_gaps": [
           "FedRAMP-IL5-IAM-Federated",
@@ -2133,9 +2138,9 @@
         ],
         "d3fend_refs": [
           "D3-MFA",
-          "D3-CBAN",
+          "D3-UAP",
           "D3-NTA",
-          "D3-IOPR"
+          "D3-UBA"
         ],
         "framework_gaps": [
           "NIST-800-53-IA-5-Federated",

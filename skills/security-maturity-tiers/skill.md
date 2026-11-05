@@ -26,9 +26,8 @@ framework_gaps: []
 d3fend_refs:
   - D3-CSPP
   - D3-EAL
-  - D3-EFA
+  - D3-FA
   - D3-FAPA
-  - D3-IOPR
   - D3-ITF
   - D3-KBPI
   - D3-MENCR
@@ -500,7 +499,7 @@ D3FEND references from `data/d3fend-catalog.json`. This skill prescribes a roadm
 | Tier | Offensive TTP | D3FEND ID | Defensive technique | Owning downstream skill |
 |---|---|---|---|---|
 | MVP | T1068 (Exploitation for Privilege Escalation) | `D3-KBPI` + `D3-SCA` | Kernel-Based Process Isolation + System Call Analysis | `kernel-lpe-triage` |
-| MVP | AML.T0051 / AML.T0054 (Prompt Injection / Jailbreak) | `D3-IOPR` | Input/Output Profiling | `ai-attack-surface` |
+| MVP | AML.T0051 / AML.T0054 (Prompt Injection / Jailbreak) | `D3-CSPP` | Client-server Payload Profiling (prompt and completion payloads) | `ai-attack-surface` |
 | MVP | AML.T0010 (ML Supply Chain Compromise — MCP) | `D3-EAL` | Executable Allowlisting (tool allowlist + version pinning) | `mcp-agent-trust` |
 | MVP | T1190 (Exploit Public-Facing Application — self-hosted LLM infrastructure) | `D3-NI` + `D3-ITF` | Network Isolation + Inbound Traffic Filtering | `webapp-security` + `ai-attack-surface` |
 | Practical | T1190 (Exploit Public-Facing Application) | `D3-ITF` + `D3-NI` | Inbound Traffic Filtering + Network Isolation | `attack-surface-pentest` |
@@ -509,8 +508,8 @@ D3FEND references from `data/d3fend-catalog.json`. This skill prescribes a roadm
 | Practical | AML.T0016 (Obtain Capabilities, AI-generated phishing and payloads) | `D3-CSPP` + `D3-MFA` | Client-server Payload Profiling + Multi-factor Authentication (passkey class) | `email-security-anti-phishing` + `identity-assurance` |
 | Practical | Harvest-now-decrypt-later (T1040, T1557) | `D3-MENCR` | Message Encryption (PQC-hybrid KEM per RFC 9954) | `pqc-first` |
 | Overkill | AML.T0096 (AI Service API, C2) | `D3-NTA` + `D3-OTF` | Network Traffic Analysis + Outbound Traffic Filtering | `ai-c2-detection` |
-| Overkill | AML.T0018 (Manipulate AI Model) | `D3-EFA` + `D3-FAPA` | Executable File Analysis (model signing) + File Access Pattern Analysis | `mlops-security` |
-| Overkill | AML.T0043 (Craft Adversarial Data — RAG) | `D3-IOPR` + `D3-FAPA` | Input/Output Profiling + File Access Pattern Analysis (vector-store access control) | `rag-pipeline-security` |
+| Overkill | AML.T0018 (Manipulate AI Model) | `D3-FA` + `D3-FAPA` | File Analysis (model signature verification) + File Access Pattern Analysis | `mlops-security` |
+| Overkill | AML.T0043 (Craft Adversarial Data — RAG) | `D3-CSPP` + `D3-FAPA` | Client-server Payload Profiling (retrieval queries and results) + File Access Pattern Analysis (vector-store access control) | `rag-pipeline-security` |
 
 **Defense-in-depth posture:** the tiers are the defense-in-depth axis. A tier is complete only when every technique at that tier *and every tier below it* is deployed — this is the cardinal rule of the skill expressed in D3FEND terms. An org running `D3-NTA` for AI-C2 detection while `D3-KBPI` is absent has an Overkill technique guarding a host that a deterministic LPE owns outright, which is precisely the half-implemented-Tier-3 anti-pattern.
 

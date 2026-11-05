@@ -20,6 +20,8 @@
 !tests/.version-bump-ack.json
 # Track the ATLAS divergence baseline so CI can compare against it.
 !tests/.atlas-divergence-baseline.json
+# Track the D3FEND divergence baseline so CI can compare against it.
+!tests/.d3fend-divergence-baseline.json
 
 # Node
 node_modules/

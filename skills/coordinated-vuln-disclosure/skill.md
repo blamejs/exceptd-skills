@@ -39,7 +39,10 @@ rfc_refs:
   - CSAF-2.0
 cwe_refs:
   - CWE-1357
-d3fend_refs: []
+d3fend_refs:
+  - D3-DA
+  - D3-EAL
+  - D3-NTA
 forward_watch:
   - EU CRA Art. 11 implementing regulations and ENISA single-reporting-platform rollout (target operational 2026-09; first manufacturer notifications due 2027-12 per CRA transition timeline)
   - ISO/IEC 29147 and ISO/IEC 30111 revisions expected post-CRA to align "method-neutral" language with EU 24h-notification reality
@@ -156,7 +159,7 @@ An org that runs only one layer is brittle. The brittleness pattern: bug bounty 
 
 **Least privilege — triage scope is per-report, not org-wide.** Researcher communications channel through a single security@ alias or VDP intake; reproducer assets stored with sealed access; not every engineer needs full pipeline access. The triage role sees all reports; product engineers see only their product's reports; regulator-notification authority is held by a named officer per CRA Art. 11 / NIS2 Art. 12 / NYDFS 500.17. Researchers receive scoped acknowledgment, not internal product detail. Bug-bounty platform admin scope is held by the security team, not engineering managers.
 
-**Zero trust — assume every disclosure is real until proven otherwise.** Do not dismiss researchers based on report writing quality, reputation, or claimed affiliation. Reproduce in isolated environment (D3-RPA — Remote Process Analysis). Treat the researcher's reproducer as adversarial input — it may itself contain payloads targeting the triage environment. Verify reproducer behavior in a sandbox before broad internal distribution. Do not trust the report's classification or severity claim — re-score under RWEP independently (hand-off to `exploit-scoring`). Do not assume the researcher's disclosure window will hold without explicit written agreement.
+**Zero trust — assume every disclosure is real until proven otherwise.** Do not dismiss researchers based on report writing quality, reputation, or claimed affiliation. Reproduce in isolated environment (D3-DA — Dynamic Analysis in a synthetic sandbox). Treat the researcher's reproducer as adversarial input — it may itself contain payloads targeting the triage environment. Verify reproducer behavior in a sandbox before broad internal distribution. Do not trust the report's classification or severity claim — re-score under RWEP independently (hand-off to `exploit-scoring`). Do not assume the researcher's disclosure window will hold without explicit written agreement.
 
 Then run the program assessment steps:
 
@@ -183,7 +186,7 @@ Audit the published CVD policy:
 
 Walk the internal handling pipeline:
 - **Intake → triage**: how does a report move from VDP queue to product team? Is there a SLA? Is there a named owner per product?
-- **Validation**: who reproduces? In what isolated environment (D3-RPA)? What is the false-positive rate?
+- **Validation**: who reproduces? In what isolated environment (D3-DA)? What is the false-positive rate?
 - **Severity scoring**: CVSS for legacy compatibility, RWEP per `lib/scoring.js` for actual prioritization. CVSS-only scoring fails — never rank disclosures on CVSS alone.
 - **Remediation routing**: how does a confirmed vulnerability become a fix? What is the engineering SLA per RWEP band?
 - **Verification**: how is the fix confirmed? Researcher re-verification? Internal regression test?
@@ -453,7 +456,7 @@ CVD is process infrastructure, not a single technical control — the D3FEND map
 
 | D3FEND ID | Where It Applies in CVD | Defense-in-Depth Layer | Least-Privilege Scope | Zero-Trust Posture | AI-Pipeline Applicability |
 |---|---|---|---|---|---|
-| **D3-RPA** (Remote Process Analysis) | Reproducer execution and triage. Researcher-submitted reproducers are adversarial input; execute in isolated environment with telemetry. | Triage layer (between intake and validation). | Triage analysts only; product engineers receive reproduced findings, not raw researcher payloads. | Verify reproducer behavior in sandbox; do not trust the report's classification or the researcher's environment claims. | Applies — AI-vuln reproducers (jailbreak prompts, training-data poisoning payloads) must run in isolated model-serving environments. The reproducer prompt may itself be designed to exfiltrate triage-environment data. |
+| **D3-DA** (Dynamic Analysis) | Reproducer execution and triage. Researcher-submitted reproducers are adversarial input; execute in a synthetic sandbox environment with telemetry to determine what the reproducer does. | Triage layer (between intake and validation). | Triage analysts only; product engineers receive reproduced findings, not raw researcher payloads. | Verify reproducer behavior in sandbox; do not trust the report's classification or the researcher's environment claims. | Applies — AI-vuln reproducers (jailbreak prompts, training-data poisoning payloads) must run in isolated model-serving environments. The reproducer prompt may itself be designed to exfiltrate triage-environment data. |
 | **D3-NTA** (Network Traffic Analysis) | Post-disclosure exploitation monitoring. Once an advisory ships, attacker weaponization typically follows within days; egress monitoring detects active exploitation against unpatched customers. | Detection layer (post-disclosure, downstream of CVD output). | Detection scoped to known exploit indicators from disclosed CVE; not all-traffic surveillance. | Assume disclosed CVEs will be exploited; verify exploitation evidence per advisory IOCs. | Limited direct applicability — AI exploitation traffic often blends with legitimate AI API usage (see `ai-c2-detection`); D3-NTA on its own is insufficient. |
 | **D3-EAL** (Executable Allowlisting) | Post-disclosure blocking of known weaponized exploits. When a public PoC ships with the advisory, allowlisting blocks the exploit binary class from execution on patched/unpatched endpoints alike. | Prevention layer (post-disclosure, downstream of CVD output). | Endpoint scope; allowlist administered by endpoint-security team, not application teams. | Default-deny; verify executable signatures and allowlist membership per execution. | Limited — AI exploits are typically prompt-class, not binary-class. D3-EAL applies to traditional-software exploits derived from CVD output, not AI-class disclosures. |
 

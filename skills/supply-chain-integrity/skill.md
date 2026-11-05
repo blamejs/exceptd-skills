@@ -64,9 +64,9 @@ cwe_refs:
   - CWE-502
   - CWE-829
 d3fend_refs:
-  - D3-CBAN
   - D3-EAL
-  - D3-EHB
+  - D3-FIM
+  - D3-SCF
 last_threat_review: "2026-11-01"
 ---
 
@@ -146,7 +146,7 @@ The catalog's expansion means a supply-chain assessment that names only NIST 800
 | AML.T0018 | Manipulate AI Model | Specific: a model weight file with an embedded backdoor (trojaned weights, data poisoning persisted into weights, or executable payload in a code-executing serialization format) is loaded at inference | No framework requires model-weight signature verification; CWE-502 deserialization risk is not mapped to a compliance control |
 | T1195.001 | Supply Chain Compromise: Compromise Software Dependencies and Development Tools | The XZ Utils class, the typosquat class, the dependency-confusion class — directly addressable by SLSA L3 provenance + in-toto attestation chain | Standard SCA tooling detects known-vulnerable dependencies but does not detect novel compromise of an authentic-looking dependency. SLSA L3 + reproducible builds closes this; not required by any framework |
 | T1195.002 | Supply Chain Compromise: Compromise Software Supply Chain | Build pipeline compromise (CI runner, build-time toolchain, signing-key compromise). Defense: hardened builder per SLSA L3, key custody in HSM or cloud KMS, ephemeral CI tokens | NIST 800-218 PS practices are process-level. No framework prescribes hardened-builder requirements. |
-| T1554 | Compromise Host Software Binary | Modification of a binary in place — addressable by D3-EHB (hash-based allowlisting at runtime) plus Sigstore verification at deploy | Frameworks accept file-integrity monitoring as SI-7 evidence; D3-EHB-grade hash-allowlisting at execution is rare |
+| T1554 | Compromise Host Software Binary | Modification of a binary in place — addressable by D3-EAL (executable allowlisting at runtime) plus Sigstore verification at deploy | Frameworks accept file-integrity monitoring (D3-FIM) as SI-7 evidence; D3-EAL-grade allowlisting at execution is rare |
 
 Cross-walk to CWE (see `data/cwe-catalog.json`):
 
@@ -200,7 +200,7 @@ Scope every privilege as narrowly as the build action requires.
 - Build pipeline workers run with minimum scope: no production write paths, no long-lived cloud credentials, no shell on the build host.
 - CI tokens are short-lived (minutes, not days) and scoped to a single repository path. GitHub Actions OIDC + cloud-side IAM trust policies are the canonical pattern.
 - Model-loading services have read-only access to model registries. No write path from inference back to the registry.
-- AI coding assistants run in scoped sandboxes: no automatic merge to main, no automatic credential access, MCP servers running under D3-SCP seccomp profile and D3-EHB binary hash allowlist.
+- AI coding assistants run in scoped sandboxes: no automatic merge to main, no automatic credential access, MCP servers running under a D3-SCF seccomp profile and a D3-EAL binary allowlist.
 - Signing keys live in HSMs or cloud KMS (AWS KMS, GCP KMS, Azure Key Vault) — never on a developer workstation, never in CI environment variables.
 
 ### Zero trust
@@ -315,7 +315,8 @@ A genuinely conformant program answers all four with concrete artifacts: publish
 D3FEND techniques referenced (see `data/d3fend-catalog.json`):
 
 - **D3-EAL (Executable Allowlisting)** — At runtime, restrict execution to a pre-approved set of executables. For supply-chain integrity, this is the runtime enforcement layer that closes the loop on build-time signing: even if a tampered binary reaches the host, D3-EAL blocks execution. In containerized / ephemeral environments the equivalent is signed-image admission control (Sigstore policy-controller, Kyverno verify-images).
-- **D3-EHB (Executable Hash-based Allowlist)** — Hash-pinned allowlist for binaries. Maps cleanly to MCP server binary hash pinning, model-weight SHA-256 verification at load time, and in-toto / SLSA Level 3 attestation enforcement. Note: D3-EHB requires runtime active rejection of unpinned binaries, not just SBOM presence — the lag against SA-12 is the active-rejection delta.
+- **D3-FIM (File Integrity Monitoring)** — Detects changes to files by comparing them against pinned digests. Maps cleanly to MCP server binary hash pinning, model-weight SHA-256 verification at load time, and in-toto / SLSA Level 3 attestation checks. Note: D3-FIM only protects when the admission controller or loader rejects a mismatched artifact, and SBOM presence alone does not do that — the lag against SA-12 is the active-rejection delta.
+- **D3-SCF (System Call Filtering)**: Restricts the kernel capabilities a process can reach. For AI coding assistants and MCP servers this is a seccomp profile limiting the system calls the process may issue.
 
 Signing baseline reference: RFC 8032 (Ed25519 / Ed448) is the algorithm used by this project's `lib/sign.js` for skill-integrity signing, and is one of the Sigstore-supported algorithms for keyless signing certificates. The exceptd skill-signing implementation is a scoped living example of the broader pattern this skill defines:
 

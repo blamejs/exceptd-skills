@@ -58,7 +58,9 @@ cwe_refs:
 d3fend_refs:
   - D3-CSPP
   - D3-EAL
+  - D3-FAPA
   - D3-IOPR
+  - D3-MENCR
   - D3-NTA
   - D3-NTPM
 last_threat_review: "2026-11-01"
@@ -322,22 +324,21 @@ D3FEND v1.3.0+ countermeasure references from `data/d3fend-catalog.json`. Indica
 
 | DLP Channel | Primary D3FEND Defense | Secondary D3FEND Defenses | Notes |
 |---|---|---|---|
-| `DLP-CHAN-LLM-PROMPT` | D3-IOPR (Input/Output Profiling) — SDK-level prompt inspection | D3-CSPP (Client-server Payload Profiling) — gateway-based inspection; D3-NTA (Network Traffic Analysis) — egress NTA | D3-IOPR is the irreplaceable control; without it no other layer has content visibility |
-| `DLP-CHAN-LLM-CONTEXT` | D3-IOPR — retrieval-time content inspection | D3-CSPP — gateway-level context inspection; D3-FAPA (File Access Pattern Analysis) on RAG source documents | RAG retrieval-time classification with user clearance check |
-| `DLP-CHAN-MCP-TOOL-ARG` | D3-CSPP — MCP gateway payload inspection on tool-call args | D3-IOPR — agent observability traces; D3-NTA — egress NTA on MCP server destinations | Emerging vendor coverage; most enterprises have no D3-CSPP equivalent on MCP today |
-| `DLP-CHAN-CLIPBOARD-AI` | D3-IOPR — endpoint clipboard inspection | D3-EAL (Executable Allowlisting) — restrict which AI-tool executables can paste; D3-CSPP — managed-browser paste inspection | Endpoint agent or managed browser required; unmanaged BYOD is structural blind spot |
-| `DLP-CHAN-CODE-COMPLETION` | D3-CSPP — proxy-based inspection where TLS termination feasible | D3-EAL — restrict which code-assistant binaries run; D3-IOPR — IDE-side context filtering | TLS pinning in IDE assistants makes D3-CSPP often infeasible; vendor-side contractual controls fill the gap |
+| `DLP-CHAN-LLM-PROMPT` | D3-CSPP (Client-server Payload Profiling) — SDK-level prompt inspection | D3-CSPP — gateway-based inspection as a second placement; D3-NTA (Network Traffic Analysis) — egress NTA | SDK-level D3-CSPP is the irreplaceable control; without it no other layer has content visibility |
+| `DLP-CHAN-LLM-CONTEXT` | D3-CSPP — retrieval-time content inspection | D3-CSPP — gateway-level context inspection; D3-FAPA (File Access Pattern Analysis) on RAG source documents | RAG retrieval-time classification with user clearance check |
+| `DLP-CHAN-MCP-TOOL-ARG` | D3-CSPP — MCP gateway payload inspection on tool-call args, plus agent observability traces at the SDK | D3-NTA — egress NTA on MCP server destinations | Emerging vendor coverage; most enterprises have no D3-CSPP equivalent on MCP today |
+| `DLP-CHAN-CLIPBOARD-AI` | D3-CSPP — managed-browser paste inspection of the browser-to-service payload; an endpoint agent inspects clipboard contents (no D3FEND technique covers clipboard inspection) | D3-EAL (Executable Allowlisting) — restrict which AI-tool executables can paste | Endpoint agent or managed browser required; unmanaged BYOD is structural blind spot |
+| `DLP-CHAN-CODE-COMPLETION` | D3-CSPP — proxy-based inspection where TLS termination feasible, plus IDE-side context filtering | D3-EAL — restrict which code-assistant binaries run | TLS pinning in IDE assistants makes proxy-based D3-CSPP often infeasible; vendor-side contractual controls fill the gap |
 | `DLP-CHAN-IDE-TELEMETRY` | D3-NTPM (Network Traffic Policy Mapping) — block telemetry domains at egress | D3-NTA — observe telemetry destinations; D3-EAL — extension allowlisting | GPO/MDM controls feed D3-NTPM allowlists |
 | `DLP-CHAN-EMAIL-OUT` (legacy, for completeness) | D3-MENCR (Message Encryption) + content classification | D3-CSPP — SMTP gateway DLP | Solved domain; keep for compliance, do not over-invest |
 | `DLP-CHAN-WEB-UPLOAD` (legacy, for completeness) | D3-CSPP — SWG / CASB inspection | D3-NTPM — domain allowlist; D3-NTA — flow observation | Tuned for file uploads, not free-form prompt text |
-| `DLP-CHAN-USB-REMOVABLE` (legacy, for completeness) | D3-PHRA (Process Hardware Resource Access) — endpoint device control | D3-EAL — restrict process access to removable media | Solved domain |
+| `DLP-CHAN-USB-REMOVABLE` (legacy, for completeness) | D3-IOPR (IO Port Restriction) — limits access to USB and other IO ports to authorized devices | D3-EAL — restrict which executables may run from removable media | Solved domain |
 
 Cross-cutting controls:
 
 - **D3-NTA** is the primary egress defense for distinguishing AI-API destinations and Oblivious HTTP (RFC 9458) relays from generic SaaS traffic. Pair with `DLP-LAG-LEGACY-SCOPE` review — if NTA is observing only legacy categories, AI-era egress is invisible.
 - **D3-NTPM** is the primary allowlist control surface. Implements the SC-7 real_requirement (per-identity sanctioned-business-reason entries) when wired to identity context.
-- **D3-IOPR** is the primary content-layer defense and the single most important missing control at the typical 2026 enterprise. Maps to SDK-level prompt and completion logging.
-- **D3-CSPP** is the primary gateway-layer defense. Maps to LLM gateway and MCP gateway products.
+- **D3-CSPP** is the primary content-layer and gateway-layer defense. At the SDK it maps to prompt and completion logging, which is the single most important missing control at the typical 2026 enterprise; at the gateway it maps to LLM gateway and MCP gateway products.
 - **D3-EAL** restricts which AI-tool binaries can run on managed endpoints — the prerequisite to clipboard-DLP and code-completion controls being meaningful.
 
 Underlying weakness classes from `data/cwe-catalog.json`: CWE-200 (Exposure of Sensitive Information to an Unauthorized Actor) is the canonical class for every AI-era DLP gap in this skill — the AI tool is the unauthorized actor either contractually (no zero-retention term), jurisdictionally (cross-border without lawful basis), or by clearance (RAG cross-clearance retrieval). CWE-1426 (Improper Validation of Generative AI Output) compounds CWE-200 in the prompt-injection-driven extraction case (AML.T0051).

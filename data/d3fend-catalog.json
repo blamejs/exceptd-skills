@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "last_updated": "2026-05-19",
+    "last_updated": "2026-11-04",
     "d3fend_version": "1.3.0",
     "d3fend_release_date": "2025-12-16",
     "source": "https://d3fend.mitre.org",
@@ -35,8 +35,8 @@
   "D3-EAL": {
     "id": "D3-EAL",
     "name": "Executable Allowlisting",
-    "tactic": "Harden",
-    "subtactic": "Application Hardening",
+    "tactic": "Isolate",
+    "subtactic": "Execution Isolation",
     "description": "Using a digital signature or other artifact-identifying property to restrict process execution to a pre-approved set of executables, blocking arbitrary binaries from running regardless of file path or user privilege.",
     "counters_attack_techniques": [
       "T1068",
@@ -55,6 +55,7 @@
       "attack-surface-pentest",
       "cloud-security",
       "container-runtime-security",
+      "coordinated-vuln-disclosure",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "fuzz-testing-strategy",
@@ -65,6 +66,7 @@
       "sector-energy",
       "sector-federal-government",
       "security-maturity-tiers",
+      "skill-update-loop",
       "supply-chain-integrity",
       "webapp-security"
     ],
@@ -82,62 +84,14 @@
       "ISO-27001-2022-A.8.19",
       "PCI-DSS-v4-2.2.4"
     ],
-    "ai_pipeline_applicability": "Partially applicable. In serverless and ephemeral container runtimes the OS-level allowlister cannot be installed; equivalent control is achieved by signed-image policy at the registry admission controller (Sigstore/cosign verification, Kyverno/OPA Gatekeeper image-signature rules) plus immutable rootfs. For MCP server runtimes the equivalent is binary-hash pinning per D3-EHB.",
+    "ai_pipeline_applicability": "Partially applicable. In serverless and ephemeral container runtimes the OS-level allowlister cannot be installed; equivalent control is achieved by signed-image policy at the registry admission controller (Sigstore/cosign verification, Kyverno/OPA Gatekeeper image-signature rules) plus immutable rootfs. For MCP server runtimes the equivalent is binary-hash pinning through hash rules in the same allowlist.",
     "lag_notes": "NIST CM-7(1) prescribes 'least functionality' and CM-7(2) 'authorized software' but does not require cryptographic verification; many auditors accept inventory-only implementations. D3-EAL requires the runtime to actively block non-listed binaries — a behavior gap that paper-compliant CM-7 implementations routinely fail.",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-11-04",
     "description_full": "Using a digital signature to authenticate a file before opening.",
     "synonyms": [
       "File Signature Authentication"
     ],
     "reference_url": "https://d3fend.mitre.org/technique/D3-EAL/"
-  },
-  "D3-EHB": {
-    "id": "D3-EHB",
-    "name": "Executable Hashbased Allowlist",
-    "tactic": "Harden",
-    "subtactic": "Application Hardening",
-    "description": "Restricting execution to binaries whose cryptographic hash matches a pre-approved allowlist entry, providing stronger identity guarantees than path- or signer-based allowlisting because hashes change on any binary modification.",
-    "counters_attack_techniques": [
-      "T1195.001",
-      "T1195.002",
-      "AML.T0010",
-      "AML.T0010.001",
-      "AML.T0010.002",
-      "AML.T0010.003"
-    ],
-    "digital_artifacts_addressed": [
-      "Executable Binary",
-      "File Hash"
-    ],
-    "skills_referencing": [
-      "container-runtime-security",
-      "defensive-countermeasure-mapping",
-      "mcp-agent-trust",
-      "mlops-security",
-      "sector-federal-government",
-      "supply-chain-integrity"
-    ],
-    "implementation_examples": [
-      "WDAC hash rules",
-      "fapolicyd hash trust database",
-      "MCP server binary hash pinning in client config",
-      "in-toto / SLSA Level 3 attestation for ML model and tool binaries"
-    ],
-    "framework_controls_partially_mapped": [
-      "NIST-800-53-SA-12",
-      "NIST-800-53-CM-7(5)",
-      "ISO-27001-2022-A.8.30",
-      "SOC2-CC9.2"
-    ],
-    "ai_pipeline_applicability": "Highly applicable to AI pipelines — directly addresses HuggingFace typosquat, malicious model weight files, and MCP server supply chain compromise (CVE-2026-30615 class). For ephemeral inference containers the hash check moves from runtime to admission control (registry signature plus model weight SHA-256 verification at load time).",
-    "lag_notes": "SA-12 supply-chain controls do not specify cryptographic hash verification at load time, and no framework yet requires hash pinning of pretrained model weights or MCP server binaries. Auditors accept SBOM presence as SA-12 evidence; D3-EHB requires the runtime to actively reject unpinned binaries, which most SBOM programs do not implement.",
-    "last_verified": "2026-05-19",
-    "description_full": "Monitoring the security status of an endpoint by sending periodic messages with health status, where absence of a response may indicate that the endpoint has been compromised.",
-    "synonyms": [
-      "Endpoint Health Telemetry"
-    ],
-    "kb_reference": "Reference-IntrusionDetectionUsingAHeartbeat_SophosLtd",
-    "reference_url": "https://d3fend.mitre.org/technique/D3-EHB/"
   },
   "D3-PSEP": {
     "id": "D3-PSEP",
@@ -181,111 +135,6 @@
     ],
     "reference_url": "https://d3fend.mitre.org/technique/D3-PSEP/"
   },
-  "D3-ASLR": {
-    "id": "D3-ASLR",
-    "name": "Address Space Layout Randomization",
-    "tactic": "Harden",
-    "subtactic": "Platform Hardening",
-    "description": "Randomizing the base addresses of executable, stack, heap, and library memory regions to prevent attackers from reliably hard-coding addresses in exploit payloads.",
-    "counters_attack_techniques": [
-      "T1068",
-      "T1055",
-      "T1203"
-    ],
-    "digital_artifacts_addressed": [
-      "Process Memory",
-      "Process Segment"
-    ],
-    "skills_referencing": [
-      "defensive-countermeasure-mapping",
-      "kernel-lpe-triage"
-    ],
-    "implementation_examples": [
-      "KASLR (Linux kernel)",
-      "Windows kernel ASLR",
-      "PIE binaries with full ASLR (Linux userland)",
-      "FG-KASLR (function-granular KASLR)"
-    ],
-    "framework_controls_partially_mapped": [
-      "NIST-800-53-SI-16",
-      "ISO-27001-2022-A.8.9"
-    ],
-    "ai_pipeline_applicability": "Inherited at host kernel level; not workload-configurable in containers or serverless. For confidential-compute AI pipelines (TEE-enclosed inference), ASLR is provided by the TEE runtime but with smaller entropy budgets — treat as defense-in-depth, not primary control.",
-    "lag_notes": "ASLR is universally assumed by SI-16 evidence but framework controls never specify the entropy budget required. Modern info-leak primitives (KASLR-defeating side channels, deterministic-allocator LPEs like Copy Fail) trivially bypass standard KASLR; lag is in framework's failure to require FG-KASLR or equivalent.",
-    "last_verified": "2026-05-11"
-  },
-  "D3-SCP": {
-    "id": "D3-SCP",
-    "name": "System Call Filtering",
-    "tactic": "Isolate",
-    "subtactic": "Execution Isolation",
-    "description": "Restricting the set of system calls a process can invoke, reducing the kernel attack surface available from a compromised userland process. Implemented as seccomp-bpf on Linux, syscall filters on Windows.",
-    "counters_attack_techniques": [
-      "T1068",
-      "T1611",
-      "T1059"
-    ],
-    "digital_artifacts_addressed": [
-      "Process",
-      "System Call"
-    ],
-    "skills_referencing": [
-      "defensive-countermeasure-mapping",
-      "kernel-lpe-triage"
-    ],
-    "implementation_examples": [
-      "seccomp-bpf profiles (Docker default, gVisor)",
-      "Windows Process Mitigation Policy syscall filters",
-      "OpenBSD pledge(2) / unveil(2)",
-      "Kubernetes RuntimeDefault and Localhost seccomp profiles"
-    ],
-    "framework_controls_partially_mapped": [
-      "NIST-800-53-SC-39",
-      "NIST-800-53-SI-10",
-      "ISO-27001-2022-A.8.20"
-    ],
-    "ai_pipeline_applicability": "Directly applicable and recommended for AI inference workloads. Default seccomp profile blocks the syscall surface most kernel-LPE PoCs depend on (e.g., io_uring entry points for Copy Fail class). MCP server processes should run under a RuntimeDefault profile at minimum; tighter Localhost profiles recommended for code-execution MCP tools.",
-    "lag_notes": "No major framework requires seccomp profiles or equivalent syscall filtering. SC-39 (process isolation) is satisfied by namespaces alone in most audits, leaving the kernel surface fully exposed. Compliance theater: 'we use containers' is accepted as SC-39 evidence even when containers run with --privileged or no seccomp profile.",
-    "last_verified": "2026-05-19",
-    "description_full": "Restricting system configuration modifications to a specific user or group of users.",
-    "kb_reference": "Reference-HowToChangeRegistryValuesOrPermissionsFromACommandLineOrAScript",
-    "reference_url": "https://d3fend.mitre.org/technique/D3-SCP/"
-  },
-  "D3-PHRA": {
-    "id": "D3-PHRA",
-    "name": "Process Hardware Resource Access",
-    "tactic": "Isolate",
-    "subtactic": "Execution Isolation",
-    "description": "Controlling and restricting the hardware resources (CPU features, devices, IOMMU mappings, performance counters) that a process can access, limiting both side-channel attacks and direct hardware abuse paths.",
-    "counters_attack_techniques": [
-      "T1068",
-      "T1212",
-      "T1614.001"
-    ],
-    "digital_artifacts_addressed": [
-      "Process",
-      "Hardware Device",
-      "Hardware Performance Counter"
-    ],
-    "skills_referencing": [
-      "defensive-countermeasure-mapping",
-      "kernel-lpe-triage"
-    ],
-    "implementation_examples": [
-      "IOMMU groups and VT-d/AMD-Vi enforcement",
-      "cgroups v2 device controllers",
-      "GPU access scoping for ML workloads (NVIDIA MIG, MPS isolation)",
-      "perf_event_paranoid kernel parameter"
-    ],
-    "framework_controls_partially_mapped": [
-      "NIST-800-53-SC-39",
-      "NIST-800-53-AC-6(10)",
-      "ISO-27001-2022-A.8.20"
-    ],
-    "ai_pipeline_applicability": "Critical for multi-tenant GPU inference platforms — without MIG/MPS isolation a tenant can side-channel adjacent tenants' models. Standard container runtimes do not enforce GPU isolation by default. For confidential AI pipelines, IOMMU enforcement on accelerator passthrough is the equivalent control.",
-    "lag_notes": "No framework prescribes GPU or accelerator isolation requirements. SC-39 is interpreted as CPU-process isolation; the AI accelerator side-channel surface is invisible to compliance audits. NIST AI RMF MEASURE-2.7 mentions infrastructure security but does not require hardware-level tenant isolation.",
-    "last_verified": "2026-05-11"
-  },
   "D3-MENCR": {
     "id": "D3-MENCR",
     "name": "Message Encryption",
@@ -302,7 +151,7 @@
       "Message"
     ],
     "skills_referencing": [
-      "defensive-countermeasure-mapping",
+      "dlp-gap-analysis",
       "global-grc",
       "pqc-first",
       "security-maturity-tiers"
@@ -342,7 +191,6 @@
       "Encrypted File"
     ],
     "skills_referencing": [
-      "defensive-countermeasure-mapping",
       "global-grc",
       "pqc-first"
     ],
@@ -382,14 +230,10 @@
     ],
     "skills_referencing": [
       "api-security",
-      "cloud-iam-incident",
       "cloud-security",
       "defensive-countermeasure-mapping",
-      "idp-incident-response",
       "mcp-agent-trust",
-      "sector-federal-government",
-      "sector-financial",
-      "supply-chain-integrity"
+      "sector-federal-government"
     ],
     "implementation_examples": [
       "mTLS for service-to-service auth",
@@ -429,6 +273,7 @@
     "skills_referencing": [
       "age-gates-child-safety",
       "api-security",
+      "attack-surface-pentest",
       "cloud-iam-incident",
       "defensive-countermeasure-mapping",
       "email-security-anti-phishing",
@@ -478,8 +323,7 @@
       "Network Traffic"
     ],
     "skills_referencing": [
-      "ai-c2-detection",
-      "defensive-countermeasure-mapping"
+      "ai-c2-detection"
     ],
     "implementation_examples": [
       "Certificate Transparency log monitoring (Sigsum, CT Watch)",
@@ -501,40 +345,39 @@
   },
   "D3-DA": {
     "id": "D3-DA",
-    "name": "Domain Analysis",
+    "name": "Dynamic Analysis",
     "tactic": "Detect",
-    "subtactic": "Identifier Analysis",
-    "description": "Analyzing domain names observed in traffic or configurations for indicators of malicious activity: newly registered domains, DGA patterns, homoglyph or typosquat similarity to known-good domains, lookalike domains for AI providers.",
+    "subtactic": "File Analysis",
+    "description": "Executing or opening a file in a synthetic sandbox environment to determine whether the file is a malicious program or exploits another program such as a document reader. The file runs in a controlled sandbox, virtual machine, or simulator so its behavior is observed without disassembling it.",
     "counters_attack_techniques": [
-      "T1071",
-      "T1568.002",
-      "T1583.001",
-      "AML.T0010.002",
-      "AML.T0010.003"
+      "T1059",
+      "T1204",
+      "T1027",
+      "T1203",
+      "AML.T0010"
     ],
     "digital_artifacts_addressed": [
-      "Domain Name",
-      "DNS Query",
-      "Network Traffic"
+      "Executable File",
+      "Document File",
+      "Process"
     ],
     "skills_referencing": [
-      "ai-c2-detection",
-      "defensive-countermeasure-mapping"
+      "coordinated-vuln-disclosure",
+      "email-security-anti-phishing"
     ],
     "implementation_examples": [
-      "Newly Observed Domain (NOD) blocking",
-      "DGA classifiers in DNS firewall",
-      "Lookalike-domain monitoring for AI provider hostnames (api.openai.com, claude.ai)",
-      "Passive DNS enrichment in SIEM"
+      "Cuckoo Sandbox",
+      "Email-gateway attachment detonation",
+      "Detonation of downloaded MCP server packages and model-loader scripts in an isolated VM before installation"
     ],
     "framework_controls_partially_mapped": [
-      "NIST-800-53-SC-7(8)",
-      "NIST-800-53-SI-4(4)",
-      "ISO-27001-2022-A.8.16"
+      "NIST-800-53-SI-3",
+      "NIST-800-53-SC-44",
+      "ISO-27001-2022-A.8.7"
     ],
-    "ai_pipeline_applicability": "Highly applicable to MCP supply chain attacks where typosquatted package or domain names install rogue MCP servers (CVE-2026-30615 vector). For AI-API C2, less effective because attackers use legitimate AI provider domains — domain analysis must combine with traffic content analysis (D3-CSPP).",
-    "lag_notes": "Compliance frameworks do not specify NOD blocking or DGA detection. SI-4(4) requires 'inbound and outbound communications traffic monitoring' but does not prescribe domain reputation enrichment. The lookalike-AI-domain detection class is novel and absent from all standard control sets.",
-    "last_verified": "2026-05-19",
+    "ai_pipeline_applicability": "Applicable to packages, scripts, and model-loader code fetched into an AI pipeline: detonating the artifact in an isolated sandbox before installation exposes install-time and import-time behavior. Serialized model weights are data, so detonation applies to the code that loads them rather than to the weights.",
+    "lag_notes": "NIST SC-44 (detonation chambers) is rarely selected and SI-3 is satisfied by signature antivirus alone, so paper-compliant programs do not execute unknown files in a sandbox. Malware that detects a sandbox or waits for a trigger condition evades short detonation runs.",
+    "last_verified": "2026-11-04",
     "description_full": "Executing or opening a file in a synthetic \"sandbox\" environment to determine if the file is a malicious program or if the file exploits another program such as a document reader.",
     "synonyms": [
       "Malware Detonation",
@@ -566,6 +409,7 @@
       "attack-surface-pentest",
       "cloud-iam-incident",
       "cloud-security",
+      "coordinated-vuln-disclosure",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "email-security-anti-phishing",
@@ -670,17 +514,22 @@
       "age-gates-child-safety",
       "ai-attack-surface",
       "ai-c2-detection",
+      "ai-risk-management",
       "api-security",
       "attack-surface-pentest",
+      "cloud-security",
       "defensive-countermeasure-mapping",
       "dlp-gap-analysis",
       "email-security-anti-phishing",
+      "fuzz-testing-strategy",
       "global-grc",
       "identity-assurance",
       "incident-response-playbook",
       "mcp-agent-trust",
+      "mlops-security",
       "rag-pipeline-security",
       "ransomware-response",
+      "sector-financial",
       "sector-healthcare",
       "security-maturity-tiers",
       "webapp-security"
@@ -703,106 +552,6 @@
     "kb_reference": "Reference-MethodAndSystemForDetectingMaliciousPayloads_VectraNetworksInc",
     "reference_url": "https://d3fend.mitre.org/technique/D3-CSPP/"
   },
-  "D3-IOPR": {
-    "id": "D3-IOPR",
-    "name": "Input/Output Profiling Resource",
-    "tactic": "Detect",
-    "subtactic": "Process Analysis",
-    "description": "Profiling the input and output behavior of a process or resource to establish a baseline and detect anomalies, including unexpected I/O patterns, unusual data flows, or access to unexpected resources.",
-    "counters_attack_techniques": [
-      "T1005",
-      "T1041",
-      "AML.T0051",
-      "AML.T0013"
-    ],
-    "digital_artifacts_addressed": [
-      "Process",
-      "Resource Access"
-    ],
-    "skills_referencing": [
-      "age-gates-child-safety",
-      "ai-attack-surface",
-      "ai-c2-detection",
-      "ai-risk-management",
-      "api-security",
-      "cloud-iam-incident",
-      "cloud-security",
-      "container-runtime-security",
-      "defensive-countermeasure-mapping",
-      "dlp-gap-analysis",
-      "email-security-anti-phishing",
-      "fuzz-testing-strategy",
-      "global-grc",
-      "idp-incident-response",
-      "incident-response-playbook",
-      "mlops-security",
-      "rag-pipeline-security",
-      "ransomware-response",
-      "sector-financial",
-      "sector-healthcare",
-      "sector-telecom",
-      "security-maturity-tiers",
-      "webapp-security"
-    ],
-    "implementation_examples": [
-      "LLM output classifier for safety-bypass content (Llama Guard, Granite Guardian)",
-      "Semantic divergence scoring (user intent vs. AI action)",
-      "RAG retrieval-pattern anomaly detection",
-      "AI API query rate / similarity clustering for probe detection"
-    ],
-    "framework_controls_partially_mapped": [
-      "NIST-800-53-SI-4",
-      "NIST-AI-RMF-MEASURE-2.5",
-      "ISO-27001-2022-A.8.16"
-    ],
-    "ai_pipeline_applicability": "Primary detection control for prompt injection (AML.T0051) and model ontology discovery (AML.T0013). Applies natively to AI pipelines — operates at the application layer where ephemeral runtime is irrelevant. Output-side IOPR (classifying AI responses) is more reliable than input-side (prompt classification) given the variety of injection encodings.",
-    "lag_notes": "NIST AI RMF MEASURE-2.5 recommends 'measurement of AI system trustworthiness characteristics' but is non-prescriptive. No framework requires runtime output safety scoring or input adversarial classification. OWASP LLM Top 10 documents the need; compliance frameworks have not incorporated it.",
-    "last_verified": "2026-05-19",
-    "description_full": "Limiting access to computer input/output (IO) ports to restrict unauthorized devices.",
-    "reference_url": "https://d3fend.mitre.org/technique/D3-IOPR/"
-  },
-  "D3-RPA": {
-    "id": "D3-RPA",
-    "name": "Remote Process Analysis",
-    "tactic": "Detect",
-    "subtactic": "Process Analysis",
-    "description": "Analyzing processes running on remote hosts via agent-based or agentless telemetry to detect malicious behaviors — unexpected child processes, anomalous network behavior by identity, or process-resource correlations indicating compromise.",
-    "counters_attack_techniques": [
-      "T1057",
-      "T1071",
-      "T1059",
-      "AML.T0096"
-    ],
-    "digital_artifacts_addressed": [
-      "Process",
-      "Process Tree"
-    ],
-    "skills_referencing": [
-      "defensive-countermeasure-mapping",
-      "incident-response-playbook",
-      "ransomware-response"
-    ],
-    "implementation_examples": [
-      "EDR with process-network correlation (CrowdStrike, SentinelOne, Defender for Endpoint)",
-      "Sysmon + Sigma rules for AI-API egress by unexpected process",
-      "eBPF-based runtime monitors (Falco, Tetragon)",
-      "Process identity attribution on AI API outbound flows"
-    ],
-    "framework_controls_partially_mapped": [
-      "NIST-800-53-SI-4(2)",
-      "NIST-800-53-SI-4(4)",
-      "ISO-27001-2022-A.8.16"
-    ],
-    "ai_pipeline_applicability": "Applies to traditional workloads. Serverless and FaaS contexts have no persistent process to analyze — alternative is invocation-level telemetry from the platform (CloudWatch Lambda Insights, GCP Cloud Run audit logs) correlated with AI-API egress flow records.",
-    "lag_notes": "Process-to-AI-API correlation is not part of any standard EDR ruleset. SI-4(2) (automated tools and mechanisms) requires SIEM/EDR presence but not the specific correlation rule. Most SOCs lack the process-identity attribution needed to distinguish legitimate from malicious AI-API use at the host.",
-    "last_verified": "2026-05-19",
-    "description_full": "The detection of an internal host relaying traffic between the internal network and the external network.",
-    "synonyms": [
-      "Relay Network Detection"
-    ],
-    "kb_reference": "Reference-MaliciousRelayDetectionOnNetworks_VECTRANETWORKSInc",
-    "reference_url": "https://d3fend.mitre.org/technique/D3-RPA/"
-  },
   "D3-FAPA": {
     "id": "D3-FAPA",
     "name": "File Access Pattern Analysis",
@@ -822,6 +571,7 @@
     "skills_referencing": [
       "ai-attack-surface",
       "defensive-countermeasure-mapping",
+      "dlp-gap-analysis",
       "global-grc",
       "rag-pipeline-security",
       "security-maturity-tiers"
@@ -862,10 +612,12 @@
     ],
     "skills_referencing": [
       "ai-c2-detection",
+      "attack-surface-pentest",
       "container-runtime-security",
       "defensive-countermeasure-mapping",
       "global-grc",
       "sector-energy",
+      "sector-financial",
       "sector-telecom",
       "security-maturity-tiers"
     ],
@@ -908,8 +660,14 @@
       "Process Tree"
     ],
     "skills_referencing": [
+      "attack-surface-pentest",
+      "cloud-security",
+      "container-runtime-security",
       "defensive-countermeasure-mapping",
-      "kernel-lpe-triage"
+      "incident-response-playbook",
+      "kernel-lpe-triage",
+      "ransomware-response",
+      "skill-update-loop"
     ],
     "implementation_examples": [
       "Sysmon process-creation events with parent-child Sigma rules",
@@ -966,47 +724,6 @@
     "last_verified": "2026-05-19",
     "description_full": "Removing tokens or credentials from an authentication cache to prevent further user associated account accesses.",
     "reference_url": "https://d3fend.mitre.org/technique/D3-ANCI/"
-  },
-  "D3-CAA": {
-    "id": "D3-CAA",
-    "name": "Credential Access Auditing",
-    "tactic": "Detect",
-    "subtactic": "Credential Activity Analysis",
-    "description": "Recording and analyzing every access to credential stores (cloud secret managers, password vaults, KMS, environment-variable reads on privileged processes) to detect anomalous read patterns indicating credential theft or misuse.",
-    "counters_attack_techniques": [
-      "T1555",
-      "T1552",
-      "T1078",
-      "AML.T0055"
-    ],
-    "digital_artifacts_addressed": [
-      "Credential Store Access Log",
-      "Process Environment Variable Access"
-    ],
-    "skills_referencing": [
-      "cloud-iam-incident",
-      "mcp-agent-trust"
-    ],
-    "implementation_examples": [
-      "AWS Secrets Manager + CloudTrail GetSecretValue audit with anomaly baseline per principal",
-      "HashiCorp Vault audit log forwarded to SIEM with per-policy read-rate alerting",
-      "Linux audit on /proc/<pid>/environ reads outside the owning process",
-      "GitHub Actions secret-access audit + repository-event correlation"
-    ],
-    "framework_controls_partially_mapped": [
-      "NIST-800-53-AU-2",
-      "NIST-800-53-AU-12",
-      "ISO-27001-2022-A.8.15"
-    ],
-    "ai_pipeline_applicability": "Applies wherever AI agents fetch credentials at runtime (MCP server bootstrap, fine-tuning job startup). Serverless equivalent: cloud-provider native secret-fetch audit (Secrets Manager VPC endpoint logs, GCP Secret Manager IAM audit logs).",
-    "lag_notes": "AU-2 prescribes audit event categories; framework controls do not require per-secret access baselining. Compliance audits accept 'logging is enabled' without requiring detection rules on read anomalies.",
-    "last_verified": "2026-05-19",
-    "description_full": "Analyzing failed connections in a network to detect unauthorized activity.",
-    "synonyms": [
-      "Network Scan Detection"
-    ],
-    "kb_reference": "Reference-DetectingNetworkReconnaissanceByTrackingIntranetDark-netCommunications_VECTRANETWORKSInc",
-    "reference_url": "https://d3fend.mitre.org/technique/D3-CAA/"
   },
   "D3-CH": {
     "id": "D3-CH",
@@ -1104,7 +821,8 @@
       "Configuration File"
     ],
     "skills_referencing": [
-      "rag-pipeline-security"
+      "rag-pipeline-security",
+      "skill-update-loop"
     ],
     "implementation_examples": [
       "gitleaks / trufflehog pre-commit and CI-time secret scanning",
@@ -1237,58 +955,6 @@
     "last_verified": "2026-05-19",
     "description_full": "Monitoring system files such as authentication databases, configuration files, system logs, and system executables for modification or tampering.",
     "reference_url": "https://d3fend.mitre.org/technique/D3-SFA/"
-  },
-  "D3-EFA": {
-    "id": "D3-EFA",
-    "name": "Executable File Analysis",
-    "tactic": "Detect",
-    "subtactic": "File Analysis",
-    "description": "Analyzing the format, contents, or static characteristics of an executable file to determine whether it warrants further investigation. Covers PE/ELF/Mach-O header inspection, embedded-string + import-table review, entropy + packer detection, and YARA-rule matching against known malicious patterns. Distinct from D3-DA (Dynamic Analysis): no execution occurs.",
-    "counters_attack_techniques": [
-      "T1027",
-      "T1027.002",
-      "T1059",
-      "T1078",
-      "T1195.002",
-      "T1204",
-      "T1505.003",
-      "T1546.014",
-      "AML.T0010",
-      "AML.T0115.000"
-    ],
-    "digital_artifacts_addressed": [
-      "Executable Binary",
-      "Executable Script",
-      "Firmware",
-      "OS Image"
-    ],
-    "skills_referencing": [
-      "global-grc",
-      "security-maturity-tiers"
-    ],
-    "implementation_examples": [
-      "YARA",
-      "PEStudio / PEiD",
-      "radare2 / Cutter / Ghidra (static-only mode)",
-      "ssdeep + sdhash fuzzy-hash matching",
-      "Mandiant CAPA capability detection",
-      "Sigstore cosign verify on container image manifests",
-      "OEM firmware-image signature verification at provisioning time"
-    ],
-    "framework_controls_partially_mapped": [
-      "NIST-800-53-SI-3",
-      "NIST-800-53-SI-7",
-      "NIST-800-53-SI-7(6)",
-      "ISO-27001-2022-A.8.7",
-      "PCI-DSS-v4-5.2.3",
-      "CIS-Controls-v8-10.5"
-    ],
-    "ai_pipeline_applicability": "Directly applicable to model-artifact ingestion paths (pickle/safetensors/ONNX): static analysis of serialized weights can surface malicious __reduce__ payloads (D3-EFA on the pickle stream) before any deserialization occurs. For MCP-server binaries shipped via npm/PyPI, D3-EFA pairs with D3-EAL — analyze first to gate the allowlist decision rather than allow-by-publisher.",
-    "lag_notes": "NIST SI-3 prescribes \"malicious code protection\" without binding the control to static-file-analysis specifically; auditors routinely accept signature-AV deployment as the entire SI-3 implementation, missing the analyze-before-load posture that catches packed / encoder-obfuscated payloads. Distinct from D3-EAL: allowlisting blocks a binary at execute-time; D3-EFA inspects the bytes at file-write / image-pull / artifact-fetch time and gates the allowlist itself.",
-    "last_verified": "2026-05-19",
-    "description_full": "Emulating instructions in a file looking for specific patterns.",
-    "kb_reference": "Reference-Network-levelPolymorphicShellcodeDetectionUsingEmulation",
-    "reference_url": "https://d3fend.mitre.org/technique/D3-EFA/"
   },
   "D3-AA": {
     "id": "D3-AA",
@@ -1611,19 +1277,6 @@
     "_intake_method": "v0.13.18-bulk-mitre-d3fend-owl",
     "description_full": "Broadcast isolation restricts the number of computers a host can contact on their LAN."
   },
-  "D3-BMA": {
-    "id": "D3-BMA",
-    "name": "Bus Message Authentication",
-    "tactic": "Defensive",
-    "description": "Applies cryptographic primitives to individual bus frames to verify the sender's identity and ensure the integrity of the data payload.",
-    "synonyms": [],
-    "reference_url": "https://d3fend.mitre.org/technique/D3-BMA/",
-    "last_verified": "2026-05-19",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.18-bulk-mitre-d3fend-owl",
-    "description_full": "Applies cryptographic primitives to individual bus frames to verify the sender's identity and ensure the integrity of the data payload.",
-    "kb_reference": "Reference-ControllerAreaNetworkMessageAuthentication"
-  },
   "D3-BSE": {
     "id": "D3-BSE",
     "name": "Byte Sequence Emulation",
@@ -1719,18 +1372,6 @@
     "_intake_method": "v0.13.18-bulk-mitre-d3fend-owl",
     "description_full": "Content format conversion is mechanical transformation from one format to another which may be normalization or specifically flattening.",
     "kb_reference": "Reference-MethodForContentDisarmandReconstruction_OPSWATInc"
-  },
-  "D3-CFI": {
-    "id": "D3-CFI",
-    "name": "Control Flow Integrity",
-    "tactic": "Defensive",
-    "description": "Enforcing legal control flow transfers during application process execution.",
-    "synonyms": [],
-    "reference_url": "https://d3fend.mitre.org/technique/D3-CFI/",
-    "last_verified": "2026-05-19",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.18-bulk-mitre-d3fend-owl",
-    "description_full": "Enforcing legal control flow transfers during application process execution."
   },
   "D3-CHN": {
     "id": "D3-CHN",
@@ -2118,11 +1759,39 @@
     "tactic": "Defensive",
     "description": "Analyzing the reputation of a domain name.",
     "synonyms": [],
+    "counters_attack_techniques": [
+      "T1568",
+      "T1568.002",
+      "T1583.001",
+      "T1566.002",
+      "T1071"
+    ],
+    "digital_artifacts_addressed": [
+      "Domain Name",
+      "DNS Network Traffic"
+    ],
+    "implementation_examples": [
+      "Secure DNS resolvers with threat-intelligence categories (Quad9, Cloudflare Gateway, Cisco Umbrella)",
+      "Newly registered and newly observed domain scoring at the mail gateway and web proxy",
+      "Domain age, registrar and passive-DNS reputation lookups in SIEM enrichment",
+      "DGA classifiers on resolver logs"
+    ],
+    "framework_controls_partially_mapped": [
+      "NIST-800-53-SC-7",
+      "NIST-800-53-SI-4",
+      "ISO-27001-2022-A.8.16"
+    ],
+    "ai_pipeline_applicability": "Applies to egress from AI pipelines that resolve external domains, such as MCP servers, RAG fetchers and agent browsing tools. Reputation scoring has no signal for traffic to major model-provider API domains, which are reputable by definition, so it does not detect AI-API command and control. In serverless and ephemeral runtimes the function has no resolver of its own; the alternative is an egress allowlist at the VPC or platform DNS firewall (Route 53 Resolver DNS Firewall, Cloud DNS response policies).",
+    "lag_notes": "SC-7 and SI-4 require boundary monitoring but not reputation scoring of domains. Auditors accept a DNS filter being deployed without checking that newly registered domains are scored or blocked. Reputation lists lag fresh infrastructure by hours to days, and attackers who register a domain days before use defeat age-based scoring.",
     "reference_url": "https://d3fend.mitre.org/technique/D3-DNRA/",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-11-04",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-d3fend-owl",
-    "description_full": "Analyzing the reputation of a domain name."
+    "description_full": "Analyzing the reputation of a domain name.",
+    "skills_referencing": [
+      "ai-c2-detection",
+      "defensive-countermeasure-mapping"
+    ]
   },
   "D3-DNSAL": {
     "id": "D3-DNSAL",
@@ -2386,21 +2055,6 @@
     "_intake_method": "v0.13.18-bulk-mitre-d3fend-owl",
     "description_full": "Monitoring electronic lock and door hardware states and access events (e.g., locked/unlocked, access granted/denied, door forced/held, tamper) to detect and respond to unauthorized entry."
   },
-  "D3-EMH": {
-    "id": "D3-EMH",
-    "name": "Electromagnetic Radiation Hardening",
-    "tactic": "Defensive",
-    "description": "The application of physical and material-level design measures to electronic systems, components, or facilities to reduce their susceptibility to damage or disruption from electromagnetic threats.",
-    "synonyms": [
-      "EM Hardening"
-    ],
-    "reference_url": "https://d3fend.mitre.org/technique/D3-EMH/",
-    "last_verified": "2026-05-19",
-    "_auto_imported": true,
-    "_intake_method": "v0.13.18-bulk-mitre-d3fend-owl",
-    "description_full": "The application of physical and material-level design measures to electronic systems, components, or facilities to reduce their susceptibility to damage or disruption from electromagnetic threats.",
-    "kb_reference": "Reference-SystemAndMethodForProvidingCertifiableElectromagneticPulseAndRFIProtection_InstantAccessNetworksLLC"
-  },
   "D3-EPL": {
     "id": "D3-EPL",
     "name": "Physical Locking",
@@ -2447,13 +2101,47 @@
     "tactic": "Defensive",
     "description": "File Analysis is an analytic process to determine a file's status. For example: virus, trojan, benign, malicious, trusted, unauthorized, sensitive, etc.",
     "synonyms": [],
+    "counters_attack_techniques": [
+      "T1059",
+      "T1027",
+      "T1027.002",
+      "T1204.002",
+      "T1505.003",
+      "T1195.002",
+      "AML.T0010"
+    ],
+    "digital_artifacts_addressed": [
+      "File",
+      "Executable Binary",
+      "Executable Script"
+    ],
+    "implementation_examples": [
+      "YARA rules over files at write, upload and fetch time",
+      "Sandbox detonation (Cuckoo, commercial detonation services)",
+      "Static analysis of scripts and binaries (CAPA, PEStudio)",
+      "Signature and hash verification of container images and packages (Sigstore cosign verify)",
+      "Pickle and model-file scanners for downloaded model artifacts"
+    ],
+    "framework_controls_partially_mapped": [
+      "NIST-800-53-SI-3",
+      "ISO-27001-2022-A.8.7",
+      "PCI-DSS-4.0-5.1",
+      "CIS-Controls-v8-10.1"
+    ],
+    "ai_pipeline_applicability": "Applies where the pipeline writes or fetches files: model downloads, plugin and tool packages, uploaded documents, build artifacts. Serverless functions have no resident scanner; the alternative is scanning at the artifact boundary (registry admission scan, object-storage upload scan, CI scan step) before the function image or model is deployed. Serialized model formats that execute code on load need a format-aware scanner, since signature antivirus does not parse them.",
+    "lag_notes": "SI-3 requires malicious code protection without binding it to static or sandbox analysis, and auditors accept signature antivirus as the whole implementation. Packed, encrypted or script-only payloads and model files with embedded loaders pass signature checks. File analysis does not stop execution; pair it with D3-EAL for blocking.",
     "reference_url": "https://d3fend.mitre.org/technique/D3-FA/",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-11-04",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-d3fend-owl",
     "description_full": "File Analysis is an analytic process to determine a file's status. For example: virus, trojan, benign, malicious, trusted, unauthorized, sensitive, etc.",
     "enables": [
       "Detect"
+    ],
+    "skills_referencing": [
+      "global-grc",
+      "sector-telecom",
+      "security-maturity-tiers"
     ]
   },
   "D3-FBA": {
@@ -2590,11 +2278,52 @@
     "tactic": "Defensive",
     "description": "Detecting any suspicious changes to files in a computer system.",
     "synonyms": [],
+    "counters_attack_techniques": [
+      "T1565.001",
+      "T1554",
+      "T1505.003",
+      "T1543",
+      "T1574",
+      "T1070.004",
+      "T1195.002",
+      "AML.T0010"
+    ],
+    "digital_artifacts_addressed": [
+      "File",
+      "Configuration File",
+      "Executable Binary"
+    ],
+    "implementation_examples": [
+      "Tripwire and AIDE baseline databases",
+      "Microsoft Defender for Cloud file integrity monitoring",
+      "Linux auditd file-watch rules and inotify/fanotify monitors",
+      "Hash pinning of MCP server binaries, tool manifests and model weight files",
+      "Image digest comparison against the signed registry manifest"
+    ],
+    "framework_controls_partially_mapped": [
+      "NIST-800-53-CM-3",
+      "NIST-800-53-SI-4",
+      "PCI-DSS-4.0.1-11.6.1",
+      "ISO-27001-2022-A.8.16"
+    ],
+    "ai_pipeline_applicability": "Applies to persistent hosts that hold model weights, MCP server code, agent configuration and prompt templates. Ephemeral containers and serverless functions have no baseline that survives a restart, so a host-level monitor has nothing to compare; the alternative is immutable images verified by digest at admission plus a read-only root filesystem, with any write attempt logged by the runtime.",
+    "lag_notes": "CM-3 and SI-4 do not require file-level baselines. PCI-DSS 11.6.1 covers payment-page change detection only. Programs that monitor a broad path set generate change noise that analysts suppress, and no framework requires integrity monitoring of model weights, prompt templates or tool manifests.",
     "reference_url": "https://d3fend.mitre.org/technique/D3-FIM/",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-11-04",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-d3fend-owl",
-    "description_full": "Detecting any suspicious changes to files in a computer system."
+    "description_full": "Detecting any suspicious changes to files in a computer system.",
+    "skills_referencing": [
+      "container-runtime-security",
+      "defensive-countermeasure-mapping",
+      "global-grc",
+      "mcp-agent-trust",
+      "mlops-security",
+      "sector-federal-government",
+      "sector-telecom",
+      "skill-update-loop",
+      "supply-chain-integrity"
+    ]
   },
   "D3-FISV": {
     "id": "D3-FISV",
@@ -2695,11 +2424,34 @@
     "synonyms": [
       "Virtualization"
     ],
+    "counters_attack_techniques": [
+      "T1055",
+      "T1611"
+    ],
+    "digital_artifacts_addressed": [
+      "Process",
+      "Process Memory"
+    ],
+    "implementation_examples": [
+      "MMU-enforced per-process virtual address spaces",
+      "IOMMU (Intel VT-d, AMD-Vi) device isolation",
+      "Hardware-assisted virtualization (KVM, Hyper-V) and microVMs (Firecracker)",
+      "Confidential-computing enclaves (Intel SGX/TDX, AMD SEV-SNP)"
+    ],
+    "framework_controls_partially_mapped": [
+      "NIST-800-53-SC-39",
+      "ISO-27001-2022-A.8.22"
+    ],
+    "ai_pipeline_applicability": "The isolation boundary is set by the platform, not by the workload. In serverless and managed container services the operator cannot configure the MMU or IOMMU, and tenant separation depends on the provider's microVM or hypervisor layer. For multi-tenant GPU inference the alternative is hardware partitioning (NVIDIA MIG) or dedicated nodes, since a shared GPU context does not give per-process address-space isolation between tenants.",
+    "lag_notes": "SC-39 is met in most audits by namespaces and virtual memory alone. No framework requires hardware-assisted isolation, IOMMU enforcement or accelerator partitioning, and a hypervisor or kernel flaw removes the boundary for every process behind it.",
     "reference_url": "https://d3fend.mitre.org/technique/D3-HBPI/",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-11-04",
     "_auto_imported": true,
     "_intake_method": "v0.13.18-bulk-mitre-d3fend-owl",
-    "description_full": "Preventing one process from writing to the memory space of another process through hardware based address manager implementations."
+    "description_full": "Preventing one process from writing to the memory space of another process through hardware based address manager implementations.",
+    "skills_referencing": [
+      "defensive-countermeasure-mapping"
+    ]
   },
   "D3-HBWP": {
     "id": "D3-HBWP",
@@ -2909,6 +2661,42 @@
     "last_verified": "2026-05-19",
     "_auto_imported": true,
     "_intake_method": "mitre-d3fend-owl"
+  },
+  "D3-IOPR": {
+    "id": "D3-IOPR",
+    "name": "IO Port Restriction",
+    "tactic": "Isolate",
+    "subtactic": "Access Mediation",
+    "description": "Limiting access to computer input/output (IO) ports to restrict unauthorized devices. Agent software or a hardware filter allows or blocks devices by connection, device class, command set, and file system read or write access.",
+    "counters_attack_techniques": [
+      "T1091",
+      "T1052"
+    ],
+    "digital_artifacts_addressed": [
+      "Input Device",
+      "Removable Media Device",
+      "IO Module"
+    ],
+    "skills_referencing": [
+      "dlp-gap-analysis"
+    ],
+    "implementation_examples": [
+      "USB mass-storage port control through endpoint management policy",
+      "Device-class allowlists keyed on vendor ID, product ID, and serial number",
+      "Endpoint DLP device control with read-only or block rules for removable media",
+      "Hardware USB filter between the host and external devices"
+    ],
+    "framework_controls_partially_mapped": [
+      "NIST-800-53-MP-7",
+      "NIST-800-53-SC-41",
+      "ISO-27001-2022-A.7.10"
+    ],
+    "ai_pipeline_applicability": "Applies to endpoints and workstations with physical IO ports, including developer machines and on-premises GPU hosts. It has no meaning in ephemeral containers or serverless AI pipeline contexts, which expose no physical ports. The equivalent control there is egress restriction and storage-mount policy: deny-by-default network egress, read-only root file systems, and an allowlist of mounted volumes and object-store buckets.",
+    "lag_notes": "NIST MP-7 and ISO 27001 A.7.10 require media use to be restricted but do not require enforcement at the device-class or serial-number level; many implementations stop at a written policy. D3-IOPR requires the endpoint to block or constrain the device at connection time.",
+    "last_verified": "2026-11-04",
+    "description_full": "Limiting access to computer input/output (IO) ports to restrict unauthorized devices.",
+    "synonyms": [],
+    "reference_url": "https://d3fend.mitre.org/technique/D3-IOPR/"
   },
   "D3-IPCTA": {
     "id": "D3-IPCTA",
@@ -4341,10 +4129,41 @@
     "requires": [],
     "inventories": [],
     "kb_reference": null,
+    "counters_attack_techniques": [
+      "T1078",
+      "T1078.004",
+      "T1552",
+      "T1530",
+      "T1213",
+      "AML.T0055"
+    ],
+    "digital_artifacts_addressed": [
+      "User Account",
+      "Authentication Log",
+      "Authorization Log"
+    ],
+    "implementation_examples": [
+      "AWS CloudTrail GetSecretValue and S3 access anomaly baselines per principal",
+      "HashiCorp Vault audit log read-rate alerting forwarded to SIEM",
+      "Microsoft Entra ID Protection and Defender for Cloud Apps access anomaly policies",
+      "Per-agent tool-call and resource-access baselines for MCP clients"
+    ],
+    "framework_controls_partially_mapped": [
+      "NIST-800-53-SI-4",
+      "ISO-27001-2022-A.8.16",
+      "SOC2-CC7-anomaly-detection"
+    ],
+    "ai_pipeline_applicability": "Applies to service identities and agent identities that call cloud APIs and secret stores. Serverless functions run with short-lived identities, so a per-identity baseline needs a stable key: use the function role or the agent's workload identity rather than the session. Resource access by an autonomous agent varies with the prompt, so baselines set per human user produce false positives and need per-agent profiles.",
+    "lag_notes": "SI-4 requires monitoring but not per-identity resource baselines. Audits accept enabled audit logging as evidence without a rule on read anomalies. Attackers who access resources slowly and within a principal's normal set do not exceed a baseline.",
     "reference_url": "https://d3fend.mitre.org/technique/D3-RAPA/",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-11-04",
     "_auto_imported": true,
-    "_intake_method": "mitre-d3fend-owl"
+    "_intake_method": "mitre-d3fend-owl",
+    "skills_referencing": [
+      "attack-surface-pentest",
+      "cloud-iam-incident",
+      "mcp-agent-trust"
+    ]
   },
   "D3-RC": {
     "id": "D3-RC",
@@ -4504,26 +4323,6 @@
     "inventories": [],
     "kb_reference": "Reference-MethodForDetectingAnomaliesInTimeSeriesDataProducedByDevicesOfAnInfrastructureInANetwork",
     "reference_url": "https://d3fend.mitre.org/technique/D3-RFUM/",
-    "last_verified": "2026-05-19",
-    "_auto_imported": true,
-    "_intake_method": "mitre-d3fend-owl"
-  },
-  "D3-RH": {
-    "id": "D3-RH",
-    "name": "Radiation Hardening",
-    "tactic": "Defensive",
-    "description": "Radiation hardening is the process of making electronic components and circuits resistant to damage or malfunction caused by high levels of ionizing radiation.",
-    "description_full": "Radiation hardening is the process of making electronic components and circuits resistant to damage or malfunction caused by high levels of ionizing radiation.",
-    "synonyms": [],
-    "defends_against": [],
-    "counters": [],
-    "enables": [],
-    "broader_of": [],
-    "narrower_of": [],
-    "requires": [],
-    "inventories": [],
-    "kb_reference": null,
-    "reference_url": "https://d3fend.mitre.org/technique/D3-RH/",
     "last_verified": "2026-05-19",
     "_auto_imported": true,
     "_intake_method": "mitre-d3fend-owl"
@@ -4737,8 +4536,35 @@
   "D3-SAOR": {
     "id": "D3-SAOR",
     "name": "Segment Address Offset Randomization",
-    "tactic": "Defensive",
-    "description": "Randomizing the base (start) address of one or more segments of memory during the initialization of a process.",
+    "tactic": "Harden",
+    "subtactic": "Application Hardening",
+    "description": "Randomizing the base (start) address of one or more segments of memory during the initialization of a process, so an attacker cannot reliably hard-code addresses of code or data in an exploit payload.",
+    "counters_attack_techniques": [
+      "T1068",
+      "T1055",
+      "T1203"
+    ],
+    "digital_artifacts_addressed": [
+      "Process Memory",
+      "Process Segment"
+    ],
+    "skills_referencing": [
+      "defensive-countermeasure-mapping",
+      "fuzz-testing-strategy",
+      "kernel-lpe-triage"
+    ],
+    "implementation_examples": [
+      "KASLR (Linux kernel)",
+      "Windows kernel ASLR",
+      "PIE binaries with full ASLR (Linux userland)",
+      "FG-KASLR (function-granular KASLR)"
+    ],
+    "framework_controls_partially_mapped": [
+      "NIST-800-53-SI-16",
+      "ISO-27001-2022-A.8.9"
+    ],
+    "ai_pipeline_applicability": "Inherited at the host kernel level and not configurable per workload in containers or serverless. In confidential-compute AI pipelines (TEE-enclosed inference) the TEE runtime provides randomization with a smaller entropy budget, so it is defense-in-depth rather than the primary control.",
+    "lag_notes": "SI-16 evidence assumes randomization is present but no framework control specifies the entropy budget. Information-leak primitives such as KASLR-defeating side channels bypass standard randomization, and no framework requires function-granular KASLR or an equivalent.",
     "description_full": "Randomizing the base (start) address of one or more segments of memory during the initialization of a process.",
     "synonyms": [
       "ASLR",
@@ -4753,7 +4579,7 @@
     "inventories": [],
     "kb_reference": null,
     "reference_url": "https://d3fend.mitre.org/technique/D3-SAOR/",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-11-04",
     "_auto_imported": true,
     "_intake_method": "mitre-d3fend-owl"
   },
@@ -4794,10 +4620,40 @@
     "requires": [],
     "inventories": [],
     "kb_reference": null,
+    "counters_attack_techniques": [
+      "T1059",
+      "T1068",
+      "T1106",
+      "T1611"
+    ],
+    "digital_artifacts_addressed": [
+      "System Call",
+      "Process"
+    ],
+    "implementation_examples": [
+      "seccomp-bpf profiles (Docker default, gVisor)",
+      "Kubernetes RuntimeDefault and Localhost seccomp profiles",
+      "OpenBSD pledge(2) and unveil(2)",
+      "Windows Process Mitigation Policy system call disable",
+      "SELinux and AppArmor policies that deny syscall-backed capabilities"
+    ],
+    "framework_controls_partially_mapped": [
+      "NIST-800-53-SC-39",
+      "NIST-800-53-CM-7",
+      "ISO-27001-2022-A.8.9"
+    ],
+    "ai_pipeline_applicability": "Applies to containers and sandboxes that run model servers, code-interpreter tools and agent tool runtimes: attach a seccomp profile that denies process creation and network socket calls the tool does not need. In serverless runtimes the provider fixes the profile and the operator cannot change it; the alternative is a sandbox runtime with its own syscall layer (gVisor, Firecracker) or a minimal function image with no shell or interpreter.",
+    "lag_notes": "No major framework requires a syscall filter. SC-39 is met in most audits by container namespaces, and containers run with --privileged or an unconfined seccomp profile still pass. A permissive profile such as the container default allows the syscalls most kernel exploits need.",
     "reference_url": "https://d3fend.mitre.org/technique/D3-SCF/",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-11-04",
     "_auto_imported": true,
-    "_intake_method": "mitre-d3fend-owl"
+    "_intake_method": "mitre-d3fend-owl",
+    "skills_referencing": [
+      "attack-surface-pentest",
+      "defensive-countermeasure-mapping",
+      "kernel-lpe-triage",
+      "supply-chain-integrity"
+    ]
   },
   "D3-SCH": {
     "id": "D3-SCH",
@@ -5353,10 +5209,40 @@
     "requires": [],
     "inventories": [],
     "kb_reference": "Reference-ConfigureUserAccessControlAndPermissions",
+    "counters_attack_techniques": [
+      "T1078",
+      "T1078.004",
+      "T1548",
+      "T1098",
+      "T1530"
+    ],
+    "digital_artifacts_addressed": [
+      "User Account",
+      "Access Control Configuration"
+    ],
+    "implementation_examples": [
+      "Least-privilege IAM roles and permission boundaries",
+      "Just-in-time privileged access (PIM, access request workflows)",
+      "Group-based role assignment with periodic access recertification",
+      "Scoped, short-lived tokens for agent and tool credentials"
+    ],
+    "framework_controls_partially_mapped": [
+      "NIST-800-53-AC-2",
+      "NIST-800-53-AC-3",
+      "NIST-800-53-AC-6",
+      "SOC2-CC6-logical-access"
+    ],
+    "ai_pipeline_applicability": "Applies to the identities that AI pipelines use: inference service roles, MCP server credentials and agent tokens. Serverless functions have no local user accounts, so the control is the function's execution role; scope it per function. Agents that act on behalf of a user need delegated, scoped tokens, not a shared service account with the union of all users' permissions.",
+    "lag_notes": "AC-2, AC-3 and AC-6 require least privilege but not measurement of unused permissions. Audits accept role definitions without checking effective permissions, and wildcard grants on service identities persist. Permissions granted to agents are rarely reviewed on the same cycle as human accounts.",
     "reference_url": "https://d3fend.mitre.org/technique/D3-UAP/",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-11-04",
     "_auto_imported": true,
-    "_intake_method": "mitre-d3fend-owl"
+    "_intake_method": "mitre-d3fend-owl",
+    "skills_referencing": [
+      "cloud-iam-incident",
+      "idp-incident-response",
+      "sector-financial"
+    ]
   },
   "D3-UBA": {
     "id": "D3-UBA",
@@ -5378,10 +5264,42 @@
     "requires": [],
     "inventories": [],
     "kb_reference": null,
+    "counters_attack_techniques": [
+      "T1078",
+      "T1078.004",
+      "T1110",
+      "T1550",
+      "T1567",
+      "T1098"
+    ],
+    "digital_artifacts_addressed": [
+      "User Account",
+      "Authentication Log",
+      "Network Traffic"
+    ],
+    "implementation_examples": [
+      "Impossible-travel and anomalous sign-in detection (Entra ID Protection, Okta ThreatInsight)",
+      "UEBA analytics in SIEM platforms (Microsoft Sentinel, Splunk UBA)",
+      "Bulk-download and unusual-hours alerting in SaaS audit logs",
+      "Cloud API call-pattern anomaly detection (GuardDuty, CloudTrail Insights)"
+    ],
+    "framework_controls_partially_mapped": [
+      "NIST-800-53-SI-4",
+      "NIST-800-53-AC-2",
+      "ISO-27001-2022-A.8.16",
+      "SOC2-CC7-anomaly-detection"
+    ],
+    "ai_pipeline_applicability": "Applies to human users of AI platforms and to the credentials that agents hold. Serverless and ephemeral workloads produce no persistent user session to profile; the alternative is identity-level analytics on the role or token (sign-in source, call volume, resource set) fed from cloud audit logs. Autonomous agents have no human behavior pattern, so a model trained on human users misclassifies agent activity.",
+    "lag_notes": "SI-4 and AC-2 do not require behavioral analytics. Audits accept a deployed UEBA product without checking that models are trained on current data or that alerts are triaged. A token replayed from the victim's usual network or device does not deviate from the user's baseline.",
     "reference_url": "https://d3fend.mitre.org/technique/D3-UBA/",
-    "last_verified": "2026-05-19",
+    "last_verified": "2026-11-04",
     "_auto_imported": true,
-    "_intake_method": "mitre-d3fend-owl"
+    "_intake_method": "mitre-d3fend-owl",
+    "skills_referencing": [
+      "cloud-iam-incident",
+      "idp-incident-response",
+      "sector-financial"
+    ]
   },
   "D3-UDTA": {
     "id": "D3-UDTA",

@@ -210,6 +210,15 @@ const GATES = [
     ciJobName: "Data integrity (catalog + manifest snapshot)",
   },
   {
+    // Compares data/d3fend-catalog.json to the D3FEND release it pins: ids,
+    // names and root tactics. It downloads the release on a cold cache, once
+    // per pin.
+    name: "D3FEND catalog currency (catalog vs. the release it pins)",
+    command: process.execPath,
+    args: [path.join(ROOT, "scripts", "check-d3fend-catalog-currency.js")],
+    ciJobName: "Data integrity (catalog + manifest snapshot)",
+  },
+  {
     // Compares data/attack-techniques.json to the Enterprise and ICS STIX
     // bundles of the ATT&CK release it pins: ids, names, STIX ids and tactics.
     // It downloads the bundles on a cold cache, once per pin.

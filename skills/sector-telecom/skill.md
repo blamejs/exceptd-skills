@@ -56,7 +56,8 @@ cwe_refs:
 d3fend_refs:
   - D3-NTA
   - D3-NTPM
-  - D3-IOPR
+  - D3-FIM
+  - D3-FA
   - D3-NI
 forward_watch:
   - "FCC CPNI rule updates (47 CFR 64.2009 / 64.2011 amendments)"
@@ -243,9 +244,9 @@ Theater patterns specific to telecom posture:
 |---|---|---|
 | Signaling anomaly | D3-NTA (Network Traffic Analysis) | SS7 / Diameter / GTP per-peer baseline + alert on z-score outliers |
 | 5G slice cross-leak | D3-NTPM (Network Traffic Policy Mapping) | Per-slice ACL + AMF/SMF/UPF reachability testing |
-| LI-gateway audit-trail integrity | D3-IOPR (I/O Read) | Immutable / append-only LI provisioning log + cross-system reconciliation |
+| LI-gateway audit-trail integrity | D3-FIM (File Integrity Monitoring) | Immutable / append-only LI provisioning log + cross-system reconciliation |
 | 5GC slice / N6 / N9 isolation | D3-NI (Network Isolation) | Slice ID + DNN + S-NSSAI policy enforcement; N6 transit egress monitoring |
-| OEM firmware tampering | D3-EFA (Executable File Analysis) | Out-of-band hash verification + operator-attested-runtime checks |
+| OEM firmware tampering | D3-FA (File Analysis) | Out-of-band hash verification + operator-attested-runtime checks |
 
 ## Hand-Off / Related Skills
 
