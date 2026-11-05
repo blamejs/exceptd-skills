@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.21.54 — 2026-11-04
+
+`exceptd watch` now registers its SIGINT, SIGTERM and SIGHUP (SIGBREAK on Windows) handlers before the scheduler runs its first currency check. A signal that arrived during that check ended the process through Node's default handler, so the watcher printed no shutdown line, left its lockfile in place and did not close its log file. The signal now runs the normal shutdown, which releases the lockfile, closes the log file and exits 0.
+
 ## 0.21.53 — 2026-11-04
 
 Advisory rows that point at an NVD record or a GitHub security advisory now carry that record's own publication date. 162 rows carried the CISA KEV listing date instead, which made an advisory look as if it had been published when CISA listed the flaw, in some cases years after the vendor shipped a fix. The 332 rows that point at the CISA KEV catalog keep the KEV date, which is the date of that page. About 380 rows that point at a vendor page still carry the KEV date until each page's date is checked, so treat `published_date` on those rows as the KEV listing date.
