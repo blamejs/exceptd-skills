@@ -45,7 +45,7 @@ cwe_refs:
   - CWE-1039
 d3fend_refs:
   - D3-CSPP
-last_threat_review: "2026-05-15"
+last_threat_review: "2026-11-20"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief ai-risk-management` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
@@ -65,7 +65,7 @@ AI governance moved from voluntary to mandatory between 2024 and 2026. The trans
 
 - **2023-08-22** — ISO/IEC 42001:2023 published as the first international standard for an AI Management System (AIMS). Certification bodies began offering accredited certification through 2024–2025; by Q2 2026 it is the de facto certification target for any organization that builds or deploys AI at scale.
 - **2023-12-15** — ISO/IEC 23894:2023 published, providing the AI risk management process that 42001 operationalizes. The two standards are designed as a pair: 23894 is the *process*, 42001 is the *management system that runs the process*.
-- **2024-08-01** to **2026-08-02** — EU AI Act (Regulation 2024/1689) staged entry into force. Prohibited-AI provisions effective 2025-02-02; GPAI obligations effective 2025-08-02; **high-risk AI system obligations under Art. 9 (risk management system), Art. 10 (data governance), Art. 12 (logging), Art. 14 (human oversight), and Art. 15 (accuracy, robustness, cybersecurity) become fully enforceable on 2026-08-02** — less than three months from the date stamped at the top of this skill.
+- **2024-08-01** to **2028-08-02**: EU AI Act (Regulation 2024/1689) staged entry into force. Prohibited-AI provisions effective 2025-02-02; GPAI obligations effective 2025-08-02. Regulation (EU) 2026/1744 (Digital Omnibus on AI, OJ L 24.7.2026, in force 2026-07-27) moved the high-risk dates: **high-risk AI system obligations under Art. 9 (risk management system), Art. 10 (data governance), Art. 12 (logging), Art. 14 (human oversight), and Art. 15 (accuracy, robustness, cybersecurity) apply from 2027-12-02 for stand-alone Annex III systems and from 2028-08-02 for high-risk systems in Annex I products.**
 
 The gap on the ground is severe and the same in every jurisdiction the maintainers have spot-checked through Q2 2026: most organizations deploying LLMs, agents, RAG pipelines, and AI-augmented developer tooling have **zero governance artifact specific to AI**. They assume general security policies, the existing risk register, the existing vendor management program, and the existing incident response playbook cover AI by inheritance. They do not. Concretely:
 
@@ -97,7 +97,7 @@ AI governance lag is global and asymmetric. Regulatory expectation outruns opera
 | Global | ISO | ISO/IEC 23894:2023 clause 7 (AI risk management process) — gap key `ISO-IEC-23894-2023-clause-7` | Details a generic risk-management process for AI; does not enumerate AI-specific threat classes, does not bind to ATLAS, does not require an AI red-team cadence. |
 | US | NIST | AI RMF 1.0 — MEASURE 2.5 — gap key `NIST-AI-RMF-MEASURE-2.5` | "Measure AI risks and impacts" is a function; provides no schedule, no minimum test set, no requirement to map findings to ATLAS or to a defensive-countermeasure catalog. NIST AI RMF MAP-3.1 (categorization) is similarly process-only. |
 | Global | OWASP | LLM Top 10 (2025) — LLM01 Prompt Injection — gap key `OWASP-LLM-Top-10-2025-LLM01` | Operational checklist treated by auditors as a substitute for binding control language. Helpful for engineers, not legally binding, and does not address ISO/IEC 42001 management-system obligations. |
-| EU | EU AI Office | EU AI Act (Regulation 2024/1689) Art. 9 (Risk Management System, high-risk AI) | Mandatory **continuous iterative** RMS for high-risk AI systems from 2026-08-02. Silent on internal-use AI tooling (Copilot-for-office-workers, internal coding assistants) where staff productivity AI doubles as data exfiltration surface. |
+| EU | EU AI Office | EU AI Act (Regulation 2024/1689) Art. 9 (Risk Management System, high-risk AI) | Mandatory **continuous iterative** RMS for high-risk AI systems from 2027-12-02 (Annex III) and 2028-08-02 (Annex I products), per Regulation (EU) 2026/1744. Silent on internal-use AI tooling (Copilot-for-office-workers, internal coding assistants) where staff productivity AI doubles as data exfiltration surface. |
 | EU | EU AI Office | EU AI Act Art. 15 (accuracy, robustness, cybersecurity) | "Cybersecurity" requirement for high-risk AI is undefined at the technical level. Prompt injection not addressed in Art. 15 or implementing measures (per `data/global-frameworks.json` → EU.EU_AI_ACT.framework_gaps). |
 | EU | EU AI Office | EU AI Act Art. 72 (GPAI adversarial testing) | Adversarial testing required for GPAI with systemic risk; no specification of test methodology, no required ATLAS coverage, no signing/attestation requirement for adversarial-test results. |
 | UK | DSIT / NCSC | UK AI Regulation White Paper (2023) — sectoral, principles-based approach | Five cross-sectoral principles (safety/security, transparency, fairness, accountability, contestability). **Non-statutory.** No central AI authority equivalent to the EU AI Office. NCSC's 2024 AI security guidance is sectoral and voluntary. |
@@ -228,7 +228,7 @@ The skill produces a structured AI Risk Management Program assessment scoring th
 ## AI Risk Management Program — <organization / scope>
 **Assessment Date:** YYYY-MM-DD
 **Standards in scope:** ISO/IEC 42001:2023 | ISO/IEC 23894:2023 | NIST AI RMF 1.0 | EU AI Act (2024/1689) | <jurisdiction-specific frameworks>
-**EU AI Act enforcement reference date:** 2026-08-02 (high-risk system obligations fully enforceable)
+**EU AI Act enforcement reference dates:** 2027-12-02 (high-risk obligations apply to stand-alone Annex III systems) and 2028-08-02 (high-risk systems in Annex I products), as set by Regulation (EU) 2026/1744
 
 ### 1. AI Inventory Ledger
 | ID | Name | Owner | Runtime | Data tier | EU AI Act risk tier | Personal data? | Tool-call surface | MCP servers | Dependencies |
@@ -282,7 +282,7 @@ Apply each test. A "no" on any of (a)–(e) means the AI governance posture is p
 
 (a) **Show me your AI inventory ledger.** If there is no list of every model + API + agent + MCP server + RAG corpus, the governance claim is theater. ISO/IEC 42001 cannot be implemented over an unknown surface. The test is concrete: ask for the inventory; if the response is "we use OpenAI for some things" or "let me check with the AI team", the inventory does not exist.
 
-(b) **Show me your most recent AI impact assessment for a high-risk EU AI Act use case.** Per the 2026-08-02 enforcement date, any high-risk use case in production requires a documented Art. 9 RMS output before that date. If none exist for a deployed high-risk use case, the organization is non-compliant with the upcoming deadline — and the governance program is paper. If the response is "we don't think any of our use cases are high-risk" without a documented classification exercise referencing EU AI Act Annex III, that *is* the theater.
+(b) **Show me your most recent AI impact assessment for a high-risk EU AI Act use case.** High-risk obligations apply from 2027-12-02 for stand-alone Annex III systems and from 2028-08-02 for Annex I products (Regulation (EU) 2026/1744), and any high-risk use case in production requires a documented Art. 9 RMS output before the applicable date. If none exist for a deployed high-risk use case, the organization is not on track for that deadline, and the governance program is paper. If the response is "we don't think any of our use cases are high-risk" without a documented classification exercise referencing EU AI Act Annex III, that *is* the theater.
 
 (c) **What is your AI red-team cadence and last finding?** If the answer is "we haven't tested" or "we ran a red-team exercise in 2023", the red-team program is theater. The pattern auditors look for in 2026: a documented cadence, ATLAS-coverage matrix, last-test date within the cadence window, findings routed to the risk-treatment register, and at least one residual-risk re-evaluation triggered by a red-team finding.
 

@@ -76,7 +76,7 @@ forward_watch:
   - NIS2 implementing-act revision enumerating federated-identity control-plane indicators
   - Cross-tenant access settings evolution at Entra ID — partner-tenant attestation cadence and revocation latency
   - PSD3 / PSR final text on agent-initiated payments and the IdP-mediated agent-attestation surface
-last_threat_review: "2026-10-04"
+last_threat_review: "2026-11-20"
 ---
 
 # Identity-Provider Incident Response (mid-2026)

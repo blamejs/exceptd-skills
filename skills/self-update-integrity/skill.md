@@ -41,7 +41,7 @@ cwe_refs:
   - CWE-829
   - CWE-353
   - CWE-347
-last_threat_review: "2026-06-02"
+last_threat_review: "2026-11-20"
 ---
 
 # Consumer-Side Self-Update & Artifact Integrity

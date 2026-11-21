@@ -43,7 +43,7 @@ cwe_refs:
   - CWE-918
   - CWE-290
   - CWE-347
-last_threat_review: "2026-06-02"
+last_threat_review: "2026-11-20"
 ---
 
 # Network-Layer Trust (AiTM Resistance)

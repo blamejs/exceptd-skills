@@ -49,7 +49,7 @@ cwe_refs:
   - CWE-834
   - CWE-770
   - CWE-787
-last_threat_review: "2026-10-27"
+last_threat_review: "2026-11-20"
 ---
 
 # Decompression-Bomb / Parser-DoS / ReDoS Resistance

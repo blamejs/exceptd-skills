@@ -396,9 +396,7 @@
     "published": "2015-03",
     "tracker": "https://www.rfc-editor.org/info/rfc7489",
     "relevance": "Defines DMARC — the email-authentication policy framework that binds SPF + DKIM results to a published domain-owner policy. Operator-facing email security depends on a published DMARC record with `p=reject` or `p=quarantine`; relaxed policies (`p=none`) are equivalent to no DMARC for spoofing-defense purposes. Cited alongside DKIM (RFC 6376) and SPF (RFC 7208) as the authoritative tri-RFC for anti-spoofing posture.",
-    "skills_referencing": [
-      "email-security-anti-phishing"
-    ],
+    "skills_referencing": [],
     "last_verified": "2026-05-27",
     "abstract": "Domain-based Message Authentication, Reporting, and Conformance (DMARC) is a scalable mechanism by which a mail-originating organization can express domain-level policies and preferences for message validation, disposition, and reporting, that a mail-receiving organization can use to improve mail handling. Originators of Internet Mail need to be able to associate reliable and authenticated domain identifiers with messages, communicate policies about messages that use those identifiers, and report about mail using those identifiers. These abilities have several benefits: Receivers can provide feedback to Domain Owners about the use of their domains; this feedback can provide valuable insight about the management of internal operations and the presence of external domain name abuse. DMARC does not produce or encourage elevated delivery privilege of authenticated email. DMARC is a mechanism for policy distribution that enables increasingly strict handling of messages that fail authentication checks, ranging from no action, through altered delivery, up to message rejection.",
     "keywords": [
@@ -291755,8 +291753,10 @@
     "tracker": "https://www.rfc-editor.org/info/rfc9989",
     "txt_url": "https://www.rfc-editor.org/rfc/rfc9989.txt",
     "html_url": "https://www.rfc-editor.org/rfc/rfc9989.html",
-    "relevance": "Auto-imported from the IETF RFC index. Operator-curated relevance pending — refine when this RFC becomes operationally cited in a skill body or finding.",
-    "skills_referencing": [],
+    "relevance": "Defines DMARC, which binds SPF and DKIM results to the policy the Author Domain publishes in DNS. It obsoletes RFC 7489 and RFC 9091 and is the current DMARC citation. Anti-spoofing posture requires a published DMARC record with p=reject or p=quarantine; a record with p=none does not ask receivers to act on failed mail. Cited with DKIM (RFC 6376) and SPF (RFC 7208).",
+    "skills_referencing": [
+      "email-security-anti-phishing"
+    ],
     "last_verified": "2026-05-27",
     "_auto_imported": true,
     "_intake_method": "ietf-rfc-index"
@@ -291786,8 +291786,10 @@
     "tracker": "https://www.rfc-editor.org/info/rfc9990",
     "txt_url": "https://www.rfc-editor.org/rfc/rfc9990.txt",
     "html_url": "https://www.rfc-editor.org/rfc/rfc9990.html",
-    "relevance": "Auto-imported from the IETF RFC index. Operator-curated relevance pending — refine when this RFC becomes operationally cited in a skill body or finding.",
-    "skills_referencing": [],
+    "relevance": "Defines DMARC aggregate reports, the XML reports receivers send to the address in a domain's rua= tag. Operators use them to find senders that fail SPF or DKIM alignment before moving a domain from p=none to p=quarantine or p=reject, and to spot spoofing of the domain.",
+    "skills_referencing": [
+      "email-security-anti-phishing"
+    ],
     "last_verified": "2026-05-27",
     "_auto_imported": true,
     "_intake_method": "ietf-rfc-index"
@@ -291827,8 +291829,10 @@
     "tracker": "https://www.rfc-editor.org/info/rfc9991",
     "txt_url": "https://www.rfc-editor.org/rfc/rfc9991.txt",
     "html_url": "https://www.rfc-editor.org/rfc/rfc9991.html",
-    "relevance": "Auto-imported from the IETF RFC index. Operator-curated relevance pending — refine when this RFC becomes operationally cited in a skill body or finding.",
-    "skills_referencing": [],
+    "relevance": "Defines DMARC failure reports, the per-message reports receivers send to the address in a domain's ruf= tag. They identify individual spoofed or misconfigured messages. They can carry message headers and content, so operators who request them should treat the reporting mailbox as holding personal data.",
+    "skills_referencing": [
+      "email-security-anti-phishing"
+    ],
     "last_verified": "2026-05-27",
     "_auto_imported": true,
     "_intake_method": "ietf-rfc-index"

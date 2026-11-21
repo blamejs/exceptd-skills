@@ -31,7 +31,7 @@
       "path": "data/attack-techniques.json",
       "purpose": null,
       "schema_version": "1.0.0",
-      "last_updated": "2026-11-01",
+      "last_updated": "2026-11-20",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {
@@ -119,7 +119,7 @@
       "path": "data/dlp-controls.json",
       "purpose": "DLP control inventory: per-pattern definitions for the dlp-gap-analysis skill, jurisdiction-tagged so a deployment can scope by applicable laws.",
       "schema_version": "1.0.0",
-      "last_updated": "2026-05-11",
+      "last_updated": "2026-11-20",
       "tlp": "CLEAR",
       "source_confidence_default": "B2",
       "freshness_policy": {
@@ -185,7 +185,7 @@
       "path": "data/global-frameworks.json",
       "purpose": "Multi-jurisdiction framework registry: per-jurisdiction applicable frameworks × patch_sla / notification_sla / critical_controls / framework_gaps (jurisdiction count is reported by entry_count, not duplicated here). Cross-cutting authority for jurisdiction-clocks index.",
       "schema_version": "1.3.0",
-      "last_updated": "2026-05-15",
+      "last_updated": "2026-11-20",
       "tlp": "CLEAR",
       "source_confidence_default": "A1",
       "freshness_policy": {

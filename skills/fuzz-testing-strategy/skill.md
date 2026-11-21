@@ -45,7 +45,7 @@ d3fend_refs:
   - D3-CSPP
   - D3-PSEP
   - D3-SAOR
-last_threat_review: "2026-11-01"
+last_threat_review: "2026-11-20"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief fuzz-testing-strategy` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 

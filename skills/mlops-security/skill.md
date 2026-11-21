@@ -61,7 +61,7 @@ forward_watch:
   - SLSA working draft (slsa.dev/spec/draft): v1.2 defines only the Build and Source Tracks, with no model-provenance or training-run track; re-baseline ML pipeline coverage if a later version adds one
   - EU AI Act high-risk technical-file implementing acts (2026-2027) — operational requirements for Article 10 / 13 / 15 documentation may pin ML-BOM or model-signing
   - MITRE ATLAS release 2026.06 (June 2026) added AML.T0113 (Steal Web Session Cookie), AML.T0091.001 (Use Alternate Authentication Material: Web Session Cookie) and AML.T0114 (AI Service Web Interface) to release 2026.05 and removed no technique ids. Earlier releases shipped the AML.T0010 sub-technique expansion and the agentic-AI techniques this forecast tracked ("Publish Poisoned AI Agent Tool", "Escape to Host"). Forward watch: subsequent monthly ATLAS releases, for updates to agentic-AI TTPs and MLOps-pipeline-specific techniques
-last_threat_review: "2026-11-01"
+last_threat_review: "2026-11-20"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief mlops-security` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 

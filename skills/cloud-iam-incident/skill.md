@@ -73,7 +73,7 @@ forward_watch:
   - AU ISM update enumerating cloud non-human-principal credential hygiene with explicit bearer-token TTL ceilings
   - DORA TLPT (JC 2024/40 RTS) first-cycle aggregate findings on cloud-account-compromise scenarios
   - AWS, GCP, and Azure shared-fate / shared-responsibility recalibration for federated-trust hygiene
-last_threat_review: "2026-09-28"
+last_threat_review: "2026-11-20"
 ---
 
 # Cloud IAM Incident Response (mid-2026)

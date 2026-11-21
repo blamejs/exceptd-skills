@@ -2258,7 +2258,19 @@
           "incident-response-playbook"
         ]
       },
-      "RFC-7489": {
+      "RFC-9989": {
+        "count": 1,
+        "skills": [
+          "email-security-anti-phishing"
+        ]
+      },
+      "RFC-9990": {
+        "count": 1,
+        "skills": [
+          "email-security-anti-phishing"
+        ]
+      },
+      "RFC-9991": {
         "count": 1,
         "skills": [
           "email-security-anti-phishing"
@@ -3252,7 +3264,6 @@
       "RFC-6546",
       "RFC-7208",
       "RFC-7296",
-      "RFC-7489",
       "RFC-7591",
       "RFC-7970",
       "RFC-8461",
@@ -3264,7 +3275,10 @@
       "RFC-9116",
       "RFC-9420",
       "RFC-9622",
-      "RFC-9794"
+      "RFC-9794",
+      "RFC-9989",
+      "RFC-9990",
+      "RFC-9991"
     ],
     "dlp_refs": []
   },
@@ -10479,6 +10493,7 @@
       "RFC-7486",
       "RFC-7487",
       "RFC-7488",
+      "RFC-7489",
       "RFC-749",
       "RFC-7490",
       "RFC-7491",
@@ -13001,10 +13016,7 @@
       "RFC-9972",
       "RFC-9975",
       "RFC-998",
-      "RFC-9983",
-      "RFC-9989",
-      "RFC-9990",
-      "RFC-9991"
+      "RFC-9983"
     ],
     "dlp_refs": [
       "DLP-CHAN-CLIPBOARD-AI",

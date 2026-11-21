@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.22.0 — 2026-11-20
+
+The minimum supported Node.js is now 26.13.1, the current Node.js 26 LTS release, so `engines.node` reads `>=26.13.1`. Installing on Node.js 24 now prints an engines warning, and `npm install --engine-strict` refuses it. Upgrade Node.js to 26.13.1 or later before upgrading exceptd. The CI, release and Docker test images run Node.js 26.13.1.
+
+The pinned MITRE ATT&CK version is now 20.1 (released 2026-11-05). Release 20.1 renames, revokes and retires no technique, so every cited id resolves unchanged.
+
+The EU AI Act entries now carry the high-risk dates set by Regulation (EU) 2026/1744 (Digital Omnibus on AI): high-risk obligations apply from 2027-12-02 for stand-alone Annex III systems and from 2028-08-02 for high-risk systems in Annex I products. The general-purpose AI obligations date is corrected to 2025-08-02, and Commission enforcement over GPAI providers starts 2026-08-02. `ai-risk-management` and the global frameworks catalog previously gave 2026-08-02 for the high-risk obligations.
+
+`email-security-anti-phishing` now cites RFC 9989, RFC 9990 and RFC 9991 for DMARC in place of the obsoleted RFC 7489. `identity-assurance` now dates the final NIST SP 800-63-4 to July 2025. Eleven skills, the ATT&CK catalog, the DLP controls catalog and the global frameworks catalog carry a 2026-11-20 review date. Twelve CVE entries were re-verified against NVD, CISA KEV and EPSS. Thirty-two entries whose CVSS, vector or EPSS no longer matches NVD, or which have no NVD record, are tracked for re-curation in issue #467.
+
 ## 0.21.54 — 2026-11-04
 
 `exceptd watch` now registers its SIGINT, SIGTERM and SIGHUP (SIGBREAK on Windows) handlers before the scheduler runs its first currency check. A signal that arrived during that check ended the process through Node's default handler, so the watcher printed no shutdown line, left its lockfile in place and did not close its log file. The signal now runs the normal shutdown, which releases the lockfile, closes the log file and exits 0.

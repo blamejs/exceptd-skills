@@ -56,14 +56,14 @@ cwe_refs:
 d3fend_refs:
   - D3-MFA
   - D3-CSPP
-last_threat_review: "2026-05-11"
+last_threat_review: "2026-11-20"
 ---
 
 # Identity Assurance Assessment
 
 ## Threat Context (mid-2026)
 
-Identity is the new perimeter, and the perimeter expanded. The 2026 principal population is no longer "humans + service accounts" — it now includes AI agents acting on behalf of users, MCP servers exchanging short-lived tokens, and ephemeral workload identities minted per function invocation. Each of these is a principal that authenticates, holds scopes, and shows up in audit logs — and each was outside the design envelope of every identity standard in production use before NIST 800-63 rev 4 (Q4 2025).
+Identity is the new perimeter, and the perimeter expanded. The 2026 principal population is no longer "humans + service accounts" — it now includes AI agents acting on behalf of users, MCP servers exchanging short-lived tokens, and ephemeral workload identities minted per function invocation. Each of these is a principal that authenticates, holds scopes, and shows up in audit logs — and each was outside the design envelope of every identity standard in production use before NIST SP 800-63-4 (final, July 2025).
 
 **Agent-as-principal is operational reality.** When an AI coding assistant calls an MCP tool, it does so under the IDE user's OAuth session by default. The agent inherits the user's scopes wholesale — not because anyone designed it that way, but because no current identity standard defines an agent-as-principal model. CVE-2026-30615 (Windsurf MCP local-vector RCE, CVSS 8.0 / AV:L) hinged in part on this implicit inheritance: tool calls executed under the IDE user's privileges with no separate authentication challenge for the agent's actions. The principal who authenticated (the human) is not the principal who took the action (the agent), and the audit trail does not distinguish them.
 
@@ -79,7 +79,7 @@ Identity is the new perimeter, and the perimeter expanded. The 2026 principal po
 
 | Framework | Control | Why It Fails in mid-2026 |
 |---|---|---|
-| NIST 800-63B rev 4 (Q4 2025) | AAL / IAL / FAL definitions | rev 4 modernizes authenticator types (passkey-first, phishing-resistance explicit at AAL3) and updates remote IAL2 proofing. It does **not** operationalize agent-as-principal identity: the model assumes a human subscriber holds an authenticator. An AI agent acting under a user's session is neither a subscriber nor a separate principal in 800-63 rev 4's vocabulary. Tracked in `data/framework-control-gaps.json` as NIST-800-63B-rev4. |
+| NIST 800-63B rev 4 (final, July 2025) | AAL / IAL / FAL definitions | rev 4 modernizes authenticator types (passkey-first, phishing-resistance explicit at AAL3) and updates remote IAL2 proofing. It does **not** operationalize agent-as-principal identity: the model assumes a human subscriber holds an authenticator. An AI agent acting under a user's session is neither a subscriber nor a separate principal in 800-63 rev 4's vocabulary. Tracked in `data/framework-control-gaps.json` as NIST-800-63B-rev4. |
 | NIST 800-53 | AC-2 (Account Management) | AC-2 enumerates account types (individual, group, service, system) but has no category for agent-mediated principals. Audit-log requirements assume the principal in the log is the principal that took the action — false when an AI agent acts on a user's session. |
 | NIST 800-207 | Zero Trust Architecture | ZTA assumes subject = device + user. The "AI agent as subject" case is not in the published model; current ZTA deployments treat agent traffic as user traffic and miss the privilege step-up requirement. |
 | ISO 27001:2022 | A.8.30 (Outsourced development) and A.5.16 (Identity management) | A.5.16 covers human and "automated entities" identity lifecycle but is silent on agent SDKs that act with user-bound tokens. A.8.30 was already flagged as silent on MCP-class tool providers; the same gap applies to agent identity. |
