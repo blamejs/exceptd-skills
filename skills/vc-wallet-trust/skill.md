@@ -46,7 +46,7 @@ cwe_refs:
   - CWE-863
   - CWE-200
   - CWE-672
-last_threat_review: "2026-06-02"
+last_threat_review: "2026-11-20"
 ---
 
 # Verifiable-Credential / Digital-Wallet Verifier Trust

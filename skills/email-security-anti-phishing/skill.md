@@ -42,7 +42,9 @@ framework_gaps:
   - UK-CAF-C1
   - AU-Essential-8-App-Hardening
 rfc_refs:
-  - RFC-7489
+  - RFC-9989
+  - RFC-9990
+  - RFC-9991
   - RFC-6376
   - RFC-7208
   - RFC-8616
@@ -53,7 +55,7 @@ d3fend_refs:
   - D3-CSPP
   - D3-DA
   - D3-MFA
-last_threat_review: "2026-05-18"
+last_threat_review: "2026-11-20"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief email-security-anti-phishing` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
@@ -71,7 +73,7 @@ Phishing remained the #1 initial-access vector through 2025 (Verizon DBIR 2025) 
 
 **Business Email Compromise losses continued growing through 2025.** FBI IC3 2024 and 2025 reports place BEC at multi-billion-USD annual loss globally, with the wire-redirection and vendor-invoice-fraud subclasses dominant. The 2026 reality is that BEC is no longer "compromised mailbox sends a wire request" — it is increasingly "spoofed-or-look-alike domain plus deepfake voice/video confirmation channel" so that out-of-band verification by phone *fails open* unless the callback number is a pre-registered known-good.
 
-**Defense ecosystem snapshot.** SPF (RFC 7208), DKIM (RFC 6376), and DMARC (RFC 7489) adoption is effectively universal among Fortune 500 sender domains, but **enforcement** (`p=reject` vs `p=none`) lags — only roughly 60% of large enterprise domains are at `p=reject` by mid-2026, with the rest stuck in monitoring mode for fear of breaking legitimate forwarders. BIMI (AuthIndicators Working Group draft, with IETF mailing-list discussion ongoing as of mid-2026) for visual brand verification is deployed at Gmail, Yahoo Mail, and Apple Mail, but requires DMARC `p=quarantine` or `p=reject` to take effect — so it doubles as enforcement-status signaling. ARC (RFC 8617) is the forwarder-authentication answer to the DMARC-vs-mailing-list problem and is maturing across major providers. MTA-STS (RFC 8461) and TLSRPT (RFC 8460) close the in-transit TLS-downgrade gap that opportunistic STARTTLS leaves open. The cloud email duopoly — Microsoft 365 Exchange Online and Google Workspace Gmail — is the canonical inbox environment most enterprises operate in; on-prem Exchange remains in regulated and air-gapped enclaves and gets an explicit exception path below.
+**Defense ecosystem snapshot.** SPF (RFC 7208), DKIM (RFC 6376), and DMARC (RFC 9989, which with RFC 9990 obsoletes RFC 7489; failure reporting is RFC 9991) adoption is effectively universal among Fortune 500 sender domains, but **enforcement** (`p=reject` vs `p=none`) lags — only roughly 60% of large enterprise domains are at `p=reject` by mid-2026, with the rest stuck in monitoring mode for fear of breaking legitimate forwarders. BIMI (AuthIndicators Working Group draft, with IETF mailing-list discussion ongoing as of mid-2026) for visual brand verification is deployed at Gmail, Yahoo Mail, and Apple Mail, but requires DMARC `p=quarantine` or `p=reject` to take effect — so it doubles as enforcement-status signaling. ARC (RFC 8617) is the forwarder-authentication answer to the DMARC-vs-mailing-list problem and is maturing across major providers. MTA-STS (RFC 8461) and TLSRPT (RFC 8460) close the in-transit TLS-downgrade gap that opportunistic STARTTLS leaves open. The cloud email duopoly — Microsoft 365 Exchange Online and Google Workspace Gmail — is the canonical inbox environment most enterprises operate in; on-prem Exchange remains in regulated and air-gapped enclaves and gets an explicit exception path below.
 
 **Phishing-resistant authentication.** FIDO2 / WebAuthn synced passkeys are the only widely deployed authenticator class that survives AiTM proxy phishing (evilginx-class), Tycoon-2FA-style session-token relay, and push-notification fatigue attacks. TOTP, SMS, and push-MFA are all bypassable by 2026 phishing-kit ecosystems. Caffeine and Tycoon 2FA continue to evolve; observed 2025 telemetry shows passkey-relay attempts emerging against poorly configured WebAuthn relying-party verification.
 
@@ -144,7 +146,7 @@ The procedure threads three foundational principles:
 
 **Cloud-email canonical, on-prem exception:** default scoping assumes Microsoft 365 Exchange Online or Google Workspace Gmail. On-prem Exchange (legacy, regulated enclave, air-gapped) gets an explicit exception path noting which controls (cloud-native sandbox detonation, Microsoft Defender XDR signals, Google Workspace Security Sandbox) have on-prem equivalents and which require compensating controls.
 
-Email-authentication RFCs cited throughout the procedure (`RFC-7489` DMARC, `RFC-6376` DKIM, `RFC-7208` SPF, `RFC-8616` BIMI/AuthIndicators DNS encoding, `RFC-8461` MTA-STS, `RFC-8617` ARC, `RFC-8460` TLSRPT) resolve against `data/rfc-references.json`. The DLP exfil-channel mappings invoked by the gateway-and-egress sub-procedures (`DLP-CHAN-EMAIL-OUT` for outbound message exfil, `DLP-CHAN-LLM-PROMPT` for LLM-prompt-as-egress when users paste mailbox content into AI assistants, `DLP-ENFORCE-BLOCK` for hard-block enforcement on confirmed PHI/PCI patterns) resolve against `data/dlp-controls.json` — these are the canonical IDs to cite when handing off to `dlp-gap-analysis`.
+Email-authentication RFCs cited throughout the procedure (`RFC-9989` DMARC, `RFC-9990` DMARC aggregate reporting, `RFC-9991` DMARC failure reporting, `RFC-6376` DKIM, `RFC-7208` SPF, `RFC-8616` BIMI/AuthIndicators DNS encoding, `RFC-8461` MTA-STS, `RFC-8617` ARC, `RFC-8460` TLSRPT) resolve against `data/rfc-references.json`. The DLP exfil-channel mappings invoked by the gateway-and-egress sub-procedures (`DLP-CHAN-EMAIL-OUT` for outbound message exfil, `DLP-CHAN-LLM-PROMPT` for LLM-prompt-as-egress when users paste mailbox content into AI assistants, `DLP-ENFORCE-BLOCK` for hard-block enforcement on confirmed PHI/PCI patterns) resolve against `data/dlp-controls.json` — these are the canonical IDs to cite when handing off to `dlp-gap-analysis`.
 
 **Ten-step assessment:**
 

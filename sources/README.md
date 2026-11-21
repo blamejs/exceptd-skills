@@ -148,7 +148,7 @@ The only exception: researcher/discoverer announcements about their own research
 ## Validators
 
 Real validation against primary sources lives in `sources/validators/`. These are
-zero-dependency Node 24 modules (stdlib `fetch`, `AbortController`, `fs/promises`
+zero-dependency Node 26 modules (stdlib `fetch`, `AbortController`, `fs/promises`
 only). Every network call has a 10s timeout and degrades to an `unreachable`
 status rather than throwing — the validators are safe to run in airgapped CI.
 

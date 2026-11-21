@@ -2,7 +2,7 @@
 
 `scripts/check-test-coverage.js` compares the changed surface in a diff
 against the `tests/` tree and reports any surface change that has no
-matching test reference. Zero dependencies, Node 24 stdlib only, runs
+matching test reference. Zero dependencies, Node 26 stdlib only, runs
 identically on Windows + Linux.
 
 ## Usage
@@ -82,7 +82,7 @@ workflow) stays green:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
       - uses: actions/setup-node@v4
-        with: { node-version: '24' }
+        with: { node-version: '26' }
       - run: node scripts/check-test-coverage.js --base origin/main
 ```
 

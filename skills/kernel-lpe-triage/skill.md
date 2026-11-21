@@ -51,7 +51,7 @@ forward_watch:
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12 or sooner via Patch Tuesday) — Windows 11 LPE heap buffer overflow by Marcin Wiązowski; track MSRC advisory and KEV add
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12 or sooner via Patch Tuesday) — Windows 11 LPE 2x use-after-free by Kentaro Kawane (GMO); track MSRC advisory and KEV add
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — RHEL race-condition LPE by chompie / IBM X-Force XOR; track Red Hat advisory and KEV add
-last_threat_review: "2026-09-28"
+last_threat_review: "2026-11-20"
 ---
 
 # Kernel LPE Triage

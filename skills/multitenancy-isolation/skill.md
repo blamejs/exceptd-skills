@@ -45,7 +45,7 @@ cwe_refs:
   - CWE-863
   - CWE-668
   - CWE-400
-last_threat_review: "2026-06-02"
+last_threat_review: "2026-11-20"
 ---
 
 # Application Multitenancy Isolation + Availability/DoS Resilience

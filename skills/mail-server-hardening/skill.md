@@ -46,7 +46,7 @@ cwe_refs:
   - CWE-611
   - CWE-863
   - CWE-400
-last_threat_review: "2026-06-02"
+last_threat_review: "2026-11-20"
 ---
 
 # Inbound Mail-Server Protocol Hardening

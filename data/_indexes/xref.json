@@ -1422,7 +1422,13 @@
     "RFC-7970": [
       "incident-response-playbook"
     ],
-    "RFC-7489": [
+    "RFC-9989": [
+      "email-security-anti-phishing"
+    ],
+    "RFC-9990": [
+      "email-security-anti-phishing"
+    ],
+    "RFC-9991": [
       "email-security-anti-phishing"
     ],
     "RFC-6376": [

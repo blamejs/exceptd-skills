@@ -67,7 +67,7 @@ d3fend_refs:
   - D3-EAL
   - D3-FIM
   - D3-SCF
-last_threat_review: "2026-11-01"
+last_threat_review: "2026-11-20"
 ---
 
 # Supply-Chain Integrity Assessment

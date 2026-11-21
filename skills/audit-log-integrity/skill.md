@@ -42,7 +42,7 @@ cwe_refs:
   - CWE-347
   - CWE-284
   - CWE-778
-last_threat_review: "2026-06-02"
+last_threat_review: "2026-11-20"
 ---
 
 # Audit-Log Integrity (Tamper-Evidence, WORM, Deception)

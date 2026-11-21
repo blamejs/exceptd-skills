@@ -42,7 +42,7 @@ cwe_refs:
   - CWE-532
   - CWE-918
   - CWE-200
-last_threat_review: "2026-06-02"
+last_threat_review: "2026-11-20"
 ---
 
 # Telemetry-Pipeline Integrity (Log Injection + Sink Confidentiality)

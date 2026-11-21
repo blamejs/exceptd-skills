@@ -1,7 +1,7 @@
 {
-  "version": "0.21.0",
+  "version": "0.22.0",
   "type": "minor",
   "authorized_by": "maintainer",
-  "authorized_on": "2026-09-22",
-  "reason": "Renames four framework-control-gaps keys that named the wrong control: AU-ISM-1546-Cloud-Service-Account becomes AU-ISM-1685-Cloud-Service-Account, AU-ISM-1556 becomes AU-ISM-1173-Telecom-NMS, AU-ISM-1559-IdP becomes AU-ISM-1685-IdP, and ATLAS-AML.T0048 becomes ATLAS-AML.T0010. Skills that cited the old ISM keys drop them from framework_gaps, and skills that cited ATLAS ids for a technique ATLAS files under another id drop those atlas_refs. The manifest snapshot gate classes both as breaking surface changes, so the release takes a minor under the project cadence."
+  "authorized_on": "2026-11-20",
+  "reason": "Raises the minimum supported Node.js from 24.22.1 to 26.13.1 (engines.node >=26.13.1). Installs on Node 24 no longer satisfy the engines range, which is a consumer-compatibility change, so the release takes a minor under the project cadence."
 }

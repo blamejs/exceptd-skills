@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": "1.0.0",
-    "last_updated": "2026-05-11",
+    "last_updated": "2026-11-20",
     "skill_refs_field": "dlp_refs",
     "note": "DLP controls relevant to mid-2026 threat reality. Legacy controls (email/web/USB) are kept because compliance frameworks still cite them; modern controls (LLM prompt, MCP tool-arg, embedding-store) are the actual operational gap. The dlp-gap-analysis skill consumes this catalog.",
     "tlp": "CLEAR",
@@ -599,7 +599,7 @@
       "C2PA content credentials (Adobe, Microsoft, Sony, Leica camera firmware)",
       "Document watermarking (Adobe Acrobat, Microsoft Information Protection labels with visible marks)"
     ],
-    "ai_pipeline_applicability": "Partial. Provides post-hoc forensic value when content reappears. Does not prevent egress in real time. EU AI Act Art 50 makes AI-output marking a legal obligation for general-purpose AI systems serving EU users from 2026.",
+    "ai_pipeline_applicability": "Partial. Provides post-hoc forensic value when content reappears. Does not prevent egress in real time. EU AI Act Art 50(2) makes AI-output marking a legal obligation for providers of generative AI systems from 2026-08-02, with a transition under Regulation (EU) 2026/1744 for systems already on the market.",
     "lag_notes": "EU AI Act Art 50 is ahead of NIST and ISO; US frameworks have no equivalent prescriptive watermarking requirement. Statistical text watermarks remain a research-grade control with documented bypass methods.",
     "evidence_examples": [
       "SynthID watermark detection report on suspicious content",

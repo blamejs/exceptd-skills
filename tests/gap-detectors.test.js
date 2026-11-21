@@ -1299,8 +1299,8 @@ test("shipped catalogs: extended-detector budgets (no silent regression on v0.13
     // data-freshness only (source_verified / last_updated / epss_date). The
     // calendar-driven KEV-due-passed sub-check was removed (external operator
     // date, not catalog freshness; grew unboundedly as KEV drafts got curated).
-    // Actual 0 with fresh data; 10 leaves refresh headroom.
-    "temporal-staleness": 10,
+    // 32 entries await re-curation against NVD before source_verified moves.
+    "temporal-staleness": 32,
     "logical-consistency": 5,
     "cross-ref-completeness": 5,
     "schema-evolution": 0,

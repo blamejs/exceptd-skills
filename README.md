@@ -16,7 +16,7 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Skills](https://img.shields.io/badge/skills-51-d946ef)](#skill-inventory)
 [![ATLAS](https://img.shields.io/badge/MITRE%20ATLAS-v2026.10-d946ef)](https://atlas.mitre.org)
-[![ATT&CK](https://img.shields.io/badge/MITRE%20ATT%26CK-v20.0-d946ef)](https://attack.mitre.org)
+[![ATT&CK](https://img.shields.io/badge/MITRE%20ATT%26CK-v20.1-d946ef)](https://attack.mitre.org)
 [![Ed25519-signed](https://img.shields.io/badge/skills-Ed25519--signed-2ea043)](AGENTS.md)
 [![Jurisdictions](https://img.shields.io/badge/jurisdictions-35-blue)](data/global-frameworks.json)
 
@@ -144,7 +144,7 @@ That prints the absolute path of the installed package. Point your AI assistant 
 - `<path>/data/_indexes/summary-cards.json` — 100-word abstract per skill (~95 KB)
 - `<path>/data/_indexes/recipes.json` — curated multi-skill chains for common use cases
 
-No clone, no signing keys, no Node 24 required for assistants that read directly from disk. If your assistant needs a local copy as a regular checkout, use `npx degit blamejs/exceptd-skills my-skills` instead.
+No clone, no signing keys, no Node 26 required for assistants that read directly from disk. If your assistant needs a local copy as a regular checkout, use `npx degit blamejs/exceptd-skills my-skills` instead.
 
 ### 2. Operator (run commands locally)
 

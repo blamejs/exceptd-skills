@@ -40,7 +40,7 @@ d3fend_refs:
   - D3-NTA
 forward_watch:
   - Pwn2Own Berlin 2026 (disclosed 2026-05-14, embargo ends 2026-08-12) — Chroma vector DB CWE-190 + CWE-362 chain by haehae; impacts RAG vector store integrity (integer overflow + race condition); track patch and downstream RAG pipeline advisory
-last_threat_review: "2026-11-01"
+last_threat_review: "2026-11-20"
 ---
 
 # RAG Pipeline Security Assessment

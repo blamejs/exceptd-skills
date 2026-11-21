@@ -63,7 +63,7 @@ d3fend_refs:
   - D3-MENCR
   - D3-NTA
   - D3-NTPM
-last_threat_review: "2026-11-01"
+last_threat_review: "2026-11-20"
 ---
 
 # DLP Gap Analysis

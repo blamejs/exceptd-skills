@@ -67,7 +67,7 @@ forward_watch:
   - "Five Eyes joint advisories on telecom-equipment intrusion"
   - "3GPP TS 33.501 updates (5G security architecture rebaseline)"
   - "O-RAN SFG / WG11 security specifications"
-last_threat_review: "2026-11-01"
+last_threat_review: "2026-11-20"
 discovery_mode: "standalone"  # operator-reached via `exceptd brief sector-telecom` or `exceptd ask`; not chained into any playbook's direct.skill_chain by design
 ---
 
