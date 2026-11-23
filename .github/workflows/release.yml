@@ -333,14 +333,14 @@ jobs:
         # minted token is per-run, repo-scoped, expires with the job, and carries
         # ONLY contents:write — so the workflow grants no write and the Scorecard
         # Token-Permissions finding clears, with the release capability unchanged.
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510  # v3.3.0
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc  # v3.4.0
         with:
           client-id: ${{ secrets.REFRESH_APP_CLIENT_ID }}
           private-key: ${{ secrets.REFRESH_APP_PRIVATE_KEY }}
           permission-contents: write
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64  # v3.0.3
+        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3  # v3.0.4
         with:
           token: ${{ steps.app-token.outputs.token }}
           tag_name: ${{ needs.validate.outputs.tag }}
